@@ -1,0 +1,7 @@
+#Classes
+DXRAMConfig - holds all keys and default values for the DXRAM configuration
+DXRAMLogger - can be used for general logging
+
+#Packages
+core - code of the DXRAM core
+utils - various utility classes

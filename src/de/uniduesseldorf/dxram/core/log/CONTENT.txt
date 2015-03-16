@@ -1,0 +1,12 @@
+#Classes
+Chunk - Stores binary data
+ChunkHandler - Default implementation of the ChunkInterface
+ChunkInformation - Stores meta information about a chunk (ID, NodeID, flags, etc.)
+ChunkInterface - API of the chunk service
+ChunkMessages - Network messages for the chunk service
+ID - Unique identifier for a Chunk
+LocalChunkHandler - Handles local chunks; coordinates the local storage (RAM and log)
+NodeID - Unique Identifier for a node
+
+#Packages
+storage - Classes for handling the RAM and log storage

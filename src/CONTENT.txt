@@ -1,0 +1,10 @@
+#Classes
+ChunkTest - Simple test for put, get and remove
+Mailbox - Test for get from remote node
+Main - Main class of the DXRAM.jar (can start main-Method of another class)
+RecoverTest - Simple test for recovering from Log
+StorageTest - Simple test for checking in-memeory and log storage access
+UnsafeTest - Simple test for accesing ram directly with the Unsafe-class
+
+#Packages
+de.uniduesseldorf.dxram - code of DXRAM

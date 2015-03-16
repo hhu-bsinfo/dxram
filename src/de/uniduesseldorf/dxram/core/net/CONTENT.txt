@@ -1,0 +1,11 @@
+#Classes
+AbstractConnection - Model of a network connection
+AbstractConnectionCreator - Model of a network connection creator (initializes a new network connection)
+ConnectionManager - Handles network connections
+Message - Model of a network message
+NetworkHandler - Default implementation of the NetworkInterface
+NetworkInterface - API of the network service
+NIOConnectionCreator - Connection creator for TCP connections using Java NIO
+Request - Model of a network request
+RequestMap - Stores open requests
+Response - Model of a network response

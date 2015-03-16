@@ -1,0 +1,6 @@
+#Classes
+Core - API of the DXRAM core
+Core-Constants - Global Constants of the DXRAMCore
+
+#Packages
+config - Classes for the DXRAM configuration

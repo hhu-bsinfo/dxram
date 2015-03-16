@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="DXRAM" basedir="." default="build-all">
+	<property name="name" value="DXRAM" />
+	<property name="jar" value="${name}.jar" />
+	<property name="source" value="src" />
+	<property name="lib" value="lib" />
+	<property name="config" value="config" />
+	<property name="log" value="log" />
+	<property name="classes" value="bin" />
+	<property name="build" value="build" />
+
+	<target name="build-all" depends="clean-all, create_dirs, copy_libs, copy_config, build" description="builds all files" />
+
+	<target name="build" depends="create_dirs" description="builds the jar file">
+		<path id="build.classpath">
+			<pathelement path="${build}/${lib}/log4j-1.2.16.jar" />
+			<pathelement path="${build}/${lib}/slf4j-log4j12-1.6.1.jar" />
+			<pathelement path="${build}/${lib}/slf4j-api-1.6.1.jar" />
+			<pathelement path="${build}/${lib}/zookeeper-3.4.3.jar" />
+			<pathelement path="${build}/${config}" />
+		</path>
+		<manifestclasspath property="jar.classpath" jarfile="${build}/${jar}">
+			<classpath refid="build.classpath" />
+		</manifestclasspath>
+
+		<javac srcdir="${source}" destdir="${classes}" includeantruntime="false" debug="true">
+			<classpath>
+				<fileset dir="${lib}">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+
+		<jar destfile="${build}/${jar}">
+			<manifest>
+				<attribute name="Main-Class" value="de.uniduesseldorf.dxram.run.Main" />
+				<attribute name="Class-Path" value="${jar.classpath}" />
+			</manifest>
+			<fileset dir="${classes}" />
+		</jar>
+	</target>
+
+	<target name="create_dirs" description="creates necessary folders">
+		<mkdir dir="${classes}" />
+		<mkdir dir="${build}" />
+		<mkdir dir="${build}/${lib}" />
+		<mkdir dir="${build}/${config}" />
+		<mkdir dir="${build}/${log}" />
+	</target>
+
+	<target name="copy_libs" depends="create_dirs" description="copies the libs">
+		<copy file="${lib}/log4j-1.2.16.jar" todir="${build}/${lib}" />
+		<copy file="${lib}/slf4j-log4j12-1.6.1.jar" todir="${build}/${lib}" />
+		<copy file="${lib}/slf4j-api-1.6.1.jar" todir="${build}/${lib}" />
+		<copy file="${lib}/zookeeper-3.4.3.jar" todir="${build}/${lib}" />
+	</target>
+
+	<target name="copy_config" depends="create_dirs" description="copies the config files">
+		<copy todir="${build}/${config}">
+			<fileset dir="${config}">
+				<include name="**/*.config" />
+				<include name="**/*.properties" />
+				<include name="**/*.dxram" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="clean-all" description="removes all created files and folders">
+		<delete dir="${build}/${config}" failonerror="false" />
+		<delete dir="${build}/${lib}" failonerror="false" />
+		<delete dir="${build}" failonerror="false" />
+		<delete failonerror="false" >
+			<fileset dir="${classes}" includes="**/*" defaultexcludes="false" />
+		</delete>
+		<delete failonerror="false" >
+			<fileset dir="." includes="**/*~" defaultexcludes="false" />
+		</delete>
+	</target>
+
+	<target name="clean-jar" description="removes jar file">
+		<delete file="${build}/${jar}" failonerror="false" />
+		<delete failonerror="false" >
+			<fileset dir="${classes}" includes="**/*" defaultexcludes="false" />
+		</delete>
+		<delete failonerror="false" >
+			<fileset dir="." includes="**/*~" defaultexcludes="false" />
+		</delete>
+	</target>
+</project>

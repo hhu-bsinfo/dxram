@@ -1,0 +1,4 @@
+#Classes
+CachedLookup - Wrapper class for the LookupHandler with automatic caching
+LookupHandler - API of the meta data service
+SOMessages - Network messages for the superpeer overlay of the lookup service

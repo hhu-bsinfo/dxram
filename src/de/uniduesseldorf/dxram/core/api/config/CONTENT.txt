@@ -1,0 +1,8 @@
+#Classes
+Configuration - Represents a configuration for DXRAM
+ConfigurationHandler - Controls the configuration of DXRAM
+DefaultNodesConfigurationParser - Parses the configured nodes
+NodesConfiguration - Represents a nodes configuration for DXRAM
+NodesConfigurationHandler - Controls the nodes configuration of DXRAM
+NodesConfigurationHelper - Simplifies the access to the DXRAM nodes configuration
+NodesConfigurationParser - Parses the nodes configuration

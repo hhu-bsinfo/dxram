@@ -1,0 +1,232 @@
+package de.uniduesseldorf.dxram.core.net;
+
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
+import de.uniduesseldorf.dxram.utils.AbstractAction;
+import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.dxram.utils.Tools;
+
+/**
+ * Represents a Request
+ * @author Florian Klein 09.03.2012
+ */
+public abstract class AbstractRequest extends AbstractMessage {
+
+	// Constants
+	public static final long WAITING_TIMEOUT = 20;
+
+	// Attributes
+	private boolean m_fulfilled;
+	private AbstractAction<AbstractRequest> m_fulfillAction;
+
+	private boolean m_aborted;
+	private AbstractAction<AbstractRequest> m_abortAction;
+
+	private Semaphore m_wait;
+
+	private AbstractResponse m_response;
+
+	// Constructors
+	/**
+	 * Creates an instance of Request
+	 */
+	protected AbstractRequest() {
+		super();
+
+		m_fulfilled = false;
+		m_fulfillAction = null;
+
+		m_aborted = false;
+		m_abortAction = null;
+
+		m_wait = new Semaphore(0, false);
+
+		m_response = null;
+	}
+
+	/**
+	 * Creates an instance of Request
+	 * @param p_destination
+	 *            the destination
+	 * @param p_type
+	 *            the message type
+	 */
+	public AbstractRequest(final short p_destination, final byte p_type) {
+		this(p_destination, p_type, DEFAULT_SUBTYPE);
+	}
+
+	/**
+	 * Creates an instance of Request
+	 * @param p_destination
+	 *            the destination
+	 * @param p_type
+	 *            the message type
+	 * @param p_subtype
+	 *            the message subtype
+	 */
+	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype) {
+		super(p_destination, p_type, p_subtype);
+
+		m_fulfilled = false;
+		m_fulfillAction = null;
+
+		m_aborted = false;
+		m_abortAction = null;
+
+		m_wait = new Semaphore(0, false);
+
+		m_response = null;
+	}
+
+	// Getters
+	/**
+	 * Get the requestID
+	 * @return the requestID
+	 */
+	public final long getRequestID() {
+		return getMessageID();
+	}
+
+	/**
+	 * Get the Response
+	 * @return the Response
+	 */
+	public final AbstractResponse getResponse() {
+		return m_response;
+	}
+
+	/**
+	 * Get the Response
+	 * @param <T>
+	 *            the Response type
+	 * @param p_class
+	 *            the Class of the Response
+	 * @return the Response
+	 */
+	public final <T extends AbstractResponse> T getResponse(final Class<T> p_class) {
+		T ret = null;
+
+		Contract.checkNotNull(p_class, "no class given");
+
+		if (m_response != null && p_class.isAssignableFrom(m_response.getClass())) {
+			ret = p_class.cast(m_response);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Checks if the Request is fulfilled
+	 * @return true if the Request is fulfilled, false otherwise
+	 */
+	public final boolean isFulfilled() {
+		return m_fulfilled;
+	}
+
+	/**
+	 * Checks if the Request is aborted
+	 * @return true if the Request is aborted, false otherwise
+	 */
+	public final boolean isAborted() {
+		return m_aborted;
+	}
+
+	// Methods
+	/**
+	 * Wait until the Request is fulfilled or aborted
+	 * @throws NetworkException
+	 *             if a timeout occurred
+	 */
+	final void waitForResponses() throws NetworkException {
+		long timeStart;
+		long timeNow;
+
+		timeStart = System.currentTimeMillis();
+
+		while (!m_fulfilled && !m_aborted) {
+			timeNow = System.currentTimeMillis();
+			if (timeNow - timeStart > 1200) {
+				System.out.println("wait-for-response time-out: " + this.print());
+				throw new NetworkException("Timeout Occurred");
+			}
+			try {
+				m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
+			} catch (final InterruptedException e) {}
+		}
+
+		timeNow = System.currentTimeMillis();
+		if (timeNow - timeStart > 100) {
+			System.out.println("Response Time (" + this.print() + "): " + Tools.readableTime(timeNow - timeStart));
+		}
+	}
+
+	/**
+	 * Registers the Action, that will be executed, if the Request is fulfilled
+	 * @param p_action
+	 *            the Action
+	 */
+	public final void registerFulfillAction(final AbstractAction<AbstractRequest> p_action) {
+		m_fulfillAction = p_action;
+	}
+
+	/**
+	 * Fulfill the Request
+	 * @param p_response
+	 *            the Response
+	 */
+	final void fulfill(final AbstractResponse p_response) {
+		Contract.checkNotNull(p_response, "no response given");
+
+		m_response = p_response;
+
+		m_fulfilled = true;
+		m_wait.release();
+
+		if (m_fulfillAction != null) {
+			m_fulfillAction.execute(this);
+		}
+	}
+
+	/**
+	 * Registers the Action, that will be executed, if the Request is aborted
+	 * @param p_action
+	 *            the Action
+	 */
+	public final void registerAbortAction(final AbstractAction<AbstractRequest> p_action) {
+		m_abortAction = p_action;
+	}
+
+	/**
+	 * Aborts the Request
+	 */
+	public final void abort() {
+		RequestMap.remove(getRequestID());
+
+		m_aborted = true;
+		m_wait.release();
+
+		if (m_abortAction != null) {
+			m_abortAction.execute(this);
+		}
+	}
+
+	/**
+	 * Send the Request and wait for fulfillment using the given NetworkInterface
+	 * @param p_network
+	 *            the NetworkInterface
+	 * @throws NetworkException
+	 *             if the message could not be send
+	 */
+	public final void sendSync(final NetworkInterface p_network) throws NetworkException {
+		send(p_network);
+		waitForResponses();
+	}
+
+	@Override
+	protected final void beforeSend() {
+		RequestMap.put(this);
+	}
+
+}
