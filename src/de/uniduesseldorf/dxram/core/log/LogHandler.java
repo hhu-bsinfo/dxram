@@ -16,6 +16,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.events.LogWriteListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
@@ -37,17 +39,17 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	// Constants
 	public static final int FLASHPAGE_SIZE = 4 * 1024;
 	public static final int MAX_NODE_CNT = Short.MAX_VALUE * 2;
-	public static final long PRIMARY_LOG_SIZE = 8 * 1024 * 1024 * 1024L;
+	public static final long PRIMARY_LOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
 	public static final int PRIMARY_LOG_MIN_SIZE = MAX_NODE_CNT * FLASHPAGE_SIZE;
-	public static final long SECONDARY_LOG_SIZE = 512 * 1024 * 1024L;
+	public static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
 	public static final int SECONDARY_LOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
-	public static final int SEGMENT_SIZE = 8 * 1024 * 1024;
+	public static final int SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENTSIZE);
 	public static final int DEFAULT_SECONDARY_LOG_BUFFER_SIZE = FLASHPAGE_SIZE * 2;
 
 	// Must be > 2 * SIGNAL_ON_BYTE_COUNT, e.g. 3 * SIGNAL_ON_BYTE_COUNT
-	public static final int DEFAULT_WRITE_BUFFER_SIZE = 256 * 1024 * 1024;
-	public static final int MAX_WRITEBUFFER_SIZE = Integer.MAX_VALUE;
-	public static final String BACKUP_DIRECTORY = "/home/beineke/ssd/logs/";
+	public static final int WRITE_BUFFER_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.WRITE_BUFFER_SIZE);;
+	public static final int MAX_WRITE_BUFFER_SIZE = Integer.MAX_VALUE;
+	public static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
 	public static final String PRIMARYLOG_FILENAME = "primary.log";
 	public static final String SECLOG_PREFIX_FILENAME = "secondary";
 	public static final String SECLOG_POSTFIX_FILENAME = ".log";
@@ -136,7 +138,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		}
 
 		// Create primary log buffer
-		m_writeBuffer = new PrimaryWriteBuffer(m_primaryLog, DEFAULT_WRITE_BUFFER_SIZE);
+		m_writeBuffer = new PrimaryWriteBuffer(m_primaryLog, WRITE_BUFFER_SIZE);
 
 		// Create secondary log and secondary log buffer arrays
 		m_secondaryLogs = new AtomicReferenceArray<SecondaryLogWithSegments>(LogHandler.MAX_NODE_CNT);

@@ -65,7 +65,7 @@ public class PrimaryWriteBuffer {
 	 *            Instance of the primary log. Used to write directly to primary log if buffer is full
 	 */
 	public PrimaryWriteBuffer(final PrimaryLog p_primaryLog){
-		this (p_primaryLog, LogHandler.DEFAULT_WRITE_BUFFER_SIZE);
+		this (p_primaryLog, LogHandler.WRITE_BUFFER_SIZE);
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class PrimaryWriteBuffer {
 			System.out.println("Could not get log interface");
 		}
 
-		if (bufferSize < (LogHandler.FLASHPAGE_SIZE) || bufferSize > LogHandler.MAX_WRITEBUFFER_SIZE) {
+		if (bufferSize < (LogHandler.FLASHPAGE_SIZE) || bufferSize > LogHandler.MAX_WRITE_BUFFER_SIZE) {
 			throw new IllegalArgumentException("Illegal buffer size!");
 		} else {
 			if (Integer.bitCount(bufferSize) != 1) {

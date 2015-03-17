@@ -263,21 +263,21 @@ public final class Configuration {
 				"ram.management", String.class,
 				"de.uniduesseldorf.dxram.core.chunk.storage.SimpleListStorageManagement");
 
-		// Size of the logfile
-		public static final ConfigurationEntry<Long> LOG_SIZE = new ConfigurationEntry<Long>("log.size", Long.class,
-				107374182400L);
-		// Size of the segments (default 64 MB)
+		// Size of the primary log file (default 8 GB)
+		public static final ConfigurationEntry<Long> PRIMARY_LOG_SIZE = new ConfigurationEntry<Long>("log.primary_size", Long.class,
+				8589934592L);
+		// Size of the secondary log file (default 512 MB)
+		public static final ConfigurationEntry<Long> SECONDARY_LOG_SIZE = new ConfigurationEntry<Long>("log.secondary_size", Long.class,
+				536870912L);
+		// Size of the write buffer (default 256 MB)
+		public static final ConfigurationEntry<Integer> WRITE_BUFFER_SIZE = new ConfigurationEntry<Integer>("log.buffer_size", Integer.class,
+				268435456);
+		// Size of the segments (default 8 MB)
 		public static final ConfigurationEntry<Integer> LOG_SEGMENTSIZE = new ConfigurationEntry<Integer>(
-				"log.segmentsize", Integer.class, 67108864);
-		// Size of the blocks in a segment (default 1 MB)
-		public static final ConfigurationEntry<Integer> LOG_BLOCKSIZE = new ConfigurationEntry<Integer>(
-				"log.blocksize", Integer.class, 1048576);
-		// Name of the logfile
-		public static final ConfigurationEntry<String> LOG_FILENAME = new ConfigurationEntry<String>("log.filename",
-				String.class, "./log/chunk.log");
-		// Class for the Memory-Management of the log
-		public static final ConfigurationEntry<String> LOG_MANAGEMENT = new ConfigurationEntry<String>(
-				"log.management", String.class, "de.uniduesseldorf.dxram.core.data.memory.MemoryManagementHandler");
+				"log.segmentsize", Integer.class, 8388608);
+		// Directory for log files
+		public static final ConfigurationEntry<String> LOG_DIRECTORY = new ConfigurationEntry<String>("log.directory",
+				String.class, "./log/");
 
 		// Sleep interval
 		public static final ConfigurationEntry<Integer> LOOKUP_SLEEP = new ConfigurationEntry<Integer>(
@@ -300,6 +300,10 @@ public final class Configuration {
 		// Nameservice key length
 		public static final ConfigurationEntry<Integer> NAMESERVICE_KEY_LENGTH = new ConfigurationEntry<Integer>(
 				"nameservice.keyLength", Integer.class, 32);
+		
+		// JNI lock path
+		public static final ConfigurationEntry<String> JNI_LOCK_DIRECTORY = new ConfigurationEntry<String>("lock.jni_directory",
+				String.class, "./jni/libJNILock.dylib");
 
 		// Path in ZooKeeper
 		public static final ConfigurationEntry<String> ZOOKEEPER_PATH = new ConfigurationEntry<String>(
@@ -309,7 +313,7 @@ public final class Configuration {
 				"zookeeper.connectionString", String.class, "127.0.0.1:2181");
 		// Session Timeout for ZooKeeper
 		public static final ConfigurationEntry<Integer> ZOOKEEPER_TIMEOUT = new ConfigurationEntry<Integer>(
-				"zookeeper.timeout", Integer.class, 5000);
+				"zookeeper.timeout", Integer.class, 10000);
 		// Bitfield size
 		public static final ConfigurationEntry<Integer> ZOOKEEPER_BITFIELDSIZE = new ConfigurationEntry<Integer>(
 				"zookeeper.bitfieldSize", Integer.class, 256 * 1024);
@@ -335,12 +339,13 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(NETWORK_CREATOR);
 			CONFIGURATION_ENTRIES.add(RAM_SIZE);
 			CONFIGURATION_ENTRIES.add(RAM_MANAGEMENT);
-			CONFIGURATION_ENTRIES.add(LOG_SIZE);
+			CONFIGURATION_ENTRIES.add(PRIMARY_LOG_SIZE);
+			CONFIGURATION_ENTRIES.add(SECONDARY_LOG_SIZE);
+			CONFIGURATION_ENTRIES.add(WRITE_BUFFER_SIZE);
 			CONFIGURATION_ENTRIES.add(LOG_SEGMENTSIZE);
-			CONFIGURATION_ENTRIES.add(LOG_BLOCKSIZE);
-			CONFIGURATION_ENTRIES.add(LOG_FILENAME);
-			CONFIGURATION_ENTRIES.add(LOG_MANAGEMENT);
+			CONFIGURATION_ENTRIES.add(LOG_DIRECTORY);
 			CONFIGURATION_ENTRIES.add(LOOKUP_SLEEP);
+			CONFIGURATION_ENTRIES.add(JNI_LOCK_DIRECTORY);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_PATH);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_CONNECTION_STRING);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_TIMEOUT);
