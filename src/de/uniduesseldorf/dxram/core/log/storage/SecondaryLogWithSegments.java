@@ -807,18 +807,19 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			int writtenBytes = 0;
 			int removedObjects = 0;
 			int removedTombstones = 0;
-			long timeStart;
+			//long timeStart;
 			long localID;
 			byte[] segmentData;
 			byte[] newData;
 			SegmentHeader header;
+			
 
-			System.out.println();
+			/*System.out.println();
 			System.out.println("----------Starting reorganization(" + m_secondaryLog.getNodeID() + ")----------");
-			timeStart = System.currentTimeMillis();
+			timeStart = System.currentTimeMillis();*/
 
 			segmentIndex = chooseSegment();
-			System.out.println("--Segment: " + segmentIndex);
+			//System.out.println("--Segment: " + segmentIndex);
 			if (-1 != segmentIndex) {
 				header = m_secondaryLog.getSegmentHeader(segmentIndex);
 				header.lock();
@@ -854,15 +855,15 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				} catch (final IOException | InterruptedException e) {
 					System.out.println("Reorganization failed!");
 				}
-				System.out.println("--" + removedObjects + " entries removed");
+				/*System.out.println("--" + removedObjects + " entries removed");
 				System.out.println("--" + removedTombstones + " tombstones removed");
 				System.out.println("--Segment(" + segmentIndex + ") processed in "
-						+ (System.currentTimeMillis() - timeStart) + "ms");
+						+ (System.currentTimeMillis() - timeStart) + "ms");*/
 				header.unlock();
 			}
 
-			System.out.println("----------Finished reorganization(" + m_secondaryLog.getNodeID() + ")----------");
-			System.out.println();
+			/*System.out.println("----------Finished reorganization(" + m_secondaryLog.getNodeID() + ")----------");
+			System.out.println();*/
 		}
 
 		/**
@@ -881,10 +882,10 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				if (currentSegment != null) {
 					costBenefitRatio = (long) (((1 - currentSegment.getUtilization())
 							* currentSegment.getLastAccess()) / (1 + currentSegment.getUtilization()));
-					System.out.println("Cost-Benefit-Ratio: " + costBenefitRatio + ", Age:"
+					/*System.out.println("Cost-Benefit-Ratio: " + costBenefitRatio + ", Age:"
 							+ currentSegment.getLastAccess() + ", Utilization: "
 							+ currentSegment.getUtilization() + ", Used Bytes: "
-							+ currentSegment.getUsedBytes());
+							+ currentSegment.getUsedBytes());*/
 					if (costBenefitRatio > max) {
 						max = costBenefitRatio;
 						ret = i;
@@ -925,7 +926,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		// Methods
 		@Override
 		protected void compute() {
-			long timeStart;
+			//long timeStart;
 			int readBytes = 0;
 			int hashVersion;
 			int logVersion;
@@ -934,9 +935,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			byte[][] segments;
 			byte[] segment;
 
-			System.out.println();
+			/*System.out.println();
 			System.out.println("............Removing tombstones(" + m_secondaryLog.getNodeID() + ")............");
-			timeStart = System.currentTimeMillis();
+			timeStart = System.currentTimeMillis();*/
 
 			m_hashtable.clear();
 			try {
@@ -958,7 +959,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					}
 				}
 				readBytes = 0;
-				System.out.println("..Entries in hashtable: " + m_hashtable.size());
+				//System.out.println("..Entries in hashtable: " + m_hashtable.size());
 
 				// Mark out-dated and deleted entries
 				for (int i = 0; i < segments.length; i++) {
@@ -992,9 +993,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				System.out.println("Removing tombstones failed!");
 			}
 
-			System.out.println("..All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms");
+			/*System.out.println("..All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms");
 			System.out.println(".............Finished removing(" + m_secondaryLog.getNodeID() + ").............");
-			System.out.println();
+			System.out.println();*/
 		}
 	}
 }
