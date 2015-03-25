@@ -445,7 +445,7 @@ public final class Core {
 			}
 		}
 		//TODO:
-		try {
+		/*try {
 			if (m_log != null) {
 				m_log.logChunk(p_chunk);
 			}
@@ -455,7 +455,7 @@ public final class Core {
 			if (!handleException(e, ExceptionSource.DXRAM_PUT, p_chunk)) {
 				throw e;
 			}
-		}
+		}*/
 
 		LOGGER.trace("Exiting put");
 	}
