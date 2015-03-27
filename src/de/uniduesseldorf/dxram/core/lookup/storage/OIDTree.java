@@ -3,6 +3,8 @@ package de.uniduesseldorf.dxram.core.lookup.storage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.utils.Contract;
 
@@ -18,7 +20,8 @@ public final class OIDTree implements Serializable {
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
 
-	public static final int RANGE_SIZE = 2500000;// Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
+	public static final int RANGE_SIZE = Core.getConfiguration().getIntValue(
+			ConfigurationConstants.LOOKUP_INIT_RANGE);
 
 	// Attributes
 	private short m_minEntries;

@@ -198,8 +198,8 @@ public final class TaskExecutor {
 
 		@Override
 		public Thread newThread(final Runnable p_runnable) {
-			String name = m_name + "-thread-" + m_threadNumber.getAndIncrement();
-			Thread thread = new Thread(p_runnable, name);
+			final Thread thread = new Thread(p_runnable, m_name + "-thread-" + m_threadNumber.getAndIncrement());
+
 			thread.setDaemon(true);
 			thread.setPriority(Thread.NORM_PRIORITY);
 

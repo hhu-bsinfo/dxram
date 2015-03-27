@@ -225,7 +225,7 @@ public final class Configuration {
 				"interface.recovery", String.class, "de.uniduesseldorf.dxram.core.recovery.RecoveryHandler");
 		// Class for the LockInterface
 		public static final ConfigurationEntry<String> INTERFACE_LOCK = new ConfigurationEntry<String>(
-				"interface.lock", String.class, "de.uniduesseldorf.dxram.core.lock.LockHandler");
+				"interface.lock", String.class, "de.uniduesseldorf.dxram.core.lock.DefaultLockHandler");
 
 		// Local IP address
 		public static final ConfigurationEntry<String> NETWORK_IP = new ConfigurationEntry<String>("network.ip",
@@ -247,13 +247,13 @@ public final class Configuration {
 				"network.nio.threadcount", Integer.class, 1);
 		//
 		public static final ConfigurationEntry<Integer> NETWORK_MESSAGEHANDLER_THREADCOUNT =
-				new ConfigurationEntry<Integer>("network.messagehandler.threadcount", Integer.class, 4);
+				new ConfigurationEntry<Integer>("network.messagehandler.threadcount", Integer.class, 10);
 		//
 		public static final ConfigurationEntry<Integer> NETWORK_TASKHANDLER_THREADCOUNT =
-				new ConfigurationEntry<Integer>("network.taskhandler.threadcount", Integer.class, 4);
+				new ConfigurationEntry<Integer>("network.taskhandler.threadcount", Integer.class, 10);
 		//
 		public static final ConfigurationEntry<Integer> NETWORK_MAX_CACHESIZE = new ConfigurationEntry<Integer>(
-				"network.maxCachesize", Integer.class, 10485760);
+				"network.maxCachesize", Integer.class, 128 * 1024 * 1024);
 
 		// Size of the RAM
 		public static final ConfigurationEntry<Long> RAM_SIZE = new ConfigurationEntry<Long>("ram.size", Long.class,
@@ -264,20 +264,20 @@ public final class Configuration {
 				"de.uniduesseldorf.dxram.core.chunk.storage.SimpleListStorageManagement");
 
 		// Size of the primary log file (default 8 GB)
-		public static final ConfigurationEntry<Long> PRIMARY_LOG_SIZE = new ConfigurationEntry<Long>("log.primary_size", Long.class,
-				8589934592L);
+		public static final ConfigurationEntry<Long> PRIMARY_LOG_SIZE = new ConfigurationEntry<Long>(
+				"log.primary_size", Long.class, 8589934592L);
 		// Size of the secondary log file (default 512 MB)
-		public static final ConfigurationEntry<Long> SECONDARY_LOG_SIZE = new ConfigurationEntry<Long>("log.secondary_size", Long.class,
-				536870912L);
+		public static final ConfigurationEntry<Long> SECONDARY_LOG_SIZE = new ConfigurationEntry<Long>(
+				"log.secondary_size", Long.class, 536870912L);
 		// Size of the write buffer (default 256 MB)
-		public static final ConfigurationEntry<Integer> WRITE_BUFFER_SIZE = new ConfigurationEntry<Integer>("log.buffer_size", Integer.class,
-				268435456);
+		public static final ConfigurationEntry<Integer> WRITE_BUFFER_SIZE = new ConfigurationEntry<Integer>(
+				"log.buffer_size", Integer.class, 268435456);
 		// Size of the segments (default 8 MB)
 		public static final ConfigurationEntry<Integer> LOG_SEGMENTSIZE = new ConfigurationEntry<Integer>(
 				"log.segmentsize", Integer.class, 8388608);
 		// Directory for log files
-		public static final ConfigurationEntry<String> LOG_DIRECTORY = new ConfigurationEntry<String>("log.directory",
-				String.class, "./log/");
+		public static final ConfigurationEntry<String> LOG_DIRECTORY = new ConfigurationEntry<String>(
+				"log.directory", String.class, "./log/");
 
 		// Sleep interval
 		public static final ConfigurationEntry<Integer> LOOKUP_SLEEP = new ConfigurationEntry<Integer>(
@@ -300,10 +300,10 @@ public final class Configuration {
 		// Nameservice key length
 		public static final ConfigurationEntry<Integer> NAMESERVICE_KEY_LENGTH = new ConfigurationEntry<Integer>(
 				"nameservice.keyLength", Integer.class, 32);
-		
+
 		// JNI lock path
-		public static final ConfigurationEntry<String> JNI_LOCK_DIRECTORY = new ConfigurationEntry<String>("lock.jni_directory",
-				String.class, "./jni/libJNILock.dylib");
+		public static final ConfigurationEntry<String> JNI_LOCK_DIRECTORY = new ConfigurationEntry<String>(
+				"lock.jni_directory", String.class, "./jni/libJNILock.so");
 
 		// Path in ZooKeeper
 		public static final ConfigurationEntry<String> ZOOKEEPER_PATH = new ConfigurationEntry<String>(
@@ -318,7 +318,20 @@ public final class Configuration {
 		public static final ConfigurationEntry<Integer> ZOOKEEPER_BITFIELDSIZE = new ConfigurationEntry<Integer>(
 				"zookeeper.bitfieldSize", Integer.class, 256 * 1024);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 26;
+		// Chunk-Statistic
+		public static final ConfigurationEntry<Boolean> STATISTIC_CHUNK = new ConfigurationEntry<Boolean>(
+				"statistic.chunk", Boolean.class, true);
+		// Memory-Statistic
+		public static final ConfigurationEntry<Boolean> STATISTIC_MEMORY = new ConfigurationEntry<Boolean>(
+				"statistic.memory", Boolean.class, true);
+		// Request-Statistic
+		public static final ConfigurationEntry<Boolean> STATISTIC_REQUEST = new ConfigurationEntry<Boolean>(
+				"statistic.request", Boolean.class, true);
+		// Throughput-Statistic
+		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>(
+				"statistic.throughput", Boolean.class, true);
+
+		public static final int CONFIGURATION_ENTRY_COUNT = 31;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
 			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
@@ -349,6 +362,10 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_PATH);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_CONNECTION_STRING);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_TIMEOUT);
+			CONFIGURATION_ENTRIES.add(STATISTIC_CHUNK);
+			CONFIGURATION_ENTRIES.add(STATISTIC_MEMORY);
+			CONFIGURATION_ENTRIES.add(STATISTIC_REQUEST);
+			CONFIGURATION_ENTRIES.add(STATISTIC_THROUGHPUT);
 
 			Collections.sort(CONFIGURATION_ENTRIES, new ConfigurationEntryComparator());
 		}

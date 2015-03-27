@@ -1,4 +1,5 @@
 #Classes
 CIDTable - Paging-like Tables for the CID-VA mapping
-MemeoryManager - Encapsulates accesses to the CIDTable and the RawMemory
+MemoryManager - Encapsulates accesses to the CIDTable and the RawMemory
+MemoryStatistic - Memory-Statistic
 RawMemory - Manages a large memory block

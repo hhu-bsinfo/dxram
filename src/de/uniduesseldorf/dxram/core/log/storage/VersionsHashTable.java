@@ -1,13 +1,9 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.TreeSet;
-
-import de.uniduesseldorf.dxram.core.api.ChunkID;
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler;
 
 /**
  * HashTable to store versions (Linear probing)
@@ -142,7 +138,7 @@ public class VersionsHashTable {
 	public final boolean containsValue(final int p_value) {
 		boolean ret = false;
 
-		for (int i = 0; i < m_intCapacity && !ret; i++) {
+		for (int i = 0;i < m_intCapacity && !ret;i++) {
 			if (getValue(i) == p_value) {
 				ret = true;
 				break;
@@ -180,7 +176,7 @@ public class VersionsHashTable {
 	 * Returns the value to which the specified key is mapped in VersionsHashTable
 	 * @param p_key
 	 *            the searched key (is incremented before insertion to avoid 0)
-	 * @return  the value to which the key is mapped in VersionsHashTable
+	 * @return the value to which the key is mapped in VersionsHashTable
 	 */
 	public final int get(final long p_key) {
 		int ret = 0;
@@ -328,7 +324,6 @@ public class VersionsHashTable {
 		int[] oldMap;
 		int[] newMap;
 
-
 		oldThreshold = m_threshold;
 		oldMap = m_table;
 
@@ -338,14 +333,13 @@ public class VersionsHashTable {
 		m_threshold = (int)(m_elementCapacity * m_loadFactor);
 		m_table = newMap;
 
-		System.out.print("Reached threshold (" + oldThreshold
-				+ ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
+		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity
+				+ " ... ");
 
 		oldCount = m_count;
 		while (index < oldThreshold) {
 			if (oldMap[index * 3] != 0) {
-				put((long)oldMap[index * 3] << 32 | oldMap[index * 3 + 1] & 0xFFFFFFFFL,
-						oldMap[index * 3 + 2] - 1);
+				put((long)oldMap[index * 3] << 32 | oldMap[index * 3 + 1] & 0xFFFFFFFFL, oldMap[index * 3 + 2] - 1);
 			}
 			index = (index + 1) % m_elementCapacity;
 		}
@@ -362,11 +356,13 @@ public class VersionsHashTable {
 	public final int hash(final long p_key) {
 		long hash = p_key;
 
-		/*hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		return (int) ((hash >> 16) ^ hash);*/
+		/*
+		 * hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+		 * hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+		 * return (int) ((hash >> 16) ^ hash);
+		 */
 		hash ^= (hash >>> 20) ^ (hash >>> 12);
-		return (int) (hash ^ (hash >>> 7) ^ (hash >>> 4));
+		return (int)(hash ^ (hash >>> 7) ^ (hash >>> 4));
 	}
 
 	/**
@@ -382,7 +378,7 @@ public class VersionsHashTable {
 	public final void print() {
 		long iter;
 
-		for (int i = 0; i < m_elementCapacity; i++) {
+		for (int i = 0;i < m_elementCapacity;i++) {
 			iter = getKey(i);
 			if (iter != 0) {
 				System.out.println("Key: " + iter + ", value: " + getValue(i));
@@ -397,14 +393,15 @@ public class VersionsHashTable {
 		long iter;
 		Collection<Entry> list;
 
-		list = new TreeSet<Entry>(new Comparator<Entry>(){
+		list = new TreeSet<Entry>(new Comparator<Entry>() {
+
 			@Override
-			public int compare(final Entry p_a, final Entry p_b){
-				return (int) (p_a.m_key - p_b.m_key);
+			public int compare(final Entry p_a, final Entry p_b) {
+				return (int)(p_a.m_key - p_b.m_key);
 			}
 		});
 
-		for (int i = 0; i < m_elementCapacity; i++) {
+		for (int i = 0;i < m_elementCapacity;i++) {
 			iter = getKey(i);
 			if (iter != 0) {
 				list.add(new Entry(iter, getValue(i)));

@@ -1,4 +1,3 @@
-
 package de.uniduesseldorf.dxram.core;
 
 import de.uniduesseldorf.dxram.core.api.Core;

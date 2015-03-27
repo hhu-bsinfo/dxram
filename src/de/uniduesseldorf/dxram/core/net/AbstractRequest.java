@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.utils.AbstractAction;
 import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.Tools;
 
 /**
  * Represents a Request
@@ -18,11 +17,13 @@ public abstract class AbstractRequest extends AbstractMessage {
 	public static final long WAITING_TIMEOUT = 20;
 
 	// Attributes
-	private boolean m_fulfilled;
+	private volatile boolean m_fulfilled;
 	private AbstractAction<AbstractRequest> m_fulfillAction;
 
-	private boolean m_aborted;
+	private volatile boolean m_aborted;
 	private AbstractAction<AbstractRequest> m_abortAction;
+
+	private boolean m_ignoreTimeout;
 
 	private Semaphore m_wait;
 
@@ -82,6 +83,14 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 	// Getters
 	/**
+	 * Checks if the network timeout for the request should be ignored
+	 * @return true if the timeout should be ignored, false otherwise
+	 */
+	public final boolean isIgnoreTimeout() {
+		return m_ignoreTimeout;
+	}
+
+	/**
 	 * Get the requestID
 	 * @return the requestID
 	 */
@@ -133,6 +142,16 @@ public abstract class AbstractRequest extends AbstractMessage {
 		return m_aborted;
 	}
 
+	// Setters
+	/**
+	 * Set the ignore timeout option
+	 * @param p_ignoreTimeout
+	 *            if true the request ignores the network timeout
+	 */
+	public final void setIgnoreTimeout(final boolean p_ignoreTimeout) {
+		m_ignoreTimeout = p_ignoreTimeout;
+	}
+
 	// Methods
 	/**
 	 * Wait until the Request is fulfilled or aborted
@@ -147,18 +166,14 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 		while (!m_fulfilled && !m_aborted) {
 			timeNow = System.currentTimeMillis();
-			if (timeNow - timeStart > 1200) {
+			if (timeNow - timeStart > 1200 && !m_ignoreTimeout) {
+				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
 				System.out.println("wait-for-response time-out: " + this.print());
 				throw new NetworkException("Timeout Occurred");
 			}
 			try {
 				m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
 			} catch (final InterruptedException e) {}
-		}
-
-		timeNow = System.currentTimeMillis();
-		if (timeNow - timeStart > 100) {
-			System.out.println("Response Time (" + this.print() + "): " + Tools.readableTime(timeNow - timeStart));
 		}
 	}
 
@@ -178,6 +193,8 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 */
 	final void fulfill(final AbstractResponse p_response) {
 		Contract.checkNotNull(p_response, "no response given");
+
+		RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
 
 		m_response = p_response;
 
@@ -204,6 +221,8 @@ public abstract class AbstractRequest extends AbstractMessage {
 	public final void abort() {
 		RequestMap.remove(getRequestID());
 
+		RequestStatistic.getInstance().requestAborted(getRequestID(), getClass());
+
 		m_aborted = true;
 		m_wait.release();
 
@@ -227,6 +246,11 @@ public abstract class AbstractRequest extends AbstractMessage {
 	@Override
 	protected final void beforeSend() {
 		RequestMap.put(this);
+	}
+
+	@Override
+	protected final void afterSend() {
+		RequestStatistic.getInstance().requestSend(getRequestID());
 	}
 
 }

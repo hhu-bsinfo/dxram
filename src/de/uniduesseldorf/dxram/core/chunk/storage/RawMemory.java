@@ -116,6 +116,8 @@ public final class RawMemory {
 		}
 		m_arenaManager = new ArenaManager();
 
+		MemoryStatistic.getInstance().initMemory(p_size);
+
 		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x"
 				+ Long.toHexString(m_memoryBase) + ")");
 
@@ -941,6 +943,8 @@ public final class RawMemory {
 				// Write block size
 				write(address, p_size, lengthFieldSize);
 
+				MemoryStatistic.getInstance().malloc(size);
+
 				ret = address;
 			}
 
@@ -1063,6 +1067,8 @@ public final class RawMemory {
 					}
 				}
 			}
+
+			MemoryStatistic.getInstance().free(size);
 		}
 
 		/**
@@ -1310,7 +1316,7 @@ public final class RawMemory {
 
 		// Methods
 		/**
-		 * Gets the assigned Segment for the given Thread
+		 * Gets the assigned Segment of the given Thread and enters the arena
 		 * @param p_threadID
 		 *            the ID of the Thread
 		 * @param p_minSize
@@ -1330,6 +1336,13 @@ public final class RawMemory {
 			return ret;
 		}
 
+		/**
+		 * Releases the assigned Segment of the given Thread and leaves the arena
+		 * @param p_threadID
+		 *            the ID of the Thread
+		 * @param p_segment
+		 *            the assigned Segment
+		 */
 		private void leaveArena(final long p_threadID, final Segment p_segment) {
 			p_segment.unlock();
 		}

@@ -12,8 +12,10 @@ public final class ChunkID {
 
 	// Constants
 	public static final long INVALID_ID = -1;
+	private static final long CREATORID_BITMASK = 0xFFFF000000000000L;
+	private static final long LOCALID_BITMASK = 0x0000FFFFFFFFFFFFL;
 
-	public static final long MAX_ID = 281474976710655L;
+	public static final long MAX_LOCALID = Long.MAX_VALUE & LOCALID_BITMASK;
 
 	// Constructors
 	/**
@@ -31,7 +33,7 @@ public final class ChunkID {
 	public static short getCreatorID(final long p_chunkID) {
 		check(p_chunkID);
 
-		return (short)((p_chunkID & 0xFFFF000000000000L) >> 48);
+		return (short)((p_chunkID & CREATORID_BITMASK) >> 48);
 	}
 
 	/**
@@ -43,7 +45,7 @@ public final class ChunkID {
 	public static long getLocalID(final long p_chunkID) {
 		check(p_chunkID);
 
-		return p_chunkID & 0x0000FFFFFFFFFFFFL;
+		return p_chunkID & LOCALID_BITMASK;
 	}
 
 	/**

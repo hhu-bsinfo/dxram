@@ -1,0 +1,13 @@
+#Classes
+AbstractKeyValueList - Prototype for a key-value list
+AbstractList -  Prototype for a list
+AbstractUnsafeList - Prototype for a list using Unsafe
+IntegerArray - Implementation of an integer array using Unsafe
+IntegerList - Implementation of an integer list using Unsafe
+IntegerLongList - Implementation of a list using an integer as key and a long as value
+LongArray - Implementation of a long array using Unsafe
+LongList - Implementation of a long list using Unsafe
+UnsafeArray - Prototype of an array using Unsafe
+UnsafeArrayList - Implementation of an array list using Unsafe
+UnsafeHandler - Class for using Unsafe
+UnsafeLinkedList - Implementation of a linked list using Unsafe
