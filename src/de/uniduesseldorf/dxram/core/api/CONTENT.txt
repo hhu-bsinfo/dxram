@@ -1,6 +1,7 @@
 #Classes
+ChunkID - Methods for handling ChunkIDs
 Core - API of the DXRAM core
-Core-Constants - Global Constants of the DXRAMCore
+NodeID - Methods for handling NodeIDs
 
 #Packages
 config - Classes for the DXRAM configuration

@@ -1,8 +1,6 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -10,9 +8,6 @@ import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
-
-import sun.misc.Unsafe;
-
 
 /**
  * Primary log write buffer
@@ -48,7 +43,7 @@ public class PrimaryWriteBuffer {
 	private int m_bytesInWriteBuffer;
 	private boolean m_isShuttingDown;
 
-	//private AtomicBoolean m_dataAvailable;
+	// private AtomicBoolean m_dataAvailable;
 	private boolean m_dataAvailable;
 	private boolean m_flushingComplete;
 
@@ -56,16 +51,14 @@ public class PrimaryWriteBuffer {
 	private int m_tickets;
 	private boolean m_blocked;
 
-
-
 	// Constructors
 	/**
 	 * Creates an instance of PrimaryWriteBuffer with default configuration
 	 * @param p_primaryLog
 	 *            Instance of the primary log. Used to write directly to primary log if buffer is full
 	 */
-	public PrimaryWriteBuffer(final PrimaryLog p_primaryLog){
-		this (p_primaryLog, LogHandler.WRITE_BUFFER_SIZE);
+	public PrimaryWriteBuffer(final PrimaryLog p_primaryLog) {
+		this(p_primaryLog, LogHandler.WRITE_BUFFER_SIZE);
 	}
 
 	/**
@@ -94,7 +87,7 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException("Illegal buffer size!");
 		} else {
 			if (Integer.bitCount(bufferSize) != 1) {
-				bufferSize = (int) (1 << (32 - Integer.numberOfLeadingZeros(bufferSize - 1)));
+				bufferSize = (int)(1 << (32 - Integer.numberOfLeadingZeros(bufferSize - 1)));
 			}
 			m_buffer = new byte[bufferSize];
 			m_ringBufferSize = bufferSize;
@@ -118,7 +111,7 @@ public class PrimaryWriteBuffer {
 	 * Returns consumer
 	 * @return consumer
 	 */
-	public final PrimaryLogWriterThread getConsumer(){
+	public final PrimaryLogWriterThread getConsumer() {
 		return m_writerThread;
 	}
 
@@ -132,14 +125,13 @@ public class PrimaryWriteBuffer {
 		m_writerThread = p_consumer;
 	}
 
-
 	// Methods
 	/**
 	 * Cleans the write buffer and resets the pointer
 	 * @throws IOException
-	 *            if buffer could not be closed
+	 *             if buffer could not be closed
 	 * @throws InterruptedException
-	 *            if caller is interrupted
+	 *             if caller is interrupted
 	 */
 	public final void closeWriteBuffer() throws InterruptedException, IOException {
 		if (!m_isShuttingDown) {
@@ -164,20 +156,20 @@ public class PrimaryWriteBuffer {
 	/**
 	 * Writes log entries as a whole (max. size: write buffer)
 	 * Log entry format: //////////////////////////////////
-	 *                   // OID // LEN // CRC// DATA ... //
-	 *                   //////////////////////////////////
+	 * // OID // LEN // CRC// DATA ... //
+	 * //////////////////////////////////
 	 * @param p_header
 	 *            the log entry's header as a byte array
 	 * @param p_payload
 	 *            the log entry's payload as a byte array
 	 * @throws IOException
-	 *            if data could not be flushed to primary log
+	 *             if data could not be flushed to primary log
 	 * @throws InterruptedException
-	 *            if caller is interrupted
+	 *             if caller is interrupted
 	 * @return the number of written bytes
 	 */
-	public final int putLogData(final byte[] p_header, final byte[] p_payload) throws
-	IOException, InterruptedException {
+	public final int putLogData(final byte[] p_header, final byte[] p_payload) throws IOException,
+			InterruptedException {
 		int payloadLength;
 		int bytesToWrite;
 		int bytesUntilEnd = 0;
@@ -197,16 +189,20 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException("Data to write exceeds buffer size!");
 		}
 		if (!m_isShuttingDown) {
-			/*while (true) {
-				m_metaDataLock.lock();
-				if (!m_blocked && (m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT)) {
-					m_tickets++;
-					break;
-				} else {
-					m_metaDataLock.unlock();
-				}
-			}*/
-			while (m_bytesInWriteBuffer + bytesToWrite > LogHandler.MAX_BYTE_COUNT) {Thread.yield();}
+			/*
+			 * while (true) {
+			 * m_metaDataLock.lock();
+			 * if (!m_blocked && (m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT)) {
+			 * m_tickets++;
+			 * break;
+			 * } else {
+			 * m_metaDataLock.unlock();
+			 * }
+			 * }
+			 */
+			while (m_bytesInWriteBuffer + bytesToWrite > LogHandler.MAX_BYTE_COUNT) {
+				Thread.yield();
+			}
 			m_metaDataLock.lock();
 
 			// Set buffer write pointer and byte counter before writing to enable multi-threading
@@ -218,8 +214,7 @@ public class PrimaryWriteBuffer {
 			// Update byte counter
 			m_bytesInWriteBuffer += bytesToWrite;
 			m_lengthByNode[AbstractLog.getNodeIDOfLogEntry(p_header, 0) & 0xFFFF] += bytesToWrite;
-			//m_metaDataLock.unlock();
-
+			// m_metaDataLock.unlock();
 
 			// Determine free space from end of log to end of array
 			if (writePointer >= m_bufferReadPointer) {
@@ -232,20 +227,20 @@ public class PrimaryWriteBuffer {
 				System.arraycopy(p_header, 0, m_buffer, writePointer, LogHandler.PRIMARY_HEADER_SIZE);
 				// Write payload
 				if (payloadLength > 0) {
-					System.arraycopy(p_payload, 0,
-							m_buffer, writePointer + LogHandler.PRIMARY_HEADER_SIZE, payloadLength);
+					System.arraycopy(p_payload, 0, m_buffer, writePointer + LogHandler.PRIMARY_HEADER_SIZE,
+							payloadLength);
 				}
 			} else {
 				// Twofold cyclic write access
 				if (bytesUntilEnd < LogHandler.PRIMARY_HEADER_SIZE) {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
-					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0,
-							LogHandler.PRIMARY_HEADER_SIZE - bytesUntilEnd);
+					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, LogHandler.PRIMARY_HEADER_SIZE
+							- bytesUntilEnd);
 					// Write payload
 					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer,
-								LogHandler.PRIMARY_HEADER_SIZE - bytesUntilEnd, payloadLength);
+						System.arraycopy(p_payload, 0, m_buffer, LogHandler.PRIMARY_HEADER_SIZE - bytesUntilEnd,
+								payloadLength);
 					}
 				} else if (bytesUntilEnd > LogHandler.PRIMARY_HEADER_SIZE) {
 					// Write header
@@ -253,8 +248,8 @@ public class PrimaryWriteBuffer {
 					bytesUntilEnd -= LogHandler.PRIMARY_HEADER_SIZE;
 					// Write payload
 					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0,
-								m_buffer, writePointer + LogHandler.PRIMARY_HEADER_SIZE, bytesUntilEnd);
+						System.arraycopy(p_payload, 0, m_buffer, writePointer + LogHandler.PRIMARY_HEADER_SIZE,
+								bytesUntilEnd);
 						System.arraycopy(p_payload, bytesUntilEnd, m_buffer, 0, payloadLength - bytesUntilEnd);
 					}
 				} else {
@@ -267,8 +262,10 @@ public class PrimaryWriteBuffer {
 				}
 			}
 
-			/*m_metaDataLock.lock();
-			m_tickets--;*/
+			/*
+			 * m_metaDataLock.lock();
+			 * m_tickets--;
+			 */
 
 			if (m_bytesInWriteBuffer >= LogHandler.SIGNAL_ON_BYTE_COUNT && !m_dataAvailable) {
 				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is written
@@ -282,7 +279,7 @@ public class PrimaryWriteBuffer {
 	/**
 	 * Wakes-up writer thread and flushes data to primary log
 	 * @throws InterruptedException
-	 *            if caller is interrupted
+	 *             if caller is interrupted
 	 */
 	public final void singalWriterThreadAndFlushToPrimLog() throws InterruptedException {
 		m_dataAvailable = true;
@@ -296,10 +293,9 @@ public class PrimaryWriteBuffer {
 	 * Determines the number of free bytes in buffer
 	 * @return remaining bytes
 	 */
-	public final int determineWritableSpace(){
+	public final int determineWritableSpace() {
 		return m_ringBufferSize - m_bytesInWriteBuffer;
 	}
-
 
 	// Classes
 	/**
@@ -314,7 +310,7 @@ public class PrimaryWriteBuffer {
 		/**
 		 * Creates an instance of PrimaryLogWriterThread
 		 */
-		public PrimaryLogWriterThread(){}
+		public PrimaryLogWriterThread() {}
 
 		@Override
 		public void run() {
@@ -336,7 +332,7 @@ public class PrimaryWriteBuffer {
 						} else {
 							// Wait until enough data is available to flush
 							Thread.sleep(10);
-							//Thread.yield();
+							// Thread.yield();
 						}
 					}
 
@@ -352,7 +348,7 @@ public class PrimaryWriteBuffer {
 		 * Flushes all data in write buffer to primary log
 		 * @return number of copied bytes
 		 * @throws InterruptedException
-		 *            if caller is interrupted
+		 *             if caller is interrupted
 		 */
 		public int flushDataToPrimaryLog() throws InterruptedException {
 			int writtenBytes = 0;
@@ -366,15 +362,17 @@ public class PrimaryWriteBuffer {
 			// 4. Release lock
 			// 5. Write buffer to hard drive
 			// -> During writing to hard drive the next slot in Write Buffer can be filled
-			/*while (true) {
-				m_metaDataLock.lock();
-				if (m_tickets == 0) {
-					break;
-				} else {
-					m_blocked = true;
-					m_metaDataLock.unlock();
-				}
-			}*/
+			/*
+			 * while (true) {
+			 * m_metaDataLock.lock();
+			 * if (m_tickets == 0) {
+			 * break;
+			 * } else {
+			 * m_blocked = true;
+			 * m_metaDataLock.unlock();
+			 * }
+			 * }
+			 */
 			m_metaDataLock.lock();
 			readPointer = m_bufferReadPointer;
 			bytesInWriteBuffer = m_bytesInWriteBuffer;
@@ -390,12 +388,11 @@ public class PrimaryWriteBuffer {
 			m_blocked = false;
 			m_metaDataLock.unlock();
 
-
 			if (bytesInWriteBuffer > 0) {
 				// Write data to primary log
 				try {
-					writtenBytes = m_logHandler.getPrimaryLog().appendData(m_buffer,
-							readPointer, bytesInWriteBuffer, lengthByNode);
+					writtenBytes = m_logHandler.getPrimaryLog().appendData(m_buffer, readPointer,
+							bytesInWriteBuffer, lengthByNode);
 				} catch (final IOException | InterruptedException e) {
 					System.out.println("Error: Could not write to log");
 				}

@@ -37,7 +37,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be created
 	 */
-	Chunk[] create(int p_sizes[]) throws DXRAMException;
+	Chunk[] create(int[] p_sizes) throws DXRAMException;
 
 	/**
 	 * Creates a new Chunk with identifier
@@ -61,7 +61,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be created
 	 */
-	Chunk[] create(int p_sizes[], int p_id) throws DXRAMException;
+	Chunk[] create(int[] p_sizes, int p_id) throws DXRAMException;
 
 	/**
 	 * Get the corresponding Chunk for the given ID
@@ -123,6 +123,17 @@ public interface ChunkInterface extends CoreComponent {
 	void put(Chunk p_chunk) throws DXRAMException;
 
 	/**
+	 * Updates the given Chunk
+	 * @param p_chunk
+	 *            the Chunk
+	 * @param p_releaseLock
+	 *            if true a possible lock is released
+	 * @throws DXRAMException
+	 *             if the Chunk could not be put
+	 */
+	void put(Chunk p_chunk, boolean p_releaseLock) throws DXRAMException;
+
+	/**
 	 * Removes the corresponding Chunk for the given ID
 	 * @param p_chunkID
 	 *            the ID
@@ -140,6 +151,18 @@ public interface ChunkInterface extends CoreComponent {
 	 *             if the Chunk could not be locked
 	 */
 	Chunk lock(long p_chunkID) throws DXRAMException;
+
+	/**
+	 * Requests and locks the corresponding Chunk for the giving ID
+	 * @param p_chunkID
+	 *            the ID
+	 * @param p_readLock
+	 *            true if the lock is a read lock, false otherwise
+	 * @return the Chunk
+	 * @throws DXRAMException
+	 *             if the Chunk could not be locked
+	 */
+	Chunk lock(long p_chunkID, boolean p_readLock) throws DXRAMException;
 
 	/**
 	 * Unlocks the corresponding Chunk for the giving ID

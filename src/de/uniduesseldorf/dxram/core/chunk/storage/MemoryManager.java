@@ -3,9 +3,12 @@ package de.uniduesseldorf.dxram.core.chunk.storage;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
 /**
  * Controls the access to the RawMemory and the CIDTable
@@ -34,6 +37,10 @@ public final class MemoryManager {
 	 */
 	public static long initialize(final long p_size) throws MemoryException {
 		long ret;
+
+		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_MEMORY)) {
+			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
+		}
 
 		m_nextLocalID = new AtomicLong(1);
 
@@ -79,6 +86,7 @@ public final class MemoryManager {
 
 	/**
 	 * Gets the next free local IDs
+	 * @param p_count the number of free local IDs
 	 * @return the next free local IDs
 	 */
 	public static long[] getNextLocalIDs(final int p_count) {

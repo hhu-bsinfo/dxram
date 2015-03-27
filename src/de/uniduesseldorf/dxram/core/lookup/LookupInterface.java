@@ -1,4 +1,3 @@
-
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.List;
@@ -121,11 +120,12 @@ public interface LookupInterface extends CoreComponent {
 	 * @return the ChunkID
 	 */
 	long getChunkID(int p_id) throws LookupException;
-	
+
 	/**
 	 * Return the number of identifier mappings
 	 * @return the number of mappings
 	 * @throws LookupException
+	 *             if the maaping count could not be get
 	 */
 	long getMappingCount() throws LookupException;
 

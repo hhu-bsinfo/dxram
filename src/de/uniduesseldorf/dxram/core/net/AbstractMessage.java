@@ -236,7 +236,7 @@ public abstract class AbstractMessage {
 	 * @return a ByteBuffer with the Message as content
 	 */
 	protected final ByteBuffer getBuffer() {
-		int payloadSize = getPayloadLength();
+		final int payloadSize = getPayloadLength();
 
 		ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
 		buffer = fillBuffer(buffer, payloadSize);
@@ -249,9 +249,11 @@ public abstract class AbstractMessage {
 	 * Fills a given ByteBuffer with the message
 	 * @param p_buffer
 	 *            a given ByteBuffer
+	 * @param p_payloadSize
+	 *            the payload size
 	 * @return filled ByteBuffer
 	 */
-	private final ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) {
+	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) {
 		p_buffer.putLong(m_messageID);
 		p_buffer.put(m_type);
 		p_buffer.put(m_subtype);
@@ -284,6 +286,8 @@ public abstract class AbstractMessage {
 		beforeSend();
 
 		p_network.sendMessage(this);
+
+		afterSend();
 	}
 
 	/**
@@ -310,6 +314,11 @@ public abstract class AbstractMessage {
 	 * Executed before a Message is send (not forwarded)
 	 */
 	protected void beforeSend() {}
+
+	/**
+	 * Executed after a Message is send (not forwarded)
+	 */
+	protected void afterSend() {}
 
 	/**
 	 * Creates a Message from the given byte buffer
@@ -351,6 +360,10 @@ public abstract class AbstractMessage {
 		return ret;
 	}
 
+	/**
+	 * Creates a string representation of the message
+	 * @return the string representation
+	 */
 	public final String print() {
 		return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
 	}

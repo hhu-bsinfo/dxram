@@ -2754,6 +2754,10 @@ public final class LookupMessages {
 
 	}
 
+	/**
+	 * Request for getting the number of mappings
+	 * @author klein 26.03.2015
+	 */
 	public static class GetMappingCountRequest extends AbstractRequest {
 
 		// Constructors
@@ -2775,6 +2779,10 @@ public final class LookupMessages {
 
 	}
 
+	/**
+	 * Response to a GetMappingCountRequest
+	 * @author klein 26.03.2015
+	 */
 	public static class GetMappingCountResponse extends AbstractResponse {
 
 		// Attributes

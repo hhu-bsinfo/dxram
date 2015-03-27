@@ -261,7 +261,7 @@ abstract class AbstractConnection {
 		// Methods
 		@Override
 		public void run() {
-			ByteStreamInterpreter streamInterpreter = m_streamInterpreter;
+			final ByteStreamInterpreter streamInterpreter = m_streamInterpreter;
 			ByteBuffer buffer;
 
 			try {
@@ -275,7 +275,7 @@ abstract class AbstractConnection {
 
 						if (streamInterpreter.isMessageComplete()) {
 							if (!streamInterpreter.isExceptionOccurred()) {
-								ByteBuffer messageBuffer = streamInterpreter.getMessageBuffer();
+								final ByteBuffer messageBuffer = streamInterpreter.getMessageBuffer();
 								m_messageCreator.newData(messageBuffer);
 							}
 
@@ -348,7 +348,7 @@ abstract class AbstractConnection {
 			AbstractMessage message = null;
 
 			p_buffer.flip();
-			ByteBuffer buffer = p_buffer.asReadOnlyBuffer();
+			final ByteBuffer buffer = p_buffer.asReadOnlyBuffer();
 
 			try {
 				message = AbstractMessage.createMessageHeader(buffer);

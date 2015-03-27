@@ -13,7 +13,7 @@ import de.uniduesseldorf.dxram.core.lookup.storage.OIDTree;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
- * Reads ChunkID, NodeID, Chunk and OIDTree from DataInput
+ * Reads data types
  * @author Florian Klein 26.03.2012
  */
 public final class InputHelper {
@@ -217,7 +217,7 @@ public final class InputHelper {
 	 * @return the read Chunks
 	 */
 	public static Chunk[] readChunks(final ByteBuffer p_buffer) {
-		Chunk ret[];
+		Chunk[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
@@ -249,6 +249,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads an OIDTree from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the OIDTree
+	 * @throws IOException
+	 *             if the OIDTree could not be read
+	 */
 	public static OIDTree readOIDTree(final ByteBuffer p_buffer) {
 		OIDTree ret = null;
 		byte[] data;
@@ -261,6 +269,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Parses binary data into an OIDTree
+	 * @param p_data
+	 *            the binary data
+	 * @return the OIDTree
+	 */
 	public static OIDTree parseOIDTree(final byte[] p_data) {
 		OIDTree ret = null;
 		ByteArrayInputStream byteArrayInputStream;
@@ -284,90 +298,196 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a boolean
+	 * @param p_input
+	 *            the input
+	 * @return the boolean
+	 * @throws IOException
+	 *             if the boolean could not be read
+	 */
 	public static boolean readBoolean(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readBoolean();
 	}
 
+	/**
+	 * Reads a boolean
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the boolean
+	 */
 	public static boolean readBoolean(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.get() == 1;
 	}
 
+	/**
+	 * Reads aan integer
+	 * @param p_input
+	 *            the input
+	 * @return the integer
+	 * @throws IOException
+	 *             if the integer could not be read
+	 */
 	public static int readInt(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readInt();
 	}
 
+	/**
+	 * Reads aan integer
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the integer
+	 */
 	public static int readInt(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getInt();
 	}
 
+	/**
+	 * Reads a byte
+	 * @param p_input
+	 *            the input
+	 * @return the byte
+	 * @throws IOException
+	 *             if the byte could not be read
+	 */
 	public static byte readByte(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readByte();
 	}
 
+	/**
+	 * Reads a byte
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the byte
+	 */
 	public static byte readByte(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.get();
 	}
 
+	/**
+	 * Reads a short
+	 * @param p_input
+	 *            the input
+	 * @return the short
+	 * @throws IOException
+	 *             if the short could not be read
+	 */
 	public static short readShort(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readShort();
 	}
 
+	/**
+	 * Reads a short
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the short
+	 */
 	public static short readShort(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getShort();
 	}
 
+	/**
+	 * Reads a long
+	 * @param p_input
+	 *            the input
+	 * @return the long
+	 * @throws IOException
+	 *             if the long could not be read
+	 */
 	public static long readLong(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readLong();
 	}
 
+	/**
+	 * Reads a long
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the long
+	 */
 	public static long readLong(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getLong();
 	}
 
+	/**
+	 * Reads a float
+	 * @param p_input
+	 *            the input
+	 * @return the float
+	 * @throws IOException
+	 *             if the float could not be read
+	 */
 	public static float readFloat(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readFloat();
 	}
 
+	/**
+	 * Reads a float
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the float
+	 */
 	public static float readFloat(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getFloat();
 	}
 
+	/**
+	 * Reads a double
+	 * @param p_input
+	 *            the input
+	 * @return the double
+	 * @throws IOException
+	 *             if the double could not be read
+	 */
 	public static double readDouble(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readDouble();
 	}
 
+	/**
+	 * Reads a double
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the double
+	 */
 	public static double readDouble(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getDouble();
 	}
 
+	/**
+	 * Reads locations
+	 * @param p_input
+	 *            the input
+	 * @return the locations
+	 * @throws IOException
+	 *             if the locations could not be read
+	 */
 	public static Locations readLocations(final DataInput p_input) throws IOException {
 		Locations ret;
 
@@ -378,6 +498,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads locations
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the locations
+	 */
 	public static Locations readLocations(final ByteBuffer p_buffer) {
 		Locations ret;
 
@@ -388,6 +514,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a long array
+	 * @param p_input
+	 *            the input
+	 * @return the long array
+	 * @throws IOException
+	 *             if the long array could not be read
+	 */
 	public static long[] readLongArray(final DataInput p_input) throws IOException {
 		long[] ret;
 
@@ -401,6 +535,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a long array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the long array
+	 */
 	public static long[] readLongArray(final ByteBuffer p_buffer) {
 		long[] ret;
 
@@ -414,6 +554,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a short array
+	 * @param p_input
+	 *            the input
+	 * @return the short array
+	 * @throws IOException
+	 *             if the short array could not be read
+	 */
 	public static short[] readShortArray(final DataInput p_input) throws IOException {
 		short[] ret;
 
@@ -427,6 +575,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a short array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the short array
+	 */
 	public static short[] readShortArray(final ByteBuffer p_buffer) {
 		short[] ret;
 
@@ -440,6 +594,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a byte array
+	 * @param p_input
+	 *            the input
+	 * @return the byte array
+	 * @throws IOException
+	 *             if the byte array could not be read
+	 */
 	public static byte[] readByteArray(final DataInput p_input) throws IOException {
 		byte[] ret;
 
@@ -453,6 +615,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a byte array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the byte array
+	 */
 	public static byte[] readByteArray(final ByteBuffer p_buffer) {
 		byte[] ret;
 
@@ -466,6 +634,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a integer array
+	 * @param p_input
+	 *            the input
+	 * @return the integer array
+	 * @throws IOException
+	 *             if the integer array could not be read
+	 */
 	public static int[] readIntArray(final DataInput p_input) throws IOException {
 		int[] ret;
 
@@ -479,6 +655,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a integer array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the integer array
+	 */
 	public static int[] readIntArray(final ByteBuffer p_buffer) {
 		int[] ret;
 
@@ -492,6 +674,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a double array
+	 * @param p_input
+	 *            the input
+	 * @return the double array
+	 * @throws IOException
+	 *             if the double array could not be read
+	 */
 	public static double[] readDoubleArray(final DataInput p_input) throws IOException {
 		double[] ret;
 
@@ -505,6 +695,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a double array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the double array
+	 */
 	public static double[] readDoubleArray(final ByteBuffer p_buffer) {
 		double[] ret;
 
@@ -518,6 +714,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a float array
+	 * @param p_input
+	 *            the input
+	 * @return the float array
+	 * @throws IOException
+	 *             if the float array could not be read
+	 */
 	public static float[] readFloatArray(final DataInput p_input) throws IOException {
 		float[] ret;
 
@@ -531,6 +735,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a float array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the float array
+	 */
 	public static float[] readFloatArray(final ByteBuffer p_buffer) {
 		float[] ret;
 
@@ -544,6 +754,14 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a boolean array
+	 * @param p_input
+	 *            the input
+	 * @return the boolean array
+	 * @throws IOException
+	 *             if the boolean array could not be read
+	 */
 	public static boolean[] readBooleanArray(final DataInput p_input) throws IOException {
 		boolean[] ret;
 
@@ -557,6 +775,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a boolean array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the boolean array
+	 */
 	public static boolean[] readBooleanArray(final ByteBuffer p_buffer) {
 		boolean[] ret;
 

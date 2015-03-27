@@ -13,7 +13,11 @@ import de.uniduesseldorf.dxram.utils.locks.JNISpinLock;
 import de.uniduesseldorf.dxram.utils.locks.NoLock;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
-public class LockTest {
+/**
+ * Test cases for evaluating lock implementations
+ * @author klein 26.03.2015
+ */
+public final class LockTest {
 
 	// Constants
 	private static final String ARGUMENT_HELP = "-h";
@@ -35,7 +39,7 @@ public class LockTest {
 	 * @param p_arguments
 	 *            The program arguments
 	 */
-	public static void main(String[] p_arguments) {
+	public static void main(final String[] p_arguments) {
 		int rounds;
 		int threadCount;
 		ArgumentHelper helper;
@@ -75,6 +79,14 @@ public class LockTest {
 		}
 	}
 
+	/**
+	 * Evaluates the NoLock implementation
+	 * @param p_rounds the number of rounds
+	 * @param p_threadCount the number of threads
+	 * @return the result
+	 * @throws InterruptedException if the test is interrupted
+	 * @throws ExecutionException if the test could not be executed
+	 */
 	private static TestResult evaluateNoLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -84,6 +96,14 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates the JNILock implementation
+	 * @param p_rounds the number of rounds
+	 * @param p_threadCount the number of threads
+	 * @return the result
+	 * @throws InterruptedException if the test is interrupted
+	 * @throws ExecutionException if the test could not be executed
+	 */
 	private static TestResult evaluateJNILock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -93,6 +113,14 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates the SpinLock implementation
+	 * @param p_rounds the number of rounds
+	 * @param p_threadCount the number of threads
+	 * @return the result
+	 * @throws InterruptedException if the test is interrupted
+	 * @throws ExecutionException if the test could not be executed
+	 */
 	private static TestResult evaluateSpinLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -102,6 +130,14 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates the ReentrantLock implementation
+	 * @param p_rounds the number of rounds
+	 * @param p_threadCount the number of threads
+	 * @return the result
+	 * @throws InterruptedException if the test is interrupted
+	 * @throws ExecutionException if the test could not be executed
+	 */
 	private static TestResult evaluateJavaLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -111,6 +147,15 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates a lock implementation
+	 * @param p_lock the lock implementation
+	 * @param p_rounds the number of rounds
+	 * @param p_threadCount the number of threads
+	 * @return the result
+	 * @throws InterruptedException if the test is interrupted
+	 * @throws ExecutionException if the test could not be executed
+	 */
 	private static long evaluateLock(final Lock p_lock, final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		ExecutorService executorService;
@@ -126,9 +171,9 @@ public class LockTest {
 
 				@Override
 				public void run() {
-					final int COUNT = p_rounds / p_threadCount;
+					final int count = p_rounds / p_threadCount;
 
-					for (int i = 1;i <= COUNT;i++) {
+					for (int i = 1;i <= count;i++) {
 						p_lock.lock();
 						p_lock.unlock();
 					}
@@ -146,6 +191,12 @@ public class LockTest {
 		return ret;
 	}
 
+	/**
+	 * Prints a test result
+	 * @param p_test the test name
+	 * @param p_rounds the number of rounds
+	 * @param p_result the test result
+	 */
 	private static void printTestResult(final String p_test, final int p_rounds, final TestResult p_result) {
 		StringBuffer output;
 		NumberFormat format;
@@ -162,18 +213,22 @@ public class LockTest {
 	}
 
 	// Classes
+	/**
+	 * Represents a test result
+	 * @author klein 26.03.2015
+	 */
 	private static final class TestResult {
 
 		// Attributes
-		private long time;
+		private long m_time;
 
 		/**
 		 * Creates an instance of MemoryManagementTest
 		 * @param p_time
 		 *            the test time
 		 */
-		public TestResult(long p_time) {
-			time = p_time;
+		public TestResult(final long p_time) {
+			m_time = p_time;
 		}
 
 		/**
@@ -181,7 +236,7 @@ public class LockTest {
 		 * @return the test time
 		 */
 		public long getTime() {
-			return time;
+			return m_time;
 		}
 
 	}

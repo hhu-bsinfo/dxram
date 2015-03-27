@@ -33,8 +33,9 @@ public final class Konferenz15Test {
 	// Constants
 	private static final int MIN_SIZE = 1;
 	private static final int MAX_SIZE = 100;
-	
-	private static final String PROGRESSBAR = "|0%_____10%_______20%_______30%_______40%_______50%_______60%_______70%_______80%_______90%______100%|";
+
+	private static final String PROGRESSBAR = "|0%_____10%_______20%_______30%_______40%_______50%"
+			+ "_______60%_______70%_______80%_______90%______100%|";
 
 	// Constructors
 	/**
@@ -123,6 +124,10 @@ public final class Konferenz15Test {
 		 * Creates an instance of Server
 		 * @param p_amount
 		 *            the amount of Chunks to create
+		 * @param p_migrations
+		 *            the number of migrations
+		 * @param p_seed
+		 *            the seed for the random number generator
 		 */
 		public Server(final int p_amount, final int p_migrations, final long p_seed) {
 			m_amount = p_amount;
@@ -204,7 +209,7 @@ public final class Konferenz15Test {
 				System.out.println("Time/Op: " + Tools.readableNanoTime(time / ranges));
 
 				System.out.println("Server started");
-			} catch (DXRAMException e) {
+			} catch (final DXRAMException e) {
 				e.printStackTrace();
 			}
 
@@ -269,7 +274,7 @@ public final class Konferenz15Test {
 				System.out.println("Time/Op: " + Tools.readableNanoTime(time / amount));
 
 				System.out.println("Client done");
-			} catch (DXRAMException e) {
+			} catch (final DXRAMException e) {
 				e.printStackTrace();
 			}
 		}

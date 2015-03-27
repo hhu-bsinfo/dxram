@@ -50,6 +50,7 @@ public final class NodeID {
 	 */
 	public static void setLocalNodeID(final short p_localNodeID) {
 		System.out.println("Own NodeID: " + p_localNodeID + " (" + Long.toHexString(p_localNodeID & 0xFFFF) + ")");
+
 		m_localNodeID = p_localNodeID;
 	}
 

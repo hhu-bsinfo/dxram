@@ -1,9 +1,15 @@
 #Classes
-Action - Simple model for an executable Action
+AbstractAction - Simple model for an executable Action
 ArrayTools - Methods for working with arrays
+BloomFilter - Represents a BloomFilter
 Cache - Simple model of a cache
-ConfigHelper - Methods for accessing the configuration
 Contract - Methods for checking values
-PropertyHelper - Methods for accessing properties-files
+CRC16 - Implementation of the CRC16 algorithm
+StatisticsManager - Management of multiple statistics
 Stopwatch - Methods for measuring method access times
-UnsafeHandler - Methods for accessing RAM directly using the Unsafe-class
+StringConverter - Converts String to integer and vice versa
+Tools - miscellaneous tools for different purposes
+
+#Packages
+locks - Lock implementations
+unsafe - Classes to use Java Unsafe

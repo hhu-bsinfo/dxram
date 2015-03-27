@@ -1822,6 +1822,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_numberOfSuperpeers--;
 		m_nodeTable = new OIDTree[65536];
 		m_nodeList = new ArrayList<Short>();
+		if (m_idTable == null) {
+			m_idTable = new IDHashTableLP(1000, 0.9f);
+		}
 
 		m_idTable.putAll(p_promotePeerRequest.getMappings());
 
@@ -3415,6 +3418,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		 * Creates an instance of Locations
 		 * @param p_primaryAndBackupPeers
 		 *            the locations in long representation
+		 * @param p_range
+		 *            the corresponding range
 		 */
 		public Locations(final long p_primaryAndBackupPeers, final long[] p_range) {
 			this((short)p_primaryAndBackupPeers, new short[] {
@@ -3448,10 +3453,18 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			return m_range;
 		}
 
+		/**
+		 * Get the start LID
+		 * @return the start LID
+		 */
 		public long getStartID() {
 			return m_range[0];
 		}
 
+		/**
+		 * Get the end LID
+		 * @return the end LID
+		 */
 		public long getEndID() {
 			return m_range[1];
 		}
