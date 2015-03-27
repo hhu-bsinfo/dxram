@@ -49,6 +49,11 @@ public final class SecondaryLogBuffer {
 	 * Closes the buffer
 	 */
 	public void close() {
+		try {
+			flushSecLogBuffer();
+		} catch (final IOException | InterruptedException e) {
+			System.out.println("Could not flush secondary log buffer. Data loss possible!");
+		}
 		m_bytesInBuffer = 0;
 		m_buffer = null;
 	}

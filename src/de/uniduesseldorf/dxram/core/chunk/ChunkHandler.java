@@ -197,7 +197,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	@Override
 	public Chunk[] create(final int[] p_sizes) throws DXRAMException {
-		Chunk ret[] = null;
+		Chunk[] ret = null;
 		final long[] lids;
 
 		Contract.checkNotNull(p_sizes, "no sizes given");

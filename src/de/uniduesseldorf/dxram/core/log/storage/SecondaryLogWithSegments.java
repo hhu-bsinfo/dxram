@@ -29,8 +29,6 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	private int m_numberOfDeletes;
 	private AtomicBoolean m_isLocked;
 
-	private volatile boolean m_isShuttingDown;
-
 	private long m_secondaryLogReorgThreshold;
 	private Lock m_reorganizationLock;
 	private Condition m_reorganizationFinishedCondition;
@@ -139,10 +137,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	// Methods
 	@Override
 	public final void closeLog() throws InterruptedException, IOException {
-		if (!m_isShuttingDown) {
-			m_isShuttingDown = true;
-			super.closeRing();
-		}
+
+		super.closeRing();
 	}
 
 	@Override
@@ -158,7 +154,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 
 		if (length <= 0 || length > m_totalUsableSpace) {
 			throw new IllegalArgumentException("Error: Invalid data size");
-		} else if (!m_isShuttingDown) {
+		} else {
 			if (getWritableSpace() >= length) {
 				if (length >= LogHandler.SEGMENT_SIZE * 0.9) {
 					lock();
@@ -300,6 +296,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 *            if the secondary log could not be read
 	 * @throws InterruptedException
 	 *            if the caller was interrupted
+	 * @note executed only by reorganization thread
 	 */
 	public final void freeSegment(final int p_segment) throws IOException, InterruptedException {
 		short segment;
@@ -333,6 +330,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 *            if the secondary log could not be read
 	 * @throws InterruptedException
 	 *            if the caller was interrupted
+	 * @note executed only by reorganization thread
 	 */
 	public final void invalidateLogEntry(final byte[] p_buffer, final int p_bufferOffset,
 			final long p_logOffset, final int p_segmentIndex) throws IOException, InterruptedException {
@@ -355,6 +353,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 *            if the secondary log could not be read
 	 * @throws InterruptedException
 	 *            if the caller was interrupted
+	 * @note executed only by reorganization thread
 	 */
 	public final void updateSegment(final byte[] p_buffer, final int p_length,
 			final int p_segmentIndex) throws IOException, InterruptedException {
@@ -371,6 +370,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @throws InterruptedException
 	 *            if the caller was interrupted
 	 * @return the segment's data
+	 * @note executed only by reorganization thread
 	 */
 	public final byte[] readSegment(final int p_segment) throws IOException, InterruptedException {
 		byte[] result = null;
@@ -393,6 +393,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @throws InterruptedException
 	 *            if the caller was interrupted
 	 * @return all data
+	 * @note executed only by reorganization thread
 	 */
 	public final byte[][] readAllSegments() throws IOException, InterruptedException {
 		byte[][] result = null;
@@ -449,6 +450,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		byte[] payload;
 		HashMap<Long, Chunk> chunkMap = null;
 
+		// TODO: Coordinate with reorganization thread
 		try {
 			logData = readAllWithoutReadPtrSet();
 			while (logData[i] != null) {
@@ -516,6 +518,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		byte[] payload;
 		HashMap<Long, Chunk> chunkMap = null;
 
+		// TODO: Coordinate with reorganization thread
 		try {
 			logData = readAllWithoutReadPtrSet();
 			while (logData[i] != null) {
@@ -568,7 +571,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		long bytesInRAF;
 
 		bytesInRAF = getOccupiedSpace();
-		if ((bytesInRAF == 0) || m_isShuttingDown) {
+		if (bytesInRAF == 0) {
 			ret = false;
 		} else {
 			if (bytesInRAF >= m_secondaryLogReorgThreshold) {
@@ -812,7 +815,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			byte[] segmentData;
 			byte[] newData;
 			SegmentHeader header;
-			
+
 
 			/*System.out.println();
 			System.out.println("----------Starting reorganization(" + m_secondaryLog.getNodeID() + ")----------");

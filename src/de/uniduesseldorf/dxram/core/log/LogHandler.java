@@ -39,17 +39,21 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	// Constants
 	public static final int FLASHPAGE_SIZE = 4 * 1024;
 	public static final int MAX_NODE_CNT = Short.MAX_VALUE * 2;
-	public static final long PRIMARY_LOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
+	public static final long PRIMARY_LOG_SIZE = Core.getConfiguration()
+			.getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
 	public static final int PRIMARY_LOG_MIN_SIZE = MAX_NODE_CNT * FLASHPAGE_SIZE;
-	public static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
+	public static final long SECONDARY_LOG_SIZE = Core.getConfiguration()
+			.getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
 	public static final int SECONDARY_LOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
 	public static final int SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENTSIZE);
 	public static final int DEFAULT_SECONDARY_LOG_BUFFER_SIZE = FLASHPAGE_SIZE * 2;
 
 	// Must be > 2 * SIGNAL_ON_BYTE_COUNT, e.g. 3 * SIGNAL_ON_BYTE_COUNT
-	public static final int WRITE_BUFFER_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.WRITE_BUFFER_SIZE);;
+	public static final int WRITE_BUFFER_SIZE = Core.getConfiguration()
+			.getIntValue(ConfigurationConstants.WRITE_BUFFER_SIZE);
 	public static final int MAX_WRITE_BUFFER_SIZE = Integer.MAX_VALUE;
-	public static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
+	public static final String BACKUP_DIRECTORY = Core.getConfiguration()
+			.getStringValue(ConfigurationConstants.LOG_DIRECTORY);
 	public static final String PRIMARYLOG_FILENAME = "primary.log";
 	public static final String SECLOG_PREFIX_FILENAME = "secondary";
 	public static final String SECLOG_POSTFIX_FILENAME = ".log";
@@ -64,6 +68,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	public static final long WRITERTHREAD_TIMEOUTTIME = 500L;
 	public static final long REORGTHREAD_TIMEOUT = 1000L;
 
+	// Log header component sizes
 	public static final byte LOG_HEADER_NID_SIZE = 2;
 	public static final byte LOG_HEADER_LID_SIZE = 6;
 	public static final byte LOG_HEADER_CID_SIZE = LOG_HEADER_NID_SIZE + LOG_HEADER_LID_SIZE;
@@ -71,6 +76,13 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	public static final byte LOG_HEADER_VER_SIZE = 4;
 	public static final byte LOG_HEADER_CRC_SIZE = 8;
 
+	// Log header sizes
+	public static final byte PRIMARY_HEADER_SIZE = LOG_HEADER_CID_SIZE
+			+ LOG_HEADER_LEN_SIZE + LOG_HEADER_VER_SIZE + LOG_HEADER_CRC_SIZE;
+	public static final byte SECONDARY_HEADER_SIZE = LOG_HEADER_LID_SIZE
+			+ LOG_HEADER_LEN_SIZE + LOG_HEADER_VER_SIZE + LOG_HEADER_CRC_SIZE;
+
+	// Primary log header offsets
 	public static final byte PRIMARY_HEADER_NID_OFFSET = 0;
 	public static final byte PRIMARY_HEADER_LID_OFFSET = LOG_HEADER_NID_SIZE;
 	public static final byte PRIMARY_HEADER_CID_OFFSET = 0;
@@ -78,24 +90,20 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	public static final byte PRIMARY_HEADER_VER_OFFSET = PRIMARY_HEADER_LEN_OFFSET + LOG_HEADER_LEN_SIZE;
 	public static final byte PRIMARY_HEADER_CRC_OFFSET = PRIMARY_HEADER_VER_OFFSET + LOG_HEADER_VER_SIZE;
 
-	public static final byte PRIMARY_HEADER_SIZE = LOG_HEADER_CID_SIZE
-			+ LOG_HEADER_LEN_SIZE + LOG_HEADER_VER_SIZE + LOG_HEADER_CRC_SIZE;
-	public static final byte SECONDARY_HEADER_SIZE = LOG_HEADER_LID_SIZE
-			+ LOG_HEADER_LEN_SIZE + LOG_HEADER_VER_SIZE + LOG_HEADER_CRC_SIZE;
 	public static final byte MIN_LOG_ENTRY_SIZE = PRIMARY_HEADER_SIZE + 4;
 	public static final byte SECONDARY_TOMBSTONE_SIZE = SECONDARY_HEADER_SIZE;
 
 	public static final int PRIMLOG_HEADER_SIZE = PRIMLOG_MAGIC.length;
-	public static final byte READPTR_SIZE = 4;
-	public static final byte WRITEPTR_SIZE = 4;
-	public static final byte REORGPTR_SIZE = 4;
-	public static final int SECLOG_HEADER_SIZE = SECLOG_MAGIC.length + READPTR_SIZE + WRITEPTR_SIZE + REORGPTR_SIZE;
+	public static final int SECLOG_HEADER_SIZE = SECLOG_MAGIC.length;
+
 
 	// Attributes
 	private PrimaryWriteBuffer m_writeBuffer;
 	private PrimaryLog m_primaryLog;
 	private AtomicReferenceArray<SecondaryLogWithSegments> m_secondaryLogs;
 	private AtomicReferenceArray<SecondaryLogBuffer> m_secondaryLogBuffers;
+
+	private Lock m_secondaryLogCreationLock;
 
 	private SecondaryLogsReorgThread m_secondaryLogsReorgThread;
 	private Lock m_reorganizationLock;
@@ -117,8 +125,11 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		m_secondaryLogs = null;
 		m_secondaryLogBuffers = null;
 
+		m_secondaryLogCreationLock = null;
+
 		m_secondaryLogsReorgThread = null;
 		m_reorganizationLock = null;
+		m_reorganizationFinishedCondition = null;
 		m_thresholdReachedCondition = null;
 
 		m_flushingInProgress = null;
@@ -144,12 +155,13 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		m_secondaryLogs = new AtomicReferenceArray<SecondaryLogWithSegments>(LogHandler.MAX_NODE_CNT);
 		m_secondaryLogBuffers = new AtomicReferenceArray<SecondaryLogBuffer>(LogHandler.MAX_NODE_CNT);
 
+		m_secondaryLogCreationLock = new ReentrantLock();
+
 		// Create reorganization thread for secondary logs
-		if (m_secondaryLogsReorgThread == null) {
-			m_secondaryLogsReorgThread = new SecondaryLogsReorgThread();
-			// Start secondary logs reorganization thread
-			m_secondaryLogsReorgThread.start();
-		}
+		m_secondaryLogsReorgThread = new SecondaryLogsReorgThread();
+		// Start secondary logs reorganization thread
+		m_secondaryLogsReorgThread.start();
+
 		m_reorganizationLock = new ReentrantLock();
 		m_reorganizationFinishedCondition = m_reorganizationLock.newCondition();
 		m_thresholdReachedCondition = m_reorganizationLock.newCondition();
@@ -167,45 +179,21 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 			m_isShuttingDown = true;
 
 			// Stop reorganization thread
-			try {
-				m_reorganizationLock.lockInterruptibly();
-				m_thresholdReachedCondition.signal();
-				m_reorganizationFinishedCondition.await();
-			} catch (final InterruptedException e) {
-				System.out.println("Could not shut down reorganization thread. Forcing interrupt");
-				m_secondaryLogsReorgThread.interrupt();
-			} finally {
-				m_reorganizationLock.unlock();
-			}
+			m_reorganizationLock.lock();
+			m_secondaryLogsReorgThread.doShutdown();
 			m_secondaryLogsReorgThread = null;
 			m_reorganizationFinishedCondition = null;
 			m_thresholdReachedCondition = null;
+			m_reorganizationLock.unlock();
 			m_reorganizationLock = null;
 
-			// Clear secondary log buffers
+			// Close write buffer
 			try {
-				for (int i = 0; i < LogHandler.MAX_NODE_CNT; i++) {
-					buffer = getSecondaryLogBuffer((short)i, false);
-					if (buffer != null) {
-						buffer.close();
-					}
-				}
-				m_secondaryLogBuffers = null;
+				m_writeBuffer.closeWriteBuffer();
 			} catch (final IOException | InterruptedException e) {
-				System.out.println("At least one secondary log buffer could not be cleared");
+				e.printStackTrace();
 			}
-			// Close secondary logs
-			try {
-				for (int i = 0; i < LogHandler.MAX_NODE_CNT; i++) {
-					log = getSecondaryLog((short)i, false);
-					if (log != null) {
-						log.closeLog();
-					}
-				}
-				m_secondaryLogs = null;
-			} catch (final IOException | InterruptedException e) {
-				System.out.println("At least one secondary log could not be closed");
-			}
+			m_writeBuffer = null;
 
 			// Close primary log
 			if (m_primaryLog != null) {
@@ -217,13 +205,31 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 				m_primaryLog = null;
 			}
 
-			// Close write buffer
-			try {
-				m_writeBuffer.closeWriteBuffer();
-			} catch (final IOException | InterruptedException e) {
-				e.printStackTrace();
+			// Clear secondary log buffers
+			for (int i = 0; i < LogHandler.MAX_NODE_CNT; i++) {
+				try {
+					buffer = getSecondaryLogBuffer((short)i, false);
+					if (buffer != null) {
+						buffer.close();
+					}
+				} catch (final IOException | InterruptedException e) {
+					System.out.println("Could not close secondary log buffer " + i);
+				}
 			}
-			m_writeBuffer = null;
+			m_secondaryLogBuffers = null;
+
+			// Close secondary logs
+			for (int i = 0; i < LogHandler.MAX_NODE_CNT; i++) {
+				try {
+					log = getSecondaryLog((short)i, false);
+					if (log != null) {
+						log.closeLog();
+					}
+				} catch (final IOException | InterruptedException e) {
+					System.out.println("Could not close secondary log " + i);
+				}
+			}
+			m_secondaryLogs = null;
 		}
 	}
 
@@ -256,7 +262,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		//TODO: Remove
 		try {
 			m_writeBuffer.putLogData(tombstone, null);
-			getSecondaryLog(ChunkID.getCreatorID(p_chunkID), false).incDeleteCounter();
+			getSecondaryLog(ChunkID.getCreatorID(p_chunkID), true).incDeleteCounter();
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
@@ -271,6 +277,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		SecondaryLogBuffer secondaryLogBuffer;
 
 		try {
+			flushDataToPrimaryLog();
 			secondaryLogBuffer = getSecondaryLogBuffer(p_nodeID, false);
 			if (secondaryLogBuffer != null) {
 				secondaryLogBuffer.flushSecLogBuffer();
@@ -291,6 +298,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		SecondaryLogBuffer secondaryLogBuffer;
 
 		try {
+			flushDataToPrimaryLog();
 			secondaryLogBuffer = getSecondaryLogBuffer(p_nodeID, false);
 			if (secondaryLogBuffer != null) {
 				secondaryLogBuffer.flushSecLogBuffer();
@@ -341,8 +349,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		int version;
 		int offset = 0;
 		long localID;
-
-		//TODO: Fix for use with segments
 
 		try {
 			flushDataToPrimaryLog();
@@ -428,11 +434,17 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		final long chunkID = ((long) p_nodeID << 48) + p_localID;
 
 		try {
-			System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "("
-					+ p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
-					+ "\t Version - " + p_version + " \t Payload - " + new String(
-							Arrays.copyOfRange(p_payload, p_offset + SECONDARY_HEADER_SIZE,
-									p_offset + SECONDARY_HEADER_SIZE + p_length), "UTF-8"));
+			if (p_version != -1) {
+				System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "("
+						+ p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
+						+ "\t Version - " + p_version + " \t Payload - " + new String(
+								Arrays.copyOfRange(p_payload, p_offset + SECONDARY_HEADER_SIZE,
+										p_offset + SECONDARY_HEADER_SIZE + p_length), "UTF-8"));
+			} else {
+				System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "("
+						+ p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
+						+ "\t Version - " + p_version + " \t Tombstones have no payload");
+			}
 		} catch (final UnsupportedEncodingException | IllegalArgumentException e) {
 			System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "("
 					+ p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
@@ -452,6 +464,8 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		SecondaryLogBuffer ret;
 		SecondaryLogWithSegments log;
 
+		// Can be executed by application/network thread or writer thread
+		m_secondaryLogCreationLock.lock();
 		ret = m_secondaryLogBuffers.get(p_nodeID & 0xFFFF);
 		if (ret == null && p_set) {
 			log = new SecondaryLogWithSegments(SECONDARY_LOG_SIZE, m_reorganizationLock,
@@ -461,6 +475,8 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 			ret = new SecondaryLogBuffer(log);
 			m_secondaryLogBuffers.set(p_nodeID & 0xFFFF, ret);
 		}
+		m_secondaryLogCreationLock.unlock();
+
 		return ret;
 	}
 
@@ -470,6 +486,8 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		SecondaryLogWithSegments ret;
 		SecondaryLogBuffer buffer;
 
+		// Can be executed by application/network thread or writer thread
+		m_secondaryLogCreationLock.lock();
 		ret = m_secondaryLogs.get(p_nodeID & 0xFFFF);
 		if (ret == null && p_set) {
 			ret = new SecondaryLogWithSegments(SECONDARY_LOG_SIZE, m_reorganizationLock,
@@ -479,6 +497,8 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 			buffer = new SecondaryLogBuffer(ret);
 			m_secondaryLogBuffers.set(p_nodeID & 0xFFFF, buffer);
 		}
+		m_secondaryLogCreationLock.unlock();
+
 		return ret;
 	}
 
@@ -504,7 +524,9 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 			}
 		} else {
 			// Another thread is flushing
-			Thread.sleep(LogHandler.FLUSHING_WAITTIME);
+			do {
+				Thread.sleep(LogHandler.FLUSHING_WAITTIME);
+			} while (m_flushingInProgress.get());
 		}
 	}
 
@@ -549,6 +571,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	 *         20.06.2014
 	 */
 	private final class SecondaryLogsReorgThread extends Thread {
+
 		// Attributes
 		private ForkJoinPool m_secLogsReorgFJPool;
 		private RecursiveAction m_task;
@@ -669,12 +692,12 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 					if (logIndex != -1) {
 						removeTombstones(logIndex);
 						for (int i = 0; i < 10; i++) {
-							if (!m_thresholdReachedCondition.await(
+							if (m_thresholdReachedCondition.await(
 									LogHandler.REORGTHREAD_TIMEOUT, TimeUnit.MILLISECONDS)) {
-								reorganizeIteratively(logIndex);
-							} else {
 								reorganizeAll();
 								m_reorganizationFinishedCondition.signal();
+							} else {
+								reorganizeIteratively(logIndex);
 							}
 						}
 						System.out.println(m_primaryLog.getOccupiedSpace() + " bytes in primary log");

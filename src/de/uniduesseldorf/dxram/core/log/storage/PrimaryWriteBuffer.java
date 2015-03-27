@@ -145,9 +145,8 @@ public class PrimaryWriteBuffer {
 		if (!m_isShuttingDown) {
 			// To shutdown primary log writer-threads
 			m_isShuttingDown = true;
+			m_flushingComplete = false;
 
-			// Flush write buffer
-			m_dataAvailable = true;
 			// Wait for writer thread
 			while (!m_flushingComplete) {
 				Thread.yield();
@@ -286,6 +285,7 @@ public class PrimaryWriteBuffer {
 	 */
 	public final void singalWriterThreadAndFlushToPrimLog() throws InterruptedException {
 		m_dataAvailable = true;
+		m_flushingComplete = false;
 
 		while (!m_flushingComplete) {
 			Thread.yield();

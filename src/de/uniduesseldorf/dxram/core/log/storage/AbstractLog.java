@@ -165,11 +165,6 @@ public abstract class AbstractLog {
 			m_logRAF.write(LogHandler.PRIMLOG_MAGIC);
 		} else {
 			m_logRAF.write(LogHandler.SECLOG_MAGIC);
-			// Write read, write and reorganization pointer at the beginning
-			m_logRAF.writeLong(m_readPos);
-			calcAndSetWritePos();
-			m_logRAF.writeLong(m_writePos);
-			m_logRAF.writeLong(m_reorgPos);
 		}
 
 		m_logRAF.seek(0);
@@ -330,7 +325,6 @@ public abstract class AbstractLog {
 		final int writableBytes = (int) Math.min(p_length, freeSpace);
 
 		if (p_length > 0) {
-			//System.out.println("Writing " + p_length + " bytes to " + super.getClass().getName());
 			if (m_writePos >= m_readPos) {
 				bytesUntilEnd = m_totalUsableSpace - m_writePos;
 			} else {

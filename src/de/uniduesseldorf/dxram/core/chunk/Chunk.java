@@ -9,7 +9,7 @@ import de.uniduesseldorf.dxram.utils.Contract;
  * Stores data
  * @author Florian Klein 09.03.2012
  */
-public class Chunk implements Comparable<Chunk>{
+public class Chunk implements Comparable<Chunk> {
 
 	// Constants
 	private static final int MAX_SIZE = 16777215;
@@ -141,8 +141,8 @@ public class Chunk implements Comparable<Chunk>{
 	}
 
 	@Override
-	public int compareTo(Chunk cmp) {
-		return (int)(getChunkID() - cmp.getChunkID());
+	public final int compareTo(final Chunk p_cmp) {
+		return (int)(getChunkID() - p_cmp.getChunkID());
 	}
 
 }

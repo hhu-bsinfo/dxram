@@ -25,8 +25,6 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	// Attributes
 	private LogInterface m_logHandler;
 
-	private boolean m_isShuttingDown;
-
 	private long m_totalUsableSpace;
 
 	// Constructors
@@ -56,19 +54,13 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		m_totalUsableSpace = super.getTotalUsableSpace();
 
 		createLogAndWriteHeader();
-
-		m_isShuttingDown = false;
 	}
 
 	// Methods
 	@Override
 	public void closeLog() throws InterruptedException, IOException {
 
-		if (!m_isShuttingDown) {
-			m_isShuttingDown = true;
-
-			super.closeRing();
-		}
+		super.closeRing();
 	}
 
 	@Override
@@ -78,7 +70,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
 			throw new IllegalArgumentException("invalid data size");
-		} else if (!m_isShuttingDown) {
+		} else {
 			ret = bufferAndStoreSegmentsHashSort(p_data, p_offset, p_length, (int[]) p_lengthByNode);
 		}
 		return ret;
