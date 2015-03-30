@@ -1,13 +1,6 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.TreeSet;
-
-import de.uniduesseldorf.dxram.core.api.ChunkID;
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler;
 
 /**
  * HashTable to store versions (Linear probing)
@@ -27,22 +20,6 @@ public class VersionsHashTable {
 	private int m_collisions = 0;
 
 	// Constructors
-	/**
-	 * Creates an instance of VersionsHashTable
-	 */
-	public VersionsHashTable() {
-		this(100000, 0.9f);
-	}
-
-	/**
-	 * Creates an instance of VersionsHashTable
-	 * @param p_initialCapacity
-	 *            the initial capacity of VersionsHashTable
-	 */
-	public VersionsHashTable(final int p_initialCapacity) {
-		this(p_initialCapacity, 0.9f);
-	}
-
 	/**
 	 * Creates an instance of VersionsHashTable
 	 * @param p_initialElementCapacity
@@ -387,55 +364,6 @@ public class VersionsHashTable {
 			if (iter != 0) {
 				System.out.println("Key: " + iter + ", value: " + getValue(i));
 			}
-		}
-	}
-
-	/**
-	 * Print all tuples in VersionsHashTable sorted
-	 */
-	public final void printSorted() {
-		long iter;
-		Collection<Entry> list;
-
-		list = new TreeSet<Entry>(new Comparator<Entry>(){
-			@Override
-			public int compare(final Entry p_a, final Entry p_b){
-				return (int) (p_a.m_key - p_b.m_key);
-			}
-		});
-
-		for (int i = 0; i < m_elementCapacity; i++) {
-			iter = getKey(i);
-			if (iter != 0) {
-				list.add(new Entry(iter, getValue(i)));
-			}
-		}
-
-		for (Entry entry : list) {
-			System.out.println("Key: " + entry.m_key + ", value: " + entry.m_value);
-		}
-	}
-
-	/**
-	 * A single Entry in VersionsHashTable
-	 */
-	private static class Entry {
-
-		// Attributes
-		private long m_key;
-		private int m_value;
-
-		// Constructors
-		/**
-		 * Creates an instance of Entry
-		 * @param p_key
-		 *            the key
-		 * @param p_value
-		 *            the value
-		 */
-		protected Entry(final long p_key, final int p_value) {
-			m_key = p_key;
-			m_value = p_value;
 		}
 	}
 }
