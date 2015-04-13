@@ -278,6 +278,9 @@ public final class Configuration {
 		// Directory for log files
 		public static final ConfigurationEntry<String> LOG_DIRECTORY = new ConfigurationEntry<String>("log.directory",
 				String.class, "./log/");
+		// Write buffer synchronization method
+		public static final ConfigurationEntry<Boolean> LOG_PARALLEL_BUFFERING = new ConfigurationEntry<Boolean>("log.parallel_buffering",
+				Boolean.class, false);
 
 		// Sleep interval
 		public static final ConfigurationEntry<Integer> LOOKUP_SLEEP = new ConfigurationEntry<Integer>(
@@ -344,6 +347,7 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(WRITE_BUFFER_SIZE);
 			CONFIGURATION_ENTRIES.add(LOG_SEGMENTSIZE);
 			CONFIGURATION_ENTRIES.add(LOG_DIRECTORY);
+			CONFIGURATION_ENTRIES.add(LOG_PARALLEL_BUFFERING);
 			CONFIGURATION_ENTRIES.add(LOOKUP_SLEEP);
 			CONFIGURATION_ENTRIES.add(JNI_LOCK_DIRECTORY);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_PATH);

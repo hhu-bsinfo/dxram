@@ -10,6 +10,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 
@@ -53,7 +54,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	public SecondaryLog(final Lock p_reorganizationLock, final Condition p_thresholdReachedCondition,
 			final Condition p_reorganizationFinishedCondition, final short p_nodeID) throws IOException,
 			InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
+		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
 				+ LogHandler.SECLOG_POSTFIX_FILENAME), LogHandler.SECONDARY_LOG_SIZE, LogHandler.SECLOG_HEADER_SIZE);
 
 		m_totalUsableSpace = super.getTotalUsableSpace();
@@ -89,7 +90,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	public SecondaryLog(final long p_secLogSize, final Lock p_reorganizationLock,
 			final Condition p_thresholdReachedCondition, final Condition p_reorganizationFinishedCondition,
 			final short p_nodeID) throws IOException, InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
+		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
 				+ LogHandler.SECLOG_POSTFIX_FILENAME), p_secLogSize, LogHandler.SECLOG_HEADER_SIZE);
 		if (p_secLogSize < LogHandler.SECONDARY_LOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
