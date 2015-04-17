@@ -22,7 +22,7 @@ import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
  * @author Kevin Beineke 23.10.2014
  */
 public class SecondaryLogWithSegments extends AbstractLog implements
-		LogStorageInterface {
+LogStorageInterface {
 
 	// TODO: Three secondary logs per node to accelerate recovery (recover
 	// everything from primary)
@@ -41,7 +41,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 	private LinkedList<Short> m_freeSegments;
 	private LinkedList<Short> m_partlyUsedSegments;
 
-	private boolean m_isAccessed = false;
+	private boolean m_isAccessed;
 
 
 	// Constructors
@@ -73,7 +73,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 
 		m_reorganizationThread = p_reorganizationThread;
 
-		m_secondaryLogReorgThreshold = (int) (LogHandler.SECONDARY_LOG_SIZE * (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
+		m_secondaryLogReorgThreshold = (int) (LogHandler.SECONDARY_LOG_SIZE *
+				(LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
 
 		m_isLocked = new AtomicBoolean(false);
 		m_segmentHeaders = new SegmentHeader[(int) (LogHandler.SECONDARY_LOG_SIZE / LogHandler.SEGMENT_SIZE)];
@@ -164,16 +165,12 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 				signalReorganizationAndWait();
 			}
 
-			// TODO: Reorganization thread might work on same data
 			if (m_isAccessed) {
-				// TODO
-				System.out
-						.println("Writing on seclog that is currently reorganized");
-			}
+				// Reorganization thread is working on this secondary log -> only append data
+				System.out.println("Writing on seclog that is currently reorganized");
 
-			if (length >= LogHandler.SEGMENT_SIZE * 0.9) {
-				lock();
-				if (m_freeSegments.size() > 0) {
+
+				if (m_freeSegments.size() > 0 && length >= LogHandler.SEGMENT_SIZE * 0.5) {
 					// Create new segment and fill it
 					header = new SegmentHeader(length);
 					segment = m_freeSegments.removeLast();
@@ -184,58 +181,34 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 					if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
 						m_partlyUsedSegments.add(segment);
 					}
-					length = 0;
-				}
-				unlock();
-			}
+				} else {
+					// No free segment available or small data buffer
+					// TODO: Threading on segments with high cost-benefit ratio
+					long costBenefitRatio;
+					long max = -1;
+					SegmentHeader currentSegment;
 
-			if (length > 0) {
-				// Fill partly used segments if log iteration (remove task)
-				// is not in progress
-				lock();
-				if (m_partlyUsedSegments.size() > 0) {
-					firstSegment = m_partlyUsedSegments.getFirst();
-					while (m_partlyUsedSegments.size() > 0 && length > 0
-							&& firstSegment != segment) {
-						segment = m_partlyUsedSegments.removeLast();
-						header = m_segmentHeaders[segment];
-						if (header.isLocked()) {
-							// Skip the segment that is being reorganized
-							// currently
-							m_partlyUsedSegments.addFirst(segment);
-							continue;
-						}
-						header.lock();
-						offset = p_length - length + p_offset;
-						rangeSize = 0;
-						while (length - rangeSize > 0) {
-							logEntrySize = LogHandler.SECONDARY_HEADER_SIZE
-									+ getLengthOfLogEntry(p_data, offset
-											+ rangeSize, false);
-							if (header.getFreeBytes() - rangeSize > logEntrySize) {
-								rangeSize += logEntrySize;
-							} else {
-								break;
+					// Cost-benefit ratio: ((1-u)*age)/(1+u)
+					for (int i = 0; i < m_segmentHeaders.length; i++) {
+						currentSegment = m_segmentHeaders[i];
+						if (currentSegment != null) {
+							costBenefitRatio = (long) (((1 - currentSegment
+									.getUtilization()) * currentSegment.getLastAccess()) / (1 + currentSegment
+											.getUtilization()));
+
+							if (costBenefitRatio > max) {
+								max = costBenefitRatio;
+							} else if (currentSegment.getFreeBytes() >= length) {
+
 							}
 						}
-						if (rangeSize > 0) {
-							writeToLog(p_data, offset,
-									(long) segment * LogHandler.SEGMENT_SIZE
-											+ header.getUsedBytes(), rangeSize);
-							header.updateUsedBytes(rangeSize);
-							length -= rangeSize;
-							offset += rangeSize;
-						}
-						if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
-							m_partlyUsedSegments.addFirst(segment);
-						}
-						header.unlock();
 					}
 				}
-				if (length > 0) {
-					// There are still objects in buffer -> create new
-					// segment and fill it
+
+			} else {
+				if (length >= LogHandler.SEGMENT_SIZE * 0.9) {
 					if (m_freeSegments.size() > 0) {
+						// Create new segment and fill it
 						header = new SegmentHeader(length);
 						segment = m_freeSegments.removeLast();
 						m_segmentHeaders[segment] = header;
@@ -246,11 +219,71 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 							m_partlyUsedSegments.add(segment);
 						}
 						length = 0;
-					} else {
-						System.out.println("Error: Secondary Log full!");
 					}
 				}
-				unlock();
+
+				if (length > 0) {
+					// Fill partly used segments if log iteration (remove task)
+					// is not in progress
+					if (m_partlyUsedSegments.size() > 0) {
+						firstSegment = m_partlyUsedSegments.getFirst();
+						while (m_partlyUsedSegments.size() > 0 && length > 0
+								&& firstSegment != segment) {
+							segment = m_partlyUsedSegments.removeLast();
+							header = m_segmentHeaders[segment];
+							if (header.isLocked()) {
+								// Skip the segment that is being reorganized
+								// currently
+								m_partlyUsedSegments.addFirst(segment);
+								continue;
+							}
+							// TODO: Remove lock!
+							header.lock();
+							offset = p_length - length + p_offset;
+							rangeSize = 0;
+							while (length - rangeSize > 0) {
+								logEntrySize = LogHandler.SECONDARY_HEADER_SIZE
+										+ getLengthOfLogEntry(p_data, offset
+												+ rangeSize, false);
+								if (header.getFreeBytes() - rangeSize > logEntrySize) {
+									rangeSize += logEntrySize;
+								} else {
+									break;
+								}
+							}
+							if (rangeSize > 0) {
+								writeToLog(p_data, offset,
+										(long) segment * LogHandler.SEGMENT_SIZE
+										+ header.getUsedBytes(), rangeSize);
+								header.updateUsedBytes(rangeSize);
+								length -= rangeSize;
+								offset += rangeSize;
+							}
+							if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
+								m_partlyUsedSegments.addFirst(segment);
+							}
+							header.unlock();
+						}
+					}
+					if (length > 0) {
+						// There are still objects in buffer -> create new
+						// segment and fill it
+						if (m_freeSegments.size() > 0) {
+							header = new SegmentHeader(length);
+							segment = m_freeSegments.removeLast();
+							m_segmentHeaders[segment] = header;
+							offset = p_length - length + p_offset;
+							writeToLog(p_data, offset, (long) segment
+									* LogHandler.SEGMENT_SIZE, length);
+							if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
+								m_partlyUsedSegments.add(segment);
+							}
+							length = 0;
+						} else {
+							System.out.println("Error: Secondary Log full!");
+						}
+					}
+				}
 			}
 		}
 
@@ -339,7 +372,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 	 * @note executed only by reorganization thread
 	 */
 	public final void freeSegment(final int p_segment) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		short segment;
 		SegmentHeader header;
 
@@ -423,7 +456,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 	 * @note executed only by reorganization thread
 	 */
 	public final byte[] readSegment(final int p_segment) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[] result = null;
 		SegmentHeader header;
 		int length;
@@ -450,7 +483,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 	 * @note executed only by reorganization thread
 	 */
 	public final byte[][] readAllSegments() throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[][] result = null;
 		SegmentHeader header;
 		int length;
@@ -479,7 +512,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 	 * @return all data
 	 */
 	public final byte[][] readAllNodeData() throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[][] result = null;
 
 		result = readAll();
@@ -703,7 +736,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 				+ ")----------");
 		timeStart = System.currentTimeMillis();
 
-		for (int i = 0; i <= m_segmentHeaders.length; i++) {
+		for (int i = 0; i < m_segmentHeaders.length; i++) {
 			if (m_segmentHeaders[i] != null) {
 				reorganizeSegment(i);
 			}
@@ -755,7 +788,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 			header.lock();
 			try {
 				segmentData = readSegment(p_segmentIndex);
-				newData = new byte[segmentData.length];
+				newData = new byte[LogHandler.SEGMENT_SIZE];
 
 				while (readBytes < segmentData.length) {
 					length = LogHandler.SECONDARY_HEADER_SIZE
@@ -780,7 +813,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 				if (writtenBytes < readBytes) {
 					if (writtenBytes > 0) {
 						newData = Arrays.copyOf(newData, writtenBytes);
-						appendData(newData, 0, writtenBytes, null);
+						updateSegment(newData, newData.length, p_segmentIndex);
+						//appendData(newData, 0, writtenBytes, null);
 					}
 					freeSegment(p_segmentIndex);
 				}
@@ -790,7 +824,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 
 			System.out.println("--" + removedObjects + " entries removed");
 			System.out
-					.println("--" + removedTombstones + " tombstones removed");
+			.println("--" + removedTombstones + " tombstones removed");
 
 			header.unlock();
 		}
@@ -814,7 +848,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 			if (currentSegment != null) {
 				costBenefitRatio = (long) (((1 - currentSegment
 						.getUtilization()) * currentSegment.getLastAccess()) / (1 + currentSegment
-						.getUtilization()));
+								.getUtilization()));
 
 				System.out.println("Cost-Benefit-Ratio: " + costBenefitRatio
 						+ ", Age:" + currentSegment.getLastAccess()
@@ -860,10 +894,10 @@ public class SecondaryLogWithSegments extends AbstractLog implements
 						// Collision: Store the higher version number if not
 						// -1 (^= deleted)
 						p_hashtable
-								.putMax(getLIDOfLogEntry(segment, readBytes,
-										false),
-										getVersionOfLogEntry(segment,
-												readBytes, false));
+						.putMax(getLIDOfLogEntry(segment, readBytes,
+								false),
+								getVersionOfLogEntry(segment,
+										readBytes, false));
 						readBytes += LogHandler.SECONDARY_HEADER_SIZE
 								+ getLengthOfLogEntry(segment, readBytes, false);
 					}

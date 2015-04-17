@@ -29,7 +29,6 @@ import de.uniduesseldorf.dxram.core.log.storage.VersionsHashTable;
 
 /**
  * Leads data accesses to a remote node
- * 
  * @author Kevin Beineke 29.05.2014
  */
 public final class LogHandler implements LogInterface, LogWriteListener {
@@ -118,9 +117,9 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 	private boolean m_isShuttingDown;
 
-	public boolean m_reorgThreadWaits = false;
-	public boolean m_accessGranted = false;
-	public short m_logToReorg = -1;
+	private boolean m_reorgThreadWaits;
+	private boolean m_accessGranted;
+	private short m_logToReorg = -1;
 
 
 	// Constructors
@@ -191,15 +190,16 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		// Stop reorganization thread
 		m_reorganizationLock.lock();
+		m_thresholdReachedCondition.signal();
+		m_reorganizationLock.unlock();
 		try {
 			m_secondaryLogsReorgThread.join();
-		} catch (InterruptedException e1) {
+		} catch (final InterruptedException e1) {
 			System.out.println("Could not close reorganization thread!");
 		}
 		m_secondaryLogsReorgThread = null;
 		m_reorganizationFinishedCondition = null;
 		m_thresholdReachedCondition = null;
-		m_reorganizationLock.unlock();
 		m_reorganizationLock = null;
 
 		// Close write buffer
@@ -277,8 +277,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		// TODO: Remove
 		try {
 			m_writeBuffer.putLogData(tombstone, null);
-			getSecondaryLog(ChunkID.getCreatorID(p_chunkID), true)
-					.incDeleteCounter();
+			getSecondaryLog(ChunkID.getCreatorID(p_chunkID), true).incDeleteCounter();
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
@@ -288,8 +287,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 
 	@Override
-	public void recoverAllLogEntries(final short p_nodeID)
-			throws DXRAMException {
+	public void recoverAllLogEntries(final short p_nodeID) throws DXRAMException {
 		ArrayList<Chunk> chunkList = null;
 		SecondaryLogBuffer secondaryLogBuffer;
 
@@ -363,8 +361,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 
 	@Override
-	public void printMetadataOfAllEntries(final short p_nodeID)
-			throws DXRAMException {
+	public void printMetadataOfAllEntries(final short p_nodeID) throws DXRAMException {
 		byte[][] logEntries = null;
 		byte[] separatedHeader = null;
 		byte[] separatedEntry = null;
@@ -394,7 +391,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 							false);
 					System.arraycopy(logEntries[i], 0, separatedEntry,
 							readBytes, (SECONDARY_HEADER_SIZE + length)
-									- readBytes);
+							- readBytes);
 					localID = AbstractLog.getLIDOfLogEntry(separatedEntry, 0,
 							false);
 					version = AbstractLog.getVersionOfLogEntry(separatedEntry,
@@ -427,7 +424,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 						separatedHeader = new byte[SECONDARY_HEADER_SIZE];
 						System.arraycopy(logEntries[i], readBytes,
 								separatedHeader, 0, logEntries[i].length
-										- readBytes);
+								- readBytes);
 						offset = -(logEntries[i].length - readBytes);
 						readBytes = logEntries[i].length;
 					} else {
@@ -438,10 +435,10 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 							// Entry is separated: The header is completely in
 							// this buffer (logEntries[i])
 							separatedEntry = new byte[SECONDARY_HEADER_SIZE
-									+ length];
+							                          + length];
 							System.arraycopy(logEntries[i], readBytes,
 									separatedEntry, 0, logEntries[i].length
-											- readBytes);
+									- readBytes);
 							offset = logEntries[i].length - readBytes;
 							readBytes = logEntries[i].length;
 						} else {
@@ -464,7 +461,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 	/**
 	 * Prints the metadata of one log entry
-	 * 
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @param p_localID
@@ -573,14 +569,14 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 	@Override
 	public void flushDataToPrimaryLog() throws IOException,
-			InterruptedException {
+	InterruptedException {
 		m_writeBuffer.signalWriterThreadAndFlushToPrimLog();
 	}
 
 
 	@Override
 	public void flushDataToSecondaryLogs() throws IOException,
-			InterruptedException {
+	InterruptedException {
 		SecondaryLogBuffer secondaryLogBuffer;
 
 		if (m_flushingInProgress.compareAndSet(false, true)) {
@@ -603,9 +599,13 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		}
 	}
 
-
-	public void getAccess(SecondaryLogWithSegments p_secLog) {
-		short secLog = p_secLog.getNodeID();
+	/**
+	 * Get access to secondary log for reorganization thread
+	 * @param p_secLog
+	 *            the Secondary Log
+	 */
+	public void getAccess(final SecondaryLogWithSegments p_secLog) {
+		final short secLog = p_secLog.getNodeID();
 
 		if (m_logToReorg != secLog) {
 			p_secLog.setAccessFlag(true);
@@ -620,6 +620,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	}
 
 
+	@Override
 	public void grantAccess() {
 		if (m_reorgThreadWaits) {
 			m_accessGranted = true;
@@ -663,14 +664,13 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	// Classes
 	/**
 	 * Reorganization thread
-	 * 
 	 * @author Kevin Beineke 20.06.2014
 	 */
 	public final class SecondaryLogsReorgThread extends Thread {
 
 		// Attributes
 		private VersionsHashTable m_versionsHT;
-		private SecondaryLogWithSegments m_secLog = null;
+		private SecondaryLogWithSegments m_secLog;
 
 
 		// Constructors
@@ -684,7 +684,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		/**
 		 * Locks the reorganization lock
-		 * 
 		 * @note Called before signaling
 		 */
 		public void lock() {
@@ -694,7 +693,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		/**
 		 * Unlocks the reorganization lock
-		 * 
 		 * @note Called after signaling
 		 */
 		public void unlock() {
@@ -704,7 +702,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		/**
 		 * Signals the reorganization thread
-		 * 
 		 * @note Called after signaling
 		 */
 		public void signal() {
@@ -714,9 +711,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		/**
 		 * Waits for the reorganization thread to finish reorganization
-		 * 
 		 * @throws InterruptedException
-		 * 
 		 * @note Called after signaling
 		 */
 		public void await() throws InterruptedException {
@@ -726,7 +721,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		/**
 		 * Determines next log to process
-		 * 
 		 * @return index of log
 		 */
 		public int chooseLog() {
@@ -753,17 +747,17 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		/**
 		 * Sets the secondary log to reorganize next
-		 * 
+		 * @param p_secLog
+		 *            the Secondary Log
 		 * @note Called before signaling
 		 */
-		public void setLog(SecondaryLogWithSegments p_secLog) {
+		public void setLog(final SecondaryLogWithSegments p_secLog) {
 			m_secLog = p_secLog;
 		}
 
 
 		/**
 		 * Executes the invalidation task
-		 * 
 		 * @param p_logIndex
 		 *            the log index
 		 */
@@ -779,7 +773,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 
 		/**
 		 * Executes the reorganization task
-		 * 
 		 * @param p_logIndex
 		 *            the log index
 		 */
@@ -803,6 +796,9 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 			while (!m_isShuttingDown) {
 				try {
 					m_reorganizationLock.lockInterruptibly();
+					if (m_isShuttingDown) {
+						break;
+					}
 					logIndex = chooseLog();
 					if (-1 != logIndex) {
 						secondaryLog = getSecondaryLog((short) logIndex, false);
@@ -814,6 +810,9 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 										LogHandler.REORGTHREAD_TIMEOUT,
 										TimeUnit.MILLISECONDS)
 										|| m_secLog != null) {
+									if (m_isShuttingDown) {
+										break;
+									}
 									// Reorganization thread was signaled ->
 									// process
 									// given log completely
@@ -825,6 +824,9 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 									m_secLog.setAccessFlag(false);
 									m_reorganizationFinishedCondition.signal();
 								} else {
+									if (m_isShuttingDown) {
+										break;
+									}
 									// Time-out -> reorganize another segment in
 									// current log
 									getAccess(secondaryLog);
@@ -852,7 +854,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 					}
 				} catch (final InterruptedException | IOException e) {
 					System.out
-							.println("Error in reorganization thread: Shutting down!");
+					.println("Error in reorganization thread: Shutting down!");
 					break;
 				} finally {
 					m_reorganizationLock.unlock();
