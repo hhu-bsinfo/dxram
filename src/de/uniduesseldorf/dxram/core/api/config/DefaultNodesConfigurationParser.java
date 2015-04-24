@@ -165,6 +165,10 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 
 			ZooKeeperHandler.create("nodes/bootstrap", (m_bootstrap + "").getBytes());
 			ZooKeeperHandler.create("nodes/superpeers", (numberOfSuperpeers + "").getBytes());
+
+			ZooKeeperHandler.create("nodes/peers");
+			// Register superpeer
+			ZooKeeperHandler.create("nodes/superpeers/" + NodeID.getLocalNodeID());
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
 			// TODO: Auf Fehler reagieren
 			e.printStackTrace();
@@ -274,6 +278,13 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 			// Set watches
 			ZooKeeperHandler.setChildrenWatch("nodes/new", this);
 			ZooKeeperHandler.setChildrenWatch("nodes/free", this);
+
+			// Register peer/superpeer
+			if (NodeID.isSuperpeer()) {
+				ZooKeeperHandler.create("nodes/superpeers/" + NodeID.getLocalNodeID());
+			} else {
+				ZooKeeperHandler.create("nodes/peers/" + NodeID.getLocalNodeID());
+			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
 			// TODO: Auf Fehler reagieren
 			e.printStackTrace();

@@ -252,17 +252,15 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	public long logChunk(final Chunk p_chunk) throws DXRAMException {
 		byte[] logHeader;
 
-		logHeader = AbstractLog.createPrimaryLogEntryHeader(p_chunk);
+		System.out.println("Received chunk!");
 
-		// TODO: Remove
+		logHeader = AbstractLog.createPrimaryLogEntryHeader(p_chunk);
 		try {
 			m_writeBuffer.putLogData(logHeader, p_chunk.getData().array());
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during logging (" + p_chunk.getChunkID()
 					+ ")!");
 		}
-
-		// TODO: Send and append data
 
 		return 0;
 	}
@@ -273,16 +271,12 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 		byte[] tombstone;
 
 		tombstone = AbstractLog.createTombstone(p_chunkID);
-
-		// TODO: Remove
 		try {
 			m_writeBuffer.putLogData(tombstone, null);
 			getSecondaryLog(ChunkID.getCreatorID(p_chunkID), true).incDeleteCounter();
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
-
-		// TODO: Send request
 	}
 
 

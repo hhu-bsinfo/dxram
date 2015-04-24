@@ -857,7 +857,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_stabilizationThread = new Thread(m_worker);
 		Contract.checkNotNull(m_stabilizationThread);
 		m_stabilizationThread
-				.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
+		.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
@@ -1282,7 +1282,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				insertPeer(joiningNode);
 				try {
 					new JoinResponse(p_joinRequest, (short)-1, (short)-1, (short)-1, null, m_superpeers, null, null)
-							.send(m_network);
+					.send(m_network);
 				} catch (final NetworkException e) {
 					// Joining node is not available anymore, ignore request
 				}
@@ -1292,7 +1292,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			superpeer = getResponsibleSuperpeer(joiningNode, NO_CHECK);
 			try {
 				new JoinResponse(p_joinRequest, superpeer, (short)-1, (short)-1, null, null, null, null)
-						.send(m_network);
+				.send(m_network);
 			} catch (final NetworkException e) {
 				// Joining node is not available anymore, ignore request
 			}
@@ -2470,7 +2470,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						tree = getOIDTree(currentPeer);
 						if (null != tree) {
 							System.out
-									.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
+							.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
 							trees.add(tree);
 						}
 						if (index == m_nodeList.size()) {
@@ -2731,7 +2731,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				// Take over failed nodes peers and OIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
 					System.out
-							.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
+					.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndOIDTrees(m_predecessor);
 					promoteOnePeer = true;
 				}
@@ -2764,7 +2764,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					promoteOnePeer(p_failedNode);
 				}
 
-				notifyAboutFailure(p_failedNode);
+				notifyAboutFailure(p_failedNode, true);
 				System.out.println("********** ********** *** End **** ********** **********");
 				System.out.println("********** ********** ************ ********** **********");
 				System.out.println();
@@ -2846,7 +2846,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				m_overlayLock.lock();
 				removePeer(p_failedNode);
 				m_overlayLock.unlock();
-				notifyAboutFailure(p_failedNode);
+				notifyAboutFailure(p_failedNode, false);
 				System.out.println("********** ********** *** End **** ********** **********");
 				System.out.println("********** ********** ************ ********** **********");
 				System.out.println();
@@ -2909,9 +2909,11 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 * Remove node from /nodes/new/ if listed and add NodeID to /nodes/free/
 	 * @param p_failedNode
 	 *            the failed node
+	 * @param p_isSuperpeer
+	 *            whether the failed node was a superpeer or not
 	 * @return true if this node reported the failure first
 	 */
-	public boolean notifyAboutFailure(final short p_failedNode) {
+	public boolean notifyAboutFailure(final short p_failedNode, final boolean p_isSuperpeer) {
 		boolean ret = false;
 		Stat status;
 
@@ -2922,6 +2924,17 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				status = ZooKeeperHandler.getStatus("nodes/new/" + p_failedNode);
 				if (null != status) {
 					ZooKeeperHandler.delete("nodes/new/" + p_failedNode, status.getVersion());
+				}
+				if (p_isSuperpeer) {
+					status = ZooKeeperHandler.getStatus("nodes/superpeers/" + p_failedNode);
+					if (null != status) {
+						ZooKeeperHandler.delete("nodes/superpeers/" + p_failedNode, status.getVersion());
+					}
+				} else {
+					status = ZooKeeperHandler.getStatus("nodes/peers/" + p_failedNode);
+					if (null != status) {
+						ZooKeeperHandler.delete("nodes/peers/" + p_failedNode, status.getVersion());
+					}
 				}
 
 				ret = true;
@@ -3418,9 +3431,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		 */
 		public Locations(final long p_primaryAndBackupPeers, final long[] p_range) {
 			this((short)p_primaryAndBackupPeers, new short[] {
-				(short)((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
-				(short)((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32),
-				(short)((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
+					(short)((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
+					(short)((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32),
+					(short)((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
 		}
 
 		// Getter

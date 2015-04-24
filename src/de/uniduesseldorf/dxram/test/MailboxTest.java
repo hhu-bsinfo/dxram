@@ -45,6 +45,8 @@ public final class MailboxTest {
 			new Superpeer().start();
 		} else if (p_arguments.length == 2 && p_arguments[0].equals("server")) {
 			new Server(Integer.parseInt(p_arguments[1])).start();
+		} else if (p_arguments.length == 1 && p_arguments[0].equals("backup")) {
+			new Backup().start();
 		} else {
 			new Client().start();
 		}
@@ -260,6 +262,50 @@ public final class MailboxTest {
 					}
 				}
 
+				// Wait a moment
+				try {
+					Thread.sleep(1000);
+				} catch (final InterruptedException e) {}
+			}
+		}
+
+	}
+
+	/**
+	 * Represents a backup peer
+	 * @author Kevin Beineke
+	 *         20.04.2014
+	 */
+	private static class Backup {
+
+		// Constructors
+		/**
+		 * Creates an instance of Backup
+		 */
+		public Backup() {}
+
+		// Methods
+		/**
+		 * Starts the Backup peer
+		 */
+		public void start() {
+			// Wait a moment
+			try {
+				Thread.sleep(1000);
+			} catch (final InterruptedException e) {}
+
+			// Initialize EPM
+			try {
+				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+			} catch (final DXRAMException e1) {
+				e1.printStackTrace();
+			}
+
+			System.out.println("Backup peer started");
+
+			// Get the Mailbox-Content
+			while (true) {
 				// Wait a moment
 				try {
 					Thread.sleep(1000);

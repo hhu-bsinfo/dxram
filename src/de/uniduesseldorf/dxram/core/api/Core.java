@@ -444,18 +444,6 @@ public final class Core {
 				throw e;
 			}
 		}
-		//TODO:
-		/*try {
-			if (m_log != null) {
-				m_log.logChunk(p_chunk);
-			}
-		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Put Chunk", e);
-
-			if (!handleException(e, ExceptionSource.DXRAM_PUT, p_chunk)) {
-				throw e;
-			}
-		}*/
 
 		LOGGER.trace("Exiting put");
 	}

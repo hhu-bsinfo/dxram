@@ -1,5 +1,6 @@
 package de.uniduesseldorf.dxram.core.chunk;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,8 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LockRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LockResponse;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LogMessage;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LogRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.PutRequest;
@@ -45,6 +48,7 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.lock.LockInterface;
 import de.uniduesseldorf.dxram.core.lock.LockInterface.AbstractLock;
+import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
@@ -53,6 +57,8 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.dxram.utils.AbstractAction;
 import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 import de.uniduesseldorf.dxram.utils.unsafe.AbstractKeyValueList.KeyValuePair;
 import de.uniduesseldorf.dxram.utils.unsafe.IntegerLongList;
 
@@ -75,6 +81,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	private NetworkInterface m_network;
 	private LookupInterface m_lookup;
+	private LogInterface m_log;
 	private LockInterface m_lock;
 
 	private IncomingChunkListener m_listener;
@@ -94,6 +101,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		m_network = null;
 		m_lookup = null;
+		m_log = null;
 		m_lock = null;
 
 		m_listener = null;
@@ -123,12 +131,15 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		m_network.register(RemoveRequest.class, this);
 		m_network.register(LockRequest.class, this);
 		m_network.register(UnlockRequest.class, this);
+		m_network.register(LogRequest.class, this);
+		m_network.register(LogMessage.class, this);
 		m_network.register(DataRequest.class, this);
 		m_network.register(DataMessage.class, this);
 		m_network.register(MultiGetRequest.class, this);
 
 		m_lookup = CoreComponentFactory.getLookupInterface();
 		m_lookup.initChunkHandler();
+		m_log = CoreComponentFactory.getLogInterface();
 		m_lock = CoreComponentFactory.getLockInterface();
 
 		MemoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE));
@@ -468,8 +479,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	@Override
 	public void put(final Chunk p_chunk) throws DXRAMException {
+		Locations locations;
 		short primaryPeer;
-		// short[] backupPeers;
+		short[] backupPeers;
 		boolean success = false;
 
 		PutRequest request;
@@ -484,10 +496,19 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			if (isResponsible(p_chunk.getChunkID())) {
 				// Local put
 				MemoryManager.put(p_chunk);
+
+				// Send backups for logging (unreliable)
+				backupPeers = m_locations.getBackupPeers();
+				for (int i = 0; i < 3; i++) {
+					if (backupPeers[i] != m_nodeID) {
+						new LogMessage(backupPeers[i], p_chunk).send(m_network);
+					}
+				}
 			} else {
 				while (!success) {
-					primaryPeer = m_lookup.get(p_chunk.getChunkID()).getPrimaryPeer();
-					// backupPeers = locations.getBackupPeers();
+					locations = m_lookup.get(p_chunk.getChunkID());
+					primaryPeer = locations.getPrimaryPeer();
+					backupPeers = locations.getBackupPeers();
 					if (primaryPeer == m_nodeID) {
 						// Local put
 						MemoryManager.put(p_chunk);
@@ -505,11 +526,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						}
 						success = request.getResponse(PutResponse.class).getStatus();
 					}
-					// Send backups for testing
-					/*
-					 * for (int i = 0; i < 3; i++) { if (backupPeers[i] == m_nodeID) { m_localHandler.put(p_chunk); }
-					 * else { new PutMessage(backupPeers[i], p_chunk).send(m_network); } }
-					 */
+					if (success) {
+						// Send backups for logging (unreliable)
+						for (int i = 0; i < 3; i++) {
+							if (backupPeers[i] != m_nodeID) {
+								new LogMessage(backupPeers[i], p_chunk).send(m_network);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -554,6 +578,15 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						}
 						success = request.getResponse(RemoveResponse.class).getStatus();
 					}
+					// TODO
+					/*if (success) {
+						// Send backups for logging (unreliable)
+						for (int i = 0; i < 3; i++) {
+							if (backupPeers[i] != m_nodeID) {
+								new LogMessage(backupPeers[i], null).send(m_network);
+							}
+						}
+					}*/
 				}
 			}
 			m_lookup.remove(p_chunkID);
@@ -893,19 +926,27 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		boolean ready = false;
 		boolean error = false;
 		short index = 0;
+		short peer;
 		short[] backupPeers;
-		short numberOfPeers;
-		List<Short> peers;
-		List<Short> superpeers;
+		short[] allPeers;
+		short numberOfPeers = 0;
+		List<String> peers = null;
 
 		backupPeers = new short[6];
 
-		// TODO: Get online peers only
-		peers = Core.getNodesConfiguration().getAlleNodeIDs();
-		superpeers = m_lookup.getSuperpeers();
-
-		peers.removeAll(superpeers);
-		numberOfPeers = (short)peers.size();
+		// Get all other online peers
+		try {
+			peers = ZooKeeperHandler.getChildren("nodes/peers");
+		} catch (final ZooKeeperException e) {
+			System.out.println("Could not access ZooKeeper!");
+		}
+		allPeers = new short[peers.size() - 1];
+		for (int i = 0; i < peers.size(); i++) {
+			peer = Short.parseShort(peers.get(i));
+			if (peer != NodeID.getLocalNodeID()) {
+				allPeers[numberOfPeers++] = peer;
+			}
+		}
 
 		if (3 > numberOfPeers) {
 			LOGGER.error("not enough peers online to backup");
@@ -924,7 +965,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			backupPeers[1] = m_locations.getBackupPeers()[1];
 			backupPeers[2] = m_locations.getBackupPeers()[2];
 		}
-
 		if (!error) {
 			// Determine backup peers
 			for (int i = 3;i < 6;i++) {
@@ -932,14 +972,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					index = (short)(Math.random() * numberOfPeers);
 					ready = true;
 					for (int j = 0;j < i;j++) {
-						if (peers.get(index) == backupPeers[j]) {
+						if (allPeers[index] == backupPeers[j]) {
 							ready = false;
 							break;
 						}
 					}
 				}
-				System.out.println(i + ". backup peer: " + peers.get(index));
-				backupPeers[i] = peers.get(index);
+				System.out.println(i + ". backup peer: " + allPeers[index]);
+				backupPeers[i] = allPeers[index];
 				ready = false;
 			}
 			m_locations.setBackupPeers(Arrays.copyOfRange(backupPeers, 3, 6));
@@ -1265,6 +1305,31 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	}
 
 	/**
+	 * Handles an incoming LogRequest
+	 * @param p_request
+	 *            the LogRequest
+	 */
+	private void incomingLogRequest(final LogRequest p_request) {
+		// TODO
+	}
+
+	/**
+	 * Handles an incoming LogMessage
+	 * @param p_message
+	 *            the LogMessage
+	 */
+	private void incomingLogMessage(final LogMessage p_message) {
+
+		try {
+			m_log.logChunk(p_message.getChunk());
+		} catch (final DXRAMException e) {
+			LOGGER.error("ERR::Could not handle request", e);
+
+			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
+		}
+	}
+
+	/**
 	 * Handles an incoming DataRequest
 	 * @param p_request
 	 *            the DataRequest
@@ -1358,6 +1423,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					break;
 				case ChunkMessages.SUBTYPE_UNLOCK_REQUEST:
 					incomingUnlockRequest((UnlockRequest)p_message);
+					break;
+				case ChunkMessages.SUBTYPE_LOG_REQUEST:
+					incomingLogRequest((LogRequest)p_message);
+					break;
+				case ChunkMessages.SUBTYPE_LOG_MESSAGE:
+					incomingLogMessage((LogMessage)p_message);
 					break;
 				case ChunkMessages.SUBTYPE_DATA_REQUEST:
 					incomingDataRequest((DataRequest)p_message);

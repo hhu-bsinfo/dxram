@@ -42,6 +42,7 @@ LogStorageInterface {
 	private LinkedList<Short> m_partlyUsedSegments;
 
 	private boolean m_isAccessed;
+	private SegmentHeader m_activeSegment;
 
 
 	// Constructors
@@ -165,12 +166,20 @@ LogStorageInterface {
 				signalReorganizationAndWait();
 			}
 
+			/*
+			 * Appending data cases:
+			 * 1. This secondary log is accessed by the reorganization thread:
+			 *  a. No active segment or buffer too large to fit in: Create (new) "active segment" with given data
+			 *  b. Put data in currently active segment
+			 * 2.
+			 *  a. Buffer is large (at least 90% of segment size): Create new segment and append it
+			 *  b. Fill partly used segments and put the rest (if there is data left) in a new segment and append it
+			 */
 			if (m_isAccessed) {
 				// Reorganization thread is working on this secondary log -> only append data
 				System.out.println("Writing on seclog that is currently reorganized");
 
-
-				if (m_freeSegments.size() > 0 && length >= LogHandler.SEGMENT_SIZE * 0.5) {
+				if (m_activeSegment == null || length + m_activeSegment.m_usedBytes > LogHandler.SEGMENT_SIZE) {
 					// Create new segment and fill it
 					header = new SegmentHeader(length);
 					segment = m_freeSegments.removeLast();
@@ -181,30 +190,15 @@ LogStorageInterface {
 					if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
 						m_partlyUsedSegments.add(segment);
 					}
+					m_activeSegment = header;
 				} else {
-					// No free segment available or small data buffer
-					// TODO: Threading on segments with high cost-benefit ratio
-					long costBenefitRatio;
-					long max = -1;
-					SegmentHeader currentSegment;
-
-					// Cost-benefit ratio: ((1-u)*age)/(1+u)
-					for (int i = 0; i < m_segmentHeaders.length; i++) {
-						currentSegment = m_segmentHeaders[i];
-						if (currentSegment != null) {
-							costBenefitRatio = (long) (((1 - currentSegment
-									.getUtilization()) * currentSegment.getLastAccess()) / (1 + currentSegment
-											.getUtilization()));
-
-							if (costBenefitRatio > max) {
-								max = costBenefitRatio;
-							} else if (currentSegment.getFreeBytes() >= length) {
-
-							}
-						}
-					}
+					// Fill active segment
+					offset = p_length - length + p_offset;
+					writeToLog(p_data, offset,
+							(long) segment * LogHandler.SEGMENT_SIZE
+							+ m_activeSegment.getUsedBytes(), p_length);
+					m_activeSegment.updateUsedBytes(p_length);
 				}
-
 			} else {
 				if (length >= LogHandler.SEGMENT_SIZE * 0.9) {
 					if (m_freeSegments.size() > 0) {
@@ -231,14 +225,6 @@ LogStorageInterface {
 								&& firstSegment != segment) {
 							segment = m_partlyUsedSegments.removeLast();
 							header = m_segmentHeaders[segment];
-							if (header.isLocked()) {
-								// Skip the segment that is being reorganized
-								// currently
-								m_partlyUsedSegments.addFirst(segment);
-								continue;
-							}
-							// TODO: Remove lock!
-							header.lock();
 							offset = p_length - length + p_offset;
 							rangeSize = 0;
 							while (length - rangeSize > 0) {
@@ -262,7 +248,6 @@ LogStorageInterface {
 							if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
 								m_partlyUsedSegments.addFirst(segment);
 							}
-							header.unlock();
 						}
 					}
 					if (length > 0) {
@@ -780,12 +765,9 @@ LogStorageInterface {
 		long localID;
 		byte[] segmentData;
 		byte[] newData;
-		SegmentHeader header;
 
 		System.out.println("--Segment: " + p_segmentIndex);
 		if (-1 != p_segmentIndex) {
-			header = getSegmentHeader(p_segmentIndex);
-			header.lock();
 			try {
 				segmentData = readSegment(p_segmentIndex);
 				newData = new byte[LogHandler.SEGMENT_SIZE];
@@ -825,8 +807,6 @@ LogStorageInterface {
 			System.out.println("--" + removedObjects + " entries removed");
 			System.out
 			.println("--" + removedTombstones + " tombstones removed");
-
-			header.unlock();
 		}
 	}
 
@@ -929,10 +909,8 @@ LogStorageInterface {
 								+ getLengthOfLogEntry(segment, readBytes, false);
 					}
 					if (wasUpdated) {
-						// m_secondaryLog.lock();
 						updateSegment(segment, readBytes, i);
 						wasUpdated = false;
-						// m_secondaryLog.unlock();
 					}
 				}
 			}
@@ -983,7 +961,6 @@ LogStorageInterface {
 		private int m_usedBytes;
 		private int m_deletedBytes;
 		private long m_lastAccess;
-		private AtomicBoolean m_isLocked;
 
 
 		// Constructors
@@ -994,7 +971,6 @@ LogStorageInterface {
 			m_usedBytes = 0;
 			m_deletedBytes = 0;
 			m_lastAccess = System.currentTimeMillis();
-			m_isLocked = new AtomicBoolean(false);
 		}
 
 
@@ -1008,7 +984,6 @@ LogStorageInterface {
 			m_usedBytes = p_usedBytes;
 			m_deletedBytes = 0;
 			m_lastAccess = System.currentTimeMillis();
-			m_isLocked = new AtomicBoolean(false);
 		}
 
 
@@ -1068,17 +1043,6 @@ LogStorageInterface {
 			return m_lastAccess;
 		}
 
-
-		/**
-		 * Returns wether the segment is locked or not
-		 * 
-		 * @return wether the segment is locked or not
-		 */
-		public final boolean isLocked() {
-			return m_isLocked.get();
-		}
-
-
 		// Setter
 		/**
 		 * Updates the number of used bytes
@@ -1102,27 +1066,6 @@ LogStorageInterface {
 			m_deletedBytes += p_deletedBytes;
 			m_lastAccess = System.currentTimeMillis();
 		}
-
-
-		/**
-		 * Locks the segment
-		 */
-		public final void lock() {
-			while (!m_isLocked.compareAndSet(false, true)) {
-				try {
-					Thread.sleep(100);
-				} catch (final InterruptedException e) {}
-			}
-		}
-
-
-		/**
-		 * Unlocks the segment
-		 */
-		public final void unlock() {
-			m_isLocked.set(false);
-		}
-
 
 		/**
 		 * Resets the segment header
