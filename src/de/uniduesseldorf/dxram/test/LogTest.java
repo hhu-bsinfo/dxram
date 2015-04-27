@@ -1,15 +1,7 @@
 
 package de.uniduesseldorf.dxram.test;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Arrays;
 import java.util.Random;
-import java.util.TreeSet;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -17,7 +9,6 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 
 /**
@@ -36,7 +27,6 @@ public final class LogTest implements Runnable {
 
 	// Attributes
 	private short m_nodeID;
-	private LogInterface m_log;
 	private int m_id;
 
 	// Constructors
@@ -51,7 +41,6 @@ public final class LogTest implements Runnable {
 	 */
 	private LogTest(final short p_nodeID, final LogInterface p_log, final int p_id) {
 		m_nodeID = p_nodeID;
-		m_log = p_log;
 		m_id = p_id;
 	}
 
@@ -127,45 +116,24 @@ public final class LogTest implements Runnable {
 
 		rand = new Random();
 		try {
-			//TODO:
-			chunk = Core.createNewChunk(m_minChunkSize);
-			chunk.getData().put(("This is a test! (" + m_nodeID + ")").getBytes());
+			// Create new chunks
 			for (int i = 1; i <= m_chunksPerNode; i++) {
-				//chunk = Core.createNewChunk(rand.nextInt((m_maxChunkSize - m_minChunkSize) + 1) + m_minChunkSize);
-				//chunk.getData().put(("This is a test! (" + m_nodeID + ")").getBytes());
-				chunk.setChunkID(((long) m_nodeID << 48) + i);
-				//chunk.incVersion();
-				m_log.logChunk(chunk);
+				chunk = Core.createNewChunk(rand.nextInt((m_maxChunkSize - m_minChunkSize) + 1) + m_minChunkSize);
+				chunk.getData().put(("This is a test! (" + m_nodeID + ")").getBytes());
+				Core.put(chunk);
 			}
+			// Update chunks
+			/*for (int i = 1; i <= m_chunksPerNode; i++) {
+				chunk = Core.get(((long) m_nodeID << 48) + random);
+				Core.put(chunk);
+			}
+			// Remove chunks
 			for (int i = 1; i <= m_chunksPerNode; i++) {
-				m_log.removeChunk(((long) m_nodeID << 48) + i);
-			}
-			//m_log.removeChunk(((long) m_nodeID << 48) + 1);
+				Core.remove(((long) m_nodeID << 48) + random);
+			}*/
 		} catch (final DXRAMException e) {
-			System.out.println("Error: Could not create or log chunk");
+			System.out.println("Error: Could not create, update or delete chunk");
 		}
-
-		/*RandomAccessFile log = null;
-		try {
-			log = new RandomAccessFile(new File("/home/beineke/ssd/logs/test.log" + m_id), "rws");
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		byte[] data = new byte[m_chunkSize];
-		try {
-			chunk = Core.createNewChunk(m_chunkSize);
-			chunk.getData().put(("This is a test! (" + m_nodeID + ")").getBytes());
-			for (int i = 1; i <= m_chunksPerNode; i++) {
-				chunk.setChunkID(((long) m_nodeID << 48) + i);
-				System.arraycopy(chunk.getData().array(), 0, data, 0, m_chunkSize);
-				log.write(data);
-				//log.getFD().sync();
-			}
-		} catch (final DXRAMException | IOException e) {
-			System.out.println("Error: Could not create or log chunk");
-		}*/
 	}
 
 }

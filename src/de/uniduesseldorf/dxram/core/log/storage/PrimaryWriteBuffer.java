@@ -114,7 +114,7 @@ public class PrimaryWriteBuffer {
 	 *             if caller is interrupted
 	 */
 	public final void closeWriteBuffer() throws InterruptedException,
-			IOException {
+	IOException {
 		// Shutdown primary log writer-thread
 		m_flushingComplete = false;
 		m_isShuttingDown = true;
@@ -331,7 +331,7 @@ public class PrimaryWriteBuffer {
 					flushDataToPrimaryLog();
 				} catch (final InterruptedException e) {
 					System.out
-							.println("Error: Writer thread is interrupted. Directly shuting down!");
+					.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;
 				}
 			}
@@ -394,6 +394,7 @@ public class PrimaryWriteBuffer {
 							lengthByNode);
 				} catch (final IOException | InterruptedException e) {
 					System.out.println("Error: Could not write to log");
+					e.printStackTrace();
 				}
 			}
 			m_flushingComplete = true;

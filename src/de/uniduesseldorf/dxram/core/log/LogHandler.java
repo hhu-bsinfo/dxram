@@ -252,8 +252,6 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	public long logChunk(final Chunk p_chunk) throws DXRAMException {
 		byte[] logHeader;
 
-		System.out.println("Received chunk!");
-
 		logHeader = AbstractLog.createPrimaryLogEntryHeader(p_chunk);
 		try {
 			m_writeBuffer.putLogData(logHeader, p_chunk.getData().array());
@@ -599,9 +597,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 	 *            the Secondary Log
 	 */
 	public void getAccess(final SecondaryLogWithSegments p_secLog) {
-		final short secLog = p_secLog.getNodeID();
-
-		if (m_logToReorg != secLog) {
+		if (!p_secLog.isAccessed()) {
 			p_secLog.setAccessFlag(true);
 			m_logToReorg = p_secLog.getNodeID();
 			m_reorgThreadWaits = true;

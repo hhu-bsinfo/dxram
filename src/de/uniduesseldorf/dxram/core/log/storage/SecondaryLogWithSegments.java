@@ -194,8 +194,7 @@ LogStorageInterface {
 				} else {
 					// Fill active segment
 					offset = p_length - length + p_offset;
-					writeToLog(p_data, offset,
-							(long) segment * LogHandler.SEGMENT_SIZE
+					writeToLog(p_data, offset, LogHandler.SEGMENT_SIZE
 							+ m_activeSegment.getUsedBytes(), p_length);
 					m_activeSegment.updateUsedBytes(p_length);
 				}
@@ -279,6 +278,9 @@ LogStorageInterface {
 		return p_length - length;
 	}
 
+	public boolean isAccessed() {
+		return m_isAccessed;
+	}
 
 	public void setAccessFlag(final boolean p_flag) {
 		m_isAccessed = p_flag;
@@ -869,10 +871,12 @@ LogStorageInterface {
 				readBytes = 0;
 				if (segments[i] != null) {
 					segment = segments[i];
+					System.out.println("Segment " + i + ": " + segment.length);
 					while (readBytes < segment.length) {
 						// Put object versions to hashtable
 						// Collision: Store the higher version number if not
 						// -1 (^= deleted)
+						System.out.println(readBytes);
 						p_hashtable
 						.putMax(getLIDOfLogEntry(segment, readBytes,
 								false),
