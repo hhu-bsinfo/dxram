@@ -13,7 +13,6 @@ import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogWithSegments;
 
 /**
  * Methods for logging the data
- * 
  * @author Kevin Beineke 23.05.2014
  */
 public interface LogInterface extends CoreComponent {
@@ -21,7 +20,6 @@ public interface LogInterface extends CoreComponent {
 	// Getter
 	/**
 	 * Returns the primary log
-	 * 
 	 * @return the primary log
 	 */
 	PrimaryLog getPrimaryLog();
@@ -29,7 +27,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Returns the secondary log buffer
-	 * 
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @param p_set
@@ -46,7 +43,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Returns the secondary log
-	 * 
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @param p_set
@@ -64,7 +60,6 @@ public interface LogInterface extends CoreComponent {
 	// Methods
 	/**
 	 * Creates a new Chunk
-	 * 
 	 * @param p_chunk
 	 *            the chunk
 	 * @return number of successfully written bytes
@@ -76,7 +71,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Creates a new Chunk
-	 * 
 	 * @param p_chunkID
 	 *            the ChunkID
 	 * @throws DXRAMException
@@ -87,7 +81,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Recovers the local data of one node from the log
-	 * 
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @throws DXRAMException
@@ -98,7 +91,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Recovers some local data of one node from the log
-	 * 
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @param p_low
@@ -114,7 +106,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Reads the local data of one node from the log
-	 * 
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @param p_manipulateReadPtr
@@ -130,7 +121,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Prints the metadata of one node's data from the log
-	 * 
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @throws DXRAMException
@@ -142,7 +132,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Flushes the primary log write buffer
-	 * 
 	 * @throws IOException
 	 *             if primary log could not be flushed
 	 * @throws InterruptedException
@@ -153,7 +142,6 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Flushes all secondary log buffers
-	 * 
 	 * @throws IOException
 	 *             if at least one secondary log could not be flushed
 	 * @throws InterruptedException
@@ -162,5 +150,8 @@ public interface LogInterface extends CoreComponent {
 	void flushDataToSecondaryLogs() throws IOException, InterruptedException;
 
 
+	/**
+	 * Grants the reorganization thread access to a secondary log
+	 */
 	void grantAccess();
 }

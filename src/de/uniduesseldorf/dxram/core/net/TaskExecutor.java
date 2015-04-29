@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.util.ArrayDeque;
@@ -198,8 +199,11 @@ public final class TaskExecutor {
 
 		@Override
 		public Thread newThread(final Runnable p_runnable) {
-			String name = m_name + "-thread-" + m_threadNumber.getAndIncrement();
-			Thread thread = new Thread(p_runnable, name);
+			String name;
+			Thread thread;
+
+			name = m_name + "-thread-" + m_threadNumber.getAndIncrement();
+			thread = new Thread(p_runnable, name);
 			thread.setDaemon(true);
 			thread.setPriority(Thread.NORM_PRIORITY);
 

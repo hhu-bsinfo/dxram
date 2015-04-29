@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.util.Arrays;
@@ -18,10 +19,10 @@ public final class CIDTable {
 	public static final byte ENTRY_SIZE = 5;
 	public static final byte TABLE_LEVELS = 4;
 	private static final byte BITS_PER_LEVEL = 48 / TABLE_LEVELS;
-	private static final long LEVEL_BITMASK = (int)Math.pow(2.0, BITS_PER_LEVEL) - 1;
-	public static final int ENTRIES_PER_LEVEL = (int)Math.pow(2.0, BITS_PER_LEVEL);
+	private static final long LEVEL_BITMASK = (int) Math.pow(2.0, BITS_PER_LEVEL) - 1;
+	public static final int ENTRIES_PER_LEVEL = (int) Math.pow(2.0, BITS_PER_LEVEL);
 	public static final int TABLE_SIZE = ENTRY_SIZE * ENTRIES_PER_LEVEL + 7;
-	public static final int TABLE_OFFSET = (int)Math.ceil(Math.log(TABLE_SIZE) / Math.log(1 << 8));
+	public static final int TABLE_OFFSET = (int) Math.ceil(Math.log(TABLE_SIZE) / Math.log(1 << 8));
 	private static final int LOCK_OFFSET = TABLE_SIZE - 4;
 
 	private static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
@@ -58,7 +59,7 @@ public final class CIDTable {
 
 		// Create for every table level one table
 		table = m_tableDirectory;
-		for (int i = 0;i < TABLE_LEVELS - 1;i++) {
+		for (int i = 0; i < TABLE_LEVELS - 1; i++) {
 			child = createTable();
 
 			writeEntry(table, 0, child);
@@ -71,8 +72,7 @@ public final class CIDTable {
 		m_defragmenter = new Defragmenter();
 		// TODO: new Thread(m_defragmenter).start();
 
-		System.out.println("CIDTable: init success (page directory at: 0x" + Long.toHexString(m_tableDirectory)
-				+ ")");
+		System.out.println("CIDTable: init success (page directory at: 0x" + Long.toHexString(m_tableDirectory) + ")");
 	}
 
 	/**
@@ -103,7 +103,7 @@ public final class CIDTable {
 	private static void disengage(final long p_table, final int p_level) throws MemoryException {
 		long entry;
 
-		for (int i = 0;i < ENTRIES_PER_LEVEL;i++) {
+		for (int i = 0; i < ENTRIES_PER_LEVEL; i++) {
 			entry = readEntry(p_table, i) & BITMASK_ADDRESS;
 
 			if (entry > 0) {
@@ -125,7 +125,7 @@ public final class CIDTable {
 		long ret;
 
 		ret = RawMemory.malloc(TABLE_SIZE);
-		RawMemory.set(ret + TABLE_OFFSET, TABLE_SIZE, (byte)0);
+		RawMemory.set(ret + TABLE_OFFSET, TABLE_SIZE, (byte) 0);
 
 		return ret;
 	}
@@ -155,8 +155,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be written
 	 */
-	private static void writeEntry(final long p_table, final long p_index, final long p_entry)
-			throws MemoryException {
+	private static void writeEntry(final long p_table, final long p_index, final long p_entry) throws MemoryException {
 		long value;
 
 		value = RawMemory.readLong(p_table + ENTRY_SIZE * p_index + TABLE_OFFSET) & 0xFFFFFF0000000000L;
@@ -205,18 +204,18 @@ public final class CIDTable {
 		// readLock(p_table);
 
 		index = p_cid >> BITS_PER_LEVEL * p_level & LEVEL_BITMASK;
-		entry = readEntry(p_table, index) & BITMASK_ADDRESS;
-		if (p_level > 0) {
-			if (entry > 0) {
-				ret = getEntry(p_cid, entry & BITMASK_ADDRESS, p_level - 1);
-			}
-		} else {
-			ret = entry;
+	entry = readEntry(p_table, index) & BITMASK_ADDRESS;
+	if (p_level > 0) {
+		if (entry > 0) {
+			ret = getEntry(p_cid, entry & BITMASK_ADDRESS, p_level - 1);
 		}
+	} else {
+		ret = entry;
+	}
 
-		// readUnlock(p_table);
+	// readUnlock(p_table);
 
-		return ret;
+	return ret;
 	}
 
 	/**
@@ -415,7 +414,7 @@ public final class CIDTable {
 
 		infos = new StringBuilder();
 		infos.append("\nCIDTable:\n");
-		for (int i = TABLE_LEVELS - 1;i >= 0;i--) {
+		for (int i = TABLE_LEVELS - 1; i >= 0; i--) {
 			infos.append("\t" + count[i] + " table(s) on level " + i + "\n");
 		}
 
@@ -436,7 +435,7 @@ public final class CIDTable {
 
 		p_count[p_level]++;
 
-		for (int i = 0;i < ENTRIES_PER_LEVEL;i++) {
+		for (int i = 0; i < ENTRIES_PER_LEVEL; i++) {
 			try {
 				entry = readEntry(p_table, i) & BITMASK_ADDRESS;
 			} catch (final MemoryException e) {
@@ -563,14 +562,14 @@ public final class CIDTable {
 		 * @throws MemoryException
 		 *             if the CIDTable could not be accessed
 		 */
-		private boolean findFreeCIDs(final long p_table, final int p_level, final long p_offset)
-				throws MemoryException {
+		private boolean findFreeCIDs(final long p_table, final int p_level,
+				final long p_offset) throws MemoryException {
 			boolean ret = false;
 			long entry;
 
 			writeLock(p_table);
 
-			for (int i = 0;i < ENTRIES_PER_LEVEL;i++) {
+			for (int i = 0; i < ENTRIES_PER_LEVEL; i++) {
 				// Read table entry
 				entry = readEntry(p_table, i);
 
@@ -684,7 +683,7 @@ public final class CIDTable {
 			byte[] data;
 
 			writeLock(p_table);
-			for (int i = 0;i < ENTRIES_PER_LEVEL;i++) {
+			for (int i = 0; i < ENTRIES_PER_LEVEL; i++) {
 				try {
 					entry = readEntry(p_table, i);
 					address = entry & BITMASK_ADDRESS;
@@ -733,13 +732,14 @@ public final class CIDTable {
 			byte[][] data;
 			int[] sizes;
 			int position;
+			int entries;
 
 			table = p_table;
-
-			addresses = new long[ENTRIES_PER_LEVEL + 1];
+			entries = ENTRIES_PER_LEVEL + 1;
+			addresses = new long[entries];
 			Arrays.fill(addresses, 0);
-			data = new byte[ENTRIES_PER_LEVEL + 1][];
-			sizes = new int[ENTRIES_PER_LEVEL + 1];
+			data = new byte[entries][];
+			sizes = new int[entries];
 			Arrays.fill(sizes, 0);
 
 			writeLock(table);
@@ -748,7 +748,7 @@ public final class CIDTable {
 				addresses[0] = table;
 				data[0] = RawMemory.readBytes(table);
 				sizes[0] = TABLE_SIZE;
-				for (int i = 0;i < ENTRIES_PER_LEVEL;i++) {
+				for (int i = 0; i < ENTRIES_PER_LEVEL; i++) {
 					position = i + 1;
 
 					address = readEntry(table, i) & BITMASK_ADDRESS;
@@ -764,7 +764,7 @@ public final class CIDTable {
 
 				table = addresses[0];
 				RawMemory.writeBytes(table, data[0]);
-				for (int i = 0;i < ENTRIES_PER_LEVEL;i++) {
+				for (int i = 0; i < ENTRIES_PER_LEVEL; i++) {
 					position = i + 1;
 
 					address = addresses[position];

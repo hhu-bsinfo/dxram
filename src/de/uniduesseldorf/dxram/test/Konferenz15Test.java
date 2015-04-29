@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.nio.ByteBuffer;
@@ -33,8 +34,9 @@ public final class Konferenz15Test {
 	// Constants
 	private static final int MIN_SIZE = 1;
 	private static final int MAX_SIZE = 100;
-	
-	private static final String PROGRESSBAR = "|0%_____10%_______20%_______30%_______40%_______50%_______60%_______70%_______80%_______90%______100%|";
+
+	private static final String PROGRESSBAR =
+			"|0%_____10%_______20%_______30%_______40%_______50%_______60%_______70%_______80%_______90%______100%|";
 
 	// Constructors
 	/**
@@ -123,6 +125,10 @@ public final class Konferenz15Test {
 		 * Creates an instance of Server
 		 * @param p_amount
 		 *            the amount of Chunks to create
+		 * @param p_migrations
+		 *            the migrations
+		 * @param p_seed
+		 *            the seed
 		 */
 		public Server(final int p_amount, final int p_migrations, final long p_seed) {
 			m_amount = p_amount;
@@ -152,7 +158,7 @@ public final class Konferenz15Test {
 
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
 						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
-				addMe = ((long)NodeID.getLocalNodeID()) << 48;
+				addMe = (long) NodeID.getLocalNodeID() << 48;
 
 				System.out.println("Server initialized");
 
@@ -168,7 +174,7 @@ public final class Konferenz15Test {
 				System.out.println("Create Chunks");
 				System.out.print(PROGRESSBAR + "\n|");
 				time = System.nanoTime();
-				for (int i = 1;i <= m_amount;i++) {
+				for (int i = 1; i <= m_amount; i++) {
 					chunk = Core.createNewChunk(12);
 					Core.put(chunk);
 					if (i % (m_amount / 100) == 0) {
@@ -190,10 +196,10 @@ public final class Konferenz15Test {
 					size = Math.min(random.nextInt(MAX_SIZE - MIN_SIZE) + MIN_SIZE, migrations);
 					chunkID = random.nextInt(m_amount - size) + 1 + addMe;
 
-					if ((short)ranges == -1) {
-						Core.migrateRange(chunkID, chunkID + size - 1, (short)(ranges - 1));
+					if ((short) ranges == -1) {
+						Core.migrateRange(chunkID, chunkID + size - 1, (short) (ranges - 1));
 					} else {
-						Core.migrateRange(chunkID, chunkID + size - 1, (short)ranges);
+						Core.migrateRange(chunkID, chunkID + size - 1, (short) ranges);
 					}
 
 					migrations -= size;
@@ -204,7 +210,7 @@ public final class Konferenz15Test {
 				System.out.println("Time/Op: " + Tools.readableNanoTime(time / ranges));
 
 				System.out.println("Server started");
-			} catch (DXRAMException e) {
+			} catch (final DXRAMException e) {
 				e.printStackTrace();
 			}
 
@@ -250,14 +256,14 @@ public final class Konferenz15Test {
 				chunk = Core.get("Idx");
 				System.out.println("ChunkID: " + Long.toHexString(chunk.getChunkID()));
 				data = chunk.getData();
-				addMe = ((long)data.getShort()) << 48;
+				addMe = (long) data.getShort() << 48;
 				amount = data.getInt();
 
 				System.out.println("Client started");
 
 				System.out.print(PROGRESSBAR + "\n|");
 				time = System.nanoTime();
-				for (long i = 1;i <= amount;i++) {
+				for (long i = 1; i <= amount; i++) {
 					Core.get(i + addMe + 1);
 					if (i % (amount / 100) == 0) {
 						System.out.print("=");
@@ -269,7 +275,7 @@ public final class Konferenz15Test {
 				System.out.println("Time/Op: " + Tools.readableNanoTime(time / amount));
 
 				System.out.println("Client done");
-			} catch (DXRAMException e) {
+			} catch (final DXRAMException e) {
 				e.printStackTrace();
 			}
 		}

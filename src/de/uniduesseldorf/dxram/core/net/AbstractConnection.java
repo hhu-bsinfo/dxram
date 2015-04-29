@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.io.IOException;
@@ -261,10 +262,12 @@ abstract class AbstractConnection {
 		// Methods
 		@Override
 		public void run() {
-			ByteStreamInterpreter streamInterpreter = m_streamInterpreter;
+			ByteStreamInterpreter streamInterpreter;
 			ByteBuffer buffer;
+			ByteBuffer messageBuffer;
 
 			try {
+				streamInterpreter = m_streamInterpreter;
 				buffer = read();
 
 				// could be null when an other thread has read the buffer before
@@ -275,7 +278,7 @@ abstract class AbstractConnection {
 
 						if (streamInterpreter.isMessageComplete()) {
 							if (!streamInterpreter.isExceptionOccurred()) {
-								ByteBuffer messageBuffer = streamInterpreter.getMessageBuffer();
+								messageBuffer = streamInterpreter.getMessageBuffer();
 								m_messageCreator.newData(messageBuffer);
 							}
 
@@ -346,9 +349,10 @@ abstract class AbstractConnection {
 		 */
 		private AbstractMessage createMessage(final ByteBuffer p_buffer) {
 			AbstractMessage message = null;
+			ByteBuffer buffer;
 
 			p_buffer.flip();
-			ByteBuffer buffer = p_buffer.asReadOnlyBuffer();
+			buffer = p_buffer.asReadOnlyBuffer();
 
 			try {
 				message = AbstractMessage.createMessageHeader(buffer);

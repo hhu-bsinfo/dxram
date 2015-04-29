@@ -5,7 +5,7 @@
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
 <!--
-    Checkstyle-Configuration: Default
+    Checkstyle-Configuration: DXRAM
     Description: none
 -->
 <module name="Checker">
@@ -57,9 +57,11 @@
       <property name="tokens" value="COMMA"/>
     </module>
     <module name="WhitespaceAround">
+      <property name="severity" value="ignore"/>
       <property name="tokens" value="ASSIGN,BAND,BAND_ASSIGN,BOR,BOR_ASSIGN,BSR,BSR_ASSIGN,BXOR,BXOR_ASSIGN,COLON,DIV,DIV_ASSIGN,EQUAL,GE,GT,LAND,LE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE,LOR,LT,MINUS,MINUS_ASSIGN,MOD,MOD_ASSIGN,NOT_EQUAL,PLUS,PLUS_ASSIGN,QUESTION,SL,SL_ASSIGN,SR,SR_ASSIGN,STAR,STAR_ASSIGN,LITERAL_ASSERT,TYPE_EXTENSION_AND,WILDCARD_TYPE"/>
       <property name="allowEmptyConstructors" value="true"/>
       <property name="allowEmptyMethods" value="true"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
     </module>
     <module name="ModifierOrder"/>
     <module name="RedundantModifier"/>
@@ -75,14 +77,12 @@
     <module name="HiddenField"/>
     <module name="InnerAssignment"/>
     <module name="MissingSwitchDefault"/>
-    <module name="RedundantThrows">
-      <property name="allowUnchecked" value="true"/>
-      <property name="allowSubclasses" value="true"/>
-      <property name="suppressLoadErrors" value="true"/>
-    </module>
     <module name="SimplifyBooleanExpression"/>
     <module name="SimplifyBooleanReturn"/>
-    <module name="DesignForExtension"/>
+    <module name="DesignForExtension">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
     <module name="FinalClass"/>
     <module name="HideUtilityClassConstructor"/>
     <module name="VisibilityModifier"/>
@@ -137,7 +137,10 @@
     </module>
     <module name="MissingCtor"/>
     <module name="MultipleVariableDeclarations"/>
-    <module name="NoFinalizer"/>
+    <module name="NoFinalizer">
+      <property name="severity" value="ignore"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
+    </module>
     <module name="ParameterAssignment"/>
     <module name="ReturnCount">
       <property name="max" value="1"/>
@@ -148,8 +151,10 @@
     <module name="InnerTypeLast"/>
     <module name="MutableException"/>
     <module name="Indentation">
+      <property name="severity" value="ignore"/>
       <property name="caseIndent" value="0"/>
       <property name="lineWrappingIndentation" value="2"/>
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
     </module>
     <module name="TrailingComment"/>
     <module name="OuterTypeFilename"/>

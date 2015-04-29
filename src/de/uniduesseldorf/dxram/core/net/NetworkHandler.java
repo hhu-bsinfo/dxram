@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.io.IOException;
@@ -65,13 +66,13 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_REQUEST, ChunkMessages.PutRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_RESPONSE, ChunkMessages.PutResponse.class);
 		MessageDirectory
-		.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_REQUEST, ChunkMessages.RemoveRequest.class);
+				.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_REQUEST, ChunkMessages.RemoveRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_RESPONSE,
 				ChunkMessages.RemoveResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_REQUEST, ChunkMessages.LockRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_RESPONSE, ChunkMessages.LockResponse.class);
 		MessageDirectory
-		.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_REQUEST, ChunkMessages.UnlockRequest.class);
+				.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_REQUEST, ChunkMessages.UnlockRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_RESPONSE,
 				ChunkMessages.UnlockResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOG_REQUEST, ChunkMessages.LogRequest.class);
@@ -258,7 +259,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
 		if (p_message instanceof AbstractResponse) {
-			RequestMap.fulfill((AbstractResponse)p_message);
+			RequestMap.fulfill((AbstractResponse) p_message);
 		} else {
 			m_messageHandler.newMessage(p_message);
 		}

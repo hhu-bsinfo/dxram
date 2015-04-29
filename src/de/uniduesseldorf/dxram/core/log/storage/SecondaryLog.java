@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
@@ -19,7 +20,7 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
  * @author Kevin Beineke
  *         23.10.2014
  */
-public class SecondaryLog extends AbstractLog implements LogStorageInterface{
+public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 
 	// TODO: Three secondary logs per node to accelerate recovery (recover everything from primary)
 
@@ -34,7 +35,6 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	private long m_totalUsableSpace;
 	private Lock m_secondaryLogLock;
 
-
 	// Constructors
 	/**
 	 * Creates an instance of SecondaryLog with default configuration
@@ -47,14 +47,15 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @throws IOException
-	 *            if secondary could not be created
+	 *             if secondary could not be created
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public SecondaryLog(final Lock p_reorganizationLock, final Condition p_thresholdReachedCondition,
 			final Condition p_reorganizationFinishedCondition, final short p_nodeID) throws IOException,
 			InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
+		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_"
+				+ LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
 				+ LogHandler.SECLOG_POSTFIX_FILENAME), LogHandler.SECONDARY_LOG_SIZE, LogHandler.SECLOG_HEADER_SIZE);
 
 		m_totalUsableSpace = super.getTotalUsableSpace();
@@ -83,14 +84,15 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @throws IOException
-	 *            if secondary log could not be created
+	 *             if secondary log could not be created
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public SecondaryLog(final long p_secLogSize, final Lock p_reorganizationLock,
 			final Condition p_thresholdReachedCondition, final Condition p_reorganizationFinishedCondition,
 			final short p_nodeID) throws IOException, InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
+		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_"
+				+ LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
 				+ LogHandler.SECLOG_POSTFIX_FILENAME), p_secLogSize, LogHandler.SECLOG_HEADER_SIZE);
 		if (p_secLogSize < LogHandler.SECONDARY_LOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
@@ -108,7 +110,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 		createLogAndWriteHeader();
 	}
 
-	//Methods
+	// Methods
 	@Override
 	public final void closeLog() throws InterruptedException, IOException {
 		if (!m_isShuttingDown) {
@@ -145,9 +147,9 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	/**
 	 * Returns all data of secondary log
 	 * @throws IOException
-	 *            if the secondary log could not be read
+	 *             if the secondary log could not be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 * @return all data
 	 */
 	public final byte[][] readAllNodeData() throws IOException, InterruptedException {
@@ -167,13 +169,13 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	 * @param p_doCRCCheck
 	 *            whether to check the payload or not
 	 * @throws IOException
-	 *            if the secondary log could not be read
+	 *             if the secondary log could not be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 * @return ArrayList with all log entries as chunks
 	 */
 	public final ArrayList<Chunk> recoverAllLogEntries(final boolean p_doCRCCheck) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		int i = 0;
 		int offset = 0;
 		int logEntrySize;
@@ -189,10 +191,10 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 			logData = readAllWithoutReadPtrSet();
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
-				while ((offset + LogHandler.PRIMARY_HEADER_SIZE) < logData[i].length) {
+				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {
 					// Determine header of next log entry
 					chunkID = getChunkIDOfLogEntry(logData[i], offset);
-					payloadSize =  getLengthOfLogEntry(logData[i], offset, false);
+					payloadSize = getLengthOfLogEntry(logData[i], offset, false);
 					checksum = getChecksumOfPayload(logData[i], offset, false);
 					logEntrySize = LogHandler.PRIMARY_HEADER_SIZE + payloadSize;
 
@@ -223,7 +225,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 			payload = null;
 			m_secondaryLogLock.unlock();
 		}
-		return (ArrayList<Chunk>)chunkMap.values();
+		return (ArrayList<Chunk>) chunkMap.values();
 	}
 
 	/**
@@ -235,9 +237,9 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	 * @param p_high
 	 *            higher bound
 	 * @throws IOException
-	 *            if the secondary log could not be read
+	 *             if the secondary log could not be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 * @return ArrayList with all log entries as chunks
 	 */
 	public final ArrayList<Chunk> recoverRange(final boolean p_doCRCCheck,
@@ -258,9 +260,9 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 			logData = readAllWithoutReadPtrSet();
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
-				while ((offset + LogHandler.PRIMARY_HEADER_SIZE) < logData[i].length) {
+				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {
 					// Determine header of next log entry
-					payloadSize =  getLengthOfLogEntry(logData[i], offset, false);
+					payloadSize = getLengthOfLogEntry(logData[i], offset, false);
 					logEntrySize = LogHandler.PRIMARY_HEADER_SIZE + payloadSize;
 					chunkID = getChunkIDOfLogEntry(logData[i], offset);
 					lid = ChunkID.getLocalID(chunkID);
@@ -295,7 +297,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 			payload = null;
 			m_secondaryLogLock.unlock();
 		}
-		return (ArrayList<Chunk>)chunkMap.values();
+		return (ArrayList<Chunk>) chunkMap.values();
 	}
 
 	/**
@@ -307,7 +309,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 		long bytesInRAF;
 
 		bytesInRAF = getOccupiedSpace();
-		if ((bytesInRAF == 0) || m_isShuttingDown) {
+		if (bytesInRAF == 0 || m_isShuttingDown) {
 			ret = false;
 		} else {
 			if (bytesInRAF >= m_secondaryLogReorgThreshold) {
@@ -322,7 +324,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	/**
 	 * Wakes up the reorganization thread
 	 * @throws InterruptedException
-	 *            if caller is interrupted
+	 *             if caller is interrupted
 	 */
 	public final void signalReorganizationThread() throws InterruptedException {
 
@@ -338,7 +340,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	/**
 	 * Wakes up the reorganization thread and waits until reorganization is finished
 	 * @throws InterruptedException
-	 *            if caller is interrupted
+	 *             if caller is interrupted
 	 */
 	public final void signalAndWaitSecLogsReorgThread() throws InterruptedException {
 
@@ -357,7 +359,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 	 * @author Kevin Beineke
 	 *         20.06.2014
 	 */
-	public static final class SecLogReorgTask extends RecursiveAction  {
+	public static final class SecLogReorgTask extends RecursiveAction {
 		// Constants
 		private static final long serialVersionUID = -6009501638448776535L;
 
@@ -367,7 +369,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface{
 		/**
 		 * Creates an instance of SecLogReorgTask
 		 */
-		public SecLogReorgTask(){}
+		public SecLogReorgTask() {}
 
 		// Methods
 		@Override

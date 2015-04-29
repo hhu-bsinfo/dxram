@@ -121,11 +121,12 @@ public interface LookupInterface extends CoreComponent {
 	 * @return the ChunkID
 	 */
 	long getChunkID(int p_id) throws LookupException;
-	
+
 	/**
 	 * Return the number of identifier mappings
 	 * @return the number of mappings
 	 * @throws LookupException
+	 *             if mapping count could not be gotten
 	 */
 	long getMappingCount() throws LookupException;
 

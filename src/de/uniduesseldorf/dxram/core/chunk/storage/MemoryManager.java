@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -79,6 +80,8 @@ public final class MemoryManager {
 
 	/**
 	 * Gets the next free local IDs
+	 * @param p_count
+	 *            the number of IDs
 	 * @return the next free local IDs
 	 */
 	public static long[] getNextLocalIDs(final int p_count) {
@@ -88,7 +91,7 @@ public final class MemoryManager {
 		lid = m_nextLocalID.getAndAdd(p_count);
 		if (lid != -1) {
 			ret = new long[p_count];
-			for (int i = 0;i < p_count;i++) {
+			for (int i = 0; i < p_count; i++) {
 				ret[i] = lid + i;
 			}
 		}

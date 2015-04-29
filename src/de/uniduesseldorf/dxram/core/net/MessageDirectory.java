@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.lang.reflect.Constructor;
@@ -41,11 +42,14 @@ public final class MessageDirectory {
 	 *            Message class
 	 */
 	public static synchronized void register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
-		Constructor<?>[][] constructors = m_constructors;
+		byte type;
+		String text;
+		Constructor<?>[][] typeArray;
+		Constructor<?>[] subtypeArray;
 		Constructor<?> constructor;
 
 		if (contains(p_type, p_subtype)) {
-			String text = "Type " + p_type + " with subtype " + p_subtype + " is already registered";
+			text = "Type " + p_type + " with subtype " + p_subtype + " is already registered";
 			throw new IllegalArgumentException("Type " + p_type + " with subtype " + p_subtype
 					+ " is already registered");
 		}
@@ -53,30 +57,31 @@ public final class MessageDirectory {
 		try {
 			constructor = p_class.getDeclaredConstructor();
 		} catch (final NoSuchMethodException e) {
-			String text = "Class " + p_class.getCanonicalName() + " has no default constructor";
+			text = "Class " + p_class.getCanonicalName() + " has no default constructor";
 			throw new IllegalArgumentException(text, e);
 		}
 
 		// enlarge array
-		if (constructors.length <= p_type) {
-			Constructor<?>[][] new_array = new Constructor[p_type + 1][];
-			System.arraycopy(constructors, 0, new_array, 0, constructors.length);
-			m_constructors = constructors = new_array;
+		if (m_constructors.length <= p_type) {
+			type = (byte) (p_type + 1);
+			typeArray = new Constructor[type][];
+			System.arraycopy(m_constructors, 0, typeArray, 0, m_constructors.length);
+			m_constructors = typeArray;
 		}
 
 		// create new sub array when it is not existing until now
-		if (constructors[p_type] == null) {
-			constructors[p_type] = new Constructor<?>[p_subtype + 1];
+		if (m_constructors[p_type] == null) {
+			m_constructors[p_type] = new Constructor<?>[p_subtype + 1];
 		}
 
 		// enlarge subtype array
-		if (constructors[p_type].length <= p_subtype) {
-			Constructor<?>[] new_array = new Constructor[p_subtype + 1];
-			System.arraycopy(constructors[p_type], 0, new_array, 0, constructors[p_type].length);
-			constructors[p_type] = new_array;
+		if (m_constructors[p_type].length <= p_subtype) {
+			subtypeArray = new Constructor[p_subtype + 1];
+			System.arraycopy(m_constructors[p_type], 0, subtypeArray, 0, m_constructors[p_type].length);
+			m_constructors[p_type] = subtypeArray;
 		}
 
-		constructors[p_type][p_subtype] = constructor;
+		m_constructors[p_type][p_subtype] = constructor;
 
 		LOGGER.info("Registered Type " + p_class.getSimpleName() + " with type " + p_type + " and subtype "
 				+ p_subtype);
@@ -92,14 +97,13 @@ public final class MessageDirectory {
 	 */
 	public static boolean contains(final byte p_type, final byte p_subtype) {
 		boolean result;
-		Constructor<?>[][] constructors = m_constructors;
 
-		if (constructors.length <= p_type) {
+		if (m_constructors.length <= p_type) {
 			result = false;
-		} else if (constructors[p_type] == null || constructors[p_type].length <= p_subtype) {
+		} else if (m_constructors[p_type] == null || m_constructors[p_type].length <= p_subtype) {
 			result = false;
 		} else {
-			result = constructors[p_type][p_subtype] != null;
+			result = m_constructors[p_type][p_subtype] != null;
 		}
 
 		return result;
@@ -145,7 +149,7 @@ public final class MessageDirectory {
 		}
 
 		try {
-			ret = (AbstractMessage)constructor.newInstance();
+			ret = (AbstractMessage) constructor.newInstance();
 		} catch (final Exception e) {
 			throw new NetworkException("ERR::Could not create message instance", e);
 		}

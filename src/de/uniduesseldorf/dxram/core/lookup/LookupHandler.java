@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.ArrayList;
@@ -312,7 +313,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			if (null != backupSuperpeers) {
 				if (-1 != backupSuperpeers[0]) {
 					// Send backups
-					for (int i = 0;i < backupSuperpeers.length;i++) {
+					for (int i = 0; i < backupSuperpeers.length; i++) {
 						request = new InitRangeRequest(backupSuperpeers[i], p_endChunkID,
 								p_primaryAndBackupPeers.convertToLong(), BACKUP);
 						Contract.checkNotNull(request);
@@ -362,7 +363,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			if (null != backupSuperpeers) {
 				if (-1 != backupSuperpeers[0]) {
 					// Send backups
-					for (int i = 0;i < backupSuperpeers.length;i++) {
+					for (int i = 0; i < backupSuperpeers.length; i++) {
 						request = new MigrateRequest(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP);
 						Contract.checkNotNull(request);
 						try {
@@ -418,7 +419,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (null != backupSuperpeers) {
 					if (-1 != backupSuperpeers[0]) {
 						// Send backups
-						for (int i = 0;i < backupSuperpeers.length;i++) {
+						for (int i = 0; i < backupSuperpeers.length; i++) {
 							request = new MigrateRangeRequest(backupSuperpeers[i], p_startCID, p_endCID, p_nodeID,
 									BACKUP);
 							Contract.checkNotNull(request);
@@ -467,7 +468,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					tree.migrateObject(p_chunkID, p_nodeID);
 					m_dataLock.unlock();
 					// Send backups
-					for (int i = 0;i < backupSuperpeers.length - 1;i++) {
+					for (int i = 0; i < backupSuperpeers.length - 1; i++) {
 						try {
 							new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
 						} catch (final NetworkException e) {
@@ -477,7 +478,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					}
 				} else {
 					// Send backups
-					for (int i = 0;i < backupSuperpeers.length;i++) {
+					for (int i = 0; i < backupSuperpeers.length; i++) {
 						try {
 							new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
 						} catch (final NetworkException e) {
@@ -511,7 +512,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		if (null != backupSuperpeers) {
 			if (-1 != backupSuperpeers[0]) {
 				// Send backups
-				for (int i = 0;i < backupSuperpeers.length;i++) {
+				for (int i = 0; i < backupSuperpeers.length; i++) {
 					try {
 						new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
 					} catch (final NetworkException e) {
@@ -561,7 +562,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (null != backupSuperpeers) {
 					if (-1 != backupSuperpeers[0]) {
 						// Send backups
-						for (int i = 0;i < backupSuperpeers.length;i++) {
+						for (int i = 0; i < backupSuperpeers.length; i++) {
 							request = new InsertIDRequest(backupSuperpeers[i], p_id, p_chunkID, BACKUP);
 							Contract.checkNotNull(request);
 							try {
@@ -676,7 +677,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			if (null != backupSuperpeers) {
 				if (-1 != backupSuperpeers[0]) {
 					// Send backups
-					for (int i = 0;i < backupSuperpeers.length;i++) {
+					for (int i = 0; i < backupSuperpeers.length; i++) {
 						request = new RemoveRequest(backupSuperpeers[i], p_chunkID, BACKUP);
 						Contract.checkNotNull(request);
 						try {
@@ -817,7 +818,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				m_peers = joinResponse.getPeers();
 
 				trees = joinResponse.getOIDTrees();
-				for (int i = 0;i < trees.size();i++) {
+				for (int i = 0; i < trees.size(); i++) {
 					tree = trees.get(i);
 					addOIDTree(tree.getCreator(), trees.get(i));
 				}
@@ -857,7 +858,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_stabilizationThread = new Thread(m_worker);
 		Contract.checkNotNull(m_stabilizationThread);
 		m_stabilizationThread
-		.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
+				.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
@@ -1113,7 +1114,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						m_successor = m_superpeers.get(0);
 					}
 				} else {
-					m_successor = (short)-1;
+					m_successor = (short) -1;
 				}
 			}
 			if (p_superpeer == m_predecessor) {
@@ -1124,7 +1125,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						m_predecessor = m_superpeers.get(m_superpeers.size() - 1);
 					}
 				} else {
-					m_predecessor = (short)-1;
+					m_predecessor = (short) -1;
 				}
 			}
 			ret = true;
@@ -1250,7 +1251,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				m_mappingLock.unlock();
 
 				try {
-					new JoinResponse(p_joinRequest, (short)-1, joiningNodesPredecessor, m_me, mappings,
+					new JoinResponse(p_joinRequest, (short) -1, joiningNodesPredecessor, m_me, mappings,
 							m_superpeers, peers, trees).send(m_network);
 				} catch (final NetworkException e) {
 					// Joining node is not available anymore -> ignore request and return directly
@@ -1258,7 +1259,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					return;
 				}
 
-				for (int i = 0;i < peers.size();i++) {
+				for (int i = 0; i < peers.size(); i++) {
 					removePeer(peers.get(i));
 				}
 
@@ -1281,8 +1282,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				m_overlayLock.lock();
 				insertPeer(joiningNode);
 				try {
-					new JoinResponse(p_joinRequest, (short)-1, (short)-1, (short)-1, null, m_superpeers, null, null)
-					.send(m_network);
+					new JoinResponse(p_joinRequest, (short) -1, (short) -1, (short) -1, null, m_superpeers, null, null)
+							.send(m_network);
 				} catch (final NetworkException e) {
 					// Joining node is not available anymore, ignore request
 				}
@@ -1291,8 +1292,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		} else {
 			superpeer = getResponsibleSuperpeer(joiningNode, NO_CHECK);
 			try {
-				new JoinResponse(p_joinRequest, superpeer, (short)-1, (short)-1, null, null, null, null)
-				.send(m_network);
+				new JoinResponse(p_joinRequest, superpeer, (short) -1, (short) -1, null, null, null, null)
+						.send(m_network);
 			} catch (final NetworkException e) {
 				// Joining node is not available anymore, ignore request
 			}
@@ -1367,7 +1368,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			m_dataLock.lock();
 			tree = getOIDTree(creator);
 			if (null == tree) {
-				tree = new OIDTree((short)10);
+				tree = new OIDTree((short) 10);
 				addOIDTree(creator, tree);
 			}
 			tree.initRange(endChunkID, creator, primaryAndBackupPeers.getBackupPeers());
@@ -1612,7 +1613,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		trees = p_sendBackupsMessage.getOIDTrees();
 		m_dataLock.lock();
-		for (int i = 0;i < trees.size();i++) {
+		for (int i = 0; i < trees.size(); i++) {
 			tree = trees.get(i);
 			addOIDTree(tree.getCreator(), tree);
 		}
@@ -1787,7 +1788,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		m_overlayLock.lock();
 		if (0 < m_peers.size()) {
-			peer = m_peers.get((int)(m_peers.size() * Math.random()));
+			peer = m_peers.get((int) (m_peers.size() * Math.random()));
 		}
 		m_overlayLock.unlock();
 		try {
@@ -1830,7 +1831,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_peers = p_promotePeerRequest.getPeers();
 
 		trees = p_promotePeerRequest.getOIDTrees();
-		for (int i = 0;i < trees.size();i++) {
+		for (int i = 0; i < trees.size(); i++) {
 			tree = trees.get(i);
 			addOIDTree(tree.getCreator(), tree);
 			if (m_me == tree.getCreator()) {
@@ -1911,7 +1912,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (1 < m_peers.size()) {
 					m_overlayLock.lock();
 					while (peer == newSuperpeer) {
-						peer = m_peers.get((int)(m_peers.size() * Math.random()));
+						peer = m_peers.get((int) (m_peers.size() * Math.random()));
 					}
 					m_overlayLock.unlock();
 					newSuperpeer = peer;
@@ -1920,7 +1921,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					while (true) {
 						if (!isOnlySuperpeer()) {
 							m_overlayLock.lock();
-							otherSuperpeer = m_superpeers.get((int)(m_superpeers.size() * Math.random()));
+							otherSuperpeer = m_superpeers.get((int) (m_superpeers.size() * Math.random()));
 							m_overlayLock.unlock();
 							System.out.println("* Delegating to " + otherSuperpeer + ", hopcount: " + hops);
 							try {
@@ -2072,63 +2073,63 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
 				case LookupMessages.SUBTYPE_JOIN_REQUEST:
-					incomingJoinRequest((JoinRequest)p_message);
+					incomingJoinRequest((JoinRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_INIT_RANGE_REQUEST:
-					incomingInitRangeRequest((InitRangeRequest)p_message);
+					incomingInitRangeRequest((InitRangeRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_LOOKUP_REQUEST:
-					incomingLookupRequest((LookupRequest)p_message);
+					incomingLookupRequest((LookupRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
-					incomingMigrateRequest((MigrateRequest)p_message);
+					incomingMigrateRequest((MigrateRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST:
-					incomingMigrateRangeRequest((MigrateRangeRequest)p_message);
+					incomingMigrateRangeRequest((MigrateRangeRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_REMOVE_REQUEST:
-					incomingRemoveRequest((RemoveRequest)p_message);
+					incomingRemoveRequest((RemoveRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE:
-					incomingSendBackupsMessage((SendBackupsMessage)p_message);
+					incomingSendBackupsMessage((SendBackupsMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
-					incomingSendSuperpeersMessage((SendSuperpeersMessage)p_message);
+					incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST:
-					incomingAskAboutBackupsRequest((AskAboutBackupsRequest)p_message);
+					incomingAskAboutBackupsRequest((AskAboutBackupsRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST:
-					incomingAskAboutSuccessorRequest((AskAboutSuccessorRequest)p_message);
+					incomingAskAboutSuccessorRequest((AskAboutSuccessorRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE:
-					incomingNotifyAboutNewPredecessorMessage((NotifyAboutNewPredecessorMessage)p_message);
+					incomingNotifyAboutNewPredecessorMessage((NotifyAboutNewPredecessorMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE:
-					incomingNotifyAboutNewSuccessorMessage((NotifyAboutNewSuccessorMessage)p_message);
+					incomingNotifyAboutNewSuccessorMessage((NotifyAboutNewSuccessorMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE:
 					break;
 				case LookupMessages.SUBTYPE_SEARCH_FOR_PEER_REQUEST:
-					incomingSearchForPeerRequest((SearchForPeerRequest)p_message);
+					incomingSearchForPeerRequest((SearchForPeerRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_PROMOTE_PEER_REQUEST:
-					incomingPromotePeerRequest((PromotePeerRequest)p_message);
+					incomingPromotePeerRequest((PromotePeerRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE:
-					incomingDelegatePromotePeerMessage((DelegatePromotePeerMessage)p_message);
+					incomingDelegatePromotePeerMessage((DelegatePromotePeerMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE:
-					incomingNotifyAboutFailedPeerMessage((NotifyAboutFailedPeerMessage)p_message);
+					incomingNotifyAboutFailedPeerMessage((NotifyAboutFailedPeerMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE:
-					incomingStartRecoveryMessage((StartRecoveryMessage)p_message);
+					incomingStartRecoveryMessage((StartRecoveryMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_INSERT_ID_REQUEST:
-					incomingInsertIDRequest((InsertIDRequest)p_message);
+					incomingInsertIDRequest((InsertIDRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_GET_CHUNKID_REQUEST:
-					incomingGetChunkIDRequest((GetChunkIDRequest)p_message);
+					incomingGetChunkIDRequest((GetChunkIDRequest) p_message);
 					break;
 				default:
 					break;
@@ -2177,7 +2178,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			} else {
 				index++;
 			}
-			for (int i = 0;i < size;i++) {
+			for (int i = 0; i < size; i++) {
 				if (index == m_superpeers.size()) {
 					superpeers[i] = m_superpeers.get(0);
 					index = 1;
@@ -2202,14 +2203,14 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		short size;
 		short index;
 
-		size = (short)m_superpeers.size();
+		size = (short) m_superpeers.size();
 		responsibleArea = new short[2];
 		if (3 < size) {
-			index = (short)Collections.binarySearch(m_superpeers, m_predecessor);
+			index = (short) Collections.binarySearch(m_superpeers, m_predecessor);
 			if (3 <= index) {
 				index -= 3;
 			} else {
-				index = (short)(size - (3 - index));
+				index = (short) (size - (3 - index));
 			}
 			responsibleArea[0] = m_superpeers.get(index);
 			responsibleArea[1] = p_nodeID;
@@ -2254,7 +2255,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		m_overlayLock.lock();
 		if (m_superpeers.isEmpty()) {
-			firstPeer = (short)(m_me + 1);
+			firstPeer = (short) (m_me + 1);
 		} else {
 			index = Collections.binarySearch(m_superpeers, p_nodeID);
 			if (0 > index) {
@@ -2266,7 +2267,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				predecessor = m_superpeers.get(index - 1);
 			}
 			if (predecessor == p_nodeID) {
-				firstPeer = (short)(m_me + 1);
+				firstPeer = (short) (m_me + 1);
 			} else {
 				firstPeer = predecessor;
 			}
@@ -2334,11 +2335,11 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				while (true) {
 					if (!isOnlySuperpeer()) {
 						m_overlayLock.lock();
-						otherSuperpeer = m_superpeers.get((int)(m_superpeers.size() * Math.random()));
+						otherSuperpeer = m_superpeers.get((int) (m_superpeers.size() * Math.random()));
 						m_overlayLock.unlock();
 						System.out.println("** Do not have enough peers, delegating to " + otherSuperpeer);
 						try {
-							new DelegatePromotePeerMessage(otherSuperpeer, (short)1).send(m_network);
+							new DelegatePromotePeerMessage(otherSuperpeer, (short) 1).send(m_network);
 						} catch (final NetworkException e) {
 							// Other superpeer is not available, try another
 							continue;
@@ -2401,7 +2402,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (1 < m_peers.size()) {
 					m_overlayLock.lock();
 					while (currentPeer == p_newSuperpeer) {
-						currentPeer = m_peers.get((int)(m_peers.size() * Math.random()));
+						currentPeer = m_peers.get((int) (m_peers.size() * Math.random()));
 					}
 					newResponsiblePeer = currentPeer;
 					m_overlayLock.unlock();
@@ -2409,7 +2410,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					// Search for another peer
 					while (-1 == newResponsiblePeer && i++ < m_superpeers.size() * 2) {
 						m_overlayLock.lock();
-						otherSuperpeer = m_superpeers.get((int)(m_superpeers.size() * Math.random()));
+						otherSuperpeer = m_superpeers.get((int) (m_superpeers.size() * Math.random()));
 						m_overlayLock.unlock();
 						System.out.println("** do not have enough peers, aksing " + otherSuperpeer);
 						searchForPeerRequest = new SearchForPeerRequest(otherSuperpeer);
@@ -2470,7 +2471,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						tree = getOIDTree(currentPeer);
 						if (null != tree) {
 							System.out
-							.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
+									.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
 							trees.add(tree);
 						}
 						if (index == m_nodeList.size()) {
@@ -2519,7 +2520,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 			if (0 == ret) {
 				m_overlayLock.lock();
-				for (i = 0;i < peers.size();i++) {
+				for (i = 0; i < peers.size(); i++) {
 					removePeer(peers.get(i));
 				}
 				removePeer(p_newSuperpeer);
@@ -2670,7 +2671,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		while (!isOnlySuperpeer()) {
 			m_overlayLock.lock();
-			index = (short)Collections.binarySearch(m_superpeers, (short)(p_backupSuperpeers[2] + 1));
+			index = (short) Collections.binarySearch(m_superpeers, (short) (p_backupSuperpeers[2] + 1));
 			if (0 > index) {
 				index = index * -1 - 1;
 				if (index == m_superpeers.size()) {
@@ -2731,7 +2732,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				// Take over failed nodes peers and OIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
 					System.out
-					.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
+							.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndOIDTrees(m_predecessor);
 					promoteOnePeer = true;
 				}
@@ -2740,7 +2741,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				responsibleArea = getResponsibleArea(m_me);
 				m_overlayLock.unlock();
 				if (3 < m_superpeers.size()
-						&& getResponsibleSuperpeer((short)(responsibleArea[0] + 1), NO_CHECK) == p_failedNode) {
+						&& getResponsibleSuperpeer((short) (responsibleArea[0] + 1), NO_CHECK) == p_failedNode) {
 					System.out.println("* " + p_failedNode + " was in my responsible area -> spreading his data");
 					spreadDataOfFailedSuperpeer(p_failedNode, responsibleArea);
 				}
@@ -2823,9 +2824,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					m_dataLock.lock();
 					backupPeers = getOIDTree(p_failedNode).getAllBackupPeers();
 					m_dataLock.unlock();
-					for (i = 0;i < backupPeers.size();i++) {
-						for (int j = 0;j < 3;j++) {
-							backupPeer = (short)(backupPeers.get(i).longValue() >> j * 16);
+					for (i = 0; i < backupPeers.size(); i++) {
+						for (int j = 0; j < 3; j++) {
+							backupPeer = (short) (backupPeers.get(i).longValue() >> j * 16);
 							// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 - 1)
 							System.out.println("** Informing backup peer " + backupPeer + " to recover chunks"
 									+ " between " + i * OIDTree.RANGE_SIZE + " and "
@@ -2959,7 +2960,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		str = "Superpeer overlay:";
 
 		m_overlayLock.lock();
-		for (int i = 0;i < m_superpeers.size();i++) {
+		for (int i = 0; i < m_superpeers.size(); i++) {
 			superpeer = m_superpeers.get(i);
 			if (printMe && superpeer > m_me) {
 				str += " ’" + m_me + "’";
@@ -2971,7 +2972,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			str += " ’" + m_me + "’";
 		}
 		str += "\n Peers:";
-		for (int i = 0;i < m_peers.size();i++) {
+		for (int i = 0; i < m_peers.size(); i++) {
 			peer = m_peers.get(i);
 			str += " " + peer;
 		}
@@ -3020,7 +3021,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				}
 
 				performStabilization();
-				for (int i = 0;i < m_numberOfSuperpeers / 300 || i < 1;i++) {
+				for (int i = 0; i < m_numberOfSuperpeers / 300 || i < 1; i++) {
 					fixSuperpeers();
 				}
 				promotePeerIfNecessary();
@@ -3168,7 +3169,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			me = m_me & 0xFFFF;
 
 			allSuperpeers = new int[m_superpeers.size() + 1];
-			for (int i = 0;i < m_superpeers.size();i++) {
+			for (int i = 0; i < m_superpeers.size(); i++) {
 				superpeer = m_superpeers.get(i).intValue() & 0xFFFF;
 				if (!found && me < superpeer) {
 					allSuperpeers[j++] = me;
@@ -3201,7 +3202,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					System.out.println();
 					System.out.println("********** ********** Promoting Peer ********** **********");
 					if (isOnlySuperpeer()) {
-						promoteOnePeer((short)((m_me & 0xFFFF) + 32767));
+						promoteOnePeer((short) ((m_me & 0xFFFF) + 32767));
 					} else {
 						m_overlayLock.lock();
 						allSuperpeers = copyAllSuperpeersInArray();
@@ -3211,19 +3212,19 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 							currentGap = allSuperpeers[index + 1] - allSuperpeers[index];
 							if (biggestGap < currentGap) {
 								biggestGap = currentGap;
-								superpeer = (short)allSuperpeers[index + 1];
+								superpeer = (short) allSuperpeers[index + 1];
 							}
 							index++;
 						}
 						currentGap = allSuperpeers[0] + 65535 - allSuperpeers[index];
 						if (biggestGap < currentGap) {
 							biggestGap = currentGap;
-							superpeer = (short)allSuperpeers[0];
+							superpeer = (short) allSuperpeers[0];
 						}
 
 						System.out.println(superpeer + " has privilege");
 						if (m_me == superpeer) {
-							promoteOnePeer((short)((m_me & 0xFFFF) - biggestGap / 2));
+							promoteOnePeer((short) ((m_me & 0xFFFF) - biggestGap / 2));
 						}
 					}
 					m_counter = 0;
@@ -3283,7 +3284,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					currentSuperpeer = m_successor;
 				} else {
 					oldSuperpeer = p_responsibleArea[0];
-					currentSuperpeer = getResponsibleSuperpeer((short)(p_responsibleArea[0] + 1), false);
+					currentSuperpeer = getResponsibleSuperpeer((short) (p_responsibleArea[0] + 1), false);
 				}
 				while (-1 != currentSuperpeer) {
 					m_dataLock.lock();
@@ -3316,7 +3317,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					} catch (final NetworkException e) {
 						// CurrentSuperpeer is not available anymore, remove it from superpeer array
 						failureHandling(currentSuperpeer);
-						currentSuperpeer = getResponsibleSuperpeer((short)(oldSuperpeer + 1), false);
+						currentSuperpeer = getResponsibleSuperpeer((short) (oldSuperpeer + 1), false);
 						peers.clear();
 						continue;
 					}
@@ -3325,7 +3326,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 					trees = response.getBackups();
 					m_dataLock.lock();
-					for (int i = 0;i < trees.size();i++) {
+					for (int i = 0; i < trees.size(); i++) {
 						tree = trees.get(i);
 						addOIDTree(tree.getCreator(), tree);
 					}
@@ -3341,7 +3342,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						break;
 					}
 					oldSuperpeer = currentSuperpeer;
-					currentSuperpeer = getResponsibleSuperpeer((short)(currentSuperpeer + 1), false);
+					currentSuperpeer = getResponsibleSuperpeer((short) (currentSuperpeer + 1), false);
 				}
 			}
 		}
@@ -3428,12 +3429,14 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		 * Creates an instance of Locations
 		 * @param p_primaryAndBackupPeers
 		 *            the locations in long representation
+		 * @param p_range
+		 *            the range
 		 */
 		public Locations(final long p_primaryAndBackupPeers, final long[] p_range) {
-			this((short)p_primaryAndBackupPeers, new short[] {
-					(short)((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
-					(short)((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32),
-					(short)((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
+			this((short) p_primaryAndBackupPeers, new short[] {
+					(short) ((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
+					(short) ((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32),
+					(short) ((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
 		}
 
 		// Getter
@@ -3461,10 +3464,18 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			return m_range;
 		}
 
+		/**
+		 * Get start ID
+		 * @return the beginning of range
+		 */
 		public long getStartID() {
 			return m_range[0];
 		}
 
+		/**
+		 * Get end ID
+		 * @return the ending of range
+		 */
 		public long getEndID() {
 			return m_range[1];
 		}

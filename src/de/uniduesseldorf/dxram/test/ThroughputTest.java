@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.nio.ByteBuffer;
@@ -115,6 +116,8 @@ public final class ThroughputTest {
 		 * Creates an instance of Server
 		 * @param p_chunkCount
 		 *            the amount of Chunks to create
+		 * @param p_threadCount
+		 *            the thread count
 		 */
 		public Server(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
@@ -185,7 +188,7 @@ public final class ThroughputTest {
 
 		private TestResult evaluateCreate(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
+			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -194,12 +197,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.createNewChunk(40);
 							} catch (final DXRAMException e) {
@@ -222,8 +225,8 @@ public final class ThroughputTest {
 
 		private TestResult evaluatePut(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
 				ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
-			final long nodeID = ((long)NodeID.getLocalNodeID()) << 48;
+			final int count = p_chunkCount / p_threadCount;
+			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -232,14 +235,14 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
 						Chunk chunk;
 
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								chunk = new Chunk(i + nodeID, new byte[40]);
 								Core.put(chunk);
@@ -263,8 +266,8 @@ public final class ThroughputTest {
 
 		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
 				ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
-			final long nodeID = ((long)NodeID.getLocalNodeID()) << 48;
+			final int count = p_chunkCount / p_threadCount;
+			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -273,12 +276,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.get(i + nodeID);
 							} catch (final DXRAMException e) {
@@ -301,14 +304,14 @@ public final class ThroughputTest {
 
 		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
-			final long nodeID = ((long)NodeID.getLocalNodeID()) << 48;
-			final long[] chunkIDs = new long[COUNT];
+			final int count = p_chunkCount / p_threadCount;
+			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
+			final long[] chunkIDs = new long[count];
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
 
-			for (int i = 1;i <= COUNT;i++) {
+			for (int i = 1; i <= count; i++) {
 				chunkIDs[i - 1] = i + nodeID;
 			}
 
@@ -316,7 +319,7 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
@@ -342,8 +345,8 @@ public final class ThroughputTest {
 
 		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
-			final long nodeID = ((long)NodeID.getLocalNodeID()) << 48;
+			final int count = p_chunkCount / p_threadCount;
+			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -352,12 +355,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.lock(i + nodeID);
 								Core.unlock(i + nodeID);
@@ -381,7 +384,7 @@ public final class ThroughputTest {
 
 		private TestResult evaluateCreateNS(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
+			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -390,12 +393,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.createNewChunk(40, "" + i);
 							} catch (final DXRAMException e) {
@@ -418,7 +421,7 @@ public final class ThroughputTest {
 
 		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
+			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -427,12 +430,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.get("" + i);
 							} catch (final DXRAMException e) {
@@ -464,7 +467,7 @@ public final class ThroughputTest {
 			output.append("\nOverall Time:\t" + Tools.readableNanoTime(p_result.getTime()));
 			output.append("\nTime / Op:\t" + format.format(p_result.getTime() / (p_chunkCount * 1.0))
 					+ " nanoseconds");
-			output.append("\nOps / Second:\t" + format.format((p_chunkCount * 1000000000.0) / p_result.getTime()));
+			output.append("\nOps / Second:\t" + format.format(p_chunkCount * 1000000000.0 / p_result.getTime()));
 
 			System.out.println(output);
 		}
@@ -489,6 +492,8 @@ public final class ThroughputTest {
 		 * Creates an instance of Server
 		 * @param p_chunkCount
 		 *            the amount of Chunks to create
+		 * @param p_threadCount
+		 *            the thread count
 		 */
 		public Client(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
@@ -537,14 +542,14 @@ public final class ThroughputTest {
 			chunk = Core.get("Idx");
 			System.out.println("ChunkID: " + Long.toHexString(chunk.getChunkID()));
 			data = chunk.getData();
-			m_nodeID = ((long)data.getShort()) << 48;
+			m_nodeID = (long) data.getShort() << 48;
 		}
 
 		private void deinit() throws MemoryException {}
 
 		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
 				ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
+			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -553,12 +558,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.get(i + m_nodeID);
 							} catch (final DXRAMException e) {
@@ -581,14 +586,14 @@ public final class ThroughputTest {
 
 		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
+			final int count = p_chunkCount / p_threadCount;
 			final long[] chunkIDs;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
 
-			chunkIDs = new long[COUNT];
-			for (int i = 1;i <= COUNT;i++) {
+			chunkIDs = new long[count];
+			for (int i = 1; i <= count; i++) {
 				chunkIDs[i - 1] = i + m_nodeID;
 			}
 
@@ -596,7 +601,7 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
@@ -622,7 +627,7 @@ public final class ThroughputTest {
 
 		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
+			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -631,12 +636,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.lock(i + m_nodeID);
 								Core.unlock(i + m_nodeID);
@@ -660,7 +665,7 @@ public final class ThroughputTest {
 
 		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
-			final int COUNT = p_chunkCount / p_threadCount;
+			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -669,12 +674,12 @@ public final class ThroughputTest {
 
 			futures = new Future[p_threadCount];
 			time = System.nanoTime();
-			for (int i = 0;i < p_threadCount;i++) {
+			for (int i = 0; i < p_threadCount; i++) {
 				futures[i] = executorService.submit(new Runnable() {
 
 					@Override
 					public void run() {
-						for (int i = 1;i <= COUNT;i++) {
+						for (int i = 1; i <= count; i++) {
 							try {
 								Core.get("" + i);
 							} catch (final DXRAMException e) {
@@ -706,7 +711,7 @@ public final class ThroughputTest {
 			output.append("\nOverall Time:\t" + Tools.readableNanoTime(p_result.getTime()));
 			output.append("\nTime / Op:\t" + format.format(p_result.getTime() / (p_chunkCount * 1.0))
 					+ " nanoseconds");
-			output.append("\nOps / Second:\t" + format.format((p_chunkCount * 1000000000.0) / p_result.getTime()));
+			output.append("\nOps / Second:\t" + format.format(p_chunkCount * 1000000000.0 / p_result.getTime()));
 
 			System.out.println(output);
 		}
@@ -716,15 +721,15 @@ public final class ThroughputTest {
 	private static final class TestResult {
 
 		// Attributes
-		private long time;
+		private long m_time;
 
 		/**
 		 * Creates an instance of MemoryManagementTest
 		 * @param p_time
 		 *            the test time
 		 */
-		public TestResult(long p_time) {
-			time = p_time;
+		public TestResult(final long p_time) {
+			m_time = p_time;
 		}
 
 		/**
@@ -732,7 +737,7 @@ public final class ThroughputTest {
 		 * @return the test time
 		 */
 		public long getTime() {
-			return time;
+			return m_time;
 		}
 
 	}

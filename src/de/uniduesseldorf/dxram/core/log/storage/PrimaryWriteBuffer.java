@@ -1,5 +1,5 @@
-package de.uniduesseldorf.dxram.core.log.storage;
 
+package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
 import java.util.concurrent.locks.Lock;
@@ -12,7 +12,6 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 
-
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
  * in-memory write-buffer for writing on primary log is cyclic. Similar to a
@@ -24,7 +23,6 @@ import de.uniduesseldorf.dxram.core.log.LogInterface;
  * buffer is extended adaptively if a threshold is passed (in (flash page size)
  * steps or doubled). Alternatively the caller can be blocked until the write
  * access is completed.
- * 
  * @author Kevin Beineke 06.06.2014
  */
 public class PrimaryWriteBuffer {
@@ -55,12 +53,10 @@ public class PrimaryWriteBuffer {
 	private int m_writingNetworkThreads;
 	private boolean m_writerThreadWantsToFlush;
 
-
 	// Constructors
 	/**
 	 * Creates an instance of PrimaryWriteBuffer with user-specific
 	 * configuration
-	 * 
 	 * @param p_primaryLog
 	 *            Instance of the primary log. Used to write directly to primary
 	 *            log if buffer is full
@@ -70,7 +66,6 @@ public class PrimaryWriteBuffer {
 	 */
 	public PrimaryWriteBuffer(final PrimaryLog p_primaryLog,
 			final int p_bufferSize) {
-		int bufferSize = p_bufferSize;
 		m_bufferReadPointer = 0;
 		m_bufferWritePointer = 0;
 		m_bytesInWriteBuffer = 0;
@@ -84,16 +79,16 @@ public class PrimaryWriteBuffer {
 			System.out.println("Could not get log interface");
 		}
 
-		if (bufferSize < (LogHandler.FLASHPAGE_SIZE)
-				|| bufferSize > LogHandler.MAX_WRITE_BUFFER_SIZE
-				|| Integer.bitCount(bufferSize) != 1) {
+		if (p_bufferSize < LogHandler.FLASHPAGE_SIZE
+				|| p_bufferSize > LogHandler.MAX_WRITE_BUFFER_SIZE
+				|| Integer.bitCount(p_bufferSize) != 1) {
 			throw new IllegalArgumentException(
 					"Illegal buffer size! Must be 2^x with "
-							+ (Math.log(LogHandler.FLASHPAGE_SIZE) / Math
-									.log(2)) + " <= x <= 31");
+							+ Math.log(LogHandler.FLASHPAGE_SIZE) / Math
+							.log(2) + " <= x <= 31");
 		} else {
-			m_buffer = new byte[bufferSize];
-			m_ringBufferSize = bufferSize;
+			m_buffer = new byte[p_bufferSize];
+			m_ringBufferSize = p_bufferSize;
 			m_lengthByNode = new int[Short.MAX_VALUE * 2];
 			m_isShuttingDown = false;
 		}
@@ -103,18 +98,16 @@ public class PrimaryWriteBuffer {
 		m_writerThread.start();
 	}
 
-
 	// Methods
 	/**
 	 * Cleans the write buffer and resets the pointer
-	 * 
 	 * @throws IOException
 	 *             if buffer could not be closed
 	 * @throws InterruptedException
 	 *             if caller is interrupted
 	 */
 	public final void closeWriteBuffer() throws InterruptedException,
-	IOException {
+			IOException {
 		// Shutdown primary log writer-thread
 		m_flushingComplete = false;
 		m_isShuttingDown = true;
@@ -129,12 +122,10 @@ public class PrimaryWriteBuffer {
 		m_buffer = null;
 	}
 
-
 	/**
 	 * Writes log entries as a whole (max. size: write buffer) Log entry format:
 	 * ////////////////////////////////// // OID // LEN // CRC// DATA ... //
 	 * //////////////////////////////////
-	 * 
 	 * @param p_header
 	 *            the log entry's header as a byte array
 	 * @param p_payload
@@ -172,7 +163,7 @@ public class PrimaryWriteBuffer {
 				while (true) {
 					m_metaDataLock.lock();
 					if (!m_writerThreadWantsToFlush
-							&& (m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT)) {
+							&& m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT) {
 						m_writingNetworkThreads++;
 						break;
 					} else {
@@ -269,10 +260,8 @@ public class PrimaryWriteBuffer {
 		return bytesToWrite;
 	}
 
-
 	/**
 	 * Wakes-up writer thread and flushes data to primary log
-	 * 
 	 * @throws InterruptedException
 	 *             if caller is interrupted
 	 */
@@ -290,7 +279,6 @@ public class PrimaryWriteBuffer {
 	/**
 	 * Writer thread The writer thread flushes data from buffer to primary log
 	 * after being waked-up (signal or timer)
-	 * 
 	 * @author Kevin Beineke 06.06.2014
 	 */
 	private final class PrimaryLogWriterThread extends Thread {
@@ -300,7 +288,6 @@ public class PrimaryWriteBuffer {
 		 * Creates an instance of PrimaryLogWriterThread
 		 */
 		public PrimaryLogWriterThread() {}
-
 
 		@Override
 		public void run() {
@@ -331,16 +318,14 @@ public class PrimaryWriteBuffer {
 					flushDataToPrimaryLog();
 				} catch (final InterruptedException e) {
 					System.out
-					.println("Error: Writer thread is interrupted. Directly shuting down!");
+							.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;
 				}
 			}
 		}
 
-
 		/**
 		 * Flushes all data in write buffer to primary log
-		 * 
 		 * @return number of copied bytes
 		 * @throws InterruptedException
 		 *             if caller is interrupted

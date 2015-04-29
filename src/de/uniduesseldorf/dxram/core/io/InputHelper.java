@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.io;
 
 import java.io.ByteArrayInputStream;
@@ -73,7 +74,7 @@ public final class InputHelper {
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new long[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readChunkID(p_input);
 		}
 
@@ -92,7 +93,7 @@ public final class InputHelper {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new long[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readChunkID(p_buffer);
 		}
 
@@ -154,7 +155,7 @@ public final class InputHelper {
 		ret = new Chunk(chunkID, length);
 		data = ret.getData();
 
-		for (int i = 0;i < length;i++) {
+		for (int i = 0; i < length; i++) {
 			data.put(p_input.readByte());
 		}
 
@@ -182,7 +183,7 @@ public final class InputHelper {
 		ret = new Chunk(chunkID, length);
 		data = ret.getData();
 
-		for (int i = 0;i < length;i++) {
+		for (int i = 0; i < length; i++) {
 			data.put(p_buffer.get());
 		}
 
@@ -203,7 +204,7 @@ public final class InputHelper {
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new Chunk[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readChunk(p_input);
 		}
 
@@ -217,12 +218,12 @@ public final class InputHelper {
 	 * @return the read Chunks
 	 */
 	public static Chunk[] readChunks(final ByteBuffer p_buffer) {
-		Chunk ret[];
+		Chunk[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new Chunk[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readChunk(p_buffer);
 		}
 
@@ -249,6 +250,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads an OIDTree from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the OIDTree
+	 */
 	public static OIDTree readOIDTree(final ByteBuffer p_buffer) {
 		OIDTree ret = null;
 		byte[] data;
@@ -261,6 +268,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Parses an OIDTree from byte array
+	 * @param p_data
+	 *            the byte array
+	 * @return the OIDTree
+	 */
 	public static OIDTree parseOIDTree(final byte[] p_data) {
 		OIDTree ret = null;
 		ByteArrayInputStream byteArrayInputStream;
@@ -270,7 +283,7 @@ public final class InputHelper {
 			byteArrayInputStream = new ByteArrayInputStream(p_data);
 			try {
 				objectInput = new ObjectInputStream(byteArrayInputStream);
-				ret = (OIDTree)objectInput.readObject();
+				ret = (OIDTree) objectInput.readObject();
 			} catch (final Exception e) {} finally {
 				try {
 					if (objectInput != null) {
@@ -284,90 +297,196 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a boolean from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the boolean
+	 * @throws IOException
+	 *             if the boolean could not be read
+	 */
 	public static boolean readBoolean(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readBoolean();
 	}
 
+	/**
+	 * Reads a boolean from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the boolean
+	 */
 	public static boolean readBoolean(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.get() == 1;
 	}
 
+	/**
+	 * Reads an integer from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the integer
+	 * @throws IOException
+	 *             if the integer could not be read
+	 */
 	public static int readInt(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readInt();
 	}
 
+	/**
+	 * Reads an integer from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the integer
+	 */
 	public static int readInt(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getInt();
 	}
 
+	/**
+	 * Reads a byte from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the byte
+	 * @throws IOException
+	 *             if the byte could not be read
+	 */
 	public static byte readByte(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readByte();
 	}
 
+	/**
+	 * Reads a byte from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the byte
+	 */
 	public static byte readByte(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.get();
 	}
 
+	/**
+	 * Reads a short from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the short
+	 * @throws IOException
+	 *             if the short could not be read
+	 */
 	public static short readShort(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readShort();
 	}
 
+	/**
+	 * Reads a short from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the short
+	 */
 	public static short readShort(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getShort();
 	}
 
+	/**
+	 * Reads a long from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the long
+	 * @throws IOException
+	 *             if the long could not be read
+	 */
 	public static long readLong(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readLong();
 	}
 
+	/**
+	 * Reads a long from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the long
+	 */
 	public static long readLong(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getLong();
 	}
 
+	/**
+	 * Reads a float from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the float
+	 * @throws IOException
+	 *             if the float could not be read
+	 */
 	public static float readFloat(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readFloat();
 	}
 
+	/**
+	 * Reads a float from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the float
+	 */
 	public static float readFloat(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getFloat();
 	}
 
+	/**
+	 * Reads a double from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the double
+	 * @throws IOException
+	 *             if the double could not be read
+	 */
 	public static double readDouble(final DataInput p_input) throws IOException {
 		Contract.checkNotNull(p_input, "no input given");
 
 		return p_input.readDouble();
 	}
 
+	/**
+	 * Reads a double from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the double
+	 */
 	public static double readDouble(final ByteBuffer p_buffer) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getDouble();
 	}
 
+	/**
+	 * Reads locations from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the locations
+	 * @throws IOException
+	 *             if the locations could not be read
+	 */
 	public static Locations readLocations(final DataInput p_input) throws IOException {
 		Locations ret;
 
@@ -378,6 +497,12 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads locations from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the locations
+	 */
 	public static Locations readLocations(final ByteBuffer p_buffer) {
 		Locations ret;
 
@@ -388,182 +513,280 @@ public final class InputHelper {
 		return ret;
 	}
 
+	/**
+	 * Reads a long array from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the long array
+	 * @throws IOException
+	 *             if the long array could not be read
+	 */
 	public static long[] readLongArray(final DataInput p_input) throws IOException {
 		long[] ret;
 
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new long[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_input.readLong();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a long array from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the long array
+	 */
 	public static long[] readLongArray(final ByteBuffer p_buffer) {
 		long[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new long[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_buffer.getLong();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a short array from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the short array
+	 * @throws IOException
+	 *             if the short array could not be read
+	 */
 	public static short[] readShortArray(final DataInput p_input) throws IOException {
 		short[] ret;
 
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new short[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_input.readShort();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a short array from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the short array
+	 */
 	public static short[] readShortArray(final ByteBuffer p_buffer) {
 		short[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new short[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_buffer.getShort();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a byte array from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the byte array
+	 * @throws IOException
+	 *             if the byte array could not be read
+	 */
 	public static byte[] readByteArray(final DataInput p_input) throws IOException {
 		byte[] ret;
 
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new byte[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_input.readByte();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a byte array from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the byte array
+	 */
 	public static byte[] readByteArray(final ByteBuffer p_buffer) {
 		byte[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new byte[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_buffer.get();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a integer array from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the integer array
+	 * @throws IOException
+	 *             if the inteager array could not be read
+	 */
 	public static int[] readIntArray(final DataInput p_input) throws IOException {
 		int[] ret;
 
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new int[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_input.readInt();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads an integer array from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the integer array
+	 */
 	public static int[] readIntArray(final ByteBuffer p_buffer) {
 		int[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new int[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_buffer.getInt();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a double array from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the double array
+	 * @throws IOException
+	 *             if the double array could not be read
+	 */
 	public static double[] readDoubleArray(final DataInput p_input) throws IOException {
 		double[] ret;
 
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new double[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_input.readDouble();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a double array from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the double array
+	 */
 	public static double[] readDoubleArray(final ByteBuffer p_buffer) {
 		double[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new double[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_buffer.getDouble();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a float array from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the float array
+	 * @throws IOException
+	 *             if the float array could not be read
+	 */
 	public static float[] readFloatArray(final DataInput p_input) throws IOException {
 		float[] ret;
 
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new float[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_input.readFloat();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a float array from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the float array
+	 */
 	public static float[] readFloatArray(final ByteBuffer p_buffer) {
 		float[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new float[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = p_buffer.getFloat();
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a boolean array from DataInput
+	 * @param p_input
+	 *            the DataInput
+	 * @return the boolean array
+	 * @throws IOException
+	 *             if the boolean array could not be read
+	 */
 	public static boolean[] readBooleanArray(final DataInput p_input) throws IOException {
 		boolean[] ret;
 
 		Contract.checkNotNull(p_input, "no input given");
 
 		ret = new boolean[p_input.readInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readBoolean(p_input);
 		}
 
 		return ret;
 	}
 
+	/**
+	 * Reads a boolean array from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the boolean array
+	 */
 	public static boolean[] readBooleanArray(final ByteBuffer p_buffer) {
 		boolean[] ret;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new boolean[p_buffer.getInt()];
-		for (int i = 0;i < ret.length;i++) {
+		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readBoolean(p_buffer);
 		}
 

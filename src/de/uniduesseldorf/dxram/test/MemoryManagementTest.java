@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.text.NumberFormat;
@@ -36,7 +37,7 @@ public class MemoryManagementTest {
 	 * @param p_arguments
 	 *            The program arguments
 	 */
-	public static void main(String[] p_arguments) {
+	public static void main(final String[] p_arguments) {
 		int chunkCount;
 		int threadCount;
 		ArgumentHelper helper;
@@ -101,26 +102,26 @@ public class MemoryManagementTest {
 
 		futures = new Future[p_threadCount];
 		time = System.nanoTime();
-		for (int i = 0;i < p_threadCount;i++) {
+		for (int i = 0; i < p_threadCount; i++) {
 			futures[i] = executorService.submit(new Runnable() {
 
 				@Override
 				public void run() {
-					final int COUNT = p_chunkCount / p_threadCount;
+					final int count = p_chunkCount / p_threadCount;
 					Chunk chunk;
 					long chunkID;
 					byte[] data;
 					Random random;
 
 					random = new Random();
-					for (int i = 1;i <= COUNT;i++) {
+					for (int i = 1; i <= count; i++) {
 						try {
 							chunkID = MemoryManager.getNextLocalID();
 							data = new byte[random.nextInt(49) + 16];
 							chunk = new Chunk(chunkID, data);
 
 							MemoryManager.put(chunk);
-						} catch (MemoryException e) {
+						} catch (final MemoryException e) {
 							e.printStackTrace();
 						}
 					}
@@ -148,17 +149,17 @@ public class MemoryManagementTest {
 
 		futures = new Future[p_threadCount];
 		time = System.nanoTime();
-		for (int i = 0;i < p_threadCount;i++) {
+		for (int i = 0; i < p_threadCount; i++) {
 			futures[i] = executorService.submit(new Runnable() {
 
 				@Override
 				public void run() {
-					final int COUNT = p_chunkCount / p_threadCount;
+					final int count = p_chunkCount / p_threadCount;
 
-					for (int i = 1;i <= COUNT;i++) {
+					for (int i = 1; i <= count; i++) {
 						try {
 							MemoryManager.get(i);
-						} catch (MemoryException e) {
+						} catch (final MemoryException e) {
 							e.printStackTrace();
 						}
 					}
@@ -186,7 +187,7 @@ public class MemoryManagementTest {
 		output.append("\n" + p_test + ":");
 		output.append("\nOverall Time:\t" + Tools.readableNanoTime(p_result.getTime()));
 		output.append("\nTime / Op:\t" + format.format(p_result.getTime() / (p_chunkCount * 1.0)) + " nanoseconds");
-		output.append("\nOps / Second:\t" + format.format((p_chunkCount * 1000000000.0) / p_result.getTime()));
+		output.append("\nOps / Second:\t" + format.format(p_chunkCount * 1000000000.0 / p_result.getTime()));
 
 		System.out.println(output);
 	}
@@ -195,15 +196,15 @@ public class MemoryManagementTest {
 	private static final class TestResult {
 
 		// Attributes
-		private long time;
+		private long m_time;
 
 		/**
 		 * Creates an instance of MemoryManagementTest
 		 * @param p_time
 		 *            the test time
 		 */
-		public TestResult(long p_time) {
-			time = p_time;
+		public TestResult(final long p_time) {
+			m_time = p_time;
 		}
 
 		/**
@@ -211,7 +212,7 @@ public class MemoryManagementTest {
 		 * @return the test time
 		 */
 		public long getTime() {
-			return time;
+			return m_time;
 		}
 
 	}

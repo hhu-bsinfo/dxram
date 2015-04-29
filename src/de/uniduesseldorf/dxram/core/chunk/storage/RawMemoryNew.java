@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.util.Arrays;
@@ -77,15 +78,15 @@ public final class RawMemoryNew {
 
 		Contract.check(p_size >= 0, "invalid size given");
 
-		segmentCount = (int)(p_size / SEGMENT_SIZE);
+		segmentCount = (int) (p_size / SEGMENT_SIZE);
 		if (p_size % SEGMENT_SIZE > 0) {
 			segmentCount++;
 		}
 
 		// Initializes the list sizes
 		m_listSizes = new long[LIST_COUNT];
-		for (int i = 0;i < LIST_COUNT;i++) {
-			m_listSizes[i] = (long)Math.pow(2, i + 2);
+		for (int i = 0; i < LIST_COUNT; i++) {
+			m_listSizes[i] = (long) Math.pow(2, i + 2);
 		}
 		m_listSizes[0] = 12;
 		m_listSizes[1] = 24;
@@ -98,7 +99,7 @@ public final class RawMemoryNew {
 		// Allocate Memory
 		try {
 			m_memoryBase = UNSAFE.allocateMemory(m_memorySize);
-			UNSAFE.setMemory(m_memoryBase, m_memorySize, (byte)0);
+			UNSAFE.setMemory(m_memoryBase, m_memorySize, (byte) 0);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not initialize memory", e);
 		}
@@ -107,7 +108,7 @@ public final class RawMemoryNew {
 		base = 0;
 		remaining = p_size;
 		m_segments = new Segment[segmentCount];
-		for (int i = 0;i < segmentCount;i++) {
+		for (int i = 0; i < segmentCount; i++) {
 			size = Math.min(SEGMENT_SIZE, remaining);
 			m_segments[i] = new Segment(i, base, size);
 
@@ -240,7 +241,7 @@ public final class RawMemoryNew {
 				writeLeftPartOfMarker(address, SINGLE_BYTE_MARKER);
 			}
 
-			for (int i = 0;i < p_sizes.length;i++) {
+			for (int i = 0; i < p_sizes.length; i++) {
 				if (p_sizes[i] > 0) {
 					if (p_sizes[i] >= 1 << 16) {
 						lengthfieldSize = 3;
@@ -249,7 +250,7 @@ public final class RawMemoryNew {
 					} else {
 						lengthfieldSize = 1;
 					}
-					marker = (byte)(OCCUPIED_FLAG + lengthfieldSize);
+					marker = (byte) (OCCUPIED_FLAG + lengthfieldSize);
 
 					writeRightPartOfMarker(address, marker);
 					address += 1;
@@ -280,7 +281,7 @@ public final class RawMemoryNew {
 	protected static void free(final long p_address) throws MemoryException {
 		Segment segment;
 
-		segment = m_segments[(int)(p_address / FULL_SEGMENT_SIZE)];
+		segment = m_segments[(int) (p_address / FULL_SEGMENT_SIZE)];
 		segment.lock();
 		try {
 			segment.free(p_address);
@@ -431,13 +432,13 @@ public final class RawMemoryNew {
 		long offset;
 
 		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
-		size = (int)read(p_address, lengthFieldSize);
+		size = (int) read(p_address, lengthFieldSize);
 
 		try {
 			ret = new byte[size];
 
 			offset = m_memoryBase + p_address + lengthFieldSize;
-			for (int i = 0;i < size;i++) {
+			for (int i = 0; i < size; i++) {
 				ret[i] = UNSAFE.getByte(offset + i);
 			}
 		} catch (final Throwable e) {
@@ -513,13 +514,13 @@ public final class RawMemoryNew {
 		long offset;
 
 		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
-		size = (int)read(p_address, lengthFieldSize);
+		size = (int) read(p_address, lengthFieldSize);
 
 		Contract.check(p_value.length == size, "array size differs from memory size");
 
 		try {
 			offset = m_memoryBase + p_address + lengthFieldSize;
-			for (int i = 0;i < p_value.length;i++) {
+			for (int i = 0; i < p_value.length; i++) {
 				UNSAFE.putByte(offset + i, p_value[i]);
 			}
 		} catch (final Throwable e) {
@@ -535,7 +536,7 @@ public final class RawMemoryNew {
 		double[] ret;
 
 		ret = new double[m_segments.length];
-		for (int i = 0;i < m_segments.length;i++) {
+		for (int i = 0; i < m_segments.length; i++) {
 			ret[i] = m_segments[i].getFragmentation();
 		}
 
@@ -549,7 +550,7 @@ public final class RawMemoryNew {
 	 * @return the segment
 	 */
 	protected static int getSegment(final long p_address) {
-		return (int)(p_address / FULL_SEGMENT_SIZE);
+		return (int) (p_address / FULL_SEGMENT_SIZE);
 	}
 
 	/**
@@ -560,7 +561,7 @@ public final class RawMemoryNew {
 		Segment.Status[] ret;
 
 		ret = new Segment.Status[m_segments.length];
-		for (int i = 0;i < m_segments.length;i++) {
+		for (int i = 0; i < m_segments.length; i++) {
 			ret[i] = m_segments[i].getStatus();
 		}
 
@@ -589,7 +590,7 @@ public final class RawMemoryNew {
 		output.append("\nSize: " + Tools.readableSize(m_memorySize));
 		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(FULL_SEGMENT_SIZE));
 		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
-		for (int i = 0;i < stati.length;i++) {
+		for (int i = 0; i < stati.length; i++) {
 			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assignedThread + "): "
 					+ Tools.readableSize(stati[i].m_freeSpace) + " in " + stati[i].m_freeBlocks + " blocks");
 		}
@@ -644,7 +645,7 @@ public final class RawMemoryNew {
 	private static void writeRightPartOfMarker(final long p_address, final int p_right) {
 		byte marker;
 
-		marker = (byte)((UNSAFE.getByte(m_memoryBase + p_address) & 0xF0) + (p_right & 0xF));
+		marker = (byte) ((UNSAFE.getByte(m_memoryBase + p_address) & 0xF0) + (p_right & 0xF));
 		UNSAFE.putByte(m_memoryBase + p_address, marker);
 	}
 
@@ -658,7 +659,7 @@ public final class RawMemoryNew {
 	private static void writeLeftPartOfMarker(final long p_address, final int p_left) {
 		byte marker;
 
-		marker = (byte)(((p_left & 0xF) << 4) + (UNSAFE.getByte(m_memoryBase + p_address) & 0xF));
+		marker = (byte) (((p_left & 0xF) << 4) + (UNSAFE.getByte(m_memoryBase + p_address) & 0xF));
 		UNSAFE.putByte(m_memoryBase + p_address, marker);
 	}
 
@@ -847,7 +848,7 @@ public final class RawMemoryNew {
 			small = m_status.getSmallBlocks();
 
 			if (small >= 1 || free >= 1) {
-				ret = (double)small / free;
+				ret = (double) small / free;
 			}
 
 			return ret;
@@ -878,7 +879,7 @@ public final class RawMemoryNew {
 			}
 			size = p_size + lengthFieldSize;
 
-			marker = (byte)(OCCUPIED_FLAG + lengthFieldSize);
+			marker = (byte) (OCCUPIED_FLAG + lengthFieldSize);
 
 			// Get the list with a free block which is big enough
 			list = getList(size) + 1;
@@ -1334,6 +1335,13 @@ public final class RawMemoryNew {
 			return ret;
 		}
 
+		/**
+		 * Leaves the arena
+		 * @param p_threadID
+		 *            the ID of the Thread
+		 * @param p_segment
+		 *            the Segment
+		 */
 		private void leaveArena(final long p_threadID, final Segment p_segment) {
 			p_segment.unlock();
 		}
@@ -1377,15 +1385,15 @@ public final class RawMemoryNew {
 			tempAssigned = null;
 			fragmentationAssigned = 1;
 			freeAssigned = 0;
-			for (int tries = 0;tries < 10 && tempUnassigned == null && tempAssigned == null;tries++) {
-				for (int i = 0;i < m_segments.length;i++) {
+			for (int tries = 0; tries < 10 && tempUnassigned == null && tempAssigned == null; tries++) {
+				for (int i = 0; i < m_segments.length; i++) {
 					if (m_segments[i].m_status.m_freeSpace > p_minSize && m_segments[i].tryLock()) {
 						if (m_segments[i].isAssigned()) {
 							fragmentationTemp = m_segments[i].getFragmentation();
 							freeTemp = m_segments[i].m_status.getFreeSpace();
 
-							if (fragmentationTemp < fragmentationAssigned
-									|| (fragmentationTemp == fragmentationAssigned && freeTemp > freeAssigned)) {
+							if (fragmentationTemp < fragmentationAssigned || fragmentationTemp == fragmentationAssigned
+									&& freeTemp > freeAssigned) {
 								if (tempAssigned != null) {
 									tempAssigned.unlock();
 								}
@@ -1400,7 +1408,7 @@ public final class RawMemoryNew {
 							freeTemp = m_segments[i].m_status.getFreeSpace();
 
 							if (fragmentationTemp < fragmentationUnassigned
-									|| (fragmentationTemp == fragmentationUnassigned && freeTemp > freeUnassigned)) {
+									|| fragmentationTemp == fragmentationUnassigned && freeTemp > freeUnassigned) {
 								if (tempUnassigned != null) {
 									tempUnassigned.unlock();
 								}

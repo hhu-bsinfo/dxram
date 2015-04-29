@@ -183,19 +183,19 @@ public final class TestCase {
 	 *             in case of an exception during (de-)initialization or with the input
 	 */
 	public List<TestResult> executeMultiple(final int p_times, final boolean p_abortOnException)
-		throws TestCaseException {
+			throws TestCaseException {
 		List<TestResult> ret;
 		int div;
 
 		div = Math.max(p_times / 10, 1);
 
-		//TODO: true
+		// TODO: true
 		m_oppressSystemOuts = false;
 
 		System.out.print("0%");
 
 		ret = new ArrayList<>();
-		for (int i = 1;i <= p_times;i++) {
+		for (int i = 1; i <= p_times; i++) {
 			ret.add(execute(p_abortOnException));
 
 			if (i % div == 0) {
@@ -411,7 +411,7 @@ public final class TestCase {
 		ret.setDeinit(p_deinit);
 
 		ret.prepareAdd();
-		for (int i = 0;i < p_operations.length;i++) {
+		for (int i = 0; i < p_operations.length; i++) {
 			ret.add(p_operations[i]);
 		}
 		ret.finishAdd();
@@ -451,7 +451,7 @@ public final class TestCase {
 		ret.setDeinit(p_deinit);
 
 		ret.prepareAdd();
-		for (int i = 0;i < p_operations.length;i++) {
+		for (int i = 0; i < p_operations.length; i++) {
 			ret.add(p_operations[i]);
 		}
 		ret.finishAdd();
@@ -714,7 +714,7 @@ public final class TestCase {
 
 			if (m_arguments != null) {
 				ret = new Class<?>[m_arguments.length];
-				for (int i = 0;i < m_arguments.length;i++) {
+				for (int i = 0; i < m_arguments.length; i++) {
 					ret[i] = m_arguments[i].getClass();
 				}
 			}
@@ -753,7 +753,7 @@ public final class TestCase {
 		}
 
 		@Override
-		public boolean execute(final TestContext p_context) throws Exception {
+		public boolean execute(final TestContext p_context) throws IOException, ReflectiveOperationException {
 			boolean ret = true;
 
 			for (AbstractOperation operation : m_operations) {
@@ -778,7 +778,7 @@ public final class TestCase {
 			AbstractOperation operation;
 
 			count = p_input.readInt();
-			for (int i = 0;i < count;i++) {
+			for (int i = 0; i < count; i++) {
 				try {
 					operation = AbstractOperation.class.cast(Class.forName(p_input.readUTF()).newInstance());
 					operation.readExternal(p_input);
@@ -807,10 +807,12 @@ public final class TestCase {
 		 * @param p_context
 		 *            the context of the test
 		 * @return true if the operation succeeds, false otherwise
-		 * @throws Exception
-		 *             if an exception occurred
+		 * @throws IOException
+		 *             if execution failed
+		 * @throws ReflectiveOperationException
+		 *             if execution failed
 		 */
-		public abstract boolean execute(TestContext p_context) throws Exception;
+		public abstract boolean execute(TestContext p_context) throws IOException, ReflectiveOperationException;
 
 		@Override
 		public void writeExternal(final ObjectOutput p_output) throws IOException {}
@@ -1103,10 +1105,12 @@ public final class TestCase {
 		/**
 		 * Gets the init operation
 		 * @return the init operation
-		 * @throws Exception
-		 *             if the init operation could not be get
+		 * @throws IOException
+		 *             if the init operation could not be gotten
+		 * @throws ReflectiveOperationException
+		 *             if the init operation could not be gotten
 		 */
-		protected abstract AbstractOperation doGetInit() throws Exception;
+		protected abstract AbstractOperation doGetInit() throws IOException, ReflectiveOperationException;
 
 		/**
 		 * Sets the init operation
@@ -1127,10 +1131,13 @@ public final class TestCase {
 		 * Sets the init operation
 		 * @param p_init
 		 *            the init operation
-		 * @throws Exception
+		 * @throws IOException
+		 *             if the init operation could not be set
+		 * @throws ReflectiveOperationException
 		 *             if the init operation could not be set
 		 */
-		protected abstract void doSetInit(final AbstractOperation p_init) throws Exception;
+		protected abstract void doSetInit(final AbstractOperation p_init) throws IOException,
+				ReflectiveOperationException;
 
 		/**
 		 * Gets the deinit operation
@@ -1153,10 +1160,12 @@ public final class TestCase {
 		/**
 		 * Gets the deinit operation
 		 * @return the deinit operation
-		 * @throws Exception
-		 *             if the deinit operation could not be get
+		 * @throws IOException
+		 *             if the deinit operation could not be gotten
+		 * @throws ReflectiveOperationException
+		 *             if the deinit operation could not be gotten
 		 */
-		protected abstract AbstractOperation doGetDeinit() throws Exception;
+		protected abstract AbstractOperation doGetDeinit() throws IOException, ReflectiveOperationException;
 
 		/**
 		 * Sets the deinit operation
@@ -1177,10 +1186,10 @@ public final class TestCase {
 		 * Sets the deinit operation
 		 * @param p_deinit
 		 *            the deinit operation
-		 * @throws Exception
+		 * @throws IOException
 		 *             if the deinit operation could not be set
 		 */
-		protected abstract void doSetDeinit(final AbstractOperation p_deinit) throws Exception;
+		protected abstract void doSetDeinit(final AbstractOperation p_deinit) throws IOException;
 
 		/**
 		 * Prepares the input for adding operations
@@ -1197,10 +1206,10 @@ public final class TestCase {
 
 		/**
 		 * Prepares the input for adding operations
-		 * @throws Exception
+		 * @throws IOException
 		 *             if the preparation fails
 		 */
-		protected void doPrepareAdd() throws Exception {}
+		protected void doPrepareAdd() throws IOException {}
 
 		/**
 		 * Completes the adding of operations
@@ -1217,10 +1226,10 @@ public final class TestCase {
 
 		/**
 		 * Completes the adding of operations
-		 * @throws Exception
+		 * @throws IOException
 		 *             if the completion fails
 		 */
-		protected void doFinishAdd() throws Exception {}
+		protected void doFinishAdd() throws IOException {}
 
 		/**
 		 * Adds an operation
@@ -1243,10 +1252,10 @@ public final class TestCase {
 		 * Adds an operation
 		 * @param p_operation
 		 *            the operation
-		 * @throws Exception
+		 * @throws IOException
 		 *             if the operation could not be added
 		 */
-		protected abstract void doAdd(final AbstractOperation p_operation) throws Exception;
+		protected abstract void doAdd(final AbstractOperation p_operation) throws IOException;
 
 		/**
 		 * Prepares the input for getting operations
@@ -1263,10 +1272,10 @@ public final class TestCase {
 
 		/**
 		 * Prepares the input for getting operations
-		 * @throws Exception
+		 * @throws IOException
 		 *             if the preparation fails
 		 */
-		protected void doPrepareGet() throws Exception {}
+		protected void doPrepareGet() throws IOException {}
 
 		/**
 		 * Completes the getting of operations
@@ -1283,10 +1292,10 @@ public final class TestCase {
 
 		/**
 		 * Completes the getting of operations
-		 * @throws Exception
+		 * @throws IOException
 		 *             if the completion fails
 		 */
-		protected void doFinishGet() throws Exception {}
+		protected void doFinishGet() throws IOException {}
 
 		/**
 		 * Gets the next operation
@@ -1309,10 +1318,12 @@ public final class TestCase {
 		/**
 		 * Gets the next operation
 		 * @return the next operation
-		 * @throws Exception
+		 * @throws IOException
+		 *             if the next operation could not be get
+		 * @throws ReflectiveOperationException
 		 *             if the next operation could not be get
 		 */
-		protected abstract AbstractOperation doGetNext() throws Exception;
+		protected abstract AbstractOperation doGetNext() throws IOException, ReflectiveOperationException;
 
 	}
 

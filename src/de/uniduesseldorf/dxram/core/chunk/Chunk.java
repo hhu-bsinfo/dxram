@@ -33,7 +33,7 @@ public class Chunk implements Comparable<Chunk> {
 	 *            the version
 	 */
 	public Chunk(final short p_nodeID, final long p_localID, final int p_size, final int p_version) {
-		this(((long)p_nodeID << 48) + p_localID, p_size);
+		this(((long) p_nodeID << 48) + p_localID, p_size);
 		m_version = p_version;
 	}
 
@@ -47,7 +47,7 @@ public class Chunk implements Comparable<Chunk> {
 	 *            the size
 	 */
 	public Chunk(final short p_nodeID, final long p_localID, final int p_size) {
-		this(((long)p_nodeID << 48) + p_localID, p_size);
+		this(((long) p_nodeID << 48) + p_localID, p_size);
 	}
 
 	/**
@@ -126,7 +126,6 @@ public class Chunk implements Comparable<Chunk> {
 		m_chunkID = p_chunkID;
 	}
 
-
 	// Methods
 	/**
 	 * Increments version
@@ -142,7 +141,7 @@ public class Chunk implements Comparable<Chunk> {
 
 	@Override
 	public final int compareTo(final Chunk p_cmp) {
-		return (int)(getChunkID() - p_cmp.getChunkID());
+		return (int) (getChunkID() - p_cmp.getChunkID());
 	}
 
 }

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.util.Arrays;
@@ -17,7 +18,7 @@ public class VersionsHashTable {
 	private int m_threshold;
 	private float m_loadFactor;
 
-	private int m_collisions = 0;
+	private int m_collisions;
 
 	// Constructors
 	/**
@@ -37,10 +38,10 @@ public class VersionsHashTable {
 
 		if (m_elementCapacity == 0) {
 			m_table = new int[3];
-			m_threshold = (int)m_loadFactor;
+			m_threshold = (int) m_loadFactor;
 		} else {
 			m_table = new int[m_intCapacity];
-			m_threshold = (int)(m_elementCapacity * m_loadFactor);
+			m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		}
 	}
 
@@ -56,9 +57,9 @@ public class VersionsHashTable {
 	public final void set(final int p_index, final long p_key, final int p_value) {
 		int index;
 
-		index = (p_index % m_elementCapacity) * 3;
-		m_table[index] = (int)(p_key >> 32);
-		m_table[index + 1] = (int)p_key;
+		index = p_index % m_elementCapacity * 3;
+		m_table[index] = (int) (p_key >> 32);
+		m_table[index + 1] = (int) p_key;
 		m_table[index + 2] = p_value;
 	}
 
@@ -71,8 +72,8 @@ public class VersionsHashTable {
 	public final long getKey(final int p_index) {
 		int index;
 
-		index = (p_index % m_elementCapacity) * 3;
-		return (long)m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
+		index = p_index % m_elementCapacity * 3;
+		return (long) m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
 	}
 
 	/**
@@ -82,7 +83,7 @@ public class VersionsHashTable {
 	 * @return the value
 	 */
 	public final int getValue(final int p_index) {
-		return m_table[(p_index % m_elementCapacity) * 3 + 2];
+		return m_table[p_index % m_elementCapacity * 3 + 2];
 	}
 
 	/**
@@ -157,7 +158,7 @@ public class VersionsHashTable {
 	 * Returns the value to which the specified key is mapped in VersionsHashTable
 	 * @param p_key
 	 *            the searched key (is incremented before insertion to avoid 0)
-	 * @return  the value to which the key is mapped in VersionsHashTable
+	 * @return the value to which the key is mapped in VersionsHashTable
 	 */
 	public final int get(final long p_key) {
 		int ret = 0;
@@ -230,14 +231,14 @@ public class VersionsHashTable {
 		long iter;
 		final long key = p_key + 1;
 
-		if (((long)-1 & 0x0000FFFFFFFFFFFFL) != p_key) {
+		if ((-1 & 0x0000FFFFFFFFFFFFL) != p_key) {
 			index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
 			iter = getKey(index);
 			while (iter != 0) {
 				if (iter == key) {
 					ret = getValue(index);
-					if ((p_value > ret && ret != -1) || p_value == -1) {
+					if (p_value > ret && ret != -1 || p_value == -1) {
 						// -1 marks deleted objects
 						set(index, key, p_value);
 					}
@@ -305,14 +306,13 @@ public class VersionsHashTable {
 		int[] oldMap;
 		int[] newMap;
 
-
 		oldThreshold = m_threshold;
 		oldMap = m_table;
 
 		m_elementCapacity = m_elementCapacity * 2 + 1;
 		m_intCapacity = m_elementCapacity * 3;
 		newMap = new int[m_intCapacity];
-		m_threshold = (int)(m_elementCapacity * m_loadFactor);
+		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newMap;
 
 		System.out.print("Reached threshold (" + oldThreshold
@@ -321,7 +321,7 @@ public class VersionsHashTable {
 		oldCount = m_count;
 		while (index < oldThreshold) {
 			if (oldMap[index * 3] != 0) {
-				put((long)oldMap[index * 3] << 32 | oldMap[index * 3 + 1] & 0xFFFFFFFFL,
+				put((long) oldMap[index * 3] << 32 | oldMap[index * 3 + 1] & 0xFFFFFFFFL,
 						oldMap[index * 3 + 2] - 1);
 			}
 			index = (index + 1) % m_elementCapacity;
@@ -339,11 +339,13 @@ public class VersionsHashTable {
 	public final int hash(final long p_key) {
 		long hash = p_key;
 
-		/*hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		return (int) ((hash >> 16) ^ hash);*/
-		hash ^= (hash >>> 20) ^ (hash >>> 12);
-		return (int) (hash ^ (hash >>> 7) ^ (hash >>> 4));
+		/*
+		 * hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+		 * hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+		 * return (int) ((hash >> 16) ^ hash);
+		 */
+		hash ^= hash >>> 20 ^ hash >>> 12;
+		return (int) (hash ^ hash >>> 7 ^ hash >>> 4);
 	}
 
 	/**

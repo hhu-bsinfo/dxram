@@ -29,7 +29,7 @@ public final class Main {
 
 		if (p_arguments.length > 0) {
 			arguments = new String[p_arguments.length - 1];
-			for (int i = 0;i < arguments.length;i++) {
+			for (int i = 0; i < arguments.length; i++) {
 				arguments[i] = p_arguments[i + 1];
 			}
 

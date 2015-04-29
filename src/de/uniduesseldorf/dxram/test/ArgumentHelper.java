@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.util.Properties;
@@ -12,16 +13,16 @@ public class ArgumentHelper {
 		m_arguments = new Properties();
 
 		if (p_arguments != null) {
-			for (int i = 0;i < p_arguments.length;i++) {
+			for (int i = 0; i < p_arguments.length; i++) {
 				if (p_arguments[i].startsWith("-")) {
 					if (i < p_arguments.length - 1) {
-						if (p_arguments[i+1].startsWith("-")) {
+						if (p_arguments[i + 1].startsWith("-")) {
 							m_arguments.put(p_arguments[i], "");
-						}else{
+						} else {
 							m_arguments.put(p_arguments[i], p_arguments[i + 1]);
 							i++;
 						}
-					}else{
+					} else {
 						m_arguments.put(p_arguments[i], "");
 					}
 				}
@@ -40,7 +41,7 @@ public class ArgumentHelper {
 		if (m_arguments.containsKey(p_key)) {
 			try {
 				ret = Integer.parseInt(m_arguments.getProperty(p_key));
-			} catch (Exception e) {}
+			} catch (final Exception e) {}
 		}
 
 		return ret;

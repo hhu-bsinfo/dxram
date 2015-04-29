@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.text.NumberFormat;
@@ -13,7 +14,11 @@ import de.uniduesseldorf.dxram.utils.locks.JNISpinLock;
 import de.uniduesseldorf.dxram.utils.locks.NoLock;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
-public class LockTest {
+/**
+ * Compares different locks
+ * @author Florian Klein
+ */
+public final class LockTest {
 
 	// Constants
 	private static final String ARGUMENT_HELP = "-h";
@@ -35,7 +40,7 @@ public class LockTest {
 	 * @param p_arguments
 	 *            The program arguments
 	 */
-	public static void main(String[] p_arguments) {
+	public static void main(final String[] p_arguments) {
 		int rounds;
 		int threadCount;
 		ArgumentHelper helper;
@@ -75,6 +80,18 @@ public class LockTest {
 		}
 	}
 
+	/**
+	 * Evaluates a no-lock implementation
+	 * @param p_rounds
+	 *            the number of rounds
+	 * @param p_threadCount
+	 *            the thread count
+	 * @return the TestResult
+	 * @throws InterruptedException
+	 *             if thread was interrupted
+	 * @throws ExecutionException
+	 *             if execution failed
+	 */
 	private static TestResult evaluateNoLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -84,6 +101,18 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates a JNI lock
+	 * @param p_rounds
+	 *            the number of rounds
+	 * @param p_threadCount
+	 *            the thread count
+	 * @return the TestResult
+	 * @throws InterruptedException
+	 *             if thread was interrupted
+	 * @throws ExecutionException
+	 *             if execution failed
+	 */
 	private static TestResult evaluateJNILock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -93,6 +122,18 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates a spin lock
+	 * @param p_rounds
+	 *            the number of rounds
+	 * @param p_threadCount
+	 *            the thread count
+	 * @return the TestResult
+	 * @throws InterruptedException
+	 *             if thread was interrupted
+	 * @throws ExecutionException
+	 *             if execution failed
+	 */
 	private static TestResult evaluateSpinLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -102,6 +143,18 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates a java lock
+	 * @param p_rounds
+	 *            the number of rounds
+	 * @param p_threadCount
+	 *            the thread count
+	 * @return the TestResult
+	 * @throws InterruptedException
+	 *             if thread was interrupted
+	 * @throws ExecutionException
+	 *             if execution failed
+	 */
 	private static TestResult evaluateJavaLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		long time;
@@ -111,6 +164,20 @@ public class LockTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluates a given lock
+	 * @param p_lock
+	 *            the lock
+	 * @param p_rounds
+	 *            the number of rounds
+	 * @param p_threadCount
+	 *            the thread count
+	 * @return the TestResult
+	 * @throws InterruptedException
+	 *             if thread was interrupted
+	 * @throws ExecutionException
+	 *             if execution failed
+	 */
 	private static long evaluateLock(final Lock p_lock, final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		ExecutorService executorService;
@@ -121,14 +188,14 @@ public class LockTest {
 
 		futures = new Future[p_threadCount];
 		ret = System.nanoTime();
-		for (int i = 0;i < p_threadCount;i++) {
+		for (int i = 0; i < p_threadCount; i++) {
 			futures[i] = executorService.submit(new Runnable() {
 
 				@Override
 				public void run() {
-					final int COUNT = p_rounds / p_threadCount;
+					final int count = p_rounds / p_threadCount;
 
-					for (int i = 1;i <= COUNT;i++) {
+					for (int i = 1; i <= count; i++) {
 						p_lock.lock();
 						p_lock.unlock();
 					}
@@ -146,6 +213,15 @@ public class LockTest {
 		return ret;
 	}
 
+	/**
+	 * Prints test results
+	 * @param p_test
+	 *            the test mode
+	 * @param p_rounds
+	 *            the number of rounds
+	 * @param p_result
+	 *            the TestResult
+	 */
 	private static void printTestResult(final String p_test, final int p_rounds, final TestResult p_result) {
 		StringBuffer output;
 		NumberFormat format;
@@ -162,18 +238,22 @@ public class LockTest {
 	}
 
 	// Classes
+	/**
+	 * Test results
+	 * @author Florian Klein
+	 */
 	private static final class TestResult {
 
 		// Attributes
-		private long time;
+		private long m_time;
 
 		/**
 		 * Creates an instance of MemoryManagementTest
 		 * @param p_time
 		 *            the test time
 		 */
-		public TestResult(long p_time) {
-			time = p_time;
+		public TestResult(final long p_time) {
+			m_time = p_time;
 		}
 
 		/**
@@ -181,7 +261,7 @@ public class LockTest {
 		 * @return the test time
 		 */
 		public long getTime() {
-			return time;
+			return m_time;
 		}
 
 	}

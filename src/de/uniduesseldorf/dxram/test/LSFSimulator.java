@@ -13,10 +13,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
 
-import de.uniduesseldorf.dxram.test.LSFSimulator.Obj;
-import de.uniduesseldorf.dxram.test.LSFSimulator.Segment;
-
-
 /* Copyright (c) 2013 Stanford University
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -50,7 +46,7 @@ import de.uniduesseldorf.dxram.test.LSFSimulator.Segment;
 public final class LSFSimulator {
 
 	// Constants
-	//These are LSF simulator defaults (see 5.5.3 in Mendel's dissertation)
+	// These are LSF simulator defaults (see 5.5.3 in Mendel's dissertation)
 	// Sentinel. Do not change.
 	private static final int DEAD_OBJECT_ID = -1;
 	// Simulates 4KB objects and 2MB segments.
@@ -89,7 +85,6 @@ public final class LSFSimulator {
 	// If TAKE_LOG_OF_AGE is true, this is the base of our log.
 	private static double m_logBase;
 
-
 	// -Counters-
 	private static int m_segmentsCleaned;
 	private static int m_cleaningPasses;
@@ -115,7 +110,6 @@ public final class LSFSimulator {
 
 	private static Utilisations m_preCleaningUtilisations;
 	private static Utilisations m_cleanedSegmentUtilisations;
-
 
 	// Constructors
 	/**
@@ -272,7 +266,6 @@ public final class LSFSimulator {
 		ArrayList<Segment> segmentsToClean;
 		ArrayList<Obj> liveObjects;
 
-
 		// We don't clean to the current head segment for the simple reason that
 		// it is full (cleaning occurs only when we've completely run out of
 		// free segments).
@@ -361,8 +354,8 @@ public final class LSFSimulator {
 	 * @return ...
 	 */
 	public static double lsfWriteCost() {
-		return (double)(m_newObjectsWritten + m_cleanerObjectsWritten + (m_segmentsCleaned - m_emptySegmentsCleaned)
-				* OBJECTS_PER_SEGMENT) / (double)m_newObjectsWritten;
+		return (double) (m_newObjectsWritten + m_cleanerObjectsWritten + (m_segmentsCleaned - m_emptySegmentsCleaned)
+				* OBJECTS_PER_SEGMENT) / (double) m_newObjectsWritten;
 	}
 
 	/**
@@ -370,7 +363,7 @@ public final class LSFSimulator {
 	 * @return ...
 	 */
 	public static double ramcloudWriteCost() {
-		return (double)(m_newObjectsWritten + m_cleanerObjectsWritten) / (double)m_newObjectsWritten;
+		return (double) (m_newObjectsWritten + m_cleanerObjectsWritten) / (double) m_newObjectsWritten;
 	}
 
 	/**
@@ -431,10 +424,8 @@ public final class LSFSimulator {
 	/**
 	 * Dump a histogram of object writes to stderr so that the access distribution
 	 * can be sanity checked.
-	 *
 	 * The output is as follows:
-	 * [% of total objects]        [probability %]     [cumulative %]
-	 *
+	 * [% of total objects] [probability %] [cumulative %]
 	 * The first column serves as an x-value. The second and third columns are
 	 * y-values that can be used for PDFs and CDFs, respectively.
 	 */
@@ -455,11 +446,11 @@ public final class LSFSimulator {
 		for (int i = 0; i < TOTAL_LIVE_OBJECTS; i++) {
 			sum += m_objectWriteCounts[i];
 			cumulativeSum += m_objectWriteCounts[i];
-			if (i != 0 && (i % (TOTAL_LIVE_OBJECTS / 100)) == 0) {
+			if (i != 0 && i % (TOTAL_LIVE_OBJECTS / 100) == 0) {
 				System.out.format("%.6f %.6f %.6f\n",
-						(double)i / (TOTAL_LIVE_OBJECTS / 100) / 100,
-						(double)sum / m_newObjectsWritten,
-						(double)cumulativeSum / m_newObjectsWritten);
+						(double) i / (TOTAL_LIVE_OBJECTS / 100) / 100,
+						(double) sum / m_newObjectsWritten,
+						(double) cumulativeSum / m_newObjectsWritten);
 				sum = 0;
 			}
 		}
@@ -692,12 +683,12 @@ public final class LSFSimulator {
 			System.out.println("# ORDER_SEGMENTS_BY_SEGMENT_AGE = false");
 		}
 		if (m_takeRootOfAge) {
-			System.out.format("# TAKE_ROOT_OF_AGE = true (exp = %.5f)\n",  m_rootExp);
+			System.out.format("# TAKE_ROOT_OF_AGE = true (exp = %.5f)\n", m_rootExp);
 		} else {
 			System.out.format("# TAKE_ROOT_OF_AGE = false (exp = %.5f)\n", m_rootExp);
 		}
 		if (m_takeLogOfAge) {
-			System.out.format("# TAKE_LOG_OF_AGE = true (base = %.5f)\n",  m_logBase);
+			System.out.format("# TAKE_LOG_OF_AGE = true (base = %.5f)\n", m_logBase);
 		} else {
 			System.out.format("# TAKE_LOG_OF_AGE = false (base = %.5f)\n", m_logBase);
 		}
@@ -732,13 +723,13 @@ public final class LSFSimulator {
 
 		lifetime = -1;
 		liveDataSegments = TOTAL_LIVE_OBJECTS / OBJECTS_PER_SEGMENT;
-		totalSegments = (int)(100.0 / m_utilisation * liveDataSegments);
+		totalSegments = (int) (100.0 / m_utilisation * liveDataSegments);
 
 		System.out.format("# Total Segments: %d, Live Data Segments: %d\n",
 				totalSegments, liveDataSegments);
 		System.out.format("# Desired u = %.2f, actual u = %.2f\n",
 				m_utilisation / 100.0,
-				(double)liveDataSegments / totalSegments);
+				(double) liveDataSegments / totalSegments);
 
 		for (i = 0; i < totalSegments; i++) {
 			freeList.add(new Segment());
@@ -795,12 +786,12 @@ public final class LSFSimulator {
 			}
 
 			writesSinceChange++;
-			if (writesSinceChange == (2 * totalSegments * OBJECTS_PER_SEGMENT) && inScriptFile == null) {
+			if (writesSinceChange == 2 * totalSegments * OBJECTS_PER_SEGMENT && inScriptFile == null) {
 				break;
 			}
 
 			// Print out every ~1 second. Don't check every time to cut overhead.
-			if ((m_newObjectsWritten % 99991) == 0) {
+			if (m_newObjectsWritten % 99991 == 0) {
 				runTime = Math.max(1, (System.currentTimeMillis() - startTime) / 1000);
 				if (runTime > lastPrintTime) {
 					System.out.format("\r Wrote %d new objects (%d / sec), Cleaned %d segments (%d empty),"
@@ -812,21 +803,22 @@ public final class LSFSimulator {
 				}
 			}
 
-			assert (activeList.size() + freeList.size() + 1) == totalSegments;
+			assert activeList.size() + freeList.size() + 1 == totalSegments;
 		}
 
 		System.out.println("\nDone!");
 
 		System.out.format("# Total simulation time = %d seconds\n",
-				(int)((System.currentTimeMillis() - startTime) / 1000));
+				(int) ((System.currentTimeMillis() - startTime) / 1000));
 		System.out.format("# New object writes = %d\n", m_newObjectsWritten);
 		System.out.format("# Survivor objects written by cleaner = %d\n", m_cleanerObjectsWritten);
 		System.out.format("# LSF write cost = %.3f\n", lsfWriteCost());
 		System.out.format("# Cleaning passes = %d\n", m_cleaningPasses);
 		System.out.format("# Segments cleaned = %d\n", m_segmentsCleaned);
-		System.out.format("# Average segments cleaned per pass = %.2f\n", (double)m_segmentsCleaned / m_cleaningPasses);
+		System.out
+		.format("# Average segments cleaned per pass = %.2f\n", (double) m_segmentsCleaned / m_cleaningPasses);
 		System.out.format("# Average segments free after cleaning = %.2f\n",
-				(double)m_segmentsFreeAfterCleaning / m_cleaningPasses);
+				(double) m_segmentsFreeAfterCleaning / m_cleaningPasses);
 		System.out.format("# Objects read from cleaned segments = %d\n", m_segmentsCleaned * OBJECTS_PER_SEGMENT);
 
 		m_preCleaningUtilisations.dump("Live Segment Utilisations Prior to Cleaning");
@@ -840,11 +832,6 @@ public final class LSFSimulator {
 			generateScriptFile(writes, outScriptFile);
 		}
 	}
-
-
-
-
-
 
 	// Classes
 	/**
@@ -1062,7 +1049,7 @@ public final class LSFSimulator {
 		 * @return ...
 		 */
 		public double utilisation() {
-			return (double)m_liveObjectCount / OBJECTS_PER_SEGMENT;
+			return (double) m_liveObjectCount / OBJECTS_PER_SEGMENT;
 		}
 
 		/**
@@ -1093,7 +1080,7 @@ public final class LSFSimulator {
 			} else if (m_orderSegmentsByMinAge) {
 				ret = m_latestTimestamp;
 			} else {
-				ret = (int)(m_timestampSum / m_liveObjectCount);
+				ret = (int) (m_timestampSum / m_liveObjectCount);
 			}
 
 			return ret;
@@ -1139,12 +1126,12 @@ public final class LSFSimulator {
 						double hotFraction;
 
 						hotFraction = hotDataSpacePct / 100.0;
-						lastHotObjectId = (int)(hotFraction * TOTAL_LIVE_OBJECTS);
+						lastHotObjectId = (int) (hotFraction * TOTAL_LIVE_OBJECTS);
 
 						if (randInt(0, 99) < hotDataAccessPct) {
-							ret = (int)randInt(0, lastHotObjectId - 1);
+							ret = (int) randInt(0, lastHotObjectId - 1);
 						} else {
-							ret = (int)randInt(lastHotObjectId, TOTAL_LIVE_OBJECTS - 1);
+							ret = (int) randInt(lastHotObjectId, TOTAL_LIVE_OBJECTS - 1);
 						}
 
 						return ret;
@@ -1169,14 +1156,14 @@ public final class LSFSimulator {
 
 						// Normalize to [0, 1) and choose the corresponding object
 						// (each one corresponds to an equal-sized slice in that range).
-						return (int)(expRnd / cap * TOTAL_LIVE_OBJECTS);
+						return (int) (expRnd / cap * TOTAL_LIVE_OBJECTS);
 					}
 				};
 			} else if (m_name.equals("uniform")) {
 				m_nextObjectMethod = new NextObjectMethod() {
 					@Override
 					public int nextObject() {
-						return (int)randInt(0, TOTAL_LIVE_OBJECTS - 1);
+						return (int) randInt(0, TOTAL_LIVE_OBJECTS - 1);
 					}
 				};
 			} else if (!m_name.equals("zipfian")) {
@@ -1213,7 +1200,7 @@ public final class LSFSimulator {
 
 			assert p_max >= p_min;
 
-			ret = p_min + (m_random.nextLong() % (p_max - p_min + 1));
+			ret = p_min + m_random.nextLong() % (p_max - p_min + 1);
 
 			if (ret < 0) {
 				ret *= -1;
@@ -1246,7 +1233,6 @@ public final class LSFSimulator {
 	 *         05.03.2014
 	 */
 	public static final class ZipfianDistribution extends Distribution {
-
 
 		// Attributes
 		private int m_totalObjects;
@@ -1332,7 +1318,7 @@ public final class LSFSimulator {
 				p = f(i, p_s, p_n);
 				sum += 100.0 * p;
 				if (sum >= p_hotAccessPct) {
-					ret = 100.0 * (double)i / (double)p_n;
+					ret = 100.0 * i / p_n;
 					break;
 				}
 			}
@@ -1343,16 +1329,13 @@ public final class LSFSimulator {
 		 * Try to compute the proper skew value to get a Zipfian distribution
 		 * over N keys where hotAccessPct of the requests go to hotDataPct of
 		 * the data.
-		 *
 		 * This method simply does a binary search across a range of skew
 		 * values until it finds something close. For large values of N this
 		 * can take a while (a few minutes when N = 100e6). If there's a fast
 		 * approximation of the generalizedHarmonic method above (which supposedly
 		 * converges to the Riemann Zeta Function for large N), this could be
 		 * significantly improved.
-		 *
 		 * But, it's good enough for current purposes.
-		 *
 		 * @param p_n
 		 *            ...
 		 * @param p_hotAccessPct
@@ -1401,7 +1384,6 @@ public final class LSFSimulator {
 		 * choose a group based on the cumulative frequency of keys it contains. We
 		 * then uniform-randomly select a key within the chosen group (see the
 		 * chooseNextKey method).
-		 *
 		 * The number of groups is fixed (1000) and each contains 0.1% of the key
 		 * frequency space. This means that groups tend to increase exponentially in
 		 * the size of the range of keys they contain (unless the Zipfian distribution
@@ -1409,7 +1391,6 @@ public final class LSFSimulator {
 		 * for the most popular keys (the most popular keys are singleton groups) and
 		 * only lose accuracy for ones further out in the curve where it's much flatter
 		 * anyway.
-		 *
 		 * @param p_n
 		 *            ...
 		 * @param p_s
@@ -1425,7 +1406,7 @@ public final class LSFSimulator {
 			for (long i = startI; i <= p_n; i++) {
 				p = f(i, p_s, p_n);
 				cdf += p;
-				if ((cdf - startCdf) >= groupFrequencySpan || i == p_n) {
+				if (cdf - startCdf >= groupFrequencySpan || i == p_n) {
 					m_groupsTable.add(new Group(startI, i, startCdf));
 					startCdf = cdf;
 					startI = i + 1;
@@ -1436,17 +1417,15 @@ public final class LSFSimulator {
 		/**
 		 * Obtain the next key fitting the Zipfian distribution described by the
 		 * 'groupsTable' table.
-		 *
 		 * This method binary searches (logn complexity), but the groups table
 		 * is small enough to fit in L2 cache, so it's quite fast (~6M keys
 		 * per second -- more than sufficient for now).
-		 *
 		 * @return ...
 		 */
 		public long chooseNextKey() {
 			long ret;
 			int i;
-			long min =  0;
+			long min = 0;
 			long max = m_groupsTable.size() - 1;
 			double p;
 			double start;
@@ -1454,7 +1433,7 @@ public final class LSFSimulator {
 
 			p = uniformUnit();
 			while (true) {
-				i = (int)((min + max) / 2);
+				i = (int) ((min + max) / 2);
 				start = m_groupsTable.get(i).getFirstCdf();
 				end = 1.1;
 				if (i != m_groupsTable.size() - 1) {
@@ -1473,10 +1452,9 @@ public final class LSFSimulator {
 
 		@Override
 		public int getNextObject() {
-			return (int)chooseNextKey();
+			return (int) chooseNextKey();
 		}
 	}
-
 
 	/**
 	 * Strategy
@@ -1621,19 +1599,19 @@ public final class LSFSimulator {
 						}
 
 						if (m_takeRootOfAge) {
-							age = (long)Math.pow(age, m_rootExp);
+							age = (long) Math.pow(age, m_rootExp);
 						} else if (m_takeLogOfAge) {
-							age = (long)(Math.log(age) / Math.log(m_logBase));
+							age = (long) (Math.log(age) / Math.log(m_logBase));
 						}
 
 						if (m_useRamcloudCostBenefit) {
-							ret = ((1.0 - u) * age) / u;
+							ret = (1.0 - u) * age / u;
 						} else if (m_useDxramCostBenefit) {
 							// TODO: Adapt cost benefit function
-							ret = ((1.0 - u) * age) / u;
+							ret = (1.0 - u) * age / u;
 						} else {
 							// Default LSF cost-benefit formula.
-							ret = ((1.0 - u) * age) / (1.0 + u);
+							ret = (1.0 - u) * age / (1.0 + u);
 						}
 					}
 				}
@@ -1648,7 +1626,7 @@ public final class LSFSimulator {
 				diff = costBenefit(p_a) - costBenefit(p_b);
 				if (diff > 0) {
 					ret = 1;
-				} else if (diff < 0){
+				} else if (diff < 0) {
 					ret = -1;
 				}
 				return ret;
@@ -1671,7 +1649,6 @@ public final class LSFSimulator {
 
 		// Constructors
 
-
 		// Methods
 		/**
 		 * Creates an instance of Utilisation
@@ -1687,7 +1664,7 @@ public final class LSFSimulator {
 		 *            ...
 		 */
 		public void store(final double p_u) {
-			m_counts[(int)Math.round(m_buckets * p_u)]++;
+			m_counts[(int) Math.round(m_buckets * p_u)]++;
 			m_totalSamples++;
 			m_total += p_u;
 		}
@@ -1706,203 +1683,200 @@ public final class LSFSimulator {
 					continue;
 				}
 				sum += m_counts[i];
-				System.out.format("%f %f %f\n", (double)i / m_buckets, (double)m_counts[i] / m_totalSamples,
-						(double)sum / m_totalSamples);
+				System.out.format("%f %f %f\n", (double) i / m_buckets, (double) m_counts[i] / m_totalSamples,
+						(double) sum / m_totalSamples);
 			}
 		}
 	}
 
-
-}
-
-/**
- * Group
- * Each of these entries represents a contiguous portion of the CDF curve
- * of keys vs. frequency. We use these to sample keys out to fit an
- * approximation of the Zipfian distribution. See generateTable for more
- * details on what's going on here.
- * @author Kevin Beineke
- *         05.03.2014
- */
-class Group {
-
-	// Attributes
-	private long m_firstKey;
-	private long m_lastKey;
-	private double m_firstCdf;
-
 	/**
-	 * Creates an instance of Group
-	 * @param p_firstKey
-	 *            ...
-	 * @param p_lastKey
-	 *            ...
-	 * @param p_firstCdf
-	 *            ...
+	 * Group
+	 * Each of these entries represents a contiguous portion of the CDF curve
+	 * of keys vs. frequency. We use these to sample keys out to fit an
+	 * approximation of the Zipfian distribution. See generateTable for more
+	 * details on what's going on here.
+	 * @author Kevin Beineke
+	 *         05.03.2014
 	 */
-	public Group(final long p_firstKey, final long p_lastKey, final double p_firstCdf) {
-		m_firstKey = p_firstKey;
-		m_lastKey = p_lastKey;
-		m_firstCdf = p_firstCdf;
-	}
+	static class Group {
 
-	// Getter
-	/**
-	 * ...
-	 * @return ...
-	 */
-	public long getFirstKey() {
-		return m_firstKey;
-	}
+		// Attributes
+		private long m_firstKey;
+		private long m_lastKey;
+		private double m_firstCdf;
 
-	/**
-	 * ...
-	 * @return ...
-	 */
-	public long getLastKey() {
-		return m_lastKey;
-	}
+		/**
+		 * Creates an instance of Group
+		 * @param p_firstKey
+		 *            ...
+		 * @param p_lastKey
+		 *            ...
+		 * @param p_firstCdf
+		 *            ...
+		 */
+		public Group(final long p_firstKey, final long p_lastKey, final double p_firstCdf) {
+			m_firstKey = p_firstKey;
+			m_lastKey = p_lastKey;
+			m_firstCdf = p_firstCdf;
+		}
 
-	/**
-	 * ...
-	 * @return ...
-	 */
-	public double getFirstCdf() {
-		return m_firstCdf;
-	}
-}
+		// Getter
+		/**
+		 * ...
+		 * @return ...
+		 */
+		public long getFirstKey() {
+			return m_firstKey;
+		}
 
-/**
- * Pair
- * @author Kevin Beineke
- *         05.03.2014
- */
-class Pair {
+		/**
+		 * ...
+		 * @return ...
+		 */
+		public long getLastKey() {
+			return m_lastKey;
+		}
 
-	// Attributes
-	private int m_firstValue;
-	private int m_secondValue;
-
-	/**
-	 * Creates an instance of Group
-	 * @param p_firstValue
-	 *            ...
-	 * @param p_secondValue
-	 *            ...
-	 */
-	public Pair(final int p_firstValue, final int p_secondValue) {
-		m_firstValue = p_firstValue;
-		m_secondValue = p_secondValue;
-	}
-
-	// Getter
-	/**
-	 * ...
-	 * @return ...
-	 */
-	public int getFirstValue() {
-		return m_firstValue;
+		/**
+		 * ...
+		 * @return ...
+		 */
+		public double getFirstCdf() {
+			return m_firstCdf;
+		}
 	}
 
 	/**
-	 * ...
-	 * @return ...
+	 * Pair
+	 * @author Kevin Beineke
+	 *         05.03.2014
 	 */
-	public int getSecondValue() {
-		return m_secondValue;
+	static class Pair {
+
+		// Attributes
+		private int m_firstValue;
+		private int m_secondValue;
+
+		/**
+		 * Creates an instance of Group
+		 * @param p_firstValue
+		 *            ...
+		 * @param p_secondValue
+		 *            ...
+		 */
+		public Pair(final int p_firstValue, final int p_secondValue) {
+			m_firstValue = p_firstValue;
+			m_secondValue = p_secondValue;
+		}
+
+		// Getter
+		/**
+		 * ...
+		 * @return ...
+		 */
+		public int getFirstValue() {
+			return m_firstValue;
+		}
+
+		/**
+		 * ...
+		 * @return ...
+		 */
+		public int getSecondValue() {
+			return m_secondValue;
+		}
+
+		// Setter
+		/**
+		 * ...
+		 * @param p_firstValue
+		 *            ...
+		 */
+		public void setFirstValue(final int p_firstValue) {
+			m_firstValue = p_firstValue;
+		}
+
+		/**
+		 * ...
+		 * @param p_secondValue
+		 *            ...
+		 */
+		public void setSecondValue(final int p_secondValue) {
+			m_secondValue = p_secondValue;
+		}
 	}
 
-	// Setter
 	/**
-	 * ...
-	 * @param p_firstValue
-	 *            ...
+	 * Used to sort survivors such that the oldest are written first. This is slightly
+	 * preferable to writing oldest last because the last survivor segment is likely to
+	 * not be completely full and will mix in new writes. We'd prefer to mix hotter
+	 * data with the new writes (most of which will be hot) than with colder data.
 	 */
-	public void setFirstValue(final int p_firstValue) {
-		m_firstValue = p_firstValue;
+	static class TimeStampComparator implements Comparator<Obj> {
+
+		// Constructors
+		/**
+		 * Creates an instance of TimeStampComparator
+		 */
+		public TimeStampComparator() {}
+
+		// Methods
+		@Override
+		public final int compare(final Obj p_a, final Obj p_b) {
+			return (int) (p_a.getTimestamp() - p_b.getTimestamp());
+		}
 	}
 
 	/**
-	 * ...
-	 * @param p_secondValue
-	 *            ...
+	 * Used to sort survivors when we're replaying from a script and using future
+	 * knowledge to our benefit. This sorts objects such that the ones to be
+	 * rewritten farthest in the future are written out first.
 	 */
-	public void setSecondValue(final int p_secondValue) {
-		m_secondValue = p_secondValue;
+	static class LifetimeComparator implements Comparator<Obj> {
+
+		// Constructors
+		/**
+		 * Creates an instance of LifetimeComparator
+		 */
+		public LifetimeComparator() {}
+
+		// Methods
+		@Override
+		public final int compare(final Obj p_a, final Obj p_b) {
+			return (int) (p_a.getTimeOfDeath() - p_b.getTimeOfDeath());
+		}
 	}
-}
 
-/**
- * Used to sort survivors such that the oldest are written first. This is slightly
- * preferable to writing oldest last because the last survivor segment is likely to
- * not be completely full and will mix in new writes. We'd prefer to mix hotter
- * data with the new writes (most of which will be hot) than with colder data.
- */
-class TimeStampComparator implements Comparator<Obj> {
-
-	// Constructors
 	/**
-	 * Creates an instance of TimeStampComparator
+	 * NextObjectMethod
+	 * @author Kevin Beineke
+	 *         05.03.2014
 	 */
-	public TimeStampComparator() {}
+	interface NextObjectMethod {
 
-	// Methods
-	@Override
-	public final int compare(final Obj p_a, final Obj p_b) {
-		return (int)(p_a.getTimestamp() - p_b.getTimestamp());
+		/**
+		 * ...
+		 * @return ...
+		 */
+		int nextObject();
 	}
-}
 
-/**
- * Used to sort survivors when we're replaying from a script and using future
- * knowledge to our benefit. This sorts objects such that the ones to be
- * rewritten farthest in the future are written out first.
- */
-class LifetimeComparator implements Comparator<Obj> {
-
-	// Constructors
 	/**
-	 * Creates an instance of LifetimeComparator
+	 * ChooseSegmentMethod
+	 * @author Kevin Beineke
+	 *         05.03.2014
 	 */
-	public LifetimeComparator() {}
+	interface ChooseSegmentMethod {
 
-	// Methods
-	@Override
-	public final int compare(final Obj p_a, final Obj p_b) {
-		return (int)(p_a.getTimeOfDeath() - p_b.getTimeOfDeath());
+		/**
+		 * ...
+		 * @param p_activeList
+		 *            ...
+		 * @param p_segmentsToClean
+		 *            ...
+		 */
+		void chooseSegment(final ArrayList<Segment> p_activeList,
+				final ArrayList<Segment> p_segmentsToClean);
 	}
-}
 
-
-/**
- * NextObjectMethod
- * @author Kevin Beineke
- *         05.03.2014
- */
-interface NextObjectMethod {
-
-	/**
-	 * ...
-	 * @return ...
-	 */
-	int nextObject();
-}
-
-
-/**
- * ChooseSegmentMethod
- * @author Kevin Beineke
- *         05.03.2014
- */
-interface ChooseSegmentMethod {
-
-	/**
-	 * ...
-	 * @param p_activeList
-	 *            ...
-	 * @param p_segmentsToClean
-	 *            ...
-	 */
-	void chooseSegment(final ArrayList<Segment> p_activeList,
-			final ArrayList<Segment> p_segmentsToClean);
 }

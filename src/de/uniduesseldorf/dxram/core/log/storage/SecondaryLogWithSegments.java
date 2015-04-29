@@ -1,5 +1,5 @@
-package de.uniduesseldorf.dxram.core.log.storage;
 
+package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,14 +15,11 @@ import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
 
-
 /**
  * This class implements the secondary log
- * 
  * @author Kevin Beineke 23.10.2014
  */
-public class SecondaryLogWithSegments extends AbstractLog implements
-LogStorageInterface {
+public class SecondaryLogWithSegments extends AbstractLog implements LogStorageInterface {
 
 	// TODO: Three secondary logs per node to accelerate recovery (recover
 	// everything from primary)
@@ -44,11 +41,9 @@ LogStorageInterface {
 	private boolean m_isAccessed;
 	private SegmentHeader m_activeSegment;
 
-
 	// Constructors
 	/**
 	 * Creates an instance of SecondaryLog with default configuration
-	 * 
 	 * @param p_reorganizationThread
 	 *            the reorganization thread
 	 * @param p_nodeID
@@ -74,13 +69,13 @@ LogStorageInterface {
 
 		m_reorganizationThread = p_reorganizationThread;
 
-		m_secondaryLogReorgThreshold = (int) (LogHandler.SECONDARY_LOG_SIZE *
-				(LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
+		m_secondaryLogReorgThreshold = (int) (LogHandler.SECONDARY_LOG_SIZE
+				* (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
 
 		m_isLocked = new AtomicBoolean(false);
 		m_segmentHeaders = new SegmentHeader[(int) (LogHandler.SECONDARY_LOG_SIZE / LogHandler.SEGMENT_SIZE)];
 		m_freeSegments = new LinkedList<Short>();
-		for (int i = (int) ((LogHandler.SECONDARY_LOG_SIZE / LogHandler.SEGMENT_SIZE) - 1); i >= 0; i--) {
+		for (int i = (int) (LogHandler.SECONDARY_LOG_SIZE / LogHandler.SEGMENT_SIZE - 1); i >= 0; i--) {
 			m_freeSegments.add((short) i);
 		}
 		m_partlyUsedSegments = new LinkedList<Short>();
@@ -88,11 +83,9 @@ LogStorageInterface {
 		createLogAndWriteHeader();
 	}
 
-
 	/**
 	 * Creates an instance of SecondaryLog with default configuration except
 	 * secondary log size
-	 * 
 	 * @param p_secLogSize
 	 *            the size of the secondary log
 	 * @param p_reorganizationThread
@@ -128,7 +121,7 @@ LogStorageInterface {
 		m_isLocked = new AtomicBoolean(false);
 		m_segmentHeaders = new SegmentHeader[(int) (LogHandler.SECONDARY_LOG_SIZE / LogHandler.SEGMENT_SIZE)];
 		m_freeSegments = new LinkedList<Short>();
-		for (int i = (int) ((LogHandler.SECONDARY_LOG_SIZE / LogHandler.SEGMENT_SIZE) - 1); i >= 0; i--) {
+		for (int i = (int) (LogHandler.SECONDARY_LOG_SIZE / LogHandler.SEGMENT_SIZE - 1); i >= 0; i--) {
 			m_freeSegments.add((short) i);
 		}
 		m_partlyUsedSegments = new LinkedList<Short>();
@@ -136,14 +129,12 @@ LogStorageInterface {
 		createLogAndWriteHeader();
 	}
 
-
 	// Methods
 	@Override
 	public final void closeLog() throws InterruptedException, IOException {
 
 		super.closeRing();
 	}
-
 
 	@Override
 	public final int appendData(final byte[] p_data, final int p_offset,
@@ -169,11 +160,11 @@ LogStorageInterface {
 			/*
 			 * Appending data cases:
 			 * 1. This secondary log is accessed by the reorganization thread:
-			 *  a. No active segment or buffer too large to fit in: Create (new) "active segment" with given data
-			 *  b. Put data in currently active segment
+			 * a. No active segment or buffer too large to fit in: Create (new) "active segment" with given data
+			 * b. Put data in currently active segment
 			 * 2.
-			 *  a. Buffer is large (at least 90% of segment size): Create new segment and append it
-			 *  b. Fill partly used segments and put the rest (if there is data left) in a new segment and append it
+			 * a. Buffer is large (at least 90% of segment size): Create new segment and append it
+			 * b. Fill partly used segments and put the rest (if there is data left) in a new segment and append it
 			 */
 			if (m_isAccessed) {
 				// Reorganization thread is working on this secondary log -> only append data
@@ -239,7 +230,7 @@ LogStorageInterface {
 							if (rangeSize > 0) {
 								writeToLog(p_data, offset,
 										(long) segment * LogHandler.SEGMENT_SIZE
-										+ header.getUsedBytes(), rangeSize);
+												+ header.getUsedBytes(), rangeSize);
 								header.updateUsedBytes(rangeSize);
 								length -= rangeSize;
 								offset += rangeSize;
@@ -278,28 +269,33 @@ LogStorageInterface {
 		return p_length - length;
 	}
 
-	public boolean isAccessed() {
+	/**
+	 * Returns whether this secondary log is currently accessed by reorg. thread
+	 * @return whether this secondary log is currently accessed by reorg. thread
+	 */
+	public final boolean isAccessed() {
 		return m_isAccessed;
 	}
 
-	public void setAccessFlag(final boolean p_flag) {
+	/**
+	 * Sets the access flag
+	 * @param p_flag
+	 *            the new status
+	 */
+	public final void setAccessFlag(final boolean p_flag) {
 		m_isAccessed = p_flag;
 	}
 
-
 	/**
 	 * Returns the NodeID
-	 * 
 	 * @return the NodeID
 	 */
 	public final short getNodeID() {
 		return m_nodeID;
 	}
 
-
 	/**
 	 * Returns the Segment Header
-	 * 
 	 * @param p_index
 	 *            the segment index
 	 * @return the Segment Header
@@ -308,16 +304,13 @@ LogStorageInterface {
 		return m_segmentHeaders[p_index];
 	}
 
-
 	/**
 	 * Returns the delete counter
-	 * 
 	 * @return the delete counter
 	 */
 	public final int getDeleteCounter() {
 		return m_numberOfDeletes;
 	}
-
 
 	/**
 	 * Increments delete counter
@@ -325,7 +318,6 @@ LogStorageInterface {
 	public final void incDeleteCounter() {
 		m_numberOfDeletes++;
 	}
-
 
 	/**
 	 * Locks the log
@@ -338,7 +330,6 @@ LogStorageInterface {
 		}
 	}
 
-
 	/**
 	 * Unlocks the log
 	 */
@@ -346,10 +337,8 @@ LogStorageInterface {
 		m_isLocked.set(false);
 	}
 
-
 	/**
 	 * Frees segment
-	 * 
 	 * @param p_segment
 	 *            the segment
 	 * @throws IOException
@@ -359,7 +348,7 @@ LogStorageInterface {
 	 * @note executed only by reorganization thread
 	 */
 	public final void freeSegment(final int p_segment) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		short segment;
 		SegmentHeader header;
 
@@ -377,10 +366,8 @@ LogStorageInterface {
 		header.reset();
 	}
 
-
 	/**
 	 * Invalidates log entry
-	 * 
 	 * @param p_buffer
 	 *            the buffer
 	 * @param p_bufferOffset
@@ -406,10 +393,8 @@ LogStorageInterface {
 						+ getLengthOfLogEntry(p_buffer, p_bufferOffset, false));
 	}
 
-
 	/**
 	 * Updates log segment
-	 * 
 	 * @param p_buffer
 	 *            the buffer
 	 * @param p_length
@@ -429,10 +414,8 @@ LogStorageInterface {
 				p_length);
 	}
 
-
 	/**
 	 * Returns given segment of secondary log
-	 * 
 	 * @param p_segment
 	 *            the segment
 	 * @throws IOException
@@ -443,7 +426,7 @@ LogStorageInterface {
 	 * @note executed only by reorganization thread
 	 */
 	public final byte[] readSegment(final int p_segment) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		byte[] result = null;
 		SegmentHeader header;
 		int length;
@@ -458,10 +441,8 @@ LogStorageInterface {
 		return result;
 	}
 
-
 	/**
 	 * Returns all segments of secondary log
-	 * 
 	 * @throws IOException
 	 *             if the secondary log could not be read
 	 * @throws InterruptedException
@@ -470,7 +451,7 @@ LogStorageInterface {
 	 * @note executed only by reorganization thread
 	 */
 	public final byte[][] readAllSegments() throws IOException,
-	InterruptedException {
+			InterruptedException {
 		byte[][] result = null;
 		SegmentHeader header;
 		int length;
@@ -488,10 +469,8 @@ LogStorageInterface {
 		return result;
 	}
 
-
 	/**
 	 * Returns all data of secondary log
-	 * 
 	 * @throws IOException
 	 *             if the secondary log could not be read
 	 * @throws InterruptedException
@@ -499,7 +478,7 @@ LogStorageInterface {
 	 * @return all data
 	 */
 	public final byte[][] readAllNodeData() throws IOException,
-	InterruptedException {
+			InterruptedException {
 		byte[][] result = null;
 
 		result = readAll();
@@ -507,10 +486,8 @@ LogStorageInterface {
 		return result;
 	}
 
-
 	/**
 	 * Returns a list with all log entries wrapped in chunks
-	 * 
 	 * @param p_doCRCCheck
 	 *            whether to check the payload or not
 	 * @throws IOException
@@ -538,7 +515,7 @@ LogStorageInterface {
 			logData = readAllWithoutReadPtrSet();
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
-				while ((offset + LogHandler.PRIMARY_HEADER_SIZE) < logData[i].length) {
+				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {
 					// Determine header of next log entry
 					chunkID = getChunkIDOfLogEntry(logData[i], offset);
 					payloadSize = getLengthOfLogEntry(logData[i], offset, false);
@@ -575,10 +552,8 @@ LogStorageInterface {
 		return (ArrayList<Chunk>) chunkMap.values();
 	}
 
-
 	/**
 	 * Returns a list with all log entries wrapped in chunks
-	 * 
 	 * @param p_doCRCCheck
 	 *            whether to check the payload or not
 	 * @param p_low
@@ -611,7 +586,7 @@ LogStorageInterface {
 			logData = readAllWithoutReadPtrSet();
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
-				while ((offset + LogHandler.PRIMARY_HEADER_SIZE) < logData[i].length) {
+				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {
 					// Determine header of next log entry
 					payloadSize = getLengthOfLogEntry(logData[i], offset, false);
 					logEntrySize = LogHandler.PRIMARY_HEADER_SIZE + payloadSize;
@@ -653,10 +628,8 @@ LogStorageInterface {
 		return (ArrayList<Chunk>) chunkMap.values();
 	}
 
-
 	/**
 	 * Checks if the threshold to reorganize is reached
-	 * 
 	 * @return whether to reorganize or not
 	 */
 	public final boolean isReorganizationThresholdReached() {
@@ -676,10 +649,8 @@ LogStorageInterface {
 		return ret;
 	}
 
-
 	/**
 	 * Wakes up the reorganization thread
-	 * 
 	 * @throws InterruptedException
 	 *             if caller is interrupted
 	 */
@@ -694,11 +665,9 @@ LogStorageInterface {
 		}
 	}
 
-
 	/**
 	 * Wakes up the reorganization thread and waits until reorganization is
 	 * finished
-	 * 
 	 * @throws InterruptedException
 	 *             if caller is interrupted
 	 */
@@ -714,8 +683,10 @@ LogStorageInterface {
 		}
 	}
 
-
-	public void reorganizeAll() {
+	/**
+	 * Reorganizes all segments
+	 */
+	public final void reorganizeAll() {
 		long timeStart;
 
 		System.out.println();
@@ -737,8 +708,10 @@ LogStorageInterface {
 		System.out.println();
 	}
 
-
-	public void reorganizeIteratively() {
+	/**
+	 * Reorganizes one segment by choosing the segment with best cost-benefit ratio
+	 */
+	public final void reorganizeIteratively() {
 		int segmentIndex;
 		long timeStart;
 
@@ -757,8 +730,12 @@ LogStorageInterface {
 		System.out.println();
 	}
 
-
-	public void reorganizeSegment(final int p_segmentIndex) {
+	/**
+	 * Reorganizes one given segment
+	 * @param p_segmentIndex
+	 *            the segments index
+	 */
+	public final void reorganizeSegment(final int p_segmentIndex) {
 		int length;
 		int readBytes = 0;
 		int writtenBytes = 0;
@@ -781,7 +758,7 @@ LogStorageInterface {
 
 					// Note: Out-dated and deleted objects' and tombstones' LIDs
 					// are marked with -1 by remove task
-					if (localID != ((long) -1 & 0x0000FFFFFFFFFFFFL)) {
+					if (localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
 						System.arraycopy(segmentData, readBytes, newData,
 								writtenBytes, length);
 						writtenBytes += length;
@@ -798,7 +775,7 @@ LogStorageInterface {
 					if (writtenBytes > 0) {
 						newData = Arrays.copyOf(newData, writtenBytes);
 						updateSegment(newData, newData.length, p_segmentIndex);
-						//appendData(newData, 0, writtenBytes, null);
+						// appendData(newData, 0, writtenBytes, null);
 					}
 					freeSegment(p_segmentIndex);
 				}
@@ -808,14 +785,12 @@ LogStorageInterface {
 
 			System.out.println("--" + removedObjects + " entries removed");
 			System.out
-			.println("--" + removedTombstones + " tombstones removed");
+					.println("--" + removedTombstones + " tombstones removed");
 		}
 	}
 
-
 	/**
 	 * Determines the next segment to reorganize
-	 * 
 	 * @return the chosen segment
 	 */
 	private int chooseSegment() {
@@ -828,9 +803,9 @@ LogStorageInterface {
 		for (int i = 0; i < m_segmentHeaders.length; i++) {
 			currentSegment = m_segmentHeaders[i];
 			if (currentSegment != null) {
-				costBenefitRatio = (long) (((1 - currentSegment
-						.getUtilization()) * currentSegment.getLastAccess()) / (1 + currentSegment
-								.getUtilization()));
+				costBenefitRatio = (long) ((1 - currentSegment
+						.getUtilization()) * currentSegment.getLastAccess() / (1 + currentSegment
+						.getUtilization()));
 
 				System.out.println("Cost-Benefit-Ratio: " + costBenefitRatio
 						+ ", Age:" + currentSegment.getLastAccess()
@@ -846,8 +821,12 @@ LogStorageInterface {
 		return ret;
 	}
 
-
-	public void markInvalidObjects(VersionsHashTable p_hashtable) {
+	/**
+	 * Marks invalid (old or deleted) objects in complete log
+	 * @param p_hashtable
+	 *            a hash table to note version numbers in
+	 */
+	public final void markInvalidObjects(final VersionsHashTable p_hashtable) {
 		long timeStart;
 		int readBytes = 0;
 		int hashVersion;
@@ -877,11 +856,8 @@ LogStorageInterface {
 						// Collision: Store the higher version number if not
 						// -1 (^= deleted)
 						System.out.println(readBytes);
-						p_hashtable
-						.putMax(getLIDOfLogEntry(segment, readBytes,
-								false),
-								getVersionOfLogEntry(segment,
-										readBytes, false));
+						p_hashtable.putMax(getLIDOfLogEntry(segment, readBytes, false),
+								getVersionOfLogEntry(segment, readBytes, false));
 						readBytes += LogHandler.SECONDARY_HEADER_SIZE
 								+ getLengthOfLogEntry(segment, readBytes, false);
 					}
@@ -898,15 +874,14 @@ LogStorageInterface {
 					while (readBytes < segment.length) {
 						localID = getLIDOfLogEntry(segment, readBytes, false);
 						hashVersion = p_hashtable.get(localID);
-						logVersion = getVersionOfLogEntry(segment, readBytes,
-								false);
+						logVersion = getVersionOfLogEntry(segment, readBytes, false);
 
 						if ((hashVersion == -1 || hashVersion > logVersion)
-								&& localID != ((long) -1 & 0x0000FFFFFFFFFFFFL)) {
+								&& localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
 							// Set LID of out-dated and deleted objects and
 							// tombstones to -1
-							invalidateLogEntry(segment, readBytes, i
-									* LogHandler.SEGMENT_SIZE + readBytes, i);
+							invalidateLogEntry(segment, readBytes,
+									i * LogHandler.SEGMENT_SIZE + readBytes, i);
 							wasUpdated = true;
 						}
 						readBytes += LogHandler.SECONDARY_HEADER_SIZE
@@ -928,7 +903,6 @@ LogStorageInterface {
 				+ ").............");
 		System.out.println();
 	}
-
 
 	/**
 	 * Prints all segment sizes
@@ -956,7 +930,6 @@ LogStorageInterface {
 	// Classes
 	/**
 	 * SegmentHeader
-	 * 
 	 * @author Kevin Beineke 07.11.2014
 	 */
 	public class SegmentHeader {
@@ -965,7 +938,6 @@ LogStorageInterface {
 		private int m_usedBytes;
 		private int m_deletedBytes;
 		private long m_lastAccess;
-
 
 		// Constructors
 		/**
@@ -977,10 +949,8 @@ LogStorageInterface {
 			m_lastAccess = System.currentTimeMillis();
 		}
 
-
 		/**
 		 * Creates an instance of SegmentHeader
-		 * 
 		 * @param p_usedBytes
 		 *            the number of used bytes
 		 */
@@ -990,11 +960,9 @@ LogStorageInterface {
 			m_lastAccess = System.currentTimeMillis();
 		}
 
-
 		// Getter
 		/**
 		 * Returns the utilization
-		 * 
 		 * @return the utilization
 		 */
 		public final float getUtilization() {
@@ -1007,40 +975,32 @@ LogStorageInterface {
 			return ret;
 		}
 
-
 		/**
 		 * Returns number of used bytes
-		 * 
 		 * @return number of used bytes
 		 */
 		public final int getUsedBytes() {
 			return m_usedBytes;
 		}
 
-
 		/**
 		 * Returns number of deleted bytes
-		 * 
 		 * @return number of deleted bytes
 		 */
 		public final int getDeletedBytes() {
 			return m_deletedBytes;
 		}
 
-
 		/**
 		 * Returns number of used bytes
-		 * 
 		 * @return number of used bytes
 		 */
 		public final int getFreeBytes() {
 			return LogHandler.SEGMENT_SIZE - m_usedBytes;
 		}
 
-
 		/**
 		 * Returns the timestamp of last access
-		 * 
 		 * @return the timestamp of last access
 		 */
 		public final long getLastAccess() {
@@ -1050,7 +1010,6 @@ LogStorageInterface {
 		// Setter
 		/**
 		 * Updates the number of used bytes
-		 * 
 		 * @param p_writtenBytes
 		 *            the number of written bytes
 		 */
@@ -1059,10 +1018,8 @@ LogStorageInterface {
 			m_lastAccess = System.currentTimeMillis();
 		}
 
-
 		/**
 		 * Updates the number of deleted bytes
-		 * 
 		 * @param p_deletedBytes
 		 *            the number of deleted bytes
 		 */

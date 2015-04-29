@@ -4,6 +4,8 @@ package de.uniduesseldorf.dxram.core.lookup.storage;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.Tools;
@@ -39,22 +41,22 @@ public final class CacheTree {
 		Thread thread;
 		long ttl;
 
-		ttl = 1000;// Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHETTL), 1000);
+		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHETTL), 1000);
 
 		Contract.checkNotNull(p_order);
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
-		m_minChildren = (short)(m_minEntries + 1);
-		m_maxEntries = (short)(2 * m_minEntries);
-		m_maxChildren = (short)(m_maxEntries + 1);
+		m_minChildren = (short) (m_minEntries + 1);
+		m_maxEntries = (short) (2 * m_minEntries);
+		m_maxChildren = (short) (m_maxEntries + 1);
 
 		m_root = null;
 		m_size = -1;
 
 		m_changedEntry = null;
 
-		createOrReplaceEntry(Long.MAX_VALUE, (short)-1);
+		createOrReplaceEntry(Long.MAX_VALUE, (short) -1);
 
 		m_lock = new ReentrantReadWriteLock();
 		m_ttlHandler = new TTLHandler(ttl);
@@ -228,7 +230,7 @@ public final class CacheTree {
 				if (null != successor && -1 == successor.getNodeID()) {
 					remove(p_endCID);
 				} else {
-					node.changeEntry(p_endCID, (short)-1, node.indexOf(p_endCID));
+					node.changeEntry(p_endCID, (short) -1, node.indexOf(p_endCID));
 				}
 			}
 
@@ -276,7 +278,7 @@ public final class CacheTree {
 								remove(p_chunkID);
 							} else {
 								// Successor is no barrier: ABC -> AXC or AB___C -> AX___C
-								node.changeEntry(p_chunkID, (short)-1, index);
+								node.changeEntry(p_chunkID, (short) -1, index);
 							}
 							if (-1 == predecessor.getNodeID()) {
 								// Predecessor is barrier: A_C -> ___C or AXC -> ___XC
@@ -290,7 +292,7 @@ public final class CacheTree {
 								remove(p_chunkID);
 							} else {
 								// Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
-								node.changeEntry(p_chunkID, (short)-1, index);
+								node.changeEntry(p_chunkID, (short) -1, index);
 							}
 							// Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
 							// or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
@@ -307,7 +309,7 @@ public final class CacheTree {
 						if (p_chunkID - 1 == predecessor.getCID()) {
 							// Predecessor is direct neighbor: A'B'
 							// Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
-							createOrReplaceEntry(p_chunkID, (short)-1);
+							createOrReplaceEntry(p_chunkID, (short) -1);
 							if (-1 == predecessor.getNodeID()) {
 								// Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
 								remove(p_chunkID - 1);
@@ -316,7 +318,7 @@ public final class CacheTree {
 							// Predecessor is no direct neighbor: A___'B'
 							// Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
 							// or A___'B'___C -> A___(B-1)X___C
-							createOrReplaceEntry(p_chunkID, (short)-1);
+							createOrReplaceEntry(p_chunkID, (short) -1);
 							createOrReplaceEntry(p_chunkID - 1, successor.getNodeID());
 						}
 					}
@@ -408,7 +410,7 @@ public final class CacheTree {
 
 		predecessor = getPredecessorsEntry(p_chunkID, p_node);
 		if (null == predecessor) {
-			createOrReplaceEntry(p_chunkID - 1, (short)-1);
+			createOrReplaceEntry(p_chunkID - 1, (short) -1);
 		} else {
 			if (p_chunkID - 1 == predecessor.getCID()) {
 				if (p_nodeID == predecessor.getNodeID()) {
@@ -652,7 +654,7 @@ public final class CacheTree {
 
 		predecessorsNode = getPredecessorsNode(p_chunkID, p_node);
 		if (predecessorsNode != null) {
-			for (int i = predecessorsNode.getNumberOfEntries() - 1;i >= 0;i--) {
+			for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
 				predecessorsCID = predecessorsNode.getCID(i);
 				if (p_chunkID > predecessorsCID) {
 					ret = new Entry(predecessorsCID, predecessorsNode.getNodeID(i));
@@ -731,7 +733,7 @@ public final class CacheTree {
 
 		successorsNode = getSuccessorsNode(p_chunkID, p_node);
 		if (successorsNode != null) {
-			for (int i = 0;i < successorsNode.getNumberOfEntries();i++) {
+			for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
 				successorsCID = successorsNode.getCID(i);
 				if (p_chunkID < successorsCID) {
 					ret = new Entry(successorsCID, successorsNode.getNodeID(i));
@@ -1047,7 +1049,7 @@ public final class CacheTree {
 
 		if (1 < numberOfEntries) {
 			// Make sure the keys are sorted
-			for (int i = 1;i < numberOfEntries;i++) {
+			for (int i = 1; i < numberOfEntries; i++) {
 				prev = p_node.getCID(i - 1);
 				next = p_node.getCID(i);
 				if (prev > next) {
@@ -1102,7 +1104,7 @@ public final class CacheTree {
 			}
 
 			// Check that each node's first and last key holds it's invariance
-			for (int i = 1;i < p_node.getNumberOfEntries();i++) {
+			for (int i = 1; i < p_node.getNumberOfEntries(); i++) {
 				prev = p_node.getCID(i - 1);
 				next = p_node.getCID(i);
 				child = p_node.getChild(i);
@@ -1116,7 +1118,7 @@ public final class CacheTree {
 				}
 			}
 
-			for (int i = 0;i < p_node.getNumberOfChildren();i++) {
+			for (int i = 0; i < p_node.getNumberOfChildren(); i++) {
 				child = p_node.getChild(i);
 				if (!validateNode(child)) {
 					ret = false;
@@ -1168,7 +1170,7 @@ public final class CacheTree {
 			ret.append("├── ");
 		}
 		ret.append("[" + p_node.getNumberOfEntries() + ", " + p_node.getNumberOfChildren() + "] ");
-		for (int i = 0;i < p_node.getNumberOfEntries();i++) {
+		for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
 			ret.append("(ChunkID: " + p_node.getCID(i) + " NodeID: " + p_node.getNodeID(i) + ")");
 			if (i < p_node.getNumberOfEntries() - 1) {
 				ret.append(", ");
@@ -1177,7 +1179,7 @@ public final class CacheTree {
 		ret.append("\n");
 
 		if (null != p_node.getChild(0)) {
-			for (int i = 0;i < p_node.getNumberOfChildren() - 1;i++) {
+			for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
 				obj = p_node.getChild(i);
 				if (p_isTail) {
 					ret.append(getString(obj, p_prefix + "    ", false));
@@ -1247,9 +1249,9 @@ public final class CacheTree {
 		public int compareTo(final Node p_cmp) {
 			int ret;
 
-			if (this.getCID(0) < p_cmp.getCID(0)) {
+			if (getCID(0) < p_cmp.getCID(0)) {
 				ret = -1;
-			} else if (this.getCID(0) > p_cmp.getCID(0)) {
+			} else if (getCID(0) > p_cmp.getCID(0)) {
 				ret = 1;
 			} else {
 				ret = 0;
@@ -1405,7 +1407,7 @@ public final class CacheTree {
 			if (-1 != p_offsetDst) {
 				System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
 				System.arraycopy(p_node.m_dataLeafs, p_offsetSrc, m_dataLeafs, p_offsetDst, p_endSrc - p_offsetSrc);
-				m_numberOfEntries = (short)(p_offsetDst + p_endSrc - p_offsetSrc);
+				m_numberOfEntries = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
 			} else {
 				aux1 = new long[m_keys.length];
 				System.arraycopy(p_node.m_keys, 0, aux1, 0, p_node.m_numberOfEntries);
@@ -1432,7 +1434,7 @@ public final class CacheTree {
 		 */
 		private void changeEntry(final long p_chunkID, final short p_nodeID, final int p_index) {
 
-			if (p_chunkID == this.getCID(p_index)) {
+			if (p_chunkID == getCID(p_index)) {
 				m_keys[p_index] = p_chunkID;
 				m_dataLeafs[p_index] = p_nodeID;
 			}
@@ -1450,7 +1452,7 @@ public final class CacheTree {
 
 			index = this.indexOf(p_chunkID);
 			if (0 <= index) {
-				ret = this.getCID(index);
+				ret = getCID(index);
 
 				System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index);
 				System.arraycopy(m_dataLeafs, index + 1, m_dataLeafs, index, m_numberOfEntries - index);
@@ -1470,7 +1472,7 @@ public final class CacheTree {
 			long ret = -1;
 
 			if (p_index < m_numberOfEntries) {
-				ret = this.getCID(p_index);
+				ret = getCID(p_index);
 
 				System.arraycopy(m_keys, p_index + 1, m_keys, p_index, m_numberOfEntries - p_index);
 				System.arraycopy(m_dataLeafs, p_index + 1, m_dataLeafs, p_index, m_numberOfEntries - p_index);
@@ -1585,7 +1587,7 @@ public final class CacheTree {
 					}
 					child.setParent(this);
 				}
-				m_numberOfChildren = (short)(p_offsetDst + p_endSrc - p_offsetSrc);
+				m_numberOfChildren = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
 			} else {
 				aux = new Node[m_children.length];
 				System.arraycopy(p_node.m_children, 0, aux, 0, p_node.m_numberOfChildren);
@@ -1663,9 +1665,9 @@ public final class CacheTree {
 			ret = new StringBuilder();
 
 			ret.append("entries=[");
-			for (int i = 0;i < this.getNumberOfEntries();i++) {
-				ret.append("(ChunkID: " + this.getCID(i) + " NodeID: " + this.getNodeID(i) + ")");
-				if (i < this.getNumberOfEntries() - 1) {
+			for (int i = 0; i < getNumberOfEntries(); i++) {
+				ret.append("(ChunkID: " + getCID(i) + " NodeID: " + getNodeID(i) + ")");
+				if (i < getNumberOfEntries() - 1) {
 					ret.append(", ");
 				}
 			}
@@ -1673,8 +1675,8 @@ public final class CacheTree {
 
 			if (null != m_parent) {
 				ret.append("parent=[");
-				for (int i = 0;i < m_parent.getNumberOfEntries();i++) {
-					ret.append("(ChunkID: " + this.getCID(i) + " NodeID: " + this.getNodeID(i) + ")");
+				for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
+					ret.append("(ChunkID: " + getCID(i) + " NodeID: " + getNodeID(i) + ")");
 					if (i < m_parent.getNumberOfEntries() - 1) {
 						ret.append(", ");
 					}
@@ -1684,9 +1686,9 @@ public final class CacheTree {
 
 			if (null != m_children) {
 				ret.append("numberOfEntries=");
-				ret.append(this.getNumberOfEntries());
+				ret.append(getNumberOfEntries());
 				ret.append(" children=");
-				ret.append(this.getNumberOfChildren());
+				ret.append(getNumberOfChildren());
 				ret.append("\n");
 			}
 

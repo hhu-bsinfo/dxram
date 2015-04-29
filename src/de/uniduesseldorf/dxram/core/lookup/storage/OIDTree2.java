@@ -1,8 +1,11 @@
+
 package de.uniduesseldorf.dxram.core.lookup.storage;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.utils.Contract;
 
@@ -18,7 +21,7 @@ public final class OIDTree2 implements Serializable {
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
 
-	private static final int RANGE_SIZE = 2500000;// Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
+	private static final int RANGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
 
 	// Attributes
 	private short m_minEntries;
@@ -45,9 +48,9 @@ public final class OIDTree2 implements Serializable {
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
-		m_minChildren = (short)(m_minEntries + 1);
-		m_maxEntries = (short)(2 * m_minEntries);
-		m_maxChildren = (short)(m_maxEntries + 1);
+		m_minChildren = (short) (m_minEntries + 1);
+		m_maxEntries = (short) (2 * m_minEntries);
+		m_maxChildren = (short) (m_maxEntries + 1);
 
 		m_root = null;
 		m_size = -1;
@@ -170,7 +173,7 @@ public final class OIDTree2 implements Serializable {
 			m_creator = p_creator;
 		} else {
 			if (null == m_root) {
-				createOrReplaceEntry((long)(Math.pow(2, 31) * RANGE_SIZE), p_creator);
+				createOrReplaceEntry((long) (Math.pow(2, 31) * RANGE_SIZE), p_creator);
 			}
 			// backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
 			// + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
@@ -242,7 +245,7 @@ public final class OIDTree2 implements Serializable {
 	 * @return the NodeIDs of all backup peers for given object
 	 */
 	public short[] getBackupPeers(final long p_chunkID) {
-		short[] ret = null;
+		// short[] ret = null;
 		// Long tempResult;
 		// long result;
 
@@ -255,7 +258,8 @@ public final class OIDTree2 implements Serializable {
 		// (short)((result & 0x0000FFFF00000000L) >> 32)};
 		// }
 		// }
-		return ret;
+		// return ret;
+		return null;
 	}
 
 	/**
@@ -361,10 +365,10 @@ public final class OIDTree2 implements Serializable {
 		long element;
 		short[] backupPeers;
 
-		for (int i = 0;i < m_backupNodes.size();i++) {
+		for (int i = 0; i < m_backupNodes.size(); i++) {
 			element = m_backupNodes.get(i);
-			backupPeers = new short[] {(short)element, (short)((element & 0x00000000FFFF0000L) >> 16),
-				(short)((element & 0x0000FFFF00000000L) >> 32)};
+			backupPeers = new short[] {(short) element, (short) ((element & 0x00000000FFFF0000L) >> 16),
+					(short) ((element & 0x0000FFFF00000000L) >> 32)};
 			if (p_failedPeer == backupPeers[0]) {
 				element = ((p_replacement & 0x000000000000FFFFL) << 32)
 						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
@@ -691,7 +695,7 @@ public final class OIDTree2 implements Serializable {
 
 		predecessorsNode = getPredecessorsNode(p_lid, p_node);
 		if (predecessorsNode != null) {
-			for (int i = predecessorsNode.getNumberOfEntries() - 1;i >= 0;i--) {
+			for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
 				predecessorsLid = predecessorsNode.getLid(i);
 				if (p_lid > predecessorsLid) {
 					ret = new Entry(predecessorsLid, predecessorsNode.getNodeID(i));
@@ -770,7 +774,7 @@ public final class OIDTree2 implements Serializable {
 
 		successorsNode = getSuccessorsNode(p_lid, p_node);
 		if (successorsNode != null) {
-			for (int i = 0;i < successorsNode.getNumberOfEntries();i++) {
+			for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
 				successorsLid = successorsNode.getLid(i);
 				if (p_lid < successorsLid) {
 					ret = new Entry(successorsLid, successorsNode.getNodeID(i));
@@ -1086,7 +1090,7 @@ public final class OIDTree2 implements Serializable {
 
 		if (1 < numberOfEntries) {
 			// Make sure the keys are sorted
-			for (int i = 1;i < numberOfEntries;i++) {
+			for (int i = 1; i < numberOfEntries; i++) {
 				prev = p_node.getLid(i - 1);
 				next = p_node.getLid(i);
 				if (prev > next) {
@@ -1141,7 +1145,7 @@ public final class OIDTree2 implements Serializable {
 			}
 
 			// Check that each node's first and last key holds it's invariance
-			for (int i = 1;i < p_node.getNumberOfEntries();i++) {
+			for (int i = 1; i < p_node.getNumberOfEntries(); i++) {
 				prev = p_node.getLid(i - 1);
 				next = p_node.getLid(i);
 				child = p_node.getChild(i);
@@ -1155,7 +1159,7 @@ public final class OIDTree2 implements Serializable {
 				}
 			}
 
-			for (int i = 0;i < p_node.getNumberOfChildren();i++) {
+			for (int i = 0; i < p_node.getNumberOfChildren(); i++) {
 				child = p_node.getChild(i);
 				if (!validateNode(child)) {
 					ret = false;
@@ -1206,7 +1210,7 @@ public final class OIDTree2 implements Serializable {
 		} else {
 			ret.append("├── ");
 		}
-		for (int i = 0;i < p_node.getNumberOfEntries();i++) {
+		for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
 			ret.append("(lid: " + p_node.getLid(i) + " nid: " + p_node.getNodeID(i) + ")");
 			if (i < p_node.getNumberOfEntries() - 1) {
 				ret.append(", ");
@@ -1215,7 +1219,7 @@ public final class OIDTree2 implements Serializable {
 		ret.append("\n");
 
 		if (null != p_node.getChild(0)) {
-			for (int i = 0;i < p_node.getNumberOfChildren() - 1;i++) {
+			for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
 				obj = p_node.getChild(i);
 				if (p_isTail) {
 					ret.append(getString(obj, p_prefix + "    ", false));
@@ -1328,7 +1332,7 @@ public final class OIDTree2 implements Serializable {
 		 * @return the data leaf to given index
 		 */
 		private short getNodeID(final int p_index) {
-			return (short)m_dataLeafs[p_index];
+			return (short) m_dataLeafs[p_index];
 		}
 
 		/**
@@ -1350,16 +1354,16 @@ public final class OIDTree2 implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_lid) {
-					low = mid + 1;
-				} else if (midVal > p_lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_lid) {
+				low = mid + 1;
+			} else if (midVal > p_lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1426,7 +1430,7 @@ public final class OIDTree2 implements Serializable {
 			if (-1 != p_offsetDst) {
 				System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
 				System.arraycopy(p_node.m_dataLeafs, p_offsetSrc, m_dataLeafs, p_offsetDst, p_endSrc - p_offsetSrc);
-				m_numberOfEntries = (short)(p_offsetDst + p_endSrc - p_offsetSrc);
+				m_numberOfEntries = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
 			} else {
 				aux1 = new long[m_keys.length];
 				System.arraycopy(p_node.m_keys, 0, aux1, 0, p_node.m_numberOfEntries);
@@ -1549,16 +1553,16 @@ public final class OIDTree2 implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLid(0);
+			midVal = m_children[mid].getLid(0);
 
-				if (midVal < lid) {
-					low = mid + 1;
-				} else if (midVal > lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < lid) {
+				low = mid + 1;
+			} else if (midVal > lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1607,7 +1611,7 @@ public final class OIDTree2 implements Serializable {
 					}
 					child.setParent(this);
 				}
-				m_numberOfChildren = (short)(p_offsetDst + p_endSrc - p_offsetSrc);
+				m_numberOfChildren = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
 			} else {
 				aux = new Node[m_children.length];
 				System.arraycopy(p_node.m_children, 0, aux, 0, p_node.m_numberOfChildren);
@@ -1685,7 +1689,7 @@ public final class OIDTree2 implements Serializable {
 			ret = new StringBuilder();
 
 			ret.append("entries=[");
-			for (int i = 0;i < getNumberOfEntries();i++) {
+			for (int i = 0; i < getNumberOfEntries(); i++) {
 				ret.append("(lid: " + getLid(i) + " location: " + getNodeID(i) + ")");
 				if (i < getNumberOfEntries() - 1) {
 					ret.append(", ");
@@ -1695,7 +1699,7 @@ public final class OIDTree2 implements Serializable {
 
 			if (null != m_parent) {
 				ret.append("parent=[");
-				for (int i = 0;i < m_parent.getNumberOfEntries();i++) {
+				for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
 					ret.append("(lid: " + getLid(i) + " location: " + getNodeID(i) + ")");
 					if (i < m_parent.getNumberOfEntries() - 1) {
 						ret.append(", ");
@@ -1756,7 +1760,7 @@ public final class OIDTree2 implements Serializable {
 		 * @return the location
 		 */
 		public short getNodeID() {
-			return (short)m_nodeID;
+			return (short) m_nodeID;
 		}
 
 		/**

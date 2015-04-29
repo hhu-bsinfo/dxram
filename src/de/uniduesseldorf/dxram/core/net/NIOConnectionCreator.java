@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.io.IOException;
@@ -229,8 +230,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 */
 		@Override
 		protected void doWrite(final AbstractMessage p_message) throws IOException {
-			ByteBuffer buffer = p_message.getBuffer();
+			ByteBuffer buffer;
 
+			buffer = p_message.getBuffer();
 			synchronized (this) {
 				while (m_unconfirmedBytes > MAX_OUTSTANDING_BYTES) {
 					try {
@@ -269,11 +271,12 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @return Buffer array
 		 */
 		protected ByteBuffer[] getOutgoingBytes(final int p_bytes) {
-			LinkedList<ByteBuffer> buffers = new LinkedList<>();
+			LinkedList<ByteBuffer> buffers;
 			ByteBuffer buffer;
 			ByteBuffer[] ret = null;
 			int length = 0;
 
+			buffers = new LinkedList<>();
 			while (!m_outgoing.isEmpty()) {
 				synchronized (m_outgoing) {
 					buffer = m_outgoing.poll();
@@ -308,7 +311,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				ret = buffers.toArray(new ByteBuffer[buffers.size()]);
 
 				synchronized (m_outgoing) {
-					for (int i = ret.length - 1;i >= 0;i--) {
+					for (int i = ret.length - 1; i >= 0; i--) {
 						m_outgoing.addFirst(ret[i]);
 					}
 				}
@@ -353,7 +356,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		@Override
 		protected void deliverMessage(final AbstractMessage p_message) {
 			if (p_message instanceof NIOConnectionCreator.FlowControlMessage) {
-				handleFlowControlMessage((FlowControlMessage)p_message);
+				handleFlowControlMessage((FlowControlMessage) p_message);
 			} else {
 				super.deliverMessage(p_message);
 			}
@@ -363,14 +366,16 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * Confirm received bytes for the other node
 		 */
 		private void sendFlowControlMessage() {
-			FlowControlMessage message = new FlowControlMessage(m_receivedBytes);
+			FlowControlMessage message;
+			ByteBuffer messageBuffer;
 
-			ByteBuffer message_buffer = message.getBuffer();
+			message = new FlowControlMessage(m_receivedBytes);
+			messageBuffer = message.getBuffer();
 
 			// add sending bytes for consistency
-			m_unconfirmedBytes += message_buffer.remaining();
+			m_unconfirmedBytes += messageBuffer.remaining();
 
-			writeToChannel(message_buffer);
+			writeToChannel(messageBuffer);
 
 			// reset received bytes counter
 			m_receivedBytes = 0;
@@ -381,10 +386,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @param p_message
 		 *            FlowControlMessage
 		 */
-		private final synchronized void handleFlowControlMessage(final FlowControlMessage p_message) {
-			int confirmedBytes = p_message.getConfirmedBytes();
-			m_unconfirmedBytes -= confirmedBytes;
-
+		private synchronized void handleFlowControlMessage(final FlowControlMessage p_message) {
+			m_unconfirmedBytes -= p_message.getConfirmedBytes();
 			super.notifyAll();
 		}
 	}
@@ -451,7 +454,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			ChangeOperationsRequest changeRequest;
 			Iterator<SelectionKey> iterator;
 			Set<SelectionKey> selected;
-			Selector selector = this.m_selector;
+			SelectionKey key;
 
 			try {
 				// Handle pending ChangeOperationsRequests
@@ -470,14 +473,14 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				}
 
 				// Wait for network action
-				selector.select();
+				m_selector.select();
 
-				if (selector.isOpen()) {
-					selected = selector.selectedKeys();
+				if (m_selector.isOpen()) {
+					selected = m_selector.selectedKeys();
 					iterator = selected.iterator();
 
 					while (iterator.hasNext()) {
-						SelectionKey key = iterator.next();
+						key = iterator.next();
 						if (key.isValid()) {
 							if (key.isAcceptable()) {
 								accept();
@@ -506,8 +509,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 */
 		private void dispatch(final SelectionKey p_key) {
 			SelectionKeyHandler handler;
-			NIOConnection connection = (NIOConnection)p_key.attachment();
+			NIOConnection connection;
 
+			connection = (NIOConnection) p_key.attachment();
 			if (connection != null) {
 				if (connection.m_handler == null) {
 					connection.m_handler = new SelectionKeyHandler(p_key);
@@ -688,26 +692,25 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		@Override
 		public void run() {
-			SelectionKey key = m_key;
 			NIOConnection connection;
 
-			if (key.isValid()) {
+			if (m_key.isValid()) {
 				try {
-					connection = (NIOConnection)key.attachment();
+					connection = (NIOConnection) m_key.attachment();
 
-					if (key.isReadable() && !m_reading) {
+					if (m_key.isReadable() && !m_reading) {
 						synchronized (m_buffer) {
 							m_reading = true;
 
 							if (connection == null) {
-								createConnection((SocketChannel)key.channel());
+								createConnection((SocketChannel) m_key.channel());
 							} else {
 								read(connection);
 							}
 
 							m_reading = false;
 						}
-					} else if (key.isWritable() && !m_writing) {
+					} else if (m_key.isWritable() && !m_writing) {
 						synchronized (m_writeLock) {
 							m_writing = true;
 
@@ -715,7 +718,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 							m_writing = false;
 						}
-					} else if (key.isConnectable()) {
+					} else if (m_key.isConnectable()) {
 						connect(connection);
 					}
 				} catch (final IOException e) {
@@ -848,7 +851,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            number of received bytes
 		 */
 		public FlowControlMessage(final int p_confirmedBytes) {
-			super((short)0, TYPE, SUBTYPE);
+			super((short) 0, TYPE, SUBTYPE);
 			m_confirmedBytes = p_confirmedBytes;
 		}
 

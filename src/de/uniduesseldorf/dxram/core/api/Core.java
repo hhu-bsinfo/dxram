@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.api;
 
 import java.util.Arrays;
@@ -21,7 +22,6 @@ import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.PrimaryLogException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
-import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.StringConverter;
 
@@ -39,7 +39,6 @@ public final class Core {
 	private static NodesConfigurationHelper m_nodesConfigurationHelper;
 
 	private static ChunkInterface m_chunk;
-	private static LogInterface m_log;
 	private static ExceptionHandler m_exceptionHandler;
 
 	// Constructors
@@ -106,7 +105,7 @@ public final class Core {
 			CoreComponentFactory.getNetworkInterface();
 			m_chunk = CoreComponentFactory.getChunkInterface();
 			if (!NodeID.isSuperpeer()) {
-				m_log = CoreComponentFactory.getLogInterface();
+				CoreComponentFactory.getLogInterface();
 			}
 
 			// Register shutdown thread
@@ -577,8 +576,8 @@ public final class Core {
 	 */
 	public static void migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
 			throws DXRAMException {
-		LOGGER.trace("Entering migrateRange with: p_startChunkID=" + p_startChunkID + ", p_endChunkID="
-				+ p_endChunkID + ", p_target=" + p_target);
+		LOGGER.trace("Entering migrateRange with: p_startChunkID=" + p_startChunkID + ", p_endChunkID=" + p_endChunkID
+				+ ", p_target=" + p_target);
 
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
@@ -638,18 +637,19 @@ public final class Core {
 
 		if (m_exceptionHandler != null) {
 			if (p_exception instanceof LookupException) {
-				ret = m_exceptionHandler.handleException((LookupException)p_exception, p_source, p_parameters);
+				ret = m_exceptionHandler.handleException((LookupException) p_exception, p_source, p_parameters);
 			} else if (p_exception instanceof ChunkException) {
-				ret = m_exceptionHandler.handleException((ChunkException)p_exception, p_source, p_parameters);
+				ret = m_exceptionHandler.handleException((ChunkException) p_exception, p_source, p_parameters);
 			} else if (p_exception instanceof NetworkException) {
-				ret = m_exceptionHandler.handleException((NetworkException)p_exception, p_source, p_parameters);
+				ret = m_exceptionHandler.handleException((NetworkException) p_exception, p_source, p_parameters);
 			} else if (p_exception instanceof PrimaryLogException) {
-				ret = m_exceptionHandler.handleException((PrimaryLogException)p_exception, p_source, p_parameters);
+				ret = m_exceptionHandler.handleException((PrimaryLogException) p_exception, p_source, p_parameters);
 			} else if (p_exception instanceof RecoveryException) {
-				ret = m_exceptionHandler.handleException((RecoveryException)p_exception, p_source, p_parameters);
+				ret = m_exceptionHandler.handleException((RecoveryException) p_exception, p_source, p_parameters);
 			} else if (p_exception instanceof ComponentCreationException) {
-				ret = m_exceptionHandler.handleException((ComponentCreationException)p_exception, p_source,
-						p_parameters);
+				ret =
+						m_exceptionHandler.handleException((ComponentCreationException) p_exception, p_source,
+								p_parameters);
 			} else {
 				ret = m_exceptionHandler.handleException(p_exception, p_source, p_parameters);
 			}

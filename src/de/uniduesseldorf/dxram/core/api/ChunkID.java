@@ -31,7 +31,7 @@ public final class ChunkID {
 	public static short getCreatorID(final long p_chunkID) {
 		check(p_chunkID);
 
-		return (short)((p_chunkID & 0xFFFF000000000000L) >> 48);
+		return (short) ((p_chunkID & 0xFFFF000000000000L) >> 48);
 	}
 
 	/**
@@ -61,7 +61,7 @@ public final class ChunkID {
 	 *            the ChunkIDs
 	 */
 	public static void check(final long[] p_chunkIDs) {
-		for (long chunkID : p_chunkIDs) {
+		for (final long chunkID : p_chunkIDs) {
 			Contract.check(chunkID != INVALID_ID, "invalid ChunkID");
 		}
 	}

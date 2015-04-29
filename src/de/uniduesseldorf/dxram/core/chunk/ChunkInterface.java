@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
@@ -37,7 +38,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be created
 	 */
-	Chunk[] create(int p_sizes[]) throws DXRAMException;
+	Chunk[] create(int[] p_sizes) throws DXRAMException;
 
 	/**
 	 * Creates a new Chunk with identifier
@@ -61,7 +62,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be created
 	 */
-	Chunk[] create(int p_sizes[], int p_id) throws DXRAMException;
+	Chunk[] create(int[] p_sizes, int p_id) throws DXRAMException;
 
 	/**
 	 * Get the corresponding Chunk for the given ID

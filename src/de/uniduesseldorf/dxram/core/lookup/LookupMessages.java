@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.nio.ByteBuffer;
@@ -321,19 +322,19 @@ public final class LookupMessages {
 
 				length = InputHelper.readInt(p_buffer);
 				m_superpeers = new ArrayList<Short>();
-				for (int i = 0;i < length;i++) {
+				for (int i = 0; i < length; i++) {
 					m_superpeers.add(InputHelper.readNodeID(p_buffer));
 				}
 
 				m_peers = new ArrayList<Short>();
 				length = InputHelper.readInt(p_buffer);
-				for (int i = 0;i < length;i++) {
+				for (int i = 0; i < length; i++) {
 					m_peers.add(InputHelper.readNodeID(p_buffer));
 				}
 
 				m_trees = new ArrayList<OIDTree>();
 				length = InputHelper.readInt(p_buffer);
-				for (int i = 0;i < length;i++) {
+				for (int i = 0; i < length; i++) {
 					m_trees.add(InputHelper.readOIDTree(p_buffer));
 				}
 			} else {
@@ -1337,7 +1338,7 @@ public final class LookupMessages {
 
 			m_peers = new ArrayList<Short>();
 			length = InputHelper.readInt(p_buffer);
-			for (int i = 0;i < length;i++) {
+			for (int i = 0; i < length; i++) {
 				m_peers.add(InputHelper.readNodeID(p_buffer));
 			}
 		}
@@ -1442,7 +1443,7 @@ public final class LookupMessages {
 
 			m_trees = new ArrayList<OIDTree>();
 			length = InputHelper.readInt(p_buffer);
-			for (int i = 0;i < length;i++) {
+			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readOIDTree(p_buffer));
 			}
 		}
@@ -1766,7 +1767,7 @@ public final class LookupMessages {
 
 			m_trees = new ArrayList<OIDTree>();
 			length = InputHelper.readInt(p_buffer);
-			for (int i = 0;i < length;i++) {
+			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readOIDTree(p_buffer));
 			}
 		}
@@ -1855,7 +1856,7 @@ public final class LookupMessages {
 
 			m_superpeers = new ArrayList<Short>();
 			length = InputHelper.readInt(p_buffer);
-			for (int i = 0;i < length;i++) {
+			for (int i = 0; i < length; i++) {
 				m_superpeers.add(InputHelper.readNodeID(p_buffer));
 			}
 		}
@@ -2074,19 +2075,19 @@ public final class LookupMessages {
 
 			length = InputHelper.readInt(p_buffer);
 			m_superpeers = new ArrayList<Short>();
-			for (int i = 0;i < length;i++) {
+			for (int i = 0; i < length; i++) {
 				m_superpeers.add(InputHelper.readNodeID(p_buffer));
 			}
 
 			m_peers = new ArrayList<Short>();
 			length = InputHelper.readInt(p_buffer);
-			for (int i = 0;i < length;i++) {
+			for (int i = 0; i < length; i++) {
 				m_peers.add(InputHelper.readNodeID(p_buffer));
 			}
 
 			m_trees = new ArrayList<OIDTree>();
 			length = InputHelper.readInt(p_buffer);
-			for (int i = 0;i < length;i++) {
+			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readOIDTree(p_buffer));
 			}
 		}
@@ -2754,6 +2755,11 @@ public final class LookupMessages {
 
 	}
 
+	/**
+	 * Request for getting the mapping count
+	 * @author Florian Klein
+	 *         01.02.2015
+	 */
 	public static class GetMappingCountRequest extends AbstractRequest {
 
 		// Constructors
@@ -2775,6 +2781,11 @@ public final class LookupMessages {
 
 	}
 
+	/**
+	 * Response to a GetMappingCountRequest
+	 * @author Florian Klein
+	 *         01.02.2015
+	 */
 	public static class GetMappingCountResponse extends AbstractResponse {
 
 		// Attributes

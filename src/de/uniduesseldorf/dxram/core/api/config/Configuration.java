@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.api.config;
 
 import java.util.ArrayList;
@@ -216,10 +217,12 @@ public final class Configuration {
 				"interface.network", String.class, "de.uniduesseldorf.dxram.core.net.NetworkHandler");
 		// Class for the MemoryInterface
 		public static final ConfigurationEntry<String> INTERFACE_RAM = new ConfigurationEntry<String>(
-				"interface.ram", String.class, "de.uniduesseldorf.dxram.core.chunk.storage.UnsafeRAMHandler");
+				"interface.ram",
+				String.class, "de.uniduesseldorf.dxram.core.chunk.storage.UnsafeRAMHandler");
 		// Class for the LogInterface
 		public static final ConfigurationEntry<String> INTERFACE_LOG = new ConfigurationEntry<String>(
-				"interface.log", String.class, "de.uniduesseldorf.dxram.core.log.LogHandler");
+				"interface.log",
+				String.class, "de.uniduesseldorf.dxram.core.log.LogHandler");
 		// Class for the RecoveryInterface
 		public static final ConfigurationEntry<String> INTERFACE_RECOVERY = new ConfigurationEntry<String>(
 				"interface.recovery", String.class, "de.uniduesseldorf.dxram.core.recovery.RecoveryHandler");
@@ -232,7 +235,8 @@ public final class Configuration {
 				String.class, Tools.getLocalIP());
 		// Global Port for DXRAM
 		public static final ConfigurationEntry<Integer> NETWORK_PORT = new ConfigurationEntry<Integer>(
-				"network.port", Integer.class, Tools.getFreePort(22222));
+				"network.port",
+				Integer.class, Tools.getFreePort(22222));
 		// Max connection count at the same time
 		public static final ConfigurationEntry<Integer> NETWORK_CONNECTIONS = new ConfigurationEntry<Integer>(
 				"network.connections", Integer.class, 100);
@@ -256,7 +260,8 @@ public final class Configuration {
 				"network.maxCachesize", Integer.class, 10485760);
 
 		// Size of the RAM
-		public static final ConfigurationEntry<Long> RAM_SIZE = new ConfigurationEntry<Long>("ram.size", Long.class,
+		public static final ConfigurationEntry<Long> RAM_SIZE = new ConfigurationEntry<Long>("ram.size",
+				Long.class,
 				1073741824L);
 		// Class for the Memory-Management of the RAM
 		public static final ConfigurationEntry<String> RAM_MANAGEMENT = new ConfigurationEntry<String>(
@@ -264,33 +269,36 @@ public final class Configuration {
 				"de.uniduesseldorf.dxram.core.chunk.storage.SimpleListStorageManagement");
 
 		// Size of the primary log file (default 8 GB)
-		public static final ConfigurationEntry<Long> PRIMARY_LOG_SIZE = new ConfigurationEntry<Long>("log.primary_size", Long.class,
-				8589934592L);
+		public static final ConfigurationEntry<Long> PRIMARY_LOG_SIZE = new ConfigurationEntry<Long>(
+				"log.primary_size", Long.class, 8589934592L);
 		// Size of the secondary log file (default 512 MB)
-		public static final ConfigurationEntry<Long> SECONDARY_LOG_SIZE = new ConfigurationEntry<Long>("log.secondary_size", Long.class,
-				536870912L);
+		public static final ConfigurationEntry<Long> SECONDARY_LOG_SIZE = new ConfigurationEntry<Long>(
+				"log.secondary_size", Long.class, 536870912L);
 		// Size of the write buffer (default 256 MB)
-		public static final ConfigurationEntry<Integer> WRITE_BUFFER_SIZE = new ConfigurationEntry<Integer>("log.buffer_size", Integer.class,
-				268435456);
+		public static final ConfigurationEntry<Integer> WRITE_BUFFER_SIZE = new ConfigurationEntry<Integer>(
+				"log.buffer_size", Integer.class, 268435456);
 		// Size of the segments (default 8 MB)
 		public static final ConfigurationEntry<Integer> LOG_SEGMENTSIZE = new ConfigurationEntry<Integer>(
 				"log.segmentsize", Integer.class, 8388608);
 		// Directory for log files
-		public static final ConfigurationEntry<String> LOG_DIRECTORY = new ConfigurationEntry<String>("log.directory",
+		public static final ConfigurationEntry<String> LOG_DIRECTORY = new ConfigurationEntry<String>(
+				"log.directory",
 				String.class, "./log/");
 		// Write buffer synchronization method
-		public static final ConfigurationEntry<Boolean> LOG_PARALLEL_BUFFERING = new ConfigurationEntry<Boolean>("log.parallel_buffering",
-				Boolean.class, false);
+		public static final ConfigurationEntry<Boolean> LOG_PARALLEL_BUFFERING = new ConfigurationEntry<Boolean>(
+				"log.parallel_buffering", Boolean.class, false);
 
 		// Sleep interval
 		public static final ConfigurationEntry<Integer> LOOKUP_SLEEP = new ConfigurationEntry<Integer>(
-				"lookup.sleep", Integer.class, 1);
+				"lookup.sleep",
+				Integer.class, 1);
 		// Cache size
 		public static final ConfigurationEntry<Integer> LOOKUP_CACHESIZE = new ConfigurationEntry<Integer>(
 				"lookup.cacheSize", Integer.class, 1000);
 		// Cache ttl
 		public static final ConfigurationEntry<Long> LOOKUP_CACHETTL = new ConfigurationEntry<Long>(
-				"lookup.cacheTTL", Long.class, (long)1000);
+				"lookup.cacheTTL",
+				Long.class, (long) 1000);
 		// Length of backup ranges
 		public static final ConfigurationEntry<Integer> LOOKUP_NS_CACHE_SIZE = new ConfigurationEntry<Integer>(
 				"lookup.ns.cacheSize", Integer.class, 1000000);
@@ -303,17 +311,18 @@ public final class Configuration {
 		// Nameservice key length
 		public static final ConfigurationEntry<Integer> NAMESERVICE_KEY_LENGTH = new ConfigurationEntry<Integer>(
 				"nameservice.keyLength", Integer.class, 32);
-		
+
 		// JNI lock path
-		public static final ConfigurationEntry<String> JNI_LOCK_DIRECTORY = new ConfigurationEntry<String>("lock.jni_directory",
-				String.class, "./jni/libJNILock.dylib");
+		public static final ConfigurationEntry<String> JNI_LOCK_DIRECTORY = new ConfigurationEntry<String>(
+				"lock.jni_directory", String.class, "./jni/libJNILock.dylib");
 
 		// Path in ZooKeeper
 		public static final ConfigurationEntry<String> ZOOKEEPER_PATH = new ConfigurationEntry<String>(
 				"zookeeper.path", String.class, "/dxram");
 		// Connection String for ZooKeeper
-		public static final ConfigurationEntry<String> ZOOKEEPER_CONNECTION_STRING = new ConfigurationEntry<String>(
-				"zookeeper.connectionString", String.class, "127.0.0.1:2181");
+		public static final ConfigurationEntry<String> ZOOKEEPER_CONNECTION_STRING =
+				new ConfigurationEntry<String>(
+						"zookeeper.connectionString", String.class, "127.0.0.1:2181");
 		// Session Timeout for ZooKeeper
 		public static final ConfigurationEntry<Integer> ZOOKEEPER_TIMEOUT = new ConfigurationEntry<Integer>(
 				"zookeeper.timeout", Integer.class, 10000);

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.nio.ByteBuffer;
@@ -236,9 +237,11 @@ public abstract class AbstractMessage {
 	 * @return a ByteBuffer with the Message as content
 	 */
 	protected final ByteBuffer getBuffer() {
-		int payloadSize = getPayloadLength();
+		int payloadSize;
+		ByteBuffer buffer;
 
-		ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
+		payloadSize = getPayloadLength();
+		buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
 		buffer = fillBuffer(buffer, payloadSize);
 		buffer.flip();
 
@@ -249,9 +252,11 @@ public abstract class AbstractMessage {
 	 * Fills a given ByteBuffer with the message
 	 * @param p_buffer
 	 *            a given ByteBuffer
+	 * @param p_payloadSize
+	 *            the payload size
 	 * @return filled ByteBuffer
 	 */
-	private final ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) {
+	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) {
 		p_buffer.putLong(m_messageID);
 		p_buffer.put(m_type);
 		p_buffer.put(m_subtype);
@@ -351,6 +356,10 @@ public abstract class AbstractMessage {
 		return ret;
 	}
 
+	/**
+	 * Prints the message
+	 * @return the message
+	 */
 	public final String print() {
 		return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
 	}
