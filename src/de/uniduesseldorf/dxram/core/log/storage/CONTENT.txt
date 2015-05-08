@@ -1,0 +1,9 @@
+#Classes
+AbstractLog - Model of a log
+LogStorageInterfae - API of a log
+PrimaryLog - The primary log persistently stores small accesses
+PrimaryWriteBuffer - Buffers all accesses in RAM
+SecondaryLog - Persistently stores chunks of one node's backup range
+SecondaryLogBuffer - Buffers chunks in RAM
+SecondaryLogWithSegments - Persistently stores chunks of one node's backup range in segments
+VersionsHashTable - HashTable with linear probing is used during reorganization
