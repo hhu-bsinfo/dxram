@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.utils.locks;
 
 import java.util.concurrent.TimeUnit;
@@ -13,6 +14,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Represents a spinlock
  * @author Florian Klein 05.04.2014
  */
+@SuppressWarnings("restriction")
 public final class ReadWriteSpinLock implements ReadWriteLock {
 
 	// Constants

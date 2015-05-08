@@ -19,6 +19,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Manages a large memory block
  * @author Florian Klein 13.02.2014
  */
+@SuppressWarnings("restriction")
 public final class RawMemoryNew {
 
 	// Constants

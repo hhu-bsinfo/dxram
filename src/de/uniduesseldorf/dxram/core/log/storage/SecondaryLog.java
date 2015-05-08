@@ -129,7 +129,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 		} else if (!m_isShuttingDown) {
 			m_secondaryLogLock.lockInterruptibly();
 			if (getWritableSpace() >= p_length) {
-				ret = appendToLog(p_data, p_offset, p_length);
+				ret = appendToLog(p_data, p_offset, p_length, false);
 
 				// Launch reorganization if threshold is reached
 				if (isReorganizationThresholdReached()) {
@@ -157,7 +157,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 
 		try {
 			m_secondaryLogLock.lockInterruptibly();
-			result = readAll();
+			result = readAll(false);
 		} finally {
 			m_secondaryLogLock.unlock();
 		}
@@ -188,7 +188,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 
 		try {
 			m_secondaryLogLock.lockInterruptibly();
-			logData = readAllWithoutReadPtrSet();
+			logData = readAllWithoutReadPtrSet(false);
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
 				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {
@@ -257,7 +257,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 
 		try {
 			m_secondaryLogLock.lockInterruptibly();
-			logData = readAllWithoutReadPtrSet();
+			logData = readAllWithoutReadPtrSet(false);
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
 				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {

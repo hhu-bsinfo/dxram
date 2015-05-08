@@ -8,6 +8,7 @@ import sun.misc.Unsafe;
  * @author Florian Klein
  *         04.07.2014
  */
+@SuppressWarnings("restriction")
 public abstract class AbstractUnsafeList {
 
 	// Constants
@@ -115,7 +116,7 @@ public abstract class AbstractUnsafeList {
 	protected final boolean contains(final ElementChecker p_checker) {
 		boolean ret = false;
 
-		for (int i = 0;i < getSize();i++) {
+		for (int i = 0; i < getSize(); i++) {
 			if (p_checker.check(get(i))) {
 				ret = true;
 
@@ -135,7 +136,7 @@ public abstract class AbstractUnsafeList {
 	protected final int indexOf(final ElementChecker p_checker) {
 		int ret = -1;
 
-		for (int i = 0;i < getSize();i++) {
+		for (int i = 0; i < getSize(); i++) {
 			if (p_checker.check(get(i))) {
 				ret = i;
 
@@ -155,7 +156,7 @@ public abstract class AbstractUnsafeList {
 	protected final int lastIndexOf(final ElementChecker p_checker) {
 		int ret = -1;
 
-		for (int i = getSize() - 1;i >= 0;i--) {
+		for (int i = getSize() - 1; i >= 0; i--) {
 			if (p_checker.check(get(i))) {
 				ret = i;
 

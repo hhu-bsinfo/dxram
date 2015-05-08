@@ -16,6 +16,7 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
+import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
 /**
  * Access the network through Java NIO
@@ -71,10 +72,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				ChunkMessages.RemoveResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_REQUEST, ChunkMessages.LockRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_RESPONSE, ChunkMessages.LockResponse.class);
-		MessageDirectory
-				.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_REQUEST, ChunkMessages.UnlockRequest.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_RESPONSE,
-				ChunkMessages.UnlockResponse.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_MESSAGE, ChunkMessages.UnlockMessage.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOG_REQUEST, ChunkMessages.LogRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOG_RESPONSE, ChunkMessages.LogResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOG_MESSAGE, ChunkMessages.LogMessage.class);
@@ -155,6 +153,13 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				LookupMessages.GetChunkIDResponse.class);
 
 		m_manager = new ConnectionManager(AbstractConnectionCreator.getInstance(), this);
+
+		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_THROUGHPUT)) {
+			StatisticsManager.registerStatistic("Throughput", ThroughputStatistic.getInstance());
+		}
+		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_REQUEST)) {
+			StatisticsManager.registerStatistic("Request", RequestStatistic.getInstance());
+		}
 
 		LOGGER.trace("Exiting initialize");
 	}

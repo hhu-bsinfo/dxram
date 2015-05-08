@@ -126,9 +126,9 @@ public final class Konferenz15Test {
 		 * @param p_amount
 		 *            the amount of Chunks to create
 		 * @param p_migrations
-		 *            the migrations
+		 *            the number of migrations
 		 * @param p_seed
-		 *            the seed
+		 *            the seed for the random number generator
 		 */
 		public Server(final int p_amount, final int p_migrations, final long p_seed) {
 			m_amount = p_amount;

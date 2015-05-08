@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.nio.ByteBuffer;
@@ -11,6 +12,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Test case for the use of the Unsafe class
  * @author Florian Klein 10.07.2013
  */
+@SuppressWarnings("restriction")
 public final class UnsafeTest {
 
 	// Constants
@@ -42,15 +44,15 @@ public final class UnsafeTest {
 
 		System.out.print("Write data to memory");
 		time = System.nanoTime();
-		for (long i = address;i < address + SIZE;i++) {
-			unsafe.putByte(i, (byte)1);
+		for (long i = address; i < address + SIZE; i++) {
+			unsafe.putByte(i, (byte) 1);
 		}
 		time = System.nanoTime() - time;
 		System.out.println(" - time: " + toString(time));
 
 		System.out.print("Read data from memory");
 		time = System.nanoTime();
-		for (long i = address;i < address + SIZE;i++) {
+		for (long i = address; i < address + SIZE; i++) {
 			unsafe.getByte(i);
 		}
 		time = System.nanoTime() - time;
@@ -109,8 +111,8 @@ public final class UnsafeTest {
 	 *            the ByteBuffer to fill
 	 */
 	private static void createData(final ByteBuffer p_buffer) {
-		for (int i = 0;i < p_buffer.capacity();i++) {
-			p_buffer.put((byte)(Math.random() * Byte.MAX_VALUE));
+		for (int i = 0; i < p_buffer.capacity(); i++) {
+			p_buffer.put((byte) (Math.random() * Byte.MAX_VALUE));
 		}
 	}
 
@@ -126,7 +128,7 @@ public final class UnsafeTest {
 		boolean ret = true;
 
 		if (p_buffer1.capacity() == p_buffer2.capacity()) {
-			for (int i = 0;i < p_buffer1.capacity();i++) {
+			for (int i = 0; i < p_buffer1.capacity(); i++) {
 				p_buffer1.position(i);
 				p_buffer2.position(i);
 				if (p_buffer1.get() != p_buffer2.get()) {
@@ -162,7 +164,7 @@ public final class UnsafeTest {
 		ret = new Chunk(id, p_size);
 		data = ret.getData();
 
-		for (long i = p_address + 8;i < p_address + 8 + p_size;i++) {
+		for (long i = p_address + 8; i < p_address + 8 + p_size; i++) {
 			data.put(p_unsafe.getByte(i));
 		}
 
@@ -185,7 +187,7 @@ public final class UnsafeTest {
 
 		data = p_chunk.getData();
 		data.position(0);
-		for (long i = p_address + 8;i < p_address + 8 + p_chunk.getSize();i++) {
+		for (long i = p_address + 8; i < p_address + 8 + p_chunk.getSize(); i++) {
 			p_unsafe.putByte(i, data.get());
 		}
 	}

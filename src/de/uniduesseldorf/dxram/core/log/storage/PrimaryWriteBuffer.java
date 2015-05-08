@@ -85,7 +85,7 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException(
 					"Illegal buffer size! Must be 2^x with "
 							+ Math.log(LogHandler.FLASHPAGE_SIZE) / Math
-							.log(2) + " <= x <= 31");
+									.log(2) + " <= x <= 31");
 		} else {
 			m_buffer = new byte[p_bufferSize];
 			m_ringBufferSize = p_bufferSize;
@@ -123,9 +123,15 @@ public class PrimaryWriteBuffer {
 	}
 
 	/**
+	 * Print the throughput statistic
+	 */
+	public void printThroughput() {
+		m_writerThread.printThroughput();
+	}
+
+	/**
 	 * Writes log entries as a whole (max. size: write buffer) Log entry format:
-	 * ////////////////////////////////// // OID // LEN // CRC// DATA ... //
-	 * //////////////////////////////////
+	 * /////// // OID // LEN // CRC// DATA ... ///////
 	 * @param p_header
 	 *            the log entry's header as a byte array
 	 * @param p_payload
@@ -283,11 +289,26 @@ public class PrimaryWriteBuffer {
 	 */
 	private final class PrimaryLogWriterThread extends Thread {
 
+		// Attributes
+		private long m_start;
+		private long m_amount;
+
 		// Constructors
 		/**
 		 * Creates an instance of PrimaryLogWriterThread
 		 */
-		public PrimaryLogWriterThread() {}
+		public PrimaryLogWriterThread() {
+			m_start = System.currentTimeMillis();
+			m_amount = 0;
+		}
+
+		/**
+		 * Print the throughput statistic
+		 */
+		public void printThroughput() {
+			System.out.println("Throughput: "
+					+ ((double) m_amount / (System.currentTimeMillis() - m_start) / 1024 * 1000) + " kb/s");
+		}
 
 		@Override
 		public void run() {
@@ -382,6 +403,7 @@ public class PrimaryWriteBuffer {
 					e.printStackTrace();
 				}
 			}
+			m_amount += writtenBytes;
 			m_flushingComplete = true;
 
 			return writtenBytes;

@@ -127,6 +127,8 @@ public final class CIDTable {
 		ret = RawMemory.malloc(TABLE_SIZE);
 		RawMemory.set(ret + TABLE_OFFSET, TABLE_SIZE, (byte) 0);
 
+		MemoryStatistic.getInstance().newCIDTable();
+
 		return ret;
 	}
 

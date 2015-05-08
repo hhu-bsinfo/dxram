@@ -15,7 +15,11 @@ import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Tools;
 
-public class MemoryManagementTest {
+/**
+ * Test cases for the evaluation of the memory management
+ * @author klein 26.03.2015
+ */
+public final class MemoryManagementTest {
 
 	// Constants
 	private static final String ARGUMENT_HELP = "-h";
@@ -75,6 +79,15 @@ public class MemoryManagementTest {
 		}
 	}
 
+	/**
+	 * Initializes the memory management
+	 * @param p_chunkCount
+	 *            the number of chunks
+	 * @param p_threadCount
+	 *            the number of threads
+	 * @throws MemoryException
+	 *             if the memory management could not be initialized
+	 */
 	private static void init(final int p_chunkCount, final int p_threadCount) throws MemoryException {
 		long size;
 
@@ -85,6 +98,11 @@ public class MemoryManagementTest {
 		MemoryManager.initialize(size);
 	}
 
+	/**
+	 * Deinitializes the memory management
+	 * @throws MemoryException
+	 *             if the memory management could not be deinitialized
+	 */
 	private static void deinit() throws MemoryException {
 		CIDTable.printDebugInfos();
 		RawMemory.printDebugInfos();
@@ -92,6 +110,18 @@ public class MemoryManagementTest {
 		MemoryManager.disengage();
 	}
 
+	/**
+	 * Evaluate the put operation
+	 * @param p_chunkCount
+	 *            the number of chunks
+	 * @param p_threadCount
+	 *            the number of threads
+	 * @return the test result
+	 * @throws InterruptedException
+	 *             if the test is interrupted
+	 * @throws ExecutionException
+	 *             if the test could not be executed
+	 */
 	private static TestResult evaluatePuts(final int p_chunkCount, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		ExecutorService executorService;
@@ -139,6 +169,18 @@ public class MemoryManagementTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Evaluate the get operation
+	 * @param p_chunkCount
+	 *            the number of chunks
+	 * @param p_threadCount
+	 *            the number of threads
+	 * @return the test result
+	 * @throws InterruptedException
+	 *             if the test is interrupted
+	 * @throws ExecutionException
+	 *             if the test could not be executed
+	 */
 	private static TestResult evaluateGets(final int p_chunkCount, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
 		ExecutorService executorService;
@@ -177,6 +219,15 @@ public class MemoryManagementTest {
 		return new TestResult(time);
 	}
 
+	/**
+	 * Prints a test result
+	 * @param p_test
+	 *            the test name
+	 * @param p_chunkCount
+	 *            the number of chunks
+	 * @param p_result
+	 *            the test result
+	 */
 	private static void printTestResult(final String p_test, final int p_chunkCount, final TestResult p_result) {
 		StringBuffer output;
 		NumberFormat format;
@@ -193,6 +244,10 @@ public class MemoryManagementTest {
 	}
 
 	// Classes
+	/**
+	 * Represents a test result
+	 * @author klein 26.03.2015
+	 */
 	private static final class TestResult {
 
 		// Attributes

@@ -1,4 +1,3 @@
-
 package de.uniduesseldorf.dxram.test;
 
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -73,18 +72,20 @@ public final class MailboxTest {
 		public void start() {
 			// Initialize DXRAM
 			try {
+				System.out.println("Superpeer starting...");
+
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
 						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
-			} catch (final DXRAMException e1) {
-				e1.printStackTrace();
-			}
 
-			System.out.println("Superpeer started");
+				System.out.println("Superpeer started");
+			} catch (final DXRAMException e) {
+				e.printStackTrace();
+			}
 
 			while (true) {
 				try {
 					// Wait a moment
-					Thread.sleep(3000);
+					Thread.sleep(5000);
 				} catch (final InterruptedException e) {}
 			}
 		}

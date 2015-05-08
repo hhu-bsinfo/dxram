@@ -5,7 +5,7 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.lookup.storage.OIDTableTest;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTree;
+import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
 import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeTest;
 
 /**
@@ -58,7 +58,7 @@ public final class OIDDataStructureTest {
 
 		long rndm;
 
-		OIDTree tableTree;
+		OIDTreeOptimized tableTree;
 		OIDTreeTest tableTreeTest;
 		OIDTableTest tableList;
 
@@ -75,7 +75,7 @@ public final class OIDDataStructureTest {
 				e1.printStackTrace();
 			}
 
-			tableTree = new OIDTree(ORDER);
+			tableTree = new OIDTreeOptimized(ORDER);
 			tableTree.initRange(0, ME, null);
 
 			// Initialize ranges up to 2^22

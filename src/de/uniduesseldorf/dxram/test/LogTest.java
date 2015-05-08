@@ -61,7 +61,7 @@ public final class LogTest implements Runnable {
 			m_chunksPerNode = m_numberOfChunks / m_numberOfNodes;
 			m_minChunkSize = Integer.parseInt(p_arguments[2]);
 			m_maxChunkSize = Integer.parseInt(p_arguments[3]);
-		} else if (p_arguments.length > 4){
+		} else if (p_arguments.length > 4) {
 			System.out.println("Too many program arguments");
 		} else {
 			System.out.println("Missing program arguments (#nodes, number of chunks, "
@@ -94,16 +94,18 @@ public final class LogTest implements Runnable {
 		}
 		System.out.println("All chunks logged in " + (System.currentTimeMillis() - timeStart) + "ms");
 
-		/*timeStart = System.currentTimeMillis();
-		for (short i = 0; i < m_numberOfNodes; i++) {
-			try {
-				log.printMetadataOfAllEntries(nodes[i]);
-				//log.readAllEntries(nodes[i]);
-			} catch (final DXRAMException e) {
-				System.out.println("Error: Could not read entries of node " + nodes[i]);
-			}
-		}
-		System.out.println("All chunks read in " + (System.currentTimeMillis() - timeStart) + "ms");*/
+		/*
+		 * timeStart = System.currentTimeMillis();
+		 * for (short i = 0; i < m_numberOfNodes; i++) {
+		 * try {
+		 * log.printMetadataOfAllEntries(nodes[i]);
+		 * //log.readAllEntries(nodes[i]);
+		 * } catch (final DXRAMException e) {
+		 * System.out.println("Error: Could not read entries of node " + nodes[i]);
+		 * }
+		 * }
+		 * System.out.println("All chunks read in " + (System.currentTimeMillis() - timeStart) + "ms");
+		 */
 	}
 
 	@Override
@@ -123,14 +125,16 @@ public final class LogTest implements Runnable {
 				Core.put(chunk);
 			}
 			// Update chunks
-			/*for (int i = 1; i <= m_chunksPerNode; i++) {
-				chunk = Core.get(((long) m_nodeID << 48) + random);
-				Core.put(chunk);
-			}
-			// Remove chunks
-			for (int i = 1; i <= m_chunksPerNode; i++) {
-				Core.remove(((long) m_nodeID << 48) + random);
-			}*/
+			/*
+			 * for (int i = 1; i <= m_chunksPerNode; i++) {
+			 * chunk = Core.get(((long) m_nodeID << 48) + random);
+			 * Core.put(chunk);
+			 * }
+			 * // Remove chunks
+			 * for (int i = 1; i <= m_chunksPerNode; i++) {
+			 * Core.remove(((long) m_nodeID << 48) + random);
+			 * }
+			 */
 		} catch (final DXRAMException e) {
 			System.out.println("Error: Could not create, update or delete chunk");
 		}

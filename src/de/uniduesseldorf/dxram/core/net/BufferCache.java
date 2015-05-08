@@ -3,8 +3,6 @@ package de.uniduesseldorf.dxram.core.net;
 
 import java.nio.ByteBuffer;
 
-import org.apache.log4j.Logger;
-
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
@@ -13,147 +11,217 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
  * Based on sun.nio.ch.Util.BufferCache
  * @author Marc Ewert 06.10.14
  */
-public class BufferCache {
+final class BufferCache {
 
-	public static final int MAX_MEMORY_CACHED;
+	// Constants
+	public static final int MAX_MEMORY_CACHED = Core.getConfiguration().getIntValue(
+			ConfigurationConstants.NETWORK_MAX_CACHESIZE);
 
-	private static final Logger LOGGER = Logger.getLogger(BufferCache.class);
+	// Attributes
+	private static FixBufferCache m_cache = new FixBufferCache();
 
-	private static final FixBufferCache CACHE = new FixBufferCache();
+	// Constructors
+	/**
+	 * Creates an instance of BufferCache
+	 */
+	private BufferCache() {}
 
-	static {
-		MAX_MEMORY_CACHED = Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MAX_CACHESIZE);
-	}
-
-	public static boolean offer(final ByteBuffer buf) {
-		synchronized (CACHE) {
-			return CACHE.offer(buf);
+	// Methods
+	/**
+	 * Offers a buffer
+	 * @param p_buffer
+	 *            the buffer
+	 * @return true if the operation was successful
+	 */
+	public static boolean offer(final ByteBuffer p_buffer) {
+		synchronized (m_cache) {
+			return m_cache.offer(p_buffer);
 		}
 	}
 
+	/**
+	 * Frees a buffer
+	 * @param p_size
+	 *            the size of the buffer
+	 */
 	public static void free(final int p_size) {
 		// m_cache.free(p_size);
 	}
 
 	/**
 	 * Returns a temporary buffer of at least the given size
+	 * @param p_size
+	 *            the size of the buffer
+	 * @return the buffer
 	 */
-	public static ByteBuffer getDirectBuffer(final int size) {
-		synchronized (CACHE) {
-			return CACHE.getDirectBuffer(size);
+	public static ByteBuffer getDirectBuffer(final int p_size) {
+		synchronized (m_cache) {
+			return m_cache.getDirectBuffer(p_size);
 		}
 	}
 
+	// Classes
+	/**
+	 * Cahe for the ByteBuffers
+	 * @author klein 26.03.2015
+	 */
 	private static class FixBufferCache {
 
+		// Constants
 		// The number of temp buffers in our pool
-		private final int m_tempBufferPoolSize = 1;
+		private static final int TEMP_BUF_POOL_SIZE = 1;
 
+		// Attributes
 		// the array of buffers
-		private final ByteBuffer[] m_buffers = new ByteBuffer[m_tempBufferPoolSize];
+		private ByteBuffer[] m_buffers = new ByteBuffer[TEMP_BUF_POOL_SIZE];
 
 		// the number of buffers in the cache
 		private int m_count;
 
-		// the number of currently used buffers
-		// private int used;
-
 		// the index of the first valid buffer (undefined if count == 0)
 		private int m_start;
 
-		private int next(final int i) {
-			return (i + 1) % m_tempBufferPoolSize;
+		// Constructors
+		/**
+		 * Creates an instance of FixBufferCache
+		 */
+		public FixBufferCache() {
+			m_buffers = new ByteBuffer[TEMP_BUF_POOL_SIZE];
+		}
+
+		// Methods
+		/**
+		 * Gets the next position
+		 * @param p_position
+		 *            the current position
+		 * @return the next position
+		 */
+		private int next(final int p_position) {
+			return (p_position + 1) % TEMP_BUF_POOL_SIZE;
 		}
 
 		/**
 		 * Removes and returns a buffer from the cache of at least the given
 		 * size (or null if no suitable buffer is found).
+		 * @param p_size
+		 *            the size of the buffer
+		 * @return the buffer
 		 */
-		private ByteBuffer get(final int size) {
-			ByteBuffer buf;
+		private ByteBuffer get(final int p_size) {
+			ByteBuffer ret = null;
 			ByteBuffer bb;
 
 			synchronized (m_buffers) {
-				if (m_count == 0) {
-					// cache is empty
-					return null;
-				}
-
-				// search for suitable buffer (often the first buffer will do)
-				buf = m_buffers[m_start];
-				if (buf.capacity() < size) {
-					buf = null;
-					int i = m_start;
-					while ((i = next(i)) != m_start) {
-						bb = m_buffers[i];
-						if (bb == null) {
-							break;
+				if (m_count > 0) {
+					// search for suitable buffer (often the first buffer will do)
+					ret = m_buffers[m_start];
+					if (ret.capacity() < p_size) {
+						ret = null;
+						int i = m_start;
+						while ((i = next(i)) != m_start) {
+							bb = m_buffers[i];
+							if (bb == null) {
+								break;
+							}
+							if (bb.capacity() >= p_size) {
+								ret = bb;
+								break;
+							}
 						}
-						if (bb.capacity() >= size) {
-							buf = bb;
-							break;
+						if (ret != null) {
+							// move first element to here to avoid re-packing
+							m_buffers[i] = m_buffers[m_start];
 						}
 					}
-					if (buf == null) {
-						return null;
-					}
-					// move first element to here to avoid re-packing
-					m_buffers[i] = m_buffers[m_start];
-				}
 
-				// remove first element
-				m_buffers[m_start] = null;
-				m_start = next(m_start);
-				m_count--;
+					if (ret != null) {
+						// remove first element
+						m_buffers[m_start] = null;
+						m_start = next(m_start);
+						m_count--;
+
+						// prepare the buffer and return it
+						ret.clear();
+						ret.limit(p_size);
+					}
+				}
 			}
 
-			// prepare the buffer and return it
-			buf.clear();
-			buf.limit(size);
-			return buf;
+			return ret;
 		}
 
-		private boolean offerFirst(final ByteBuffer buf) {
+		/**
+		 * Offers a buffer
+		 * @param p_buffer
+		 *            the buffer
+		 * @return true if the operation was successful
+		 */
+		private boolean offerFirst(final ByteBuffer p_buffer) {
+			boolean ret;
+
 			synchronized (m_buffers) {
-				if (m_count >= m_tempBufferPoolSize) {
-					return false;
+				if (m_count >= TEMP_BUF_POOL_SIZE) {
+					ret = false;
 				} else {
-					m_start = (m_start + m_tempBufferPoolSize - 1) % m_tempBufferPoolSize;
-					m_buffers[m_start] = buf;
+					m_start = (m_start + TEMP_BUF_POOL_SIZE - 1) % TEMP_BUF_POOL_SIZE;
+					m_buffers[m_start] = p_buffer;
 					m_count++;
-					return true;
+
+					ret = true;
 				}
 			}
+
+			return ret;
 		}
 
+		/**
+		 * Checks if the cache is empty
+		 * @return true if the cache is empty, false otherwise
+		 */
 		private boolean isEmpty() {
 			synchronized (m_buffers) {
 				return m_count == 0;
 			}
 		}
 
+		/**
+		 * Removes and returns the first buffer
+		 * @return the removed buffer
+		 */
 		private ByteBuffer removeFirst() {
-			ByteBuffer buf;
-
 			synchronized (m_buffers) {
 				assert m_count > 0;
-				buf = m_buffers[m_start];
+				final ByteBuffer ret = m_buffers[m_start];
+
 				m_buffers[m_start] = null;
 				m_start = next(m_start);
 				m_count--;
-				return buf;
+
+				return ret;
 			}
 		}
 
-		public boolean offer(final ByteBuffer buf) {
-			return offerFirst(buf);
+		/**
+		 * Offers a buffer
+		 * @param p_buffer
+		 *            the buffer
+		 * @return true if the operation was successful
+		 */
+		public boolean offer(final ByteBuffer p_buffer) {
+			return offerFirst(p_buffer);
 		}
 
-		public ByteBuffer getDirectBuffer(final int size) {
+		/**
+		 * Get a direct buffer
+		 * @param p_size
+		 *            the size of the buffer
+		 * @return a direct buffer
+		 */
+		public ByteBuffer getDirectBuffer(final int p_size) {
 			ByteBuffer buf = null;
 
 			try {
-				buf = get(size);
+				buf = get(p_size);
 			} catch (final Exception e) {
 				e.printStackTrace();
 			}
@@ -165,11 +233,10 @@ public class BufferCache {
 				// buffer from the cache and free it.
 				if (!isEmpty()) {
 					removeFirst();
-					LOGGER.info("New max buffer size: " + size + " bytes");
 				}
 
 				// LOGGER.info("allocating " + size + "bytes");
-				buf = ByteBuffer.allocateDirect(size);
+				buf = ByteBuffer.allocateDirect(p_size);
 			}
 
 			return buf;

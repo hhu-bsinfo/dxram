@@ -3,6 +3,8 @@ package de.uniduesseldorf.dxram.core.chunk;
 
 import java.nio.ByteBuffer;
 
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -12,8 +14,7 @@ import de.uniduesseldorf.dxram.utils.Contract;
 public class Chunk implements Comparable<Chunk> {
 
 	// Constants
-	private static final int MAX_SIZE = 16777215;
-	// private static final int MAX_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.CHUNK_MAXSIZE);
+	private static final int MAX_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.CHUNK_MAXSIZE);
 
 	// Attributes
 	private long m_chunkID;
@@ -135,13 +136,13 @@ public class Chunk implements Comparable<Chunk> {
 	}
 
 	@Override
-	public final String toString() {
-		return this.getClass().getSimpleName() + "[" + m_chunkID + ", " + m_data.capacity() + "]";
+	public final int compareTo(final Chunk p_chunk) {
+		return (int) (getChunkID() - p_chunk.getChunkID());
 	}
 
 	@Override
-	public final int compareTo(final Chunk p_cmp) {
-		return (int) (getChunkID() - p_cmp.getChunkID());
+	public final String toString() {
+		return this.getClass().getSimpleName() + "[" + Long.toHexString(m_chunkID) + ", " + m_data.capacity() + "]";
 	}
 
 }

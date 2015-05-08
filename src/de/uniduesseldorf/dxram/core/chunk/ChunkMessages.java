@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk;
 
 import java.nio.ByteBuffer;
@@ -26,16 +27,15 @@ public final class ChunkMessages {
 	public static final byte SUBTYPE_REMOVE_RESPONSE = 6;
 	public static final byte SUBTYPE_LOCK_REQUEST = 7;
 	public static final byte SUBTYPE_LOCK_RESPONSE = 8;
-	public static final byte SUBTYPE_UNLOCK_REQUEST = 9;
-	public static final byte SUBTYPE_UNLOCK_RESPONSE = 10;
-	public static final byte SUBTYPE_LOG_REQUEST = 11;
-	public static final byte SUBTYPE_LOG_RESPONSE = 12;
-	public static final byte SUBTYPE_LOG_MESSAGE = 13;
-	public static final byte SUBTYPE_DATA_REQUEST = 14;
-	public static final byte SUBTYPE_DATA_RESPONSE = 15;
-	public static final byte SUBTYPE_DATA_MESSAGE = 16;
-	public static final byte SUBTYPE_MULTIGET_REQUEST = 17;
-	public static final byte SUBTYPE_MULTIGET_RESPONSE = 18;
+	public static final byte SUBTYPE_UNLOCK_MESSAGE = 9;
+	public static final byte SUBTYPE_LOG_REQUEST = 10;
+	public static final byte SUBTYPE_LOG_RESPONSE = 11;
+	public static final byte SUBTYPE_LOG_MESSAGE = 12;
+	public static final byte SUBTYPE_DATA_REQUEST = 13;
+	public static final byte SUBTYPE_DATA_RESPONSE = 14;
+	public static final byte SUBTYPE_DATA_MESSAGE = 15;
+	public static final byte SUBTYPE_MULTIGET_REQUEST = 16;
+	public static final byte SUBTYPE_MULTIGET_RESPONSE = 17;
 
 	// Constructors
 	/**
@@ -172,6 +172,7 @@ public final class ChunkMessages {
 
 		// Attributes
 		private Chunk m_chunk;
+		private boolean m_releaseLock;
 
 		// Constructors
 		/**
@@ -181,6 +182,7 @@ public final class ChunkMessages {
 			super();
 
 			m_chunk = null;
+			m_releaseLock = false;
 		}
 
 		/**
@@ -191,11 +193,25 @@ public final class ChunkMessages {
 		 *            the Chunk to put
 		 */
 		public PutRequest(final short p_destination, final Chunk p_chunk) {
+			this(p_destination, p_chunk, false);
+		}
+
+		/**
+		 * Creates an instance of PutRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunk
+		 *            the Chunk to put
+		 * @param p_releaseLock
+		 *            if true a potential lock will be released
+		 */
+		public PutRequest(final short p_destination, final Chunk p_chunk, final boolean p_releaseLock) {
 			super(p_destination, TYPE, SUBTYPE_PUT_REQUEST);
 
 			Contract.checkNotNull(p_chunk, "no chunk given");
 
 			m_chunk = p_chunk;
+			m_releaseLock = p_releaseLock;
 		}
 
 		// Getters
@@ -207,20 +223,30 @@ public final class ChunkMessages {
 			return m_chunk;
 		}
 
+		/**
+		 * Checks if a potential lock should be realeased
+		 * @return true if a potential lock should be released, false otherwise
+		 */
+		public final boolean isReleaseLock() {
+			return m_releaseLock;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunk(p_buffer, m_chunk);
+			OutputHelper.writeBoolean(p_buffer, m_releaseLock);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunk = InputHelper.readChunk(p_buffer);
+			m_releaseLock = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
+			return OutputHelper.getChunkWriteLength(m_chunk) + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -412,6 +438,7 @@ public final class ChunkMessages {
 
 		// Attributes
 		private long m_chunkID;
+		private boolean m_readLock;
 
 		// Constructors
 		/**
@@ -421,6 +448,7 @@ public final class ChunkMessages {
 			super();
 
 			m_chunkID = ChunkID.INVALID_ID;
+			m_readLock = false;
 		}
 
 		/**
@@ -431,11 +459,25 @@ public final class ChunkMessages {
 		 *            The ID of the Chunk to lock
 		 */
 		public LockRequest(final short p_destination, final long p_chunkID) {
+			this(p_destination, p_chunkID, false);
+		}
+
+		/**
+		 * Creates an instance of LockRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunkID
+		 *            The ID of the Chunk to lock
+		 * @param p_readLock
+		 *            if true the lock is a read lock, otherwise the lock is a write lock
+		 */
+		public LockRequest(final short p_destination, final long p_chunkID, final boolean p_readLock) {
 			super(p_destination, TYPE, SUBTYPE_LOCK_REQUEST);
 
 			ChunkID.check(p_chunkID);
 
 			m_chunkID = p_chunkID;
+			m_readLock = p_readLock;
 		}
 
 		// Getters
@@ -447,20 +489,30 @@ public final class ChunkMessages {
 			return m_chunkID;
 		}
 
+		/**
+		 * Checks if the lock is a read lock
+		 * @return true if the lock is a read lock, false otherwise
+		 */
+		public final boolean isReadLock() {
+			return m_readLock;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunkID(p_buffer, m_chunkID);
+			OutputHelper.writeBoolean(p_buffer, m_readLock);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunkID = InputHelper.readChunkID(p_buffer);
+			m_readLock = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -493,8 +545,6 @@ public final class ChunkMessages {
 		 */
 		public LockResponse(final LockRequest p_request, final Chunk p_chunk) {
 			super(p_request, SUBTYPE_LOCK_RESPONSE);
-
-			Contract.checkNotNull(p_chunk, "no chunk given");
 
 			m_chunk = p_chunk;
 		}
@@ -530,7 +580,7 @@ public final class ChunkMessages {
 	 * Request for unlocking a Chunk on a remote node
 	 * @author Florian Klein 09.03.2012
 	 */
-	public static class UnlockRequest extends AbstractRequest {
+	public static class UnlockMessage extends AbstractMessage {
 
 		// Attributes
 		private long m_chunkID;
@@ -539,7 +589,7 @@ public final class ChunkMessages {
 		/**
 		 * Creates an instance of UnlockRequest
 		 */
-		public UnlockRequest() {
+		public UnlockMessage() {
 			super();
 
 			m_chunkID = ChunkID.INVALID_ID;
@@ -552,8 +602,8 @@ public final class ChunkMessages {
 		 * @param p_chunkID
 		 *            The ID of the Chunk to unlock
 		 */
-		public UnlockRequest(final short p_destination, final long p_chunkID) {
-			super(p_destination, TYPE, SUBTYPE_UNLOCK_REQUEST);
+		public UnlockMessage(final short p_destination, final long p_chunkID) {
+			super(p_destination, TYPE, SUBTYPE_UNLOCK_MESSAGE);
 
 			ChunkID.check(p_chunkID);
 
@@ -583,31 +633,6 @@ public final class ChunkMessages {
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getChunkIDWriteLength();
-		}
-
-	}
-
-	/**
-	 * Response to a UnlockRequest
-	 * @author Florian Klein 09.03.2012
-	 */
-	public static class UnlockResponse extends AbstractResponse {
-
-		// Constructors
-		/**
-		 * Creates an instance of UnlockResponse
-		 */
-		public UnlockResponse() {
-			super();
-		}
-
-		/**
-		 * Creates an instance of LockResponse
-		 * @param p_request
-		 *            the corresponding UnlockRequest
-		 */
-		public UnlockResponse(final UnlockRequest p_request) {
-			super(p_request, SUBTYPE_UNLOCK_RESPONSE);
 		}
 
 	}

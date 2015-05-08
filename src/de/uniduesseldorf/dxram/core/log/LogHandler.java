@@ -316,9 +316,9 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 				secondaryLogBuffer.flushSecLogBuffer();
 
 				if (p_manipulateReadPtr) {
-					ret = getSecondaryLog(p_nodeID, false).readAll();
+					ret = getSecondaryLog(p_nodeID, false).readAll(false);
 				} else {
-					ret = getSecondaryLog(p_nodeID, false).readAllWithoutReadPtrSet();
+					ret = getSecondaryLog(p_nodeID, false).readAllWithoutReadPtrSet(false);
 				}
 			}
 		} catch (final IOException | InterruptedException e) {}
@@ -723,6 +723,7 @@ public final class LogHandler implements LogInterface, LogWriteListener {
 							getAccess(secondaryLog);
 							secondaryLog.markInvalidObjects(m_versionsHT);
 							for (int i = 0; i < 10; i++) {
+								m_writeBuffer.printThroughput();
 								if (m_thresholdReachedCondition.await(LogHandler.REORGTHREAD_TIMEOUT,
 										TimeUnit.MILLISECONDS) || m_secLog != null) {
 									if (m_isShuttingDown) {

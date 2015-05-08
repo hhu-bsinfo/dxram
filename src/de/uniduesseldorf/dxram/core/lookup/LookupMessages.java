@@ -8,7 +8,7 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTree;
+import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.AbstractRequest;
 import de.uniduesseldorf.dxram.core.net.AbstractResponse;
@@ -157,7 +157,7 @@ public final class LookupMessages {
 		private byte[] m_mappings;
 		private ArrayList<Short> m_superpeers;
 		private ArrayList<Short> m_peers;
-		private ArrayList<OIDTree> m_trees;
+		private ArrayList<OIDTreeOptimized> m_trees;
 
 		// Constructors
 		/**
@@ -196,7 +196,8 @@ public final class LookupMessages {
 		 */
 		public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer,
 				final short p_predecessor, final short p_successor, final byte[] p_mappings,
-				final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<OIDTree> p_trees) {
+				final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers,
+				final ArrayList<OIDTreeOptimized> p_trees) {
 			super(p_request, SUBTYPE_JOIN_RESPONSE);
 
 			m_newContactSuperpeer = p_newContactSuperpeer;
@@ -261,7 +262,7 @@ public final class LookupMessages {
 		 * Get OIDTrees
 		 * @return the OIDTrees
 		 */
-		public final ArrayList<OIDTree> getOIDTrees() {
+		public final ArrayList<OIDTreeOptimized> getOIDTrees() {
 			return m_trees;
 		}
 
@@ -298,7 +299,7 @@ public final class LookupMessages {
 					OutputHelper.writeInt(p_buffer, 0);
 				} else {
 					OutputHelper.writeInt(p_buffer, m_trees.size());
-					for (OIDTree tree : m_trees) {
+					for (OIDTreeOptimized tree : m_trees) {
 						OutputHelper.writeOIDTree(p_buffer, tree);
 					}
 				}
@@ -332,7 +333,7 @@ public final class LookupMessages {
 					m_peers.add(InputHelper.readNodeID(p_buffer));
 				}
 
-				m_trees = new ArrayList<OIDTree>();
+				m_trees = new ArrayList<OIDTreeOptimized>();
 				length = InputHelper.readInt(p_buffer);
 				for (int i = 0; i < length; i++) {
 					m_trees.add(InputHelper.readOIDTree(p_buffer));
@@ -363,7 +364,7 @@ public final class LookupMessages {
 
 				ret += OutputHelper.getIntWriteLength();
 				if (m_trees != null) {
-					for (OIDTree tree : m_trees) {
+					for (OIDTreeOptimized tree : m_trees) {
 						ret += OutputHelper.getOIDTreeWriteLength(tree);
 					}
 				}
@@ -1365,7 +1366,7 @@ public final class LookupMessages {
 	public static class AskAboutBackupsResponse extends AbstractResponse {
 
 		// Attributes
-		private ArrayList<OIDTree> m_trees;
+		private ArrayList<OIDTreeOptimized> m_trees;
 		private byte[] m_mappings;
 
 		// Constructors
@@ -1388,7 +1389,8 @@ public final class LookupMessages {
 		 * @param p_mappings
 		 *            the missing id mappings
 		 */
-		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request, final ArrayList<OIDTree> p_trees,
+		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request,
+				final ArrayList<OIDTreeOptimized> p_trees,
 				final byte[] p_mappings) {
 			super(p_request, SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE);
 
@@ -1401,7 +1403,7 @@ public final class LookupMessages {
 		 * Get the missing backups
 		 * @return the OIDTrees
 		 */
-		public final ArrayList<OIDTree> getBackups() {
+		public final ArrayList<OIDTreeOptimized> getBackups() {
 			return m_trees;
 		}
 
@@ -1427,7 +1429,7 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (OIDTree tree : m_trees) {
+				for (OIDTreeOptimized tree : m_trees) {
 					OutputHelper.writeOIDTree(p_buffer, tree);
 				}
 			}
@@ -1441,7 +1443,7 @@ public final class LookupMessages {
 				m_mappings = InputHelper.readByteArray(p_buffer);
 			}
 
-			m_trees = new ArrayList<OIDTree>();
+			m_trees = new ArrayList<OIDTreeOptimized>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readOIDTree(p_buffer));
@@ -1459,7 +1461,7 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (OIDTree tree : m_trees) {
+				for (OIDTreeOptimized tree : m_trees) {
 					ret += OutputHelper.getOIDTreeWriteLength(tree);
 				}
 			}
@@ -1689,7 +1691,7 @@ public final class LookupMessages {
 	public static class SendBackupsMessage extends AbstractMessage {
 
 		// Attributes
-		private ArrayList<OIDTree> m_trees;
+		private ArrayList<OIDTreeOptimized> m_trees;
 		private byte[] m_mappings;
 
 		// Constructors
@@ -1713,7 +1715,7 @@ public final class LookupMessages {
 		 *            the OIDTrees
 		 */
 		public SendBackupsMessage(final short p_destination, final byte[] p_mappings,
-				final ArrayList<OIDTree> p_trees) {
+				final ArrayList<OIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_SEND_BACKUPS_MESSAGE);
 
 			m_mappings = p_mappings;
@@ -1725,7 +1727,7 @@ public final class LookupMessages {
 		 * Get OIDTrees
 		 * @return the OIDTrees
 		 */
-		public final ArrayList<OIDTree> getOIDTrees() {
+		public final ArrayList<OIDTreeOptimized> getOIDTrees() {
 			return m_trees;
 		}
 
@@ -1751,7 +1753,7 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (OIDTree tree : m_trees) {
+				for (OIDTreeOptimized tree : m_trees) {
 					OutputHelper.writeOIDTree(p_buffer, tree);
 				}
 			}
@@ -1765,7 +1767,7 @@ public final class LookupMessages {
 				m_mappings = InputHelper.readByteArray(p_buffer);
 			}
 
-			m_trees = new ArrayList<OIDTree>();
+			m_trees = new ArrayList<OIDTreeOptimized>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readOIDTree(p_buffer));
@@ -1783,7 +1785,7 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (OIDTree tree : m_trees) {
+				for (OIDTreeOptimized tree : m_trees) {
 					ret += OutputHelper.getOIDTreeWriteLength(tree);
 				}
 			}
@@ -1915,7 +1917,7 @@ public final class LookupMessages {
 		private byte[] m_mappings;
 		private ArrayList<Short> m_superpeers;
 		private ArrayList<Short> m_peers;
-		private ArrayList<OIDTree> m_trees;
+		private ArrayList<OIDTreeOptimized> m_trees;
 
 		// Constructors
 		/**
@@ -1954,7 +1956,7 @@ public final class LookupMessages {
 		 */
 		public PromotePeerRequest(final short p_destination, final short p_predecessor, final short p_successor,
 				final short p_replacement, final byte[] p_mappings, final ArrayList<Short> p_superpeers,
-				final ArrayList<Short> p_peers, final ArrayList<OIDTree> p_trees) {
+				final ArrayList<Short> p_peers, final ArrayList<OIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_PROMOTE_PEER_REQUEST);
 
 			m_predecessor = p_predecessor;
@@ -2019,7 +2021,7 @@ public final class LookupMessages {
 		 * Get OIDTrees
 		 * @return the OIDTrees
 		 */
-		public final ArrayList<OIDTree> getOIDTrees() {
+		public final ArrayList<OIDTreeOptimized> getOIDTrees() {
 			return m_trees;
 		}
 
@@ -2055,7 +2057,7 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (OIDTree tree : m_trees) {
+				for (OIDTreeOptimized tree : m_trees) {
 					OutputHelper.writeOIDTree(p_buffer, tree);
 				}
 			}
@@ -2085,7 +2087,7 @@ public final class LookupMessages {
 				m_peers.add(InputHelper.readNodeID(p_buffer));
 			}
 
-			m_trees = new ArrayList<OIDTree>();
+			m_trees = new ArrayList<OIDTreeOptimized>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readOIDTree(p_buffer));
@@ -2112,7 +2114,7 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (OIDTree tree : m_trees) {
+				for (OIDTreeOptimized tree : m_trees) {
 					ret += OutputHelper.getOIDTreeWriteLength(tree);
 				}
 			}
@@ -2756,9 +2758,8 @@ public final class LookupMessages {
 	}
 
 	/**
-	 * Request for getting the mapping count
-	 * @author Florian Klein
-	 *         01.02.2015
+	 * Request for getting the number of mappings
+	 * @author klein 26.03.2015
 	 */
 	public static class GetMappingCountRequest extends AbstractRequest {
 
@@ -2783,8 +2784,7 @@ public final class LookupMessages {
 
 	/**
 	 * Response to a GetMappingCountRequest
-	 * @author Florian Klein
-	 *         01.02.2015
+	 * @author klein 26.03.2015
 	 */
 	public static class GetMappingCountResponse extends AbstractResponse {
 

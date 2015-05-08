@@ -1,4 +1,3 @@
-
 package de.uniduesseldorf.dxram.test;
 
 import java.io.BufferedReader;

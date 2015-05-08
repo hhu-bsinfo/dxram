@@ -10,18 +10,18 @@ import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
- * Btree to store ranges
+ * Btree to store ranges. Backup nodes are stored in an ArrayList<Long> to improve access times.
  * @author Justin Wetherell <phishman3579@gmail.com> (classic btree implementation)
  * @author Kevin Beineke (rewritten to handle ranges instead of single entries + reduction and optimization for this
  *         application)
  *         13.06.2013
  */
-public final class OIDTree2 implements Serializable {
+public final class OIDTreeOptimized implements Serializable {
 
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
 
-	private static final int RANGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
+	public static final int RANGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
 
 	// Attributes
 	private short m_minEntries;
@@ -44,7 +44,7 @@ public final class OIDTree2 implements Serializable {
 	 * @param p_order
 	 *            order of the btree
 	 */
-	public OIDTree2(final short p_order) {
+	public OIDTreeOptimized(final short p_order) {
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
@@ -57,7 +57,7 @@ public final class OIDTree2 implements Serializable {
 		m_creator = -1;
 		m_status = true;
 
-		// m_backupNodes = new ArrayList<Long>();
+		m_backupNodes = new ArrayList<Long>();
 
 		m_changedEntry = null;
 	}
@@ -99,7 +99,7 @@ public final class OIDTree2 implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean migrateObject(final long p_chunkID, final short p_nodeID) {
-		// int index;
+		int index;
 		long lid;
 		Node node;
 
@@ -107,14 +107,14 @@ public final class OIDTree2 implements Serializable {
 
 		Contract.check(0 < lid, "lid smaller than 1");
 
-		// index = (int)(lid / RANGE_SIZE);
-		// if (index < m_backupNodes.size()) {
-		node = createOrReplaceEntry(lid, p_nodeID);
+		index = (int) (lid / RANGE_SIZE);
+		if (index < m_backupNodes.size()) {
+			node = createOrReplaceEntry(lid, p_nodeID);
 
-		mergeWithPredecessorOrBound(lid, p_nodeID, node);
+			mergeWithPredecessorOrBound(lid, p_nodeID, node);
 
-		mergeWithSuccessor(lid, p_nodeID);
-		// }
+			mergeWithSuccessor(lid, p_nodeID);
+		}
 		return true;
 	}
 
@@ -129,7 +129,7 @@ public final class OIDTree2 implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean migrateRange(final long p_startID, final long p_endID, final short p_nodeID) {
-		// int index;
+		int index;
 		long startLid;
 		long endLid;
 		Node startNode;
@@ -140,18 +140,18 @@ public final class OIDTree2 implements Serializable {
 		if (startLid == endLid) {
 			migrateObject(p_startID, p_nodeID);
 		} else {
-			// index = (int)(endLid / RANGE_SIZE);
-			// if (index < m_backupNodes.size()) {
-			startNode = createOrReplaceEntry(startLid, p_nodeID);
+			index = (int) (endLid / RANGE_SIZE);
+			if (index < m_backupNodes.size()) {
+				startNode = createOrReplaceEntry(startLid, p_nodeID);
 
-			mergeWithPredecessorOrBound(startLid, p_nodeID, startNode);
+				mergeWithPredecessorOrBound(startLid, p_nodeID, startNode);
 
-			createOrReplaceEntry(endLid, p_nodeID);
+				createOrReplaceEntry(endLid, p_nodeID);
 
-			removeEntriesWithinRange(startLid, endLid);
+				removeEntriesWithinRange(startLid, endLid);
 
-			mergeWithSuccessor(endLid, p_nodeID);
-			// }
+				mergeWithSuccessor(endLid, p_nodeID);
+			}
 		}
 		return true;
 	}
@@ -167,7 +167,7 @@ public final class OIDTree2 implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean initRange(final long p_endID, final short p_creator, final short[] p_backupPeers) {
-		// long backupPeers;
+		long backupPeers;
 
 		if (0 == p_endID) {
 			m_creator = p_creator;
@@ -175,9 +175,9 @@ public final class OIDTree2 implements Serializable {
 			if (null == m_root) {
 				createOrReplaceEntry((long) (Math.pow(2, 31) * RANGE_SIZE), p_creator);
 			}
-			// backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
-			// + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
-			// m_backupNodes.add(backupPeers);
+			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
+					+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
+			m_backupNodes.add(backupPeers);
 		}
 		return true;
 	}
@@ -218,7 +218,8 @@ public final class OIDTree2 implements Serializable {
 				// LID was found: Store NodeID and determine successor
 				range = new long[2];
 				nodeID = node.getNodeID(index);
-				range[1] = getSuccessorsEntry(lid, node).getLid();
+				range[1] = lid;
+				// range[1] = getSuccessorsEntry(lid, node).getLid();
 			} else {
 				// LID was not found, but successor: Store NodeID and LID of successor
 				range = new long[2];
@@ -245,21 +246,19 @@ public final class OIDTree2 implements Serializable {
 	 * @return the NodeIDs of all backup peers for given object
 	 */
 	public short[] getBackupPeers(final long p_chunkID) {
-		// short[] ret = null;
-		// Long tempResult;
-		// long result;
+		short[] ret = null;
+		Long tempResult;
+		long result;
 
-		// if (m_root != null) {
-		// tempResult = m_backupNodes.get((int)((p_chunkID & 0x0000FFFFFFFFFFFFL) / RANGE_SIZE));
-		// if (tempResult != null) {
-		// result = tempResult;
-		// ret =
-		// new short[] {(short)result, (short)((result & 0x00000000FFFF0000L) >> 16),
-		// (short)((result & 0x0000FFFF00000000L) >> 32)};
-		// }
-		// }
-		// return ret;
-		return null;
+		if (m_root != null) {
+			tempResult = m_backupNodes.get((int) ((p_chunkID & 0x0000FFFFFFFFFFFFL) / RANGE_SIZE));
+			if (tempResult != null) {
+				result = tempResult;
+				ret = new short[] {(short) result, (short) ((result & 0x00000000FFFF0000L) >> 16),
+						(short) ((result & 0x0000FFFF00000000L) >> 32)};
+			}
+		}
+		return ret;
 	}
 
 	/**
@@ -445,8 +444,9 @@ public final class OIDTree2 implements Serializable {
 
 			ret = node;
 		}
-		m_size++;
-		m_changedEntry = null;
+		if (m_changedEntry == null) {
+			m_size++;
+		}
 
 		return ret;
 	}
@@ -1182,7 +1182,7 @@ public final class OIDTree2 implements Serializable {
 		if (null == m_root) {
 			ret = "Btree has no nodes";
 		} else {
-			ret = getString(m_root, "", true);
+			ret = "Size: " + m_size + "\n" + getString(m_root, "", true);
 		}
 
 		return ret;
@@ -1210,6 +1210,7 @@ public final class OIDTree2 implements Serializable {
 		} else {
 			ret.append("├── ");
 		}
+		ret.append("[" + p_node.getNumberOfEntries() + ", " + p_node.getNumberOfChildren() + "] ");
 		for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
 			ret.append("(lid: " + p_node.getLid(i) + " nid: " + p_node.getNodeID(i) + ")");
 			if (i < p_node.getNumberOfEntries() - 1) {
@@ -1252,7 +1253,7 @@ public final class OIDTree2 implements Serializable {
 		private Node m_parent;
 
 		private long[] m_keys;
-		private long[] m_dataLeafs;
+		private short[] m_dataLeafs;
 		private short m_numberOfEntries;
 
 		private Node[] m_children;
@@ -1271,7 +1272,7 @@ public final class OIDTree2 implements Serializable {
 		private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
 			m_parent = p_parent;
 			m_keys = new long[p_maxEntries + 1];
-			m_dataLeafs = new long[p_maxEntries + 1];
+			m_dataLeafs = new short[p_maxEntries + 1];
 			m_numberOfEntries = 0;
 			m_children = new Node[p_maxChildren + 1];
 			m_numberOfChildren = 0;
@@ -1332,7 +1333,7 @@ public final class OIDTree2 implements Serializable {
 		 * @return the data leaf to given index
 		 */
 		private short getNodeID(final int p_index) {
-			return (short) m_dataLeafs[p_index];
+			return m_dataLeafs[p_index];
 		}
 
 		/**
@@ -1354,16 +1355,16 @@ public final class OIDTree2 implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_lid) {
-				low = mid + 1;
-			} else if (midVal > p_lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_lid) {
+					low = mid + 1;
+				} else if (midVal > p_lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1425,7 +1426,7 @@ public final class OIDTree2 implements Serializable {
 		 */
 		private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
 			long[] aux1;
-			long[] aux2;
+			short[] aux2;
 
 			if (-1 != p_offsetDst) {
 				System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
@@ -1437,7 +1438,7 @@ public final class OIDTree2 implements Serializable {
 				System.arraycopy(m_keys, 0, aux1, p_node.m_numberOfEntries, m_numberOfEntries);
 				m_keys = aux1;
 
-				aux2 = new long[m_dataLeafs.length];
+				aux2 = new short[m_dataLeafs.length];
 				System.arraycopy(p_node.m_dataLeafs, 0, aux2, 0, p_node.m_numberOfEntries);
 				System.arraycopy(m_dataLeafs, 0, aux2, p_node.m_numberOfEntries, m_numberOfEntries);
 				m_dataLeafs = aux2;
@@ -1553,16 +1554,16 @@ public final class OIDTree2 implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLid(0);
+				midVal = m_children[mid].getLid(0);
 
-			if (midVal < lid) {
-				low = mid + 1;
-			} else if (midVal > lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < lid) {
+					low = mid + 1;
+				} else if (midVal > lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1732,7 +1733,7 @@ public final class OIDTree2 implements Serializable {
 
 		// Attributes
 		private long m_lid;
-		private long m_nodeID;
+		private short m_nodeID;
 
 		// Constructors
 		/**
@@ -1760,7 +1761,7 @@ public final class OIDTree2 implements Serializable {
 		 * @return the location
 		 */
 		public short getNodeID() {
-			return (short) m_nodeID;
+			return m_nodeID;
 		}
 
 		/**

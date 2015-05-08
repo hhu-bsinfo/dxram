@@ -10,11 +10,11 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTree;
+import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
- * Reads ChunkID, NodeID, Chunk and OIDTree from DataInput
+ * Reads data types
  * @author Florian Klein 26.03.2012
  */
 public final class InputHelper {
@@ -238,8 +238,8 @@ public final class InputHelper {
 	 * @throws IOException
 	 *             if the OIDTree could not be read
 	 */
-	public static OIDTree readOIDTree(final DataInput p_input) throws IOException {
-		OIDTree ret = null;
+	public static OIDTreeOptimized readOIDTree(final DataInput p_input) throws IOException {
+		OIDTreeOptimized ret = null;
 		byte[] data;
 
 		if (readBoolean(p_input)) {
@@ -256,8 +256,8 @@ public final class InputHelper {
 	 *            the ByteBuffer
 	 * @return the OIDTree
 	 */
-	public static OIDTree readOIDTree(final ByteBuffer p_buffer) {
-		OIDTree ret = null;
+	public static OIDTreeOptimized readOIDTree(final ByteBuffer p_buffer) {
+		OIDTreeOptimized ret = null;
 		byte[] data;
 
 		if (readBoolean(p_buffer)) {
@@ -269,13 +269,13 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Parses an OIDTree from byte array
+	 * Parses binary data into an OIDTree
 	 * @param p_data
-	 *            the byte array
+	 *            the binary data
 	 * @return the OIDTree
 	 */
-	public static OIDTree parseOIDTree(final byte[] p_data) {
-		OIDTree ret = null;
+	public static OIDTreeOptimized parseOIDTree(final byte[] p_data) {
+		OIDTreeOptimized ret = null;
 		ByteArrayInputStream byteArrayInputStream;
 		ObjectInput objectInput = null;
 
@@ -283,7 +283,7 @@ public final class InputHelper {
 			byteArrayInputStream = new ByteArrayInputStream(p_data);
 			try {
 				objectInput = new ObjectInputStream(byteArrayInputStream);
-				ret = (OIDTree) objectInput.readObject();
+				ret = (OIDTreeOptimized) objectInput.readObject();
 			} catch (final Exception e) {} finally {
 				try {
 					if (objectInput != null) {
@@ -298,9 +298,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a boolean from DataInput
+	 * Reads a boolean
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the boolean
 	 * @throws IOException
 	 *             if the boolean could not be read
@@ -312,9 +312,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a boolean from ByteBuffer
+	 * Reads a boolean
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the boolean
 	 */
 	public static boolean readBoolean(final ByteBuffer p_buffer) {
@@ -324,9 +324,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads an integer from DataInput
+	 * Reads an integer
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the integer
 	 * @throws IOException
 	 *             if the integer could not be read
@@ -338,9 +338,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads an integer from ByteBuffer
+	 * Reads an integer
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the integer
 	 */
 	public static int readInt(final ByteBuffer p_buffer) {
@@ -350,9 +350,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a byte from DataInput
+	 * Reads a byte
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the byte
 	 * @throws IOException
 	 *             if the byte could not be read
@@ -364,9 +364,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a byte from ByteBuffer
+	 * Reads a byte
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the byte
 	 */
 	public static byte readByte(final ByteBuffer p_buffer) {
@@ -376,9 +376,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a short from DataInput
+	 * Reads a short
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the short
 	 * @throws IOException
 	 *             if the short could not be read
@@ -390,9 +390,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a short from ByteBuffer
+	 * Reads a short
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the short
 	 */
 	public static short readShort(final ByteBuffer p_buffer) {
@@ -402,9 +402,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a long from DataInput
+	 * Reads a long
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the long
 	 * @throws IOException
 	 *             if the long could not be read
@@ -416,9 +416,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a long from ByteBuffer
+	 * Reads a long
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the long
 	 */
 	public static long readLong(final ByteBuffer p_buffer) {
@@ -428,9 +428,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a float from DataInput
+	 * Reads a float
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the float
 	 * @throws IOException
 	 *             if the float could not be read
@@ -442,9 +442,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a float from ByteBuffer
+	 * Reads a float
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the float
 	 */
 	public static float readFloat(final ByteBuffer p_buffer) {
@@ -454,9 +454,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a double from DataInput
+	 * Reads a double
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the double
 	 * @throws IOException
 	 *             if the double could not be read
@@ -468,9 +468,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a double from ByteBuffer
+	 * Reads a double
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the double
 	 */
 	public static double readDouble(final ByteBuffer p_buffer) {
@@ -480,9 +480,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads locations from DataInput
+	 * Reads locations
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the locations
 	 * @throws IOException
 	 *             if the locations could not be read
@@ -498,9 +498,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads locations from ByteBuffer
+	 * Reads locations
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the locations
 	 */
 	public static Locations readLocations(final ByteBuffer p_buffer) {
@@ -514,9 +514,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a long array from DataInput
+	 * Reads a long array
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the long array
 	 * @throws IOException
 	 *             if the long array could not be read
@@ -535,9 +535,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a long array from ByteBuffer
+	 * Reads a long array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the long array
 	 */
 	public static long[] readLongArray(final ByteBuffer p_buffer) {
@@ -554,9 +554,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a short array from DataInput
+	 * Reads a short array
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the short array
 	 * @throws IOException
 	 *             if the short array could not be read
@@ -575,9 +575,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a short array from ByteBuffer
+	 * Reads a short array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the short array
 	 */
 	public static short[] readShortArray(final ByteBuffer p_buffer) {
@@ -594,9 +594,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a byte array from DataInput
+	 * Reads a byte array
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the byte array
 	 * @throws IOException
 	 *             if the byte array could not be read
@@ -615,9 +615,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a byte array from ByteBuffer
+	 * Reads a byte array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the byte array
 	 */
 	public static byte[] readByteArray(final ByteBuffer p_buffer) {
@@ -634,12 +634,12 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a integer array from DataInput
+	 * Reads a integer array
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the integer array
 	 * @throws IOException
-	 *             if the inteager array could not be read
+	 *             if the integer array could not be read
 	 */
 	public static int[] readIntArray(final DataInput p_input) throws IOException {
 		int[] ret;
@@ -655,9 +655,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads an integer array from ByteBuffer
+	 * Reads a integer array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the integer array
 	 */
 	public static int[] readIntArray(final ByteBuffer p_buffer) {
@@ -674,9 +674,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a double array from DataInput
+	 * Reads a double array
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the double array
 	 * @throws IOException
 	 *             if the double array could not be read
@@ -695,9 +695,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a double array from ByteBuffer
+	 * Reads a double array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the double array
 	 */
 	public static double[] readDoubleArray(final ByteBuffer p_buffer) {
@@ -714,9 +714,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a float array from DataInput
+	 * Reads a float array
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the float array
 	 * @throws IOException
 	 *             if the float array could not be read
@@ -735,9 +735,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a float array from ByteBuffer
+	 * Reads a float array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the float array
 	 */
 	public static float[] readFloatArray(final ByteBuffer p_buffer) {
@@ -754,9 +754,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a boolean array from DataInput
+	 * Reads a boolean array
 	 * @param p_input
-	 *            the DataInput
+	 *            the input
 	 * @return the boolean array
 	 * @throws IOException
 	 *             if the boolean array could not be read
@@ -775,9 +775,9 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads a boolean array from ByteBuffer
+	 * Reads a boolean array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @return the boolean array
 	 */
 	public static boolean[] readBooleanArray(final ByteBuffer p_buffer) {

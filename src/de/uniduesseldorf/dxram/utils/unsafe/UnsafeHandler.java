@@ -10,6 +10,7 @@ import sun.misc.Unsafe;
  * @author Florian Klein
  *         22.07.2013
  */
+@SuppressWarnings("restriction")
 public final class UnsafeHandler {
 
 	// Attributes
@@ -25,7 +26,7 @@ public final class UnsafeHandler {
 		try {
 			field = Unsafe.class.getDeclaredField("theUnsafe");
 			field.setAccessible(true);
-			m_unsafe = (Unsafe)field.get(null);
+			m_unsafe = (Unsafe) field.get(null);
 		} catch (final Exception e) {
 			throw new AssertionError(e);
 		}

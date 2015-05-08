@@ -20,6 +20,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.AbstractUnsafeList.UnsafeListIterato
  * @author Florian Klein
  *         04.07.2014
  */
+@SuppressWarnings("restriction")
 public abstract class AbstractList<Type> implements List<Type> {
 
 	// Constants
@@ -135,12 +136,12 @@ public abstract class AbstractList<Type> implements List<Type> {
 		if (p_array.length >= size) {
 			ret = p_array;
 		} else {
-			ret = (T[])Array.newInstance(p_array.getClass().getComponentType(), size);
+			ret = (T[]) Array.newInstance(p_array.getClass().getComponentType(), size);
 		}
 
 		position = 0;
 		for (Type value : this) {
-			ret[position++] = (T)value;
+			ret[position++] = (T) value;
 		}
 
 		return ret;
@@ -238,7 +239,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 
 		Contract.checkNotNull(p_collection, "no collection given");
 
-		for (final Iterator<Type> iterator = iterator();iterator.hasNext();) {
+		for (final Iterator<Type> iterator = iterator(); iterator.hasNext();) {
 			if (!p_collection.contains(iterator.next())) {
 				iterator.remove();
 

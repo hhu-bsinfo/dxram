@@ -19,6 +19,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Manages a large memory block
  * @author Florian Klein 13.02.2014
  */
+@SuppressWarnings("restriction")
 public final class RawMemory {
 
 	// Constants
@@ -116,6 +117,8 @@ public final class RawMemory {
 			remaining -= SEGMENT_SIZE;
 		}
 		m_arenaManager = new ArenaManager();
+
+		MemoryStatistic.getInstance().initMemory(p_size);
 
 		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x"
 				+ Long.toHexString(m_memoryBase) + ")");
@@ -942,6 +945,8 @@ public final class RawMemory {
 				// Write block size
 				write(address, p_size, lengthFieldSize);
 
+				MemoryStatistic.getInstance().malloc(size);
+
 				ret = address;
 			}
 
@@ -1064,6 +1069,8 @@ public final class RawMemory {
 					}
 				}
 			}
+
+			MemoryStatistic.getInstance().free(size);
 		}
 
 		/**
@@ -1311,7 +1318,7 @@ public final class RawMemory {
 
 		// Methods
 		/**
-		 * Gets the assigned Segment for the given Thread
+		 * Gets the assigned Segment of the given Thread and enters the arena
 		 * @param p_threadID
 		 *            the ID of the Thread
 		 * @param p_minSize
@@ -1332,11 +1339,11 @@ public final class RawMemory {
 		}
 
 		/**
-		 * Leaves the arena
+		 * Releases the assigned Segment of the given Thread and leaves the arena
 		 * @param p_threadID
 		 *            the ID of the Thread
 		 * @param p_segment
-		 *            the Segment
+		 *            the assigned Segment
 		 */
 		private void leaveArena(final long p_threadID, final Segment p_segment) {
 			p_segment.unlock();

@@ -10,6 +10,7 @@ import sun.misc.Unsafe;
  * @author Florian Klein
  *         04.07.2014
  */
+@SuppressWarnings("restriction")
 public final class LongArray implements Iterable<Long> {
 
 	// Constants

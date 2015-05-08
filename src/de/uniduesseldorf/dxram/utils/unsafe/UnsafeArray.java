@@ -10,6 +10,7 @@ import de.uniduesseldorf.dxram.utils.Contract;
  * @author Florian Klein
  *         04.07.2014
  */
+@SuppressWarnings("restriction")
 public final class UnsafeArray {
 
 	// Constants
@@ -40,7 +41,7 @@ public final class UnsafeArray {
 
 		size = m_elementSize * m_size;
 		m_head = UNSAFE.allocateMemory(size);
-		UNSAFE.setMemory(m_head, size, (byte)0);
+		UNSAFE.setMemory(m_head, size, (byte) 0);
 	}
 
 	/**
@@ -81,7 +82,7 @@ public final class UnsafeArray {
 
 		size = m_elementSize * p_elementCount;
 		address = UNSAFE.allocateMemory(size);
-		UNSAFE.setMemory(address, size, (byte)0);
+		UNSAFE.setMemory(address, size, (byte) 0);
 		UNSAFE.copyMemory(m_head, address, m_elementSize * Math.min(m_size, p_elementCount));
 
 		UNSAFE.freeMemory(m_head);

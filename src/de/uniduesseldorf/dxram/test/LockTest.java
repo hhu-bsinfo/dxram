@@ -15,8 +15,8 @@ import de.uniduesseldorf.dxram.utils.locks.NoLock;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
 /**
- * Compares different locks
- * @author Florian Klein
+ * Test cases for evaluating lock implementations
+ * @author klein 26.03.2015
  */
 public final class LockTest {
 
@@ -81,16 +81,16 @@ public final class LockTest {
 	}
 
 	/**
-	 * Evaluates a no-lock implementation
+	 * Evaluates the NoLock implementation
 	 * @param p_rounds
 	 *            the number of rounds
 	 * @param p_threadCount
-	 *            the thread count
-	 * @return the TestResult
+	 *            the number of threads
+	 * @return the result
 	 * @throws InterruptedException
-	 *             if thread was interrupted
+	 *             if the test is interrupted
 	 * @throws ExecutionException
-	 *             if execution failed
+	 *             if the test could not be executed
 	 */
 	private static TestResult evaluateNoLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
@@ -102,16 +102,16 @@ public final class LockTest {
 	}
 
 	/**
-	 * Evaluates a JNI lock
+	 * Evaluates the JNILock implementation
 	 * @param p_rounds
 	 *            the number of rounds
 	 * @param p_threadCount
-	 *            the thread count
-	 * @return the TestResult
+	 *            the number of threads
+	 * @return the result
 	 * @throws InterruptedException
-	 *             if thread was interrupted
+	 *             if the test is interrupted
 	 * @throws ExecutionException
-	 *             if execution failed
+	 *             if the test could not be executed
 	 */
 	private static TestResult evaluateJNILock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
@@ -123,16 +123,16 @@ public final class LockTest {
 	}
 
 	/**
-	 * Evaluates a spin lock
+	 * Evaluates the SpinLock implementation
 	 * @param p_rounds
 	 *            the number of rounds
 	 * @param p_threadCount
-	 *            the thread count
-	 * @return the TestResult
+	 *            the number of threads
+	 * @return the result
 	 * @throws InterruptedException
-	 *             if thread was interrupted
+	 *             if the test is interrupted
 	 * @throws ExecutionException
-	 *             if execution failed
+	 *             if the test could not be executed
 	 */
 	private static TestResult evaluateSpinLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
@@ -144,16 +144,16 @@ public final class LockTest {
 	}
 
 	/**
-	 * Evaluates a java lock
+	 * Evaluates the ReentrantLock implementation
 	 * @param p_rounds
 	 *            the number of rounds
 	 * @param p_threadCount
-	 *            the thread count
-	 * @return the TestResult
+	 *            the number of threads
+	 * @return the result
 	 * @throws InterruptedException
-	 *             if thread was interrupted
+	 *             if the test is interrupted
 	 * @throws ExecutionException
-	 *             if execution failed
+	 *             if the test could not be executed
 	 */
 	private static TestResult evaluateJavaLock(final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
@@ -165,18 +165,18 @@ public final class LockTest {
 	}
 
 	/**
-	 * Evaluates a given lock
+	 * Evaluates a lock implementation
 	 * @param p_lock
-	 *            the lock
+	 *            the lock implementation
 	 * @param p_rounds
 	 *            the number of rounds
 	 * @param p_threadCount
-	 *            the thread count
-	 * @return the TestResult
+	 *            the number of threads
+	 * @return the result
 	 * @throws InterruptedException
-	 *             if thread was interrupted
+	 *             if the test is interrupted
 	 * @throws ExecutionException
-	 *             if execution failed
+	 *             if the test could not be executed
 	 */
 	private static long evaluateLock(final Lock p_lock, final int p_rounds, final int p_threadCount)
 			throws InterruptedException, ExecutionException {
@@ -214,13 +214,13 @@ public final class LockTest {
 	}
 
 	/**
-	 * Prints test results
+	 * Prints a test result
 	 * @param p_test
-	 *            the test mode
+	 *            the test name
 	 * @param p_rounds
 	 *            the number of rounds
 	 * @param p_result
-	 *            the TestResult
+	 *            the test result
 	 */
 	private static void printTestResult(final String p_test, final int p_rounds, final TestResult p_result) {
 		StringBuffer output;
@@ -239,8 +239,8 @@ public final class LockTest {
 
 	// Classes
 	/**
-	 * Test results
-	 * @author Florian Klein
+	 * Represents a test result
+	 * @author klein 26.03.2015
 	 */
 	private static final class TestResult {
 

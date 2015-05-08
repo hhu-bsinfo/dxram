@@ -1,8 +1,10 @@
+
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -31,7 +33,7 @@ public abstract class AbstractLog {
 	private File m_logFile;
 	private RandomAccessFile m_logRAF;
 	private static Checksum m_crc;
-
+	private ReentrantLock m_lock;
 
 	// Constructors
 	/**
@@ -57,6 +59,7 @@ public abstract class AbstractLog {
 		m_logRAF = null;
 
 		m_crc = new CRC32();
+		m_lock = new ReentrantLock(false);
 	}
 
 	// Getter
@@ -95,7 +98,7 @@ public abstract class AbstractLog {
 	 * Determines the number of bytes left to write
 	 * @return the number of bytes left to write
 	 */
-	protected final long getWritableSpace(){
+	protected final long getWritableSpace() {
 		return m_totalUsableSpace - m_bytesInRAF;
 	}
 
@@ -121,7 +124,7 @@ public abstract class AbstractLog {
 	/**
 	 * Closes log
 	 * @throws IOException
-	 *            if the buffers could not be flushed
+	 *             if the buffers could not be flushed
 	 */
 	public final void closeRing() throws IOException {
 		m_bytesInRAF = 0;
@@ -144,9 +147,9 @@ public abstract class AbstractLog {
 	/**
 	 * Creates and initializes random access file
 	 * @throws IOException
-	 *            if the header could not be read or written
+	 *             if the header could not be read or written
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	protected final void createLogAndWriteHeader() throws IOException, InterruptedException {
 
@@ -176,7 +179,7 @@ public abstract class AbstractLog {
 	 * @param p_logFile
 	 *            the log file
 	 * @throws IOException
-	 *            if opening the random access file failed
+	 *             if opening the random access file failed
 	 * @return file descriptor to the log file
 	 */
 	protected final RandomAccessFile openRingFile(final File p_logFile) throws IOException {
@@ -185,11 +188,13 @@ public abstract class AbstractLog {
 
 	/**
 	 * Returns all data
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 * @return all data
 	 */
-	public final byte[][] readAll() throws IOException {
+	public final byte[][] readAll(final boolean p_accessed) throws IOException {
 		byte[][] result = null;
 		int i = 0;
 
@@ -198,11 +203,11 @@ public abstract class AbstractLog {
 			while (m_bytesInRAF > 0) {
 				if (m_bytesInRAF > Integer.MAX_VALUE) {
 					result[i] = new byte[Integer.MAX_VALUE];
-					readOnRAFRing(result[i], Integer.MAX_VALUE, true);
+					readOnRAFRing(result[i], Integer.MAX_VALUE, true, p_accessed);
 					m_bytesInRAF -= Integer.MAX_VALUE;
 				} else {
 					result[i] = new byte[(int) m_bytesInRAF];
-					readOnRAFRing(result[i], (int) m_bytesInRAF, true);
+					readOnRAFRing(result[i], (int) m_bytesInRAF, true, p_accessed);
 					m_bytesInRAF = 0;
 				}
 				i++;
@@ -213,11 +218,13 @@ public abstract class AbstractLog {
 
 	/**
 	 * Returns all data without manipulating the read pointer (read data is still valid)
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 * @return all data
 	 */
-	public final byte[][] readAllWithoutReadPtrSet() throws IOException {
+	public final byte[][] readAllWithoutReadPtrSet(final boolean p_accessed) throws IOException {
 		byte[][] result = null;
 		int i = 0;
 		long size = m_bytesInRAF;
@@ -228,11 +235,11 @@ public abstract class AbstractLog {
 			while (size > 0) {
 				if (size > Integer.MAX_VALUE) {
 					result[i] = new byte[Integer.MAX_VALUE];
-					readOnRAFRing(result[i], Integer.MAX_VALUE, false);
+					readOnRAFRing(result[i], Integer.MAX_VALUE, false, p_accessed);
 					size -= Integer.MAX_VALUE;
 				} else {
 					result[i] = new byte[(int) size];
-					readOnRAFRing(result[i], (int) size, false);
+					readOnRAFRing(result[i], (int) size, false, p_accessed);
 					size = 0;
 				}
 				i++;
@@ -250,15 +257,20 @@ public abstract class AbstractLog {
 	 *            number of bytes to read
 	 * @param p_manipulateReadPtr
 	 *            whether the read pointer is moved forward or not after reading
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 * @return number of bytes that were read successfully
 	 */
 	protected final int readOnRAFRing(final byte[] p_data, final int p_length,
-			final boolean p_manipulateReadPtr) throws IOException{
+			final boolean p_manipulateReadPtr, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd = m_totalUsableSpace - m_readPos;
 
 		if (p_length > 0) {
+			if (p_accessed) {
+				m_lock.lock();
+			}
 			m_logRAF.seek(m_logFileHeaderSize + m_readPos);
 			if (p_length <= bytesUntilEnd) {
 				m_logRAF.readFully(p_data, 0, p_length);
@@ -272,6 +284,9 @@ public abstract class AbstractLog {
 			if (p_manipulateReadPtr) {
 				calcAndSetReadPos(p_length);
 			}
+			if (p_accessed) {
+				m_lock.unlock();
+			}
 		}
 		return p_length;
 	}
@@ -284,15 +299,20 @@ public abstract class AbstractLog {
 	 *            number of bytes to read
 	 * @param p_readPos
 	 *            the position within the log file
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 */
 	protected final void readOnRAFRingRandomly(final byte[] p_data, final int p_length,
-			final long p_readPos) throws IOException {
+			final long p_readPos, final boolean p_accessed) throws IOException {
 		final long innerLogSeekPos = m_logFileHeaderSize + p_readPos;
 		final long bytesUntilEnd = m_totalUsableSpace - p_readPos;
 
 		if (p_length > 0) {
+			if (p_accessed) {
+				m_lock.lock();
+			}
 			m_logRAF.seek(innerLogSeekPos);
 			if (p_length <= bytesUntilEnd) {
 				m_logRAF.readFully(p_data, 0, p_length);
@@ -302,6 +322,9 @@ public abstract class AbstractLog {
 				m_logRAF.readFully(p_data, 0, (int) bytesUntilEnd);
 				m_logRAF.seek(m_logFileHeaderSize);
 				m_logRAF.readFully(p_data, (int) bytesUntilEnd, p_length - (int) bytesUntilEnd);
+			}
+			if (p_accessed) {
+				m_lock.unlock();
 			}
 		}
 	}
@@ -314,17 +337,22 @@ public abstract class AbstractLog {
 	 *            offset in buffer
 	 * @param p_length
 	 *            number of bytes to write
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
-	protected final int appendToLog(final byte[] p_data,
-			final int p_bufferOffset, final int p_length) throws IOException{
+	protected final int appendToLog(final byte[] p_data, final int p_bufferOffset,
+			final int p_length, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd;
 		final long freeSpace = getWritableSpace();
 		final int writableBytes = (int) Math.min(p_length, freeSpace);
 
 		if (p_length > 0) {
+			if (p_accessed) {
+				m_lock.lock();
+			}
 			if (m_writePos >= m_readPos) {
 				bytesUntilEnd = m_totalUsableSpace - m_writePos;
 			} else {
@@ -342,8 +370,11 @@ public abstract class AbstractLog {
 				m_logRAF.seek(m_logFileHeaderSize);
 				m_logRAF.write(p_data, p_bufferOffset + (int) bytesUntilEnd, writableBytes - (int) bytesUntilEnd);
 			}
-			//m_logRAF.getFD().sync();
+			// m_logRAF.getFD().sync();
 			m_bytesInRAF += writableBytes;
+			if (p_accessed) {
+				m_lock.unlock();
+			}
 		}
 		return writableBytes;
 	}
@@ -358,12 +389,14 @@ public abstract class AbstractLog {
 	 *            number of bytes to write
 	 * @param p_innerWritePos
 	 *            the position within the log file
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
 	protected final int appendToLogWithoutPtrManipulation(final byte[] p_data, final int p_offset,
-			final int p_length, final long p_innerWritePos) throws IOException{
+			final int p_length, final long p_innerWritePos, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd;
 		final long freeSpace = getFreeSpaceBetweenReadAndReorgPos();
 		final int writableData = (int) Math.min(p_length, freeSpace);
@@ -375,6 +408,9 @@ public abstract class AbstractLog {
 		}
 
 		if (p_length > 0) {
+			if (p_accessed) {
+				m_lock.lock();
+			}
 			m_logRAF.seek(m_logFileHeaderSize + p_innerWritePos);
 			if (writableData <= bytesUntilEnd) {
 				m_logRAF.write(p_data, p_offset, writableData);
@@ -385,7 +421,10 @@ public abstract class AbstractLog {
 				m_logRAF.seek(m_logFileHeaderSize);
 				m_logRAF.write(p_data, p_offset + (int) bytesUntilEnd, writableData - (int) bytesUntilEnd);
 			}
-			//m_logRAF.getFD().sync();
+			// m_logRAF.getFD().sync();
+			if (p_accessed) {
+				m_lock.unlock();
+			}
 		}
 		return writableData;
 	}
@@ -400,15 +439,20 @@ public abstract class AbstractLog {
 	 *            offset in log file
 	 * @param p_length
 	 *            number of bytes to write
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
-	protected final int writeToLog(final byte[] p_data,
-			final int p_bufferOffset, final long p_logOffset, final int p_length) throws IOException{
+	protected final int writeToLog(final byte[] p_data, final int p_bufferOffset, final long p_logOffset,
+			final int p_length, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd;
 
 		if (p_length > 0) {
+			if (p_accessed) {
+				m_lock.lock();
+			}
 			m_logRAF.seek(m_logFileHeaderSize + p_logOffset);
 			if (p_logOffset + p_length <= m_totalUsableSpace) {
 				m_logRAF.write(p_data, p_bufferOffset, p_length);
@@ -421,6 +465,9 @@ public abstract class AbstractLog {
 				m_logRAF.write(p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd);
 			}
 			m_bytesInRAF += p_length;
+			if (p_accessed) {
+				m_lock.unlock();
+			}
 		}
 		return p_length;
 	}
@@ -435,15 +482,20 @@ public abstract class AbstractLog {
 	 *            offset in log file
 	 * @param p_length
 	 *            number of bytes to write
+	 * @param p_accessed
+	 *            whether the RAF is accessed by another thread or not
 	 * @throws IOException
-	 *            if reading the random access file failed
+	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
-	protected final int overwriteLog(final byte[] p_data,
-			final int p_bufferOffset, final long p_logOffset, final int p_length) throws IOException{
+	protected final int overwriteLog(final byte[] p_data, final int p_bufferOffset, final long p_logOffset,
+			final int p_length, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd;
 
 		if (p_length > 0) {
+			if (p_accessed) {
+				m_lock.lock();
+			}
 			m_logRAF.seek(m_logFileHeaderSize + p_logOffset);
 			if (p_logOffset + p_length <= m_totalUsableSpace) {
 				m_logRAF.write(p_data, p_bufferOffset, p_length);
@@ -454,6 +506,9 @@ public abstract class AbstractLog {
 				m_logRAF.write(p_data, p_bufferOffset, (int) bytesUntilEnd);
 				m_logRAF.seek(m_logFileHeaderSize);
 				m_logRAF.write(p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd);
+			}
+			if (p_accessed) {
+				m_lock.unlock();
 			}
 		}
 		return p_length;
@@ -480,7 +535,7 @@ public abstract class AbstractLog {
 	/**
 	 * Deletes the log file
 	 * @throws IOException
-	 *            if deleting the random access file failed
+	 *             if deleting the random access file failed
 	 * @return whether the deletion was successful or not
 	 */
 	protected final boolean deleteLogFile() throws IOException {
@@ -502,7 +557,7 @@ public abstract class AbstractLog {
 		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(chunkID), ChunkID.getLocalID(chunkID));
 		putLengthInLogEntryHeader(result, p_chunk.getSize());
 		putVersionInLogEntryHeader(result, p_chunk.getVersion());
-		//putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
+		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
 
 		return result;
 	}
@@ -520,7 +575,7 @@ public abstract class AbstractLog {
 		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(p_chunkID), ChunkID.getLocalID(p_chunkID));
 		putLengthInLogEntryHeader(result, 0);
 		putVersionInLogEntryHeader(result, -1);
-		//putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
+		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
 
 		return result;
 	}
@@ -636,7 +691,7 @@ public abstract class AbstractLog {
 			offset = p_offset + LogHandler.PRIMARY_HEADER_LID_OFFSET;
 		}
 
-		return (long)((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
+		return (long) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
 				+ ((p_buffer[offset + 2] & 0xff) << 16) + (((long) p_buffer[offset + 3] & 0xff) << 24)
 				+ (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40));
 	}
@@ -709,7 +764,7 @@ public abstract class AbstractLog {
 			offset -= LogHandler.LOG_HEADER_NID_SIZE;
 		}
 
-		return (long)((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
+		return (long) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
 				+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24)
 				+ ((p_buffer[offset + 4] & 0xff) << 32) + ((p_buffer[offset + 5] & 0xff) << 40)
 				+ ((p_buffer[offset + 6] & 0xff) << 48) + ((p_buffer[offset + 7] & 0xff) << 54));
@@ -742,7 +797,7 @@ public abstract class AbstractLog {
 	 *            the payload
 	 * @return the checksum
 	 */
-	public static long calculateChecksumOfPayload(final byte[] p_payload){
+	public static long calculateChecksumOfPayload(final byte[] p_payload) {
 
 		m_crc.reset();
 		m_crc.update(p_payload, 0, p_payload.length);

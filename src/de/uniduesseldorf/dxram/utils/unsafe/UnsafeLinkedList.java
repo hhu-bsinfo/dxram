@@ -8,6 +8,7 @@ import sun.misc.Unsafe;
  * @author Florian Klein
  *         04.07.2014
  */
+@SuppressWarnings("restriction")
 public final class UnsafeLinkedList extends AbstractUnsafeList {
 
 	// Constants
@@ -75,7 +76,7 @@ public final class UnsafeLinkedList extends AbstractUnsafeList {
 			address = m_tail;
 		} else {
 			address = m_head;
-			for (int i = 0;i < p_position;i++) {
+			for (int i = 0; i < p_position; i++) {
 				address = UNSAFE.getLong(address + SUCCESSOR_OFFSET);
 			}
 		}
@@ -123,7 +124,7 @@ public final class UnsafeLinkedList extends AbstractUnsafeList {
 			m_tail = address;
 		} else {
 			predecessor = m_head;
-			for (int i = 1;i < p_position;i++) {
+			for (int i = 1; i < p_position; i++) {
 				predecessor = UNSAFE.getLong(predecessor + SUCCESSOR_OFFSET);
 			}
 			successor = UNSAFE.getLong(predecessor + SUCCESSOR_OFFSET);
@@ -174,7 +175,7 @@ public final class UnsafeLinkedList extends AbstractUnsafeList {
 			}
 		} else {
 			predecessor = m_head;
-			for (int i = 0;i < p_position;i++) {
+			for (int i = 0; i < p_position; i++) {
 				predecessor = UNSAFE.getLong(predecessor + SUCCESSOR_OFFSET);
 			}
 			address = UNSAFE.getLong(predecessor + SUCCESSOR_OFFSET);
@@ -210,12 +211,12 @@ public final class UnsafeLinkedList extends AbstractUnsafeList {
 		ret = new UnsafeLinkedList(getElementSize());
 
 		address = m_head;
-		for (int i = 0;i < p_from;i++) {
+		for (int i = 0; i < p_from; i++) {
 			address = UNSAFE.getLong(address + SUCCESSOR_OFFSET);
 		}
 
 		elementSize = getElementSize();
-		for (int i = p_from;i < p_to;i++) {
+		for (int i = p_from; i < p_to; i++) {
 			newAddress = ret.addTail();
 			UNSAFE.copyMemory(address + DATA_OFFSET, newAddress + DATA_OFFSET, elementSize);
 		}

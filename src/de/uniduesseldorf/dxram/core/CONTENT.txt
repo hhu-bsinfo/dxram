@@ -5,11 +5,12 @@ CoreComponentFactory - Factory for creating instances of the main components
 #Packages
 api - API of the DXRAM core an global constants of the DXRAM core
 chunk - Classes for handling chunk data (RAM and log)
-lookup - Classes for handling meta data
 events - Events that can be triggered from the DXRAM core
 exceptions - Exceptions that can occur in the DXRAM core
 io - Classes for de-/serialization and io access
 lock - Classes for lock chunk data
+log - Classes for handling the log
+lookup - Classes for handling meta data
 monitoring - Classes for monitoring accesses and access pattern
 net - Classes for accessing the network layer
 recovery - Classes for the data recovery

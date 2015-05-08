@@ -315,8 +315,8 @@ public class VersionsHashTable {
 		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newMap;
 
-		System.out.print("Reached threshold (" + oldThreshold
-				+ ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
+		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity
+				+ " ... ");
 
 		oldCount = m_count;
 		while (index < oldThreshold) {

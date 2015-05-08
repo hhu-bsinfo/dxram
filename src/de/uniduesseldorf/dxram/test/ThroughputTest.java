@@ -16,7 +16,6 @@ import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Tools;
 
 /*
@@ -32,7 +31,7 @@ import de.uniduesseldorf.dxram.utils.Tools;
  * DXRAM
  */
 /**
- * Test case for the distributed evaluation for 2015 conference
+ * Test case for evaluating the throughput
  * @author Florian Klein
  *         27.12.2014
  */
@@ -117,7 +116,7 @@ public final class ThroughputTest {
 		 * @param p_chunkCount
 		 *            the amount of Chunks to create
 		 * @param p_threadCount
-		 *            the thread count
+		 *            the number of threads
 		 */
 		public Server(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
@@ -166,11 +165,21 @@ public final class ThroughputTest {
 			}
 		}
 
+		/**
+		 * Initializes DXRAM
+		 * @throws DXRAMException
+		 *             if DXRAM could not be initialized
+		 */
 		private void init() throws DXRAMException {
 			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
 					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
 		}
 
+		/**
+		 * Deinitializes DXRAM
+		 * @throws DXRAMException
+		 *             if DXRAM could not be deinitialized
+		 */
 		private void deinit() throws DXRAMException {
 			Chunk chunk;
 			ByteBuffer data;
@@ -186,6 +195,18 @@ public final class ThroughputTest {
 			RawMemory.printDebugInfos();
 		}
 
+		/**
+		 * Evaluate the create operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateCreate(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -223,6 +244,18 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the put operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluatePut(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
 				ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -264,10 +297,22 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the get operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
 				ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
-			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
+			final long nodeID = ((long) NodeID.getLocalNodeID()) << 48;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -302,10 +347,22 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the multiget operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
-			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
+			final long nodeID = ((long) NodeID.getLocalNodeID()) << 48;
 			final long[] chunkIDs = new long[count];
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -343,10 +400,22 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the lock operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
-			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
+			final long nodeID = ((long) NodeID.getLocalNodeID()) << 48;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -382,6 +451,18 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the create nameservice operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateCreateNS(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -419,6 +500,18 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the get nameservice operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -456,6 +549,15 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Prints a test result
+		 * @param p_test
+		 *            the test name
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_result
+		 *            the test result
+		 */
 		private void printTestResult(final String p_test, final int p_chunkCount, final TestResult p_result) {
 			StringBuffer output;
 			NumberFormat format;
@@ -493,7 +595,7 @@ public final class ThroughputTest {
 		 * @param p_chunkCount
 		 *            the amount of Chunks to create
 		 * @param p_threadCount
-		 *            the thread count
+		 *            the number of threads
 		 */
 		public Client(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
@@ -531,6 +633,11 @@ public final class ThroughputTest {
 			}
 		}
 
+		/**
+		 * Initializes DXRAM
+		 * @throws DXRAMException
+		 *             if DXRAM could not be initialized
+		 */
 		private void init() throws DXRAMException {
 			Chunk chunk;
 			ByteBuffer data;
@@ -545,8 +652,25 @@ public final class ThroughputTest {
 			m_nodeID = (long) data.getShort() << 48;
 		}
 
-		private void deinit() throws MemoryException {}
+		/**
+		 * Deinitializes DXRAM
+		 * @throws DXRAMException
+		 *             if DXRAM could not be deinitialized
+		 */
+		private void deinit() throws DXRAMException {}
 
+		/**
+		 * Evaluate the get operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
 				ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -584,6 +708,18 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the multiget operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -625,6 +761,18 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the lock operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -663,6 +811,18 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Evaluate the get nameservice operation
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_threadCount
+		 *            the number of threads
+		 * @return the test result
+		 * @throws InterruptedException
+		 *             if the test is interrupted
+		 * @throws ExecutionException
+		 *             if the test could not be executed
+		 */
 		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
@@ -700,6 +860,15 @@ public final class ThroughputTest {
 			return new TestResult(time);
 		}
 
+		/**
+		 * Prints a test result
+		 * @param p_test
+		 *            the test name
+		 * @param p_chunkCount
+		 *            the number of chunks
+		 * @param p_result
+		 *            the test result
+		 */
 		private void printTestResult(final String p_test, final int p_chunkCount, final TestResult p_result) {
 			StringBuffer output;
 			NumberFormat format;
@@ -718,6 +887,10 @@ public final class ThroughputTest {
 
 	}
 
+	/**
+	 * Represents a test result
+	 * @author klein 26.03.2015
+	 */
 	private static final class TestResult {
 
 		// Attributes

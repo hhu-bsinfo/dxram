@@ -26,6 +26,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Manages a large memory block
  * @author Florian Klein 13.02.2014
  */
+@SuppressWarnings("restriction")
 public final class RawMemoryOld {
 
 	// Constants
@@ -1241,22 +1242,17 @@ public final class RawMemoryOld {
 			 * long address;
 			 * int lengthFieldSize;
 			 * long count;
-			 *
 			 * ret = new long[m_listSizes.length];
 			 * for (int i = 0; i < m_listSizes.length; i++) {
 			 * count = 0;
-			 *
 			 * address = readPointer(p_pointerOffset + i * POINTER_SIZE);
 			 * while (address != 0) {
 			 * count++;
-			 *
 			 * lengthFieldSize = readRightPartOfMarker(address - 1);
 			 * address = readPointer(address + lengthFieldSize + POINTER_SIZE);
 			 * }
-			 *
 			 * ret[i] = count;
 			 * }
-			 *
 			 * return ret;
 			 * }
 			 */
@@ -1348,8 +1344,6 @@ public final class RawMemoryOld {
 		 * @param p_current
 		 *            the current assigned Segment
 		 * @return the new assigned Segment
-		 * @throws MemoryException
-		 *             if no Segment could be assigned
 		 */
 		private Segment assignNewSegment(final long p_threadID, final Segment p_current) {
 			Segment ret = null;

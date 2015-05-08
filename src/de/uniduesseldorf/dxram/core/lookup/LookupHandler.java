@@ -58,7 +58,7 @@ import de.uniduesseldorf.dxram.core.lookup.LookupMessages.SendBackupsMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.SendSuperpeersMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.StartRecoveryMessage;
 import de.uniduesseldorf.dxram.core.lookup.storage.IDHashTableLP;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTree;
+import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
@@ -105,7 +105,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	private ArrayList<Short> m_peers;
 
 	private int m_sleepInterval;
-	private OIDTree[] m_nodeTable;
+	private OIDTreeOptimized[] m_nodeTable;
 	private ArrayList<Short> m_nodeList;
 
 	private CRC16 m_hashGenerator;
@@ -195,7 +195,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		Contract.check(-1 != m_me);
 
 		if (NodeID.isSuperpeer()) {
-			m_nodeTable = new OIDTree[65536];
+			m_nodeTable = new OIDTreeOptimized[65536];
 			m_nodeList = new ArrayList<Short>();
 			m_idTable = new IDHashTableLP(1000, 0.9f);
 
@@ -444,7 +444,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 
-		OIDTree tree;
+		OIDTreeOptimized tree;
 
 		LOGGER.trace("Entering migrateNotCreatedChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
 
@@ -496,7 +496,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) throws LookupException {
 		short[] backupSuperpeers;
 
-		OIDTree tree;
+		OIDTreeOptimized tree;
 
 		LOGGER.trace("Entering migrateOwnChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
 
@@ -779,8 +779,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		short contactSuperpeer;
 		JoinRequest joinRequest = null;
 		JoinResponse joinResponse = null;
-		ArrayList<OIDTree> trees;
-		OIDTree tree;
+		ArrayList<OIDTreeOptimized> trees;
+		OIDTreeOptimized tree;
 
 		LOGGER.trace("Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
 
@@ -973,7 +973,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 * @return the OIDTree for given NodeID
 	 * @note assumes m_dataLock has been locked
 	 */
-	private OIDTree getOIDTree(final short p_nodeID) {
+	private OIDTreeOptimized getOIDTree(final short p_nodeID) {
 		return m_nodeTable[p_nodeID & 0xFFFF];
 	}
 
@@ -985,7 +985,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 *            the OIDTree to add
 	 * @note assumes m_dataLock has been locked
 	 */
-	private void addOIDTree(final short p_nodeID, final OIDTree p_tree) {
+	private void addOIDTree(final short p_nodeID, final OIDTreeOptimized p_tree) {
 		int index;
 
 		index = Collections.binarySearch(m_nodeList, p_nodeID);
@@ -1185,7 +1185,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		int startIndex;
 		Iterator<Short> iter;
 		ArrayList<Short> peers;
-		ArrayList<OIDTree> trees;
+		ArrayList<OIDTreeOptimized> trees;
 
 		byte[] mappings;
 		short joiningNodesPredecessor;
@@ -1220,7 +1220,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				}
 
 				m_dataLock.lock();
-				trees = new ArrayList<OIDTree>();
+				trees = new ArrayList<OIDTreeOptimized>();
 				responsibleArea = getResponsibleArea(joiningNode);
 				if (0 != m_nodeList.size()) {
 					index = Collections.binarySearch(m_nodeList, responsibleArea[0]);
@@ -1308,7 +1308,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	private void incomingLookupRequest(final LookupRequest p_lookupRequest) {
 		long chunkID;
 		Locations result = null;
-		OIDTree tree;
+		OIDTreeOptimized tree;
 
 		LOGGER.trace("Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource());
 
@@ -1336,7 +1336,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		long endChunkID;
 		short creator;
 		short[] backupSuperpeers;
-		OIDTree tree;
+		OIDTreeOptimized tree;
 		boolean isBackup;
 
 		LOGGER.trace("Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
@@ -1350,7 +1350,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			m_dataLock.lock();
 			tree = getOIDTree(creator);
 			if (null == tree) {
-				tree = new OIDTree(ORDER);
+				tree = new OIDTreeOptimized(ORDER);
 				addOIDTree(creator, tree);
 			}
 			tree.initRange(endChunkID, creator, primaryAndBackupPeers.getBackupPeers());
@@ -1368,7 +1368,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			m_dataLock.lock();
 			tree = getOIDTree(creator);
 			if (null == tree) {
-				tree = new OIDTree((short) 10);
+				tree = new OIDTreeOptimized((short) 10);
 				addOIDTree(creator, tree);
 			}
 			tree.initRange(endChunkID, creator, primaryAndBackupPeers.getBackupPeers());
@@ -1398,7 +1398,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		long chunkID;
 		short creator;
 		short[] backupSuperpeers;
-		OIDTree tree;
+		OIDTreeOptimized tree;
 		boolean isBackup;
 
 		LOGGER.trace("Got Message: MIGRATE_REQUEST from " + p_migrateRequest.getSource());
@@ -1467,7 +1467,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		long endChunkID;
 		short creator;
 		short[] backupSuperpeers;
-		OIDTree tree;
+		OIDTreeOptimized tree;
 		boolean isBackup;
 
 		LOGGER.trace("Got Message: MIGRATE_RANGE_REQUEST from " + p_migrateRangeRequest.getSource());
@@ -1541,7 +1541,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		short creator;
 		short[] backupSuperpeers;
 		boolean isBackup;
-		OIDTree tree;
+		OIDTreeOptimized tree;
 
 		LOGGER.trace("Got Message: REMOVE_REQUEST from " + p_removeRequest.getSource());
 
@@ -1605,8 +1605,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 */
 	private void incomingSendBackupsMessage(final SendBackupsMessage p_sendBackupsMessage) {
 		short source;
-		ArrayList<OIDTree> trees;
-		OIDTree tree;
+		ArrayList<OIDTreeOptimized> trees;
+		OIDTreeOptimized tree;
 
 		source = p_sendBackupsMessage.getSource();
 		LOGGER.trace("Got Message: SEND_BACKUPS_MESSAGE from " + source);
@@ -1660,12 +1660,12 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		byte[] mappings;
 		byte[] oldMappings;
 		byte[] allMappings = null;
-		ArrayList<OIDTree> trees;
+		ArrayList<OIDTreeOptimized> trees;
 		ArrayList<Short> peers;
 
 		LOGGER.trace("Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutBackupsRequest.getSource());
 
-		trees = new ArrayList<OIDTree>();
+		trees = new ArrayList<OIDTreeOptimized>();
 		peers = p_askAboutBackupsRequest.getPeers();
 		m_dataLock.lock();
 		lowerBound = m_predecessor;
@@ -1806,8 +1806,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 */
 	private void incomingPromotePeerRequest(final PromotePeerRequest p_promotePeerRequest) {
 		short replacement;
-		ArrayList<OIDTree> trees;
-		OIDTree tree;
+		ArrayList<OIDTreeOptimized> trees;
+		OIDTreeOptimized tree;
 
 		LOGGER.trace("Got request: PROMOTE_PEER_REQUEST from " + p_promotePeerRequest.getSource());
 
@@ -1821,8 +1821,11 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		NodeID.setSuperpeer(true);
 		m_numberOfSuperpeers--;
-		m_nodeTable = new OIDTree[65536];
+		m_nodeTable = new OIDTreeOptimized[65536];
 		m_nodeList = new ArrayList<Short>();
+		if (m_idTable == null) {
+			m_idTable = new IDHashTableLP(1000, 0.9f);
+		}
 
 		m_idTable.putAll(p_promotePeerRequest.getMappings());
 
@@ -1958,7 +1961,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	private void incomingNotifyAboutFailedPeerMessage(
 			final NotifyAboutFailedPeerMessage p_notifyAboutFailedPeerMessage) {
 		short failedPeer;
-		OIDTree tree;
+		OIDTreeOptimized tree;
 		Iterator<Short> iter;
 
 		LOGGER.trace("Got message: NOTIFY_ABOUT_FAILED_PEER_MESSAGE from "
@@ -2387,11 +2390,11 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		byte[] mappings;
 
-		OIDTree tree;
+		OIDTreeOptimized tree;
 
 		Iterator<Short> iter;
 		ArrayList<Short> peers = null;
-		ArrayList<OIDTree> trees;
+		ArrayList<OIDTreeOptimized> trees;
 
 		SearchForPeerRequest searchForPeerRequest;
 		SearchForPeerResponse searchForPeerResponse;
@@ -2452,7 +2455,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					}
 				}
 
-				trees = new ArrayList<OIDTree>();
+				trees = new ArrayList<OIDTreeOptimized>();
 				responsibleArea = getResponsibleArea(p_newSuperpeer);
 				m_overlayLock.unlock();
 
@@ -2561,9 +2564,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		byte[] mappings;
 		byte[] oldMappings;
 		byte[] allMappings = null;
-		ArrayList<OIDTree> trees;
+		ArrayList<OIDTreeOptimized> trees;
 
-		trees = new ArrayList<OIDTree>();
+		trees = new ArrayList<OIDTreeOptimized>();
 		m_dataLock.lock();
 		if (0 != m_nodeList.size()) {
 			index = Collections.binarySearch(m_nodeList, p_responsibleArea[0]);
@@ -2628,9 +2631,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		byte[] mappings;
 		byte[] oldMappings;
 		byte[] allMappings = null;
-		ArrayList<OIDTree> trees;
+		ArrayList<OIDTreeOptimized> trees;
 
-		trees = new ArrayList<OIDTree>();
+		trees = new ArrayList<OIDTreeOptimized>();
 		m_dataLock.lock();
 		lowerBound = m_predecessor;
 		if (0 != m_nodeList.size()) {
@@ -2709,7 +2712,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		int i = 0;
 		Iterator<Short> iter;
 		ArrayList<Long> backupPeers;
-		OIDTree tree;
+		OIDTreeOptimized tree;
 
 		boolean promoteOnePeer = false;
 		boolean finished = false;
@@ -2829,8 +2832,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 							backupPeer = (short) (backupPeers.get(i).longValue() >> j * 16);
 							// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 - 1)
 							System.out.println("** Informing backup peer " + backupPeer + " to recover chunks"
-									+ " between " + i * OIDTree.RANGE_SIZE + " and "
-									+ ((i + 1) * OIDTree.RANGE_SIZE - 1) + " from " + p_failedNode);
+									+ " between " + i * OIDTreeOptimized.RANGE_SIZE + " and "
+									+ ((i + 1) * OIDTreeOptimized.RANGE_SIZE - 1) + " from " + p_failedNode);
 							/*
 							 * try {
 							 * new StartRecoveryMessage(backupPeer, p_failedNode, i * 1000).send(m_network);
@@ -3269,10 +3272,10 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			short oldSuperpeer;
 			short currentPeer;
 
-			OIDTree tree;
+			OIDTreeOptimized tree;
 
 			ArrayList<Short> peers;
-			ArrayList<OIDTree> trees;
+			ArrayList<OIDTreeOptimized> trees;
 
 			AskAboutBackupsRequest request;
 			AskAboutBackupsResponse response;
@@ -3430,7 +3433,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		 * @param p_primaryAndBackupPeers
 		 *            the locations in long representation
 		 * @param p_range
-		 *            the range
+		 *            the corresponding range
 		 */
 		public Locations(final long p_primaryAndBackupPeers, final long[] p_range) {
 			this((short) p_primaryAndBackupPeers, new short[] {
@@ -3465,16 +3468,16 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		}
 
 		/**
-		 * Get start ID
-		 * @return the beginning of range
+		 * Get the start LID
+		 * @return the start LID
 		 */
 		public long getStartID() {
 			return m_range[0];
 		}
 
 		/**
-		 * Get end ID
-		 * @return the ending of range
+		 * Get the end LID
+		 * @return the end LID
 		 */
 		public long getEndID() {
 			return m_range[1];

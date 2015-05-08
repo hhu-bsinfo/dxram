@@ -289,6 +289,8 @@ public abstract class AbstractMessage {
 		beforeSend();
 
 		p_network.sendMessage(this);
+
+		afterSend();
 	}
 
 	/**
@@ -315,6 +317,11 @@ public abstract class AbstractMessage {
 	 * Executed before a Message is send (not forwarded)
 	 */
 	protected void beforeSend() {}
+
+	/**
+	 * Executed after a Message is send (not forwarded)
+	 */
+	protected void afterSend() {}
 
 	/**
 	 * Creates a Message from the given byte buffer
@@ -357,8 +364,8 @@ public abstract class AbstractMessage {
 	}
 
 	/**
-	 * Prints the message
-	 * @return the message
+	 * Creates a string representation of the message
+	 * @return the string representation
 	 */
 	public final String print() {
 		return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";

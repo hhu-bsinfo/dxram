@@ -3,12 +3,21 @@ package de.uniduesseldorf.dxram.test;
 
 import java.util.Properties;
 
-public class ArgumentHelper {
+/**
+ * Helps parsing program arguments
+ * @author klein 26.03.2015
+ */
+public final class ArgumentHelper {
 
 	// Attributes
 	private Properties m_arguments;
 
 	// Constructors
+	/**
+	 * Creates an instance of ArgumentHelper
+	 * @param p_arguments
+	 *            the program arguments
+	 */
 	public ArgumentHelper(final String[] p_arguments) {
 		m_arguments = new Properties();
 
@@ -31,10 +40,24 @@ public class ArgumentHelper {
 	}
 
 	// Methods
+	/**
+	 * Gets the argument value for the given key
+	 * @param p_key
+	 *            the key
+	 * @return the argument
+	 */
 	public String getArgument(final String p_key) {
 		return m_arguments.getProperty(p_key);
 	}
 
+	/**
+	 * Gets the argument value for the given key. If the key does not exist the default value will be returned
+	 * @param p_key
+	 *            the key
+	 * @param p_defaultValue
+	 *            the default value
+	 * @return the argument
+	 */
 	public int getArgument(final String p_key, final int p_defaultValue) {
 		int ret = p_defaultValue;
 
@@ -47,6 +70,12 @@ public class ArgumentHelper {
 		return ret;
 	}
 
+	/**
+	 * Checks if an argument for the given key exists
+	 * @param p_key
+	 *            the key
+	 * @return true if an argument exists, false otherwise
+	 */
 	public boolean containsArgument(final String p_key) {
 		return m_arguments.containsKey(p_key);
 	}

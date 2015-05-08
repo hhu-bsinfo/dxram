@@ -70,7 +70,6 @@ The most common styleguide rules are presented below:
 9.12. General types should not be declared to be thrown: java.lang.Throwable, java.lang.Error, java.lang.RuntimeException, java.lang.Exception
 9.13. Every class need to declare a constructor
 9.14. Every variable declaration need to be on a new line
-9.15. No finalize() method in a class
 9.16. No parameter assignments
 9.17. Only one return is allowed in a method
 9.18. Only one statement per line is allowed

@@ -10,11 +10,11 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTree;
+import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
- * Writes ChunkID, NodeID, Chunk and OIDTree to DataOutput
+ * Writes data types
  * @author Florian Klein 26.03.2012
  */
 public final class OutputHelper {
@@ -27,8 +27,8 @@ public final class OutputHelper {
 
 	// Methods
 	/**
-	 * Gets the ChunkID's write length
-	 * @return the ChunkID's write length
+	 * Get the length of a ChunkID
+	 * @return the length of a ChunkID
 	 */
 	public static int getChunkIDWriteLength() {
 		return 8;
@@ -63,10 +63,10 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the ChunkIDs' write length
+	 * Get the length of multiple ChunkIDs
 	 * @param p_count
 	 *            the number of ChunkIDs
-	 * @return the ChunkIDs' write length
+	 * @return the length of the ChunkIDs
 	 */
 	public static int getChunkIDsWriteLength(final int p_count) {
 		return getChunkIDWriteLength() * p_count + 4;
@@ -109,8 +109,8 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the NodeID's write length
-	 * @return the NodeID's write length
+	 * Get the length of a NodeID
+	 * @return the length of a NodeID
 	 */
 	public static int getNodeIDWriteLength() {
 		return 2;
@@ -145,10 +145,10 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the Chunk's write length
+	 * Get the length of a Chunk
 	 * @param p_chunk
 	 *            the Chunk
-	 * @return the Chunk's write length
+	 * @return the length of the Chunk
 	 */
 	public static int getChunkWriteLength(final Chunk p_chunk) {
 		Contract.checkNotNull(p_chunk, "no chunk given");
@@ -191,10 +191,10 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the Chunks' write length
+	 * Get the length of multiple Chunks
 	 * @param p_chunks
-	 *            the chunk array
-	 * @return the Chunks' write length
+	 *            the Chunks
+	 * @return the length of the Chunk
 	 */
 	public static int getChunksWriteLength(final Chunk[] p_chunks) {
 		int ret;
@@ -246,12 +246,12 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the OIDTree's write length
+	 * Get the lenth of a OIDTree
 	 * @param p_tree
 	 *            the OIDTree
-	 * @return the OIDTree's write length
+	 * @return the lenght of the OIDTree
 	 */
-	public static int getOIDTreeWriteLength(final OIDTree p_tree) {
+	public static int getOIDTreeWriteLength(final OIDTreeOptimized p_tree) {
 		int ret;
 		byte[] data;
 
@@ -277,7 +277,7 @@ public final class OutputHelper {
 	 * @throws IOException
 	 *             if the OIDTree could not be written
 	 */
-	public static void writeOIDTree(final DataOutput p_output, final OIDTree p_tree) throws IOException {
+	public static void writeOIDTree(final DataOutput p_output, final OIDTreeOptimized p_tree) throws IOException {
 		byte[] data;
 
 		Contract.checkNotNull(p_output, "no output given");
@@ -294,13 +294,13 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes the OIDTree to ByteBuffer
+	 * Writes an OIDTree
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_tree
 	 *            the OIDTree
 	 */
-	public static void writeOIDTree(final ByteBuffer p_buffer, final OIDTree p_tree) {
+	public static void writeOIDTree(final ByteBuffer p_buffer, final OIDTreeOptimized p_tree) {
 		byte[] data;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -317,12 +317,12 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Parses the OIDTree
+	 * Parses an OIDTree to a byte array
 	 * @param p_tree
 	 *            the OIDTree
 	 * @return the byte array
 	 */
-	private static byte[] parseOIDTree(final OIDTree p_tree) {
+	private static byte[] parseOIDTree(final OIDTreeOptimized p_tree) {
 		byte[] ret = null;
 		ByteArrayOutputStream byteArrayOutputStream;
 		ObjectOutput objectOutput = null;
@@ -345,17 +345,17 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the boolean's write length
-	 * @return the boolean's write length
+	 * Get the length of a boolean
+	 * @return the length of a boolean
 	 */
 	public static int getBooleanWriteLength() {
 		return 1;
 	}
 
 	/**
-	 * Writes a boolean to DataOutput
+	 * Writes a boolean
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_boolean
 	 *            the boolean
 	 * @throws IOException
@@ -368,9 +368,9 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a boolean to ByteBuffer
+	 * Writes a boolean
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_boolean
 	 *            the boolean
 	 */
@@ -385,17 +385,17 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the integer's write length
-	 * @return the integer's write length
+	 * Get the length of an integer
+	 * @return the length of an integer
 	 */
 	public static int getIntWriteLength() {
 		return 4;
 	}
 
 	/**
-	 * Writes an integer to DataOutput
+	 * Writes an integer
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_int
 	 *            the integer
 	 * @throws IOException
@@ -408,9 +408,9 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes an integer to ByteBuffer
+	 * Writes a integer
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_int
 	 *            the integer
 	 */
@@ -421,17 +421,17 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the byte's write length
-	 * @return the byte's write length
+	 * Get the length of a byte
+	 * @return the length of a byte
 	 */
 	public static int getByteWriteLength() {
 		return 1;
 	}
 
 	/**
-	 * Writes a byte to DataOutput
+	 * Writes a byte
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_byte
 	 *            the byte
 	 * @throws IOException
@@ -444,9 +444,9 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a byte to ByteBuffer
+	 * Writes a byte
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_byte
 	 *            the byte
 	 */
@@ -457,17 +457,17 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the short's write length
-	 * @return the short's write length
+	 * Get the length of a short
+	 * @return the length of a short
 	 */
 	public static int getShortWriteLength() {
 		return 2;
 	}
 
 	/**
-	 * Writes a short to DataOutput
+	 * Writes a short
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_short
 	 *            the short
 	 * @throws IOException
@@ -480,9 +480,9 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a short to ByteBuffer
+	 * Writes a short
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_short
 	 *            the short
 	 */
@@ -493,17 +493,17 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the long's write length
-	 * @return the long's write length
+	 * Get the length of a long
+	 * @return the length of a long
 	 */
 	public static int getLongWriteLength() {
 		return 8;
 	}
 
 	/**
-	 * Writes a long to DataOutput
+	 * Writes a long
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_long
 	 *            the long
 	 * @throws IOException
@@ -516,9 +516,9 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a long to ByteBuffer
+	 * Writes a long
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_long
 	 *            the long
 	 */
@@ -529,17 +529,17 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the float's write length
-	 * @return the float's write length
+	 * Get the length of a float
+	 * @return the length of a float
 	 */
 	public static int getFloatWriteLength() {
 		return 4;
 	}
 
 	/**
-	 * Writes a float to DataOutput
+	 * Writes a float
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_float
 	 *            the float
 	 * @throws IOException
@@ -552,9 +552,9 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a float to ByteBuffer
+	 * Writes a float
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_float
 	 *            the float
 	 */
@@ -565,17 +565,17 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the double's write length
-	 * @return the double's write length
+	 * Get the length of a double
+	 * @return the length of a double
 	 */
 	public static int getDoubleWriteLength() {
 		return 8;
 	}
 
 	/**
-	 * Writes a double to DataOutput
+	 * Writes a double
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_double
 	 *            the double
 	 * @throws IOException
@@ -588,9 +588,9 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a double to ByteBuffer
+	 * Writes a double
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_double
 	 *            the double
 	 */
@@ -601,21 +601,21 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the Locations's write length
-	 * @return the Locations's write length
+	 * Get the length of a boolean
+	 * @return the length of a boolean
 	 */
 	public static int getLocationsWriteLength() {
 		return 24;
 	}
 
 	/**
-	 * Writes Locations to DataOutput
+	 * Writes a location
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_locations
-	 *            the Locations
+	 *            the location
 	 * @throws IOException
-	 *             if the Locations could not be written
+	 *             if the location could not be written
 	 */
 	public static void writeLocations(final DataOutput p_output, final Locations p_locations) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -627,11 +627,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes Locations to ByteBuffer
+	 * Writes a location
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_locations
-	 *            the Locations
+	 *            the location
 	 */
 	public static void writeLocations(final ByteBuffer p_buffer, final Locations p_locations) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -643,23 +643,23 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the long array's write length
+	 * Get the length of multiple longs
 	 * @param p_count
-	 *            the number of elements
-	 * @return the long array's write length
+	 *            the number of longs
+	 * @return the length of the longs
 	 */
 	public static int getLongArrayWriteLength(final int p_count) {
 		return 8 * p_count + 4;
 	}
 
 	/**
-	 * Writes a long array to DataOutput
+	 * Writes a long array
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_array
-	 *            the long array
+	 *            the array
 	 * @throws IOException
-	 *             if the long array could not be written
+	 *             if the array could not be written
 	 */
 	public static void writeLongArray(final DataOutput p_output, final long[] p_array) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -672,11 +672,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a long array to ByteBuffer
+	 * Writes a long array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_array
-	 *            the long array
+	 *            the array
 	 */
 	public static void writeLongArray(final ByteBuffer p_buffer, final long[] p_array) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -689,23 +689,23 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the short array's write length
+	 * Get the length of multiple shorts
 	 * @param p_count
-	 *            the number of elements
-	 * @return the short array's write length
+	 *            the number of shorts
+	 * @return the length of the shorts
 	 */
 	public static int getShortArrayWriteLength(final int p_count) {
 		return 2 * p_count + 4;
 	}
 
 	/**
-	 * Writes a short array to DataOutput
+	 * Writes a short array
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_array
-	 *            the short array
+	 *            the array
 	 * @throws IOException
-	 *             if the short array could not be written
+	 *             if the array could not be written
 	 */
 	public static void writeShortArray(final DataOutput p_output, final short[] p_array) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -718,11 +718,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a short array to ByteBuffer
+	 * Writes a short array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_array
-	 *            the short array
+	 *            the array
 	 */
 	public static void writeShortArray(final ByteBuffer p_buffer, final short[] p_array) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -735,23 +735,23 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the byte array's write length
+	 * Get the length of multiple bytes
 	 * @param p_count
-	 *            the number of elements
-	 * @return the byte array's write length
+	 *            the number of bytes
+	 * @return the length of the bytes
 	 */
 	public static int getByteArrayWriteLength(final int p_count) {
 		return p_count + 4;
 	}
 
 	/**
-	 * Writes a byte array to DataOutput
+	 * Writes a byte array
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_array
-	 *            the byte array
+	 *            the array
 	 * @throws IOException
-	 *             if the byte array could not be written
+	 *             if the array could not be written
 	 */
 	public static void writeByteArray(final DataOutput p_output, final byte[] p_array) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -764,11 +764,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a byte array to ByteBuffer
+	 * Writes a byte array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_array
-	 *            the byte array
+	 *            the array
 	 */
 	public static void writeByteArray(final ByteBuffer p_buffer, final byte[] p_array) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -781,23 +781,23 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the integer array's write length
+	 * Get the length of multiple integers
 	 * @param p_count
-	 *            the number of elements
-	 * @return the integer array's write length
+	 *            the number of integers
+	 * @return the length of the integers
 	 */
 	public static int getIntArrayWriteLength(final int p_count) {
 		return 4 * p_count + 4;
 	}
 
 	/**
-	 * Writes an integer array to DataOutput
+	 * Writes a integer array
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_array
-	 *            the integer array
+	 *            the array
 	 * @throws IOException
-	 *             if the integer array could not be written
+	 *             if the array could not be written
 	 */
 	public static void writeIntArray(final DataOutput p_output, final int[] p_array) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -810,11 +810,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes an integer array to ByteBuffer
+	 * Writes a integer array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_array
-	 *            the integer array
+	 *            the array
 	 */
 	public static void writeIntArray(final ByteBuffer p_buffer, final int[] p_array) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -827,23 +827,23 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the float array's write length
+	 * Get the length of multiple floats
 	 * @param p_count
-	 *            the number of elements
-	 * @return the float array's write length
+	 *            the number of floats
+	 * @return the length of the floats
 	 */
 	public static int getFloatArrayWriteLength(final int p_count) {
 		return 4 * p_count + 4;
 	}
 
 	/**
-	 * Writes a float array to DataOutput
+	 * Writes a float array
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_array
-	 *            the float array
+	 *            the array
 	 * @throws IOException
-	 *             if the float array could not be written
+	 *             if the array could not be written
 	 */
 	public static void writeFloatArray(final DataOutput p_output, final float[] p_array) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -856,11 +856,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a float array to ByteBuffer
+	 * Writes a float array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_array
-	 *            the float array
+	 *            the array
 	 */
 	public static void writeFloatArray(final ByteBuffer p_buffer, final float[] p_array) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -873,23 +873,23 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the double array's write length
+	 * Get the length of multiple doubles
 	 * @param p_count
-	 *            the number of elements
-	 * @return the double array's write length
+	 *            the number of doubles
+	 * @return the length of the doubles
 	 */
 	public static int getDoubleArrayWriteLength(final int p_count) {
 		return 8 * p_count + 4;
 	}
 
 	/**
-	 * Writes a double array to DataOutput
+	 * Writes a double array
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_array
-	 *            the double array
+	 *            the array
 	 * @throws IOException
-	 *             if the double array could not be written
+	 *             if the array could not be written
 	 */
 	public static void writeDoubleArray(final DataOutput p_output, final double[] p_array) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -902,11 +902,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a double array to ByteBuffer
+	 * Writes a double array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_array
-	 *            the double array
+	 *            the array
 	 */
 	public static void writeDoubleArray(final ByteBuffer p_buffer, final double[] p_array) {
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -919,23 +919,23 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Gets the boolean array's write length
+	 * Get the length of multiple booleans
 	 * @param p_count
-	 *            the number of elements
-	 * @return the boolean array's write length
+	 *            the number of booleans
+	 * @return the length of the booleans
 	 */
 	public static int getBooleanArrayWriteLength(final int p_count) {
 		return p_count + 4;
 	}
 
 	/**
-	 * Writes a boolean array to DataOutput
+	 * Writes a boolean array
 	 * @param p_output
-	 *            the DataOutput
+	 *            the output
 	 * @param p_array
-	 *            the boolean array
+	 *            the array
 	 * @throws IOException
-	 *             if the boolean array could not be written
+	 *             if the array could not be written
 	 */
 	public static void writeBooleanArray(final DataOutput p_output, final boolean[] p_array) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -948,11 +948,11 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a boolean array to ByteBuffer
+	 * Writes a boolean array
 	 * @param p_buffer
-	 *            the ByteBuffer
+	 *            the buffer
 	 * @param p_array
-	 *            the boolean array
+	 *            the array
 	 */
 	public static void writeBooleanArray(final ByteBuffer p_buffer, final boolean[] p_array) {
 		Contract.checkNotNull(p_buffer, "no buffer given");

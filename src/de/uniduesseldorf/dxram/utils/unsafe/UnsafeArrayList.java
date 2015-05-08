@@ -8,6 +8,7 @@ import de.uniduesseldorf.dxram.utils.Contract;
  * @author Florian Klein
  *         04.07.2014
  */
+@SuppressWarnings("restriction")
 public final class UnsafeArrayList extends AbstractUnsafeList {
 
 	// Constants
@@ -106,7 +107,7 @@ public final class UnsafeArrayList extends AbstractUnsafeList {
 		}
 
 		ret = m_array.get(p_position);
-		for (int i = m_size - 1;i >= p_position;i--) {
+		for (int i = m_size - 1; i >= p_position; i--) {
 			UNSAFE.copyMemory(m_array.get(i), m_array.get(i + 1), elementSize);
 		}
 
@@ -124,7 +125,7 @@ public final class UnsafeArrayList extends AbstractUnsafeList {
 		}
 
 		elementSize = getElementSize();
-		for (int i = p_position;i < m_size - 1;i++) {
+		for (int i = p_position; i < m_size - 1; i++) {
 			UNSAFE.copyMemory(m_array.get(i + 1), m_array.get(i), elementSize);
 		}
 
@@ -147,7 +148,7 @@ public final class UnsafeArrayList extends AbstractUnsafeList {
 
 		elementSize = getElementSize();
 		ret = new UnsafeArrayList(elementSize, p_to - p_from);
-		for (int i = 0;i < p_to - p_from;i++) {
+		for (int i = 0; i < p_to - p_from; i++) {
 			UNSAFE.copyMemory(m_array.get(p_from + i), ret.m_array.get(i), elementSize);
 		}
 

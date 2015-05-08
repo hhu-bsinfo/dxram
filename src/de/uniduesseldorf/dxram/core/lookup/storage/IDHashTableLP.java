@@ -177,7 +177,7 @@ public class IDHashTableLP {
 	 * Returns the value to which the specified key is mapped in IDHashTable
 	 * @param p_key
 	 *            the searched key (is incremented before insertion to avoid 0)
-	 * @return  the value to which the key is mapped in IDHashTable
+	 * @return the value to which the key is mapped in IDHashTable
 	 */
 	public final long get(final int p_key) {
 		long ret = 0;
@@ -322,14 +322,14 @@ public class IDHashTableLP {
 		m_threshold = (int)(m_elementCapacity * m_loadFactor);
 		m_table = newTable;
 
-		System.out.print("Reached threshold (" + oldThreshold
-				+ ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
+		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity
+				+ " ... ");
 
 		m_count = 0;
 		while (index < oldElementCapacity) {
 			if (oldTable[index * 3] != 0) {
-				put(oldTable[index * 3] - 1,
-						(long)oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2] & 0xFFFFFFFFL);
+				put(oldTable[index * 3] - 1, (long)oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2]
+						& 0xFFFFFFFFL);
 			}
 			index = (index + 1) % m_elementCapacity;
 		}
@@ -349,8 +349,10 @@ public class IDHashTableLP {
 		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
 		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
 		return (hash >> 16) ^ hash;
-		/*hash ^= (hash >>> 20) ^ (hash >>> 12);
-		return hash ^ (hash >>> 7) ^ (hash >>> 4);*/
+		/*
+		 * hash ^= (hash >>> 20) ^ (hash >>> 12);
+		 * return hash ^ (hash >>> 7) ^ (hash >>> 4);
+		 */
 	}
 
 	/**
@@ -385,8 +387,8 @@ public class IDHashTableLP {
 	 *            the type of interval
 	 * @return all data in IDHashTable
 	 */
-	public final byte[] toArray(final short p_bound1, final short p_bound2,
-			final boolean p_isOnlySuperpeer, final short p_interval) {
+	public final byte[] toArray(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer,
+			final short p_interval) {
 		int count = 0;
 		int iter;
 		long value;
@@ -398,8 +400,8 @@ public class IDHashTableLP {
 			iter = getKey(i);
 			value = getValue(i);
 			if (iter != 0) {
-				if (p_isOnlySuperpeer || LookupHandler.isNodeInRange(ChunkID.getCreatorID(value),
-						p_bound1, p_bound2, p_interval)) {
+				if (p_isOnlySuperpeer
+						|| LookupHandler.isNodeInRange(ChunkID.getCreatorID(value), p_bound1, p_bound2, p_interval)) {
 					data.putInt(iter);
 					data.putLong(getValue(i));
 					count++;
@@ -448,10 +450,12 @@ public class IDHashTableLP {
 		Collection<Entry> list;
 
 		list = new TreeSet<Entry>(new Comparator<Entry>(){
+
 			@Override
-			public int compare(final Entry p_a, final Entry p_b){
-				return p_a.m_key - p_b.m_key;
+			public int compare(final Entry p_entryA, final Entry p_entryB) {
+				return p_entryA.m_key - p_entryB.m_key;
 			}
+
 		});
 
 		for (int i = 0; i < m_elementCapacity; i++) {
