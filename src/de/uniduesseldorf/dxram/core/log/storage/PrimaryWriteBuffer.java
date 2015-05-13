@@ -2,8 +2,7 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Semaphore;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -49,7 +48,7 @@ public class PrimaryWriteBuffer {
 	private boolean m_dataAvailable;
 	private boolean m_flushingComplete;
 
-	private Lock m_metaDataLock;
+	private Semaphore m_metaDataLock;
 	private int m_writingNetworkThreads;
 	private boolean m_writerThreadWantsToFlush;
 
@@ -92,7 +91,7 @@ public class PrimaryWriteBuffer {
 			m_lengthByNode = new int[Short.MAX_VALUE * 2];
 			m_isShuttingDown = false;
 		}
-		m_metaDataLock = new ReentrantLock(false);
+		m_metaDataLock = new Semaphore(1, false);
 
 		m_writerThread = new PrimaryLogWriterThread();
 		m_writerThread.start();
@@ -167,20 +166,20 @@ public class PrimaryWriteBuffer {
 		if (!m_isShuttingDown) {
 			if (PARALLEL_BUFFERING) {
 				while (true) {
-					m_metaDataLock.lock();
+					m_metaDataLock.acquire();
 					if (!m_writerThreadWantsToFlush
 							&& m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT) {
 						m_writingNetworkThreads++;
 						break;
 					} else {
-						m_metaDataLock.unlock();
+						m_metaDataLock.release();
 					}
 				}
 			} else {
 				while (m_bytesInWriteBuffer + bytesToWrite > LogHandler.MAX_BYTE_COUNT) {
 					Thread.yield();
 				}
-				m_metaDataLock.lock();
+				m_metaDataLock.acquire();
 			}
 
 			// Set buffer write pointer and byte counter before writing to
@@ -195,7 +194,7 @@ public class PrimaryWriteBuffer {
 			m_bytesInWriteBuffer += bytesToWrite;
 			m_lengthByNode[AbstractLog.getNodeIDOfLogEntry(p_header, 0) & 0xFFFF] += bytesToWrite;
 			if (PARALLEL_BUFFERING) {
-				m_metaDataLock.unlock();
+				m_metaDataLock.release();
 			}
 
 			// Determine free space from end of log to end of array
@@ -252,7 +251,7 @@ public class PrimaryWriteBuffer {
 			}
 
 			if (PARALLEL_BUFFERING) {
-				m_metaDataLock.lock();
+				m_metaDataLock.acquire();
 				m_writingNetworkThreads--;
 			}
 
@@ -261,7 +260,7 @@ public class PrimaryWriteBuffer {
 				// written
 				m_dataAvailable = true;
 			}
-			m_metaDataLock.unlock();
+			m_metaDataLock.release();
 		}
 		return bytesToWrite;
 	}
@@ -290,24 +289,30 @@ public class PrimaryWriteBuffer {
 	private final class PrimaryLogWriterThread extends Thread {
 
 		// Attributes
-		private long m_start;
+		private long m_time;
 		private long m_amount;
+		private double m_throughput;
 
 		// Constructors
 		/**
 		 * Creates an instance of PrimaryLogWriterThread
 		 */
 		public PrimaryLogWriterThread() {
-			m_start = System.currentTimeMillis();
+			m_time = System.currentTimeMillis();
 			m_amount = 0;
+			m_throughput = 0;
 		}
 
 		/**
 		 * Print the throughput statistic
 		 */
 		public void printThroughput() {
-			System.out.println("Throughput: "
-					+ ((double) m_amount / (System.currentTimeMillis() - m_start) / 1024 * 1000) + " kb/s");
+			m_throughput = ((double) m_amount / (System.currentTimeMillis() - m_time) / 1024 / 1024 * 1000) * 0.9
+					+ m_throughput * 0.1;
+			m_amount = 0;
+			m_time = System.currentTimeMillis();
+
+			System.out.format("Throughput: %.2f mb/s\n", m_throughput);
 		}
 
 		@Override
@@ -366,16 +371,16 @@ public class PrimaryWriteBuffer {
 			// be filled
 			if (PARALLEL_BUFFERING) {
 				while (true) {
-					m_metaDataLock.lock();
+					m_metaDataLock.acquire();
 					if (m_writingNetworkThreads == 0) {
 						break;
 					} else {
 						m_writerThreadWantsToFlush = true;
-						m_metaDataLock.unlock();
+						m_metaDataLock.release();
 					}
 				}
 			} else {
-				m_metaDataLock.lock();
+				m_metaDataLock.acquire();
 			}
 
 			readPointer = m_bufferReadPointer;
@@ -390,7 +395,7 @@ public class PrimaryWriteBuffer {
 			m_flushingComplete = false;
 
 			m_writerThreadWantsToFlush = false;
-			m_metaDataLock.unlock();
+			m_metaDataLock.release();
 
 			if (bytesInWriteBuffer > 0) {
 				// Write data to primary log

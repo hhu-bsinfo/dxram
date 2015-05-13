@@ -3510,9 +3510,16 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		public long convertToLong() {
 			long ret;
 			if (null != m_backupPeers) {
-				ret = ((m_backupPeers[2] & 0x000000000000FFFFL) << 48)
-						+ ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
-						+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+				if (m_backupPeers.length == 3) {
+					ret = ((m_backupPeers[2] & 0x000000000000FFFFL) << 48)
+							+ ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
+							+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+				} else if (m_backupPeers.length == 2) {
+					ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
+							+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+				} else {
+					ret = ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+				}
 			} else {
 				ret = m_primaryPeer & 0x0000FFFF;
 			}
@@ -3528,8 +3535,14 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			String ret;
 
 			if (null != m_backupPeers) {
-				ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", " + m_backupPeers[2]
-						+ "]";
+				if (m_backupPeers.length == 3) {
+					ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", " + m_backupPeers[2]
+							+ "]";
+				} else if (m_backupPeers.length == 2) {
+					ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + "]";
+				} else {
+					ret = m_primaryPeer + ", [" + m_backupPeers[0] + "]";
+				}
 			} else {
 				ret = m_primaryPeer + ", no backup peers";
 			}

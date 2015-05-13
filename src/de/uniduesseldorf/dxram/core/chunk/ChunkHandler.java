@@ -76,6 +76,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(
 			ConfigurationConstants.LOG_ACTIVE);
+	private static final int REPLICATION_FACTOR = Core.getConfiguration().getIntValue(
+			ConfigurationConstants.REPLICATION_FACTOR);
 
 	// Attributes
 	private short m_nodeID;
@@ -502,9 +504,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (LOG_ACTIVE) {
 					// Send backups for logging (unreliable)
 					backupPeers = m_locations.getBackupPeers();
-					for (int i = 0; i < 3; i++) {
-						if (backupPeers[i] != m_nodeID) {
-							new LogMessage(backupPeers[i], p_chunk).send(m_network);
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID) {
+								new LogMessage(backupPeers[i], p_chunk).send(m_network);
+							}
 						}
 					}
 				}
@@ -534,9 +538,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					}
 					if (success && LOG_ACTIVE) {
 						// Send backups for logging (unreliable)
-						for (int i = 0; i < 3; i++) {
-							if (backupPeers[i] != m_nodeID) {
-								new LogMessage(backupPeers[i], p_chunk).send(m_network);
+						if (backupPeers != null) {
+							for (int i = 0; i < backupPeers.length; i++) {
+								if (backupPeers[i] != m_nodeID) {
+									new LogMessage(backupPeers[i], p_chunk).send(m_network);
+								}
 							}
 						}
 					}
@@ -920,15 +926,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private void determineBackupPeers() {
 		boolean ready = false;
-		boolean error = false;
+		boolean insufficientPeers = false;
 		short index = 0;
 		short peer;
-		short[] backupPeers;
+		short[] oldBackupPeers = null;
+		short[] newBackupPeers = null;
 		short[] allPeers;
 		short numberOfPeers = 0;
 		List<String> peers = null;
-
-		backupPeers = new short[6];
 
 		// Get all other online peers
 		try {
@@ -945,40 +950,70 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		}
 
 		if (3 > numberOfPeers) {
-			LOGGER.error("not enough peers online to backup");
-			error = true;
-		} else if (null == m_locations.getBackupPeers()) {
-			backupPeers[0] = (short) -1;
-			backupPeers[1] = (short) -1;
-			backupPeers[2] = (short) -1;
+			LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
+
+			newBackupPeers = new short[numberOfPeers];
+			Arrays.fill(newBackupPeers, (short) -1);
+
+			insufficientPeers = true;
 		} else if (6 > numberOfPeers) {
-			LOGGER.warn("less than six peers online. Within the new backup peers will be old ones");
-			backupPeers[0] = (short) -1;
-			backupPeers[1] = (short) -1;
-			backupPeers[2] = (short) -1;
-		} else {
-			backupPeers[0] = m_locations.getBackupPeers()[0];
-			backupPeers[1] = m_locations.getBackupPeers()[1];
-			backupPeers[2] = m_locations.getBackupPeers()[2];
+			LOGGER.warn("Less than six peers for backup available. Some peers may store more"
+					+ " than one backup range of a node!");
+
+			oldBackupPeers = new short[REPLICATION_FACTOR];
+			Arrays.fill(oldBackupPeers, (short) -1);
+
+			newBackupPeers = new short[REPLICATION_FACTOR];
+			Arrays.fill(newBackupPeers, (short) -1);
+		} else if (null != m_locations.getBackupPeers()) {
+			oldBackupPeers = new short[REPLICATION_FACTOR];
+			for (int i = 0; i < REPLICATION_FACTOR; i++) {
+				oldBackupPeers[i] = m_locations.getBackupPeers()[i];
+			}
+
+			newBackupPeers = new short[REPLICATION_FACTOR];
+			Arrays.fill(newBackupPeers, (short) -1);
 		}
-		if (!error) {
+
+		if (insufficientPeers) {
+			if (numberOfPeers > 0) {
+				// Determine backup peers
+				for (int i = 0; i < numberOfPeers; i++) {
+					while (!ready) {
+						index = (short) (Math.random() * numberOfPeers);
+						ready = true;
+						for (int j = 0; j < i; j++) {
+							if (allPeers[index] == newBackupPeers[j]) {
+								ready = false;
+								break;
+							}
+						}
+					}
+					System.out.println((i + 1) + ". backup peer: " + allPeers[index]);
+					newBackupPeers[i] = allPeers[index];
+					ready = false;
+				}
+				m_locations.setBackupPeers(newBackupPeers);
+			}
+		} else {
 			// Determine backup peers
-			for (int i = 3; i < 6; i++) {
+			for (int i = 0; i < 3; i++) {
 				while (!ready) {
 					index = (short) (Math.random() * numberOfPeers);
 					ready = true;
 					for (int j = 0; j < i; j++) {
-						if (allPeers[index] == backupPeers[j]) {
+						if (allPeers[index] == oldBackupPeers[j]
+								|| allPeers[index] == newBackupPeers[j]) {
 							ready = false;
 							break;
 						}
 					}
 				}
-				System.out.println(i + ". backup peer: " + allPeers[index]);
-				backupPeers[i] = allPeers[index];
+				System.out.println((i + 1) + ". backup peer: " + allPeers[index]);
+				newBackupPeers[i] = allPeers[index];
 				ready = false;
 			}
-			m_locations.setBackupPeers(Arrays.copyOfRange(backupPeers, 3, 6));
+			m_locations.setBackupPeers(newBackupPeers);
 		}
 	}
 
