@@ -1,6 +1,7 @@
 #Classes
 LogHandler - Default implementation of the LogInterface
 LogInterface - API of log service
+ChunkMessages - Network messages for the log service
 
 #Packages
 storage - Classes for handling the log storage

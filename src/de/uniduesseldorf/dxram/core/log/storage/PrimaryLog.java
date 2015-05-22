@@ -246,15 +246,13 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 						// 1. Buffer in secondary log buffer
 						bufferLogEntryInSecondaryLogBuffer(segment, 0, length,
 								nodeID);
-						// 2. Copy log entry/range to write it in primary log
-						// subsequently
+						// 2. Copy log entry/range to write it in primary log subsequently
 						System.arraycopy(segment, 0, primaryLogBuffer,
 								primaryLogBufferOffset, length);
 						primaryLogBufferOffset += length;
 						break;
 					} else {
-						// Segment is larger than one flash page -> skip primary
-						// log
+						// Segment is larger than one flash page -> skip primary log
 						writeDirectlyToSecondaryLog(segment, 0, length, nodeID);
 					}
 					segment = bufferNode.getData(++i);
@@ -467,8 +465,8 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 *            position of log entry/range in data block
 	 * @param p_logEntrySize
 	 *            size of log entry/range
-	 * @param p_nodeID
-	 *            NodeID of log entry/range
+	 * @param p_chunkID
+	 *            ChunkID of log entry/range
 	 * @throws IOException
 	 *             if secondary log buffer could not be written
 	 * @throws InterruptedException
@@ -476,9 +474,9 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 */
 	private void bufferLogEntryInSecondaryLogBuffer(final byte[] p_buffer,
 			final int p_bufferOffset, final int p_logEntrySize,
-			final short p_nodeID) throws IOException, InterruptedException {
+			final long p_chunkID) throws IOException, InterruptedException {
 
-		m_logHandler.getSecondaryLogBuffer(p_nodeID, true).bufferData(p_buffer,
+		m_logHandler.getSecondaryLogBuffer(p_chunkID).bufferData(p_buffer,
 				p_bufferOffset, p_logEntrySize);
 	}
 
@@ -492,8 +490,8 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 *            position of log entry/range in data block
 	 * @param p_logEntrySize
 	 *            size of log entry/range
-	 * @param p_nodeID
-	 *            NodeID of log entry/range
+	 * @param p_chunkID
+	 *            ChunkID of log entry/range
 	 * @throws IOException
 	 *             if secondary log could not be written
 	 * @throws InterruptedException
@@ -501,9 +499,9 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 */
 	private void writeDirectlyToSecondaryLog(final byte[] p_buffer,
 			final int p_bufferOffset, final int p_logEntrySize,
-			final short p_nodeID) throws IOException, InterruptedException {
+			final long p_chunkID) throws IOException, InterruptedException {
 
-		m_logHandler.getSecondaryLogBuffer(p_nodeID, true)
+		m_logHandler.getSecondaryLogBuffer(p_chunkID)
 				.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 	}
 

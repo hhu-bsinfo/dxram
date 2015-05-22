@@ -1,5 +1,5 @@
-package de.uniduesseldorf.dxram.core.log.storage;
 
+package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,6 +44,14 @@ public final class SecondaryLogBuffer {
 		return m_bytesInBuffer == 0;
 	}
 
+	/**
+	 * Returns the number of bytes
+	 * @return the number of bytes
+	 */
+	public int getOccupiedSpace() {
+		return m_bytesInBuffer;
+	}
+
 	// Methods
 	/**
 	 * Closes the buffer
@@ -68,9 +76,9 @@ public final class SecondaryLogBuffer {
 	 * @param p_entryOrRangeSize
 	 *            size of the log entry/range
 	 * @throws IOException
-	 *            if the secondary log could not be written or buffer be read
+	 *             if the secondary log could not be written or buffer be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public void bufferData(final byte[] p_buffer, final int p_bufferOffset,
 			final int p_entryOrRangeSize) throws IOException, InterruptedException {
@@ -130,9 +138,9 @@ public final class SecondaryLogBuffer {
 	 * @param p_entryOrRangeSize
 	 *            size of the log entry/range
 	 * @throws IOException
-	 *            if the secondary log could not be written or buffer be read
+	 *             if the secondary log could not be written or buffer be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public void flushAllDataToSecLog(final byte[] p_buffer, final int p_bufferOffset,
 			final int p_entryOrRangeSize) throws IOException, InterruptedException {
@@ -157,9 +165,9 @@ public final class SecondaryLogBuffer {
 	/**
 	 * Flushes all data in secondary log buffer to secondary log regardless of the size
 	 * @throws IOException
-	 *            if the secondary log could not be written or buffer be read
+	 *             if the secondary log could not be written or buffer be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public void flushSecLogBuffer() throws IOException, InterruptedException {
 

@@ -1,5 +1,5 @@
-package de.uniduesseldorf.dxram.core.log;
 
+package de.uniduesseldorf.dxram.core.log;
 
 import java.io.IOException;
 
@@ -9,7 +9,6 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogBuffer;
 import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogWithSegments;
-
 
 /**
  * Methods for logging the data
@@ -24,40 +23,42 @@ public interface LogInterface extends CoreComponent {
 	 */
 	PrimaryLog getPrimaryLog();
 
-
 	/**
 	 * Returns the secondary log buffer
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_set
-	 *            whether to create it if null or not
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @return the secondary log buffer
 	 * @throws IOException
 	 *             if the secondary log buffer could not be returned
 	 * @throws InterruptedException
 	 *             if the secondary log buffer could not be returned
 	 */
-	SecondaryLogBuffer getSecondaryLogBuffer(short p_nodeID, boolean p_set)
+	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID)
 			throws IOException, InterruptedException;
-
 
 	/**
 	 * Returns the secondary log
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_set
-	 *            whether to create it if null or not
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @return the secondary log
 	 * @throws IOException
 	 *             if the secondary log could not be returned
 	 * @throws InterruptedException
 	 *             if the secondary log could not be returned
 	 */
-	SecondaryLogWithSegments getSecondaryLog(short p_nodeID, boolean p_set)
+	SecondaryLogWithSegments getSecondaryLog(long p_chunkID)
 			throws IOException, InterruptedException;
 
-
 	// Methods
+	/**
+	 * Creates a new Chunk
+	 * @param p_start
+	 *            the beginning of the range
+	 * @param p_backupPeers
+	 *            the backup peers
+	 */
+	void initRange(long p_start, short[] p_backupPeers);
+
 	/**
 	 * Creates a new Chunk
 	 * @param p_chunk
@@ -68,7 +69,6 @@ public interface LogInterface extends CoreComponent {
 	 */
 	long logChunk(Chunk p_chunk) throws DXRAMException;
 
-
 	/**
 	 * Creates a new Chunk
 	 * @param p_chunkID
@@ -78,21 +78,17 @@ public interface LogInterface extends CoreComponent {
 	 */
 	void removeChunk(long p_chunkID) throws DXRAMException;
 
-
 	/**
-	 * Recovers the local data of one node from the log
-	 * @param p_nodeID
-	 *            the NodeID
+	 * Recovers the local data of one log
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	void recoverAllLogEntries(short p_nodeID) throws DXRAMException;
-
+	void recoverAllLogEntries(long p_chunkID) throws DXRAMException;
 
 	/**
 	 * Recovers some local data of one node from the log
-	 * @param p_nodeID
-	 *            the NodeID
 	 * @param p_low
 	 *            lower bound
 	 * @param p_high
@@ -100,14 +96,13 @@ public interface LogInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	void recoverRange(short p_nodeID, long p_low, long p_high)
+	void recoverRange(long p_low, long p_high)
 			throws DXRAMException;
 
-
 	/**
-	 * Reads the local data of one node from the log
-	 * @param p_nodeID
-	 *            the NodeID
+	 * Reads the local data of one log
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @param p_manipulateReadPtr
 	 *            whether the read pointer should be adjusted or not
 	 * @throws DXRAMException
@@ -115,20 +110,18 @@ public interface LogInterface extends CoreComponent {
 	 * @return the local data
 	 * @note for testing only
 	 */
-	byte[][] readAllEntries(short p_nodeID, boolean p_manipulateReadPtr)
+	byte[][] readAllEntries(long p_chunkID, boolean p_manipulateReadPtr)
 			throws DXRAMException;
 
-
 	/**
-	 * Prints the metadata of one node's data from the log
-	 * @param p_nodeID
-	 *            the NodeID
+	 * Prints the metadata of one node's log
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 * @note for testing only
 	 */
-	void printMetadataOfAllEntries(short p_nodeID) throws DXRAMException;
-
+	void printMetadataOfAllEntries(long p_chunkID) throws DXRAMException;
 
 	/**
 	 * Flushes the primary log write buffer
@@ -139,7 +132,6 @@ public interface LogInterface extends CoreComponent {
 	 */
 	void flushDataToPrimaryLog() throws IOException, InterruptedException;
 
-
 	/**
 	 * Flushes all secondary log buffers
 	 * @throws IOException
@@ -148,7 +140,6 @@ public interface LogInterface extends CoreComponent {
 	 *             if caller is interrupted
 	 */
 	void flushDataToSecondaryLogs() throws IOException, InterruptedException;
-
 
 	/**
 	 * Grants the reorganization thread access to a secondary log

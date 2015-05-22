@@ -26,8 +26,6 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LockRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LockResponse;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LogMessage;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LogRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.PutRequest;
@@ -48,6 +46,7 @@ import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.lock.DefaultLock;
 import de.uniduesseldorf.dxram.core.lock.LockInterface;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
+import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
@@ -76,12 +75,16 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(
 			ConfigurationConstants.LOG_ACTIVE);
+	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(
+			ConfigurationConstants.SECONDARY_LOG_SIZE);
 	private static final int REPLICATION_FACTOR = Core.getConfiguration().getIntValue(
 			ConfigurationConstants.REPLICATION_FACTOR);
 
 	// Attributes
 	private short m_nodeID;
 	private Locations m_locations;
+	private int m_rangeID;
+	private long m_rangeSize;
 
 	private NetworkInterface m_network;
 	private LookupInterface m_lookup;
@@ -102,6 +105,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	public ChunkHandler() {
 		m_nodeID = NodeID.INVALID_ID;
 		m_locations = null;
+		m_rangeID = 1;
+		m_rangeSize = 0;
 
 		m_network = null;
 		m_lookup = null;
@@ -133,8 +138,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		m_network.register(RemoveRequest.class, this);
 		m_network.register(LockRequest.class, this);
 		m_network.register(UnlockMessage.class, this);
-		m_network.register(LogRequest.class, this);
-		m_network.register(LogMessage.class, this);
 		m_network.register(DataRequest.class, this);
 		m_network.register(DataMessage.class, this);
 		m_network.register(MultiGetRequest.class, this);
@@ -200,7 +203,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			lid = MemoryManager.getNextLocalID();
 			ret = new Chunk(m_nodeID, lid, p_size);
 			MemoryManager.put(ret);
-			initBackupRange(lid);
+			initBackupRange(lid, p_size);
 		}
 
 		Operation.CREATE.leave();
@@ -224,7 +227,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				for (int i = 0; i < p_sizes.length; i++) {
 					ret[i] = new Chunk(m_nodeID, lids[i], p_sizes[i]);
 					MemoryManager.put(ret[i]);
-					initBackupRange(lids[i]);
+					initBackupRange(lids[i], p_sizes[i]);
 				}
 			}
 		}
@@ -904,17 +907,24 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * and determines new backup peers if necessary
 	 * @param p_lid
 	 *            the current localID
+	 * @param p_size
+	 *            the size of the new created chunk
 	 * @throws LookupException
 	 *             if range could not be initialized
 	 */
-	private void initBackupRange(final long p_lid) throws LookupException {
+	private void initBackupRange(final long p_lid, final long p_size) throws LookupException {
 		if (LOG_ACTIVE) {
-			if (0 == p_lid % RANGE_SIZE) {
+			m_rangeSize += p_size;
+			// TODO: Check OIDTree
+			if (0 == p_lid % RANGE_SIZE || m_rangeSize > SECONDARY_LOG_SIZE / 2) {
 				determineBackupPeers();
 				m_lookup.initRange(((long) m_nodeID << 48) + p_lid + RANGE_SIZE - 1, m_locations);
+				m_log.initRange(((long) m_nodeID << 48) + p_lid, m_locations.getBackupPeers());
+				m_rangeSize = 0;
 			} else if (1 == p_lid) {
 				determineBackupPeers();
 				m_lookup.initRange(((long) m_nodeID << 48) + RANGE_SIZE - 1, m_locations);
+				m_log.initRange(((long) m_nodeID << 48) + p_lid, m_locations.getBackupPeers());
 			}
 		} else if (1 == p_lid) {
 			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, m_locations);
@@ -1360,31 +1370,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	}
 
 	/**
-	 * Handles an incoming LogRequest
-	 * @param p_request
-	 *            the LogRequest
-	 */
-	private void incomingLogRequest(final LogRequest p_request) {
-		// TODO
-	}
-
-	/**
-	 * Handles an incoming LogMessage
-	 * @param p_message
-	 *            the LogMessage
-	 */
-	private void incomingLogMessage(final LogMessage p_message) {
-
-		try {
-			m_log.logChunk(p_message.getChunk());
-		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle request", e);
-
-			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
-		}
-	}
-
-	/**
 	 * Handles an incoming DataRequest
 	 * @param p_request
 	 *            the DataRequest
@@ -1455,12 +1440,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					break;
 				case ChunkMessages.SUBTYPE_UNLOCK_MESSAGE:
 					incomingUnlockMessage((UnlockMessage) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_LOG_REQUEST:
-					incomingLogRequest((LogRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_LOG_MESSAGE:
-					incomingLogMessage((LogMessage) p_message);
 					break;
 				case ChunkMessages.SUBTYPE_DATA_REQUEST:
 					incomingDataRequest((DataRequest) p_message);

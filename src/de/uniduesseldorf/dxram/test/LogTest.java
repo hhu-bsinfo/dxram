@@ -112,6 +112,7 @@ public final class LogTest implements Runnable {
 	public void run() {
 		int[] sizes;
 		Chunk[] chunks;
+		// ArrayList<Integer> list;
 		Random rand;
 
 		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize
@@ -138,17 +139,31 @@ public final class LogTest implements Runnable {
 				chunks[i].getData().put(("This is a test! (" + m_nodeID + ")").getBytes());
 			}
 
+			// Create list for deletion
+			/*
+			 * list = new ArrayList<Integer>();
+			 * for (int i = 1; i <= m_chunksPerThread; i++) {
+			 * list.add(new Integer(i));
+			 * }
+			 * Collections.shuffle(list);
+			 */
+
 			// Put
+			System.out.print("Starting replication...");
 			for (int i = 0; i < m_chunksPerThread; i++) {
 				Core.put(chunks[i]);
 			}
+			System.out.println("done");
 
 			// Delete
+			System.out.print("Starting deletion...");
 			/*
-			 * for (int i = 0; i < m_chunksPerThread; i++) {
-			 * Core.remove(chunks[i].getChunkID());
+			 * for (int i = 0; i < 1000; i++) {
+			 * Core.remove(chunks[list.get(i)].getChunkID());
 			 * }
 			 */
+			System.out.println("done");
+
 		} catch (final DXRAMException e) {
 			System.out.println("Error: Could not create, update or delete chunk");
 		}
