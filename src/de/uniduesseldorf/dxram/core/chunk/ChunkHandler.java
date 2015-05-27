@@ -917,6 +917,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			m_rangeSize += p_size;
 			// TODO: Check OIDTree
 			if (0 == p_lid % RANGE_SIZE || m_rangeSize > SECONDARY_LOG_SIZE / 2) {
+				System.out.println(m_rangeSize + ", " + (SECONDARY_LOG_SIZE / 2));
 				determineBackupPeers();
 				m_lookup.initRange(((long) m_nodeID << 48) + p_lid + RANGE_SIZE - 1, m_locations);
 				m_log.initRange(((long) m_nodeID << 48) + p_lid, m_locations.getBackupPeers());

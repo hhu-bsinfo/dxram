@@ -310,7 +310,7 @@ public final class Configuration {
 				"lookup.ns.cacheSize", Integer.class, 1000000);
 		// Length of backup ranges
 		public static final ConfigurationEntry<Integer> LOOKUP_INIT_RANGE = new ConfigurationEntry<Integer>(
-				"lookup.initRange", Integer.class, 2500000);
+				"lookup.initRange", Integer.class, 10000000);
 		// Nameservice type
 		public static final ConfigurationEntry<String> NAMESERVICE_TYPE = new ConfigurationEntry<String>(
 				"nameservice.type", String.class, "NAME");

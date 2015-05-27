@@ -2,6 +2,10 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
@@ -37,7 +41,7 @@ public class PrimaryWriteBuffer {
 	private int m_ringBufferSize;
 	private PrimaryLogWriterThread m_writerThread;
 
-	private int[] m_lengthByNode;
+	private HashMap<Long, Integer> m_lengthByBackupRange;
 
 	private int m_bufferReadPointer;
 	private int m_bufferWritePointer;
@@ -88,7 +92,7 @@ public class PrimaryWriteBuffer {
 		} else {
 			m_buffer = new byte[p_bufferSize];
 			m_ringBufferSize = p_bufferSize;
-			m_lengthByNode = new int[Short.MAX_VALUE * 2];
+			m_lengthByBackupRange = new HashMap<Long, Integer>();
 			m_isShuttingDown = false;
 		}
 		m_metaDataLock = new Semaphore(1, false);
@@ -147,6 +151,8 @@ public class PrimaryWriteBuffer {
 		int bytesToWrite;
 		int bytesUntilEnd = 0;
 		int writePointer;
+		Integer counter;
+		long range;
 
 		if (p_payload != null) {
 			payloadLength = p_payload.length;
@@ -192,7 +198,13 @@ public class PrimaryWriteBuffer {
 			}
 			// Update byte counters
 			m_bytesInWriteBuffer += bytesToWrite;
-			m_lengthByNode[AbstractLog.getNodeIDOfLogEntry(p_header, 0) & 0xFFFF] += bytesToWrite;
+			range = m_logHandler.getRange(AbstractLog.getChunkIDOfLogEntry(p_header, 0));
+			counter = m_lengthByBackupRange.get(range);
+			if (null == counter) {
+				m_lengthByBackupRange.put(range, bytesToWrite);
+			} else {
+				m_lengthByBackupRange.put(range, counter + bytesToWrite);
+			}
 			if (PARALLEL_BUFFERING) {
 				m_metaDataLock.release();
 			}
@@ -360,7 +372,9 @@ public class PrimaryWriteBuffer {
 			int writtenBytes = 0;
 			int readPointer;
 			int bytesInWriteBuffer;
-			int[] lengthByNode;
+			ArrayList<MyEntry> lengthByBackupRange;
+			Iterator<Entry<Long, Integer>> it;
+			Entry<Long, Integer> entry;
 
 			// 1. Gain exclusive write access
 			// 2. Copy read pointer and counter
@@ -385,11 +399,17 @@ public class PrimaryWriteBuffer {
 
 			readPointer = m_bufferReadPointer;
 			bytesInWriteBuffer = m_bytesInWriteBuffer;
-			lengthByNode = m_lengthByNode;
+
+			lengthByBackupRange = new ArrayList<MyEntry>();
+			it = m_lengthByBackupRange.entrySet().iterator();
+			while (it.hasNext()) {
+				entry = it.next();
+				lengthByBackupRange.add(new MyEntry(entry.getKey(), entry.getValue()));
+			}
 
 			m_bufferReadPointer = m_bufferWritePointer;
 			m_bytesInWriteBuffer = 0;
-			m_lengthByNode = new int[Short.MAX_VALUE * 2];
+			m_lengthByBackupRange.clear();
 
 			m_dataAvailable = false;
 			m_flushingComplete = false;
@@ -402,7 +422,7 @@ public class PrimaryWriteBuffer {
 				try {
 					writtenBytes = m_logHandler.getPrimaryLog().appendData(
 							m_buffer, readPointer, bytesInWriteBuffer,
-							lengthByNode);
+							lengthByBackupRange);
 				} catch (final IOException | InterruptedException e) {
 					System.out.println("Error: Could not write to log");
 					e.printStackTrace();
@@ -412,6 +432,35 @@ public class PrimaryWriteBuffer {
 			m_flushingComplete = true;
 
 			return writtenBytes;
+		}
+	}
+
+	public class MyEntry {
+
+		// Attributes
+		private long m_range;
+		private int m_counter;
+
+		// Constructors
+		/**
+		 * Creates an instance of BufferNode
+		 * @param p_range
+		 *            the range
+		 * @param p_counter
+		 *            the number of bytes
+		 */
+		public MyEntry(final long p_range, final int p_counter) {
+			m_range = p_range;
+			m_counter = p_counter;
+		}
+
+		// Getter
+		public long getRange() {
+			return m_range;
+		}
+
+		public int getCounter() {
+			return m_counter;
 		}
 	}
 }

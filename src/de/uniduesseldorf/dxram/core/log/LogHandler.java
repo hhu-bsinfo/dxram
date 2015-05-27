@@ -498,7 +498,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		SecondaryLogBuffer ret;
 		LogCatalogue cat;
 
-		System.out.println(p_chunkID);
 		// Can be executed by application/network thread or writer thread
 		m_secondaryLogCreationLock.lock();
 		cat = m_logCatalogues.get((int) ChunkID.getCreatorID(p_chunkID) & 0xFFFF);
@@ -523,6 +522,20 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		m_secondaryLogCreationLock.unlock();
 
 		return ret;
+	}
+
+	@Override
+	public long getRange(final long p_chunkID) {
+		long ret = -1;
+		LogCatalogue cat;
+
+		// Can be executed by application/network thread or writer thread
+		m_secondaryLogCreationLock.lock();
+		cat = m_logCatalogues.get((int) ChunkID.getCreatorID(p_chunkID) & 0xFFFF);
+		ret = cat.getRange(p_chunkID);
+		m_secondaryLogCreationLock.unlock();
+
+		return (p_chunkID & 0xFFFF000000000000L) + ret;
 	}
 
 	@Override
@@ -722,11 +735,33 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		}
 
 		/**
+		 * Gets the corresponding range
+		 * @param p_chunkID
+		 *            the ChunkID
+		 * @return the first ChunkID of the range
+		 */
+		public long getRange(final long p_chunkID) {
+			long ret = -1;
+
+			for (int i = m_logs.size() - 1; i >= 0; i--) {
+				if (m_ranges.get(i) <= ChunkID.getLocalID(p_chunkID)) {
+					ret = m_ranges.get(i);
+				}
+			}
+
+			return ret;
+		}
+
+		/**
 		 * Gets all secondary logs from this node
 		 * @return the secondary log array
 		 */
 		public SecondaryLogWithSegments[] getAllLogs() {
 			SecondaryLogWithSegments[] ret = null;
+
+			for (int i = 0; i < m_ranges.size(); i++) {
+				System.out.println(m_ranges.get(i));
+			}
 
 			ret = m_logs.toArray(new SecondaryLogWithSegments[m_logs.size()]);
 
@@ -896,6 +931,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		@Override
 		public void run() {
 			SecondaryLogWithSegments secondaryLog;
+			SecondaryLogWithSegments[] secondaryLogs;
+			LogCatalogue cat;
 
 			while (!m_isShuttingDown) {
 				try {
@@ -936,19 +973,27 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						secondaryLog.setAccessFlag(false);
 
 						System.out.println(m_primaryLog.getOccupiedSpace() + " bytes in primary log");
-						for (int i = 0; i < LogHandler.MAX_NODE_CNT; i++) {
-							secondaryLog = getSecondaryLog((short) i);
-							if (secondaryLog != null) {
-								System.out.println(secondaryLog.getOccupiedSpace() + " bytes from " + (short) i
-										+ " in secondary log");
-								secondaryLog.printSegmentDistribution();
+						for (int i = 0; i < m_logCatalogues.length(); i++) {
+							cat = m_logCatalogues.get(i);
+							if (cat != null) {
+								System.out.println("Node " + i + ":");
+								secondaryLogs = cat.getAllLogs();
+								for (int j = 0; j < secondaryLogs.length; j++) {
+									System.out.println("Backup range " + j + ":");
+									secondaryLog = secondaryLogs[j];
+									if (secondaryLog != null) {
+										System.out.println(secondaryLog.getOccupiedSpace() + " bytes from " + (short) i
+												+ " in secondary log");
+										secondaryLog.printSegmentDistribution();
+									}
+								}
 							}
 						}
 					} else {
 						// All secondary logs empty -> sleep
 						Thread.sleep(100);
 					}
-				} catch (final InterruptedException | IOException e) {
+				} catch (final InterruptedException e) {
 					System.out.println("Error in reorganization thread: Shutting down!");
 					break;
 				} finally {

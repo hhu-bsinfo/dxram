@@ -49,6 +49,14 @@ public interface LogInterface extends CoreComponent {
 	SecondaryLogWithSegments getSecondaryLog(long p_chunkID)
 			throws IOException, InterruptedException;
 
+	/**
+	 * Returns the range
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return the first ChunkID of the range
+	 */
+	long getRange(long p_chunkID);
+
 	// Methods
 	/**
 	 * Creates a new Chunk
