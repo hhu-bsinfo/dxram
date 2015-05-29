@@ -70,7 +70,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(ChunkHandler.class);
 
-	private static final int RANGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
 	private static final int INDEX_SIZE = 12016;
 
 	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(
@@ -82,8 +81,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	// Attributes
 	private short m_nodeID;
-	private Locations m_locations;
-	private int m_rangeID;
+	private Locations m_currentBackupPeers;
+	private ArrayList<long[]> m_allBackupPeers;
 	private long m_rangeSize;
 
 	private NetworkInterface m_network;
@@ -104,8 +103,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	public ChunkHandler() {
 		m_nodeID = NodeID.INVALID_ID;
-		m_locations = null;
-		m_rangeID = 1;
+		m_allBackupPeers = new ArrayList<long[]>();
+		m_currentBackupPeers = null;
 		m_rangeSize = 0;
 
 		m_network = null;
@@ -154,7 +153,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (!NodeID.isSuperpeer()) {
 			m_migrations = new ArrayList<Long>();
 			m_migrationLock = new ReentrantLock(false);
-			m_locations = new Locations(m_nodeID, null, null);
+			m_currentBackupPeers = new Locations(m_nodeID, null, null);
 			registerPeer();
 
 			m_mappingLock = new ReentrantLock(false);
@@ -506,7 +505,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 				if (LOG_ACTIVE) {
 					// Send backups for logging (unreliable)
-					backupPeers = m_locations.getBackupPeers();
+					backupPeers = getBackupPeers(p_chunk.getChunkID());
 					if (backupPeers != null) {
 						for (int i = 0; i < backupPeers.length; i++) {
 							if (backupPeers[i] != m_nodeID) {
@@ -899,7 +898,30 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *             if range could not be initialized
 	 */
 	private void registerPeer() throws LookupException {
-		m_lookup.initRange(0, m_locations);
+		m_lookup.initRange(0, m_currentBackupPeers);
+	}
+
+	/**
+	 * Returns the corresponding backup peers
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return the backup peers
+	 */
+	private short[] getBackupPeers(final long p_chunkID) {
+		short[] ret = null;
+		long backupPeers;
+
+		for (int i = m_allBackupPeers.size() - 1; i >= 0; i--) {
+			if (m_allBackupPeers.get(i)[0] <= ChunkID.getLocalID(ChunkID.getLocalID(p_chunkID))) {
+				backupPeers = m_allBackupPeers.get(i)[1];
+				ret = new short[] {
+						(short) (backupPeers & 0x000000000000FFFFL),
+						(short) ((backupPeers & 0x00000000FFFF0000L) >> 16),
+						(short) ((backupPeers & 0x0000FFFF00000000L) >> 32)};
+			}
+		}
+
+		return ret;
 	}
 
 	/**
@@ -915,27 +937,24 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	private void initBackupRange(final long p_lid, final long p_size) throws LookupException {
 		if (LOG_ACTIVE) {
 			m_rangeSize += p_size;
-			// TODO: Check OIDTree
-			if (0 == p_lid % RANGE_SIZE || m_rangeSize > SECONDARY_LOG_SIZE / 2) {
-				System.out.println(m_rangeSize + ", " + (SECONDARY_LOG_SIZE / 2));
-				determineBackupPeers();
-				m_lookup.initRange(((long) m_nodeID << 48) + p_lid + RANGE_SIZE - 1, m_locations);
-				m_log.initRange(((long) m_nodeID << 48) + p_lid, m_locations.getBackupPeers());
+			if (1 == p_lid || m_rangeSize > SECONDARY_LOG_SIZE / 2) {
+				System.out.println(m_rangeSize + ", " + SECONDARY_LOG_SIZE / 2);
+				determineBackupPeers(p_lid);
+				m_lookup.initRange(((long) m_nodeID << 48) + p_lid, m_currentBackupPeers);
+				m_log.initRange(((long) m_nodeID << 48) + p_lid, m_currentBackupPeers.getBackupPeers());
 				m_rangeSize = 0;
-			} else if (1 == p_lid) {
-				determineBackupPeers();
-				m_lookup.initRange(((long) m_nodeID << 48) + RANGE_SIZE - 1, m_locations);
-				m_log.initRange(((long) m_nodeID << 48) + p_lid, m_locations.getBackupPeers());
 			}
 		} else if (1 == p_lid) {
-			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, m_locations);
+			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, m_currentBackupPeers);
 		}
 	}
 
 	/**
 	 * Determines backup peers
+	 * @param p_lid
+	 *            the current localID
 	 */
-	private void determineBackupPeers() {
+	private void determineBackupPeers(final long p_lid) {
 		boolean ready = false;
 		boolean insufficientPeers = false;
 		short index = 0;
@@ -976,10 +995,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 			newBackupPeers = new short[REPLICATION_FACTOR];
 			Arrays.fill(newBackupPeers, (short) -1);
-		} else if (null != m_locations.getBackupPeers()) {
+		} else if (null != m_currentBackupPeers.getBackupPeers()) {
 			oldBackupPeers = new short[REPLICATION_FACTOR];
 			for (int i = 0; i < REPLICATION_FACTOR; i++) {
-				oldBackupPeers[i] = m_locations.getBackupPeers()[i];
+				oldBackupPeers[i] = m_currentBackupPeers.getBackupPeers()[i];
 			}
 
 			newBackupPeers = new short[REPLICATION_FACTOR];
@@ -1000,11 +1019,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 							}
 						}
 					}
-					System.out.println((i + 1) + ". backup peer: " + allPeers[index]);
+					System.out.println(i + 1 + ". backup peer: " + allPeers[index]);
 					newBackupPeers[i] = allPeers[index];
 					ready = false;
 				}
-				m_locations.setBackupPeers(newBackupPeers);
+				m_currentBackupPeers.setBackupPeers(newBackupPeers);
 			}
 		} else {
 			// Determine backup peers
@@ -1020,12 +1039,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						}
 					}
 				}
-				System.out.println((i + 1) + ". backup peer: " + allPeers[index]);
+				System.out.println(i + 1 + ". backup peer: " + allPeers[index]);
 				newBackupPeers[i] = allPeers[index];
 				ready = false;
 			}
-			m_locations.setBackupPeers(newBackupPeers);
+			m_currentBackupPeers.setBackupPeers(newBackupPeers);
 		}
+		m_allBackupPeers.add(new long[] {p_lid, m_currentBackupPeers.getBackupPeersAsLong()});
 	}
 
 	/**
@@ -1159,8 +1179,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *             if there is no fitting chunk
 	 */
 	private void
-			deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index)
-					throws DXRAMException {
+	deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index)
+			throws DXRAMException {
 		int size;
 		byte[] data1;
 		byte[] data2;

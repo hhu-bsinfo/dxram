@@ -308,9 +308,6 @@ public final class Configuration {
 		// Length of backup ranges
 		public static final ConfigurationEntry<Integer> LOOKUP_NS_CACHE_SIZE = new ConfigurationEntry<Integer>(
 				"lookup.ns.cacheSize", Integer.class, 1000000);
-		// Length of backup ranges
-		public static final ConfigurationEntry<Integer> LOOKUP_INIT_RANGE = new ConfigurationEntry<Integer>(
-				"lookup.initRange", Integer.class, 10000000);
 		// Nameservice type
 		public static final ConfigurationEntry<String> NAMESERVICE_TYPE = new ConfigurationEntry<String>(
 				"nameservice.type", String.class, "NAME");
@@ -349,7 +346,7 @@ public final class Configuration {
 		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>(
 				"statistic.throughput", Boolean.class, true);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 45;
+		public static final int CONFIGURATION_ENTRY_COUNT = 44;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
 			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
@@ -387,7 +384,6 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(LOOKUP_CACHESIZE);
 			CONFIGURATION_ENTRIES.add(LOOKUP_CACHETTL);
 			CONFIGURATION_ENTRIES.add(LOOKUP_NS_CACHE_SIZE);
-			CONFIGURATION_ENTRIES.add(LOOKUP_INIT_RANGE);
 			CONFIGURATION_ENTRIES.add(NAMESERVICE_TYPE);
 			CONFIGURATION_ENTRIES.add(NAMESERVICE_KEY_LENGTH);
 			CONFIGURATION_ENTRIES.add(JNI_LOCK_DIRECTORY);

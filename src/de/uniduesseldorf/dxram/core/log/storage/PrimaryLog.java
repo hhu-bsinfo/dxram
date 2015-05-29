@@ -3,18 +3,17 @@ package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
-import de.uniduesseldorf.dxram.core.log.storage.PrimaryWriteBuffer.MyEntry;
 
 /**
  * This class implements the primary log. Furthermore this class manages all
@@ -41,7 +40,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 *             if the caller was interrupted
 	 */
 	public PrimaryLog(final long p_primaryLogSize) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N"
 				+ NodeID.getLocalNodeID() + "_"
 				+ LogHandler.PRIMARYLOG_FILENAME), p_primaryLogSize,
@@ -73,14 +72,14 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length,
 			final Object p_lengthByBackupRange)
-			throws IOException, InterruptedException {
+					throws IOException, InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
 			throw new IllegalArgumentException("invalid data size");
 		} else {
 			ret = bufferAndStoreSegmentsHashSort(p_data, p_offset, p_length,
-					(ArrayList<MyEntry>) p_lengthByBackupRange);
+					(Set<Entry<Long, Integer>>) p_lengthByBackupRange);
 		}
 		return ret;
 	}
@@ -104,8 +103,8 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 * @return the number of stored bytes
 	 */
 	private int bufferAndStoreSegmentsHashSort(final byte[] p_buffer,
-			final int p_offset, final int p_length, final ArrayList<MyEntry> p_lengthByBackupRange)
-			throws InterruptedException, IOException {
+			final int p_offset, final int p_length, final Set<Entry<Long, Integer>> p_lengthByBackupRange)
+					throws InterruptedException, IOException {
 		final int logHeaderSize = LogHandler.PRIMARY_HEADER_SIZE;
 		int i = 0;
 		int offset = 0;
@@ -122,8 +121,10 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		byte[] header;
 		byte[] segment;
 		HashMap<Long, BufferSegmentsNode> map;
-		Iterator<Entry<Long, BufferSegmentsNode>> iter;
-		Entry<Long, BufferSegmentsNode> entry;
+		Iterator<Entry<Long, Integer>> iter;
+		Entry<Long, Integer> entry;
+		Iterator<Entry<Long, BufferSegmentsNode>> iter2;
+		Entry<Long, BufferSegmentsNode> entry2;
 		BufferSegmentsNode bufferNode;
 
 		// Sort buffer by backup range
@@ -141,9 +142,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			 * stored directly in secondary log (header without NodeID).
 			 */
 			map = new HashMap<Long, BufferSegmentsNode>();
-			for (int j = 0; j < p_lengthByBackupRange.size(); j++) {
-				rangeID = p_lengthByBackupRange.get(j).getRange();
-				length = p_lengthByBackupRange.get(j).getCounter();
+			iter = p_lengthByBackupRange.iterator();
+			while (iter.hasNext()) {
+				entry = iter.next();
+				rangeID = entry.getKey();
+				length = entry.getValue();
 				if (length < LogHandler.FLASHPAGE_SIZE) {
 					// There is less than 4096KB data from this node ->
 					// store buffer in primary log (later)
@@ -217,12 +220,12 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			// Write sorted buffers to log
 			primaryLogBuffer = new byte[primaryLogBufferSize];
 
-			iter = map.entrySet().iterator();
-			while (iter.hasNext()) {
+			iter2 = map.entrySet().iterator();
+			while (iter2.hasNext()) {
 				i = 0;
-				entry = iter.next();
-				rangeID = entry.getKey();
-				bufferNode = entry.getValue();
+				entry2 = iter2.next();
+				rangeID = entry2.getKey();
+				bufferNode = entry2.getValue();
 				bufferNode.trimLastSegment();
 				segment = bufferNode.getData(i);
 				length = bufferNode.getLength(i);
@@ -244,7 +247,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					segment = bufferNode.getData(++i);
 					length = bufferNode.getLength(i);
 				}
-				iter.remove();
+				iter2.remove();
 				bufferNode = null;
 			}
 
@@ -488,7 +491,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			final long p_chunkID) throws IOException, InterruptedException {
 
 		m_logHandler.getSecondaryLogBuffer(p_chunkID)
-				.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
+		.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 	}
 
 	// Classes

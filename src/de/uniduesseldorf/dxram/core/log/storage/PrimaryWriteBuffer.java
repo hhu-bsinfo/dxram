@@ -2,10 +2,9 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
@@ -88,7 +87,7 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException(
 					"Illegal buffer size! Must be 2^x with "
 							+ Math.log(LogHandler.FLASHPAGE_SIZE) / Math
-									.log(2) + " <= x <= 31");
+							.log(2) + " <= x <= 31");
 		} else {
 			m_buffer = new byte[p_bufferSize];
 			m_ringBufferSize = p_bufferSize;
@@ -110,7 +109,7 @@ public class PrimaryWriteBuffer {
 	 *             if caller is interrupted
 	 */
 	public final void closeWriteBuffer() throws InterruptedException,
-			IOException {
+	IOException {
 		// Shutdown primary log writer-thread
 		m_flushingComplete = false;
 		m_isShuttingDown = true;
@@ -319,7 +318,7 @@ public class PrimaryWriteBuffer {
 		 * Print the throughput statistic
 		 */
 		public void printThroughput() {
-			m_throughput = ((double) m_amount / (System.currentTimeMillis() - m_time) / 1024 / 1024 * 1000) * 0.9
+			m_throughput = (double) m_amount / (System.currentTimeMillis() - m_time) / 1024 / 1024 * 1000 * 0.9
 					+ m_throughput * 0.1;
 			m_amount = 0;
 			m_time = System.currentTimeMillis();
@@ -356,7 +355,7 @@ public class PrimaryWriteBuffer {
 					flushDataToPrimaryLog();
 				} catch (final InterruptedException e) {
 					System.out
-							.println("Error: Writer thread is interrupted. Directly shuting down!");
+					.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;
 				}
 			}
@@ -372,9 +371,7 @@ public class PrimaryWriteBuffer {
 			int writtenBytes = 0;
 			int readPointer;
 			int bytesInWriteBuffer;
-			ArrayList<MyEntry> lengthByBackupRange;
-			Iterator<Entry<Long, Integer>> it;
-			Entry<Long, Integer> entry;
+			Set<Entry<Long, Integer>> lengthByBackupRange;
 
 			// 1. Gain exclusive write access
 			// 2. Copy read pointer and counter
@@ -399,17 +396,11 @@ public class PrimaryWriteBuffer {
 
 			readPointer = m_bufferReadPointer;
 			bytesInWriteBuffer = m_bytesInWriteBuffer;
-
-			lengthByBackupRange = new ArrayList<MyEntry>();
-			it = m_lengthByBackupRange.entrySet().iterator();
-			while (it.hasNext()) {
-				entry = it.next();
-				lengthByBackupRange.add(new MyEntry(entry.getKey(), entry.getValue()));
-			}
+			lengthByBackupRange = m_lengthByBackupRange.entrySet();
 
 			m_bufferReadPointer = m_bufferWritePointer;
 			m_bytesInWriteBuffer = 0;
-			m_lengthByBackupRange.clear();
+			m_lengthByBackupRange = new HashMap<Long, Integer>();
 
 			m_dataAvailable = false;
 			m_flushingComplete = false;
@@ -432,35 +423,6 @@ public class PrimaryWriteBuffer {
 			m_flushingComplete = true;
 
 			return writtenBytes;
-		}
-	}
-
-	public class MyEntry {
-
-		// Attributes
-		private long m_range;
-		private int m_counter;
-
-		// Constructors
-		/**
-		 * Creates an instance of BufferNode
-		 * @param p_range
-		 *            the range
-		 * @param p_counter
-		 *            the number of bytes
-		 */
-		public MyEntry(final long p_range, final int p_counter) {
-			m_range = p_range;
-			m_counter = p_counter;
-		}
-
-		// Getter
-		public long getRange() {
-			return m_range;
-		}
-
-		public int getCounter() {
-			return m_counter;
 		}
 	}
 }

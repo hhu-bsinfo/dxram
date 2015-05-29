@@ -965,7 +965,7 @@ public final class LookupMessages {
 	public static class InitRangeRequest extends AbstractRequest {
 
 		// Attributes
-		private long m_endChunkID;
+		private long m_startChunkID;
 		private long m_locations;
 		private boolean m_isBackup;
 
@@ -976,7 +976,7 @@ public final class LookupMessages {
 		public InitRangeRequest() {
 			super();
 
-			m_endChunkID = -1;
+			m_startChunkID = -1;
 			m_locations = -1;
 			m_isBackup = false;
 		}
@@ -985,18 +985,18 @@ public final class LookupMessages {
 		 * Creates an instance of InitRangeRequest
 		 * @param p_destination
 		 *            the destination
-		 * @param p_endChunkID
-		 *            the last object
+		 * @param p_startChunkID
+		 *            the first object
 		 * @param p_locations
 		 *            the locations (backup peers and own NodeID)
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public InitRangeRequest(final short p_destination, final long p_endChunkID, final long p_locations,
+		public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_locations,
 				final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_INIT_RANGE_REQUEST);
 
-			m_endChunkID = p_endChunkID;
+			m_startChunkID = p_startChunkID;
 			m_locations = p_locations;
 			m_isBackup = p_isBackup;
 		}
@@ -1006,8 +1006,8 @@ public final class LookupMessages {
 		 * Get the last ChunkID
 		 * @return the ID
 		 */
-		public final long getEndChunkID() {
-			return m_endChunkID;
+		public final long getStartChunkID() {
+			return m_startChunkID;
 		}
 
 		/**
@@ -1029,14 +1029,14 @@ public final class LookupMessages {
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunkID(p_buffer, m_endChunkID);
+			OutputHelper.writeChunkID(p_buffer, m_startChunkID);
 			OutputHelper.writeLong(p_buffer, m_locations);
 			OutputHelper.writeBoolean(p_buffer, m_isBackup);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_endChunkID = InputHelper.readChunkID(p_buffer);
+			m_startChunkID = InputHelper.readChunkID(p_buffer);
 			m_locations = InputHelper.readLong(p_buffer);
 			m_isBackup = InputHelper.readBoolean(p_buffer);
 		}

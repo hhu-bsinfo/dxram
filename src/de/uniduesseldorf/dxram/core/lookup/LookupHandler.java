@@ -858,7 +858,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_stabilizationThread = new Thread(m_worker);
 		Contract.checkNotNull(m_stabilizationThread);
 		m_stabilizationThread
-				.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
+		.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
@@ -1283,7 +1283,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				insertPeer(joiningNode);
 				try {
 					new JoinResponse(p_joinRequest, (short) -1, (short) -1, (short) -1, null, m_superpeers, null, null)
-							.send(m_network);
+					.send(m_network);
 				} catch (final NetworkException e) {
 					// Joining node is not available anymore, ignore request
 				}
@@ -1293,7 +1293,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			superpeer = getResponsibleSuperpeer(joiningNode, NO_CHECK);
 			try {
 				new JoinResponse(p_joinRequest, superpeer, (short) -1, (short) -1, null, null, null, null)
-						.send(m_network);
+				.send(m_network);
 			} catch (final NetworkException e) {
 				// Joining node is not available anymore, ignore request
 			}
@@ -1333,7 +1333,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 */
 	private void incomingInitRangeRequest(final InitRangeRequest p_initRangeRequest) {
 		Locations primaryAndBackupPeers;
-		long endChunkID;
+		long startChunkID;
 		short creator;
 		short[] backupSuperpeers;
 		OIDTreeOptimized tree;
@@ -1342,7 +1342,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		LOGGER.trace("Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
 
 		primaryAndBackupPeers = new Locations(p_initRangeRequest.getLocations());
-		endChunkID = p_initRangeRequest.getEndChunkID();
+		startChunkID = p_initRangeRequest.getStartChunkID();
 		creator = primaryAndBackupPeers.getPrimaryPeer();
 		isBackup = p_initRangeRequest.isBackup();
 
@@ -1353,7 +1353,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				tree = new OIDTreeOptimized(ORDER);
 				addOIDTree(creator, tree);
 			}
-			tree.initRange(endChunkID, creator, primaryAndBackupPeers.getBackupPeers());
+			tree.initRange(startChunkID, creator, primaryAndBackupPeers.getBackupPeers());
 			m_dataLock.unlock();
 
 			m_overlayLock.lock();
@@ -1371,7 +1371,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				tree = new OIDTreeOptimized((short) 10);
 				addOIDTree(creator, tree);
 			}
-			tree.initRange(endChunkID, creator, primaryAndBackupPeers.getBackupPeers());
+			tree.initRange(startChunkID, creator, primaryAndBackupPeers.getBackupPeers());
 			m_dataLock.unlock();
 			try {
 				new InitRangeResponse(p_initRangeRequest, null).send(m_network);
@@ -2474,7 +2474,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						tree = getOIDTree(currentPeer);
 						if (null != tree) {
 							System.out
-									.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
+							.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
 							trees.add(tree);
 						}
 						if (index == m_nodeList.size()) {
@@ -2710,8 +2710,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		short backupPeer;
 		short superpeer;
 		int i = 0;
+		long backupRange;
 		Iterator<Short> iter;
-		ArrayList<Long> backupPeers;
+		ArrayList<long[]> backupRanges;
 		OIDTreeOptimized tree;
 
 		boolean promoteOnePeer = false;
@@ -2735,7 +2736,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				// Take over failed nodes peers and OIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
 					System.out
-							.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
+					.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndOIDTrees(m_predecessor);
 					promoteOnePeer = true;
 				}
@@ -2825,15 +2826,15 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				while (!finished) {
 					finished = true;
 					m_dataLock.lock();
-					backupPeers = getOIDTree(p_failedNode).getAllBackupPeers();
+					backupRanges = getOIDTree(p_failedNode).getAllBackupRanges();
 					m_dataLock.unlock();
-					for (i = 0; i < backupPeers.size(); i++) {
+					for (i = 0; i < backupRanges.size(); i++) {
 						for (int j = 0; j < 3; j++) {
-							backupPeer = (short) (backupPeers.get(i).longValue() >> j * 16);
+							backupRange = backupRanges.get(i)[0];
+							backupPeer = (short) (backupRanges.get(i)[1] >> j * 16);
 							// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 - 1)
 							System.out.println("** Informing backup peer " + backupPeer + " to recover chunks"
-									+ " between " + i * OIDTreeOptimized.RANGE_SIZE + " and "
-									+ ((i + 1) * OIDTreeOptimized.RANGE_SIZE - 1) + " from " + p_failedNode);
+									+ " from backup range starting with " + backupRange + " from " + p_failedNode);
 							/*
 							 * try {
 							 * new StartRecoveryMessage(backupPeer, p_failedNode, i * 1000).send(m_network);
@@ -3457,6 +3458,28 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		 */
 		public short[] getBackupPeers() {
 			return m_backupPeers;
+		}
+
+		/**
+		 * Get backup peers as long
+		 * @return the backup peers
+		 */
+		public long getBackupPeersAsLong() {
+			long ret = -1;
+			if (null != m_backupPeers) {
+				if (m_backupPeers.length == 3) {
+					ret = ((m_backupPeers[2] & 0x000000000000FFFFL) << 32)
+							+ ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+				} else if (m_backupPeers.length == 2) {
+					ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+				} else {
+					ret = m_backupPeers[0] & 0x000000000000FFFFL;
+				}
+			}
+
+			return ret;
 		}
 
 		/**
