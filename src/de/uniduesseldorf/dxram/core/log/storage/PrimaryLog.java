@@ -40,7 +40,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 *             if the caller was interrupted
 	 */
 	public PrimaryLog(final long p_primaryLogSize) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N"
 				+ NodeID.getLocalNodeID() + "_"
 				+ LogHandler.PRIMARYLOG_FILENAME), p_primaryLogSize,
@@ -72,7 +72,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length,
 			final Object p_lengthByBackupRange)
-					throws IOException, InterruptedException {
+			throws IOException, InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -104,7 +104,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 */
 	private int bufferAndStoreSegmentsHashSort(final byte[] p_buffer,
 			final int p_offset, final int p_length, final Set<Entry<Long, Integer>> p_lengthByBackupRange)
-					throws InterruptedException, IOException {
+			throws InterruptedException, IOException {
 		final int logHeaderSize = LogHandler.PRIMARY_HEADER_SIZE;
 		int i = 0;
 		int offset = 0;
@@ -174,7 +174,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					logEntrySize = logHeaderSize
 							+ getLengthOfLogEntry(p_buffer, bufferOffset
 									+ offset, true);
-					rangeID = m_logHandler.getRange(getChunkIDOfLogEntry(p_buffer, bufferOffset
+					rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, bufferOffset
 							+ offset));
 
 					bufferNode = map.get(rangeID);
@@ -187,7 +187,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					logEntrySize = logHeaderSize
 							+ getLengthOfLogEntry(p_buffer, -bytesUntilEnd,
 									true);
-					rangeID = m_logHandler.getRange(getChunkIDOfLogEntry(p_buffer, -bytesUntilEnd));
+					rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, -bytesUntilEnd));
 
 					bufferNode = map.get(rangeID);
 					bufferNode.appendToBuffer(p_buffer, -bytesUntilEnd,
@@ -205,7 +205,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 							logHeaderSize - bytesUntilEnd);
 					logEntrySize = logHeaderSize
 							+ getLengthOfLogEntry(header, 0, true);
-					rangeID = m_logHandler.getRange(getChunkIDOfLogEntry(header, 0));
+					rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(header, 0));
 
 					bufferNode = map.get(rangeID);
 					bufferNode.appendToBuffer(p_buffer, bufferOffset + offset,
@@ -491,7 +491,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			final long p_chunkID) throws IOException, InterruptedException {
 
 		m_logHandler.getSecondaryLogBuffer(p_chunkID)
-		.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
+				.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 	}
 
 	// Classes

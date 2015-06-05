@@ -22,8 +22,9 @@ public final class LogMessages {
 	public static final byte SUBTYPE_LOG_REQUEST = 1;
 	public static final byte SUBTYPE_LOG_RESPONSE = 2;
 	public static final byte SUBTYPE_LOG_MESSAGE = 3;
-	public static final byte SUBTYPE_INIT_REQUEST = 4;
-	public static final byte SUBTYPE_INIT_RESPONSE = 5;
+	public static final byte SUBTYPE_REMOVE_MESSAGE = 4;
+	public static final byte SUBTYPE_INIT_REQUEST = 5;
+	public static final byte SUBTYPE_INIT_RESPONSE = 6;
 
 	// Constructors
 	/**
@@ -217,6 +218,64 @@ public final class LogMessages {
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getChunkWriteLength(m_chunk);
+		}
+	}
+
+	/**
+	 * Message for removing a Chunk on a remote node
+	 * @author Kevin Beineke 20.04.2014
+	 */
+	public static class RemoveMessage extends AbstractMessage {
+
+		// Attributes
+		private long m_chunkID;
+
+		// Constructors
+		/**
+		 * Creates an instance of RemoveMessage
+		 */
+		public RemoveMessage() {
+			super();
+
+			m_chunkID = -1;
+		}
+
+		/**
+		 * Creates an instance of RemoveMessage
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunkID
+		 *            the ChunkID of the Chunk to remove
+		 */
+		public RemoveMessage(final short p_destination, final long p_chunkID) {
+			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
+
+			m_chunkID = p_chunkID;
+		}
+
+		// Getters
+		/**
+		 * Get the ChunkID
+		 * @return the ChunkID
+		 */
+		public final long getChunkID() {
+			return m_chunkID;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeChunkID(p_buffer, m_chunkID);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_chunkID = InputHelper.readChunkID(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getChunkIDWriteLength();
 		}
 	}
 

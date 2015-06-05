@@ -88,6 +88,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_REQUEST, LogMessages.LogRequest.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_RESPONSE, LogMessages.LogResponse.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessages.LogMessage.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_REMOVE_MESSAGE, LogMessages.RemoveMessage.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_REQUEST, LogMessages.InitRequest.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_RESPONSE, LogMessages.InitResponse.class);
 

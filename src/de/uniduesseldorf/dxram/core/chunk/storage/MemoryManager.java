@@ -167,6 +167,24 @@ public final class MemoryManager {
 	}
 
 	/**
+	 * Gets the Chunk for the given ChunkID from the memory
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return the corresponding Chunk
+	 * @throws MemoryException
+	 *             if the Chunk could not be get
+	 */
+	public static boolean isResponsible(final long p_chunkID) throws MemoryException {
+		long address;
+
+		// Get the address from the CIDTable
+		address = CIDTable.get(p_chunkID);
+
+		// If address <= 0, the Chunk does not exists in the memory
+		return address > 0;
+	}
+
+	/**
 	 * Removes a Chunk from the memory
 	 * @param p_chunkID
 	 *            the ChunkID of the Chunk

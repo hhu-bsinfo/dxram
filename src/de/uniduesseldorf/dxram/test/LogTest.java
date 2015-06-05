@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.test;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
@@ -112,7 +114,7 @@ public final class LogTest implements Runnable {
 	public void run() {
 		int[] sizes;
 		Chunk[] chunks;
-		// ArrayList<Integer> list;
+		ArrayList<Integer> list;
 		Random rand;
 
 		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize
@@ -140,13 +142,11 @@ public final class LogTest implements Runnable {
 			}
 
 			// Create list for deletion
-			/*
-			 * list = new ArrayList<Integer>();
-			 * for (int i = 1; i <= m_chunksPerThread; i++) {
-			 * list.add(new Integer(i));
-			 * }
-			 * Collections.shuffle(list);
-			 */
+			list = new ArrayList<Integer>();
+			for (int i = 1; i <= m_chunksPerThread; i++) {
+				list.add(new Integer(i));
+			}
+			Collections.shuffle(list);
 
 			// Put
 			System.out.print("Starting replication...");
@@ -157,11 +157,9 @@ public final class LogTest implements Runnable {
 
 			// Delete
 			System.out.print("Starting deletion...");
-			/*
-			 * for (int i = 0; i < 1000; i++) {
-			 * Core.remove(chunks[list.get(i)].getChunkID());
-			 * }
-			 */
+			for (int i = 0; i < 1000; i++) {
+				Core.remove(chunks[list.get(i)].getChunkID());
+			}
 			System.out.println("done");
 
 		} catch (final DXRAMException e) {

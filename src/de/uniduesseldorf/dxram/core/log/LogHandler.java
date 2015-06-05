@@ -26,6 +26,7 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.InitRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitResponse;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogRequest;
+import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.log.storage.AbstractLog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryWriteBuffer;
@@ -154,6 +155,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(LogRequest.class, this);
 		m_network.register(LogMessage.class, this);
+		m_network.register(RemoveMessage.class, this);
 		m_network.register(InitRequest.class, this);
 
 		// Create primary log
@@ -237,7 +239,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public void initRange(final long p_start, final short[] p_backupPeers) {
+	public void initBackupRange(final long p_start, final short[] p_backupPeers) {
 		InitRequest request;
 		InitResponse response;
 
@@ -492,6 +494,22 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
+	public SecondaryLogWithSegments getSecondaryLog(final long p_chunkID)
+			throws IOException,
+			InterruptedException {
+		SecondaryLogWithSegments ret;
+		LogCatalog cat;
+
+		// Can be executed by application/network thread or writer thread
+		m_secondaryLogCreationLock.lock();
+		cat = m_logCatalogs.get(ChunkID.getCreatorID(p_chunkID) & 0xFFFF);
+		ret = cat.getLog(p_chunkID);
+		m_secondaryLogCreationLock.unlock();
+
+		return ret;
+	}
+
+	@Override
 	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID)
 			throws IOException,
 			InterruptedException {
@@ -508,24 +526,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public SecondaryLogWithSegments getSecondaryLog(final long p_chunkID)
-			throws IOException,
-			InterruptedException {
-		SecondaryLogWithSegments ret;
-		LogCatalog cat;
-
-		System.out.println(p_chunkID);
-		// Can be executed by application/network thread or writer thread
-		m_secondaryLogCreationLock.lock();
-		cat = m_logCatalogs.get(ChunkID.getCreatorID(p_chunkID) & 0xFFFF);
-		ret = cat.getLog(p_chunkID);
-		m_secondaryLogCreationLock.unlock();
-
-		return ret;
-	}
-
-	@Override
-	public long getRange(final long p_chunkID) {
+	public long getBackupRange(final long p_chunkID) {
 		long ret = -1;
 		LogCatalog cat;
 
@@ -539,20 +540,27 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
+	public short getHeaderSize() {
+		return SECONDARY_HEADER_SIZE;
+	}
+
+	@Override
 	public void flushDataToPrimaryLog() throws IOException, InterruptedException {
 		m_writeBuffer.signalWriterThreadAndFlushToPrimLog();
 	}
 
 	@Override
 	public void flushDataToSecondaryLogs() throws IOException, InterruptedException {
-		SecondaryLogBuffer secondaryLogBuffer;
+		SecondaryLogBuffer[] buffers;
 
 		if (m_flushingInProgress.compareAndSet(false, true)) {
 			try {
 				for (int i = 0; i < LogHandler.MAX_NODE_CNT; i++) {
-					secondaryLogBuffer = getSecondaryLogBuffer((short) i);
-					if (secondaryLogBuffer != null && !secondaryLogBuffer.isBufferEmpty()) {
-						secondaryLogBuffer.flushSecLogBuffer();
+					buffers = m_logCatalogs.get(i).getAllBuffers();
+					for (int j = 0; j < buffers.length; j++) {
+						if (buffers[i] != null && !buffers[i].isBufferEmpty()) {
+							buffers[i].flushSecLogBuffer();
+						}
 					}
 				}
 			} finally {
@@ -614,6 +622,20 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	/**
+	 * Handles an incoming RemoveMessage
+	 * @param p_message
+	 *            the RemoveMessage
+	 */
+	private void incomingRemoveMessage(final RemoveMessage p_message) {
+
+		try {
+			removeChunk(p_message.getChunkID());
+		} catch (final DXRAMException e) {
+			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
+		}
+	}
+
+	/**
 	 * Handles an incoming InitRequest
 	 * @param p_message
 	 *            the InitRequest
@@ -662,6 +684,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					break;
 				case LogMessages.SUBTYPE_LOG_MESSAGE:
 					incomingLogMessage((LogMessage) p_message);
+					break;
+				case LogMessages.SUBTYPE_REMOVE_MESSAGE:
+					incomingRemoveMessage((RemoveMessage) p_message);
 					break;
 				case LogMessages.SUBTYPE_INIT_REQUEST:
 					incomingInitRequest((InitRequest) p_message);

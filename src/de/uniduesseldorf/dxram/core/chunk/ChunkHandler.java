@@ -4,7 +4,6 @@ package de.uniduesseldorf.dxram.core.chunk;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -47,6 +46,7 @@ import de.uniduesseldorf.dxram.core.lock.DefaultLock;
 import de.uniduesseldorf.dxram.core.lock.LockInterface;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
+import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
@@ -82,7 +82,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	// Attributes
 	private short m_nodeID;
 	private Locations m_currentBackupPeers;
-	private ArrayList<long[]> m_allBackupPeers;
+	private ArrayList<long[]> m_ownBackupRanges;
+	// TODO:
+	private ArrayList<long[]> m_migrationBackupRanges;
+	private MigrationsTree m_migrationsTree;
 	private long m_rangeSize;
 
 	private NetworkInterface m_network;
@@ -92,7 +95,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	private IncomingChunkListener m_listener;
 
-	private ArrayList<Long> m_migrations;
 	private Lock m_migrationLock;
 
 	private Lock m_mappingLock;
@@ -103,7 +105,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	public ChunkHandler() {
 		m_nodeID = NodeID.INVALID_ID;
-		m_allBackupPeers = new ArrayList<long[]>();
+		m_ownBackupRanges = new ArrayList<long[]>();
+		m_migrationBackupRanges = new ArrayList<long[]>();
+		m_migrationsTree = new MigrationsTree((short) 10);
 		m_currentBackupPeers = null;
 		m_rangeSize = 0;
 
@@ -114,7 +118,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		m_listener = null;
 
-		m_migrations = null;
 		m_migrationLock = null;
 
 		m_mappingLock = null;
@@ -151,7 +154,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		MemoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE));
 
 		if (!NodeID.isSuperpeer()) {
-			m_migrations = new ArrayList<Long>();
 			m_migrationLock = new ReentrantLock(false);
 			m_currentBackupPeers = new Locations(m_nodeID, null, null);
 			registerPeer();
@@ -169,24 +171,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		try {
 			MemoryManager.disengage();
 		} catch (final MemoryException e) {}
-	}
-
-	/**
-	 * Checks if the node is responsible for the Chunk
-	 * @param p_chunkID
-	 *            the ChunkID of the Chunk
-	 * @return true if the node is responsible, false otherwise
-	 */
-	private boolean isResponsible(final long p_chunkID) {
-		boolean ret;
-
-		ret = ChunkID.getCreatorID(p_chunkID) == m_nodeID;
-		if (!ret) {
-			// This could be a bottleneck
-			ret = m_migrations.contains(p_chunkID);
-		}
-
-		return ret;
 	}
 
 	@Override
@@ -304,7 +288,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (isResponsible(p_chunkID)) {
+			if (MemoryManager.isResponsible(p_chunkID)) {
 				// Local get
 				ret = MemoryManager.get(p_chunkID);
 			} else {
@@ -360,7 +344,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 			peers = new TreeMap<>();
 			for (int i = 0; i < p_chunkIDs.length; i++) {
-				if (isResponsible(p_chunkIDs[i])) {
+				if (MemoryManager.isResponsible(p_chunkIDs[i])) {
 					// Local get
 					ret[i] = MemoryManager.get(p_chunkIDs[i]);
 				} else {
@@ -457,7 +441,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (isResponsible(p_chunkID)) {
+			if (MemoryManager.isResponsible(p_chunkID)) {
 				// Local get
 				fireIncomingChunk(new IncomingChunkEvent(m_nodeID, MemoryManager.get(p_chunkID)));
 			} else {
@@ -495,7 +479,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (isResponsible(p_chunk.getChunkID())) {
+			if (MemoryManager.isResponsible(p_chunk.getChunkID())) {
 				// Local put
 				MemoryManager.put(p_chunk);
 
@@ -508,7 +492,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					backupPeers = getBackupPeers(p_chunk.getChunkID());
 					if (backupPeers != null) {
 						for (int i = 0; i < backupPeers.length; i++) {
-							if (backupPeers[i] != m_nodeID) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
 								new LogMessage(backupPeers[i], p_chunk).send(m_network);
 							}
 						}
@@ -557,7 +541,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	@Override
 	public void remove(final long p_chunkID) throws DXRAMException {
+		Locations locations;
 		short primaryPeer;
+		short[] backupPeers;
 		boolean success = false;
 		RemoveRequest request;
 
@@ -565,15 +551,32 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		ChunkID.check(p_chunkID);
 
+		// TODO: Do not delete migrated chunks
+
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (isResponsible(p_chunkID)) {
+			if (MemoryManager.isResponsible(p_chunkID)) {
 				// Local remove
 				MemoryManager.remove(p_chunkID);
+
+				if (LOG_ACTIVE) {
+					// Send backups for logging (unreliable)
+					backupPeers = getBackupPeers(p_chunkID);
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+								new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
+							}
+						}
+					}
+				}
 			} else {
 				while (!success) {
-					primaryPeer = m_lookup.get(p_chunkID).getPrimaryPeer();
+					locations = m_lookup.get(p_chunkID);
+					primaryPeer = locations.getPrimaryPeer();
+					backupPeers = locations.getBackupPeers();
+
 					if (primaryPeer == m_nodeID) {
 						// Local remove
 						MemoryManager.remove(p_chunkID);
@@ -589,17 +592,16 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						}
 						success = request.getResponse(RemoveResponse.class).getStatus();
 					}
-					// TODO
-					/*
-					 * if (success) {
-					 * // Send backups for logging (unreliable)
-					 * for (int i = 0; i < 3; i++) {
-					 * if (backupPeers[i] != m_nodeID) {
-					 * new LogMessage(backupPeers[i], null).send(m_network);
-					 * }
-					 * }
-					 * }
-					 */
+					if (success && LOG_ACTIVE) {
+						// Send backups for logging (unreliable)
+						if (backupPeers != null) {
+							for (int i = 0; i < backupPeers.length; i++) {
+								if (backupPeers[i] != m_nodeID) {
+									new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
+								}
+							}
+						}
+					}
 				}
 			}
 			m_lookup.remove(p_chunkID);
@@ -628,7 +630,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (isResponsible(p_chunkID)) {
+			if (MemoryManager.isResponsible(p_chunkID)) {
 				// Local lock
 				lock = new DefaultLock(p_chunkID, m_nodeID, p_readLock);
 				m_lock.lock(lock);
@@ -683,7 +685,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (isResponsible(p_chunkID)) {
+			if (MemoryManager.isResponsible(p_chunkID)) {
 				// Local release
 				m_lock.unlock(p_chunkID, m_nodeID);
 			} else {
@@ -713,6 +715,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	@Override
 	public void migrate(final long p_chunkID, final short p_target) throws DXRAMException, NetworkException {
+		short[] backupPeers;
 		Chunk chunk;
 		DataRequest request;
 
@@ -723,8 +726,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			LOGGER.error("a superpeer must not store chunks");
 		} else {
 			m_migrationLock.lock();
-			if (p_target != m_nodeID && isResponsible(p_chunkID)) {
+			if (p_target != m_nodeID && MemoryManager.isResponsible(p_chunkID)) {
 				chunk = MemoryManager.get(p_chunkID);
+
 				if (chunk != null) {
 					LOGGER.trace("Send request to " + p_target);
 
@@ -733,10 +737,21 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					request.send(m_network);
 					request.getResponse(DataResponse.class);
 
+					// Update superpeers
 					m_lookup.migrate(p_chunkID, p_target);
+					// Remove all locks
 					m_lock.unlockAll(p_chunkID);
+					// Update local memory management
 					MemoryManager.remove(p_chunkID);
-					m_migrations.remove(p_chunkID);
+					// Update logging
+					backupPeers = getBackupPeers(p_chunkID);
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+								new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
+							}
+						}
+					}
 				}
 			}
 			m_migrationLock.unlock();
@@ -746,9 +761,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	@Override
 	public void migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
 			throws DXRAMException {
+		short[] backupPeers;
 		long iter;
 		Chunk chunk;
-		// DataRequest request;
+		DataRequest request;
 
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
@@ -761,24 +777,36 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			if (p_target != m_nodeID) {
 				iter = p_startChunkID;
 				while (iter <= p_endChunkID) {
-					if (isResponsible(iter)) {
+					if (MemoryManager.isResponsible(iter)) {
 						chunk = MemoryManager.get(iter);
 						if (chunk != null) {
-							// TODO: Send request instead of message to guarantee delivery
-							// request = new DataRequest(p_target, chunk);
-							// request.send(m_network);
-							// request.getResponse(DataResponse.class);
+							request = new DataRequest(p_target, chunk);
+							request.send(m_network);
+							request.getResponse(DataResponse.class);
 						}
 					}
 					iter++;
 				}
+				// Update superpeers
 				m_lookup.migrateRange(p_startChunkID, p_endChunkID, p_target);
 
+				// TODO: Handle range properly
 				iter = p_startChunkID;
 				while (iter <= p_endChunkID) {
+					// Remove all locks
 					m_lock.unlockAll(iter);
+					// Update local memory management
 					MemoryManager.remove(iter);
-					m_migrations.remove(iter++);
+					// Update logging
+					backupPeers = getBackupPeers(iter);
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+								new RemoveMessage(backupPeers[i], iter).send(m_network);
+							}
+						}
+					}
+					iter++;
 				}
 			}
 			m_migrationLock.unlock();
@@ -798,6 +826,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Chunk chunk;
 		short creator;
 		short target;
+		short[] backupPeers;
 
 		ChunkID.check(p_chunkID);
 		NodeID.check(p_target);
@@ -823,9 +852,21 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				// the number of network threads is increased
 				new DataMessage(target, chunk).send(m_network);
 
+				// Update superpeers
 				m_lookup.migrateNotCreatedChunk(p_chunkID, target);
+				// Remove all locks
 				m_lock.unlockAll(p_chunkID);
+				// Update local memory management
 				MemoryManager.remove(p_chunkID);
+				// Update logging
+				backupPeers = getBackupPeers(p_chunkID);
+				if (backupPeers != null) {
+					for (int i = 0; i < backupPeers.length; i++) {
+						if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+							new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
+						}
+					}
+				}
 			}
 		}
 		m_migrationLock.unlock();
@@ -841,6 +882,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *             if the Chunk could not be migrated
 	 */
 	public void migrateOwnChunk(final long p_chunkID, final short p_target) throws DXRAMException {
+		short[] backupPeers;
 		Chunk chunk;
 
 		ChunkID.check(p_chunkID);
@@ -857,9 +899,21 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				System.out.println("** Migrating own chunk " + p_chunkID + " to " + p_target);
 				new DataMessage(p_target, chunk).send(m_network);
 
+				// Update superpeers
 				m_lookup.migrateOwnChunk(p_chunkID, p_target);
+				// Remove all locks
 				m_lock.unlockAll(p_chunkID);
+				// Update local memory management
 				MemoryManager.remove(p_chunkID);
+				// Update logging
+				backupPeers = getBackupPeers(p_chunkID);
+				if (backupPeers != null) {
+					for (int i = 0; i < backupPeers.length; i++) {
+						if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+							new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
+						}
+					}
+				}
 			}
 		}
 		m_migrationLock.unlock();
@@ -869,7 +923,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	public void migrateAll(final short p_target) throws DXRAMException {
 		long localID;
 		long chunkID;
-		Iterator<Long> iter;
 
 		localID = MemoryManager.getCurrentLocalID();
 
@@ -877,19 +930,21 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (1 != localID) {
 			for (int i = 1; i <= localID; i++) {
 				chunkID = ((long) m_nodeID << 48) + i;
-				if (isResponsible(chunkID)) {
+				if (MemoryManager.isResponsible(chunkID)) {
 					migrateOwnChunk(chunkID, p_target);
 				}
 			}
 		}
+		// TODO: Migrate previously migrated chunks
 
-		// Migrate previously migrated chunks
-		iter = m_migrations.iterator();
-		while (iter.hasNext()) {
-			chunkID = iter.next();
-			migrateNotCreatedChunk(chunkID, p_target);
-		}
-		m_migrations.clear();
+		/*
+		 * iter = m_migrations.iterator();
+		 * while (iter.hasNext()) {
+		 * chunkID = iter.next();
+		 * migrateNotCreatedChunk(chunkID, p_target);
+		 * }
+		 * m_migrations.clear();
+		 */
 	}
 
 	/**
@@ -911,13 +966,21 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		short[] ret = null;
 		long backupPeers;
 
-		for (int i = m_allBackupPeers.size() - 1; i >= 0; i--) {
-			if (m_allBackupPeers.get(i)[0] <= ChunkID.getLocalID(ChunkID.getLocalID(p_chunkID))) {
-				backupPeers = m_allBackupPeers.get(i)[1];
+		// TODO: Check migrated chunks too
+
+		for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
+			if (m_ownBackupRanges.get(i)[0] <= ChunkID.getLocalID(ChunkID.getLocalID(p_chunkID))) {
+				backupPeers = m_ownBackupRanges.get(i)[1];
+				/*
+				 * for (int j = 0; j < REPLICATION_FACTOR; j++) {
+				 * if (backupPeers)
+				 * }
+				 */
 				ret = new short[] {
 						(short) (backupPeers & 0x000000000000FFFFL),
 						(short) ((backupPeers & 0x00000000FFFF0000L) >> 16),
 						(short) ((backupPeers & 0x0000FFFF00000000L) >> 32)};
+				break;
 			}
 		}
 
@@ -936,12 +999,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private void initBackupRange(final long p_lid, final long p_size) throws LookupException {
 		if (LOG_ACTIVE) {
-			m_rangeSize += p_size;
+			m_rangeSize += p_size + m_log.getHeaderSize();
 			if (1 == p_lid || m_rangeSize > SECONDARY_LOG_SIZE / 2) {
-				System.out.println(m_rangeSize + ", " + SECONDARY_LOG_SIZE / 2);
 				determineBackupPeers(p_lid);
 				m_lookup.initRange(((long) m_nodeID << 48) + p_lid, m_currentBackupPeers);
-				m_log.initRange(((long) m_nodeID << 48) + p_lid, m_currentBackupPeers.getBackupPeers());
+				m_log.initBackupRange(((long) m_nodeID << 48) + p_lid, m_currentBackupPeers.getBackupPeers());
 				m_rangeSize = 0;
 			}
 		} else if (1 == p_lid) {
@@ -1045,7 +1107,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			}
 			m_currentBackupPeers.setBackupPeers(newBackupPeers);
 		}
-		m_allBackupPeers.add(new long[] {p_lid, m_currentBackupPeers.getBackupPeersAsLong()});
+		m_ownBackupRanges.add(new long[] {p_lid, m_currentBackupPeers.getBackupPeersAsLong()});
 	}
 
 	/**
@@ -1179,8 +1241,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *             if there is no fitting chunk
 	 */
 	private void
-	deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index)
-			throws DXRAMException {
+			deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index)
+					throws DXRAMException {
 		int size;
 		byte[] data1;
 		byte[] data2;
@@ -1304,7 +1366,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		try {
 			m_migrationLock.lock();
-			if (isResponsible(chunk.getChunkID())) {
+			if (MemoryManager.isResponsible(chunk.getChunkID())) {
 				MemoryManager.put(chunk);
 				success = true;
 			}
@@ -1333,7 +1395,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		chunkID = p_request.getChunkID();
 		try {
 			m_migrationLock.lock();
-			if (isResponsible(chunkID)) {
+			if (MemoryManager.isResponsible(chunkID)) {
 				MemoryManager.remove(chunkID);
 				success = true;
 			}
@@ -1397,16 +1459,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private void incomingDataRequest(final DataRequest p_request) {
 		Chunk chunk;
-		long chunkID;
 
 		chunk = p_request.getChunk();
-		chunkID = chunk.getChunkID();
 
 		try {
-			if (m_nodeID != ChunkID.getCreatorID(chunkID)) {
-				m_migrations.add(m_migrations.size(), chunkID);
-			}
 			MemoryManager.put(chunk);
+			// TODO: Determine backup range for migrated chunk
+			// m_migrationBackupRanges.putObject(chunk.getChunkID(), p_rangeID);
+			// TODO: Replicate data
 			new DataResponse(p_request).send(m_network);
 		} catch (final DXRAMException e) {
 			LOGGER.error("ERR::Could not handle request", e);
@@ -1422,17 +1482,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private void incomingDataMessage(final DataMessage p_message) {
 		Chunk chunk;
-		long chunkID;
 
 		chunk = p_message.getChunk();
-		chunkID = chunk.getChunkID();
-		System.out.println("--------------------------- " + chunkID + " ------------------------");
 
 		try {
-			if (m_nodeID != ChunkID.getCreatorID(chunkID)) {
-				m_migrations.add(m_migrations.size(), chunkID);
-			}
 			MemoryManager.put(chunk);
+			// TODO: Determine backup range for migrated chunk
+			// m_migrationBackupRanges.putObject(chunk.getChunkID(), p_rangeID);
+			// TODO: Replicate data
 		} catch (final DXRAMException e) {
 			LOGGER.error("ERR::Could not handle request", e);
 

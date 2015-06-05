@@ -197,7 +197,7 @@ public class PrimaryWriteBuffer {
 			}
 			// Update byte counters
 			m_bytesInWriteBuffer += bytesToWrite;
-			range = m_logHandler.getRange(AbstractLog.getChunkIDOfLogEntry(p_header, 0));
+			range = m_logHandler.getBackupRange(AbstractLog.getChunkIDOfLogEntry(p_header, 0));
 			counter = m_lengthByBackupRange.get(range);
 			if (null == counter) {
 				m_lengthByBackupRange.put(range, bytesToWrite);

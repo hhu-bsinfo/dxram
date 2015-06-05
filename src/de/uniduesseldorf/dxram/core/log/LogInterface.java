@@ -24,19 +24,6 @@ public interface LogInterface extends CoreComponent {
 	PrimaryLog getPrimaryLog();
 
 	/**
-	 * Returns the secondary log buffer
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @return the secondary log buffer
-	 * @throws IOException
-	 *             if the secondary log buffer could not be returned
-	 * @throws InterruptedException
-	 *             if the secondary log buffer could not be returned
-	 */
-	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID)
-			throws IOException, InterruptedException;
-
-	/**
 	 * Returns the secondary log
 	 * @param p_chunkID
 	 *            the ChunkID
@@ -50,22 +37,41 @@ public interface LogInterface extends CoreComponent {
 			throws IOException, InterruptedException;
 
 	/**
-	 * Returns the range
+	 * Returns the secondary log buffer
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return the secondary log buffer
+	 * @throws IOException
+	 *             if the secondary log buffer could not be returned
+	 * @throws InterruptedException
+	 *             if the secondary log buffer could not be returned
+	 */
+	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID)
+			throws IOException, InterruptedException;
+
+	/**
+	 * Returns the backup range
 	 * @param p_chunkID
 	 *            the ChunkID
 	 * @return the first ChunkID of the range
 	 */
-	long getRange(long p_chunkID);
+	long getBackupRange(long p_chunkID);
+
+	/**
+	 * Returns the header size
+	 * @return the header size
+	 */
+	short getHeaderSize();
 
 	// Methods
 	/**
-	 * Creates a new Chunk
+	 * Initializes a new backup range
 	 * @param p_start
 	 *            the beginning of the range
 	 * @param p_backupPeers
 	 *            the backup peers
 	 */
-	void initRange(long p_start, short[] p_backupPeers);
+	void initBackupRange(long p_start, short[] p_backupPeers);
 
 	/**
 	 * Creates a new Chunk

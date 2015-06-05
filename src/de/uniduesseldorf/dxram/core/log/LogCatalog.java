@@ -80,6 +80,7 @@ public final class LogCatalog {
 		for (int i = m_logs.size() - 1; i >= 0; i--) {
 			if (m_backupRanges.get(i) <= ChunkID.getLocalID(p_chunkID)) {
 				ret = m_backupRanges.get(i);
+				break;
 			}
 		}
 
@@ -93,11 +94,19 @@ public final class LogCatalog {
 	public SecondaryLogWithSegments[] getAllLogs() {
 		SecondaryLogWithSegments[] ret = null;
 
-		for (int i = 0; i < m_backupRanges.size(); i++) {
-			System.out.println(m_backupRanges.get(i));
-		}
-
 		ret = m_logs.toArray(new SecondaryLogWithSegments[m_logs.size()]);
+
+		return ret;
+	}
+
+	/**
+	 * Gets all secondary log buffers from this node
+	 * @return the secondary log buffer array
+	 */
+	public SecondaryLogBuffer[] getAllBuffers() {
+		SecondaryLogBuffer[] ret = null;
+
+		ret = m_buffers.toArray(new SecondaryLogBuffer[m_buffers.size()]);
 
 		return ret;
 	}
@@ -115,7 +124,7 @@ public final class LogCatalog {
 	 *             if no new secondary log could be created
 	 */
 	public void insertRange(final long p_low, final SecondaryLogWithSegments p_log) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		SecondaryLogBuffer buffer;
 		int rangeID;
 
@@ -142,6 +151,7 @@ public final class LogCatalog {
 		for (int i = m_logs.size() - 1; i >= 0; i--) {
 			if (m_backupRanges.get(i) <= ChunkID.getLocalID(p_chunkID)) {
 				ret = i;
+				break;
 			}
 		}
 
