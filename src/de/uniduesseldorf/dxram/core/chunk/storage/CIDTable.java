@@ -1,9 +1,11 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 
+import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
@@ -382,6 +384,70 @@ public final class CIDTable {
 		}
 
 		writeUnlock(p_table);
+
+		return ret;
+	}
+
+	/**
+	 * Returns the ChunkIDs of all migrated Chunks
+	 * @return the ChunkIDs of all migrated Chunks
+	 * @throws MemoryException
+	 *             if the CIDTable could not be completely accessed
+	 */
+	protected static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
+		ArrayList<Long> ret = null;
+		long entry;
+
+		if (m_store != null) {
+			ret = new ArrayList<Long>();
+
+			readLock(m_nodeIDTableDirectory);
+
+			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
+				entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
+				if (entry > 0 && i != ((int) NodeID.getLocalNodeID() & 0xFFFF)) {
+					ret.addAll(getAllEntries((long) i << 48, readEntry(m_nodeIDTableDirectory, i & NID_LEVEL_BITMASK)
+							& BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+				}
+			}
+
+			readUnlock(m_nodeIDTableDirectory);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Adds all ChunkIDs to an ArrayList
+	 * @param p_unfinishedCID
+	 *            the unfinished ChunkID
+	 * @param p_table
+	 *            the current table
+	 * @param p_level
+	 *            the current table level
+	 * @return the ArrayList
+	 * @throws MemoryException
+	 *             if the CIDTable could not be completely accessed
+	 */
+	private static ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level)
+			throws MemoryException {
+		ArrayList<Long> ret;
+		long entry;
+
+		System.out.println("Entering with " + Long.toHexString(p_unfinishedCID));
+
+		ret = new ArrayList<Long>();
+		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
+			entry = readEntry(p_table, i);
+			if (entry > 0) {
+				if (p_level > 0) {
+					ret.addAll(getAllEntries(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level),
+							entry & BITMASK_ADDRESS, p_level - 1));
+				} else {
+					ret.add(p_unfinishedCID + i);
+				}
+			}
+		}
 
 		return ret;
 	}

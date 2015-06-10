@@ -3,6 +3,8 @@ package de.uniduesseldorf.dxram.core.chunk;
 
 import java.io.Serializable;
 
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -13,6 +15,8 @@ import de.uniduesseldorf.dxram.utils.Contract;
 public final class MigrationsTree implements Serializable {
 
 	// Constants
+	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(
+			ConfigurationConstants.SECONDARY_LOG_SIZE);
 	private static final long serialVersionUID = 7565597467331239020L;
 	private static final int INVALID = -1;
 
@@ -23,7 +27,8 @@ public final class MigrationsTree implements Serializable {
 	private short m_maxChildren;
 
 	private Node m_root;
-	private int m_size;
+	private int m_entrySize;
+	private long m_logSize;
 
 	private Entry m_changedEntry;
 
@@ -42,7 +47,8 @@ public final class MigrationsTree implements Serializable {
 		m_maxChildren = (short) (m_maxEntries + 1);
 
 		m_root = null;
-		m_size = -1;
+		m_entrySize = -1;
+		m_logSize = 0;
 
 		m_changedEntry = null;
 
@@ -51,14 +57,26 @@ public final class MigrationsTree implements Serializable {
 
 	// Methods
 	/**
+	 * Checks if the Chunk fits in current log
+	 * @param p_size
+	 *            the size of the chunk + log header size
+	 * @return true if it fits
+	 */
+	public boolean fits(final long p_size) {
+		return (p_size + m_logSize) <= SECONDARY_LOG_SIZE;
+	}
+
+	/**
 	 * Stores the backup range ID for a single object
 	 * @param p_chunkID
 	 *            ChunkID of migrated object
 	 * @param p_rangeID
 	 *            the backup range ID
+	 * @param p_size
+	 *            the size of the chunk + log header size
 	 * @return true if insertion was successful
 	 */
-	public boolean putObject(final long p_chunkID, final int p_rangeID) {
+	public boolean putObject(final long p_chunkID, final int p_rangeID, final long p_size) {
 		long lid;
 		Node node;
 
@@ -72,6 +90,8 @@ public final class MigrationsTree implements Serializable {
 
 		mergeWithSuccessor(lid, p_rangeID);
 
+		m_logSize += p_size;
+
 		return true;
 	}
 
@@ -83,9 +103,11 @@ public final class MigrationsTree implements Serializable {
 	 *            ChunkID of last migrated object
 	 * @param p_rangeID
 	 *            the backup range ID
+	 * @param p_rangeSize
+	 *            the size of the range + log header sizes
 	 * @return true if insertion was successful
 	 */
-	public boolean putRange(final long p_startID, final long p_endID, final int p_rangeID) {
+	public boolean putRange(final long p_startID, final long p_endID, final int p_rangeID, final long p_rangeSize) {
 		long startLid;
 		long endLid;
 		Node startNode;
@@ -94,7 +116,7 @@ public final class MigrationsTree implements Serializable {
 		endLid = p_endID & 0x0000FFFFFFFFFFFFL;
 		Contract.check(startLid <= endLid && 0 < startLid, "end larger than start or start smaller than 1");
 		if (startLid == endLid) {
-			putObject(p_startID, p_rangeID);
+			putObject(p_startID, p_rangeID, p_rangeSize);
 		} else {
 			startNode = createOrReplaceEntry(startLid, p_rangeID);
 
@@ -105,6 +127,8 @@ public final class MigrationsTree implements Serializable {
 			removeEntriesWithinRange(startLid, endLid);
 
 			mergeWithSuccessor(endLid, p_rangeID);
+
+			m_logSize += p_rangeSize;
 		}
 		return true;
 	}
@@ -265,7 +289,7 @@ public final class MigrationsTree implements Serializable {
 			ret = node;
 		}
 		if (m_changedEntry == null) {
-			m_size++;
+			m_entrySize++;
 		}
 
 		return ret;
@@ -744,7 +768,7 @@ public final class MigrationsTree implements Serializable {
 					split(p_lid, greatest);
 				}
 			}
-			m_size--;
+			m_entrySize--;
 		}
 
 		return ret;
@@ -873,7 +897,7 @@ public final class MigrationsTree implements Serializable {
 	 * @return the number of entries in btree
 	 */
 	public int size() {
-		return m_size;
+		return m_entrySize;
 	}
 
 	/**
@@ -1002,7 +1026,7 @@ public final class MigrationsTree implements Serializable {
 		if (null == m_root) {
 			ret = "Btree has no nodes";
 		} else {
-			ret = "Size: " + m_size + "\n" + getString(m_root, "", true);
+			ret = "Size: " + m_entrySize + "\n" + getString(m_root, "", true);
 		}
 
 		return ret;

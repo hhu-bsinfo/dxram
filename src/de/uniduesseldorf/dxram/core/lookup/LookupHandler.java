@@ -3391,7 +3391,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	/**
-	 * Stabilizes superpeer overlay
+	 * Stores locations
 	 * @author Kevin Beineke
 	 *         03.09.2013
 	 */

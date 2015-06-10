@@ -4,6 +4,7 @@ package de.uniduesseldorf.dxram.core.chunk;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -81,10 +82,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	// Attributes
 	private short m_nodeID;
-	private Locations m_currentBackupPeers;
-	private ArrayList<long[]> m_ownBackupRanges;
-	// TODO:
-	private ArrayList<long[]> m_migrationBackupRanges;
+
+	private BackupRange m_currentBackupRange;
+	private ArrayList<BackupRange> m_ownBackupRanges;
+
+	private BackupRange m_currentMigrationBackupRange;
+	private ArrayList<BackupRange> m_migrationBackupRanges;
+	private long m_currentRangeID;
 	private MigrationsTree m_migrationsTree;
 	private long m_rangeSize;
 
@@ -105,10 +109,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	public ChunkHandler() {
 		m_nodeID = NodeID.INVALID_ID;
-		m_ownBackupRanges = new ArrayList<long[]>();
-		m_migrationBackupRanges = new ArrayList<long[]>();
+		m_ownBackupRanges = new ArrayList<BackupRange>();
+		m_migrationBackupRanges = new ArrayList<BackupRange>();
+		m_currentRangeID = 0;
 		m_migrationsTree = new MigrationsTree((short) 10);
-		m_currentBackupPeers = null;
+		m_currentBackupRange = null;
+		m_currentMigrationBackupRange = null;
 		m_rangeSize = 0;
 
 		m_network = null;
@@ -155,7 +161,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		if (!NodeID.isSuperpeer()) {
 			m_migrationLock = new ReentrantLock(false);
-			m_currentBackupPeers = new Locations(m_nodeID, null, null);
 			registerPeer();
 
 			m_mappingLock = new ReentrantLock(false);
@@ -551,25 +556,27 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		ChunkID.check(p_chunkID);
 
-		// TODO: Do not delete migrated chunks
-
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
 			if (MemoryManager.isResponsible(p_chunkID)) {
-				// Local remove
-				MemoryManager.remove(p_chunkID);
+				if (!MemoryManager.wasMigrated(p_chunkID)) {
+					// Local remove
+					MemoryManager.remove(p_chunkID);
 
-				if (LOG_ACTIVE) {
-					// Send backups for logging (unreliable)
-					backupPeers = getBackupPeers(p_chunkID);
-					if (backupPeers != null) {
-						for (int i = 0; i < backupPeers.length; i++) {
-							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-								new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
+					if (LOG_ACTIVE) {
+						// Send backups for logging (unreliable)
+						backupPeers = getBackupPeers(p_chunkID);
+						if (backupPeers != null) {
+							for (int i = 0; i < backupPeers.length; i++) {
+								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+									new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
+								}
 							}
 						}
 					}
+				} else {
+					// TODO: Migrate back and remove
 				}
 			} else {
 				while (!success) {
@@ -770,6 +777,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		ChunkID.check(p_endChunkID);
 		NodeID.check(p_target);
 
+		// TODO: Handle range properly
+
 		if (NodeID.isSuperpeer()) {
 			LOGGER.error("a superpeer must not store chunks");
 		} else {
@@ -790,7 +799,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				// Update superpeers
 				m_lookup.migrateRange(p_startChunkID, p_endChunkID, p_target);
 
-				// TODO: Handle range properly
 				iter = p_startChunkID;
 				while (iter <= p_endChunkID) {
 					// Remove all locks
@@ -833,38 +841,36 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		creator = ChunkID.getCreatorID(p_chunkID);
 
 		m_migrationLock.lock();
-		if (p_target != m_nodeID) {
+		if (p_target != m_nodeID && MemoryManager.isResponsible(p_chunkID) && MemoryManager.wasMigrated(p_chunkID)) {
 			chunk = MemoryManager.get(p_chunkID);
-			if (chunk != null) {
-				LOGGER.trace("Send request to " + p_target);
+			LOGGER.trace("Send request to " + p_target);
 
-				if (m_lookup.creatorAvailable(creator)) {
-					// Migrate chunk back to owner
-					System.out.println("** Migrating " + p_chunkID + " back to " + creator);
-					target = creator;
-				} else {
-					// Migrate chunk to p_target, if owner is not available anymore
-					System.out.println("** Migrating " + p_chunkID + " to " + p_target);
-					target = p_target;
-				}
+			if (m_lookup.creatorAvailable(creator)) {
+				// Migrate chunk back to owner
+				System.out.println("** Migrating " + p_chunkID + " back to " + creator);
+				target = creator;
+			} else {
+				// Migrate chunk to p_target, if owner is not available anymore
+				System.out.println("** Migrating " + p_chunkID + " to " + p_target);
+				target = p_target;
+			}
 
-				// This is not safe, but there is no other possibility unless
-				// the number of network threads is increased
-				new DataMessage(target, chunk).send(m_network);
+			// This is not safe, but there is no other possibility unless
+			// the number of network threads is increased
+			new DataMessage(target, chunk).send(m_network);
 
-				// Update superpeers
-				m_lookup.migrateNotCreatedChunk(p_chunkID, target);
-				// Remove all locks
-				m_lock.unlockAll(p_chunkID);
-				// Update local memory management
-				MemoryManager.remove(p_chunkID);
-				// Update logging
-				backupPeers = getBackupPeers(p_chunkID);
-				if (backupPeers != null) {
-					for (int i = 0; i < backupPeers.length; i++) {
-						if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-							new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
-						}
+			// Update superpeers
+			m_lookup.migrateNotCreatedChunk(p_chunkID, target);
+			// Remove all locks
+			m_lock.unlockAll(p_chunkID);
+			// Update local memory management
+			MemoryManager.remove(p_chunkID);
+			// Update logging
+			backupPeers = getBackupPeers(p_chunkID);
+			if (backupPeers != null) {
+				for (int i = 0; i < backupPeers.length; i++) {
+					if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+						new RemoveMessage(backupPeers[i], p_chunkID).send(m_network);
 					}
 				}
 			}
@@ -923,6 +929,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	public void migrateAll(final short p_target) throws DXRAMException {
 		long localID;
 		long chunkID;
+		Iterator<Long> iter;
 
 		localID = MemoryManager.getCurrentLocalID();
 
@@ -935,16 +942,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				}
 			}
 		}
-		// TODO: Migrate previously migrated chunks
 
-		/*
-		 * iter = m_migrations.iterator();
-		 * while (iter.hasNext()) {
-		 * chunkID = iter.next();
-		 * migrateNotCreatedChunk(chunkID, p_target);
-		 * }
-		 * m_migrations.clear();
-		 */
+		iter = MemoryManager.getCIDOfAllMigratedChunks().iterator();
+		while (iter.hasNext()) {
+			chunkID = iter.next();
+			migrateNotCreatedChunk(chunkID, p_target);
+		}
 	}
 
 	/**
@@ -953,7 +956,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *             if range could not be initialized
 	 */
 	private void registerPeer() throws LookupException {
-		m_lookup.initRange(0, m_currentBackupPeers);
+		m_lookup.initRange(0, new Locations(m_nodeID, null, null));
 	}
 
 	/**
@@ -964,24 +967,16 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private short[] getBackupPeers(final long p_chunkID) {
 		short[] ret = null;
-		long backupPeers;
 
-		// TODO: Check migrated chunks too
-
-		for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
-			if (m_ownBackupRanges.get(i)[0] <= ChunkID.getLocalID(ChunkID.getLocalID(p_chunkID))) {
-				backupPeers = m_ownBackupRanges.get(i)[1];
-				/*
-				 * for (int j = 0; j < REPLICATION_FACTOR; j++) {
-				 * if (backupPeers)
-				 * }
-				 */
-				ret = new short[] {
-						(short) (backupPeers & 0x000000000000FFFFL),
-						(short) ((backupPeers & 0x00000000FFFF0000L) >> 16),
-						(short) ((backupPeers & 0x0000FFFF00000000L) >> 32)};
-				break;
+		if (ChunkID.getCreatorID(p_chunkID) == NodeID.getLocalNodeID()) {
+			for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
+				if (m_ownBackupRanges.get(i).getBackupPeers()[0] <= ChunkID.getLocalID(ChunkID.getLocalID(p_chunkID))) {
+					ret = m_ownBackupRanges.get(i).getBackupPeers();
+					break;
+				}
 			}
+		} else {
+			ret = m_migrationBackupRanges.get((int) m_migrationsTree.getBackupRange(p_chunkID)).getBackupPeers();
 		}
 
 		return ret;
@@ -1002,12 +997,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			m_rangeSize += p_size + m_log.getHeaderSize();
 			if (1 == p_lid || m_rangeSize > SECONDARY_LOG_SIZE / 2) {
 				determineBackupPeers(p_lid);
-				m_lookup.initRange(((long) m_nodeID << 48) + p_lid, m_currentBackupPeers);
-				m_log.initBackupRange(((long) m_nodeID << 48) + p_lid, m_currentBackupPeers.getBackupPeers());
+				m_lookup.initRange(((long) m_nodeID << 48) + p_lid,
+						new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_log.initBackupRange(((long) m_nodeID << 48) + p_lid, m_currentBackupRange.getBackupPeers());
 				m_rangeSize = 0;
 			}
 		} else if (1 == p_lid) {
-			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, m_currentBackupPeers);
+			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL,
+					new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
 		}
 	}
 
@@ -1057,10 +1054,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 			newBackupPeers = new short[REPLICATION_FACTOR];
 			Arrays.fill(newBackupPeers, (short) -1);
-		} else if (null != m_currentBackupPeers.getBackupPeers()) {
+		} else if (null != m_currentBackupRange.getBackupPeers()) {
 			oldBackupPeers = new short[REPLICATION_FACTOR];
 			for (int i = 0; i < REPLICATION_FACTOR; i++) {
-				oldBackupPeers[i] = m_currentBackupPeers.getBackupPeers()[i];
+				if (p_lid > -1) {
+					oldBackupPeers[i] = m_currentBackupRange.getBackupPeers()[i];
+				} else {
+					oldBackupPeers[i] = m_currentMigrationBackupRange.getBackupPeers()[i];
+				}
 			}
 
 			newBackupPeers = new short[REPLICATION_FACTOR];
@@ -1085,7 +1086,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					newBackupPeers[i] = allPeers[index];
 					ready = false;
 				}
-				m_currentBackupPeers.setBackupPeers(newBackupPeers);
+				if (p_lid > -1) {
+					m_currentBackupRange = new BackupRange(p_lid, newBackupPeers);
+				} else {
+					m_currentMigrationBackupRange = new BackupRange(p_lid, newBackupPeers);
+				}
 			}
 		} else {
 			// Determine backup peers
@@ -1105,9 +1110,19 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				newBackupPeers[i] = allPeers[index];
 				ready = false;
 			}
-			m_currentBackupPeers.setBackupPeers(newBackupPeers);
+			if (p_lid > -1) {
+				m_currentBackupRange = new BackupRange(p_lid, newBackupPeers);
+			} else {
+				m_currentMigrationBackupRange = new BackupRange(p_lid, newBackupPeers);
+			}
 		}
-		m_ownBackupRanges.add(new long[] {p_lid, m_currentBackupPeers.getBackupPeersAsLong()});
+
+		if (p_lid > -1) {
+			m_ownBackupRanges.add(m_currentBackupRange);
+		} else {
+			m_migrationBackupRanges.add(m_currentMigrationBackupRange);
+			m_currentRangeID++;
+		}
 	}
 
 	/**
@@ -1458,14 +1473,18 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *            the DataRequest
 	 */
 	private void incomingDataRequest(final DataRequest p_request) {
+		long size;
 		Chunk chunk;
 
 		chunk = p_request.getChunk();
+		size = chunk.getSize() + m_log.getHeaderSize();
 
 		try {
 			MemoryManager.put(chunk);
-			// TODO: Determine backup range for migrated chunk
-			// m_migrationBackupRanges.putObject(chunk.getChunkID(), p_rangeID);
+			if (!m_migrationsTree.fits(size)) {
+				determineBackupPeers(-1);
+			}
+			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentRangeID, size);
 			// TODO: Replicate data
 			new DataResponse(p_request).send(m_network);
 		} catch (final DXRAMException e) {
@@ -1481,14 +1500,18 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *            the DataMessage
 	 */
 	private void incomingDataMessage(final DataMessage p_message) {
+		long size;
 		Chunk chunk;
 
 		chunk = p_message.getChunk();
+		size = chunk.getSize() + m_log.getHeaderSize();
 
 		try {
 			MemoryManager.put(chunk);
-			// TODO: Determine backup range for migrated chunk
-			// m_migrationBackupRanges.putObject(chunk.getChunkID(), p_rangeID);
+			if (!m_migrationsTree.fits(size)) {
+				determineBackupPeers(-1);
+			}
+			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentRangeID, size);
 			// TODO: Replicate data
 		} catch (final DXRAMException e) {
 			LOGGER.error("ERR::Could not handle request", e);
@@ -1588,6 +1611,105 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			}
 		}
 
+	}
+
+	/**
+	 * Stores a backup range
+	 * @author Kevin Beineke 10.06.2015
+	 */
+	public static final class BackupRange {
+
+		// Attributes
+		private long m_rangeID;
+		private short[] m_backupPeers;
+
+		// Constructors
+		/**
+		 * Creates an instance of Locations
+		 * @param p_rangeID
+		 *            the RangeID or the first ChunkID
+		 * @param p_backupPeers
+		 *            the backup peers
+		 */
+		public BackupRange(final long p_rangeID, final short[] p_backupPeers) {
+			super();
+
+			m_rangeID = p_rangeID;
+			m_backupPeers = p_backupPeers;
+		}
+
+		/**
+		 * Creates an instance of Locations
+		 * @param p_rangeID
+		 *            the RangeID or the first ChunkID
+		 * @param p_backupPeers
+		 *            the locations in long representation
+		 */
+		public BackupRange(final long p_rangeID, final long p_backupPeers) {
+			this(p_rangeID, new short[] {
+					(short) ((p_backupPeers & 0x00000000FFFF0000L) >> 16),
+					(short) ((p_backupPeers & 0x0000FFFF00000000L) >> 32),
+					(short) ((p_backupPeers & 0xFFFF000000000000L) >> 48)});
+		}
+
+		// Getter
+		/**
+		 * Get backup peers
+		 * @return the backup peers
+		 */
+		public short[] getBackupPeers() {
+			return m_backupPeers;
+		}
+
+		/**
+		 * Get backup peers as long
+		 * @return the backup peers
+		 */
+		public long getBackupPeersAsLong() {
+			long ret = -1;
+			if (null != m_backupPeers) {
+				if (m_backupPeers.length == 3) {
+					ret = ((m_backupPeers[2] & 0x000000000000FFFFL) << 32)
+							+ ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+				} else if (m_backupPeers.length == 2) {
+					ret = ((-1 & 0x000000000000FFFFL) << 32)
+							+ ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+				} else {
+					ret = ((-1 & 0x000000000000FFFFL) << 32)
+							+ ((-1 & 0x000000000000FFFFL) << 16)
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+				}
+			}
+
+			return ret;
+		}
+
+		// Methods
+		/**
+		 * Prints the locations
+		 * @return String interpretation of locations
+		 */
+		@Override
+		public String toString() {
+			String ret;
+
+			ret = "" + m_rangeID;
+			if (null != m_backupPeers) {
+				if (m_backupPeers.length == 3) {
+					ret = "[" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", " + m_backupPeers[2] + "]";
+				} else if (m_backupPeers.length == 2) {
+					ret = "[" + m_backupPeers[0] + ", " + m_backupPeers[1] + "]";
+				} else {
+					ret = "[" + m_backupPeers[0] + "]";
+				}
+			} else {
+				ret = "no backup peers";
+			}
+
+			return ret;
+		}
 	}
 
 }

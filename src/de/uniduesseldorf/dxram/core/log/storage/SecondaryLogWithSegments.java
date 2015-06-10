@@ -891,7 +891,6 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						// Put object versions to hashtable
 						// Collision: Store the higher version number if not
 						// -1 (^= deleted)
-						System.out.println(getVersionOfLogEntry(segment, readBytes, false));
 						p_hashtable.putMax(getLIDOfLogEntry(segment, readBytes, false),
 								getVersionOfLogEntry(segment, readBytes, false));
 						readBytes += LogHandler.SECONDARY_HEADER_SIZE
