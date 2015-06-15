@@ -279,14 +279,15 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	@Override
-	public void initRange(final long p_endChunkID, final Locations p_primaryAndBackupPeers) throws LookupException {
+	public void initRange(final long p_firstChunkIDOrRangeID,
+			final Locations p_primaryAndBackupPeers) throws LookupException {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 
 		InitRangeRequest request;
 		InitRangeResponse response;
 
-		LOGGER.trace("Entering initRange with: p_endChunkID=" + p_endChunkID + ", p_locations="
+		LOGGER.trace("Entering initRange with: p_endChunkID=" + p_firstChunkIDOrRangeID + ", p_locations="
 				+ p_primaryAndBackupPeers);
 
 		Contract.check(!NodeID.isSuperpeer());
@@ -294,7 +295,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		while (true) {
 			responsibleSuperpeer = m_mySuperpeer;
 
-			request = new InitRangeRequest(responsibleSuperpeer, p_endChunkID,
+			request = new InitRangeRequest(responsibleSuperpeer, p_firstChunkIDOrRangeID,
 					p_primaryAndBackupPeers.convertToLong(), NO_BACKUP);
 			Contract.checkNotNull(request);
 			try {
@@ -314,7 +315,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (-1 != backupSuperpeers[0]) {
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
-						request = new InitRangeRequest(backupSuperpeers[i], p_endChunkID,
+						request = new InitRangeRequest(backupSuperpeers[i], p_firstChunkIDOrRangeID,
 								p_primaryAndBackupPeers.convertToLong(), BACKUP);
 						Contract.checkNotNull(request);
 						try {
@@ -858,7 +859,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_stabilizationThread = new Thread(m_worker);
 		Contract.checkNotNull(m_stabilizationThread);
 		m_stabilizationThread
-				.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
+		.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
@@ -1283,7 +1284,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				insertPeer(joiningNode);
 				try {
 					new JoinResponse(p_joinRequest, (short) -1, (short) -1, (short) -1, null, m_superpeers, null, null)
-							.send(m_network);
+					.send(m_network);
 				} catch (final NetworkException e) {
 					// Joining node is not available anymore, ignore request
 				}
@@ -1293,7 +1294,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			superpeer = getResponsibleSuperpeer(joiningNode, NO_CHECK);
 			try {
 				new JoinResponse(p_joinRequest, superpeer, (short) -1, (short) -1, null, null, null, null)
-						.send(m_network);
+				.send(m_network);
 			} catch (final NetworkException e) {
 				// Joining node is not available anymore, ignore request
 			}
@@ -1333,7 +1334,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 */
 	private void incomingInitRangeRequest(final InitRangeRequest p_initRangeRequest) {
 		Locations primaryAndBackupPeers;
-		long startChunkID;
+		long startChunkIDRangeID;
 		short creator;
 		short[] backupSuperpeers;
 		OIDTreeOptimized tree;
@@ -1342,7 +1343,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		LOGGER.trace("Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
 
 		primaryAndBackupPeers = new Locations(p_initRangeRequest.getLocations());
-		startChunkID = p_initRangeRequest.getStartChunkID();
+		startChunkIDRangeID = p_initRangeRequest.getStartChunkIDOrRangeID();
 		creator = primaryAndBackupPeers.getPrimaryPeer();
 		isBackup = p_initRangeRequest.isBackup();
 
@@ -1353,7 +1354,11 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				tree = new OIDTreeOptimized(ORDER);
 				addOIDTree(creator, tree);
 			}
-			tree.initRange(startChunkID, creator, primaryAndBackupPeers.getBackupPeers());
+			if (ChunkID.getCreatorID(startChunkIDRangeID) != -1) {
+				tree.initRange(startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
+			} else {
+				tree.initMigrationRange((int) startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
+			}
 			m_dataLock.unlock();
 
 			m_overlayLock.lock();
@@ -1371,7 +1376,11 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				tree = new OIDTreeOptimized((short) 10);
 				addOIDTree(creator, tree);
 			}
-			tree.initRange(startChunkID, creator, primaryAndBackupPeers.getBackupPeers());
+			if ((startChunkIDRangeID & 0x0000FFFFFFFFFFFFL) != 0) {
+				tree.initRange(startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
+			} else {
+				tree.initMigrationRange((int) startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
+			}
 			m_dataLock.unlock();
 			try {
 				new InitRangeResponse(p_initRangeRequest, null).send(m_network);
@@ -2474,7 +2483,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						tree = getOIDTree(currentPeer);
 						if (null != tree) {
 							System.out
-									.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
+							.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
 							trees.add(tree);
 						}
 						if (index == m_nodeList.size()) {
@@ -2736,7 +2745,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				// Take over failed nodes peers and OIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
 					System.out
-							.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
+					.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndOIDTrees(m_predecessor);
 					promoteOnePeer = true;
 				}
@@ -3407,10 +3416,10 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		 * Creates an instance of Locations
 		 * @param p_primaryPeer
 		 *            the primary peer
-		 * @param p_range
-		 *            the range's beginning and ending
 		 * @param p_backupPeers
 		 *            the backup peers
+		 * @param p_range
+		 *            the range's beginning and ending
 		 */
 		public Locations(final short p_primaryPeer, final short[] p_backupPeers, final long[] p_range) {
 			super();

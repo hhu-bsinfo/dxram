@@ -286,7 +286,7 @@ public final class LogMessages {
 	public static class InitRequest extends AbstractRequest {
 
 		// Attributes
-		private long m_start;
+		private long m_firstChunkIDOrRangeID;
 
 		// Constructors
 		/**
@@ -295,20 +295,20 @@ public final class LogMessages {
 		public InitRequest() {
 			super();
 
-			m_start = 0;
+			m_firstChunkIDOrRangeID = 0;
 		}
 
 		/**
 		 * Creates an instance of InitRequest
 		 * @param p_destination
 		 *            the destination
-		 * @param p_start
+		 * @param p_firstChunkIDOrRangeID
 		 *            the beginning of the range
 		 */
-		public InitRequest(final short p_destination, final long p_start) {
+		public InitRequest(final short p_destination, final long p_firstChunkIDOrRangeID) {
 			super(p_destination, TYPE, SUBTYPE_INIT_REQUEST);
 
-			m_start = p_start;
+			m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
 		}
 
 		// Getters
@@ -316,19 +316,19 @@ public final class LogMessages {
 		 * Get the beginning of the range
 		 * @return the ChunkID
 		 */
-		public final long getStartCID() {
-			return m_start;
+		public final long getFirstCIDOrRangeID() {
+			return m_firstChunkIDOrRangeID;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeLong(p_buffer, m_start);
+			OutputHelper.writeLong(p_buffer, m_firstChunkIDOrRangeID);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_start = InputHelper.readLong(p_buffer);
+			m_firstChunkIDOrRangeID = InputHelper.readLong(p_buffer);
 		}
 
 		@Override

@@ -965,7 +965,7 @@ public final class LookupMessages {
 	public static class InitRangeRequest extends AbstractRequest {
 
 		// Attributes
-		private long m_startChunkID;
+		private long m_startChunkIDOrRangeID;
 		private long m_locations;
 		private boolean m_isBackup;
 
@@ -976,7 +976,7 @@ public final class LookupMessages {
 		public InitRangeRequest() {
 			super();
 
-			m_startChunkID = -1;
+			m_startChunkIDOrRangeID = -1;
 			m_locations = -1;
 			m_isBackup = false;
 		}
@@ -996,7 +996,7 @@ public final class LookupMessages {
 				final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_INIT_RANGE_REQUEST);
 
-			m_startChunkID = p_startChunkID;
+			m_startChunkIDOrRangeID = p_startChunkID;
 			m_locations = p_locations;
 			m_isBackup = p_isBackup;
 		}
@@ -1006,8 +1006,8 @@ public final class LookupMessages {
 		 * Get the last ChunkID
 		 * @return the ID
 		 */
-		public final long getStartChunkID() {
-			return m_startChunkID;
+		public final long getStartChunkIDOrRangeID() {
+			return m_startChunkIDOrRangeID;
 		}
 
 		/**
@@ -1029,14 +1029,14 @@ public final class LookupMessages {
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunkID(p_buffer, m_startChunkID);
+			OutputHelper.writeChunkID(p_buffer, m_startChunkIDOrRangeID);
 			OutputHelper.writeLong(p_buffer, m_locations);
 			OutputHelper.writeBoolean(p_buffer, m_isBackup);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_startChunkID = InputHelper.readChunkID(p_buffer);
+			m_startChunkIDOrRangeID = InputHelper.readChunkID(p_buffer);
 			m_locations = InputHelper.readLong(p_buffer);
 			m_isBackup = InputHelper.readBoolean(p_buffer);
 		}

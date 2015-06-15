@@ -82,15 +82,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	// Attributes
 	private short m_nodeID;
+	private long m_rangeSize;
 
 	private BackupRange m_currentBackupRange;
 	private ArrayList<BackupRange> m_ownBackupRanges;
 
 	private BackupRange m_currentMigrationBackupRange;
 	private ArrayList<BackupRange> m_migrationBackupRanges;
-	private long m_currentRangeID;
 	private MigrationsTree m_migrationsTree;
-	private long m_rangeSize;
 
 	private NetworkInterface m_network;
 	private LookupInterface m_lookup;
@@ -111,10 +110,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		m_nodeID = NodeID.INVALID_ID;
 		m_ownBackupRanges = new ArrayList<BackupRange>();
 		m_migrationBackupRanges = new ArrayList<BackupRange>();
-		m_currentRangeID = 0;
 		m_migrationsTree = new MigrationsTree((short) 10);
 		m_currentBackupRange = null;
-		m_currentMigrationBackupRange = null;
+		m_currentMigrationBackupRange = new BackupRange(-1, null);
 		m_rangeSize = 0;
 
 		m_network = null;
@@ -1089,7 +1087,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (p_lid > -1) {
 					m_currentBackupRange = new BackupRange(p_lid, newBackupPeers);
 				} else {
-					m_currentMigrationBackupRange = new BackupRange(p_lid, newBackupPeers);
+					m_currentMigrationBackupRange =
+							new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
 				}
 			}
 		} else {
@@ -1113,7 +1112,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			if (p_lid > -1) {
 				m_currentBackupRange = new BackupRange(p_lid, newBackupPeers);
 			} else {
-				m_currentMigrationBackupRange = new BackupRange(p_lid, newBackupPeers);
+				m_currentMigrationBackupRange =
+						new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
 			}
 		}
 
@@ -1121,7 +1121,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			m_ownBackupRanges.add(m_currentBackupRange);
 		} else {
 			m_migrationBackupRanges.add(m_currentMigrationBackupRange);
-			m_currentRangeID++;
 		}
 	}
 
@@ -1483,8 +1482,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			MemoryManager.put(chunk);
 			if (!m_migrationsTree.fits(size)) {
 				determineBackupPeers(-1);
+
+				m_lookup.initRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
+						new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_log.initBackupRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
+						m_currentBackupRange.getBackupPeers());
 			}
-			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentRangeID, size);
+			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentMigrationBackupRange.getRangeID(), size);
 			// TODO: Replicate data
 			new DataResponse(p_request).send(m_network);
 		} catch (final DXRAMException e) {
@@ -1510,8 +1514,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			MemoryManager.put(chunk);
 			if (!m_migrationsTree.fits(size)) {
 				determineBackupPeers(-1);
+				// TODO
 			}
-			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentRangeID, size);
+			m_migrationsTree.putObject(chunk.getChunkID(),
+					(int) m_currentMigrationBackupRange.getRangeID(), size);
 			// TODO: Replicate data
 		} catch (final DXRAMException e) {
 			LOGGER.error("ERR::Could not handle request", e);
@@ -1653,6 +1659,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		}
 
 		// Getter
+		/**
+		 * Returns RangeID or first ChunkID
+		 * @return RangeID or first ChunkID
+		 */
+		public long getRangeID() {
+			return m_rangeID;
+		}
+
 		/**
 		 * Get backup peers
 		 * @return the backup peers

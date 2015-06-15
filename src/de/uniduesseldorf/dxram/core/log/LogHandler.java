@@ -239,13 +239,13 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public void initBackupRange(final long p_start, final short[] p_backupPeers) {
+	public void initBackupRange(final long p_firstChunkIDOrRangeID, final short[] p_backupPeers) {
 		InitRequest request;
 		InitResponse response;
 
 		if (null != p_backupPeers) {
 			for (int i = 0; i < p_backupPeers.length; i++) {
-				request = new InitRequest(p_backupPeers[i], p_start);
+				request = new InitRequest(p_backupPeers[i], p_firstChunkIDOrRangeID);
 				Contract.checkNotNull(request);
 				try {
 					request.sendSync(m_network);
@@ -641,25 +641,29 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 *            the InitRequest
 	 */
 	private void incomingInitRequest(final InitRequest p_message) {
-		long start;
+		long firstChunkIDOrRangeID;
 		boolean success = true;
 		LogCatalog cat;
 		SecondaryLogWithSegments secLog;
 
-		start = p_message.getStartCID();
+		firstChunkIDOrRangeID = p_message.getFirstCIDOrRangeID();
 
 		m_secondaryLogCreationLock.lock();
-		cat = m_logCatalogs.get(ChunkID.getCreatorID(start) & 0xFFFF);
+		cat = m_logCatalogs.get(ChunkID.getCreatorID(firstChunkIDOrRangeID) & 0xFFFF);
 		if (cat == null) {
-			cat = new LogCatalog();
-			m_logCatalogs.set(ChunkID.getCreatorID(start) & 0xFFFF, cat);
+			if (ChunkID.getCreatorID(firstChunkIDOrRangeID) != -1) {
+				cat = new LogCatalog();
+				m_logCatalogs.set(ChunkID.getCreatorID(firstChunkIDOrRangeID) & 0xFFFF, cat);
+			} else {
+				// TODO: First logged chunk is a migration
+			}
 		}
 		try {
 			// Create new secondary log
 			secLog = new SecondaryLogWithSegments(SECONDARY_LOG_SIZE, m_secondaryLogsReorgThread,
-					ChunkID.getCreatorID(start));
+					ChunkID.getCreatorID(firstChunkIDOrRangeID));
 			// Insert range in log catalog
-			cat.insertRange(start, secLog);
+			cat.insertRange(firstChunkIDOrRangeID, secLog);
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("ERROR: New range could not be initialized");
 			success = false;

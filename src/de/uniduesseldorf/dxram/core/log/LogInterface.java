@@ -66,12 +66,12 @@ public interface LogInterface extends CoreComponent {
 	// Methods
 	/**
 	 * Initializes a new backup range
-	 * @param p_start
+	 * @param p_firstChunkIDOrRangeID
 	 *            the beginning of the range
 	 * @param p_backupPeers
 	 *            the backup peers
 	 */
-	void initBackupRange(long p_start, short[] p_backupPeers);
+	void initBackupRange(long p_firstChunkIDOrRangeID, short[] p_backupPeers);
 
 	/**
 	 * Creates a new Chunk

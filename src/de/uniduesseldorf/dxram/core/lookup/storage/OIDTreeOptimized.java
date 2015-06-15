@@ -31,7 +31,8 @@ public final class OIDTreeOptimized implements Serializable {
 	private short m_creator;
 	private boolean m_status;
 
-	private ArrayList<long[]> m_backupNodes;
+	private ArrayList<long[]> m_backupRanges;
+	private ArrayList<Long> m_migrationBackupRanges;
 
 	private Entry m_changedEntry;
 
@@ -54,7 +55,8 @@ public final class OIDTreeOptimized implements Serializable {
 		m_creator = -1;
 		m_status = true;
 
-		m_backupNodes = new ArrayList<long[]>();
+		m_backupRanges = new ArrayList<long[]>();
+		m_migrationBackupRanges = new ArrayList<Long>();
 
 		m_changedEntry = null;
 	}
@@ -168,8 +170,27 @@ public final class OIDTreeOptimized implements Serializable {
 			}
 			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
 					+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
-			m_backupNodes.add(new long[] {p_startID, backupPeers});
+			m_backupRanges.add(new long[] {p_startID, backupPeers});
 		}
+		return true;
+	}
+
+	/**
+	 * Initializes a range for migrated chunks
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @param p_creator
+	 *            the creator
+	 * @param p_backupPeers
+	 *            the backup peers
+	 * @return true if insertion was successful
+	 */
+	public boolean initMigrationRange(final int p_rangeID, final short p_creator,
+			final short[] p_backupPeers) {
+
+		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
+				+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF));
+
 		return true;
 	}
 
@@ -242,9 +263,9 @@ public final class OIDTreeOptimized implements Serializable {
 		long result;
 
 		if (m_root != null) {
-			for (int i = m_backupNodes.size() - 1; i >= 0; i--) {
-				if (m_backupNodes.get(i)[0] <= ChunkID.getLocalID(p_chunkID)) {
-					tempResult = m_backupNodes.get(i)[1];
+			for (int i = m_backupRanges.size() - 1; i >= 0; i--) {
+				if (m_backupRanges.get(i)[0] <= ChunkID.getLocalID(p_chunkID)) {
+					tempResult = m_backupRanges.get(i)[1];
 				}
 			}
 
@@ -346,7 +367,7 @@ public final class OIDTreeOptimized implements Serializable {
 	 * @return an ArrayList with all backup peers
 	 */
 	public ArrayList<long[]> getAllBackupRanges() {
-		return m_backupNodes;
+		return m_backupRanges;
 	}
 
 	/**
@@ -361,8 +382,8 @@ public final class OIDTreeOptimized implements Serializable {
 		short[] backupPeers;
 		long[] element;
 
-		for (int i = 0; i < m_backupNodes.size(); i++) {
-			element = m_backupNodes.get(i);
+		for (int i = 0; i < m_backupRanges.size(); i++) {
+			element = m_backupRanges.get(i);
 			backupNodes = element[1];
 			backupPeers = new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16),
 					(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
@@ -1353,16 +1374,16 @@ public final class OIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_lid) {
-					low = mid + 1;
-				} else if (midVal > p_lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_lid) {
+				low = mid + 1;
+			} else if (midVal > p_lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1552,16 +1573,16 @@ public final class OIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLid(0);
+			midVal = m_children[mid].getLid(0);
 
-				if (midVal < lid) {
-					low = mid + 1;
-				} else if (midVal > lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < lid) {
+				low = mid + 1;
+			} else if (midVal > lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

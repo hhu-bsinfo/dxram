@@ -145,10 +145,10 @@ public final class CachedTreeLookup implements LookupInterface {
 	}
 
 	@Override
-	public void initRange(final long p_endChunkID, final Locations p_locations) throws LookupException {
-		ChunkID.check(p_endChunkID);
+	public void initRange(final long p_firstChunkID, final Locations p_locations) throws LookupException {
+		ChunkID.check(p_firstChunkID);
 
-		m_lookup.initRange(p_endChunkID, p_locations);
+		m_lookup.initRange(p_firstChunkID, p_locations);
 	}
 
 	@Override

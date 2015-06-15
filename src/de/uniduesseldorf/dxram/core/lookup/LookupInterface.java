@@ -83,14 +83,14 @@ public interface LookupInterface extends CoreComponent {
 
 	/**
 	 * Initializes the given ID range in OIDTree
-	 * @param p_endChunkID
+	 * @param p_firstChunkIDOrRangeID
 	 *            the last ID
 	 * @param p_locations
 	 *            the NodeID of creator and backup nodes
 	 * @throws LookupException
 	 *             if the initialization could not be executed
 	 */
-	void initRange(long p_endChunkID, Locations p_locations) throws LookupException;
+	void initRange(long p_firstChunkIDOrRangeID, Locations p_locations) throws LookupException;
 
 	/**
 	 * Remove the corresponding NodeID for the given ID
