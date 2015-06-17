@@ -21,7 +21,7 @@ public final class LogCatalog {
 
 	private ArrayList<SecondaryLogWithSegments> m_migrationLogs;
 	private ArrayList<SecondaryLogBuffer> m_migrationBuffers;
-	private ArrayList<Long> m_migrationBackupRanges;
+	private int m_currentRangeID;
 
 	// Constructors
 	/**
@@ -34,7 +34,7 @@ public final class LogCatalog {
 
 		m_migrationLogs = new ArrayList<SecondaryLogWithSegments>();
 		m_migrationBuffers = new ArrayList<SecondaryLogBuffer>();
-		m_migrationBackupRanges = new ArrayList<Long>();
+		m_currentRangeID = 0;
 	}
 
 	// Getter
@@ -148,15 +148,15 @@ public final class LogCatalog {
 			// Insert range
 			m_creatorBackupRanges.add(ChunkID.getLocalID(p_firstChunkIDOrRangeID));
 		} else {
-			rangeID = m_migrationBackupRanges.size();
-			m_migrationLogs.add(rangeID, p_log);
+			m_migrationLogs.add(m_currentRangeID, p_log);
 
 			// Create new secondary log buffer
 			buffer = new SecondaryLogBuffer(p_log);
-			m_migrationBuffers.add(rangeID, buffer);
+			m_migrationBuffers.add(m_currentRangeID, buffer);
 
 			// Insert range
 			m_creatorBackupRanges.add(ChunkID.getLocalID(p_firstChunkIDOrRangeID));
+			m_currentRangeID++;
 		}
 	}
 

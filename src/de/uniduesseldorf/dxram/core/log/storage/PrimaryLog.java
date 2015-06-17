@@ -172,10 +172,14 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 						+ LogHandler.LOG_HEADER_LEN_SIZE) {
 					// Determine header of next log entry
 					logEntrySize = logHeaderSize
-							+ getLengthOfLogEntry(p_buffer, bufferOffset
-									+ offset, true);
-					rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, bufferOffset
-							+ offset));
+							+ getLengthOfLogEntry(p_buffer, bufferOffset + offset, true);
+
+					// Get RangeID: If RangeID is set (!= -1) this Chunk was migrated
+					rangeID = getRangeIDOfLogEntry(p_buffer, bufferOffset + offset);
+					if (rangeID == -1) {
+						rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, bufferOffset
+								+ offset));
+					}
 
 					bufferNode = map.get(rangeID);
 					bufferNode.appendToBuffer(p_buffer, bufferOffset + offset,
@@ -184,10 +188,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					offset += logEntrySize;
 				} else if (bytesUntilEnd <= 0) {
 					// Buffer overflow -> header is near the beginning
-					logEntrySize = logHeaderSize
-							+ getLengthOfLogEntry(p_buffer, -bytesUntilEnd,
-									true);
-					rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, -bytesUntilEnd));
+					logEntrySize = logHeaderSize + getLengthOfLogEntry(p_buffer, -bytesUntilEnd, true);
+					rangeID = getRangeIDOfLogEntry(p_buffer, -bytesUntilEnd);
+					if (rangeID == -1) {
+						rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, -bytesUntilEnd));
+					}
 
 					bufferNode = map.get(rangeID);
 					bufferNode.appendToBuffer(p_buffer, -bytesUntilEnd,
@@ -205,7 +210,10 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 							logHeaderSize - bytesUntilEnd);
 					logEntrySize = logHeaderSize
 							+ getLengthOfLogEntry(header, 0, true);
-					rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(header, 0));
+					rangeID = getRangeIDOfLogEntry(header, 0);
+					if (rangeID == -1) {
+						rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(header, 0));
+					}
 
 					bufferNode = map.get(rangeID);
 					bufferNode.appendToBuffer(p_buffer, bufferOffset + offset,
@@ -669,7 +677,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					index = i;
 					break;
 				} else if (LogHandler.SEGMENT_SIZE
-						- m_writtenBytesPerSegment[i] <= LogHandler.SECONDARY_HEADER_SIZE) {
+						- m_writtenBytesPerSegment[i] <= LogHandler.SECONDARY_CREATOR_HEADER_SIZE) {
 					m_filledSegments[i] = true;
 					for (int j = m_startIndex; j <= m_currentSegment; j++) {
 						if (m_filledSegments[j]) {

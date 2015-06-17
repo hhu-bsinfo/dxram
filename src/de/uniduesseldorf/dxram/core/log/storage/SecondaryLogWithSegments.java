@@ -177,7 +177,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					m_segmentHeaders[segment] = header;
 					writeToLog(p_data, p_offset, (long) segment
 							* LogHandler.SEGMENT_SIZE, length, true);
-					if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
+					if (header.getFreeBytes() > LogHandler.SECONDARY_CREATOR_HEADER_SIZE) {
 						m_partlyUsedSegments.add(segment);
 					}
 					m_activeSegment = header;
@@ -198,7 +198,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						offset = p_length - length + p_offset;
 						writeToLog(p_data, offset, (long) segment
 								* LogHandler.SEGMENT_SIZE, length, false);
-						if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
+						if (header.getFreeBytes() > LogHandler.SECONDARY_CREATOR_HEADER_SIZE) {
 							m_partlyUsedSegments.add(segment);
 						}
 						length = 0;
@@ -217,7 +217,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 							offset = p_length - length + p_offset;
 							rangeSize = 0;
 							while (length - rangeSize > 0) {
-								logEntrySize = LogHandler.SECONDARY_HEADER_SIZE
+								logEntrySize = LogHandler.SECONDARY_CREATOR_HEADER_SIZE
 										+ getLengthOfLogEntry(p_data, offset
 												+ rangeSize, false);
 								if (header.getFreeBytes() - rangeSize > logEntrySize) {
@@ -234,7 +234,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 								length -= rangeSize;
 								offset += rangeSize;
 							}
-							if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
+							if (header.getFreeBytes() > LogHandler.SECONDARY_CREATOR_HEADER_SIZE) {
 								m_partlyUsedSegments.addFirst(segment);
 							}
 						}
@@ -249,7 +249,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 							offset = p_length - length + p_offset;
 							writeToLog(p_data, offset, (long) segment
 									* LogHandler.SEGMENT_SIZE, length, false);
-							if (header.getFreeBytes() > LogHandler.SECONDARY_HEADER_SIZE) {
+							if (header.getFreeBytes() > LogHandler.SECONDARY_CREATOR_HEADER_SIZE) {
 								m_partlyUsedSegments.add(segment);
 							}
 							length = 0;
@@ -388,7 +388,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		markLogEntryAsInvalid(p_buffer, p_bufferOffset);
 
 		m_segmentHeaders[p_segmentIndex]
-				.updateDeletedBytes(LogHandler.SECONDARY_HEADER_SIZE
+				.updateDeletedBytes(LogHandler.SECONDARY_CREATOR_HEADER_SIZE
 						+ getLengthOfLogEntry(p_buffer, p_bufferOffset, false));
 	}
 
@@ -784,7 +784,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				// TODO: Remove all old versions in segment if a tombstone appears?
 				// TODO: Remove object if there is a newer version in this segment?
 				while (readBytes < segmentData.length) {
-					length = LogHandler.SECONDARY_HEADER_SIZE
+					length = LogHandler.SECONDARY_CREATOR_HEADER_SIZE
 							+ getLengthOfLogEntry(segmentData, readBytes, false);
 					localID = getLIDOfLogEntry(segmentData, readBytes, false);
 
@@ -893,7 +893,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						// -1 (^= deleted)
 						p_hashtable.putMax(getLIDOfLogEntry(segment, readBytes, false),
 								getVersionOfLogEntry(segment, readBytes, false));
-						readBytes += LogHandler.SECONDARY_HEADER_SIZE
+						readBytes += LogHandler.SECONDARY_CREATOR_HEADER_SIZE
 								+ getLengthOfLogEntry(segment, readBytes, false);
 					}
 				}
@@ -920,7 +920,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 									i * LogHandler.SEGMENT_SIZE + readBytes, i);
 							wasUpdated = true;
 						}
-						readBytes += LogHandler.SECONDARY_HEADER_SIZE
+						readBytes += LogHandler.SECONDARY_CREATOR_HEADER_SIZE
 								+ getLengthOfLogEntry(segment, readBytes, false);
 					}
 					if (wasUpdated) {

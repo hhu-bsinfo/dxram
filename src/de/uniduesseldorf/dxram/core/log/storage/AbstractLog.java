@@ -557,6 +557,30 @@ public abstract class AbstractLog {
 		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(chunkID), ChunkID.getLocalID(chunkID));
 		putLengthInLogEntryHeader(result, p_chunk.getSize());
 		putVersionInLogEntryHeader(result, p_chunk.getVersion());
+		putRangeIDInLogEntryHeader(result, -1);
+		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
+
+		return result;
+	}
+
+	/**
+	 * Generates a log entry with filled-in header but without any payload
+	 * @param p_chunk
+	 *            the Chunk
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @return the log entry
+	 */
+	public static byte[] createPrimaryLogEntryHeader(final Chunk p_chunk, final int p_rangeID) {
+		byte[] result;
+		long chunkID;
+
+		result = new byte[LogHandler.PRIMARY_HEADER_SIZE];
+		chunkID = p_chunk.getChunkID();
+		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(chunkID), ChunkID.getLocalID(chunkID));
+		putLengthInLogEntryHeader(result, p_chunk.getSize());
+		putVersionInLogEntryHeader(result, p_chunk.getVersion());
+		putRangeIDInLogEntryHeader(result, p_rangeID);
 		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
 
 		return result;
@@ -575,6 +599,7 @@ public abstract class AbstractLog {
 		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(p_chunkID), ChunkID.getLocalID(p_chunkID));
 		putLengthInLogEntryHeader(result, 0);
 		putVersionInLogEntryHeader(result, -1);
+		putRangeIDInLogEntryHeader(result, -1);
 		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
 
 		return result;
@@ -645,6 +670,21 @@ public abstract class AbstractLog {
 
 		for (int i = 0; i < LogHandler.LOG_HEADER_VER_SIZE; i++) {
 			p_logEntry[offset + i] = (byte) (p_version >> (i * 8));
+		}
+	}
+
+	/**
+	 * Puts RangeID of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_rangeID
+	 *            the RangeID
+	 */
+	public static void putRangeIDInLogEntryHeader(final byte[] p_logEntry, final int p_rangeID) {
+		final int offset = LogHandler.PRIMARY_HEADER_VER_OFFSET;
+
+		for (int i = 0; i < LogHandler.LOG_HEADER_VER_SIZE; i++) {
+			p_logEntry[offset + i] = (byte) (p_rangeID >> (i * 8));
 		}
 	}
 
@@ -749,6 +789,21 @@ public abstract class AbstractLog {
 	}
 
 	/**
+	 * Returns version of a log entry
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @return the version
+	 */
+	public static int getRangeIDOfLogEntry(final byte[] p_buffer, final int p_offset) {
+		final int offset = p_offset + LogHandler.PRIMARY_HEADER_RID_OFFSET;
+
+		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
+				+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
+	}
+
+	/**
 	 * Returns the checksum of a log entry's payload
 	 * @param p_buffer
 	 *            buffer with log entries
@@ -761,7 +816,7 @@ public abstract class AbstractLog {
 	public static long getChecksumOfPayload(final byte[] p_buffer, final int p_offset, final boolean p_primary) {
 		int offset = p_offset + LogHandler.PRIMARY_HEADER_CRC_OFFSET;
 		if (!p_primary) {
-			offset -= LogHandler.LOG_HEADER_NID_SIZE;
+			offset = offset - (LogHandler.LOG_HEADER_NID_SIZE + LogHandler.LOG_HEADER_RID_SIZE);
 		}
 
 		return (long) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)

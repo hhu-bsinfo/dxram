@@ -77,11 +77,13 @@ public interface LogInterface extends CoreComponent {
 	 * Creates a new Chunk
 	 * @param p_chunk
 	 *            the chunk
+	 * @param p_rangeID
+	 *            the RangeID
 	 * @return number of successfully written bytes
 	 * @throws DXRAMException
 	 *             if the Chunk could not be logged
 	 */
-	long logChunk(Chunk p_chunk) throws DXRAMException;
+	long logChunk(Chunk p_chunk, int p_rangeID) throws DXRAMException;
 
 	/**
 	 * Creates a new Chunk

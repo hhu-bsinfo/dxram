@@ -118,7 +118,13 @@ public final class SecondaryLogBuffer {
 			// Determine header of next log entry
 			logEntrySize = LogHandler.PRIMARY_HEADER_SIZE
 					+ SecondaryLog.getLengthOfLogEntry(p_buffer, oldBufferOffset, true);
-			System.arraycopy(p_buffer, oldBufferOffset + nidSize, buffer, newBufferOffset, logEntrySize - nidSize);
+			// System.arraycopy(p_buffer, oldBufferOffset + nidSize, buffer, newBufferOffset, logEntrySize - nidSize);
+
+			// Copy primary log header, but skip NodeID and RangeID
+			System.arraycopy(p_buffer, oldBufferOffset + nidSize, buffer, newBufferOffset,
+					LogHandler.PRIMARY_HEADER_RID_OFFSET - nidSize);
+			System.arraycopy(p_buffer, oldBufferOffset + LogHandler.PRIMARY_HEADER_RID_OFFSET, buffer, newBufferOffset,
+					LogHandler.LOG_HEADER_CRC_SIZE + logEntrySize - LogHandler.PRIMARY_HEADER_SIZE);
 
 			oldBufferOffset += logEntrySize;
 			newBufferOffset += logEntrySize - nidSize;

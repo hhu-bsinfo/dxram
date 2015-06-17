@@ -169,6 +169,7 @@ public final class LogMessages {
 
 		// Attributes
 		private Chunk m_chunk;
+		private int m_rangeID;
 
 		// Constructors
 		/**
@@ -178,6 +179,7 @@ public final class LogMessages {
 			super();
 
 			m_chunk = null;
+			m_rangeID = -1;
 		}
 
 		/**
@@ -195,6 +197,24 @@ public final class LogMessages {
 			m_chunk = p_chunk;
 		}
 
+		/**
+		 * Creates an instance of LogMessage
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunk
+		 *            the Chunk to store
+		 * @param p_rangeID
+		 *            the RangeID
+		 */
+		public LogMessage(final short p_destination, final Chunk p_chunk, final int p_rangeID) {
+			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
+
+			Contract.checkNotNull(p_chunk, "no chunk given");
+
+			m_chunk = p_chunk;
+			m_rangeID = p_rangeID;
+		}
+
 		// Getters
 		/**
 		 * Get the Chunk to store
@@ -204,20 +224,31 @@ public final class LogMessages {
 			return m_chunk;
 		}
 
+		/**
+		 * Get the RangeID
+		 * @return the RangeID
+		 */
+		public final int getRangeID() {
+			return m_rangeID;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunk(p_buffer, m_chunk);
+			OutputHelper.writeInt(p_buffer, m_rangeID);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunk = InputHelper.readChunk(p_buffer);
+			m_rangeID = InputHelper.readInt(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
+			return OutputHelper.getChunkWriteLength(m_chunk)
+					+ OutputHelper.getIntWriteLength();
 		}
 	}
 

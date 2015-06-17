@@ -1255,8 +1255,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *             if there is no fitting chunk
 	 */
 	private void
-			deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index)
-					throws DXRAMException {
+	deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index)
+			throws DXRAMException {
 		int size;
 		byte[] data1;
 		byte[] data2;
@@ -1474,6 +1474,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	private void incomingDataRequest(final DataRequest p_request) {
 		long size;
 		Chunk chunk;
+		short[] backupPeers;
 
 		chunk = p_request.getChunk();
 		size = chunk.getSize() + m_log.getHeaderSize();
@@ -1489,7 +1490,17 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						m_currentBackupRange.getBackupPeers());
 			}
 			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentMigrationBackupRange.getRangeID(), size);
-			// TODO: Replicate data
+
+			backupPeers = m_currentMigrationBackupRange.getBackupPeers();
+			if (backupPeers != null) {
+				for (int i = 0; i < backupPeers.length; i++) {
+					if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+						new LogMessage(backupPeers[i], chunk, (int) m_currentMigrationBackupRange.getRangeID())
+						.send(m_network);
+					}
+				}
+			}
+
 			new DataResponse(p_request).send(m_network);
 		} catch (final DXRAMException e) {
 			LOGGER.error("ERR::Could not handle request", e);
@@ -1506,6 +1517,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	private void incomingDataMessage(final DataMessage p_message) {
 		long size;
 		Chunk chunk;
+		short[] backupPeers;
 
 		chunk = p_message.getChunk();
 		size = chunk.getSize() + m_log.getHeaderSize();
@@ -1514,11 +1526,23 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			MemoryManager.put(chunk);
 			if (!m_migrationsTree.fits(size)) {
 				determineBackupPeers(-1);
-				// TODO
+
+				m_lookup.initRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
+						new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_log.initBackupRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
+						m_currentBackupRange.getBackupPeers());
 			}
-			m_migrationsTree.putObject(chunk.getChunkID(),
-					(int) m_currentMigrationBackupRange.getRangeID(), size);
-			// TODO: Replicate data
+			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentMigrationBackupRange.getRangeID(), size);
+
+			backupPeers = m_currentMigrationBackupRange.getBackupPeers();
+			if (backupPeers != null) {
+				for (int i = 0; i < backupPeers.length; i++) {
+					if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+						new LogMessage(backupPeers[i], chunk, (int) m_currentMigrationBackupRange.getRangeID())
+						.send(m_network);
+					}
+				}
+			}
 		} catch (final DXRAMException e) {
 			LOGGER.error("ERR::Could not handle request", e);
 
