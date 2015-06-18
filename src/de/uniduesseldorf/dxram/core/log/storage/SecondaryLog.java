@@ -56,7 +56,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 			InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_"
 				+ LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
-				+ LogHandler.SECLOG_POSTFIX_FILENAME), LogHandler.SECONDARY_LOG_SIZE, LogHandler.SECLOG_HEADER_SIZE);
+				+ LogHandler.SECLOG_POSTFIX_FILENAME), LogHandler.SECLOG_SIZE, LogHandler.SECLOG_MAGIC_HEADER_SIZE);
 
 		m_totalUsableSpace = super.getTotalUsableSpace();
 		m_secondaryLogLock = new ReentrantLock();
@@ -66,7 +66,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 		m_thresholdReachedCondition = p_thresholdReachedCondition;
 
 		m_secondaryLogReorgThreshold = (int)
-				(LogHandler.SECONDARY_LOG_SIZE * (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
+				(LogHandler.SECLOG_SIZE * (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
 
 		createLogAndWriteHeader();
 	}
@@ -93,8 +93,8 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 			final short p_nodeID) throws IOException, InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_"
 				+ LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
-				+ LogHandler.SECLOG_POSTFIX_FILENAME), p_secLogSize, LogHandler.SECLOG_HEADER_SIZE);
-		if (p_secLogSize < LogHandler.SECONDARY_LOG_MIN_SIZE) {
+				+ LogHandler.SECLOG_POSTFIX_FILENAME), p_secLogSize, LogHandler.SECLOG_MAGIC_HEADER_SIZE);
+		if (p_secLogSize < LogHandler.SECLOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
 		}
 
@@ -191,19 +191,19 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 			logData = readAllWithoutReadPtrSet(false);
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
-				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {
+				while (offset + LogHandler.PRIMLOG_ENTRY_HEADER_SIZE < logData[i].length) {
 					// Determine header of next log entry
 					chunkID = getChunkIDOfLogEntry(logData[i], offset);
 					payloadSize = getLengthOfLogEntry(logData[i], offset, false);
 					checksum = getChecksumOfPayload(logData[i], offset, false);
-					logEntrySize = LogHandler.PRIMARY_HEADER_SIZE + payloadSize;
+					logEntrySize = LogHandler.PRIMLOG_ENTRY_HEADER_SIZE + payloadSize;
 
-					if (logEntrySize > LogHandler.MIN_LOG_ENTRY_SIZE) {
+					if (logEntrySize > LogHandler.SECLOG_ENTRY_HEADER_SIZE) {
 						// Read payload and create chunk
 						if (offset + logEntrySize <= logData[i].length) {
 							// Create chunk only if log entry complete
 							payload = new byte[payloadSize];
-							System.arraycopy(logData[i], offset + LogHandler.PRIMARY_HEADER_SIZE,
+							System.arraycopy(logData[i], offset + LogHandler.PRIMLOG_ENTRY_HEADER_SIZE,
 									payload, 0, payloadSize);
 							if (p_doCRCCheck) {
 								if (calculateChecksumOfPayload(payload) != checksum) {
@@ -260,21 +260,21 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 			logData = readAllWithoutReadPtrSet(false);
 			while (logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
-				while (offset + LogHandler.PRIMARY_HEADER_SIZE < logData[i].length) {
+				while (offset + LogHandler.PRIMLOG_ENTRY_HEADER_SIZE < logData[i].length) {
 					// Determine header of next log entry
 					payloadSize = getLengthOfLogEntry(logData[i], offset, false);
-					logEntrySize = LogHandler.PRIMARY_HEADER_SIZE + payloadSize;
+					logEntrySize = LogHandler.PRIMLOG_ENTRY_HEADER_SIZE + payloadSize;
 					chunkID = getChunkIDOfLogEntry(logData[i], offset);
 					lid = ChunkID.getLocalID(chunkID);
 					if (lid >= p_low || lid <= p_high) {
 						checksum = getChecksumOfPayload(logData[i], offset, false);
 
-						if (logEntrySize > LogHandler.MIN_LOG_ENTRY_SIZE) {
+						if (logEntrySize > LogHandler.SECLOG_ENTRY_HEADER_SIZE) {
 							// Read payload and create chunk
 							if (offset + logEntrySize <= logData[i].length) {
 								// Create chunk only if log entry complete
 								payload = new byte[payloadSize];
-								System.arraycopy(logData[i], offset + LogHandler.PRIMARY_HEADER_SIZE,
+								System.arraycopy(logData[i], offset + LogHandler.PRIMLOG_ENTRY_HEADER_SIZE,
 										payload, 0, payloadSize);
 								if (p_doCRCCheck) {
 									if (calculateChecksumOfPayload(payload) != checksum) {

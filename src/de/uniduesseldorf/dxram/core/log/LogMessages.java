@@ -169,7 +169,7 @@ public final class LogMessages {
 
 		// Attributes
 		private Chunk m_chunk;
-		private int m_rangeID;
+		private byte m_rangeID;
 
 		// Constructors
 		/**
@@ -206,7 +206,7 @@ public final class LogMessages {
 		 * @param p_rangeID
 		 *            the RangeID
 		 */
-		public LogMessage(final short p_destination, final Chunk p_chunk, final int p_rangeID) {
+		public LogMessage(final short p_destination, final Chunk p_chunk, final byte p_rangeID) {
 			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
 
 			Contract.checkNotNull(p_chunk, "no chunk given");
@@ -228,7 +228,7 @@ public final class LogMessages {
 		 * Get the RangeID
 		 * @return the RangeID
 		 */
-		public final int getRangeID() {
+		public final byte getRangeID() {
 			return m_rangeID;
 		}
 
@@ -236,19 +236,19 @@ public final class LogMessages {
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunk(p_buffer, m_chunk);
-			OutputHelper.writeInt(p_buffer, m_rangeID);
+			OutputHelper.writeByte(p_buffer, m_rangeID);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunk = InputHelper.readChunk(p_buffer);
-			m_rangeID = InputHelper.readInt(p_buffer);
+			m_rangeID = InputHelper.readByte(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getChunkWriteLength(m_chunk)
-					+ OutputHelper.getIntWriteLength();
+					+ OutputHelper.getByteWriteLength();
 		}
 	}
 
@@ -318,6 +318,7 @@ public final class LogMessages {
 
 		// Attributes
 		private long m_firstChunkIDOrRangeID;
+		private short m_owner;
 
 		// Constructors
 		/**
@@ -327,6 +328,7 @@ public final class LogMessages {
 			super();
 
 			m_firstChunkIDOrRangeID = 0;
+			m_owner = -1;
 		}
 
 		/**
@@ -335,11 +337,14 @@ public final class LogMessages {
 		 *            the destination
 		 * @param p_firstChunkIDOrRangeID
 		 *            the beginning of the range
+		 * @param p_owner
+		 *            the current owner
 		 */
-		public InitRequest(final short p_destination, final long p_firstChunkIDOrRangeID) {
+		public InitRequest(final short p_destination, final long p_firstChunkIDOrRangeID, final short p_owner) {
 			super(p_destination, TYPE, SUBTYPE_INIT_REQUEST);
 
 			m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
+			m_owner = p_owner;
 		}
 
 		// Getters
@@ -351,20 +356,30 @@ public final class LogMessages {
 			return m_firstChunkIDOrRangeID;
 		}
 
+		/**
+		 * Get the current owner
+		 * @return the current owner
+		 */
+		public final short getOwner() {
+			return m_owner;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeLong(p_buffer, m_firstChunkIDOrRangeID);
+			OutputHelper.writeShort(p_buffer, m_owner);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_firstChunkIDOrRangeID = InputHelper.readLong(p_buffer);
+			m_owner = InputHelper.readShort(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getLongWriteLength();
+			return OutputHelper.getLongWriteLength() + OutputHelper.getShortWriteLength();
 		}
 	}
 

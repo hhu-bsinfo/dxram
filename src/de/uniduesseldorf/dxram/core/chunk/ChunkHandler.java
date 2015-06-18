@@ -974,7 +974,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				}
 			}
 		} else {
-			ret = m_migrationBackupRanges.get((int) m_migrationsTree.getBackupRange(p_chunkID)).getBackupPeers();
+			ret = m_migrationBackupRanges.get(m_migrationsTree.getBackupRange(p_chunkID)).getBackupPeers();
 		}
 
 		return ret;
@@ -1090,6 +1090,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					m_currentMigrationBackupRange =
 							new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
 				}
+			} else {
+				if (p_lid > -1) {
+					m_currentBackupRange = new BackupRange(p_lid, null);
+				} else {
+					m_currentMigrationBackupRange =
+							new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, null);
+				}
 			}
 		} else {
 			// Determine backup peers
@@ -1117,10 +1124,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			}
 		}
 
-		if (p_lid > -1) {
-			m_ownBackupRanges.add(m_currentBackupRange);
-		} else {
-			m_migrationBackupRanges.add(m_currentMigrationBackupRange);
+		if (numberOfPeers > 0) {
+			if (p_lid > -1) {
+				m_ownBackupRanges.add(m_currentBackupRange);
+			} else {
+				m_migrationBackupRanges.add(m_currentMigrationBackupRange);
+			}
 		}
 	}
 
@@ -1489,13 +1498,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				m_log.initBackupRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
 						m_currentBackupRange.getBackupPeers());
 			}
-			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentMigrationBackupRange.getRangeID(), size);
+			m_migrationsTree.putObject(chunk.getChunkID(), (byte) m_currentMigrationBackupRange.getRangeID(), size);
 
 			backupPeers = m_currentMigrationBackupRange.getBackupPeers();
 			if (backupPeers != null) {
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-						new LogMessage(backupPeers[i], chunk, (int) m_currentMigrationBackupRange.getRangeID())
+						new LogMessage(backupPeers[i], chunk, (byte) m_currentMigrationBackupRange.getRangeID())
 						.send(m_network);
 					}
 				}
@@ -1532,13 +1541,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				m_log.initBackupRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
 						m_currentBackupRange.getBackupPeers());
 			}
-			m_migrationsTree.putObject(chunk.getChunkID(), (int) m_currentMigrationBackupRange.getRangeID(), size);
+			m_migrationsTree.putObject(chunk.getChunkID(), (byte) m_currentMigrationBackupRange.getRangeID(), size);
 
 			backupPeers = m_currentMigrationBackupRange.getBackupPeers();
 			if (backupPeers != null) {
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-						new LogMessage(backupPeers[i], chunk, (int) m_currentMigrationBackupRange.getRangeID())
+						new LogMessage(backupPeers[i], chunk, (byte) m_currentMigrationBackupRange.getRangeID())
 						.send(m_network);
 					}
 				}
@@ -1650,33 +1659,33 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	public static final class BackupRange {
 
 		// Attributes
-		private long m_rangeID;
+		private long m_firstChunkIDORRangeID;
 		private short[] m_backupPeers;
 
 		// Constructors
 		/**
 		 * Creates an instance of Locations
-		 * @param p_rangeID
+		 * @param p_firstChunkIDORRangeID
 		 *            the RangeID or the first ChunkID
 		 * @param p_backupPeers
 		 *            the backup peers
 		 */
-		public BackupRange(final long p_rangeID, final short[] p_backupPeers) {
+		public BackupRange(final long p_firstChunkIDORRangeID, final short[] p_backupPeers) {
 			super();
 
-			m_rangeID = p_rangeID;
+			m_firstChunkIDORRangeID = p_firstChunkIDORRangeID;
 			m_backupPeers = p_backupPeers;
 		}
 
 		/**
 		 * Creates an instance of Locations
-		 * @param p_rangeID
+		 * @param p_firstChunkIDORRangeID
 		 *            the RangeID or the first ChunkID
 		 * @param p_backupPeers
 		 *            the locations in long representation
 		 */
-		public BackupRange(final long p_rangeID, final long p_backupPeers) {
-			this(p_rangeID, new short[] {
+		public BackupRange(final long p_firstChunkIDORRangeID, final long p_backupPeers) {
+			this(p_firstChunkIDORRangeID, new short[] {
 					(short) ((p_backupPeers & 0x00000000FFFF0000L) >> 16),
 					(short) ((p_backupPeers & 0x0000FFFF00000000L) >> 32),
 					(short) ((p_backupPeers & 0xFFFF000000000000L) >> 48)});
@@ -1688,7 +1697,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		 * @return RangeID or first ChunkID
 		 */
 		public long getRangeID() {
-			return m_rangeID;
+			return m_firstChunkIDORRangeID;
 		}
 
 		/**
@@ -1733,7 +1742,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		public String toString() {
 			String ret;
 
-			ret = "" + m_rangeID;
+			ret = "" + m_firstChunkIDORRangeID;
 			if (null != m_backupPeers) {
 				if (m_backupPeers.length == 3) {
 					ret = "[" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", " + m_backupPeers[2] + "]";

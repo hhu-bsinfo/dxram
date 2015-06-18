@@ -43,8 +43,8 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N"
 				+ NodeID.getLocalNodeID() + "_"
-				+ LogHandler.PRIMARYLOG_FILENAME), p_primaryLogSize,
-				LogHandler.PRIMLOG_HEADER_SIZE);
+				+ LogHandler.PRIMLOG_FILENAME), p_primaryLogSize,
+				LogHandler.PRIMLOG_MAGIC_HEADER_SIZE);
 
 		try {
 			m_logHandler = CoreComponentFactory.getLogInterface();
@@ -52,7 +52,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			System.out.println("Could not get log interface");
 		}
 
-		if (p_primaryLogSize < LogHandler.PRIMARY_LOG_MIN_SIZE) {
+		if (p_primaryLogSize < LogHandler.PRIMLOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Primary log too small");
 		}
 
@@ -105,7 +105,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	private int bufferAndStoreSegmentsHashSort(final byte[] p_buffer,
 			final int p_offset, final int p_length, final Set<Entry<Long, Integer>> p_lengthByBackupRange)
 			throws InterruptedException, IOException {
-		final int logHeaderSize = LogHandler.PRIMARY_HEADER_SIZE;
+		final int logHeaderSize = LogHandler.PRIMLOG_ENTRY_HEADER_SIZE;
 		int i = 0;
 		int offset = 0;
 		int bufferOffset = p_offset;
@@ -153,7 +153,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					primaryLogBufferSize += length;
 					nidOffset = 0;
 				} else {
-					nidOffset = LogHandler.LOG_HEADER_NID_SIZE;
+					nidOffset = LogHandler.LOG_ENTRY_NID_SIZE;
 				}
 				bufferNode = new BufferSegmentsNode(nidOffset, length);
 				map.put(rangeID, bufferNode);
@@ -168,8 +168,8 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				 * Offset pointer is already in next iteration 3. Log entry must
 				 * be split over two iterations
 				 */
-				if (bytesUntilEnd > LogHandler.PRIMARY_HEADER_LEN_OFFSET
-						+ LogHandler.LOG_HEADER_LEN_SIZE) {
+				if (bytesUntilEnd > LogHandler.PRIMLOG_ENTRY_LEN_OFFSET
+						+ LogHandler.LOG_ENTRY_LEN_SIZE) {
 					// Determine header of next log entry
 					logEntrySize = logHeaderSize
 							+ getLengthOfLogEntry(p_buffer, bufferOffset + offset, true);
@@ -606,7 +606,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		public BufferSegmentsNode(final int p_nidOffset, final int p_length) {
 			m_nidOffset = p_nidOffset;
 			m_numberOfSegments = (int) Math.ceil((double) p_length
-					/ LogHandler.SEGMENT_SIZE);
+					/ LogHandler.SECLOG_SEGMENT_SIZE);
 
 			m_currentSegment = 0;
 			m_startIndex = 0;
@@ -616,7 +616,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			m_segments = new byte[m_numberOfSegments][];
 
 			for (int i = 0; i < m_segments.length; i++) {
-				m_segments[i] = new byte[LogHandler.SEGMENT_SIZE];
+				m_segments[i] = new byte[LogHandler.SECLOG_SEGMENT_SIZE];
 			}
 		}
 
@@ -673,11 +673,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			byte[] segment;
 
 			for (int i = m_startIndex; i <= m_currentSegment; i++) {
-				if (LogHandler.SEGMENT_SIZE - m_writtenBytesPerSegment[i] >= p_logEntrySize) {
+				if (LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i] >= p_logEntrySize) {
 					index = i;
 					break;
-				} else if (LogHandler.SEGMENT_SIZE
-						- m_writtenBytesPerSegment[i] <= LogHandler.SECONDARY_CREATOR_HEADER_SIZE) {
+				} else if (LogHandler.SECLOG_SEGMENT_SIZE
+						- m_writtenBytesPerSegment[i] <= LogHandler.SECLOG_ENTRY_HEADER_SIZE) {
 					m_filledSegments[i] = true;
 					for (int j = m_startIndex; j <= m_currentSegment; j++) {
 						if (m_filledSegments[j]) {
@@ -698,7 +698,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 							m_writtenBytesPerSegment, m_numberOfSegments);
 					m_filledSegments = Arrays.copyOf(m_filledSegments,
 							m_numberOfSegments);
-					m_segments[m_currentSegment] = new byte[LogHandler.SEGMENT_SIZE];
+					m_segments[m_currentSegment] = new byte[LogHandler.SECLOG_SEGMENT_SIZE];
 				}
 			}
 

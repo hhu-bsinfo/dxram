@@ -83,7 +83,7 @@ public interface LogInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be logged
 	 */
-	long logChunk(Chunk p_chunk, int p_rangeID) throws DXRAMException;
+	long logChunk(Chunk p_chunk, byte p_rangeID) throws DXRAMException;
 
 	/**
 	 * Creates a new Chunk

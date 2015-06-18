@@ -82,7 +82,7 @@ public class PrimaryWriteBuffer {
 		}
 
 		if (p_bufferSize < LogHandler.FLASHPAGE_SIZE
-				|| p_bufferSize > LogHandler.MAX_WRITE_BUFFER_SIZE
+				|| p_bufferSize > LogHandler.WRITE_BUFFER_MAX_SIZE
 				|| Integer.bitCount(p_bufferSize) != 1) {
 			throw new IllegalArgumentException(
 					"Illegal buffer size! Must be 2^x with "
@@ -159,9 +159,9 @@ public class PrimaryWriteBuffer {
 			// This is probably a tombstone
 			payloadLength = 0;
 		}
-		bytesToWrite = LogHandler.PRIMARY_HEADER_SIZE + payloadLength;
+		bytesToWrite = LogHandler.PRIMLOG_ENTRY_HEADER_SIZE + payloadLength;
 
-		if (p_header.length != LogHandler.PRIMARY_HEADER_SIZE) {
+		if (p_header.length != LogHandler.PRIMLOG_ENTRY_HEADER_SIZE) {
 			throw new IllegalArgumentException("The header is corrupted.");
 		}
 		if (bytesToWrite > m_ringBufferSize) {
@@ -217,42 +217,42 @@ public class PrimaryWriteBuffer {
 			if (bytesToWrite <= bytesUntilEnd) {
 				// Write header
 				System.arraycopy(p_header, 0, m_buffer, writePointer,
-						LogHandler.PRIMARY_HEADER_SIZE);
+						LogHandler.PRIMLOG_ENTRY_HEADER_SIZE);
 				// Write payload
 				if (payloadLength > 0) {
 					System.arraycopy(p_payload, 0, m_buffer, writePointer
-							+ LogHandler.PRIMARY_HEADER_SIZE, payloadLength);
+							+ LogHandler.PRIMLOG_ENTRY_HEADER_SIZE, payloadLength);
 				}
 			} else {
 				// Twofold cyclic write access
-				if (bytesUntilEnd < LogHandler.PRIMARY_HEADER_SIZE) {
+				if (bytesUntilEnd < LogHandler.PRIMLOG_ENTRY_HEADER_SIZE) {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer,
 							bytesUntilEnd);
 					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0,
-							LogHandler.PRIMARY_HEADER_SIZE - bytesUntilEnd);
+							LogHandler.PRIMLOG_ENTRY_HEADER_SIZE - bytesUntilEnd);
 					// Write payload
 					if (payloadLength > 0) {
 						System.arraycopy(p_payload, 0, m_buffer,
-								LogHandler.PRIMARY_HEADER_SIZE - bytesUntilEnd,
+								LogHandler.PRIMLOG_ENTRY_HEADER_SIZE - bytesUntilEnd,
 								payloadLength);
 					}
-				} else if (bytesUntilEnd > LogHandler.PRIMARY_HEADER_SIZE) {
+				} else if (bytesUntilEnd > LogHandler.PRIMLOG_ENTRY_HEADER_SIZE) {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer,
-							LogHandler.PRIMARY_HEADER_SIZE);
-					bytesUntilEnd -= LogHandler.PRIMARY_HEADER_SIZE;
+							LogHandler.PRIMLOG_ENTRY_HEADER_SIZE);
+					bytesUntilEnd -= LogHandler.PRIMLOG_ENTRY_HEADER_SIZE;
 					// Write payload
 					if (payloadLength > 0) {
 						System.arraycopy(p_payload, 0, m_buffer, writePointer
-								+ LogHandler.PRIMARY_HEADER_SIZE, bytesUntilEnd);
+								+ LogHandler.PRIMLOG_ENTRY_HEADER_SIZE, bytesUntilEnd);
 						System.arraycopy(p_payload, bytesUntilEnd, m_buffer, 0,
 								payloadLength - bytesUntilEnd);
 					}
 				} else {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer,
-							LogHandler.PRIMARY_HEADER_SIZE);
+							LogHandler.PRIMLOG_ENTRY_HEADER_SIZE);
 					// Write payload
 					if (payloadLength > 0) {
 						System.arraycopy(p_payload, 0, m_buffer, 0,

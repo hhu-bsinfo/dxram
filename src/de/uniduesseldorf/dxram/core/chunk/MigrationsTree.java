@@ -18,7 +18,7 @@ public final class MigrationsTree implements Serializable {
 	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(
 			ConfigurationConstants.SECONDARY_LOG_SIZE);
 	private static final long serialVersionUID = 7565597467331239020L;
-	private static final int INVALID = -1;
+	private static final byte INVALID = -1;
 
 	// Attributes
 	private short m_minEntries;
@@ -63,7 +63,7 @@ public final class MigrationsTree implements Serializable {
 	 * @return true if it fits
 	 */
 	public boolean fits(final long p_size) {
-		return (p_size + m_logSize) <= SECONDARY_LOG_SIZE;
+		return p_size + m_logSize <= SECONDARY_LOG_SIZE;
 	}
 
 	/**
@@ -76,7 +76,7 @@ public final class MigrationsTree implements Serializable {
 	 *            the size of the chunk + log header size
 	 * @return true if insertion was successful
 	 */
-	public boolean putObject(final long p_chunkID, final int p_rangeID, final long p_size) {
+	public boolean putObject(final long p_chunkID, final byte p_rangeID, final long p_size) {
 		long lid;
 		Node node;
 
@@ -107,7 +107,7 @@ public final class MigrationsTree implements Serializable {
 	 *            the size of the range + log header sizes
 	 * @return true if insertion was successful
 	 */
-	public boolean putRange(final long p_startID, final long p_endID, final int p_rangeID, final long p_rangeSize) {
+	public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
 		long startLid;
 		long endLid;
 		Node startNode;
@@ -236,7 +236,7 @@ public final class MigrationsTree implements Serializable {
 	 *            the backup range ID
 	 * @return the node in which the entry is stored
 	 */
-	private Node createOrReplaceEntry(final long p_lid, final int p_rangeID) {
+	private Node createOrReplaceEntry(final long p_lid, final byte p_rangeID) {
 		Node ret = null;
 		Node node;
 		int index;
@@ -304,7 +304,7 @@ public final class MigrationsTree implements Serializable {
 	 * @param p_node
 	 *            anchor node
 	 */
-	private void mergeWithPredecessorOrBound(final long p_lid, final int p_rangeID, final Node p_node) {
+	private void mergeWithPredecessorOrBound(final long p_lid, final byte p_rangeID, final Node p_node) {
 		Entry predecessor;
 		Entry successor;
 
@@ -342,7 +342,7 @@ public final class MigrationsTree implements Serializable {
 	 * @param p_rangeID
 	 *            the backup range ID
 	 */
-	private void mergeWithSuccessor(final long p_lid, final int p_rangeID) {
+	private void mergeWithSuccessor(final long p_lid, final byte p_rangeID) {
 		Node node;
 		Entry successor;
 
@@ -645,7 +645,7 @@ public final class MigrationsTree implements Serializable {
 		int size;
 		int medianIndex;
 		long medianLid;
-		int medianRangeID;
+		byte medianRangeID;
 
 		Node left;
 		Node right;
@@ -733,7 +733,7 @@ public final class MigrationsTree implements Serializable {
 		int index;
 		Node greatest;
 		long replaceLid;
-		int replaceRangeID;
+		byte replaceRangeID;
 
 		Contract.checkNotNull(p_node, "Node null");
 
@@ -791,10 +791,10 @@ public final class MigrationsTree implements Serializable {
 
 		long removeLid;
 		int prev;
-		int parentRangeID;
+		byte parentRangeID;
 		long parentLid;
 
-		int neighborRangeID;
+		byte neighborRangeID;
 		long neighborLid;
 
 		parent = p_node.getParent();
@@ -1097,7 +1097,7 @@ public final class MigrationsTree implements Serializable {
 		private Node m_parent;
 
 		private long[] m_keys;
-		private int[] m_dataLeafs;
+		private byte[] m_dataLeafs;
 		private short m_numberOfEntries;
 
 		private Node[] m_children;
@@ -1116,7 +1116,7 @@ public final class MigrationsTree implements Serializable {
 		private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
 			m_parent = p_parent;
 			m_keys = new long[p_maxEntries + 1];
-			m_dataLeafs = new int[p_maxEntries + 1];
+			m_dataLeafs = new byte[p_maxEntries + 1];
 			m_numberOfEntries = 0;
 			m_children = new Node[p_maxChildren + 1];
 			m_numberOfChildren = 0;
@@ -1176,7 +1176,7 @@ public final class MigrationsTree implements Serializable {
 		 *            the index
 		 * @return the data leaf to given index
 		 */
-		private int getRangeID(final int p_index) {
+		private byte getRangeID(final int p_index) {
 			return m_dataLeafs[p_index];
 		}
 
@@ -1224,7 +1224,7 @@ public final class MigrationsTree implements Serializable {
 		 * @param p_rangeID
 		 *            the backup range ID
 		 */
-		private void addEntry(final long p_lid, final int p_rangeID) {
+		private void addEntry(final long p_lid, final byte p_rangeID) {
 			int index;
 
 			index = this.indexOf(p_lid) * -1 - 1;
@@ -1247,7 +1247,7 @@ public final class MigrationsTree implements Serializable {
 		 * @param p_index
 		 *            the index to store the element at
 		 */
-		private void addEntry(final long p_lid, final int p_rangeID, final int p_index) {
+		private void addEntry(final long p_lid, final byte p_rangeID, final int p_index) {
 			System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
 			System.arraycopy(m_dataLeafs, p_index, m_dataLeafs, p_index + 1, m_numberOfEntries - p_index);
 
@@ -1270,7 +1270,7 @@ public final class MigrationsTree implements Serializable {
 		 */
 		private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
 			long[] aux1;
-			int[] aux2;
+			byte[] aux2;
 
 			if (-1 != p_offsetDst) {
 				System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
@@ -1282,7 +1282,7 @@ public final class MigrationsTree implements Serializable {
 				System.arraycopy(m_keys, 0, aux1, p_node.m_numberOfEntries, m_numberOfEntries);
 				m_keys = aux1;
 
-				aux2 = new int[m_dataLeafs.length];
+				aux2 = new byte[m_dataLeafs.length];
 				System.arraycopy(p_node.m_dataLeafs, 0, aux2, 0, p_node.m_numberOfEntries);
 				System.arraycopy(m_dataLeafs, 0, aux2, p_node.m_numberOfEntries, m_numberOfEntries);
 				m_dataLeafs = aux2;
@@ -1300,7 +1300,7 @@ public final class MigrationsTree implements Serializable {
 		 * @param p_index
 		 *            the index of given entry in this node
 		 */
-		private void changeEntry(final long p_lid, final int p_rangeID, final int p_index) {
+		private void changeEntry(final long p_lid, final byte p_rangeID, final int p_index) {
 
 			if (p_lid == getLid(p_index)) {
 				m_keys[p_index] = p_lid;
@@ -1577,7 +1577,7 @@ public final class MigrationsTree implements Serializable {
 
 		// Attributes
 		private long m_lid;
-		private int m_rangeID;
+		private byte m_rangeID;
 
 		// Constructors
 		/**
@@ -1587,7 +1587,7 @@ public final class MigrationsTree implements Serializable {
 		 * @param p_rangeID
 		 *            the backup range ID
 		 */
-		public Entry(final long p_lid, final int p_rangeID) {
+		public Entry(final long p_lid, final byte p_rangeID) {
 			m_lid = p_lid;
 			m_rangeID = p_rangeID;
 		}
@@ -1604,7 +1604,7 @@ public final class MigrationsTree implements Serializable {
 		 * Returns the backup range ID
 		 * @return the backup range ID
 		 */
-		public int getRangeID() {
+		public byte getRangeID() {
 			return m_rangeID;
 		}
 

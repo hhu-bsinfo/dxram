@@ -552,12 +552,12 @@ public abstract class AbstractLog {
 		byte[] result;
 		long chunkID;
 
-		result = new byte[LogHandler.PRIMARY_HEADER_SIZE];
+		result = new byte[LogHandler.PRIMLOG_ENTRY_HEADER_SIZE];
 		chunkID = p_chunk.getChunkID();
 		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(chunkID), ChunkID.getLocalID(chunkID));
 		putLengthInLogEntryHeader(result, p_chunk.getSize());
 		putVersionInLogEntryHeader(result, p_chunk.getVersion());
-		putRangeIDInLogEntryHeader(result, -1);
+		putRangeIDInLogEntryHeader(result, (byte) -1);
 		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
 
 		return result;
@@ -571,11 +571,11 @@ public abstract class AbstractLog {
 	 *            the RangeID
 	 * @return the log entry
 	 */
-	public static byte[] createPrimaryLogEntryHeader(final Chunk p_chunk, final int p_rangeID) {
+	public static byte[] createPrimaryLogEntryHeader(final Chunk p_chunk, final byte p_rangeID) {
 		byte[] result;
 		long chunkID;
 
-		result = new byte[LogHandler.PRIMARY_HEADER_SIZE];
+		result = new byte[LogHandler.PRIMLOG_ENTRY_HEADER_SIZE];
 		chunkID = p_chunk.getChunkID();
 		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(chunkID), ChunkID.getLocalID(chunkID));
 		putLengthInLogEntryHeader(result, p_chunk.getSize());
@@ -595,11 +595,11 @@ public abstract class AbstractLog {
 	public static byte[] createTombstone(final long p_chunkID) {
 		byte[] result;
 
-		result = new byte[LogHandler.PRIMARY_HEADER_SIZE];
+		result = new byte[LogHandler.PRIMLOG_ENTRY_HEADER_SIZE];
 		putChunkIDInLogEntryHeader(result, ChunkID.getCreatorID(p_chunkID), ChunkID.getLocalID(p_chunkID));
 		putLengthInLogEntryHeader(result, 0);
 		putVersionInLogEntryHeader(result, -1);
-		putRangeIDInLogEntryHeader(result, -1);
+		putRangeIDInLogEntryHeader(result, (byte) -1);
 		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()));
 
 		return result;
@@ -618,7 +618,7 @@ public abstract class AbstractLog {
 
 		// LID
 		offset = p_offset;
-		for (int i = 0; i < LogHandler.LOG_HEADER_LID_SIZE; i++) {
+		for (int i = 0; i < LogHandler.LOG_ENTRY_LID_SIZE; i++) {
 			p_buffer[offset + i] = invalid;
 		}
 	}
@@ -634,12 +634,12 @@ public abstract class AbstractLog {
 	 */
 	public static void putChunkIDInLogEntryHeader(final byte[] p_logEntry, final short p_nodeID, final long p_lid) {
 		// NodeID
-		for (int i = 0; i < LogHandler.LOG_HEADER_NID_SIZE; i++) {
-			p_logEntry[i] = (byte) ((p_nodeID >> (i * 8)) & 0xff);
+		for (int i = 0; i < LogHandler.LOG_ENTRY_NID_SIZE; i++) {
+			p_logEntry[i] = (byte) (p_nodeID >> i * 8 & 0xff);
 		}
 		// LID
-		for (int i = 0; i < LogHandler.LOG_HEADER_LID_SIZE; i++) {
-			p_logEntry[LogHandler.LOG_HEADER_NID_SIZE + i] = (byte) (p_lid >> (i * 8));
+		for (int i = 0; i < LogHandler.LOG_ENTRY_LID_SIZE; i++) {
+			p_logEntry[LogHandler.LOG_ENTRY_NID_SIZE + i] = (byte) (p_lid >> i * 8);
 		}
 	}
 
@@ -651,10 +651,10 @@ public abstract class AbstractLog {
 	 *            the length
 	 */
 	public static void putLengthInLogEntryHeader(final byte[] p_logEntry, final int p_length) {
-		final int offset = LogHandler.PRIMARY_HEADER_LEN_OFFSET;
+		final int offset = LogHandler.PRIMLOG_ENTRY_LEN_OFFSET;
 
-		for (int i = 0; i < LogHandler.LOG_HEADER_LEN_SIZE; i++) {
-			p_logEntry[offset + i] = (byte) (p_length >> (i * 8));
+		for (int i = 0; i < LogHandler.LOG_ENTRY_LEN_SIZE; i++) {
+			p_logEntry[offset + i] = (byte) (p_length >> i * 8);
 		}
 	}
 
@@ -666,10 +666,10 @@ public abstract class AbstractLog {
 	 *            the version
 	 */
 	public static void putVersionInLogEntryHeader(final byte[] p_logEntry, final int p_version) {
-		final int offset = LogHandler.PRIMARY_HEADER_VER_OFFSET;
+		final int offset = LogHandler.PRIMLOG_ENTRY_VER_OFFSET;
 
-		for (int i = 0; i < LogHandler.LOG_HEADER_VER_SIZE; i++) {
-			p_logEntry[offset + i] = (byte) (p_version >> (i * 8));
+		for (int i = 0; i < LogHandler.LOG_ENTRY_VER_SIZE; i++) {
+			p_logEntry[offset + i] = (byte) (p_version >> i * 8);
 		}
 	}
 
@@ -680,12 +680,10 @@ public abstract class AbstractLog {
 	 * @param p_rangeID
 	 *            the RangeID
 	 */
-	public static void putRangeIDInLogEntryHeader(final byte[] p_logEntry, final int p_rangeID) {
-		final int offset = LogHandler.PRIMARY_HEADER_VER_OFFSET;
+	public static void putRangeIDInLogEntryHeader(final byte[] p_logEntry, final byte p_rangeID) {
+		final int offset = LogHandler.PRIMLOG_ENTRY_VER_OFFSET;
 
-		for (int i = 0; i < LogHandler.LOG_HEADER_VER_SIZE; i++) {
-			p_logEntry[offset + i] = (byte) (p_rangeID >> (i * 8));
-		}
+		p_logEntry[offset] = p_rangeID;
 	}
 
 	/**
@@ -696,10 +694,10 @@ public abstract class AbstractLog {
 	 *            the checksum
 	 */
 	public static void putChecksumInLogEntryHeader(final byte[] p_logEntry, final long p_checksum) {
-		final int offset = LogHandler.PRIMARY_HEADER_CRC_OFFSET;
+		final int offset = LogHandler.PRIMLOG_ENTRY_CRC_OFFSET;
 
-		for (int i = 0; i < LogHandler.LOG_HEADER_CRC_SIZE; i++) {
-			p_logEntry[offset + i] = (byte) ((p_checksum >> (i * 8)) & 0xff);
+		for (int i = 0; i < LogHandler.LOG_ENTRY_CRC_SIZE; i++) {
+			p_logEntry[offset + i] = (byte) (p_checksum >> i * 8 & 0xff);
 		}
 	}
 
@@ -728,12 +726,12 @@ public abstract class AbstractLog {
 	public static long getLIDOfLogEntry(final byte[] p_buffer, final int p_offset, final boolean p_primary) {
 		int offset = p_offset;
 		if (p_primary) {
-			offset = p_offset + LogHandler.PRIMARY_HEADER_LID_OFFSET;
+			offset = p_offset + LogHandler.PRIMLOG_ENTRY_LID_OFFSET;
 		}
 
-		return (long) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
+		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
 				+ ((p_buffer[offset + 2] & 0xff) << 16) + (((long) p_buffer[offset + 3] & 0xff) << 24)
-				+ (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40));
+				+ (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
 	}
 
 	/**
@@ -759,9 +757,9 @@ public abstract class AbstractLog {
 	 * @return the length
 	 */
 	public static int getLengthOfLogEntry(final byte[] p_buffer, final int p_offset, final boolean p_primary) {
-		int offset = p_offset + LogHandler.PRIMARY_HEADER_LEN_OFFSET;
+		int offset = p_offset + LogHandler.PRIMLOG_ENTRY_LEN_OFFSET;
 		if (!p_primary) {
-			offset -= LogHandler.LOG_HEADER_NID_SIZE;
+			offset -= LogHandler.LOG_ENTRY_NID_SIZE;
 		}
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
@@ -779,9 +777,9 @@ public abstract class AbstractLog {
 	 * @return the version
 	 */
 	public static int getVersionOfLogEntry(final byte[] p_buffer, final int p_offset, final boolean p_primary) {
-		int offset = p_offset + LogHandler.PRIMARY_HEADER_VER_OFFSET;
+		int offset = p_offset + LogHandler.PRIMLOG_ENTRY_VER_OFFSET;
 		if (!p_primary) {
-			offset -= LogHandler.LOG_HEADER_NID_SIZE;
+			offset -= LogHandler.LOG_ENTRY_NID_SIZE;
 		}
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
@@ -796,11 +794,10 @@ public abstract class AbstractLog {
 	 *            offset in buffer
 	 * @return the version
 	 */
-	public static int getRangeIDOfLogEntry(final byte[] p_buffer, final int p_offset) {
-		final int offset = p_offset + LogHandler.PRIMARY_HEADER_RID_OFFSET;
+	public static byte getRangeIDOfLogEntry(final byte[] p_buffer, final int p_offset) {
+		final int offset = p_offset + LogHandler.PRIMLOG_ENTRY_RID_OFFSET;
 
-		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
-				+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
+		return p_buffer[offset];
 	}
 
 	/**
@@ -814,15 +811,15 @@ public abstract class AbstractLog {
 	 * @return the checksum
 	 */
 	public static long getChecksumOfPayload(final byte[] p_buffer, final int p_offset, final boolean p_primary) {
-		int offset = p_offset + LogHandler.PRIMARY_HEADER_CRC_OFFSET;
+		int offset = p_offset + LogHandler.PRIMLOG_ENTRY_CRC_OFFSET;
 		if (!p_primary) {
-			offset = offset - (LogHandler.LOG_HEADER_NID_SIZE + LogHandler.LOG_HEADER_RID_SIZE);
+			offset = offset - (LogHandler.LOG_ENTRY_NID_SIZE + LogHandler.LOG_ENTRY_RID_SIZE);
 		}
 
-		return (long) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
+		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
 				+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24)
 				+ ((p_buffer[offset + 4] & 0xff) << 32) + ((p_buffer[offset + 5] & 0xff) << 40)
-				+ ((p_buffer[offset + 6] & 0xff) << 48) + ((p_buffer[offset + 7] & 0xff) << 54));
+				+ ((p_buffer[offset + 6] & 0xff) << 48) + ((p_buffer[offset + 7] & 0xff) << 54);
 	}
 
 	/**
