@@ -28,7 +28,6 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.InitResponse;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
-import de.uniduesseldorf.dxram.core.log.storage.AbstractLog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryWriteBuffer;
 import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogBuffer;
@@ -79,29 +78,14 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public static final long REORGTHREAD_TIMEOUT = 1000L;
 
 	// Log header component sizes
+	public static final byte LOG_ENTRY_TYP_SIZE = 1;
 	public static final byte LOG_ENTRY_NID_SIZE = 2;
 	public static final byte LOG_ENTRY_LID_SIZE = 6;
-	public static final byte LOG_ENTRY_CID_SIZE = LOG_ENTRY_NID_SIZE + LOG_ENTRY_LID_SIZE;
 	public static final byte LOG_ENTRY_LEN_SIZE = 4;
 	public static final byte LOG_ENTRY_VER_SIZE = 4;
 	public static final byte LOG_ENTRY_RID_SIZE = 1;
+	public static final byte LOG_ENTRY_SRC_SIZE = 2;
 	public static final byte LOG_ENTRY_CRC_SIZE = 8;
-
-	// Log header sizes
-	public static final byte PRIMLOG_ENTRY_HEADER_SIZE = LOG_ENTRY_CID_SIZE + LOG_ENTRY_LEN_SIZE
-			+ LOG_ENTRY_VER_SIZE
-			+ LOG_ENTRY_RID_SIZE + LOG_ENTRY_CRC_SIZE;
-	public static final byte SECLOG_ENTRY_HEADER_SIZE = LOG_ENTRY_LID_SIZE + LOG_ENTRY_LEN_SIZE
-			+ LOG_ENTRY_VER_SIZE + LOG_ENTRY_CRC_SIZE;
-
-	// Primary log header offsets
-	public static final byte PRIMLOG_ENTRY_NID_OFFSET = 0;
-	public static final byte PRIMLOG_ENTRY_LID_OFFSET = LOG_ENTRY_NID_SIZE;
-	public static final byte PRIMLOG_ENTRY_CID_OFFSET = 0;
-	public static final byte PRIMLOG_ENTRY_LEN_OFFSET = LOG_ENTRY_CID_SIZE;
-	public static final byte PRIMLOG_ENTRY_VER_OFFSET = PRIMLOG_ENTRY_LEN_OFFSET + LOG_ENTRY_LEN_SIZE;
-	public static final byte PRIMLOG_ENTRY_RID_OFFSET = PRIMLOG_ENTRY_VER_OFFSET + LOG_ENTRY_VER_SIZE;
-	public static final byte PRIMLOG_ENTRY_CRC_OFFSET = PRIMLOG_ENTRY_RID_OFFSET + LOG_ENTRY_RID_SIZE;
 
 	public static final int PRIMLOG_MAGIC_HEADER_SIZE = PRIMLOG_MAGIC.length;
 	public static final int SECLOG_MAGIC_HEADER_SIZE = SECLOG_MAGIC.length;
@@ -272,10 +256,14 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public long logChunk(final Chunk p_chunk, final byte p_rangeID) throws DXRAMException {
+	public long logChunk(final Chunk p_chunk, final byte p_rangeID, final short p_source) throws DXRAMException {
 		byte[] logHeader;
 
-		logHeader = AbstractLog.createPrimaryLogEntryHeader(p_chunk, p_rangeID);
+		if (p_rangeID == -1) {
+			logHeader = LogEntryHeader.Primary.createHeader(p_chunk);
+		} else {
+			logHeader = LogEntryHeader.Migration.createHeader(p_chunk, p_rangeID, p_source);
+		}
 		try {
 			m_writeBuffer.putLogData(logHeader, p_chunk.getData().array());
 		} catch (final IOException | InterruptedException e) {
@@ -289,7 +277,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public void removeChunk(final long p_chunkID) throws DXRAMException {
 		byte[] tombstone;
 
-		tombstone = AbstractLog.createTombstone(p_chunkID);
+		tombstone = LogEntryHeader.Tombstone.createHeader(p_chunkID);
 		try {
 			m_writeBuffer.putLogData(tombstone, null);
 			getSecondaryLog(p_chunkID).incDeleteCounter();
@@ -391,54 +379,54 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				if (readBytes > 0) {
 					// Header was in previous buffer (logEntries[i - 1]), but
 					// payload is here
-					length = AbstractLog.getLengthOfLogEntry(separatedEntry, 0, false);
-					System.arraycopy(logEntries[i], 0, separatedEntry, readBytes, SECLOG_ENTRY_HEADER_SIZE
+					length = LogEntryHeader.Secondary.getLength(separatedEntry, 0);
+					System.arraycopy(logEntries[i], 0, separatedEntry, readBytes, LogEntryHeader.Secondary.SIZE
 							+ length
 							- readBytes);
-					localID = AbstractLog.getLIDOfLogEntry(separatedEntry, 0, false);
-					version = AbstractLog.getVersionOfLogEntry(separatedEntry, 0, false);
+					localID = LogEntryHeader.Secondary.getLID(separatedEntry, 0);
+					version = LogEntryHeader.Secondary.getVersion(separatedEntry, 0);
 					printMetadata(ChunkID.getCreatorID(p_chunkID), localID, separatedEntry, 0, length, version, j++);
-					readBytes = length + SECLOG_ENTRY_HEADER_SIZE - readBytes;
+					readBytes = length + LogEntryHeader.Secondary.SIZE - readBytes;
 				} else if (readBytes < 0) {
 					// A part of the header was in previous buffer (logEntries[i
 					// - 1])
 					readBytes *= -1;
-					System.arraycopy(logEntries[i], 0, separatedHeader, readBytes, SECLOG_ENTRY_HEADER_SIZE
+					System.arraycopy(logEntries[i], 0, separatedHeader, readBytes, LogEntryHeader.Secondary.SIZE
 							- readBytes);
-					length = AbstractLog.getLengthOfLogEntry(separatedHeader, 0, false);
-					localID = AbstractLog.getLIDOfLogEntry(separatedHeader, 0, false);
-					version = AbstractLog.getVersionOfLogEntry(separatedEntry, 0, false);
-					readBytes = length + SECLOG_ENTRY_HEADER_SIZE - readBytes;
+					length = LogEntryHeader.Secondary.getLength(separatedHeader, 0);
+					localID = LogEntryHeader.Secondary.getLID(separatedHeader, 0);
+					version = LogEntryHeader.Secondary.getVersion(separatedEntry, 0);
+					readBytes = length + LogEntryHeader.Secondary.SIZE - readBytes;
 					printMetadata(ChunkID.getCreatorID(p_chunkID), localID, logEntries[i], readBytes, length, version,
 							j++);
 				}
 
 				while (readBytes < logEntries[i].length) {
-					if (SECLOG_ENTRY_HEADER_SIZE > logEntries[i].length - readBytes) {
+					if (LogEntryHeader.Secondary.SIZE > logEntries[i].length - readBytes) {
 						// Entry is separated: Only a part of the header is in
 						// this buffer (logEntries[i])
-						separatedHeader = new byte[SECLOG_ENTRY_HEADER_SIZE];
+						separatedHeader = new byte[LogEntryHeader.Secondary.SIZE];
 						System.arraycopy(logEntries[i], readBytes, separatedHeader, 0,
 								logEntries[i].length - readBytes);
 						offset = -(logEntries[i].length - readBytes);
 						readBytes = logEntries[i].length;
 					} else {
-						length = AbstractLog.getLengthOfLogEntry(logEntries[i], readBytes, false);
-						if (length + SECLOG_ENTRY_HEADER_SIZE > logEntries[i].length - readBytes) {
+						length = LogEntryHeader.Secondary.getLength(logEntries[i], readBytes);
+						if (length + LogEntryHeader.Secondary.SIZE > logEntries[i].length - readBytes) {
 							// Entry is separated: The header is completely in
 							// this buffer (logEntries[i])
-							separatedEntry = new byte[SECLOG_ENTRY_HEADER_SIZE + length];
+							separatedEntry = new byte[LogEntryHeader.Secondary.SIZE + length];
 							System.arraycopy(logEntries[i], readBytes, separatedEntry, 0, logEntries[i].length
 									- readBytes);
 							offset = logEntries[i].length - readBytes;
 							readBytes = logEntries[i].length;
 						} else {
 							// Complete entry is in this buffer (logEntries[i])
-							localID = AbstractLog.getLIDOfLogEntry(logEntries[i], readBytes, false);
-							version = AbstractLog.getVersionOfLogEntry(logEntries[i], readBytes, false);
+							localID = LogEntryHeader.Secondary.getLID(logEntries[i], readBytes);
+							version = LogEntryHeader.Secondary.getVersion(logEntries[i], readBytes);
 							printMetadata(ChunkID.getCreatorID(p_chunkID), localID, logEntries[i], readBytes, length,
 									version, j++);
-							readBytes += length + SECLOG_ENTRY_HEADER_SIZE;
+							readBytes += length + LogEntryHeader.Secondary.SIZE;
 						}
 					}
 				}
@@ -483,8 +471,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						+ "\t Version - "
 						+ p_version
 						+ " \t Payload - "
-						+ new String(Arrays.copyOfRange(p_payload, p_offset + SECLOG_ENTRY_HEADER_SIZE, p_offset
-								+ SECLOG_ENTRY_HEADER_SIZE + p_length), "UTF-8"));
+						+ new String(Arrays.copyOfRange(p_payload, p_offset + LogEntryHeader.Secondary.SIZE, p_offset
+								+ LogEntryHeader.Secondary.SIZE + p_length), "UTF-8"));
 			} else {
 				System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
 						+ (int) p_localID + ") \t Length - " + p_length + "\t Version - " + p_version
@@ -508,11 +496,17 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			throws IOException,
 			InterruptedException {
 		SecondaryLogWithSegments ret;
+		short creator;
 		LogCatalog cat;
 
 		// Can be executed by application/network thread or writer thread
 		m_secondaryLogCreationLock.lock();
-		cat = m_logCatalogs.get(ChunkID.getCreatorID(p_chunkID) & 0xFFFF);
+		creator = ChunkID.getCreatorID(p_chunkID);
+		if (creator != -1) {
+			cat = m_logCatalogs.get((int) creator & 0xFFFF);
+		} else {
+			// TODO
+		}
 		ret = cat.getLog(p_chunkID);
 		m_secondaryLogCreationLock.unlock();
 
@@ -524,11 +518,17 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			throws IOException,
 			InterruptedException {
 		SecondaryLogBuffer ret;
+		short creator;
 		LogCatalog cat;
 
 		// Can be executed by application/network thread or writer thread
 		m_secondaryLogCreationLock.lock();
-		cat = m_logCatalogs.get(ChunkID.getCreatorID(p_chunkID) & 0xFFFF);
+		creator = ChunkID.getCreatorID(p_chunkID);
+		if (creator != -1) {
+			cat = m_logCatalogs.get((int) creator & 0xFFFF);
+		} else {
+			// TODO
+		}
 		ret = cat.getBuffer(p_chunkID);
 		m_secondaryLogCreationLock.unlock();
 
@@ -542,6 +542,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		// Can be executed by application/network thread or writer thread
 		m_secondaryLogCreationLock.lock();
+
 		cat = m_logCatalogs.get(ChunkID.getCreatorID(p_chunkID) & 0xFFFF);
 		ret = cat.getRange(p_chunkID);
 		m_secondaryLogCreationLock.unlock();
@@ -551,7 +552,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 	@Override
 	public short getHeaderSize() {
-		return SECLOG_ENTRY_HEADER_SIZE;
+		return LogEntryHeader.Secondary.SIZE;
 	}
 
 	@Override
@@ -625,7 +626,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private void incomingLogMessage(final LogMessage p_message) {
 
 		try {
-			logChunk(p_message.getChunk(), p_message.getRangeID());
+			logChunk(p_message.getChunk(), p_message.getRangeID(), p_message.getSource());
 		} catch (final DXRAMException e) {
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
 		}

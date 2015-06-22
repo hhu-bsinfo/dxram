@@ -195,6 +195,7 @@ public final class LogMessages {
 			Contract.checkNotNull(p_chunk, "no chunk given");
 
 			m_chunk = p_chunk;
+			m_rangeID = -1;
 		}
 
 		/**

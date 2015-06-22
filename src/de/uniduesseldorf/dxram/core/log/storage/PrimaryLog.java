@@ -12,6 +12,7 @@ import java.util.Set;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.log.LogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 
@@ -40,7 +41,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 *             if the caller was interrupted
 	 */
 	public PrimaryLog(final long p_primaryLogSize) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N"
 				+ NodeID.getLocalNodeID() + "_"
 				+ LogHandler.PRIMLOG_FILENAME), p_primaryLogSize,
@@ -72,7 +73,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length,
 			final Object p_lengthByBackupRange)
-			throws IOException, InterruptedException {
+					throws IOException, InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -104,12 +105,13 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 */
 	private int bufferAndStoreSegmentsHashSort(final byte[] p_buffer,
 			final int p_offset, final int p_length, final Set<Entry<Long, Integer>> p_lengthByBackupRange)
-			throws InterruptedException, IOException {
-		final int logHeaderSize = LogHandler.PRIMLOG_ENTRY_HEADER_SIZE;
+					throws InterruptedException, IOException {
+		final int logHeaderSize = LogEntryHeader.Primary.SIZE;
+		byte type;
 		int i = 0;
 		int offset = 0;
 		int bufferOffset = p_offset;
-		int nidOffset;
+		int seclogOffset;
 		int primaryLogBufferOffset = 0;
 		int primaryLogBufferSize = 0;
 		int bytesRead = 0;
@@ -151,11 +153,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					// There is less than 4096KB data from this node ->
 					// store buffer in primary log (later)
 					primaryLogBufferSize += length;
-					nidOffset = 0;
+					seclogOffset = 0;
 				} else {
-					nidOffset = LogHandler.LOG_ENTRY_NID_SIZE;
+					seclogOffset = LogHandler.LOG_ENTRY_RID_SIZE + LogHandler.LOG_ENTRY_NID_SIZE;
 				}
-				bufferNode = new BufferSegmentsNode(nidOffset, length);
+				bufferNode = new BufferSegmentsNode(seclogOffset, length);
 				map.put(rangeID, bufferNode);
 			}
 
@@ -168,17 +170,19 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				 * Offset pointer is already in next iteration 3. Log entry must
 				 * be split over two iterations
 				 */
-				if (bytesUntilEnd > LogHandler.PRIMLOG_ENTRY_LEN_OFFSET
+				if (bytesUntilEnd > LogEntryHeader.Primary.LEN_OFFSET
 						+ LogHandler.LOG_ENTRY_LEN_SIZE) {
 					// Determine header of next log entry
 					logEntrySize = logHeaderSize
-							+ getLengthOfLogEntry(p_buffer, bufferOffset + offset, true);
+							+ LogEntryHeader.Primary.getLength(p_buffer, bufferOffset + offset);
 
-					// Get RangeID: If RangeID is set (!= -1) this Chunk was migrated
-					rangeID = getRangeIDOfLogEntry(p_buffer, bufferOffset + offset);
-					if (rangeID == -1) {
-						rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, bufferOffset
+					type = LogEntryHeader.getType(p_buffer, bufferOffset + offset);
+					if (type == 0 || type == 2) {
+						rangeID = m_logHandler.getBackupRange(LogEntryHeader.Primary.getChunkID(p_buffer, bufferOffset
 								+ offset));
+					} else {
+						rangeID = ((long) -1 << 48)
+								+ LogEntryHeader.Migration.getRangeID(p_buffer, bufferOffset + offset);
 					}
 
 					bufferNode = map.get(rangeID);
@@ -188,10 +192,15 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					offset += logEntrySize;
 				} else if (bytesUntilEnd <= 0) {
 					// Buffer overflow -> header is near the beginning
-					logEntrySize = logHeaderSize + getLengthOfLogEntry(p_buffer, -bytesUntilEnd, true);
-					rangeID = getRangeIDOfLogEntry(p_buffer, -bytesUntilEnd);
-					if (rangeID == -1) {
-						rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(p_buffer, -bytesUntilEnd));
+					logEntrySize =
+							logHeaderSize + LogEntryHeader.Primary.getLength(p_buffer, -bytesUntilEnd);
+					type = LogEntryHeader.getType(p_buffer, bufferOffset + offset);
+					if (type == 0 || type == 2) {
+						rangeID = m_logHandler.getBackupRange(LogEntryHeader.Primary.getChunkID(p_buffer, bufferOffset
+								+ offset));
+					} else {
+						rangeID = ((long) -1 << 48)
+								+ LogEntryHeader.Migration.getRangeID(p_buffer, bufferOffset + offset);
 					}
 
 					bufferNode = map.get(rangeID);
@@ -209,10 +218,14 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					System.arraycopy(p_buffer, 0, header, bytesUntilEnd,
 							logHeaderSize - bytesUntilEnd);
 					logEntrySize = logHeaderSize
-							+ getLengthOfLogEntry(header, 0, true);
-					rangeID = getRangeIDOfLogEntry(header, 0);
-					if (rangeID == -1) {
-						rangeID = m_logHandler.getBackupRange(getChunkIDOfLogEntry(header, 0));
+							+ LogEntryHeader.Primary.getLength(header, 0);
+					type = LogEntryHeader.getType(p_buffer, bufferOffset + offset);
+					if (type == 0 || type == 2) {
+						rangeID = m_logHandler.getBackupRange(LogEntryHeader.Primary.getChunkID(p_buffer, bufferOffset
+								+ offset));
+					} else {
+						rangeID = ((long) -1 << 48)
+								+ LogEntryHeader.Migration.getRangeID(p_buffer, bufferOffset + offset);
 					}
 
 					bufferNode = map.get(rangeID);
@@ -499,7 +512,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			final long p_chunkID) throws IOException, InterruptedException {
 
 		m_logHandler.getSecondaryLogBuffer(p_chunkID)
-				.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
+		.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 	}
 
 	// Classes
@@ -587,7 +600,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	public class BufferSegmentsNode {
 
 		// Attributes
-		private int m_nidOffset;
+		private int m_seclogOffset;
 		private int m_numberOfSegments;
 		private int m_currentSegment;
 		private int m_startIndex;
@@ -598,13 +611,13 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		// Constructors
 		/**
 		 * Creates an instance of BufferNode
-		 * @param p_nidOffset
+		 * @param p_seclogOffset
 		 *            the header offset (with or without NodeID)
 		 * @param p_length
 		 *            the buffer length
 		 */
-		public BufferSegmentsNode(final int p_nidOffset, final int p_length) {
-			m_nidOffset = p_nidOffset;
+		public BufferSegmentsNode(final int p_seclogOffset, final int p_length) {
+			m_seclogOffset = p_seclogOffset;
 			m_numberOfSegments = (int) Math.ceil((double) p_length
 					/ LogHandler.SECLOG_SEGMENT_SIZE);
 
@@ -677,7 +690,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					index = i;
 					break;
 				} else if (LogHandler.SECLOG_SEGMENT_SIZE
-						- m_writtenBytesPerSegment[i] <= LogHandler.SECLOG_ENTRY_HEADER_SIZE) {
+						- m_writtenBytesPerSegment[i] <= LogEntryHeader.Secondary.SIZE) {
 					m_filledSegments[i] = true;
 					for (int j = m_startIndex; j <= m_currentSegment; j++) {
 						if (m_filledSegments[j]) {
@@ -705,22 +718,22 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			segment = m_segments[index];
 			segmentOffset = m_writtenBytesPerSegment[index];
 			if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
-				System.arraycopy(p_buffer, p_offset + m_nidOffset, segment,
-						segmentOffset, p_logEntrySize - m_nidOffset);
+				System.arraycopy(p_buffer, p_offset + m_seclogOffset, segment,
+						segmentOffset, p_logEntrySize - m_seclogOffset);
 			} else {
-				if (p_bytesUntilEnd > m_nidOffset) {
-					System.arraycopy(p_buffer, p_offset + m_nidOffset, segment,
-							segmentOffset, p_bytesUntilEnd - m_nidOffset);
+				if (p_bytesUntilEnd > m_seclogOffset) {
+					System.arraycopy(p_buffer, p_offset + m_seclogOffset, segment,
+							segmentOffset, p_bytesUntilEnd - m_seclogOffset);
 					System.arraycopy(p_buffer, 0, segment, segmentOffset
-							+ p_bytesUntilEnd - m_nidOffset, p_logEntrySize
+							+ p_bytesUntilEnd - m_seclogOffset, p_logEntrySize
 							- p_bytesUntilEnd);
 				} else {
 					System.arraycopy(p_buffer, 0, segment, segmentOffset
-							+ m_nidOffset - p_bytesUntilEnd, p_logEntrySize
-							- (m_nidOffset - p_bytesUntilEnd));
+							+ m_seclogOffset - p_bytesUntilEnd, p_logEntrySize
+							- (m_seclogOffset - p_bytesUntilEnd));
 				}
 			}
-			m_writtenBytesPerSegment[index] += p_logEntrySize - m_nidOffset;
+			m_writtenBytesPerSegment[index] += p_logEntrySize - m_seclogOffset;
 		}
 
 		/**
