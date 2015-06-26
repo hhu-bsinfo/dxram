@@ -12,15 +12,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.log.LogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
+import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
+import de.uniduesseldorf.dxram.core.log.header.MigrationSecondaryLogEntryHeader;
+import de.uniduesseldorf.dxram.core.log.header.NormalSecondaryLogEntryHeader;
 
 /**
  * This class implements the secondary log
  * @author Kevin Beineke 23.10.2014
  */
 public class SecondaryLogWithSegments extends AbstractLog implements LogStorageInterface {
+
+	// Constants
+	private static final LogEntryHeaderInterface NORMAL_SECONDARY_LOG_ENTRY_HEADER =
+			new NormalSecondaryLogEntryHeader();
+	private static final LogEntryHeaderInterface MIGRATION_SECONDARY_LOG_ENTRY_HEADER =
+			new MigrationSecondaryLogEntryHeader();
 
 	// Attributes
 	private final int m_entryHeaderSize;
@@ -61,7 +70,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	public SecondaryLogWithSegments(final long p_secLogSize,
 			final SecondaryLogsReorgThread p_reorganizationThread,
 			final short p_nodeID, final boolean p_storesMigrations)
-					throws IOException, InterruptedException {
+			throws IOException, InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N"
 				+ NodeID.getLocalNodeID() + "_"
 				+ LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
@@ -71,10 +80,11 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			throw new IllegalArgumentException("Error: Secondary log too small");
 		}
 
+		// TODO:
 		if (!p_storesMigrations) {
-			m_entryHeaderSize = LogEntryHeader.Secondary.SIZE;
+			m_entryHeaderSize = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getHeaderSize();
 		} else {
-			m_entryHeaderSize = LogEntryHeader.Secondary.SIZE + LogHandler.LOG_ENTRY_NID_SIZE;
+			m_entryHeaderSize = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getHeaderSize() + LogHandler.LOG_ENTRY_NID_SIZE;
 		}
 
 		m_nodeID = p_nodeID;
@@ -186,7 +196,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 							rangeSize = 0;
 							while (length - rangeSize > 0) {
 								logEntrySize = m_entryHeaderSize
-										+ LogEntryHeader.Secondary.getLength(p_data, offset
+										+ NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLength(p_data, offset
 												+ rangeSize);
 								if (header.getFreeBytes() - rangeSize > logEntrySize) {
 									rangeSize += logEntrySize;
@@ -197,7 +207,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 							if (rangeSize > 0) {
 								writeToLog(p_data, offset,
 										(long) segment * LogHandler.SECLOG_SEGMENT_SIZE
-												+ header.getUsedBytes(), rangeSize, false);
+										+ header.getUsedBytes(), rangeSize, false);
 								header.updateUsedBytes(rangeSize);
 								length -= rangeSize;
 								offset += rangeSize;
@@ -315,7 +325,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @note executed only by reorganization thread
 	 */
 	public final void freeSegment(final int p_segment) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		short segment;
 		SegmentHeader header;
 
@@ -353,11 +363,11 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			final int p_bufferOffset, final long p_logOffset,
 			final int p_segmentIndex) throws IOException, InterruptedException {
 
-		LogEntryHeader.Secondary.markAsInvalid(p_buffer, p_bufferOffset);
+		AbstractLogEntryHeader.markAsInvalid(p_buffer, p_bufferOffset);
 
 		m_segmentHeaders[p_segmentIndex]
 				.updateDeletedBytes(m_entryHeaderSize
-						+ LogEntryHeader.Secondary.getLength(p_buffer, p_bufferOffset));
+						+ NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLength(p_buffer, p_bufferOffset));
 	}
 
 	/**
@@ -393,7 +403,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @note executed only by reorganization thread
 	 */
 	public final byte[] readSegment(final int p_segment) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[] result = null;
 		SegmentHeader header;
 		int length;
@@ -418,7 +428,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @note executed only by reorganization thread
 	 */
 	public final byte[][] readAllSegments() throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[][] result = null;
 		SegmentHeader header;
 		int length;
@@ -446,7 +456,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @note executed only by reorganization thread
 	 */
 	public final byte[][] readAllNonActiveSegments() throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[][] result = null;
 		SegmentHeader header;
 		int length;
@@ -475,7 +485,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @return all data
 	 */
 	public final byte[][] readAllNodeData() throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[][] result = null;
 
 		result = readAll(true);
@@ -514,9 +524,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				chunkMap = new HashMap<Long, Chunk>();
 				while (offset + m_entryHeaderSize < logData[i].length) {
 					// Determine header of next log entry
-					chunkID = ((long) m_nodeID << 48) + LogEntryHeader.Secondary.getLID(logData[i], offset);
-					payloadSize = LogEntryHeader.Secondary.getLength(logData[i], offset);
-					checksum = LogEntryHeader.Secondary.getChecksum(logData[i], offset);
+					chunkID = ((long) m_nodeID << 48) + NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLID(logData[i], offset);
+					payloadSize = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLength(logData[i], offset);
+					checksum = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getChecksum(logData[i], offset);
 					logEntrySize = m_entryHeaderSize + payloadSize;
 
 					if (logEntrySize > m_entryHeaderSize) {
@@ -528,7 +538,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 									+ m_entryHeaderSize, payload,
 									0, payloadSize);
 							if (p_doCRCCheck) {
-								if (LogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
+								if (AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
 									// Ignore log entry
 									offset += logEntrySize;
 									continue;
@@ -585,12 +595,12 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				chunkMap = new HashMap<Long, Chunk>();
 				while (offset + m_entryHeaderSize < logData[i].length) {
 					// Determine header of next log entry
-					payloadSize = LogEntryHeader.Secondary.getLength(logData[i], offset);
+					payloadSize = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLength(logData[i], offset);
 					logEntrySize = m_entryHeaderSize + payloadSize;
-					chunkID = ((long) m_nodeID << 48) + LogEntryHeader.Secondary.getLID(logData[i], offset);
+					chunkID = ((long) m_nodeID << 48) + NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLID(logData[i], offset);
 					lid = ChunkID.getLocalID(chunkID);
 					if (lid >= p_low || lid <= p_high) {
-						checksum = LogEntryHeader.Secondary.getChecksum(logData[i], offset);
+						checksum = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getChecksum(logData[i], offset);
 						if (logEntrySize > m_entryHeaderSize) {
 							// Read payload and create chunk
 							if (offset + logEntrySize <= logData[i].length) {
@@ -599,7 +609,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 								System.arraycopy(logData[i], offset + m_entryHeaderSize,
 										payload, 0, payloadSize);
 								if (p_doCRCCheck) {
-									if (LogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
+									if (AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
 										// Ignore log entry
 										offset += logEntrySize;
 										continue;
@@ -750,8 +760,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				// TODO: Remove object if there is a newer version in this segment?
 				while (readBytes < segmentData.length) {
 					length = m_entryHeaderSize
-							+ LogEntryHeader.Secondary.getLength(segmentData, readBytes);
-					localID = LogEntryHeader.Secondary.getLID(segmentData, readBytes);
+							+ NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLength(segmentData, readBytes);
+					localID = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLID(segmentData, readBytes);
 
 					// Note: Out-dated and deleted objects' and tombstones' LIDs
 					// are marked with -1 by remove task
@@ -786,7 +796,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 
 			System.out.println("--" + removedObjects + " entries removed");
 			System.out
-					.println("--" + removedTombstones + " tombstones removed");
+			.println("--" + removedTombstones + " tombstones removed");
 		}
 	}
 
@@ -806,7 +816,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			if (currentSegment != null) {
 				costBenefitRatio = (long) ((1 - currentSegment
 						.getUtilization()) * currentSegment.getLastAccess() / (1 + currentSegment
-						.getUtilization()));
+								.getUtilization()));
 
 				System.out.println("Cost-Benefit-Ratio: " + costBenefitRatio
 						+ ", Age:" + currentSegment.getLastAccess()
@@ -856,9 +866,10 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						// Put object versions to hashtable
 						// Collision: Store the higher version number if not
 						// -1 (^= deleted)
-						p_hashtable.putMax(LogEntryHeader.Secondary.getLID(segment, readBytes),
-								LogEntryHeader.Secondary.getVersion(segment, readBytes));
-						readBytes += m_entryHeaderSize + LogEntryHeader.Secondary.getLength(segment, readBytes);
+						p_hashtable.putMax(NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLID(segment, readBytes),
+								NORMAL_SECONDARY_LOG_ENTRY_HEADER.getVersion(segment, readBytes));
+						readBytes +=
+								m_entryHeaderSize + NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLength(segment, readBytes);
 					}
 				}
 			}
@@ -871,9 +882,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				if (segments[i] != null) {
 					segment = segments[i];
 					while (readBytes < segment.length) {
-						localID = LogEntryHeader.Secondary.getLID(segment, readBytes);
+						localID = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLID(segment, readBytes);
 						hashVersion = p_hashtable.get(localID);
-						logVersion = LogEntryHeader.Secondary.getVersion(segment, readBytes);
+						logVersion = NORMAL_SECONDARY_LOG_ENTRY_HEADER.getVersion(segment, readBytes);
 
 						if ((hashVersion == -1 || hashVersion > logVersion)
 								&& localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
@@ -884,7 +895,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 									i * LogHandler.SECLOG_SEGMENT_SIZE + readBytes, i);
 							wasUpdated = true;
 						}
-						readBytes += m_entryHeaderSize + LogEntryHeader.Secondary.getLength(segment, readBytes);
+						readBytes +=
+								m_entryHeaderSize + NORMAL_SECONDARY_LOG_ENTRY_HEADER.getLength(segment, readBytes);
 					}
 					if (wasUpdated) {
 						updateSegment(segment, readBytes, i);

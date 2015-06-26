@@ -11,9 +11,11 @@ import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.log.LogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
+import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
+import de.uniduesseldorf.dxram.core.log.header.MigrationLogEntryHeader;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -88,7 +90,7 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException(
 					"Illegal buffer size! Must be 2^x with "
 							+ Math.log(LogHandler.FLASHPAGE_SIZE) / Math
-									.log(2) + " <= x <= 31");
+							.log(2) + " <= x <= 31");
 		} else {
 			m_buffer = new byte[p_bufferSize];
 			m_ringBufferSize = p_bufferSize;
@@ -110,7 +112,7 @@ public class PrimaryWriteBuffer {
 	 *             if caller is interrupted
 	 */
 	public final void closeWriteBuffer() throws InterruptedException,
-			IOException {
+	IOException {
 		// Shutdown primary log writer-thread
 		m_flushingComplete = false;
 		m_isShuttingDown = true;
@@ -147,7 +149,7 @@ public class PrimaryWriteBuffer {
 	 */
 	public final int putLogData(final byte[] p_header, final byte[] p_payload)
 			throws IOException, InterruptedException {
-		byte type;
+		LogEntryHeaderInterface logEntryHeader;
 		int payloadLength;
 		int bytesToWrite;
 		int bytesUntilEnd = 0;
@@ -155,17 +157,14 @@ public class PrimaryWriteBuffer {
 		Integer counter;
 		long rangeID;
 
+		logEntryHeader = AbstractLogEntryHeader.getType(p_header, 0);
 		if (p_payload != null) {
 			payloadLength = p_payload.length;
 		} else {
-			// This is probably a tombstone
 			payloadLength = 0;
 		}
-		bytesToWrite = LogEntryHeader.Primary.SIZE + payloadLength;
+		bytesToWrite = logEntryHeader.getHeaderSize() + payloadLength;
 
-		if (p_header.length != LogEntryHeader.Primary.SIZE) {
-			throw new IllegalArgumentException("The header is corrupted.");
-		}
 		if (bytesToWrite > m_ringBufferSize) {
 			throw new IllegalArgumentException(
 					"Data to write exceeds buffer size!");
@@ -200,12 +199,10 @@ public class PrimaryWriteBuffer {
 			// Update byte counters
 			m_bytesInWriteBuffer += bytesToWrite;
 
-			type = LogEntryHeader.getType(p_header, 0);
-			if (type == 0 || type == 2) {
-				rangeID = m_logHandler.getBackupRange(LogEntryHeader.Primary.getChunkID(p_header, 0));
+			if (logEntryHeader instanceof MigrationLogEntryHeader) {
+				rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
 			} else {
-				rangeID = ((long) -1 << 48)
-						+ LogEntryHeader.Migration.getRangeID(p_header, 0);
+				rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0));
 			}
 
 			counter = m_lengthByBackupRange.get(rangeID);
@@ -226,47 +223,37 @@ public class PrimaryWriteBuffer {
 			}
 			if (bytesToWrite <= bytesUntilEnd) {
 				// Write header
-				System.arraycopy(p_header, 0, m_buffer, writePointer,
-						LogEntryHeader.Primary.SIZE);
+				System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
 				// Write payload
 				if (payloadLength > 0) {
-					System.arraycopy(p_payload, 0, m_buffer, writePointer
-							+ LogEntryHeader.Primary.SIZE, payloadLength);
+					System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, payloadLength);
 				}
 			} else {
 				// Twofold cyclic write access
-				if (bytesUntilEnd < LogEntryHeader.Primary.SIZE) {
+				if (bytesUntilEnd < p_header.length) {
 					// Write header
-					System.arraycopy(p_header, 0, m_buffer, writePointer,
-							bytesUntilEnd);
-					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0,
-							LogEntryHeader.Primary.SIZE - bytesUntilEnd);
+					System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
+					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
 					// Write payload
 					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer,
-								LogEntryHeader.Primary.SIZE - bytesUntilEnd,
+						System.arraycopy(p_payload, 0, m_buffer, p_header.length - bytesUntilEnd,
 								payloadLength);
 					}
-				} else if (bytesUntilEnd > LogEntryHeader.Primary.SIZE) {
+				} else if (bytesUntilEnd > p_header.length) {
 					// Write header
-					System.arraycopy(p_header, 0, m_buffer, writePointer,
-							LogEntryHeader.Primary.SIZE);
-					bytesUntilEnd -= LogEntryHeader.Primary.SIZE;
+					System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
+					bytesUntilEnd -= p_header.length;
 					// Write payload
 					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer, writePointer
-								+ LogEntryHeader.Primary.SIZE, bytesUntilEnd);
-						System.arraycopy(p_payload, bytesUntilEnd, m_buffer, 0,
-								payloadLength - bytesUntilEnd);
+						System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, bytesUntilEnd);
+						System.arraycopy(p_payload, bytesUntilEnd, m_buffer, 0, payloadLength - bytesUntilEnd);
 					}
 				} else {
 					// Write header
-					System.arraycopy(p_header, 0, m_buffer, writePointer,
-							LogEntryHeader.Primary.SIZE);
+					System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
 					// Write payload
 					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer, 0,
-								payloadLength);
+						System.arraycopy(p_payload, 0, m_buffer, 0, payloadLength);
 					}
 				}
 			}
@@ -365,7 +352,7 @@ public class PrimaryWriteBuffer {
 					flushDataToPrimaryLog();
 				} catch (final InterruptedException e) {
 					System.out
-							.println("Error: Writer thread is interrupted. Directly shuting down!");
+					.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;
 				}
 			}

@@ -4,8 +4,9 @@ package de.uniduesseldorf.dxram.core.log.storage;
 import java.io.IOException;
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.log.LogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
+import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 
 /**
  * This class implements the secondary log buffer
@@ -113,12 +114,14 @@ public final class SecondaryLogBuffer {
 		int newBufferOffset = 0;
 		int logEntrySize;
 		final int secLogOffset = LogHandler.LOG_ENTRY_RID_SIZE + LogHandler.LOG_ENTRY_NID_SIZE;
+		LogEntryHeaderInterface logEntryHeader;
 
 		buffer = new byte[p_entryOrRangeSize];
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry
-			logEntrySize = LogEntryHeader.Primary.SIZE
-					+ LogEntryHeader.Primary.getLength(p_buffer, oldBufferOffset);
+			logEntryHeader = AbstractLogEntryHeader.getType(p_buffer, oldBufferOffset);
+			logEntrySize = logEntryHeader.getHeaderSize()
+					+ logEntryHeader.getLength(p_buffer, oldBufferOffset);
 
 			// Copy primary log header, but skip NodeID and RangeID
 			System.arraycopy(p_buffer, oldBufferOffset + secLogOffset,
