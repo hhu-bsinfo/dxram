@@ -52,7 +52,7 @@ public final class MessageDirectory {
 
 		// enlarge array
 		if (constructors.length <= p_type) {
-			final Constructor<?>[][] newArray = new Constructor[p_type + 1][];
+			final Constructor<?>[][] newArray = new Constructor[(byte) (p_type + 1)][];
 			System.arraycopy(constructors, 0, newArray, 0, constructors.length);
 			constructors = newArray;
 			m_constructors = constructors;

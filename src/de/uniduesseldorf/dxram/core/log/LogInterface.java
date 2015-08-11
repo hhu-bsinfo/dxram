@@ -114,8 +114,10 @@ public interface LogInterface extends CoreComponent {
 	 * Recovers the local data of one backup range
 	 * @param p_owner
 	 *            the NodeID
-	 * @param p_firstChunkIDOrRangeID
-	 *            the RangeID for migrations or the first ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_rangeID
+	 *            the RangeID
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
@@ -139,8 +141,10 @@ public interface LogInterface extends CoreComponent {
 	 * Reads the local data of one log
 	 * @param p_owner
 	 *            the NodeID
-	 * @param p_firstChunkIDOrRangeID
-	 *            the RangeID for migrations or the first ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_rangeID
+	 *            the RangeID
 	 * @param p_manipulateReadPtr
 	 *            whether the read pointer should be adjusted or not
 	 * @throws DXRAMException
@@ -155,8 +159,10 @@ public interface LogInterface extends CoreComponent {
 	 * Prints the metadata of one node's log
 	 * @param p_owner
 	 *            the NodeID
-	 * @param p_firstChunkIDOrRangeID
-	 *            the RangeID for migrations or the first ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_rangeID
+	 *            the RangeID
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 * @note for testing only
