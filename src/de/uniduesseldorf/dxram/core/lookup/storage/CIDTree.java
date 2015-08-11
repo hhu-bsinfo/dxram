@@ -1,14 +1,23 @@
 
 package de.uniduesseldorf.dxram.core.lookup.storage;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+
+import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.utils.Contract;
 
-
 /**
- * Btree to store ranges, experimental version for evaluation
+ * Btree to store ranges
+ * @author Justin Wetherell <phishman3579@gmail.com> (classic btree implementation)
+ * @author Kevin Beineke (rewritten to handle ranges instead of single entries + reduction and optimization for this
+ *         application)
  *         13.06.2013
  */
-public final class OIDTreeTest {
+public final class CIDTree implements Serializable {
+
+	// Constants
+	private static final long serialVersionUID = 7565597467331239020L;
 
 	// Attributes
 	private short m_minEntries;
@@ -19,97 +28,357 @@ public final class OIDTreeTest {
 	private Node m_root;
 	private int m_size;
 	private short m_creator;
+	private boolean m_status;
+
+	private ArrayList<Long> m_backupNodes;
 
 	private Entry m_changedEntry;
 
 	// Constructors
 	/**
-	 * Creates an instance of OIDTree
+	 * Creates an instance of CIDTree
 	 * @param p_order
 	 *            order of the btree
-	 * @param p_creator
-	 *            the creator
 	 */
-	public OIDTreeTest(final short p_order, final short p_creator) {
+	public CIDTree(final short p_order) {
+		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
-		m_minChildren = (short)(m_minEntries + 1);
-		m_maxEntries = (short)(2 * m_minEntries);
-		m_maxChildren = (short)(m_maxEntries + 1);
+		m_minChildren = (short) (m_minEntries + 1);
+		m_maxEntries = (short) (2 * m_minEntries);
+		m_maxChildren = (short) (m_maxEntries + 1);
 
 		m_root = null;
 		m_size = -1;
-		m_creator = p_creator;
+		m_creator = -1;
+		m_status = true;
+
+		// m_backupNodes = new ArrayList<Long>();
 
 		m_changedEntry = null;
+	}
 
-		createOrReplaceEntry((long)(Math.pow(2, 32) * 1000), p_creator);
+	// Getters
+	/**
+	 * Returns the creator
+	 * @return the creator
+	 */
+	public short getCreator() {
+		return m_creator;
+	}
+
+	/**
+	 * Get the status of this peer
+	 * @return whether this node is online or not
+	 */
+	public boolean getStatus() {
+		return m_status;
+	}
+
+	// Setters
+	/**
+	 * Set the status of this peer
+	 * @param p_status
+	 *            whether this node is online or not
+	 */
+	public void setStatus(final boolean p_status) {
+		m_status = p_status;
 	}
 
 	// Methods
 	/**
-	 * Get the NodeID of the node which hosts the object of the given ObjectID
-	 * @param p_oid
-	 *            the ObjectID
-	 * @return the NodeID
+	 * Stores the migration for a single object
+	 * @param p_chunkID
+	 *            ChunkID of migrated object
+	 * @param p_nodeID
+	 *            new primary peer
+	 * @return true if insertion was successful
 	 */
-	public short get(final long p_oid) {
-		short ret;
-
-		if (null == m_root) {
-			ret = m_creator;
-		} else {
-			ret = getNodeIDOrSuccessorsNodeID(p_oid & 0x0000FFFFFFFFFFFFL);
-		}
-		return ret;
-	}
-
-	/**
-	 * Migrates an object
-	 * @param p_oid
-	 *            the ObjectID
-	 * @param p_nid
-	 *            the NodeID
-	 */
-	public void migrateObject(final long p_oid, final short p_nid) {
+	public boolean migrateObject(final long p_chunkID, final short p_nodeID) {
+		// int index;
 		long lid;
 		Node node;
 
-		lid = p_oid & 0x0000FFFFFFFFFFFFL;
+		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
 
-		node = createOrReplaceEntry(lid, p_nid);
+		Contract.check(0 < lid, "lid smaller than 1");
 
-		mergeWithPredecessorOrBound(lid, p_nid, node);
+		// index = (int)(lid / RANGE_SIZE);
+		// if (index < m_backupNodes.size()) {
+		node = createOrReplaceEntry(lid, p_nodeID);
 
-		mergeWithSuccessor(lid, p_nid);
+		mergeWithPredecessorOrBound(lid, p_nodeID, node);
+
+		mergeWithSuccessor(lid, p_nodeID);
+		// }
+		return true;
 	}
 
 	/**
-	 * Migrates a range
-	 * @param p_start
-	 *            the range start
-	 * @param p_end
-	 *            the range end
-	 * @param p_nid
-	 *            the NodeID
+	 * Stores the migration for a range
+	 * @param p_startID
+	 *            ChunkID of first migrated object
+	 * @param p_endID
+	 *            ChunkID of last migrated object
+	 * @param p_nodeID
+	 *            new primary peer
+	 * @return true if insertion was successful
 	 */
-	public void migrateRange(final long p_start, final long p_end, final short p_nid) {
+	public boolean migrateRange(final long p_startID, final long p_endID, final short p_nodeID) {
+		// int index;
 		long startLid;
 		long endLid;
 		Node startNode;
 
-		startLid = p_start & 0x0000FFFFFFFFFFFFL;
-		endLid = p_end & 0x0000FFFFFFFFFFFFL;
+		startLid = p_startID & 0x0000FFFFFFFFFFFFL;
+		endLid = p_endID & 0x0000FFFFFFFFFFFFL;
+		Contract.check(startLid <= endLid && 0 < startLid, "end larger than start or start smaller than 1");
+		if (startLid == endLid) {
+			migrateObject(p_startID, p_nodeID);
+		} else {
+			// index = (int)(endLid / RANGE_SIZE);
+			// if (index < m_backupNodes.size()) {
+			startNode = createOrReplaceEntry(startLid, p_nodeID);
 
-		startNode = createOrReplaceEntry(startLid, p_nid);
+			mergeWithPredecessorOrBound(startLid, p_nodeID, startNode);
 
-		mergeWithPredecessorOrBound(startLid, p_nid, startNode);
+			createOrReplaceEntry(endLid, p_nodeID);
 
-		createOrReplaceEntry(endLid, p_nid);
+			removeEntriesWithinRange(startLid, endLid);
 
-		removeEntriesWithinRange(startLid, endLid);
+			mergeWithSuccessor(endLid, p_nodeID);
+			// }
+		}
+		return true;
+	}
 
-		mergeWithSuccessor(endLid, p_nid);
+	/**
+	 * Initializes a range
+	 * @param p_endID
+	 *            ChunkID of last migrated object
+	 * @param p_creator
+	 *            the creator
+	 * @param p_backupPeers
+	 *            the backup peers
+	 * @return true if insertion was successful
+	 */
+	public boolean initRange(final long p_endID, final short p_creator, final short[] p_backupPeers) {
+		// long backupPeers;
+
+		if (0 == p_endID) {
+			m_creator = p_creator;
+		} else {
+			if (null == m_root) {
+				createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
+			}
+			// backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
+			// + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
+			// m_backupNodes.add(backupPeers);
+		}
+		return true;
+	}
+
+	/**
+	 * Returns the primary peer for given object
+	 * @param p_chunkID
+	 *            ChunkID of requested object
+	 * @return the NodeID of the primary peer for given object
+	 */
+	public short getPrimaryPeer(final long p_chunkID) {
+		Contract.checkNotNull(m_root);
+		return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
+	}
+
+	/**
+	 * Returns the range given ChunkID is in
+	 * @param p_chunkID
+	 *            ChunkID of requested object
+	 * @return the first and last ChunkID of the range
+	 */
+	public Locations getMetadata(final long p_chunkID) {
+		Locations ret = null;
+		long[] range;
+		short nodeID;
+		int index;
+		long lid;
+		Node node;
+		Entry predecessorEntry;
+
+		Contract.checkNotNull(m_root);
+
+		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
+		node = getNodeOrSuccessorsNode(lid);
+		if (node != null) {
+			index = node.indexOf(lid);
+			if (0 <= index) {
+				// LID was found: Store NodeID and determine successor
+				range = new long[2];
+				nodeID = node.getNodeID(index);
+				range[1] = getSuccessorsEntry(lid, node).getLid();
+			} else {
+				// LID was not found, but successor: Store NodeID and LID of successor
+				range = new long[2];
+				nodeID = node.getNodeID(index * -1 - 1);
+				range[1] = node.getLid(index * -1 - 1);
+			}
+			// Determine LID of predecessor
+			predecessorEntry = getPredecessorsEntry(range[1], node);
+			if (predecessorEntry != null) {
+				range[0] = predecessorEntry.getLid() + 1;
+			} else {
+				range[0] = 0;
+			}
+			ret = new Locations(nodeID, getBackupPeers(p_chunkID), range);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Returns all the backup peers for given object
+	 * @param p_chunkID
+	 *            ChunkID of requested object
+	 * @return the NodeIDs of all backup peers for given object
+	 */
+	public short[] getBackupPeers(final long p_chunkID) {
+		// short[] ret = null;
+		// Long tempResult;
+		// long result;
+
+		// if (m_root != null) {
+		// tempResult = m_backupNodes.get((int)((p_chunkID & 0x0000FFFFFFFFFFFFL) / RANGE_SIZE));
+		// if (tempResult != null) {
+		// result = tempResult;
+		// ret =
+		// new short[] {(short)result, (short)((result & 0x00000000FFFF0000L) >> 16),
+		// (short)((result & 0x0000FFFF00000000L) >> 32)};
+		// }
+		// }
+		// return ret;
+		return null;
+	}
+
+	/**
+	 * Removes given object from btree
+	 * @param p_chunkID
+	 *            ChunkID of deleted object
+	 * @note should always be called if an object is deleted
+	 */
+	public void removeObject(final long p_chunkID) {
+		int index;
+		Node node;
+		long currentLid;
+		Entry currentEntry;
+		Entry predecessor;
+		Entry successor;
+
+		if (null != m_root) {
+			node = getNodeOrSuccessorsNode(p_chunkID);
+			if (null != node) {
+				currentLid = -1;
+
+				index = node.indexOf(p_chunkID);
+				if (0 <= index) {
+					// Entry was found
+					currentLid = node.getLid(index);
+					predecessor = getPredecessorsEntry(p_chunkID, node);
+					currentEntry = new Entry(currentLid, node.getNodeID(index));
+					successor = getSuccessorsEntry(p_chunkID, node);
+					if (m_creator != currentEntry.getNodeID() && null != predecessor) {
+						if (p_chunkID - 1 == predecessor.getLid()) {
+							// Predecessor is direct neighbor: AB
+							// Successor might be direct neighbor or not: ABC or AB___C
+							if (m_creator == successor.getNodeID()) {
+								// Successor is barrier: ABC -> A_C or AB___C -> A___C
+								remove(p_chunkID);
+							} else {
+								// Successor is no barrier: ABC -> AXC or AB___C -> AX___C
+								node.changeEntry(p_chunkID, m_creator, index);
+							}
+							if (m_creator == predecessor.getNodeID()) {
+								// Predecessor is barrier: A_C -> ___C or AXC -> ___XC
+								// or A___C -> ___C or AX___C -> ___X___C
+								remove(predecessor.getLid());
+							}
+						} else {
+							// Predecessor is no direct neighbor: A___B
+							if (m_creator == successor.getNodeID()) {
+								// Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
+								remove(p_chunkID);
+							} else {
+								// Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
+								node.changeEntry(p_chunkID, m_creator, index);
+							}
+							// Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
+							// or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
+							createOrReplaceEntry(p_chunkID - 1, currentEntry.getNodeID());
+						}
+					}
+				} else {
+					// Entry was not found
+					index = index * -1 - 1;
+					successor = new Entry(node.getLid(index), node.getNodeID(index));
+					predecessor = getPredecessorsEntry(successor.getLid(), node);
+					if (m_creator != successor.getNodeID() && null != predecessor) {
+						// Entry is in range
+						if (p_chunkID - 1 == predecessor.getLid()) {
+							// Predecessor is direct neighbor: A'B'
+							// Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
+							createOrReplaceEntry(p_chunkID, m_creator);
+							if (m_creator == predecessor.getNodeID()) {
+								// Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
+								remove(p_chunkID - 1);
+							}
+						} else {
+							// Predecessor is no direct neighbor: A___'B'
+							// Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
+							// or A___'B'___C -> A___(B-1)X___C
+							createOrReplaceEntry(p_chunkID, m_creator);
+							createOrReplaceEntry(p_chunkID - 1, successor.getNodeID());
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Returns the backup peers for every range
+	 * @return an ArrayList with all backup peers
+	 */
+	public ArrayList<Long> getAllBackupPeers() {
+		return m_backupNodes;
+	}
+
+	/**
+	 * Removes given peer from all backups
+	 * @param p_failedPeer
+	 *            NodeID of failed peer
+	 * @param p_replacement
+	 *            NodeID of new backup peer
+	 */
+	public void removeBackupPeer(final short p_failedPeer, final short p_replacement) {
+		long element;
+		short[] backupPeers;
+
+		for (int i = 0; i < m_backupNodes.size(); i++) {
+			element = m_backupNodes.get(i);
+			backupPeers = new short[] {(short) element, (short) ((element & 0x00000000FFFF0000L) >> 16),
+					(short) ((element & 0x0000FFFF00000000L) >> 32)};
+			if (p_failedPeer == backupPeers[0]) {
+				element = ((p_replacement & 0x000000000000FFFFL) << 32)
+						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
+				m_backupNodes.set(i, element);
+			} else if (p_failedPeer == backupPeers[1]) {
+				element = ((p_replacement & 0x000000000000FFFFL) << 32)
+						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				m_backupNodes.set(i, element);
+			} else if (p_failedPeer == backupPeers[2]) {
+				element = ((p_replacement & 0x000000000000FFFFL) << 32)
+						+ ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				m_backupNodes.set(i, element);
+			}
+		}
 	}
 
 	/**
@@ -128,7 +397,7 @@ public final class OIDTreeTest {
 
 		if (null == m_root) {
 			m_root = new Node(null, m_maxEntries, m_maxChildren);
-			m_root.addEntry(p_lid, p_nodeID, 0);
+			m_root.addEntry(p_lid, p_nodeID);
 			ret = m_root;
 		} else {
 			node = m_root;
@@ -140,31 +409,13 @@ public final class OIDTreeTest {
 						node.changeEntry(p_lid, p_nodeID, index);
 					} else {
 						m_changedEntry = null;
-						node.addEntry(p_lid, p_nodeID, (index * -1) - 1);
+						node.addEntry(p_lid, p_nodeID, index * -1 - 1);
 						if (m_maxEntries < node.getNumberOfEntries()) {
 							// Need to split up
 							node = split(p_lid, node);
 						}
 					}
 					break;
-					/* Sequential search
-					for (int i = 0;i < node.getNumberOfEntries();i++) {
-						currentLid = node.getLid(i);
-						if (p_lid == currentLid) {
-							m_changedEntry = new Entry(node.getLid(i), node.getNodeID(i), node.isEndOfRange(i));
-							node.changeEntry(p_lid, p_nodeID, p_isEndOfRange, i);
-							ready = true;
-							break;
-						}
-					}
-					if (!ready) {
-						node.addEntry(p_lid, p_nodeID, p_isEndOfRange);
-						if (node.getNumberOfEntries() > m_maxEntries) {
-							// Need to split up
-							node = split(p_lid, node);
-						}
-						break;
-					}*/
 				} else {
 					if (p_lid < node.getLid(0)) {
 						node = node.getChild(0);
@@ -183,24 +434,8 @@ public final class OIDTreeTest {
 						node.changeEntry(p_lid, p_nodeID, index);
 						break;
 					} else {
-						node = node.getChild((index * -1) - 1);
+						node = node.getChild(index * -1 - 1);
 					}
-					/* Sequential search
-					for (int i = 1;i < node.getNumberOfChildren();i++) {
-						prev = node.getLid(i - 1);
-						if (p_lid == prev) {
-							m_changedEntry =
-									new Entry(node.getLid(i - 1), node.getNodeID(i - 1), node.isEndOfRange(i - 1));
-							node.changeEntry(p_lid, p_nodeID, p_isEndOfRange, i - 1);
-							ready = true;
-							break;
-						}
-						next = node.getLid(i);
-						if ((p_lid > prev) && (p_lid < next)) {
-							node = node.getChild(i);
-							break;
-						}
-					}*/
 				}
 			}
 
@@ -229,7 +464,7 @@ public final class OIDTreeTest {
 		if (null == predecessor) {
 			createOrReplaceEntry(p_lid - 1, m_creator);
 		} else {
-			if ((p_lid - 1) == predecessor.getLid()) {
+			if (p_lid - 1 == predecessor.getLid()) {
 				if (p_nodeID == predecessor.getNodeID()) {
 					remove(predecessor.getLid(), getPredecessorsNode(p_lid, p_node));
 				}
@@ -265,11 +500,29 @@ public final class OIDTreeTest {
 
 		node = getNodeOrSuccessorsNode(p_lid);
 		successor = getSuccessorsEntry(p_lid, node);
-		if ((null != successor) && (p_nodeID == successor.getNodeID())) {
+		if (null != successor && p_nodeID == successor.getNodeID()) {
 			remove(p_lid, node);
 		}
 	}
 
+	/**
+	 * Removes all entries between start (inclusive) and end
+	 * @param p_start
+	 *            the first object in range
+	 * @param p_end
+	 *            the last object in range
+	 */
+	private void removeEntriesWithinRange(final long p_start, final long p_end) {
+		long successor;
+
+		remove(p_start, getNodeOrSuccessorsNode(p_start));
+
+		successor = getLidOrSuccessorsLid(p_start);
+		while (-1 != successor && successor < p_end) {
+			remove(successor);
+			successor = getLidOrSuccessorsLid(p_start);
+		}
+	}
 
 	/**
 	 * Returns the node in which the next entry to given lid (could be the lid itself) is stored
@@ -311,35 +564,13 @@ public final class OIDTreeTest {
 			if (0 <= index) {
 				break;
 			} else {
-				index = (index * -1) - 1;
+				index = index * -1 - 1;
 				if (index < ret.getNumberOfChildren()) {
 					ret = ret.getChild(index);
 				} else {
 					break;
 				}
 			}
-			/* Sequential search
-			for (int i = 0;i < size;i++) {
-				currentLid = ret.getLid(i);
-				if (currentLid == p_lid) {
-					ready = true;
-					break;
-				}
-
-				next = i + 1;
-				if (next <= (size - 1)) {
-					nextLid = ret.getLid(next);
-					if ((currentLid < p_lid) && (nextLid > p_lid)) {
-						if (next < ret.getNumberOfChildren()) {
-							ret = ret.getChild(next);
-							break;
-						} else {
-							ready = true;
-							break;
-						}
-					}
-				}
-			}*/
 		}
 
 		return ret;
@@ -362,15 +593,8 @@ public final class OIDTreeTest {
 			if (0 <= index) {
 				ret = node.getLid(index);
 			} else {
-				ret = node.getLid((index * -1) - 1);
+				ret = node.getLid(index * -1 - 1);
 			}
-			/*for (int i = 0;i < node.getNumberOfEntries();i++) {
-				currentLid = node.getLid(i);
-				if (p_lid <= currentLid) {
-					ret = currentLid;
-					break;
-				}
-			}*/
 		}
 
 		return ret;
@@ -379,8 +603,8 @@ public final class OIDTreeTest {
 	/**
 	 * Returns the location and backup nodes of next lid to given lid (could be the lid itself)
 	 * @param p_lid
-	 *            the lid whose NodeID are searched
-	 * @return NodeID of p_lid if p_lid is in btree or successors NodeID
+	 *            the lid whose corresponding NodeID is searched
+	 * @return NodeID for p_lid if p_lid is in btree or successors NodeID
 	 */
 	private short getNodeIDOrSuccessorsNodeID(final long p_lid) {
 		short ret = -1;
@@ -393,37 +617,11 @@ public final class OIDTreeTest {
 			if (0 <= index) {
 				ret = node.getNodeID(index);
 			} else {
-				ret = node.getNodeID((index * -1) - 1);
+				ret = node.getNodeID(index * -1 - 1);
 			}
-			/*for (int i = 0;i < node.getNumberOfEntries();i++) {
-				currentLid = node.getLid(i);
-				if (p_lid <= currentLid) {
-					ret = node.getNodeID(i);
-					break;
-				}
-			}*/
 		}
 
 		return ret;
-	}
-
-	/**
-	 * Removes all entries between start (inclusive) and end
-	 * @param p_start
-	 *            the first object in range
-	 * @param p_end
-	 *            the last object in range
-	 */
-	private void removeEntriesWithinRange(final long p_start, final long p_end) {
-		long successor;
-
-		remove(p_start, getNodeOrSuccessorsNode(p_start));
-
-		successor = getLidOrSuccessorsLid(p_start);
-		while ((-1 != successor) && (successor < p_end)) {
-			remove(successor);
-			successor = getLidOrSuccessorsLid(p_start);
-		}
 	}
 
 	/**
@@ -455,7 +653,7 @@ public final class OIDTreeTest {
 			} else {
 				parent = node.getParent();
 				if (parent != null) {
-					while ((parent != null) && (p_lid < parent.getLid(0))) {
+					while (parent != null && p_lid < parent.getLid(0)) {
 						parent = parent.getParent();
 					}
 					ret = parent;
@@ -473,21 +671,6 @@ public final class OIDTreeTest {
 				}
 				ret = node;
 			}
-			/* Sequential search
-			for (int i = 1;i < node.getNumberOfEntries();i++) {
-				if (p_lid == node.getLid(i)) {
-					if (i <= node.getNumberOfChildren()) {
-						// Get maximum in child tree
-						node = node.getChild(i);
-						while (node.getNumberOfEntries() < node.getNumberOfChildren()) {
-							node = node.getChild(node.getNumberOfChildren() - 1);
-						}
-					}
-
-					ret = node;
-					break;
-				}
-			}*/
 		}
 
 		return ret;
@@ -508,7 +691,7 @@ public final class OIDTreeTest {
 
 		predecessorsNode = getPredecessorsNode(p_lid, p_node);
 		if (predecessorsNode != null) {
-			for (int i = predecessorsNode.getNumberOfEntries() - 1;i >= 0;i--) {
+			for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
 				predecessorsLid = predecessorsNode.getLid(i);
 				if (p_lid > predecessorsLid) {
 					ret = new Entry(predecessorsLid, predecessorsNode.getNodeID(i));
@@ -549,7 +732,7 @@ public final class OIDTreeTest {
 			} else {
 				parent = node.getParent();
 				if (parent != null) {
-					while ((parent != null) && (p_lid > parent.getLid(parent.getNumberOfEntries() - 1))) {
+					while (parent != null && p_lid > parent.getLid(parent.getNumberOfEntries() - 1)) {
 						parent = parent.getParent();
 					}
 					ret = parent;
@@ -567,21 +750,6 @@ public final class OIDTreeTest {
 				}
 				ret = node;
 			}
-			/* Sequential search
-			for (int i = 0;i < (node.getNumberOfEntries() - 1);i++) {
-				if (p_lid == node.getLid(i)) {
-					if (i < node.getNumberOfChildren()) {
-						// Get minimum in child tree
-						node = node.getChild(i + 1);
-						while (0 < node.getNumberOfChildren()) {
-							node = node.getChild(0);
-						}
-					}
-
-					ret = node;
-					break;
-				}
-			}*/
 		}
 
 		return ret;
@@ -602,7 +770,7 @@ public final class OIDTreeTest {
 
 		successorsNode = getSuccessorsNode(p_lid, p_node);
 		if (successorsNode != null) {
-			for (int i = 0;i < successorsNode.getNumberOfEntries();i++) {
+			for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
 				successorsLid = successorsNode.getLid(i);
 				if (p_lid < successorsLid) {
 					ret = new Entry(successorsLid, successorsNode.getNodeID(i));
@@ -655,7 +823,7 @@ public final class OIDTreeTest {
 			right.addChildren(node, medianIndex + 1, node.getNumberOfChildren(), 0);
 		}
 		if (null == node.getParent()) {
-			// new root, height of tree is increased
+			// New root, height of tree is increased
 			newRoot = new Node(null, m_maxEntries, m_maxChildren);
 			newRoot.addEntry(medianLid, medianNodeID, 0);
 			node.setParent(newRoot);
@@ -726,9 +894,9 @@ public final class OIDTreeTest {
 			ret = p_node.removeEntry(p_lid);
 			if (0 == p_node.getNumberOfChildren()) {
 				// Leaf node
-				if ((null != p_node.getParent()) && (p_node.getNumberOfEntries() < m_minEntries)) {
+				if (null != p_node.getParent() && p_node.getNumberOfEntries() < m_minEntries) {
 					combined(p_node);
-				} else if ((null == p_node.getParent()) && (0 == p_node.getNumberOfEntries())) {
+				} else if (null == p_node.getParent() && 0 == p_node.getNumberOfEntries()) {
 					// Removing root node with no keys or children
 					m_root = null;
 				}
@@ -745,7 +913,7 @@ public final class OIDTreeTest {
 					replaceLid = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
 				}
 				p_node.addEntry(replaceLid, replaceNodeID);
-				if ((null != greatest.getParent()) && (greatest.getNumberOfEntries() < m_minEntries)) {
+				if (null != greatest.getParent() && greatest.getNumberOfEntries() < m_minEntries) {
 					combined(greatest);
 				}
 				if (greatest.getNumberOfChildren() > m_maxChildren) {
@@ -794,10 +962,10 @@ public final class OIDTreeTest {
 		}
 
 		// Try to borrow neighbor
-		if ((null != rightNeighbor) && (rightNeighborSize > m_minEntries)) {
+		if (null != rightNeighbor && rightNeighborSize > m_minEntries) {
 			// Try to borrow from right neighbor
 			removeLid = rightNeighbor.getLid(0);
-			prev = (parent.indexOf(removeLid) * -1) - 2;
+			prev = parent.indexOf(removeLid) * -1 - 2;
 			parentNodeID = parent.getNodeID(prev);
 			parentLid = parent.removeEntry(prev);
 
@@ -817,10 +985,10 @@ public final class OIDTreeTest {
 				leftNeighborSize = leftNeighbor.getNumberOfEntries();
 			}
 
-			if ((null != leftNeighbor) && (leftNeighborSize > m_minEntries)) {
+			if (null != leftNeighbor && leftNeighborSize > m_minEntries) {
 				// Try to borrow from left neighbor
 				removeLid = leftNeighbor.getLid(leftNeighbor.getNumberOfEntries() - 1);
-				prev = (parent.indexOf(removeLid) * -1) - 1;
+				prev = parent.indexOf(removeLid) * -1 - 1;
 				parentNodeID = parent.getNodeID(prev);
 				parentLid = parent.removeEntry(prev);
 
@@ -832,19 +1000,20 @@ public final class OIDTreeTest {
 				if (0 < leftNeighbor.getNumberOfChildren()) {
 					p_node.addChild(leftNeighbor.removeChild(leftNeighbor.getNumberOfChildren() - 1));
 				}
-			} else if ((null != rightNeighbor) && (0 < parent.getNumberOfEntries())) {
+			} else if (null != rightNeighbor && 0 < parent.getNumberOfEntries()) {
 				// Cannot borrow from neighbors, try to combined with right neighbor
 				removeLid = rightNeighbor.getLid(0);
-				prev = (parent.indexOf(removeLid) * -1) - 2;
+				prev = parent.indexOf(removeLid) * -1 - 2;
 				parentNodeID = parent.getNodeID(prev);
 				parentLid = parent.removeEntry(prev);
 				parent.removeChild(rightNeighbor);
 				p_node.addEntry(parentLid, parentNodeID);
 
 				p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
-				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
+				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(),
+						p_node.getNumberOfChildren());
 
-				if ((null != parent.getParent()) && (parent.getNumberOfEntries() < m_minEntries)) {
+				if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
 					// Removing key made parent too small, combined up tree
 					combined(parent);
 				} else if (0 == parent.getNumberOfEntries()) {
@@ -852,10 +1021,10 @@ public final class OIDTreeTest {
 					p_node.setParent(null);
 					m_root = p_node;
 				}
-			} else if ((null != leftNeighbor) && (0 < parent.getNumberOfEntries())) {
+			} else if (null != leftNeighbor && 0 < parent.getNumberOfEntries()) {
 				// Cannot borrow from neighbors, try to combined with left neighbor
 				removeLid = leftNeighbor.getLid(leftNeighbor.getNumberOfEntries() - 1);
-				prev = (parent.indexOf(removeLid) * -1) - 1;
+				prev = parent.indexOf(removeLid) * -1 - 1;
 				parentNodeID = parent.getNodeID(prev);
 				parentLid = parent.removeEntry(prev);
 				parent.removeChild(leftNeighbor);
@@ -863,7 +1032,7 @@ public final class OIDTreeTest {
 				p_node.addEntries(leftNeighbor, 0, leftNeighbor.getNumberOfEntries(), -1);
 				p_node.addChildren(leftNeighbor, 0, leftNeighbor.getNumberOfChildren(), -1);
 
-				if ((null != parent.getParent()) && (parent.getNumberOfEntries() < m_minEntries)) {
+				if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
 					// Removing key made parent too small, combined up tree
 					combined(parent);
 				} else if (0 == parent.getNumberOfEntries()) {
@@ -906,21 +1075,21 @@ public final class OIDTreeTest {
 	private boolean validateNode(final Node p_node) {
 		boolean ret = true;
 		int numberOfEntries;
-		long p;
-		long n;
+		long prev;
+		long next;
 		int childrenSize;
 		Node first;
 		Node last;
-		Node c;
+		Node child;
 
 		numberOfEntries = p_node.getNumberOfEntries();
 
 		if (1 < numberOfEntries) {
 			// Make sure the keys are sorted
-			for (int i = 1;i < numberOfEntries;i++) {
-				p = p_node.getLid(i - 1);
-				n = p_node.getLid(i);
-				if (p > n) {
+			for (int i = 1; i < numberOfEntries; i++) {
+				prev = p_node.getLid(i - 1);
+				next = p_node.getLid(i);
+				if (prev > next) {
 					ret = false;
 					break;
 				}
@@ -949,7 +1118,7 @@ public final class OIDTreeTest {
 					ret = false;
 				} else if (0 == childrenSize) {
 					ret = true;
-				} else if (numberOfEntries != (childrenSize - 1)) {
+				} else if (numberOfEntries != childrenSize - 1) {
 					// If there are children, there should be one more child then keys
 					ret = false;
 				} else if (childrenSize < m_minChildren) {
@@ -972,23 +1141,23 @@ public final class OIDTreeTest {
 			}
 
 			// Check that each node's first and last key holds it's invariance
-			for (int i = 1;i < p_node.getNumberOfEntries();i++) {
-				p = p_node.getLid(i - 1);
-				n = p_node.getLid(i);
-				c = p_node.getChild(i);
-				if (p > c.getLid(0)) {
+			for (int i = 1; i < p_node.getNumberOfEntries(); i++) {
+				prev = p_node.getLid(i - 1);
+				next = p_node.getLid(i);
+				child = p_node.getChild(i);
+				if (prev > child.getLid(0)) {
 					ret = false;
 					break;
 				}
-				if (n < c.getLid(c.getNumberOfEntries() - 1)) {
+				if (next < child.getLid(child.getNumberOfEntries() - 1)) {
 					ret = false;
 					break;
 				}
 			}
 
-			for (int i = 0;i < p_node.getNumberOfChildren();i++) {
-				c = p_node.getChild(i);
-				if (!validateNode(c)) {
+			for (int i = 0; i < p_node.getNumberOfChildren(); i++) {
+				child = p_node.getChild(i);
+				if (!validateNode(child)) {
 					ret = false;
 					break;
 				}
@@ -1037,16 +1206,16 @@ public final class OIDTreeTest {
 		} else {
 			ret.append("├── ");
 		}
-		for (int i = 0;i < p_node.getNumberOfEntries();i++) {
+		for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
 			ret.append("(lid: " + p_node.getLid(i) + " nid: " + p_node.getNodeID(i) + ")");
-			if (i < (p_node.getNumberOfEntries() - 1)) {
+			if (i < p_node.getNumberOfEntries() - 1) {
 				ret.append(", ");
 			}
 		}
 		ret.append("\n");
 
 		if (null != p_node.getChild(0)) {
-			for (int i = 0;i < (p_node.getNumberOfChildren() - 1);i++) {
+			for (int i = 0; i < p_node.getNumberOfChildren() - 1; i++) {
 				obj = p_node.getChild(i);
 				if (p_isTail) {
 					ret.append(getString(obj, p_prefix + "    ", false));
@@ -1071,13 +1240,15 @@ public final class OIDTreeTest {
 	 * @author Kevin Beineke
 	 *         13.06.2013
 	 */
-	private static final class Node implements Comparable<Node> {
+	private static final class Node implements Comparable<Node>, Serializable {
 
 		// Attributes
+		private static final long serialVersionUID = 8096853988906422021L;
+
 		private Node m_parent;
 
 		private long[] m_keys;
-		private short[] m_dataLeafs;
+		private long[] m_dataLeafs;
 		private short m_numberOfEntries;
 
 		private Node[] m_children;
@@ -1096,7 +1267,7 @@ public final class OIDTreeTest {
 		private Node(final Node p_parent, final short p_maxEntries, final int p_maxChildren) {
 			m_parent = p_parent;
 			m_keys = new long[p_maxEntries + 1];
-			m_dataLeafs = new short[p_maxEntries + 1];
+			m_dataLeafs = new long[p_maxEntries + 1];
 			m_numberOfEntries = 0;
 			m_children = new Node[p_maxChildren + 1];
 			m_numberOfChildren = 0;
@@ -1112,9 +1283,9 @@ public final class OIDTreeTest {
 		public int compareTo(final Node p_cmp) {
 			int ret;
 
-			if (this.getLid(0) < p_cmp.getLid(0)) {
+			if (getLid(0) < p_cmp.getLid(0)) {
 				ret = -1;
-			} else if (this.getLid(0) > p_cmp.getLid(0)) {
+			} else if (getLid(0) > p_cmp.getLid(0)) {
 				ret = 1;
 			} else {
 				ret = 0;
@@ -1147,7 +1318,7 @@ public final class OIDTreeTest {
 		 * @return the lid to given index
 		 */
 		private long getLid(final int p_index) {
-			return m_keys[p_index] & 0x0000FFFFFFFFFFFFL;
+			return m_keys[p_index];
 		}
 
 		/**
@@ -1157,7 +1328,7 @@ public final class OIDTreeTest {
 		 * @return the data leaf to given index
 		 */
 		private short getNodeID(final int p_index) {
-			return m_dataLeafs[p_index];
+			return (short) m_dataLeafs[p_index];
 		}
 
 		/**
@@ -1207,7 +1378,7 @@ public final class OIDTreeTest {
 		private void addEntry(final long p_lid, final short p_nodeID) {
 			int index;
 
-			index = (this.indexOf(p_lid) * -1) - 1;
+			index = this.indexOf(p_lid) * -1 - 1;
 
 			System.arraycopy(m_keys, index, m_keys, index + 1, m_numberOfEntries - index);
 			System.arraycopy(m_dataLeafs, index, m_dataLeafs, index + 1, m_numberOfEntries - index);
@@ -1250,19 +1421,19 @@ public final class OIDTreeTest {
 		 */
 		private void addEntries(final Node p_node, final int p_offsetSrc, final int p_endSrc, final int p_offsetDst) {
 			long[] aux1;
-			short[] aux2;
+			long[] aux2;
 
 			if (-1 != p_offsetDst) {
 				System.arraycopy(p_node.m_keys, p_offsetSrc, m_keys, p_offsetDst, p_endSrc - p_offsetSrc);
 				System.arraycopy(p_node.m_dataLeafs, p_offsetSrc, m_dataLeafs, p_offsetDst, p_endSrc - p_offsetSrc);
-				m_numberOfEntries = (short)((p_offsetDst + p_endSrc) - p_offsetSrc);
+				m_numberOfEntries = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
 			} else {
 				aux1 = new long[m_keys.length];
 				System.arraycopy(p_node.m_keys, 0, aux1, 0, p_node.m_numberOfEntries);
 				System.arraycopy(m_keys, 0, aux1, p_node.m_numberOfEntries, m_numberOfEntries);
 				m_keys = aux1;
 
-				aux2 = new short[m_dataLeafs.length];
+				aux2 = new long[m_dataLeafs.length];
 				System.arraycopy(p_node.m_dataLeafs, 0, aux2, 0, p_node.m_numberOfEntries);
 				System.arraycopy(m_dataLeafs, 0, aux2, p_node.m_numberOfEntries, m_numberOfEntries);
 				m_dataLeafs = aux2;
@@ -1282,7 +1453,7 @@ public final class OIDTreeTest {
 		 */
 		private void changeEntry(final long p_lid, final short p_nodeID, final int p_index) {
 
-			if (p_lid == this.getLid(p_index)) {
+			if (p_lid == getLid(p_index)) {
 				m_keys[p_index] = p_lid;
 				m_dataLeafs[p_index] = p_nodeID;
 			}
@@ -1300,10 +1471,11 @@ public final class OIDTreeTest {
 
 			index = this.indexOf(p_lid);
 			if (0 <= index) {
-				ret = this.getLid(index);
+				ret = getLid(index);
 
-				System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index);
-				System.arraycopy(m_dataLeafs, index + 1, m_dataLeafs, index, m_numberOfEntries - index);
+				System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index - 1);
+				System.arraycopy(m_dataLeafs, index + 1, m_dataLeafs, index, m_numberOfEntries - index - 1);
+
 				m_numberOfEntries--;
 			}
 
@@ -1320,7 +1492,7 @@ public final class OIDTreeTest {
 			long ret = -1;
 
 			if (p_index < m_numberOfEntries) {
-				ret = this.getLid(p_index);
+				ret = getLid(p_index);
 
 				System.arraycopy(m_keys, p_index + 1, m_keys, p_index, m_numberOfEntries - p_index);
 				System.arraycopy(m_dataLeafs, p_index + 1, m_dataLeafs, p_index, m_numberOfEntries - p_index);
@@ -1403,7 +1575,7 @@ public final class OIDTreeTest {
 		private void addChild(final Node p_child) {
 			int index;
 
-			index = (this.indexOf(p_child) * -1) - 1;
+			index = this.indexOf(p_child) * -1 - 1;
 
 			System.arraycopy(m_children, index, m_children, index + 1, m_numberOfChildren - index);
 			m_children[index] = p_child;
@@ -1429,18 +1601,18 @@ public final class OIDTreeTest {
 			if (-1 != p_offsetDst) {
 				System.arraycopy(p_node.m_children, p_offsetSrc, m_children, p_offsetDst, p_endSrc - p_offsetSrc);
 
-				for (Node child : m_children) {
+				for (final Node child : m_children) {
 					if (null == child) {
 						break;
 					}
 					child.setParent(this);
 				}
-				m_numberOfChildren = (short)((p_offsetDst + p_endSrc) - p_offsetSrc);
+				m_numberOfChildren = (short) (p_offsetDst + p_endSrc - p_offsetSrc);
 			} else {
 				aux = new Node[m_children.length];
 				System.arraycopy(p_node.m_children, 0, aux, 0, p_node.m_numberOfChildren);
 
-				for (Node child : aux) {
+				for (final Node child : aux) {
 					if (null == child) {
 						break;
 					}
@@ -1513,9 +1685,9 @@ public final class OIDTreeTest {
 			ret = new StringBuilder();
 
 			ret.append("entries=[");
-			for (int i = 0;i < this.getNumberOfEntries();i++) {
-				ret.append("(lid: " + this.getLid(i) + " location: " + this.getNodeID(i) + ")");
-				if (i < (this.getNumberOfEntries() - 1)) {
+			for (int i = 0; i < getNumberOfEntries(); i++) {
+				ret.append("(lid: " + getLid(i) + " location: " + getNodeID(i) + ")");
+				if (i < getNumberOfEntries() - 1) {
 					ret.append(", ");
 				}
 			}
@@ -1523,9 +1695,9 @@ public final class OIDTreeTest {
 
 			if (null != m_parent) {
 				ret.append("parent=[");
-				for (int i = 0;i < m_parent.getNumberOfEntries();i++) {
-					ret.append("(lid: " + this.getLid(i) + " location: " + this.getNodeID(i) + ")");
-					if (i < (m_parent.getNumberOfEntries() - 1)) {
+				for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
+					ret.append("(lid: " + getLid(i) + " location: " + getNodeID(i) + ")");
+					if (i < m_parent.getNumberOfEntries() - 1) {
 						ret.append(", ");
 					}
 				}
@@ -1534,9 +1706,9 @@ public final class OIDTreeTest {
 
 			if (null != m_children) {
 				ret.append("numberOfEntries=");
-				ret.append(this.getNumberOfEntries());
+				ret.append(getNumberOfEntries());
 				ret.append(" children=");
-				ret.append(this.getNumberOfChildren());
+				ret.append(getNumberOfChildren());
 				ret.append("\n");
 			}
 
@@ -1549,11 +1721,14 @@ public final class OIDTreeTest {
 	 * @author Kevin Beineke
 	 *         13.06.2013
 	 */
-	private static final class Entry {
+	private static final class Entry implements Serializable {
+
+		// Constants
+		private static final long serialVersionUID = -7000053901808777917L;
 
 		// Attributes
 		private long m_lid;
-		private short m_nodeID;
+		private long m_nodeID;
 
 		// Constructors
 		/**
@@ -1581,7 +1756,7 @@ public final class OIDTreeTest {
 		 * @return the location
 		 */
 		public short getNodeID() {
-			return m_nodeID;
+			return (short) m_nodeID;
 		}
 
 		/**

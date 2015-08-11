@@ -9,7 +9,7 @@ MailboxTest - A simple Test for Chunks and network
 MemoryManagementTest - Test cases for the evaluation of the memory management
 NetworkTest - Test for the network
 NodeParserTest - Test for the node parsing
-OIDDataStructureTest - Test for the OID data structures
+CIDTreeTest - Test for the CIDTree(Optimized)
 TestCase - A TestCase for automated testing
 ThroughputTest - Test case for evaluating the throughput
 UnsafeTest - Test of the Unsafe-class

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup.storage;
 
 import java.util.concurrent.locks.ReadWriteLock;
@@ -32,7 +33,7 @@ public final class CacheTree {
 
 	// Constructors
 	/**
-	 * Creates an instance of OIDTree
+	 * Creates an instance of CacheTree
 	 * @param p_order
 	 *            order of the btree
 	 */

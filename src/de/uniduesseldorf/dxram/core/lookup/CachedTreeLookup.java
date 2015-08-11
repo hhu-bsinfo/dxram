@@ -32,7 +32,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	// Attributes
 	private LookupInterface m_lookup;
 
-	private CacheTree m_oidCacheTree;
+	private CacheTree m_cidCacheTree;
 	private Cache<Integer, Long> m_aidCache;
 
 	// Constructors
@@ -53,7 +53,7 @@ public final class CachedTreeLookup implements LookupInterface {
 
 		m_lookup = p_lookup;
 
-		m_oidCacheTree = null;
+		m_cidCacheTree = null;
 		m_aidCache = null;
 	}
 
@@ -63,7 +63,7 @@ public final class CachedTreeLookup implements LookupInterface {
 		m_lookup.initialize();
 
 		if (!NodeID.isSuperpeer()) {
-			m_oidCacheTree = new CacheTree(ORDER);
+			m_cidCacheTree = new CacheTree(ORDER);
 			m_aidCache = new Cache<Integer, Long>(NS_CACHE_SIZE);
 			// m_aidCache.enableTTL();
 		}
@@ -78,9 +78,9 @@ public final class CachedTreeLookup implements LookupInterface {
 	public void close() {
 		m_lookup.close();
 
-		if (m_oidCacheTree != null) {
-			m_oidCacheTree.close();
-			m_oidCacheTree = null;
+		if (m_cidCacheTree != null) {
+			m_cidCacheTree.close();
+			m_cidCacheTree = null;
 		}
 		if (m_aidCache != null) {
 			m_aidCache.clear();
@@ -93,13 +93,13 @@ public final class CachedTreeLookup implements LookupInterface {
 		Locations ret;
 		short nodeID;
 
-		ret = m_oidCacheTree.getMetadata(p_chunkID);
+		ret = m_cidCacheTree.getMetadata(p_chunkID);
 		if (ret == null) {
 			ret = m_lookup.get(p_chunkID);
 			if (ret != null) {
 				nodeID = ret.getPrimaryPeer();
 
-				m_oidCacheTree.cacheRange(((long)nodeID << 48) + ret.getRange()[0],
+				m_cidCacheTree.cacheRange(((long)nodeID << 48) + ret.getRange()[0],
 						((long)nodeID << 48) + ret.getRange()[1], nodeID);
 			}
 		}
@@ -193,7 +193,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	@Override
 	public void invalidate(final long... p_chunkIDs) {
 		for (long chunkID : p_chunkIDs) {
-			m_oidCacheTree.invalidateChunkID(chunkID);
+			m_cidCacheTree.invalidateChunkID(chunkID);
 		}
 	}
 
@@ -229,7 +229,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	 * Clear the cache
 	 */
 	public void clear() {
-		m_oidCacheTree = new CacheTree(ORDER);
+		m_cidCacheTree = new CacheTree(ORDER);
 		m_aidCache.clear();
 	}
 

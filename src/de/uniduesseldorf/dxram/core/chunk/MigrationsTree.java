@@ -28,7 +28,7 @@ public final class MigrationsTree implements Serializable {
 
 	private Node m_root;
 	private int m_entrySize;
-	private long m_logSize;
+	private long m_currentSecLogSize;
 
 	private Entry m_changedEntry;
 
@@ -48,7 +48,7 @@ public final class MigrationsTree implements Serializable {
 
 		m_root = null;
 		m_entrySize = -1;
-		m_logSize = 0;
+		m_currentSecLogSize = 0;
 
 		m_changedEntry = null;
 
@@ -63,7 +63,14 @@ public final class MigrationsTree implements Serializable {
 	 * @return true if it fits
 	 */
 	public boolean fits(final long p_size) {
-		return p_size + m_logSize <= SECONDARY_LOG_SIZE;
+		return p_size + m_currentSecLogSize <= SECONDARY_LOG_SIZE;
+	}
+
+	/**
+	 * Resets the byte counter for current backup range
+	 */
+	public void initNewBackupRange() {
+		m_currentSecLogSize = 0;
 	}
 
 	/**
@@ -90,7 +97,7 @@ public final class MigrationsTree implements Serializable {
 
 		mergeWithSuccessor(lid, p_rangeID);
 
-		m_logSize += p_size;
+		m_currentSecLogSize += p_size;
 
 		return true;
 	}
@@ -128,7 +135,7 @@ public final class MigrationsTree implements Serializable {
 
 			mergeWithSuccessor(endLid, p_rangeID);
 
-			m_logSize += p_rangeSize;
+			m_currentSecLogSize += p_rangeSize;
 		}
 		return true;
 	}
@@ -1199,16 +1206,16 @@ public final class MigrationsTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_lid) {
-					low = mid + 1;
-				} else if (midVal > p_lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_lid) {
+				low = mid + 1;
+			} else if (midVal > p_lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1398,16 +1405,16 @@ public final class MigrationsTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLid(0);
+			midVal = m_children[mid].getLid(0);
 
-				if (midVal < lid) {
-					low = mid + 1;
-				} else if (midVal > lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < lid) {
+				low = mid + 1;
+			} else if (midVal > lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

@@ -15,7 +15,8 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
-import de.uniduesseldorf.dxram.core.log.header.MigrationLogEntryHeader;
+import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogEntryHeader;
+import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -90,7 +91,7 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException(
 					"Illegal buffer size! Must be 2^x with "
 							+ Math.log(LogHandler.FLASHPAGE_SIZE) / Math
-							.log(2) + " <= x <= 31");
+									.log(2) + " <= x <= 31");
 		} else {
 			m_buffer = new byte[p_bufferSize];
 			m_ringBufferSize = p_bufferSize;
@@ -112,7 +113,7 @@ public class PrimaryWriteBuffer {
 	 *             if caller is interrupted
 	 */
 	public final void closeWriteBuffer() throws InterruptedException,
-	IOException {
+			IOException {
 		// Shutdown primary log writer-thread
 		m_flushingComplete = false;
 		m_isShuttingDown = true;
@@ -136,7 +137,7 @@ public class PrimaryWriteBuffer {
 
 	/**
 	 * Writes log entries as a whole (max. size: write buffer) Log entry format:
-	 * /////// // OID // LEN // CRC// DATA ... ///////
+	 * /////// // CID // LEN // CRC// DATA ... ///////
 	 * @param p_header
 	 *            the log entry's header as a byte array
 	 * @param p_payload
@@ -157,13 +158,21 @@ public class PrimaryWriteBuffer {
 		Integer counter;
 		long rangeID;
 
-		logEntryHeader = AbstractLogEntryHeader.getType(p_header, 0);
 		if (p_payload != null) {
 			payloadLength = p_payload.length;
 		} else {
 			payloadLength = 0;
 		}
-		bytesToWrite = logEntryHeader.getHeaderSize() + payloadLength;
+
+		logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_header, 0);
+		if (logEntryHeader instanceof MigrationPrimLogEntryHeader
+				|| logEntryHeader instanceof MigrationPrimLogTombstone) {
+			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0, true);
+			bytesToWrite = logEntryHeader.getHeaderSize(true) + payloadLength;
+		} else {
+			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0, false));
+			bytesToWrite = logEntryHeader.getHeaderSize(false) + payloadLength;
+		}
 
 		if (bytesToWrite > m_ringBufferSize) {
 			throw new IllegalArgumentException(
@@ -198,12 +207,6 @@ public class PrimaryWriteBuffer {
 			}
 			// Update byte counters
 			m_bytesInWriteBuffer += bytesToWrite;
-
-			if (logEntryHeader instanceof MigrationLogEntryHeader) {
-				rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
-			} else {
-				rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0));
-			}
 
 			counter = m_lengthByBackupRange.get(rangeID);
 			if (null == counter) {
@@ -352,7 +355,7 @@ public class PrimaryWriteBuffer {
 					flushDataToPrimaryLog();
 				} catch (final InterruptedException e) {
 					System.out
-					.println("Error: Writer thread is interrupted. Directly shuting down!");
+							.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;
 				}
 			}

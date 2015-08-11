@@ -27,26 +27,34 @@ public interface LogInterface extends CoreComponent {
 	 * Returns the secondary log
 	 * @param p_chunkID
 	 *            the ChunkID
+	 * @param p_source
+	 *            the source NodeID
+	 * @param p_rangeID
+	 *            the RangeID for migrations or -1
 	 * @return the secondary log
 	 * @throws IOException
 	 *             if the secondary log could not be returned
 	 * @throws InterruptedException
 	 *             if the secondary log could not be returned
 	 */
-	SecondaryLogWithSegments getSecondaryLog(long p_chunkID)
+	SecondaryLogWithSegments getSecondaryLog(long p_chunkID, short p_source, byte p_rangeID)
 			throws IOException, InterruptedException;
 
 	/**
 	 * Returns the secondary log buffer
 	 * @param p_chunkID
 	 *            the ChunkID
+	 * @param p_source
+	 *            the source NodeID
+	 * @param p_rangeID
+	 *            the RangeID for migrations or -1
 	 * @return the secondary log buffer
 	 * @throws IOException
 	 *             if the secondary log buffer could not be returned
 	 * @throws InterruptedException
 	 *             if the secondary log buffer could not be returned
 	 */
-	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID)
+	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID, short p_source, byte p_rangeID)
 			throws IOException, InterruptedException;
 
 	/**
@@ -59,9 +67,11 @@ public interface LogInterface extends CoreComponent {
 
 	/**
 	 * Returns the header size
+	 * @param p_nodeID
+	 *            the NodeID
 	 * @return the header size
 	 */
-	short getHeaderSize();
+	short getHeaderSize(final short p_nodeID);
 
 	// Methods
 	/**
@@ -91,22 +101,30 @@ public interface LogInterface extends CoreComponent {
 	 * Creates a new Chunk
 	 * @param p_chunkID
 	 *            the ChunkID
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @param p_source
+	 *            the source NodeID
 	 * @throws DXRAMException
 	 *             if the Chunk could not be logged
 	 */
-	void removeChunk(long p_chunkID) throws DXRAMException;
+	void removeChunk(long p_chunkID, byte p_rangeID, short p_source) throws DXRAMException;
 
 	/**
-	 * Recovers the local data of one log
-	 * @param p_chunkID
-	 *            the ChunkID
+	 * Recovers the local data of one backup range
+	 * @param p_owner
+	 *            the NodeID
+	 * @param p_firstChunkIDOrRangeID
+	 *            the RangeID for migrations or the first ChunkID
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	void recoverAllLogEntries(long p_chunkID) throws DXRAMException;
+	void recoverAllLogEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
-	 * Recovers some local data of one node from the log
+	 * Recovers some local data of one node from log
+	 * @param p_owner
+	 *            the NodeID
 	 * @param p_low
 	 *            lower bound
 	 * @param p_high
@@ -114,13 +132,15 @@ public interface LogInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	void recoverRange(long p_low, long p_high)
+	void recoverRange(short p_owner, long p_low, long p_high)
 			throws DXRAMException;
 
 	/**
 	 * Reads the local data of one log
-	 * @param p_chunkID
-	 *            the ChunkID
+	 * @param p_owner
+	 *            the NodeID
+	 * @param p_firstChunkIDOrRangeID
+	 *            the RangeID for migrations or the first ChunkID
 	 * @param p_manipulateReadPtr
 	 *            whether the read pointer should be adjusted or not
 	 * @throws DXRAMException
@@ -128,18 +148,20 @@ public interface LogInterface extends CoreComponent {
 	 * @return the local data
 	 * @note for testing only
 	 */
-	byte[][] readAllEntries(long p_chunkID, boolean p_manipulateReadPtr)
+	byte[][] readAllEntries(short p_owner, long p_chunkID, byte p_rangeID, boolean p_manipulateReadPtr)
 			throws DXRAMException;
 
 	/**
 	 * Prints the metadata of one node's log
-	 * @param p_chunkID
-	 *            the ChunkID
+	 * @param p_owner
+	 *            the NodeID
+	 * @param p_firstChunkIDOrRangeID
+	 *            the RangeID for migrations or the first ChunkID
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 * @note for testing only
 	 */
-	void printMetadataOfAllEntries(long p_chunkID) throws DXRAMException;
+	void printMetadataOfAllEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
 	 * Flushes the primary log write buffer

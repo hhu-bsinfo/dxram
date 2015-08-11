@@ -14,7 +14,7 @@ import de.uniduesseldorf.dxram.core.lookup.LookupHandler;
  * @author Kevin Beineke
  *         27.01.2014
  */
-public class IDHashTableLP {
+public class AIDTableOptimized {
 
 	// Attributes
 	private int[] m_table;
@@ -27,7 +27,7 @@ public class IDHashTableLP {
 	/**
 	 * Creates an instance of IDHashTable
 	 */
-	public IDHashTableLP() {
+	public AIDTableOptimized() {
 		this(100000, 0.9f);
 	}
 
@@ -36,7 +36,7 @@ public class IDHashTableLP {
 	 * @param p_initialCapacity
 	 *            the initial capacity of IDHashTable
 	 */
-	public IDHashTableLP(final int p_initialCapacity) {
+	public AIDTableOptimized(final int p_initialCapacity) {
 		this(p_initialCapacity, 0.9f);
 	}
 
@@ -47,7 +47,7 @@ public class IDHashTableLP {
 	 * @param p_loadFactor
 	 *            the load factor of IDHashTable
 	 */
-	public IDHashTableLP(final int p_initialElementCapacity, final float p_loadFactor) {
+	public AIDTableOptimized(final int p_initialElementCapacity, final float p_loadFactor) {
 		super();
 
 		m_count = 0;

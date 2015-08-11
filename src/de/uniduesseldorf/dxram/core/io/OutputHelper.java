@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -246,19 +246,19 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Get the lenth of a OIDTree
+	 * Get the lenth of a CIDTree
 	 * @param p_tree
-	 *            the OIDTree
-	 * @return the lenght of the OIDTree
+	 *            the CIDTree
+	 * @return the lenght of the CIDTree
 	 */
-	public static int getOIDTreeWriteLength(final OIDTreeOptimized p_tree) {
+	public static int getCIDTreeWriteLength(final CIDTreeOptimized p_tree) {
 		int ret;
 		byte[] data;
 
 		if (p_tree == null) {
 			ret = getBooleanWriteLength();
 		} else {
-			data = parseOIDTree(p_tree);
+			data = parseCIDTree(p_tree);
 			ret = getBooleanWriteLength();
 			if (data != null) {
 				ret += getByteArrayWriteLength(data.length);
@@ -269,15 +269,15 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes an OIDTree to DataOutput
+	 * Writes an CIDTree to DataOutput
 	 * @param p_output
 	 *            the DataOutput
 	 * @param p_tree
-	 *            the OIDTree
+	 *            the CIDTree
 	 * @throws IOException
-	 *             if the OIDTree could not be written
+	 *             if the CIDTree could not be written
 	 */
-	public static void writeOIDTree(final DataOutput p_output, final OIDTreeOptimized p_tree) throws IOException {
+	public static void writeCIDTree(final DataOutput p_output, final CIDTreeOptimized p_tree) throws IOException {
 		byte[] data;
 
 		Contract.checkNotNull(p_output, "no output given");
@@ -285,7 +285,7 @@ public final class OutputHelper {
 		if (p_tree == null) {
 			writeBoolean(p_output, false);
 		} else {
-			data = parseOIDTree(p_tree);
+			data = parseCIDTree(p_tree);
 			writeBoolean(p_output, data != null);
 			if (data != null) {
 				writeByteArray(p_output, data);
@@ -294,13 +294,13 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes an OIDTree
+	 * Writes an CIDTree
 	 * @param p_buffer
 	 *            the buffer
 	 * @param p_tree
-	 *            the OIDTree
+	 *            the CIDTree
 	 */
-	public static void writeOIDTree(final ByteBuffer p_buffer, final OIDTreeOptimized p_tree) {
+	public static void writeCIDTree(final ByteBuffer p_buffer, final CIDTreeOptimized p_tree) {
 		byte[] data;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -308,7 +308,7 @@ public final class OutputHelper {
 		if (p_tree == null) {
 			writeBoolean(p_buffer, false);
 		} else {
-			data = parseOIDTree(p_tree);
+			data = parseCIDTree(p_tree);
 			writeBoolean(p_buffer, data != null);
 			if (data != null) {
 				writeByteArray(p_buffer, data);
@@ -317,12 +317,12 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Parses an OIDTree to a byte array
+	 * Parses an CIDTree to a byte array
 	 * @param p_tree
-	 *            the OIDTree
+	 *            the CIDTree
 	 * @return the byte array
 	 */
-	private static byte[] parseOIDTree(final OIDTreeOptimized p_tree) {
+	private static byte[] parseCIDTree(final CIDTreeOptimized p_tree) {
 		byte[] ret = null;
 		ByteArrayOutputStream byteArrayOutputStream;
 		ObjectOutput objectOutput = null;

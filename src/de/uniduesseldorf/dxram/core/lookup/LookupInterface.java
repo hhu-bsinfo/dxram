@@ -82,7 +82,7 @@ public interface LookupInterface extends CoreComponent {
 	void migrateOwnChunk(long p_chunkID, short p_nodeID) throws LookupException;
 
 	/**
-	 * Initializes the given ID range in OIDTree
+	 * Initializes the given ID range in CIDTree
 	 * @param p_firstChunkIDOrRangeID
 	 *            the last ID
 	 * @param p_locations

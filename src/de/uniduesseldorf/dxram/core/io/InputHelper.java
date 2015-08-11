@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -231,51 +231,51 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads an OIDTree from DataInput
+	 * Reads an CIDTree from DataInput
 	 * @param p_input
 	 *            the DataInput
-	 * @return the OIDTree
+	 * @return the CIDTree
 	 * @throws IOException
-	 *             if the OIDTree could not be read
+	 *             if the CIDTree could not be read
 	 */
-	public static OIDTreeOptimized readOIDTree(final DataInput p_input) throws IOException {
-		OIDTreeOptimized ret = null;
+	public static CIDTreeOptimized readCIDTree(final DataInput p_input) throws IOException {
+		CIDTreeOptimized ret = null;
 		byte[] data;
 
 		if (readBoolean(p_input)) {
 			data = readByteArray(p_input);
-			ret = parseOIDTree(data);
+			ret = parseCIDTree(data);
 		}
 
 		return ret;
 	}
 
 	/**
-	 * Reads an OIDTree from ByteBuffer
+	 * Reads an CIDTree from ByteBuffer
 	 * @param p_buffer
 	 *            the ByteBuffer
-	 * @return the OIDTree
+	 * @return the CIDTree
 	 */
-	public static OIDTreeOptimized readOIDTree(final ByteBuffer p_buffer) {
-		OIDTreeOptimized ret = null;
+	public static CIDTreeOptimized readCIDTree(final ByteBuffer p_buffer) {
+		CIDTreeOptimized ret = null;
 		byte[] data;
 
 		if (readBoolean(p_buffer)) {
 			data = readByteArray(p_buffer);
-			ret = parseOIDTree(data);
+			ret = parseCIDTree(data);
 		}
 
 		return ret;
 	}
 
 	/**
-	 * Parses binary data into an OIDTree
+	 * Parses binary data into an CIDTree
 	 * @param p_data
 	 *            the binary data
-	 * @return the OIDTree
+	 * @return the CIDTree
 	 */
-	public static OIDTreeOptimized parseOIDTree(final byte[] p_data) {
-		OIDTreeOptimized ret = null;
+	public static CIDTreeOptimized parseCIDTree(final byte[] p_data) {
+		CIDTreeOptimized ret = null;
 		ByteArrayInputStream byteArrayInputStream;
 		ObjectInput objectInput = null;
 
@@ -283,7 +283,7 @@ public final class InputHelper {
 			byteArrayInputStream = new ByteArrayInputStream(p_data);
 			try {
 				objectInput = new ObjectInputStream(byteArrayInputStream);
-				ret = (OIDTreeOptimized) objectInput.readObject();
+				ret = (CIDTreeOptimized) objectInput.readObject();
 			} catch (final Exception e) {} finally {
 				try {
 					if (objectInput != null) {

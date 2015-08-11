@@ -28,9 +28,11 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the version
 	 */
-	byte getRangeID(final byte[] p_buffer, final int p_offset);
+	byte getRangeID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns source of a log entry
@@ -38,9 +40,11 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the NodeID
 	 */
-	short getSource(final byte[] p_buffer, final int p_offset);
+	short getSource(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns NodeID of a log entry
@@ -48,9 +52,11 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the NodeID
 	 */
-	short getNodeID(final byte[] p_buffer, final int p_offset);
+	short getNodeID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the LID of a log entry
@@ -58,9 +64,11 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the LID
 	 */
-	long getLID(final byte[] p_buffer, final int p_offset);
+	long getLID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the ChunkID of a log entry
@@ -68,9 +76,11 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the ChunkID
 	 */
-	long getChunkID(final byte[] p_buffer, final int p_offset);
+	long getChunkID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns length of a log entry
@@ -78,9 +88,11 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the length
 	 */
-	int getLength(final byte[] p_buffer, final int p_offset);
+	int getLength(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns version of a log entry
@@ -88,9 +100,11 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the version
 	 */
-	int getVersion(final byte[] p_buffer, final int p_offset);
+	int getVersion(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the checksum of a log entry's payload
@@ -98,51 +112,83 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the checksum
 	 */
-	long getChecksum(final byte[] p_buffer, final int p_offset);
+	long getChecksum(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the log entry header size
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the size
 	 */
-	short getHeaderSize();
+	short getHeaderSize(final boolean p_logStoresMigrations);
+
+	/**
+	 * Returns the offset for conversion
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
+	 * @return the offset
+	 */
+	short getConversionOffset(final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the RangeID offset
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the offset
 	 */
-	short getRIDOffset();
+	short getRIDOffset(final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the source offset
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the offset
 	 */
-	short getSRCOffset();
+	short getSRCOffset(final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the NodeID offset
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the offset
 	 */
-	short getNIDOffset();
+	short getNIDOffset(final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the LocalID offset
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the offset
 	 */
-	short getLIDOffset();
+	short getLIDOffset(final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the length offset
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the offset
 	 */
-	short getLENOffset();
+	short getLENOffset(final boolean p_logStoresMigrations);
 
 	/**
 	 * Returns the version offset
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the offset
 	 */
-	short getVEROffset();
+	short getVEROffset(final boolean p_logStoresMigrations);
+
+	/**
+	 * Returns the checksum offset
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
+	 * @return the offset
+	 */
+	short getCRCOffset(final boolean p_logStoresMigrations);
 
 	/**
 	 * Prints the log header
@@ -150,6 +196,8 @@ public interface LogEntryHeaderInterface {
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 */
-	void print(final byte[] p_buffer, final int p_offset);
+	void print(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations);
 }

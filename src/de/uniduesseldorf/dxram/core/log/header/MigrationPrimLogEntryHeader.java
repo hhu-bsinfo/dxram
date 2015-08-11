@@ -9,7 +9,7 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
  * @author Kevin Beineke
  *         25.06.2015
  */
-public class MigrationLogEntryHeader implements LogEntryHeaderInterface {
+public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 	// Attributes
 	public static final short SIZE = 28;
 	public static final byte RID_OFFSET = LogHandler.LOG_ENTRY_TYP_SIZE;
@@ -24,7 +24,7 @@ public class MigrationLogEntryHeader implements LogEntryHeaderInterface {
 	/**
 	 * Creates an instance of MigrationLogEntryHeader
 	 */
-	public MigrationLogEntryHeader() {}
+	public MigrationPrimLogEntryHeader() {}
 
 	// Methods
 	@Override
@@ -43,51 +43,27 @@ public class MigrationLogEntryHeader implements LogEntryHeaderInterface {
 		return result;
 	}
 
-	/**
-	 * Returns RangeID of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the version
-	 */
 	@Override
-	public byte getRangeID(final byte[] p_buffer, final int p_offset) {
+	public byte getRangeID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		return p_buffer[RID_OFFSET];
 	}
 
-	/**
-	 * Returns source of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the NodeID
-	 */
 	@Override
-	public short getSource(final byte[] p_buffer, final int p_offset) {
+	public short getSource(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + SRC_OFFSET;
 
 		return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 	}
 
-	/**
-	 * Returns NodeID of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the NodeID
-	 */
 	@Override
-	public short getNodeID(final byte[] p_buffer, final int p_offset) {
+	public short getNodeID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + NID_OFFSET;
 
 		return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 	}
 
 	@Override
-	public long getLID(final byte[] p_buffer, final int p_offset) {
+	public long getLID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + LID_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
@@ -95,21 +71,14 @@ public class MigrationLogEntryHeader implements LogEntryHeaderInterface {
 				+ (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
 	}
 
-	/**
-	 * Returns the ChunkID of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the ChunkID
-	 */
 	@Override
-	public long getChunkID(final byte[] p_buffer, final int p_offset) {
-		return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
+	public long getChunkID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
+		return ((long) getNodeID(p_buffer, p_offset, p_logStoresMigrations) << 48)
+				+ getLID(p_buffer, p_offset, p_logStoresMigrations);
 	}
 
 	@Override
-	public int getLength(final byte[] p_buffer, final int p_offset) {
+	public int getLength(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + LEN_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
@@ -117,23 +86,15 @@ public class MigrationLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public int getVersion(final byte[] p_buffer, final int p_offset) {
+	public int getVersion(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + VER_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
 				+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 	}
 
-	/**
-	 * Returns the checksum of a log entry's payload
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the checksum
-	 */
 	@Override
-	public long getChecksum(final byte[] p_buffer, final int p_offset) {
+	public long getChecksum(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + CRC_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
@@ -143,48 +104,58 @@ public class MigrationLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public void print(final byte[] p_buffer, final int p_offset) {
-		System.out.println("********************Primary Log Entry Header (Migration)********************");
-		System.out.println("* NodeID: " + getNodeID(p_buffer, p_offset));
-		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
-		System.out.println("* Length: " + getLength(p_buffer, p_offset));
-		System.out.println("* Version: " + getVersion(p_buffer, p_offset));
-		System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
-		System.out.println("****************************************************************************");
-	}
-
-	@Override
-	public short getHeaderSize() {
+	public short getHeaderSize(final boolean p_logStoresMigrations) {
 		return SIZE;
 	}
 
 	@Override
-	public short getRIDOffset() {
+	public short getConversionOffset(final boolean p_logStoresMigrations) {
+		return getNIDOffset(p_logStoresMigrations);
+	}
+
+	@Override
+	public short getRIDOffset(final boolean p_logStoresMigrations) {
 		return RID_OFFSET;
 	}
 
 	@Override
-	public short getSRCOffset() {
+	public short getSRCOffset(final boolean p_logStoresMigrations) {
 		return SRC_OFFSET;
 	}
 
 	@Override
-	public short getNIDOffset() {
+	public short getNIDOffset(final boolean p_logStoresMigrations) {
 		return NID_OFFSET;
 	}
 
 	@Override
-	public short getLIDOffset() {
+	public short getLIDOffset(final boolean p_logStoresMigrations) {
 		return LID_OFFSET;
 	}
 
 	@Override
-	public short getLENOffset() {
+	public short getLENOffset(final boolean p_logStoresMigrations) {
 		return LEN_OFFSET;
 	}
 
 	@Override
-	public short getVEROffset() {
+	public short getVEROffset(final boolean p_logStoresMigrations) {
 		return VER_OFFSET;
+	}
+
+	@Override
+	public short getCRCOffset(final boolean p_logStoresMigrations) {
+		return CRC_OFFSET;
+	}
+
+	@Override
+	public void print(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
+		System.out.println("********************Primary Log Entry Header (Migration)********************");
+		System.out.println("* NodeID: " + getNodeID(p_buffer, p_offset, p_logStoresMigrations));
+		System.out.println("* LocalID: " + getLID(p_buffer, p_offset, p_logStoresMigrations));
+		System.out.println("* Length: " + getLength(p_buffer, p_offset, p_logStoresMigrations));
+		System.out.println("* Version: " + getVersion(p_buffer, p_offset, p_logStoresMigrations));
+		System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset, p_logStoresMigrations));
+		System.out.println("****************************************************************************");
 	}
 }

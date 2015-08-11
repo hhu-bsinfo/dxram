@@ -143,7 +143,7 @@ public final class LogTest implements Runnable {
 
 			// Create list for deletion
 			list = new ArrayList<Integer>();
-			for (int i = 1; i <= m_chunksPerThread; i++) {
+			for (int i = 1; i < m_chunksPerThread; i++) {
 				list.add(new Integer(i));
 			}
 			Collections.shuffle(list);

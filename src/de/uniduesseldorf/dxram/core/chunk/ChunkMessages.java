@@ -641,7 +641,7 @@ public final class ChunkMessages {
 	public static class DataRequest extends AbstractRequest {
 
 		// Attributes
-		private Chunk m_chunk;
+		private Chunk[] m_chunks;
 
 		// Constructors
 		/**
@@ -650,7 +650,7 @@ public final class ChunkMessages {
 		public DataRequest() {
 			super();
 
-			m_chunk = null;
+			m_chunks = null;
 		}
 
 		/**
@@ -658,39 +658,54 @@ public final class ChunkMessages {
 		 * @param p_destination
 		 *            the destination
 		 * @param p_chunk
-		 *            the Chunk to store
+		 *            a single Chunk to store
 		 */
 		public DataRequest(final short p_destination, final Chunk p_chunk) {
 			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
 
 			Contract.checkNotNull(p_chunk, "no chunk given");
 
-			m_chunk = p_chunk;
+			m_chunks = new Chunk[] {p_chunk};
+		}
+
+		/**
+		 * Creates an instance of DataRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunks
+		 *            the Chunks to store
+		 */
+		public DataRequest(final short p_destination, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
+
+			Contract.checkNotNull(p_chunks, "no chunks given");
+
+			m_chunks = p_chunks;
 		}
 
 		// Getters
 		/**
-		 * Get the Chunk to store
-		 * @return the Chunk to store
+		 * Get the Chunks to store
+		 * @return the Chunks to store
 		 */
-		public final Chunk getChunk() {
-			return m_chunk;
+		public final Chunk[] getChunks() {
+			return m_chunks;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunk(p_buffer, m_chunk);
+			OutputHelper.writeChunks(p_buffer, m_chunks);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunk = InputHelper.readChunk(p_buffer);
+			m_chunks = InputHelper.readChunks(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
+			return OutputHelper.getChunksWriteLength(m_chunks);
 		}
 
 	}
@@ -727,7 +742,7 @@ public final class ChunkMessages {
 	public static class DataMessage extends AbstractMessage {
 
 		// Attributes
-		private Chunk m_chunk;
+		private Chunk[] m_chunks;
 
 		// Constructors
 		/**
@@ -736,47 +751,47 @@ public final class ChunkMessages {
 		public DataMessage() {
 			super();
 
-			m_chunk = null;
+			m_chunks = null;
 		}
 
 		/**
 		 * Creates an instance of DataMessage
 		 * @param p_destination
 		 *            the destination
-		 * @param p_chunk
-		 *            the Chunk to store
+		 * @param p_chunks
+		 *            the Chunks to store
 		 */
-		public DataMessage(final short p_destination, final Chunk p_chunk) {
+		public DataMessage(final short p_destination, final Chunk[] p_chunks) {
 			super(p_destination, TYPE, SUBTYPE_DATA_MESSAGE);
 
-			Contract.checkNotNull(p_chunk, "no chunk given");
+			Contract.checkNotNull(p_chunks, "no chunks given");
 
-			m_chunk = p_chunk;
+			m_chunks = p_chunks;
 		}
 
 		// Getters
 		/**
-		 * Get the Chunk to store
-		 * @return the Chunk to store
+		 * Get the Chunks to store
+		 * @return the Chunks to store
 		 */
-		public final Chunk getChunk() {
-			return m_chunk;
+		public final Chunk[] getChunks() {
+			return m_chunks;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunk(p_buffer, m_chunk);
+			OutputHelper.writeChunks(p_buffer, m_chunks);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunk = InputHelper.readChunk(p_buffer);
+			m_chunks = InputHelper.readChunks(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
+			return OutputHelper.getChunksWriteLength(m_chunks);
 		}
 
 	}

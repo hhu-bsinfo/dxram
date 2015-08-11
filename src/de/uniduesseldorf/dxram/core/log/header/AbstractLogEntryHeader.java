@@ -16,10 +16,14 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
 public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface {
 
 	// Attributes
-	private static Checksum m_crc = new CRC32();
-	private static LogEntryHeaderInterface m_normalLogEntryHeader = new NormalLogEntryHeader();
-	private static LogEntryHeaderInterface m_migrationLogEntryHeader = new MigrationLogEntryHeader();
-	private static LogEntryHeaderInterface m_tombstone = new Tombstone();
+	private static final Checksum CRC = new CRC32();
+	private static final LogEntryHeaderInterface DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
+	private static final LogEntryHeaderInterface MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
+	private static final LogEntryHeaderInterface DEFAULT_PRIM_LOG_TOMBSTONE = new DefaultPrimLogTombstone();
+	private static final LogEntryHeaderInterface MIGRATION_PRIM_LOG_TOMBSTONE = new MigrationPrimLogTombstone();
+
+	private static final LogEntryHeaderInterface DEFAULT_SEC_LOG_ENTRY_HEADER = new DefaultSecLogEntryHeader();
+	private static final LogEntryHeaderInterface DEFAULT_SEC_LOG_TOMBSTONE = new DefaultSecLogTombstone();
 
 	// Methods
 	/**
@@ -37,29 +41,27 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 *            the length of the log entry
 	 * @param p_bytesUntilEnd
 	 *            the number of bytes to the end of the input buffer
+	 * @param p_conversionOffset
+	 *            the number of bytes to cut off at the beginning
 	 */
 	public static void convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output,
-			final int p_outputOffset, final int p_logEntrySize, final int p_bytesUntilEnd) {
-		LogEntryHeaderInterface type;
-		short typeOffset;
-
-		type = getType(p_input, p_inputOffset);
-		typeOffset = type.getLIDOffset();
+			final int p_outputOffset, final int p_logEntrySize, final int p_bytesUntilEnd,
+			final short p_conversionOffset) {
 
 		if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
-			System.arraycopy(p_input, p_inputOffset + typeOffset, p_output,
-					p_outputOffset, p_logEntrySize - typeOffset);
+			System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output,
+					p_outputOffset, p_logEntrySize - p_conversionOffset);
 		} else {
-			if (p_bytesUntilEnd > typeOffset) {
-				System.arraycopy(p_input, p_inputOffset + typeOffset, p_output,
-						p_outputOffset, p_bytesUntilEnd - typeOffset);
+			if (p_bytesUntilEnd > p_conversionOffset) {
+				System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output,
+						p_outputOffset, p_bytesUntilEnd - p_conversionOffset);
 				System.arraycopy(p_input, 0, p_output, p_outputOffset
-						+ p_bytesUntilEnd - typeOffset, p_logEntrySize
+						+ p_bytesUntilEnd - p_conversionOffset, p_logEntrySize
 						- p_bytesUntilEnd);
 			} else {
 				System.arraycopy(p_input, 0, p_output, p_outputOffset
-						+ typeOffset - p_bytesUntilEnd, p_logEntrySize
-						- (typeOffset - p_bytesUntilEnd));
+						+ p_conversionOffset - p_bytesUntilEnd, p_logEntrySize
+						- (p_conversionOffset - p_bytesUntilEnd));
 			}
 		}
 	}
@@ -70,13 +72,18 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 *            the buffer
 	 * @param p_offset
 	 *            the offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
 	 */
-	public static void markAsInvalid(final byte[] p_buffer, final int p_offset) {
+	public static void markAsInvalid(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final byte invalid = (byte) 0xFF;
-		int offset;
+		int offset = p_offset;
+
+		if (p_logStoresMigrations) {
+			offset += LogHandler.LOG_ENTRY_NID_SIZE;
+		}
 
 		// LID
-		offset = p_offset;
 		for (int i = 0; i < LogHandler.LOG_ENTRY_LID_SIZE; i++) {
 			p_buffer[offset + i] = invalid;
 		}
@@ -91,8 +98,36 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_offset
 	 *            the type-specific offset
 	 */
-	public static void putType(final byte[] p_logEntry, final byte p_type, final byte p_offset) {
+	public static void putType(final byte[] p_logEntry, final byte p_type, final short p_offset) {
 		p_logEntry[p_offset] = p_type;
+	}
+
+	/**
+	 * Puts RangeID of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @param p_offset
+	 *            the type-specific offset
+	 */
+	public static void putRangeID(final byte[] p_logEntry, final byte p_rangeID, final short p_offset) {
+		p_logEntry[p_offset] = p_rangeID;
+	}
+
+	/**
+	 * Puts source of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_source
+	 *            the source
+	 * @param p_offset
+	 *            the type-specific offset
+	 */
+	public static void putSource(final byte[] p_logEntry, final short p_source, final short p_offset) {
+		for (int i = 0; i < LogHandler.LOG_ENTRY_SRC_SIZE; i++) {
+			p_logEntry[p_offset + i] = (byte) (p_source >> i * 8 & 0xff);
+		}
 	}
 
 	/**
@@ -104,7 +139,7 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_offset
 	 *            the type-specific offset
 	 */
-	public static void putChunkID(final byte[] p_logEntry, final long p_chunkID, final byte p_offset) {
+	public static void putChunkID(final byte[] p_logEntry, final long p_chunkID, final short p_offset) {
 		// NodeID
 		for (int i = 0; i < LogHandler.LOG_ENTRY_NID_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (ChunkID.getCreatorID(p_chunkID) >> i * 8 & 0xff);
@@ -125,7 +160,7 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_offset
 	 *            the type-specific offset
 	 */
-	public static void putLength(final byte[] p_logEntry, final int p_length, final byte p_offset) {
+	public static void putLength(final byte[] p_logEntry, final int p_length, final short p_offset) {
 		for (int i = 0; i < LogHandler.LOG_ENTRY_LEN_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
 		}
@@ -140,7 +175,7 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_offset
 	 *            the type-specific offset
 	 */
-	public static void putVersion(final byte[] p_logEntry, final int p_version, final byte p_offset) {
+	public static void putVersion(final byte[] p_logEntry, final int p_version, final short p_offset) {
 		for (int i = 0; i < LogHandler.LOG_ENTRY_VER_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (p_version >> i * 8 & 0xff);
 		}
@@ -155,37 +190,9 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_offset
 	 *            the type-specific offset
 	 */
-	public static void putChecksum(final byte[] p_logEntry, final long p_checksum, final byte p_offset) {
+	public static void putChecksum(final byte[] p_logEntry, final long p_checksum, final short p_offset) {
 		for (int i = 0; i < LogHandler.LOG_ENTRY_CRC_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (p_checksum >> i * 8 & 0xff);
-		}
-	}
-
-	/**
-	 * Puts RangeID of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @param p_offset
-	 *            the type-specific offset
-	 */
-	public static void putRangeID(final byte[] p_logEntry, final byte p_rangeID, final byte p_offset) {
-		p_logEntry[p_offset] = p_rangeID;
-	}
-
-	/**
-	 * Puts source of log entry in log entry header
-	 * @param p_logEntry
-	 *            log entry
-	 * @param p_source
-	 *            the source
-	 * @param p_offset
-	 *            the type-specific offset
-	 */
-	public static void putSource(final byte[] p_logEntry, final short p_source, final byte p_offset) {
-		for (int i = 0; i < LogHandler.LOG_ENTRY_SRC_SIZE; i++) {
-			p_logEntry[p_offset + i] = (byte) (p_source >> i * 8 & 0xff);
 		}
 	}
 
@@ -197,30 +204,56 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 */
 	public static long calculateChecksumOfPayload(final byte[] p_payload) {
 
-		m_crc.reset();
-		m_crc.update(p_payload, 0, p_payload.length);
+		CRC.reset();
+		CRC.update(p_payload, 0, p_payload.length);
 
-		return m_crc.getValue();
+		return CRC.getValue();
 	}
 
 	/**
-	 * Returns type of a log entry
+	 * Returns the corresponding LogEntryHeaderInterface of a primary log entry
 	 * @param p_buffer
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
-	 * @return the version
+	 * @return the LogEntryHeaderInterface
 	 */
-	public static LogEntryHeaderInterface getType(final byte[] p_buffer, final int p_offset) {
-		LogEntryHeaderInterface ret;
+	public static LogEntryHeaderInterface getPrimaryHeader(final byte[] p_buffer, final int p_offset) {
+		LogEntryHeaderInterface ret = null;
 
-		if (p_buffer[0] == 0) {
-			ret = m_normalLogEntryHeader;
-		} else if (p_buffer[0] == 1) {
-			ret = m_migrationLogEntryHeader;
-		} else {
-			ret = m_tombstone;
+		if (p_buffer[p_offset] == 0) {
+			ret = DEFAULT_PRIM_LOG_ENTRY_HEADER;
+		} else if (p_buffer[p_offset] == 1) {
+			ret = MIGRATION_PRIM_LOG_ENTRY_HEADER;
+		} else if (p_buffer[p_offset] == 2) {
+			ret = DEFAULT_PRIM_LOG_TOMBSTONE;
+		} else if (p_buffer[p_offset] == 3) {
+			ret = MIGRATION_PRIM_LOG_TOMBSTONE;
 		}
+
+		return ret;
+	}
+
+	/**
+	 * Returns the corresponding LogEntryHeaderInterface of a secondary log entry
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
+	 * @return the LogEntryHeaderInterface
+	 */
+	public static LogEntryHeaderInterface getSecondaryHeader(final byte[] p_buffer, final int p_offset,
+			final boolean p_logStoresMigrations) {
+		LogEntryHeaderInterface ret = null;
+
+		if (DEFAULT_SEC_LOG_ENTRY_HEADER.getVersion(p_buffer, p_offset, p_logStoresMigrations) >= 0) {
+			ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
+		} else {
+			ret = DEFAULT_SEC_LOG_TOMBSTONE;
+		}
+
 		return ret;
 	}
 }
