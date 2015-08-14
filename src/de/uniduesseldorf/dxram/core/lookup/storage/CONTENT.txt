@@ -1,7 +1,6 @@
 #Classes
 CacheTree - Stores meta data in a special btree (for the client)
-OIDTableTest - Stores meta data in an ArrayList (experimental tests)
-OIDTree - Stores meta data in a special btree (for a super-peer)
-OIDTreeTest -  Stores meta data in a special btree (experimental tests)
-IDHashTable - HashMap to store ID-Mappings (chain hashmap)
-IDHashTableLP - HashMap to store ID-Mappings (linear probing)
+CIDTree - Stores meta data in a special btree (for a super-peer)
+CIDTreeOptimized - Like CIDTree but stores backup ranges outside the tree
+AIDTable - HashMap to store ID-Mappings (chain hashmap)
+AIDTableOptimized - HashMap to store ID-Mappings (linear probing)

@@ -1,10 +1,12 @@
-package de.uniduesseldorf.dxram.core.log.storage;
 
+package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 import de.uniduesseldorf.dxram.core.log.LogHandler;
+import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 
 /**
  * This class implements the secondary log buffer
@@ -19,6 +21,8 @@ public final class SecondaryLogBuffer {
 	private byte[] m_buffer;
 	private int m_bytesInBuffer;
 
+	private boolean m_storesMigrations;
+
 	private SecondaryLogWithSegments m_secondaryLog;
 
 	// Constructors
@@ -26,8 +30,10 @@ public final class SecondaryLogBuffer {
 	 * Creates an instance of SecondaryLogBuffer
 	 * @param p_secondaryLog
 	 *            Instance of the corresponding secondary log. Used to write directly to secondary
+	 * @param p_storesMigrations
+	 *            whether this secondary log buffer stores migrations or not
 	 */
-	public SecondaryLogBuffer(final SecondaryLogWithSegments p_secondaryLog) {
+	public SecondaryLogBuffer(final SecondaryLogWithSegments p_secondaryLog, final boolean p_storesMigrations) {
 
 		m_secondaryLog = p_secondaryLog;
 
@@ -42,6 +48,14 @@ public final class SecondaryLogBuffer {
 	 */
 	public boolean isBufferEmpty() {
 		return m_bytesInBuffer == 0;
+	}
+
+	/**
+	 * Returns the number of bytes
+	 * @return the number of bytes
+	 */
+	public int getOccupiedSpace() {
+		return m_bytesInBuffer;
 	}
 
 	// Methods
@@ -68,9 +82,9 @@ public final class SecondaryLogBuffer {
 	 * @param p_entryOrRangeSize
 	 *            size of the log entry/range
 	 * @throws IOException
-	 *            if the secondary log could not be written or buffer be read
+	 *             if the secondary log could not be written or buffer be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public void bufferData(final byte[] p_buffer, final int p_bufferOffset,
 			final int p_entryOrRangeSize) throws IOException, InterruptedException {
@@ -103,17 +117,27 @@ public final class SecondaryLogBuffer {
 		int oldBufferOffset = p_bufferOffset;
 		int newBufferOffset = 0;
 		int logEntrySize;
-		final int nidSize = LogHandler.LOG_HEADER_NID_SIZE;
+		final int secLogOffset = LogHandler.LOG_ENTRY_RID_SIZE + LogHandler.LOG_ENTRY_NID_SIZE;
+		LogEntryHeaderInterface logEntryHeader;
 
 		buffer = new byte[p_entryOrRangeSize];
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry
-			logEntrySize = LogHandler.PRIMARY_HEADER_SIZE
-					+ SecondaryLog.getLengthOfLogEntry(p_buffer, oldBufferOffset, true);
-			System.arraycopy(p_buffer, oldBufferOffset + nidSize, buffer, newBufferOffset, logEntrySize - nidSize);
+			logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, oldBufferOffset);
+			if (m_storesMigrations) {
+				logEntrySize = logEntryHeader.getHeaderSize(true)
+						+ logEntryHeader.getLength(p_buffer, oldBufferOffset, true);
+			} else {
+				logEntrySize = logEntryHeader.getHeaderSize(false)
+						+ logEntryHeader.getLength(p_buffer, oldBufferOffset, false);
+			}
+
+			// Copy primary log header, but skip NodeID and RangeID
+			System.arraycopy(p_buffer, oldBufferOffset + secLogOffset,
+					buffer, newBufferOffset, logEntrySize - secLogOffset);
 
 			oldBufferOffset += logEntrySize;
-			newBufferOffset += logEntrySize - nidSize;
+			newBufferOffset += logEntrySize - secLogOffset;
 		}
 		buffer = Arrays.copyOf(buffer, newBufferOffset);
 
@@ -130,9 +154,9 @@ public final class SecondaryLogBuffer {
 	 * @param p_entryOrRangeSize
 	 *            size of the log entry/range
 	 * @throws IOException
-	 *            if the secondary log could not be written or buffer be read
+	 *             if the secondary log could not be written or buffer be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public void flushAllDataToSecLog(final byte[] p_buffer, final int p_bufferOffset,
 			final int p_entryOrRangeSize) throws IOException, InterruptedException {
@@ -143,23 +167,22 @@ public final class SecondaryLogBuffer {
 			m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize, null);
 		} else {
 			// Data in secondary log buffer -> Flush buffer and write new data in secondary log with one access
-			if (m_bytesInBuffer > 0) {
-				dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
-				System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
-				System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_entryOrRangeSize);
 
-				m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length, null);
-				m_bytesInBuffer = 0;
-			}
+			dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
+			System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
+			System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_buffer.length);
+
+			m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length, null);
+			m_bytesInBuffer = 0;
 		}
 	}
 
 	/**
 	 * Flushes all data in secondary log buffer to secondary log regardless of the size
 	 * @throws IOException
-	 *            if the secondary log could not be written or buffer be read
+	 *             if the secondary log could not be written or buffer be read
 	 * @throws InterruptedException
-	 *            if the caller was interrupted
+	 *             if the caller was interrupted
 	 */
 	public void flushSecLogBuffer() throws IOException, InterruptedException {
 

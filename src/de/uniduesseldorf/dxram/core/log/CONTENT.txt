@@ -1,6 +1,8 @@
 #Classes
 LogHandler - Default implementation of the LogInterface
 LogInterface - API of log service
+LogMessages - Network messages for the log service
+LogCatalogue - Bundles logs and buffers for backup zones
 
 #Packages
 storage - Classes for handling the log storage

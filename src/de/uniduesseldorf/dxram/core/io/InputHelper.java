@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -231,51 +231,51 @@ public final class InputHelper {
 	}
 
 	/**
-	 * Reads an OIDTree from DataInput
+	 * Reads an CIDTree from DataInput
 	 * @param p_input
 	 *            the DataInput
-	 * @return the OIDTree
+	 * @return the CIDTree
 	 * @throws IOException
-	 *             if the OIDTree could not be read
+	 *             if the CIDTree could not be read
 	 */
-	public static OIDTreeOptimized readOIDTree(final DataInput p_input) throws IOException {
-		OIDTreeOptimized ret = null;
+	public static CIDTreeOptimized readCIDTree(final DataInput p_input) throws IOException {
+		CIDTreeOptimized ret = null;
 		byte[] data;
 
 		if (readBoolean(p_input)) {
 			data = readByteArray(p_input);
-			ret = parseOIDTree(data);
+			ret = parseCIDTree(data);
 		}
 
 		return ret;
 	}
 
 	/**
-	 * Reads an OIDTree from ByteBuffer
+	 * Reads an CIDTree from ByteBuffer
 	 * @param p_buffer
 	 *            the ByteBuffer
-	 * @return the OIDTree
+	 * @return the CIDTree
 	 */
-	public static OIDTreeOptimized readOIDTree(final ByteBuffer p_buffer) {
-		OIDTreeOptimized ret = null;
+	public static CIDTreeOptimized readCIDTree(final ByteBuffer p_buffer) {
+		CIDTreeOptimized ret = null;
 		byte[] data;
 
 		if (readBoolean(p_buffer)) {
 			data = readByteArray(p_buffer);
-			ret = parseOIDTree(data);
+			ret = parseCIDTree(data);
 		}
 
 		return ret;
 	}
 
 	/**
-	 * Parses binary data into an OIDTree
+	 * Parses binary data into an CIDTree
 	 * @param p_data
 	 *            the binary data
-	 * @return the OIDTree
+	 * @return the CIDTree
 	 */
-	public static OIDTreeOptimized parseOIDTree(final byte[] p_data) {
-		OIDTreeOptimized ret = null;
+	public static CIDTreeOptimized parseCIDTree(final byte[] p_data) {
+		CIDTreeOptimized ret = null;
 		ByteArrayInputStream byteArrayInputStream;
 		ObjectInput objectInput = null;
 
@@ -283,7 +283,7 @@ public final class InputHelper {
 			byteArrayInputStream = new ByteArrayInputStream(p_data);
 			try {
 				objectInput = new ObjectInputStream(byteArrayInputStream);
-				ret = (OIDTreeOptimized) objectInput.readObject();
+				ret = (CIDTreeOptimized) objectInput.readObject();
 			} catch (final Exception e) {} finally {
 				try {
 					if (objectInput != null) {
@@ -477,6 +477,52 @@ public final class InputHelper {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		return p_buffer.getDouble();
+	}
+
+	/**
+	 * Reads a String
+	 * @param p_input
+	 *            the input
+	 * @return the String
+	 * @throws IOException
+	 *             if the long could not be read
+	 */
+	public static String readString(final DataInput p_input) throws IOException {
+		short length;
+		byte[] byteArray;
+
+		Contract.checkNotNull(p_input, "no input given");
+
+		length = p_input.readShort();
+		byteArray = new byte[length];
+
+		for (int i = 0; i < length; i++) {
+			byteArray[i] = p_input.readByte();
+		}
+
+		return new String(byteArray);
+	}
+
+	/**
+	 * Reads a String
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the String
+	 */
+	public static String readString(final ByteBuffer p_buffer) {
+		short length;
+		byte[] byteArray;
+
+		Contract.checkNotNull(p_buffer, "no buffer given");
+
+		length = p_buffer.getShort();
+		byteArray = new byte[length];
+
+		for (int i = 0; i < length; i++) {
+			byteArray[i] = p_buffer.get();
+		}
+
+		return new String(byteArray);
 	}
 
 	/**
@@ -788,6 +834,46 @@ public final class InputHelper {
 		ret = new boolean[p_buffer.getInt()];
 		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readBoolean(p_buffer);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Reads a String array
+	 * @param p_input
+	 *            the input
+	 * @return the String array
+	 * @throws IOException
+	 *             if the String array could not be read
+	 */
+	public static String[] readStringArray(final DataInput p_input) throws IOException {
+		String[] ret;
+
+		Contract.checkNotNull(p_input, "no input given");
+
+		ret = new String[p_input.readInt()];
+		for (int i = 0; i < ret.length; i++) {
+			ret[i] = readString(p_input);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Reads a String array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the String array
+	 */
+	public static String[] readStringArray(final ByteBuffer p_buffer) {
+		String[] ret;
+
+		Contract.checkNotNull(p_buffer, "no buffer given");
+
+		ret = new String[p_buffer.getInt()];
+		for (int i = 0; i < ret.length; i++) {
+			ret[i] = readString(p_buffer);
 		}
 
 		return ret;

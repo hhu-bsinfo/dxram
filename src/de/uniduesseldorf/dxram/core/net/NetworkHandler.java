@@ -14,6 +14,7 @@ import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
+import de.uniduesseldorf.dxram.core.log.LogMessages;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
@@ -51,6 +52,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	public synchronized void initialize() throws NetworkException {
 		final byte networkType;
 		final byte chunkType;
+		final byte logType;
 		final byte lookupType;
 
 		LOGGER.trace("Entering initialize");
@@ -73,9 +75,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_REQUEST, ChunkMessages.LockRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_RESPONSE, ChunkMessages.LockResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_MESSAGE, ChunkMessages.UnlockMessage.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOG_REQUEST, ChunkMessages.LogRequest.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOG_RESPONSE, ChunkMessages.LogResponse.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOG_MESSAGE, ChunkMessages.LogMessage.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_DATA_REQUEST, ChunkMessages.DataRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_DATA_RESPONSE, ChunkMessages.DataResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_DATA_MESSAGE, ChunkMessages.DataMessage.class);
@@ -83,6 +82,19 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				ChunkMessages.MultiGetRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTIGET_RESPONSE,
 				ChunkMessages.MultiGetResponse.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_MESSAGE, ChunkMessages.CommandMessage.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_REQUEST, ChunkMessages.CommandRequest.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_RESPONSE,
+				ChunkMessages.CommandResponse.class);
+
+		// Log Messages
+		logType = LogMessages.TYPE;
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_REQUEST, LogMessages.LogRequest.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_RESPONSE, LogMessages.LogResponse.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessages.LogMessage.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_REMOVE_MESSAGE, LogMessages.RemoveMessage.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_REQUEST, LogMessages.InitRequest.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_RESPONSE, LogMessages.InitResponse.class);
 
 		// Lookup Messages
 		lookupType = LookupMessages.TYPE;

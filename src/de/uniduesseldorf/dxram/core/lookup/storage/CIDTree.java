@@ -4,8 +4,6 @@ package de.uniduesseldorf.dxram.core.lookup.storage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.utils.Contract;
 
@@ -16,12 +14,10 @@ import de.uniduesseldorf.dxram.utils.Contract;
  *         application)
  *         13.06.2013
  */
-public final class OIDTree implements Serializable {
+public final class CIDTree implements Serializable {
 
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
-
-	private static final int RANGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
 
 	// Attributes
 	private short m_minEntries;
@@ -40,11 +36,11 @@ public final class OIDTree implements Serializable {
 
 	// Constructors
 	/**
-	 * Creates an instance of OIDTree
+	 * Creates an instance of CIDTree
 	 * @param p_order
 	 *            order of the btree
 	 */
-	public OIDTree(final short p_order) {
+	public CIDTree(final short p_order) {
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
@@ -173,7 +169,7 @@ public final class OIDTree implements Serializable {
 			m_creator = p_creator;
 		} else {
 			if (null == m_root) {
-				createOrReplaceEntry((long) (Math.pow(2, 31) * RANGE_SIZE), p_creator);
+				createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
 			}
 			// backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
 			// + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
@@ -1354,16 +1350,16 @@ public final class OIDTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_lid) {
-				low = mid + 1;
-			} else if (midVal > p_lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_lid) {
+					low = mid + 1;
+				} else if (midVal > p_lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1553,16 +1549,16 @@ public final class OIDTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLid(0);
+				midVal = m_children[mid].getLid(0);
 
-			if (midVal < lid) {
-				low = mid + 1;
-			} else if (midVal > lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < lid) {
+					low = mid + 1;
+				} else if (midVal > lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

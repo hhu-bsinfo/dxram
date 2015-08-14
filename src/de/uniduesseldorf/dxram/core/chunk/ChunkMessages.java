@@ -28,14 +28,14 @@ public final class ChunkMessages {
 	public static final byte SUBTYPE_LOCK_REQUEST = 7;
 	public static final byte SUBTYPE_LOCK_RESPONSE = 8;
 	public static final byte SUBTYPE_UNLOCK_MESSAGE = 9;
-	public static final byte SUBTYPE_LOG_REQUEST = 10;
-	public static final byte SUBTYPE_LOG_RESPONSE = 11;
-	public static final byte SUBTYPE_LOG_MESSAGE = 12;
-	public static final byte SUBTYPE_DATA_REQUEST = 13;
-	public static final byte SUBTYPE_DATA_RESPONSE = 14;
-	public static final byte SUBTYPE_DATA_MESSAGE = 15;
-	public static final byte SUBTYPE_MULTIGET_REQUEST = 16;
-	public static final byte SUBTYPE_MULTIGET_RESPONSE = 17;
+	public static final byte SUBTYPE_DATA_REQUEST = 10;
+	public static final byte SUBTYPE_DATA_RESPONSE = 11;
+	public static final byte SUBTYPE_DATA_MESSAGE = 12;
+	public static final byte SUBTYPE_MULTIGET_REQUEST = 13;
+	public static final byte SUBTYPE_MULTIGET_RESPONSE = 14;
+	public static final byte SUBTYPE_COMMAND_MESSAGE = 15;
+	public static final byte SUBTYPE_COMMAND_REQUEST = 16;
+	public static final byte SUBTYPE_COMMAND_RESPONSE = 17;
 
 	// Constructors
 	/**
@@ -638,202 +638,13 @@ public final class ChunkMessages {
 	}
 
 	/**
-	 * Request for logging a Chunk on a remote node
-	 * @author Kevin Beineke 20.04.2014
-	 */
-	public static class LogRequest extends AbstractRequest {
-
-		// Attributes
-		private Chunk m_chunk;
-
-		// Constructors
-		/**
-		 * Creates an instance of LogRequest
-		 */
-		public LogRequest() {
-			super();
-
-			m_chunk = null;
-		}
-
-		/**
-		 * Creates an instance of LogRequest
-		 * @param p_destination
-		 *            the destination
-		 * @param p_chunk
-		 *            the chunk to log
-		 */
-		public LogRequest(final short p_destination, final Chunk p_chunk) {
-			super(p_destination, TYPE, SUBTYPE_LOG_REQUEST);
-
-			m_chunk = p_chunk;
-		}
-
-		// Getters
-		/**
-		 * Get the Chunk to log
-		 * @return the Chunk to log
-		 */
-		public final Chunk getChunk() {
-			Chunk ret = null;
-
-			if (m_chunk.getSize() != 0) {
-				ret = m_chunk;
-			}
-
-			return ret;
-		}
-
-		// Methods
-		@Override
-		protected final void writePayload(final ByteBuffer p_buffer) {
-			if (m_chunk != null) {
-				OutputHelper.writeChunk(p_buffer, m_chunk);
-			} else {
-				OutputHelper.writeChunk(p_buffer, new Chunk(0, new byte[0]));
-			}
-		}
-
-		@Override
-		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunk = InputHelper.readChunk(p_buffer);
-		}
-
-		@Override
-		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
-		}
-
-	}
-
-	/**
-	 * Response to a LogRequest
-	 * @author Kevin Beineke 20.04.2014
-	 */
-	public static class LogResponse extends AbstractResponse {
-
-		// Attributes
-		private boolean m_success;
-
-		// Constructors
-		/**
-		 * Creates an instance of LogResponse
-		 */
-		public LogResponse() {
-			super();
-
-			m_success = false;
-		}
-
-		/**
-		 * Creates an instance of LogResponse
-		 * @param p_request
-		 *            the request
-		 * @param p_success
-		 *            true if remove was successful
-		 */
-		public LogResponse(final RemoveRequest p_request, final boolean p_success) {
-			super(p_request, SUBTYPE_LOG_RESPONSE);
-
-			m_success = p_success;
-		}
-
-		// Getters
-		/**
-		 * Get the status
-		 * @return true if remove was successful
-		 */
-		public final boolean getStatus() {
-			return m_success;
-		}
-
-		// Methods
-		@Override
-		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeBoolean(p_buffer, m_success);
-		}
-
-		@Override
-		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_success = InputHelper.readBoolean(p_buffer);
-		}
-
-		@Override
-		protected final int getPayloadLength() {
-			return OutputHelper.getBooleanWriteLength();
-		}
-
-	}
-
-	/**
-	 * Message for logging a Chunk on a remote node
-	 * @author Kevin Beineke 20.04.2014
-	 */
-	public static class LogMessage extends AbstractMessage {
-
-		// Attributes
-		private Chunk m_chunk;
-
-		// Constructors
-		/**
-		 * Creates an instance of LogMessage
-		 */
-		public LogMessage() {
-			super();
-
-			m_chunk = null;
-		}
-
-		/**
-		 * Creates an instance of LogMessage
-		 * @param p_destination
-		 *            the destination
-		 * @param p_chunk
-		 *            the Chunk to store
-		 */
-		public LogMessage(final short p_destination, final Chunk p_chunk) {
-			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
-
-			Contract.checkNotNull(p_chunk, "no chunk given");
-
-			m_chunk = p_chunk;
-		}
-
-		// Getters
-		/**
-		 * Get the Chunk to store
-		 * @return the Chunk to store
-		 */
-		public final Chunk getChunk() {
-			return m_chunk;
-		}
-
-		// Methods
-		@Override
-		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunk(p_buffer, m_chunk);
-		}
-
-		@Override
-		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunk = InputHelper.readChunk(p_buffer);
-		}
-
-		@Override
-		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
-		}
-
-	}
-
-	/**
 	 * Request for storing a Chunk on a remote node after migration
 	 * @author Florian Klein 09.03.2012
 	 */
 	public static class DataRequest extends AbstractRequest {
 
 		// Attributes
-		private Chunk m_chunk;
+		private Chunk[] m_chunks;
 
 		// Constructors
 		/**
@@ -842,7 +653,7 @@ public final class ChunkMessages {
 		public DataRequest() {
 			super();
 
-			m_chunk = null;
+			m_chunks = null;
 		}
 
 		/**
@@ -850,39 +661,54 @@ public final class ChunkMessages {
 		 * @param p_destination
 		 *            the destination
 		 * @param p_chunk
-		 *            the Chunk to store
+		 *            a single Chunk to store
 		 */
 		public DataRequest(final short p_destination, final Chunk p_chunk) {
 			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
 
 			Contract.checkNotNull(p_chunk, "no chunk given");
 
-			m_chunk = p_chunk;
+			m_chunks = new Chunk[] {p_chunk};
+		}
+
+		/**
+		 * Creates an instance of DataRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunks
+		 *            the Chunks to store
+		 */
+		public DataRequest(final short p_destination, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
+
+			Contract.checkNotNull(p_chunks, "no chunks given");
+
+			m_chunks = p_chunks;
 		}
 
 		// Getters
 		/**
-		 * Get the Chunk to store
-		 * @return the Chunk to store
+		 * Get the Chunks to store
+		 * @return the Chunks to store
 		 */
-		public final Chunk getChunk() {
-			return m_chunk;
+		public final Chunk[] getChunks() {
+			return m_chunks;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunk(p_buffer, m_chunk);
+			OutputHelper.writeChunks(p_buffer, m_chunks);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunk = InputHelper.readChunk(p_buffer);
+			m_chunks = InputHelper.readChunks(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
+			return OutputHelper.getChunksWriteLength(m_chunks);
 		}
 
 	}
@@ -919,7 +745,7 @@ public final class ChunkMessages {
 	public static class DataMessage extends AbstractMessage {
 
 		// Attributes
-		private Chunk m_chunk;
+		private Chunk[] m_chunks;
 
 		// Constructors
 		/**
@@ -928,47 +754,47 @@ public final class ChunkMessages {
 		public DataMessage() {
 			super();
 
-			m_chunk = null;
+			m_chunks = null;
 		}
 
 		/**
 		 * Creates an instance of DataMessage
 		 * @param p_destination
 		 *            the destination
-		 * @param p_chunk
-		 *            the Chunk to store
+		 * @param p_chunks
+		 *            the Chunks to store
 		 */
-		public DataMessage(final short p_destination, final Chunk p_chunk) {
+		public DataMessage(final short p_destination, final Chunk[] p_chunks) {
 			super(p_destination, TYPE, SUBTYPE_DATA_MESSAGE);
 
-			Contract.checkNotNull(p_chunk, "no chunk given");
+			Contract.checkNotNull(p_chunks, "no chunks given");
 
-			m_chunk = p_chunk;
+			m_chunks = p_chunks;
 		}
 
 		// Getters
 		/**
-		 * Get the Chunk to store
-		 * @return the Chunk to store
+		 * Get the Chunks to store
+		 * @return the Chunks to store
 		 */
-		public final Chunk getChunk() {
-			return m_chunk;
+		public final Chunk[] getChunks() {
+			return m_chunks;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunk(p_buffer, m_chunk);
+			OutputHelper.writeChunks(p_buffer, m_chunks);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunk = InputHelper.readChunk(p_buffer);
+			m_chunks = InputHelper.readChunks(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
+			return OutputHelper.getChunksWriteLength(m_chunks);
 		}
 
 	}
@@ -1093,6 +919,219 @@ public final class ChunkMessages {
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getChunksWriteLength(m_chunks);
+		}
+
+	}
+
+	/**
+	 * Message for command
+	 * @author Kevin Beineke 12.08.2015
+	 */
+	public static class CommandMessage extends AbstractMessage {
+
+		// Attributes
+		private short m_commandType;
+		private String[] m_args;
+
+		// Constructors
+		/**
+		 * Creates an instance of CommandMessage
+		 */
+		public CommandMessage() {
+			super();
+
+			m_commandType = -1;
+			m_args = null;
+		}
+
+		/**
+		 * Creates an instance of CommandMessage
+		 * @param p_destination
+		 *            the destination
+		 * @param p_commandType
+		 *            the command's type
+		 * @param p_args
+		 *            the command's arguments
+		 */
+		public CommandMessage(final short p_destination, final short p_commandType, final String[] p_args) {
+			super(p_destination, TYPE, SUBTYPE_COMMAND_MESSAGE);
+
+			Contract.check(p_commandType != -1, "no type given");
+			Contract.checkNotNull(p_args, "no arguments given");
+
+			m_commandType = p_commandType;
+			m_args = p_args;
+		}
+
+		// Getters
+		/**
+		 * Get the type
+		 * @return the command's type
+		 */
+		public final short getCommandType() {
+			return m_commandType;
+		}
+
+		/**
+		 * Get the arguments
+		 * @return the command's arguments
+		 */
+		public final String[] getArguments() {
+			return m_args;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeShort(p_buffer, m_commandType);
+			OutputHelper.writeStringArray(p_buffer, m_args);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_commandType = InputHelper.readShort(p_buffer);
+			m_args = InputHelper.readStringArray(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getShortWriteLength() + OutputHelper.getStringArrayWriteLength(m_args);
+		}
+
+	}
+
+	/**
+	 * Request for command
+	 * @author Kevin Beineke 12.08.2015
+	 */
+	public static class CommandRequest extends AbstractRequest {
+
+		// Attributes
+		private short m_commandType;
+		private String[] m_args;
+
+		// Constructors
+		/**
+		 * Creates an instance of CommandRequest
+		 */
+		public CommandRequest() {
+			super();
+
+			m_commandType = -1;
+			m_args = null;
+		}
+
+		/**
+		 * Creates an instance of CommandRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_commandType
+		 *            the command's type
+		 * @param p_args
+		 *            the command's arguments
+		 */
+		public CommandRequest(final short p_destination, final short p_commandType, final String[] p_args) {
+			super(p_destination, TYPE, SUBTYPE_COMMAND_REQUEST);
+
+			Contract.check(p_commandType != -1, "no type given");
+			Contract.checkNotNull(p_args, "no arguments given");
+
+			m_commandType = p_commandType;
+			m_args = p_args;
+		}
+
+		// Getters
+		/**
+		 * Get the type
+		 * @return the command's type
+		 */
+		public final short getCommandType() {
+			return m_commandType;
+		}
+
+		/**
+		 * Get the arguments
+		 * @return the command's arguments
+		 */
+		public final String[] getArguments() {
+			return m_args;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeShort(p_buffer, m_commandType);
+			OutputHelper.writeStringArray(p_buffer, m_args);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_commandType = InputHelper.readShort(p_buffer);
+			m_args = InputHelper.readStringArray(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getShortWriteLength() + OutputHelper.getStringArrayWriteLength(m_args);
+		}
+
+	}
+
+	/**
+	 * Response to a CommandRequest
+	 * @author Florian Klein 05.07.2014
+	 */
+	public static class CommandResponse extends AbstractResponse {
+
+		// Attributes
+		private String m_answer;
+
+		// Constructors
+		/**
+		 * Creates an instance of CommandResponse
+		 */
+		public CommandResponse() {
+			super();
+
+			m_answer = null;
+		}
+
+		/**
+		 * Creates an instance of CommandResponse
+		 * @param p_request
+		 *            the corresponding CommandRequest
+		 * @param p_answer
+		 *            the answer
+		 */
+		public CommandResponse(final CommandRequest p_request, final String p_answer) {
+			super(p_request, SUBTYPE_COMMAND_RESPONSE);
+
+			m_answer = p_answer;
+		}
+
+		// Getters
+		/**
+		 * Get the answer
+		 * @return the answer
+		 */
+		public final String getAnswer() {
+			return m_answer;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeString(p_buffer, m_answer);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_answer = InputHelper.readString(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getStringsWriteLength(m_answer);
 		}
 
 	}

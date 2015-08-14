@@ -13,7 +13,7 @@ import de.uniduesseldorf.dxram.core.lookup.LookupHandler;
  * @author Kevin Beineke
  *         22.01.2014
  */
-public class IDHashTable {
+public class AIDTable {
 
 	// Attributes
 	private transient Entry[] m_table;
@@ -25,7 +25,7 @@ public class IDHashTable {
 	/**
 	 * Creates an instance of IDHashTable
 	 */
-	public IDHashTable() {
+	public AIDTable() {
 		this(20, 0.75f);
 	}
 
@@ -34,7 +34,7 @@ public class IDHashTable {
 	 * @param p_initialCapacity
 	 *            the initial capacity of IDHashTable
 	 */
-	public IDHashTable(final int p_initialCapacity) {
+	public AIDTable(final int p_initialCapacity) {
 		this(p_initialCapacity, 0.75f);
 	}
 
@@ -45,7 +45,7 @@ public class IDHashTable {
 	 * @param p_loadFactor
 	 *            the load factor of IDHashTable
 	 */
-	public IDHashTable(final int p_initialCapacity, final float p_loadFactor) {
+	public AIDTable(final int p_initialCapacity, final float p_loadFactor) {
 		super();
 
 		m_loadFactor = p_loadFactor;

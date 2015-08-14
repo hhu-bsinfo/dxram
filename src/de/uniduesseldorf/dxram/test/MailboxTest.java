@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -154,14 +155,14 @@ public final class MailboxTest {
 			data = new byte[0];
 			for (long chunkID : chunkIDs) {
 				buffer = new byte[8];
-				buffer[0] = (byte)(chunkID >>> 56);
-				buffer[1] = (byte)(chunkID >>> 48);
-				buffer[2] = (byte)(chunkID >>> 40);
-				buffer[3] = (byte)(chunkID >>> 32);
-				buffer[4] = (byte)(chunkID >>> 24);
-				buffer[5] = (byte)(chunkID >>> 16);
-				buffer[6] = (byte)(chunkID >>> 8);
-				buffer[7] = (byte)(chunkID >>> 0);
+				buffer[0] = (byte) (chunkID >>> 56);
+				buffer[1] = (byte) (chunkID >>> 48);
+				buffer[2] = (byte) (chunkID >>> 40);
+				buffer[3] = (byte) (chunkID >>> 32);
+				buffer[4] = (byte) (chunkID >>> 24);
+				buffer[5] = (byte) (chunkID >>> 16);
+				buffer[6] = (byte) (chunkID >>> 8);
+				buffer[7] = (byte) (chunkID >>> 0);
 				data = ArrayTools.concatArrays(data, buffer);
 			}
 
@@ -177,29 +178,29 @@ public final class MailboxTest {
 			System.out.println("Server started");
 
 			/* Migration test */
-			/*
-			 * int i = 0;
-			 * while (i < 10) {
-			 * // Wait a moment
-			 * try {
-			 * Thread.sleep(1000);
-			 * } catch (InterruptedException e) {}
-			 * i++;
-			 * }
-			 * try {
-			 * //System.out.println("Migrating range(1,5) to " + 960);
-			 * //Core.migrateRange(((long)NodeID.getLocalNodeID() << 48) + 1, ((long)NodeID.getLocalNodeID() << 48) + 5,
-			 * (short)960);
-			 * System.out.println("Migrating object(1) to " + 320);
-			 * Core.migrate(((long)NodeID.getLocalNodeID() << 48) + 1, (short)320);
-			 * System.out.println("Migrating object(2) to " + (-29119));
-			 * Core.migrate(((long)NodeID.getLocalNodeID() << 48) + 2, (short)(-29119));
-			 * System.out.println("Migrating object(3) to " + (-15615));
-			 * Core.migrate(((long)NodeID.getLocalNodeID() << 48) + 3, (short)(-15615));
-			 * System.out.println("Migrating object(4) to " + 960);
-			 * Core.migrate(((long)NodeID.getLocalNodeID() << 48) + 4, (short)960);
-			 * } catch (DXRAMException e1) {}
-			 */
+			int i = 0;
+			while (i < 10) {
+				// Wait a moment
+				try {
+					Thread.sleep(1000);
+				} catch (final InterruptedException e) {}
+				i++;
+			}
+			try {
+				// System.out.println("Migrating range(1,5) to " + 960);
+				// Core.migrateRange(((long) NodeID.getLocalNodeID() << 48) + 1,
+				// ((long) NodeID.getLocalNodeID() << 48) + 5,
+				// (short) 960);
+				System.out.println("Migrating object(1) to " + 320);
+				// Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 1, (short) 320);
+				Core.execute("migrate", "" + ((long) NodeID.getLocalNodeID() << 48) + 1, "" + Core.getNodeID(), ""
+						+ (short) 320);
+				System.out.println("Migrating object(2) to " + (-15999));
+				Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 2, (short) (-15999));
+				System.out.println("Migrating object(3) to " + (-15615));
+				Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 3, (short) (-15615));
+			} catch (final DXRAMException e1) {}
+
 			while (true) {
 				// Wait a moment
 				try {
@@ -207,7 +208,6 @@ public final class MailboxTest {
 				} catch (final InterruptedException e) {}
 			}
 		}
-
 	}
 
 	/**
@@ -250,7 +250,7 @@ public final class MailboxTest {
 			while (true) {
 				System.out.println("----------");
 
-				for (int i = 0;i < 10;i++) {
+				for (int i = 0; i < 10; i++) {
 					try {
 						chunkID = Core.getChunkID("" + i);
 						chunk = Core.lock(chunkID);

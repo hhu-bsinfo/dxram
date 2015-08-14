@@ -12,7 +12,7 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
  * @author Kevin Beineke
  *         14.02.2014
  */
-public final class StringConverter {
+public final class NameServiceStringConverter {
 
 	// Constants
 	private static final String NAMESERVICE_TYPE = Core.getConfiguration().getStringValue(
@@ -27,7 +27,7 @@ public final class StringConverter {
 	/**
 	 * Creates an instance of StringConverter
 	 */
-	private StringConverter() {}
+	private NameServiceStringConverter() {}
 
 	static {
 		if (NAMESERVICE_TYPE.equals("NAME")) {

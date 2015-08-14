@@ -8,7 +8,7 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.OIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.AbstractRequest;
 import de.uniduesseldorf.dxram.core.net.AbstractResponse;
@@ -157,7 +157,7 @@ public final class LookupMessages {
 		private byte[] m_mappings;
 		private ArrayList<Short> m_superpeers;
 		private ArrayList<Short> m_peers;
-		private ArrayList<OIDTreeOptimized> m_trees;
+		private ArrayList<CIDTreeOptimized> m_trees;
 
 		// Constructors
 		/**
@@ -192,12 +192,12 @@ public final class LookupMessages {
 		 * @param p_peers
 		 *            the peers the superpeer is responsible for
 		 * @param p_trees
-		 *            the OIDTrees of the peers
+		 *            the CIDTrees of the peers
 		 */
 		public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer,
 				final short p_predecessor, final short p_successor, final byte[] p_mappings,
 				final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers,
-				final ArrayList<OIDTreeOptimized> p_trees) {
+				final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_request, SUBTYPE_JOIN_RESPONSE);
 
 			m_newContactSuperpeer = p_newContactSuperpeer;
@@ -259,10 +259,10 @@ public final class LookupMessages {
 		}
 
 		/**
-		 * Get OIDTrees
-		 * @return the OIDTrees
+		 * Get CIDTrees
+		 * @return the CIDTrees
 		 */
-		public final ArrayList<OIDTreeOptimized> getOIDTrees() {
+		public final ArrayList<CIDTreeOptimized> getCIDTrees() {
 			return m_trees;
 		}
 
@@ -299,8 +299,8 @@ public final class LookupMessages {
 					OutputHelper.writeInt(p_buffer, 0);
 				} else {
 					OutputHelper.writeInt(p_buffer, m_trees.size());
-					for (OIDTreeOptimized tree : m_trees) {
-						OutputHelper.writeOIDTree(p_buffer, tree);
+					for (CIDTreeOptimized tree : m_trees) {
+						OutputHelper.writeCIDTree(p_buffer, tree);
 					}
 				}
 			} else {
@@ -333,10 +333,10 @@ public final class LookupMessages {
 					m_peers.add(InputHelper.readNodeID(p_buffer));
 				}
 
-				m_trees = new ArrayList<OIDTreeOptimized>();
+				m_trees = new ArrayList<CIDTreeOptimized>();
 				length = InputHelper.readInt(p_buffer);
 				for (int i = 0; i < length; i++) {
-					m_trees.add(InputHelper.readOIDTree(p_buffer));
+					m_trees.add(InputHelper.readCIDTree(p_buffer));
 				}
 			} else {
 				m_newContactSuperpeer = InputHelper.readNodeID(p_buffer);
@@ -364,8 +364,8 @@ public final class LookupMessages {
 
 				ret += OutputHelper.getIntWriteLength();
 				if (m_trees != null) {
-					for (OIDTreeOptimized tree : m_trees) {
-						ret += OutputHelper.getOIDTreeWriteLength(tree);
+					for (CIDTreeOptimized tree : m_trees) {
+						ret += OutputHelper.getCIDTreeWriteLength(tree);
 					}
 				}
 			} else {
@@ -614,7 +614,7 @@ public final class LookupMessages {
 	public static class MigrateResponse extends AbstractResponse {
 
 		// Attributes
-		private short[] m_backupSuperpeers;
+		private boolean m_success;
 
 		// Constructors
 		/**
@@ -623,61 +623,45 @@ public final class LookupMessages {
 		public MigrateResponse() {
 			super();
 
-			m_backupSuperpeers = null;
+			m_success = false;
 		}
 
 		/**
 		 * Creates an instance of MigrateResponse
 		 * @param p_request
 		 *            the corresponding MigrateRequest
-		 * @param p_backupSuperpeers
-		 *            the backup superpeers
+		 * @param p_success
+		 *            whether the migration was successful or not
 		 */
-		public MigrateResponse(final MigrateRequest p_request, final short[] p_backupSuperpeers) {
+		public MigrateResponse(final MigrateRequest p_request, final boolean p_success) {
 			super(p_request, SUBTYPE_MIGRATE_RESPONSE);
 
-			m_backupSuperpeers = p_backupSuperpeers;
+			m_success = p_success;
 		}
 
 		// Getters
 		/**
-		 * Get the backup superpeers
-		 * @return the backup superpeers
+		 * Get the status
+		 * @return whether the migration was successful or not
 		 */
-		public final short[] getBackupSuperpeers() {
-			return m_backupSuperpeers;
+		public final boolean getStatus() {
+			return m_success;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			if (m_backupSuperpeers == null) {
-				OutputHelper.writeBoolean(p_buffer, false);
-			} else {
-				OutputHelper.writeBoolean(p_buffer, true);
-				OutputHelper.writeShortArray(p_buffer, m_backupSuperpeers);
-			}
+			OutputHelper.writeBoolean(p_buffer, m_success);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			if (InputHelper.readBoolean(p_buffer)) {
-				m_backupSuperpeers = InputHelper.readShortArray(p_buffer);
-			}
+			m_success = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			int ret;
-
-			if (m_backupSuperpeers == null) {
-				ret = OutputHelper.getBooleanWriteLength();
-			} else {
-				ret = OutputHelper.getBooleanWriteLength()
-						+ OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
-			}
-
-			return ret;
+			return OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -889,7 +873,7 @@ public final class LookupMessages {
 	public static class MigrateRangeResponse extends AbstractResponse {
 
 		// Attributes
-		private short[] m_backupSuperpeers;
+		private boolean m_success;
 
 		// Constructors
 		/**
@@ -898,61 +882,45 @@ public final class LookupMessages {
 		public MigrateRangeResponse() {
 			super();
 
-			m_backupSuperpeers = null;
+			m_success = false;
 		}
 
 		/**
 		 * Creates an instance of MigrateRangeResponse
 		 * @param p_request
 		 *            the corresponding MigrateRangeRequest
-		 * @param p_backupSuperpeers
-		 *            the backup superpeers
+		 * @param p_success
+		 *            whether the migration was successful or not
 		 */
-		public MigrateRangeResponse(final MigrateRangeRequest p_request, final short[] p_backupSuperpeers) {
+		public MigrateRangeResponse(final MigrateRangeRequest p_request, final boolean p_success) {
 			super(p_request, SUBTYPE_MIGRATE_RANGE_RESPONSE);
 
-			m_backupSuperpeers = p_backupSuperpeers;
+			m_success = p_success;
 		}
 
 		// Getters
 		/**
-		 * Get the backup superpeers
-		 * @return the backup superpeers
+		 * Get the status
+		 * @return whether the migration was successful or not
 		 */
-		public final short[] getBackupSuperpeers() {
-			return m_backupSuperpeers;
+		public final boolean getStatus() {
+			return m_success;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			if (m_backupSuperpeers == null) {
-				OutputHelper.writeBoolean(p_buffer, false);
-			} else {
-				OutputHelper.writeBoolean(p_buffer, true);
-				OutputHelper.writeShortArray(p_buffer, m_backupSuperpeers);
-			}
+			OutputHelper.writeBoolean(p_buffer, m_success);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			if (InputHelper.readBoolean(p_buffer)) {
-				m_backupSuperpeers = InputHelper.readShortArray(p_buffer);
-			}
+			m_success = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			int ret;
-
-			if (m_backupSuperpeers == null) {
-				ret = OutputHelper.getBooleanWriteLength();
-			} else {
-				ret = OutputHelper.getBooleanWriteLength()
-						+ OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
-			}
-
-			return ret;
+			return OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -965,7 +933,7 @@ public final class LookupMessages {
 	public static class InitRangeRequest extends AbstractRequest {
 
 		// Attributes
-		private long m_endChunkID;
+		private long m_startChunkIDOrRangeID;
 		private long m_locations;
 		private boolean m_isBackup;
 
@@ -976,7 +944,7 @@ public final class LookupMessages {
 		public InitRangeRequest() {
 			super();
 
-			m_endChunkID = -1;
+			m_startChunkIDOrRangeID = -1;
 			m_locations = -1;
 			m_isBackup = false;
 		}
@@ -985,18 +953,18 @@ public final class LookupMessages {
 		 * Creates an instance of InitRangeRequest
 		 * @param p_destination
 		 *            the destination
-		 * @param p_endChunkID
-		 *            the last object
+		 * @param p_startChunkID
+		 *            the first object
 		 * @param p_locations
 		 *            the locations (backup peers and own NodeID)
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public InitRangeRequest(final short p_destination, final long p_endChunkID, final long p_locations,
+		public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_locations,
 				final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_INIT_RANGE_REQUEST);
 
-			m_endChunkID = p_endChunkID;
+			m_startChunkIDOrRangeID = p_startChunkID;
 			m_locations = p_locations;
 			m_isBackup = p_isBackup;
 		}
@@ -1006,8 +974,8 @@ public final class LookupMessages {
 		 * Get the last ChunkID
 		 * @return the ID
 		 */
-		public final long getEndChunkID() {
-			return m_endChunkID;
+		public final long getStartChunkIDOrRangeID() {
+			return m_startChunkIDOrRangeID;
 		}
 
 		/**
@@ -1029,14 +997,14 @@ public final class LookupMessages {
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunkID(p_buffer, m_endChunkID);
+			OutputHelper.writeChunkID(p_buffer, m_startChunkIDOrRangeID);
 			OutputHelper.writeLong(p_buffer, m_locations);
 			OutputHelper.writeBoolean(p_buffer, m_isBackup);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_endChunkID = InputHelper.readChunkID(p_buffer);
+			m_startChunkIDOrRangeID = InputHelper.readChunkID(p_buffer);
 			m_locations = InputHelper.readLong(p_buffer);
 			m_isBackup = InputHelper.readBoolean(p_buffer);
 		}
@@ -1057,7 +1025,7 @@ public final class LookupMessages {
 	public static class InitRangeResponse extends AbstractResponse {
 
 		// Attributes
-		private short[] m_backupSuperpeers;
+		private boolean m_success;
 
 		// Constructors
 		/**
@@ -1066,61 +1034,45 @@ public final class LookupMessages {
 		public InitRangeResponse() {
 			super();
 
-			m_backupSuperpeers = null;
+			m_success = false;
 		}
 
 		/**
 		 * Creates an instance of InitRangeResponse
 		 * @param p_request
 		 *            the corresponding InitRangeRequest
-		 * @param p_backupSuperpeers
-		 *            the backup superpeers
+		 * @param p_success
+		 *            whether the migration was successful or not
 		 */
-		public InitRangeResponse(final InitRangeRequest p_request, final short[] p_backupSuperpeers) {
+		public InitRangeResponse(final InitRangeRequest p_request, final boolean p_success) {
 			super(p_request, SUBTYPE_INIT_RANGE_RESPONSE);
 
-			m_backupSuperpeers = p_backupSuperpeers;
+			m_success = p_success;
 		}
 
 		// Getters
 		/**
-		 * Get the backup superpeers
-		 * @return the backup superpeers
+		 * Get the status
+		 * @return whether the migration was successful or not
 		 */
-		public final short[] getBackupSuperpeers() {
-			return m_backupSuperpeers;
+		public final boolean getStatus() {
+			return m_success;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			if (m_backupSuperpeers == null) {
-				OutputHelper.writeBoolean(p_buffer, false);
-			} else {
-				OutputHelper.writeBoolean(p_buffer, true);
-				OutputHelper.writeShortArray(p_buffer, m_backupSuperpeers);
-			}
+			OutputHelper.writeBoolean(p_buffer, m_success);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			if (InputHelper.readBoolean(p_buffer)) {
-				m_backupSuperpeers = InputHelper.readShortArray(p_buffer);
-			}
+			m_success = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			int ret;
-
-			if (m_backupSuperpeers == null) {
-				ret = OutputHelper.getBooleanWriteLength();
-			} else {
-				ret = OutputHelper.getBooleanWriteLength()
-						+ OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
-			}
-
-			return ret;
+			return OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -1366,7 +1318,7 @@ public final class LookupMessages {
 	public static class AskAboutBackupsResponse extends AbstractResponse {
 
 		// Attributes
-		private ArrayList<OIDTreeOptimized> m_trees;
+		private ArrayList<CIDTreeOptimized> m_trees;
 		private byte[] m_mappings;
 
 		// Constructors
@@ -1390,7 +1342,7 @@ public final class LookupMessages {
 		 *            the missing id mappings
 		 */
 		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request,
-				final ArrayList<OIDTreeOptimized> p_trees,
+				final ArrayList<CIDTreeOptimized> p_trees,
 				final byte[] p_mappings) {
 			super(p_request, SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE);
 
@@ -1401,9 +1353,9 @@ public final class LookupMessages {
 		// Getters
 		/**
 		 * Get the missing backups
-		 * @return the OIDTrees
+		 * @return the CIDTrees
 		 */
-		public final ArrayList<OIDTreeOptimized> getBackups() {
+		public final ArrayList<CIDTreeOptimized> getBackups() {
 			return m_trees;
 		}
 
@@ -1429,8 +1381,8 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (OIDTreeOptimized tree : m_trees) {
-					OutputHelper.writeOIDTree(p_buffer, tree);
+				for (CIDTreeOptimized tree : m_trees) {
+					OutputHelper.writeCIDTree(p_buffer, tree);
 				}
 			}
 		}
@@ -1443,10 +1395,10 @@ public final class LookupMessages {
 				m_mappings = InputHelper.readByteArray(p_buffer);
 			}
 
-			m_trees = new ArrayList<OIDTreeOptimized>();
+			m_trees = new ArrayList<CIDTreeOptimized>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
-				m_trees.add(InputHelper.readOIDTree(p_buffer));
+				m_trees.add(InputHelper.readCIDTree(p_buffer));
 			}
 		}
 
@@ -1461,8 +1413,8 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (OIDTreeOptimized tree : m_trees) {
-					ret += OutputHelper.getOIDTreeWriteLength(tree);
+				for (CIDTreeOptimized tree : m_trees) {
+					ret += OutputHelper.getCIDTreeWriteLength(tree);
 				}
 			}
 
@@ -1691,7 +1643,7 @@ public final class LookupMessages {
 	public static class SendBackupsMessage extends AbstractMessage {
 
 		// Attributes
-		private ArrayList<OIDTreeOptimized> m_trees;
+		private ArrayList<CIDTreeOptimized> m_trees;
 		private byte[] m_mappings;
 
 		// Constructors
@@ -1712,10 +1664,10 @@ public final class LookupMessages {
 		 * @param p_mappings
 		 *            the id mappings
 		 * @param p_trees
-		 *            the OIDTrees
+		 *            the CIDTrees
 		 */
 		public SendBackupsMessage(final short p_destination, final byte[] p_mappings,
-				final ArrayList<OIDTreeOptimized> p_trees) {
+				final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_SEND_BACKUPS_MESSAGE);
 
 			m_mappings = p_mappings;
@@ -1724,10 +1676,10 @@ public final class LookupMessages {
 
 		// Getters
 		/**
-		 * Get OIDTrees
-		 * @return the OIDTrees
+		 * Get CIDTrees
+		 * @return the CIDTrees
 		 */
-		public final ArrayList<OIDTreeOptimized> getOIDTrees() {
+		public final ArrayList<CIDTreeOptimized> getCIDTrees() {
 			return m_trees;
 		}
 
@@ -1753,8 +1705,8 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (OIDTreeOptimized tree : m_trees) {
-					OutputHelper.writeOIDTree(p_buffer, tree);
+				for (CIDTreeOptimized tree : m_trees) {
+					OutputHelper.writeCIDTree(p_buffer, tree);
 				}
 			}
 		}
@@ -1767,10 +1719,10 @@ public final class LookupMessages {
 				m_mappings = InputHelper.readByteArray(p_buffer);
 			}
 
-			m_trees = new ArrayList<OIDTreeOptimized>();
+			m_trees = new ArrayList<CIDTreeOptimized>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
-				m_trees.add(InputHelper.readOIDTree(p_buffer));
+				m_trees.add(InputHelper.readCIDTree(p_buffer));
 			}
 		}
 
@@ -1785,8 +1737,8 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (OIDTreeOptimized tree : m_trees) {
-					ret += OutputHelper.getOIDTreeWriteLength(tree);
+				for (CIDTreeOptimized tree : m_trees) {
+					ret += OutputHelper.getCIDTreeWriteLength(tree);
 				}
 			}
 
@@ -1917,7 +1869,7 @@ public final class LookupMessages {
 		private byte[] m_mappings;
 		private ArrayList<Short> m_superpeers;
 		private ArrayList<Short> m_peers;
-		private ArrayList<OIDTreeOptimized> m_trees;
+		private ArrayList<CIDTreeOptimized> m_trees;
 
 		// Constructors
 		/**
@@ -1952,11 +1904,11 @@ public final class LookupMessages {
 		 * @param p_peers
 		 *            the peers the superpeer is responsible for
 		 * @param p_trees
-		 *            the OIDTrees of the peers
+		 *            the CIDTrees of the peers
 		 */
 		public PromotePeerRequest(final short p_destination, final short p_predecessor, final short p_successor,
 				final short p_replacement, final byte[] p_mappings, final ArrayList<Short> p_superpeers,
-				final ArrayList<Short> p_peers, final ArrayList<OIDTreeOptimized> p_trees) {
+				final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_PROMOTE_PEER_REQUEST);
 
 			m_predecessor = p_predecessor;
@@ -2018,10 +1970,10 @@ public final class LookupMessages {
 		}
 
 		/**
-		 * Get OIDTrees
-		 * @return the OIDTrees
+		 * Get CIDTrees
+		 * @return the CIDTrees
 		 */
-		public final ArrayList<OIDTreeOptimized> getOIDTrees() {
+		public final ArrayList<CIDTreeOptimized> getCIDTrees() {
 			return m_trees;
 		}
 
@@ -2057,8 +2009,8 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (OIDTreeOptimized tree : m_trees) {
-					OutputHelper.writeOIDTree(p_buffer, tree);
+				for (CIDTreeOptimized tree : m_trees) {
+					OutputHelper.writeCIDTree(p_buffer, tree);
 				}
 			}
 		}
@@ -2087,10 +2039,10 @@ public final class LookupMessages {
 				m_peers.add(InputHelper.readNodeID(p_buffer));
 			}
 
-			m_trees = new ArrayList<OIDTreeOptimized>();
+			m_trees = new ArrayList<CIDTreeOptimized>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
-				m_trees.add(InputHelper.readOIDTree(p_buffer));
+				m_trees.add(InputHelper.readCIDTree(p_buffer));
 			}
 		}
 
@@ -2114,8 +2066,8 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (OIDTreeOptimized tree : m_trees) {
-					ret += OutputHelper.getOIDTreeWriteLength(tree);
+				for (CIDTreeOptimized tree : m_trees) {
+					ret += OutputHelper.getCIDTreeWriteLength(tree);
 				}
 			}
 

@@ -1,10 +1,12 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
@@ -167,6 +169,34 @@ public final class MemoryManager {
 	}
 
 	/**
+	 * Returns whether this Chunk is stored locally or not
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return whether this Chunk is stored locally or not
+	 * @throws MemoryException
+	 *             if the Chunk could not be checked
+	 */
+	public static boolean isResponsible(final long p_chunkID) throws MemoryException {
+		long address;
+
+		// Get the address from the CIDTable
+		address = CIDTable.get(p_chunkID);
+
+		// If address <= 0, the Chunk does not exists in the memory
+		return address > 0;
+	}
+
+	/**
+	 * Returns whether this Chunk was migrated here or not
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return whether this Chunk was migrated here or not
+	 */
+	public static boolean wasMigrated(final long p_chunkID) {
+		return ChunkID.getCreatorID(p_chunkID) != NodeID.getLocalNodeID();
+	}
+
+	/**
 	 * Removes a Chunk from the memory
 	 * @param p_chunkID
 	 *            the ChunkID of the Chunk
@@ -185,4 +215,13 @@ public final class MemoryManager {
 		}
 	}
 
+	/**
+	 * Returns the ChunkIDs of all migrated Chunks
+	 * @return the ChunkIDs of all migrated Chunks
+	 * @throws MemoryException
+	 *             if the CIDTable could not be completely accessed
+	 */
+	public static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
+		return CIDTable.getCIDOfAllMigratedChunks();
+	}
 }

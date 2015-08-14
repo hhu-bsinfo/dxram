@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.api.config;
 
 import java.io.BufferedReader;
@@ -133,6 +134,12 @@ public final class ConfigurationHandler {
 		}
 
 		keyValue[0] = "network.port";
+		keyValue[1] = System.getProperty(keyValue[0]);
+		if (keyValue[1] != null) {
+			p_configuration.setValue(keyValue[0], keyValue[1]);
+		}
+
+		keyValue[0] = "dxram.role";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			p_configuration.setValue(keyValue[0], keyValue[1]);

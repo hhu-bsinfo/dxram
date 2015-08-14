@@ -1,6 +1,6 @@
 #Classes
 CachedLookup - Wrapper class for the LookupHandler with automatic caching
-CachedTreeLookup - Wrapper class for the LookupHandler with automatic caching using OIDTrees
+CachedTreeLookup - Wrapper class for the LookupHandler with automatic caching using CIDTrees
 LookupHandler - Default implementation of the lookup interface
 LookupInterface - API of the meta data service
 LookupMessages - All messages used by the lookup classes

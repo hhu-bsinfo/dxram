@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.api.config;
 
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationEntry;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 
 /**
  * Simplifies the access to the DXRAM configuration
@@ -173,6 +174,40 @@ public final class ConfigurationHelper {
 
 		try {
 			ret = m_configuration.getValue(p_entry.getKey()).charAt(0);
+		} catch (final RuntimeException e) {}
+
+		return ret;
+	}
+
+	/**
+	 * Gets the value for the given ConfigurationEntry
+	 * @param p_entry
+	 *            the ConfigurationEntry
+	 * @return the value for the given ConfigurationEntry
+	 */
+	public Role getRoleValue(final ConfigurationEntry<String> p_entry) {
+		Role ret = null;
+		String defaultRole;
+		String role;
+
+		try {
+			defaultRole = p_entry.getDefaultValue();
+			if (defaultRole.equalsIgnoreCase("Peer")) {
+				ret = Role.PEER;
+			} else if (defaultRole.equalsIgnoreCase("Superpeer")) {
+				ret = Role.SUPERPEER;
+			} else if (defaultRole.equalsIgnoreCase("Monitor")) {
+				ret = Role.MONITOR;
+			}
+
+			role = m_configuration.getValue(p_entry.getKey());
+			if (role.equalsIgnoreCase("Peer")) {
+				ret = Role.PEER;
+			} else if (role.equalsIgnoreCase("Superpeer")) {
+				ret = Role.SUPERPEER;
+			} else if (role.equalsIgnoreCase("Monitor")) {
+				ret = Role.MONITOR;
+			}
 		} catch (final RuntimeException e) {}
 
 		return ret;

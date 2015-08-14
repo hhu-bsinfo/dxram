@@ -199,6 +199,10 @@ public final class Configuration {
 		public static final ConfigurationEntry<Boolean> RECOVER = new ConfigurationEntry<Boolean>("recover",
 				Boolean.class, false);
 
+		// DXRAM role (Superpeer, Peer or Monitor, may be overwritten by nodes configuration)
+		public static final ConfigurationEntry<String> DXRAM_ROLE = new ConfigurationEntry<String>(
+				"dxram.role", String.class, "Peer");
+
 		// Max size of a Chunk (default 16 MB)
 		public static final ConfigurationEntry<Integer> CHUNK_MAXSIZE = new ConfigurationEntry<Integer>(
 				"chunk_maxsize", Integer.class, 16777215);
@@ -272,6 +276,9 @@ public final class Configuration {
 		// Backup activation flag
 		public static final ConfigurationEntry<Boolean> LOG_ACTIVE = new ConfigurationEntry<Boolean>(
 				"log.active", Boolean.class, false);
+		// Replication factor
+		public static final ConfigurationEntry<Integer> REPLICATION_FACTOR = new ConfigurationEntry<Integer>(
+				"log.replication_factor", Integer.class, 3);
 		// Size of the primary log file (default 8 GB)
 		public static final ConfigurationEntry<Long> PRIMARY_LOG_SIZE = new ConfigurationEntry<Long>(
 				"log.primary_size", Long.class, 8589934592L);
@@ -305,9 +312,6 @@ public final class Configuration {
 		// Length of backup ranges
 		public static final ConfigurationEntry<Integer> LOOKUP_NS_CACHE_SIZE = new ConfigurationEntry<Integer>(
 				"lookup.ns.cacheSize", Integer.class, 1000000);
-		// Length of backup ranges
-		public static final ConfigurationEntry<Integer> LOOKUP_INIT_RANGE = new ConfigurationEntry<Integer>(
-				"lookup.initRange", Integer.class, 2500000);
 		// Nameservice type
 		public static final ConfigurationEntry<String> NAMESERVICE_TYPE = new ConfigurationEntry<String>(
 				"nameservice.type", String.class, "NAME");
@@ -346,11 +350,12 @@ public final class Configuration {
 		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>(
 				"statistic.throughput", Boolean.class, true);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 44;
+		public static final int CONFIGURATION_ENTRY_COUNT = 45;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
 			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
 			CONFIGURATION_ENTRIES.add(RECOVER);
+			CONFIGURATION_ENTRIES.add(DXRAM_ROLE);
 			CONFIGURATION_ENTRIES.add(CHUNK_MAXSIZE);
 			CONFIGURATION_ENTRIES.add(INTERFACE_CHUNK);
 			CONFIGURATION_ENTRIES.add(INTERFACE_LOOKUP);
@@ -373,6 +378,7 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(RAM_SIZE);
 			CONFIGURATION_ENTRIES.add(RAM_MANAGEMENT);
 			CONFIGURATION_ENTRIES.add(LOG_ACTIVE);
+			CONFIGURATION_ENTRIES.add(REPLICATION_FACTOR);
 			CONFIGURATION_ENTRIES.add(PRIMARY_LOG_SIZE);
 			CONFIGURATION_ENTRIES.add(SECONDARY_LOG_SIZE);
 			CONFIGURATION_ENTRIES.add(WRITE_BUFFER_SIZE);
@@ -383,7 +389,6 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(LOOKUP_CACHESIZE);
 			CONFIGURATION_ENTRIES.add(LOOKUP_CACHETTL);
 			CONFIGURATION_ENTRIES.add(LOOKUP_NS_CACHE_SIZE);
-			CONFIGURATION_ENTRIES.add(LOOKUP_INIT_RANGE);
 			CONFIGURATION_ENTRIES.add(NAMESERVICE_TYPE);
 			CONFIGURATION_ENTRIES.add(NAMESERVICE_KEY_LENGTH);
 			CONFIGURATION_ENTRIES.add(JNI_LOCK_DIRECTORY);

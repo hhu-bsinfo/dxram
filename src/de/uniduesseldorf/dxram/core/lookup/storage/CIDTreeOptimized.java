@@ -4,8 +4,6 @@ package de.uniduesseldorf.dxram.core.lookup.storage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.utils.Contract;
 
@@ -16,12 +14,10 @@ import de.uniduesseldorf.dxram.utils.Contract;
  *         application)
  *         13.06.2013
  */
-public final class OIDTreeOptimized implements Serializable {
+public final class CIDTreeOptimized implements Serializable {
 
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
-
-	public static final int RANGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_INIT_RANGE);
 
 	// Attributes
 	private short m_minEntries;
@@ -34,17 +30,18 @@ public final class OIDTreeOptimized implements Serializable {
 	private short m_creator;
 	private boolean m_status;
 
-	private ArrayList<Long> m_backupNodes;
+	private ArrayList<long[]> m_backupRanges;
+	private ArrayList<Long> m_migrationBackupRanges;
 
 	private Entry m_changedEntry;
 
 	// Constructors
 	/**
-	 * Creates an instance of OIDTree
+	 * Creates an instance of CIDTreeOptimized
 	 * @param p_order
 	 *            order of the btree
 	 */
-	public OIDTreeOptimized(final short p_order) {
+	public CIDTreeOptimized(final short p_order) {
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
@@ -57,7 +54,8 @@ public final class OIDTreeOptimized implements Serializable {
 		m_creator = -1;
 		m_status = true;
 
-		m_backupNodes = new ArrayList<Long>();
+		m_backupRanges = new ArrayList<long[]>();
+		m_migrationBackupRanges = new ArrayList<Long>();
 
 		m_changedEntry = null;
 	}
@@ -99,7 +97,6 @@ public final class OIDTreeOptimized implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean migrateObject(final long p_chunkID, final short p_nodeID) {
-		int index;
 		long lid;
 		Node node;
 
@@ -107,14 +104,12 @@ public final class OIDTreeOptimized implements Serializable {
 
 		Contract.check(0 < lid, "lid smaller than 1");
 
-		index = (int) (lid / RANGE_SIZE);
-		if (index < m_backupNodes.size()) {
-			node = createOrReplaceEntry(lid, p_nodeID);
+		node = createOrReplaceEntry(lid, p_nodeID);
 
-			mergeWithPredecessorOrBound(lid, p_nodeID, node);
+		mergeWithPredecessorOrBound(lid, p_nodeID, node);
 
-			mergeWithSuccessor(lid, p_nodeID);
-		}
+		mergeWithSuccessor(lid, p_nodeID);
+
 		return true;
 	}
 
@@ -129,7 +124,6 @@ public final class OIDTreeOptimized implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean migrateRange(final long p_startID, final long p_endID, final short p_nodeID) {
-		int index;
 		long startLid;
 		long endLid;
 		Node startNode;
@@ -140,45 +134,62 @@ public final class OIDTreeOptimized implements Serializable {
 		if (startLid == endLid) {
 			migrateObject(p_startID, p_nodeID);
 		} else {
-			index = (int) (endLid / RANGE_SIZE);
-			if (index < m_backupNodes.size()) {
-				startNode = createOrReplaceEntry(startLid, p_nodeID);
+			startNode = createOrReplaceEntry(startLid, p_nodeID);
 
-				mergeWithPredecessorOrBound(startLid, p_nodeID, startNode);
+			mergeWithPredecessorOrBound(startLid, p_nodeID, startNode);
 
-				createOrReplaceEntry(endLid, p_nodeID);
+			createOrReplaceEntry(endLid, p_nodeID);
 
-				removeEntriesWithinRange(startLid, endLid);
+			removeEntriesWithinRange(startLid, endLid);
 
-				mergeWithSuccessor(endLid, p_nodeID);
-			}
+			mergeWithSuccessor(endLid, p_nodeID);
 		}
 		return true;
 	}
 
 	/**
 	 * Initializes a range
-	 * @param p_endID
-	 *            ChunkID of last migrated object
+	 * @param p_startID
+	 *            ChunkID of first chunk
 	 * @param p_creator
 	 *            the creator
 	 * @param p_backupPeers
 	 *            the backup peers
 	 * @return true if insertion was successful
 	 */
-	public boolean initRange(final long p_endID, final short p_creator, final short[] p_backupPeers) {
+	public boolean initRange(final long p_startID, final short p_creator,
+			final short[] p_backupPeers) {
 		long backupPeers;
 
-		if (0 == p_endID) {
+		if (0 == p_startID) {
 			m_creator = p_creator;
 		} else {
 			if (null == m_root) {
-				createOrReplaceEntry((long) (Math.pow(2, 31) * RANGE_SIZE), p_creator);
+				createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
 			}
 			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
 					+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
-			m_backupNodes.add(backupPeers);
+			m_backupRanges.add(new long[] {p_startID, backupPeers});
 		}
+		return true;
+	}
+
+	/**
+	 * Initializes a range for migrated chunks
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @param p_creator
+	 *            the creator
+	 * @param p_backupPeers
+	 *            the backup peers
+	 * @return true if insertion was successful
+	 */
+	public boolean initMigrationRange(final int p_rangeID, final short p_creator,
+			final short[] p_backupPeers) {
+
+		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
+				+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF));
+
 		return true;
 	}
 
@@ -247,15 +258,26 @@ public final class OIDTreeOptimized implements Serializable {
 	 */
 	public short[] getBackupPeers(final long p_chunkID) {
 		short[] ret = null;
-		Long tempResult;
+		short backupPeer;
+		Long tempResult = null;
 		long result;
 
 		if (m_root != null) {
-			tempResult = m_backupNodes.get((int) ((p_chunkID & 0x0000FFFFFFFFFFFFL) / RANGE_SIZE));
+			for (int i = m_backupRanges.size() - 1; i >= 0; i--) {
+				if (m_backupRanges.get(i)[0] <= p_chunkID) {
+					tempResult = m_backupRanges.get(i)[1];
+				}
+			}
+
+			ret = new short[] {-1, -1, -1};
 			if (tempResult != null) {
 				result = tempResult;
-				ret = new short[] {(short) result, (short) ((result & 0x00000000FFFF0000L) >> 16),
-						(short) ((result & 0x0000FFFF00000000L) >> 32)};
+				for (int i = 0; i < ret.length; i++) {
+					backupPeer = (short) ((result & (long) Math.pow(2, 16 * (i + 1))) >> (i * 8));
+					if (backupPeer != 0) {
+						ret[i] = backupPeer;
+					}
+				}
 			}
 		}
 		return ret;
@@ -349,8 +371,8 @@ public final class OIDTreeOptimized implements Serializable {
 	 * Returns the backup peers for every range
 	 * @return an ArrayList with all backup peers
 	 */
-	public ArrayList<Long> getAllBackupPeers() {
-		return m_backupNodes;
+	public ArrayList<long[]> getAllBackupRanges() {
+		return m_backupRanges;
 	}
 
 	/**
@@ -361,25 +383,27 @@ public final class OIDTreeOptimized implements Serializable {
 	 *            NodeID of new backup peer
 	 */
 	public void removeBackupPeer(final short p_failedPeer, final short p_replacement) {
-		long element;
+		long backupNodes;
 		short[] backupPeers;
+		long[] element;
 
-		for (int i = 0; i < m_backupNodes.size(); i++) {
-			element = m_backupNodes.get(i);
-			backupPeers = new short[] {(short) element, (short) ((element & 0x00000000FFFF0000L) >> 16),
-					(short) ((element & 0x0000FFFF00000000L) >> 32)};
+		for (int i = 0; i < m_backupRanges.size(); i++) {
+			element = m_backupRanges.get(i);
+			backupNodes = element[1];
+			backupPeers = new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16),
+					(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
 			if (p_failedPeer == backupPeers[0]) {
-				element = ((p_replacement & 0x000000000000FFFFL) << 32)
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
 						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
-				m_backupNodes.set(i, element);
+				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[1]) {
-				element = ((p_replacement & 0x000000000000FFFFL) << 32)
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
 						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
-				m_backupNodes.set(i, element);
+				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[2]) {
-				element = ((p_replacement & 0x000000000000FFFFL) << 32)
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
 						+ ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
-				m_backupNodes.set(i, element);
+				element[1] = backupNodes;
 			}
 		}
 	}

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.api.config;
 
 import java.util.Arrays;
@@ -29,6 +30,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(DefaultNodesConfigurationParser.class);
+	private static final Role DEFAULT_ROLE = Core.getConfiguration().getRoleValue(ConfigurationConstants.DXRAM_ROLE);
 
 	// Attributes
 	private short m_bootstrap;
@@ -141,7 +143,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 					// Set own NodeID
 					NodeID.setLocalNodeID(nodeID);
 					// Set role
-					NodeID.setSuperpeer(entry.getRole().equals(Role.SUPERPEER));
+					NodeID.setRole(entry.getRole());
 					m_bootstrap = nodeID;
 				}
 				if (entry.getRole().equals(Role.SUPERPEER)) {
@@ -200,6 +202,8 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 
 		LOGGER.trace("Entering parseNodesNormal");
 
+		NodeID.setRole(DEFAULT_ROLE);
+
 		ret = new long[NodeID.MAX_ID + 1];
 		Arrays.fill(ret, -1);
 
@@ -223,7 +227,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 					// Set own NodeID
 					NodeID.setLocalNodeID(nodeID);
 					// Set role
-					NodeID.setSuperpeer(entry.getRole().equals(Role.SUPERPEER));
+					NodeID.setRole(entry.getRole());
 				}
 
 				ret[nodeID & 0x0000FFFF] = parseNode(entry.getIP(), entry.getPort(), nodeID);
@@ -244,7 +248,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 
 				if (nodeID == NodeID.getLocalNodeID()) {
 					// NodeID was already re-used
-					NodeID.setLocalNodeID((short)0);
+					NodeID.setLocalNodeID((short) 0);
 				}
 			}
 
@@ -280,9 +284,9 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 			ZooKeeperHandler.setChildrenWatch("nodes/free", this);
 
 			// Register peer/superpeer
-			if (NodeID.isSuperpeer()) {
+			if (NodeID.getRole().equals(Role.SUPERPEER)) {
 				ZooKeeperHandler.create("nodes/superpeers/" + NodeID.getLocalNodeID());
-			} else {
+			} else if (NodeID.getRole().equals(Role.PEER)) {
 				ZooKeeperHandler.create("nodes/peers/" + NodeID.getLocalNodeID());
 			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
@@ -32,7 +34,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	// Attributes
 	private LookupInterface m_lookup;
 
-	private CacheTree m_oidCacheTree;
+	private CacheTree m_cidCacheTree;
 	private Cache<Integer, Long> m_aidCache;
 
 	// Constructors
@@ -53,7 +55,7 @@ public final class CachedTreeLookup implements LookupInterface {
 
 		m_lookup = p_lookup;
 
-		m_oidCacheTree = null;
+		m_cidCacheTree = null;
 		m_aidCache = null;
 	}
 
@@ -62,8 +64,8 @@ public final class CachedTreeLookup implements LookupInterface {
 	public void initialize() throws DXRAMException {
 		m_lookup.initialize();
 
-		if (!NodeID.isSuperpeer()) {
-			m_oidCacheTree = new CacheTree(ORDER);
+		if (!NodeID.getRole().equals(Role.SUPERPEER)) {
+			m_cidCacheTree = new CacheTree(ORDER);
 			m_aidCache = new Cache<Integer, Long>(NS_CACHE_SIZE);
 			// m_aidCache.enableTTL();
 		}
@@ -78,9 +80,9 @@ public final class CachedTreeLookup implements LookupInterface {
 	public void close() {
 		m_lookup.close();
 
-		if (m_oidCacheTree != null) {
-			m_oidCacheTree.close();
-			m_oidCacheTree = null;
+		if (m_cidCacheTree != null) {
+			m_cidCacheTree.close();
+			m_cidCacheTree = null;
 		}
 		if (m_aidCache != null) {
 			m_aidCache.clear();
@@ -93,14 +95,14 @@ public final class CachedTreeLookup implements LookupInterface {
 		Locations ret;
 		short nodeID;
 
-		ret = m_oidCacheTree.getMetadata(p_chunkID);
+		ret = m_cidCacheTree.getMetadata(p_chunkID);
 		if (ret == null) {
 			ret = m_lookup.get(p_chunkID);
 			if (ret != null) {
 				nodeID = ret.getPrimaryPeer();
 
-				m_oidCacheTree.cacheRange(((long)nodeID << 48) + ret.getRange()[0],
-						((long)nodeID << 48) + ret.getRange()[1], nodeID);
+				m_cidCacheTree.cacheRange(((long) nodeID << 48) + ret.getRange()[0],
+						((long) nodeID << 48) + ret.getRange()[1], nodeID);
 			}
 		}
 		return ret;
@@ -145,10 +147,10 @@ public final class CachedTreeLookup implements LookupInterface {
 	}
 
 	@Override
-	public void initRange(final long p_endChunkID, final Locations p_locations) throws LookupException {
-		ChunkID.check(p_endChunkID);
+	public void initRange(final long p_firstChunkID, final Locations p_locations) throws LookupException {
+		ChunkID.check(p_firstChunkID);
 
-		m_lookup.initRange(p_endChunkID, p_locations);
+		m_lookup.initRange(p_firstChunkID, p_locations);
 	}
 
 	@Override
@@ -193,7 +195,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	@Override
 	public void invalidate(final long... p_chunkIDs) {
 		for (long chunkID : p_chunkIDs) {
-			m_oidCacheTree.invalidateChunkID(chunkID);
+			m_cidCacheTree.invalidateChunkID(chunkID);
 		}
 	}
 
@@ -229,7 +231,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	 * Clear the cache
 	 */
 	public void clear() {
-		m_oidCacheTree = new CacheTree(ORDER);
+		m_cidCacheTree = new CacheTree(ORDER);
 		m_aidCache.clear();
 	}
 
