@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.utils;
 
 import java.io.File;
@@ -15,6 +16,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 
 /**
  * Manages multiple statistics
@@ -109,12 +113,15 @@ public final class StatisticsManager {
 		Contract.check(p_period > 0, "invalid period");
 		Contract.checkNotNull(p_stream, "no stream given");
 
-		if (m_timer != null) {
-			m_timer.cancel();
-		}
+		if (!NodeID.getRole().equals(Role.MONITOR)) {
 
-		m_timer = new Timer(StatisticsManager.class.getSimpleName(), true);
-		m_timer.scheduleAtFixedRate(new StatisticsTask(p_stream), 0, p_period * 1000);
+			if (m_timer != null) {
+				m_timer.cancel();
+			}
+
+			m_timer = new Timer(StatisticsManager.class.getSimpleName(), true);
+			m_timer.scheduleAtFixedRate(new StatisticsTask(p_stream), 0, p_period * 1000);
+		}
 	}
 
 	/**
@@ -134,7 +141,8 @@ public final class StatisticsManager {
 		// Methods
 		/**
 		 * Gets the statistic values
-		 * @param p_withDetails if true, details will be included
+		 * @param p_withDetails
+		 *            if true, details will be included
 		 * @return the statistic values
 		 */
 		List<StatisticEntry> getValues(final boolean p_withDetails);
@@ -155,9 +163,12 @@ public final class StatisticsManager {
 		// Constructors
 		/**
 		 * Creates an instance of StatisticEntry
-		 * @param p_position the position
-		 * @param p_name the name
-		 * @param p_value the value
+		 * @param p_position
+		 *            the position
+		 * @param p_name
+		 *            the name
+		 * @param p_value
+		 *            the value
 		 */
 		public StatisticEntry(final int p_position, final String p_name, final String p_value) {
 			m_position = p_position;
@@ -245,7 +256,8 @@ public final class StatisticsManager {
 		// Methods
 		/**
 		 * Journalizes an access
-		 * @param p_time the time of the operation
+		 * @param p_time
+		 *            the time of the operation
 		 */
 		public void update(final long p_time) {
 			m_lock.lock();
@@ -268,9 +280,12 @@ public final class StatisticsManager {
 
 		/**
 		 * Adds the operation statistic to a list
-		 * @param p_list the list
-		 * @param p_prefix the operation prefix
-		 * @param p_start the start offset
+		 * @param p_list
+		 *            the list
+		 * @param p_prefix
+		 *            the operation prefix
+		 * @param p_start
+		 *            the start offset
 		 */
 		public void addValues(final List<StatisticEntry> p_list, final String p_prefix, final int p_start) {
 			String count;
@@ -288,7 +303,7 @@ public final class StatisticsManager {
 				} else {
 					min = Tools.readableNanoTime(m_min);
 				}
-				avg = Tools.readableNanoTime((long)m_avg);
+				avg = Tools.readableNanoTime((long) m_avg);
 
 				p_list.add(new StatisticEntry(p_start + OFFSET_COUNT, p_prefix + NAME_COUNT, count));
 				p_list.add(new StatisticEntry(p_start + OFFSET_MAX_TIME, p_prefix + NAME_MAX_TIME, max));
@@ -316,7 +331,8 @@ public final class StatisticsManager {
 		// Constructors
 		/**
 		 * Creates an instance of StatisticTask
-		 * @param p_stream the output stream
+		 * @param p_stream
+		 *            the output stream
 		 */
 		public StatisticsTask(final PrintStream p_stream) {
 			m_stream = p_stream;
@@ -352,8 +368,10 @@ public final class StatisticsManager {
 
 		/**
 		 * Appends a statistic to a buffer
-		 * @param p_buffer the buffer
-		 * @param p_statistic the statistic
+		 * @param p_buffer
+		 *            the buffer
+		 * @param p_statistic
+		 *            the statistic
 		 */
 		private void appendStatistic(final StringBuffer p_buffer, final Statistic p_statistic) {
 			List<StatisticEntry> values;
@@ -375,7 +393,7 @@ public final class StatisticsManager {
 					name = entry.getName();
 
 					p_buffer.append(name + ": ");
-					for (int i = name.length();i < maxLength;i++) {
+					for (int i = name.length(); i < maxLength; i++) {
 						p_buffer.append(" ");
 					}
 					p_buffer.append(entry.getValue() + "\n");

@@ -158,7 +158,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
 			m_channel
-					.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
+			.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
 
 			m_incoming = new ArrayDeque<>();
 			m_outgoing = new ArrayDeque<>();

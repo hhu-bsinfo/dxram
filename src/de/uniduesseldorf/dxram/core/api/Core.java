@@ -8,9 +8,11 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHelper;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHelper;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandMessage;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.exceptions.ChunkException;
 import de.uniduesseldorf.dxram.core.exceptions.ComponentCreationException;
@@ -22,9 +24,13 @@ import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.PrimaryLogException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
+import de.uniduesseldorf.dxram.core.net.NetworkInterface;
+import de.uniduesseldorf.dxram.utils.CommandStringConverter;
 import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
-import de.uniduesseldorf.dxram.utils.StringConverter;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
  * API for DXRAM
@@ -39,6 +45,7 @@ public final class Core {
 	private static ConfigurationHelper m_configurationHelper;
 	private static NodesConfigurationHelper m_nodesConfigurationHelper;
 
+	private static NetworkInterface m_network;
 	private static ChunkInterface m_chunk;
 	private static ExceptionHandler m_exceptionHandler;
 
@@ -106,7 +113,10 @@ public final class Core {
 			CoreComponentFactory.getNetworkInterface();
 			m_chunk = CoreComponentFactory.getChunkInterface();
 
-			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE) && !NodeID.isSuperpeer()) {
+			m_network = CoreComponentFactory.getNetworkInterface();
+
+			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE)
+					&& !NodeID.getRole().equals(Role.SUPERPEER)) {
 				CoreComponentFactory.getLogInterface();
 			}
 
@@ -124,7 +134,7 @@ public final class Core {
 	}
 
 	/**
-	 * Closes DXRAM und frees unused ressources
+	 * Closes DXRAM and frees unused resources
 	 */
 	public static void close() {
 		LOGGER.trace("Entering close");
@@ -201,7 +211,7 @@ public final class Core {
 
 		try {
 			if (m_chunk != null) {
-				ret = m_chunk.create(p_size, StringConverter.convert(p_name));
+				ret = m_chunk.create(p_size, NameServiceStringConverter.convert(p_name));
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_CREATE_NEW_CHUNK);
@@ -225,7 +235,7 @@ public final class Core {
 
 		try {
 			if (m_chunk != null) {
-				ret = m_chunk.create(p_sizes, StringConverter.convert(p_name));
+				ret = m_chunk.create(p_sizes, NameServiceStringConverter.convert(p_name));
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_CREATE_NEW_CHUNK);
@@ -295,7 +305,7 @@ public final class Core {
 		Chunk ret = null;
 		int id;
 
-		id = StringConverter.convert(p_name);
+		id = NameServiceStringConverter.convert(p_name);
 		try {
 			if (m_chunk != null) {
 				ret = m_chunk.get(id);
@@ -319,7 +329,7 @@ public final class Core {
 		long ret = -1;
 		int id;
 
-		id = StringConverter.convert(p_name);
+		id = NameServiceStringConverter.convert(p_name);
 		try {
 			if (m_chunk != null) {
 				ret = m_chunk.getChunkID(id);
@@ -457,6 +467,45 @@ public final class Core {
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_REMOVE, p_chunkID);
 		}
+	}
+
+	/**
+	 * Executes given command
+	 * @param p_command
+	 *            the command
+	 * @param p_args
+	 *            the command's arguments
+	 * @throws DXRAMException
+	 *             if the chunk could not be get
+	 */
+	public static void execute(final String p_command, final String... p_args) throws DXRAMException {
+		short type;
+
+		type = CommandStringConverter.convert(p_command);
+
+		switch (type) {
+		case 1:
+			// migrate: ChunkID, src, dest
+			new CommandMessage(Short.parseShort(p_args[1]), type, p_args).send(m_network);
+			break;
+		case 2:
+			// show_nodes:
+			try {
+				System.out.println("Superpeers:");
+				System.out.println(ZooKeeperHandler.getChildren("nodes/superpeers").toString());
+				System.out.println("Peers:");
+				System.out.println(ZooKeeperHandler.getChildren("nodes/peers").toString());
+			} catch (final ZooKeeperException e) {
+				System.out.println("Could not access ZooKeeper!");
+			}
+			break;
+		case -1:
+			System.out.println("Command unknown!");
+			break;
+		default:
+			break;
+		}
+
 	}
 
 	/**

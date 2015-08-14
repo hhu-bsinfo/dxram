@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.List;
@@ -6,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
@@ -102,7 +104,7 @@ public final class CachedLookup implements LookupInterface {
 	@Override
 	public void initialize() throws DXRAMException {
 		m_lookup.initialize();
-		if (!NodeID.isSuperpeer()) {
+		if (!NodeID.getRole().equals(Role.SUPERPEER)) {
 			m_cidCache.enableTTL();
 			m_aidCache.enableTTL();
 		} else {
@@ -211,13 +213,13 @@ public final class CachedLookup implements LookupInterface {
 		long ret;
 		Long chunkID;
 
-		chunkID = m_aidCache.get((long)p_id);
+		chunkID = m_aidCache.get((long) p_id);
 		if (null == chunkID) {
 			LOGGER.trace("value not cached: " + p_id);
 
 			ret = m_lookup.getChunkID(p_id);
 
-			m_aidCache.put((long)p_id, ret);
+			m_aidCache.put((long) p_id, ret);
 		} else {
 			ret = chunkID.longValue();
 		}

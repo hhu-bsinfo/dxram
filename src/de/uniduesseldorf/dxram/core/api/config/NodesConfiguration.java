@@ -146,7 +146,8 @@ public final class NodesConfiguration {
 
 		// Constants
 		PEER('P'),
-		SUPERPEER('S');
+		SUPERPEER('S'),
+		MONITOR('M');
 
 		// Attributes
 		private char m_acronym;

@@ -199,6 +199,10 @@ public final class Configuration {
 		public static final ConfigurationEntry<Boolean> RECOVER = new ConfigurationEntry<Boolean>("recover",
 				Boolean.class, false);
 
+		// DXRAM role (Superpeer, Peer or Monitor, may be overwritten by nodes configuration)
+		public static final ConfigurationEntry<String> DXRAM_ROLE = new ConfigurationEntry<String>(
+				"dxram.role", String.class, "Peer");
+
 		// Max size of a Chunk (default 16 MB)
 		public static final ConfigurationEntry<Integer> CHUNK_MAXSIZE = new ConfigurationEntry<Integer>(
 				"chunk_maxsize", Integer.class, 16777215);
@@ -346,11 +350,12 @@ public final class Configuration {
 		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>(
 				"statistic.throughput", Boolean.class, true);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 44;
+		public static final int CONFIGURATION_ENTRY_COUNT = 45;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
 			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
 			CONFIGURATION_ENTRIES.add(RECOVER);
+			CONFIGURATION_ENTRIES.add(DXRAM_ROLE);
 			CONFIGURATION_ENTRIES.add(CHUNK_MAXSIZE);
 			CONFIGURATION_ENTRIES.add(INTERFACE_CHUNK);
 			CONFIGURATION_ENTRIES.add(INTERFACE_LOOKUP);

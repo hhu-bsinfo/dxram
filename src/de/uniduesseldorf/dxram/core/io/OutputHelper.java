@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
@@ -601,6 +602,46 @@ public final class OutputHelper {
 	}
 
 	/**
+	 * Get the length of the string
+	 * @param p_str
+	 *            the String
+	 * @return the length the string
+	 */
+	public static int getStringsWriteLength(final String p_str) {
+		return p_str.getBytes(Charset.defaultCharset()).length + getShortWriteLength();
+	}
+
+	/**
+	 * Writes a String
+	 * @param p_output
+	 *            the output
+	 * @param p_str
+	 *            the String
+	 * @throws IOException
+	 *             if the byte could not be written
+	 */
+	public static void writeString(final DataOutput p_output, final String p_str) throws IOException {
+		Contract.checkNotNull(p_output, "no output given");
+
+		p_output.writeShort((short) (getStringsWriteLength(p_str) - getShortWriteLength()));
+		p_output.writeBytes(p_str);
+	}
+
+	/**
+	 * Writes a String
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_str
+	 *            the String
+	 */
+	public static void writeString(final ByteBuffer p_buffer, final String p_str) {
+		Contract.checkNotNull(p_buffer, "no buffer given");
+
+		p_buffer.putShort((short) (getStringsWriteLength(p_str) - getShortWriteLength()));
+		p_buffer.put(p_str.getBytes());
+	}
+
+	/**
 	 * Get the length of a boolean
 	 * @return the length of a boolean
 	 */
@@ -961,6 +1002,58 @@ public final class OutputHelper {
 		p_buffer.putInt(p_array.length);
 		for (boolean value : p_array) {
 			writeBoolean(p_buffer, value);
+		}
+	}
+
+	/**
+	 * Get the length of multiple Strings
+	 * @param p_array
+	 *            the array of Strings
+	 * @return the length of the Strings
+	 */
+	public static int getStringArrayWriteLength(final String[] p_array) {
+		int length = getIntWriteLength();
+
+		for (String str : p_array) {
+			length += getStringsWriteLength(str);
+		}
+
+		return length;
+	}
+
+	/**
+	 * Writes a String array
+	 * @param p_output
+	 *            the output
+	 * @param p_array
+	 *            the array
+	 * @throws IOException
+	 *             if the array could not be written
+	 */
+	public static void writeStringArray(final DataOutput p_output, final String[] p_array) throws IOException {
+		Contract.checkNotNull(p_output, "no output given");
+		Contract.checkNotNull(p_array, "no array given");
+
+		p_output.writeInt(p_array.length);
+		for (String value : p_array) {
+			writeString(p_output, value);
+		}
+	}
+
+	/**
+	 * Writes a String array
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_array
+	 *            the array
+	 */
+	public static void writeStringArray(final ByteBuffer p_buffer, final String[] p_array) {
+		Contract.checkNotNull(p_buffer, "no buffer given");
+		Contract.checkNotNull(p_array, "no array given");
+
+		p_buffer.putInt(p_array.length);
+		for (String value : p_array) {
+			writeString(p_buffer, value);
 		}
 	}
 

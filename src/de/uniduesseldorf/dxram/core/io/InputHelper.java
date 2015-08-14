@@ -480,6 +480,52 @@ public final class InputHelper {
 	}
 
 	/**
+	 * Reads a String
+	 * @param p_input
+	 *            the input
+	 * @return the String
+	 * @throws IOException
+	 *             if the long could not be read
+	 */
+	public static String readString(final DataInput p_input) throws IOException {
+		short length;
+		byte[] byteArray;
+
+		Contract.checkNotNull(p_input, "no input given");
+
+		length = p_input.readShort();
+		byteArray = new byte[length];
+
+		for (int i = 0; i < length; i++) {
+			byteArray[i] = p_input.readByte();
+		}
+
+		return new String(byteArray);
+	}
+
+	/**
+	 * Reads a String
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the String
+	 */
+	public static String readString(final ByteBuffer p_buffer) {
+		short length;
+		byte[] byteArray;
+
+		Contract.checkNotNull(p_buffer, "no buffer given");
+
+		length = p_buffer.getShort();
+		byteArray = new byte[length];
+
+		for (int i = 0; i < length; i++) {
+			byteArray[i] = p_buffer.get();
+		}
+
+		return new String(byteArray);
+	}
+
+	/**
 	 * Reads locations
 	 * @param p_input
 	 *            the input
@@ -788,6 +834,46 @@ public final class InputHelper {
 		ret = new boolean[p_buffer.getInt()];
 		for (int i = 0; i < ret.length; i++) {
 			ret[i] = readBoolean(p_buffer);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Reads a String array
+	 * @param p_input
+	 *            the input
+	 * @return the String array
+	 * @throws IOException
+	 *             if the String array could not be read
+	 */
+	public static String[] readStringArray(final DataInput p_input) throws IOException {
+		String[] ret;
+
+		Contract.checkNotNull(p_input, "no input given");
+
+		ret = new String[p_input.readInt()];
+		for (int i = 0; i < ret.length; i++) {
+			ret[i] = readString(p_input);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Reads a String array
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the String array
+	 */
+	public static String[] readStringArray(final ByteBuffer p_buffer) {
+		String[] ret;
+
+		Contract.checkNotNull(p_buffer, "no buffer given");
+
+		ret = new String[p_buffer.getInt()];
+		for (int i = 0; i < ret.length; i++) {
+			ret[i] = readString(p_buffer);
 		}
 
 		return ret;

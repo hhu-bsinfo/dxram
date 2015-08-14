@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk;
 
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ final class ChunkStatistic implements Statistic {
 	private static final String PREFIX_INCOMING_REMOVE = "[Incoming] Remove";
 	private static final String PREFIX_INCOMING_LOCK = "[Incoming] Lock";
 	private static final String PREFIX_INCOMING_UNLOCK = "[Incoming] Unlock";
+	private static final String PREFIX_INCOMING_COMMAND = "[Incoming] Command";
 
 	private static final int POSITION_CREATE = 1;
 	private static final int POSITION_MULTI_CREATE = 2;
@@ -51,6 +53,7 @@ final class ChunkStatistic implements Statistic {
 	private static final int POSITION_INCOMING_REMOVE = 13;
 	private static final int POSITION_INCOMING_LOCK = 14;
 	private static final int POSITION_INCOMING_UNLOCK = 15;
+	private static final int POSITION_INCOMING_COMMAND = 16;
 
 	private static final int START_FACTOR = 10;
 
@@ -102,7 +105,8 @@ final class ChunkStatistic implements Statistic {
 		INCOMING_PUT(PREFIX_INCOMING_PUT, POSITION_INCOMING_PUT),
 		INCOMING_REMOVE(PREFIX_INCOMING_REMOVE, POSITION_INCOMING_REMOVE),
 		INCOMING_LOCK(PREFIX_INCOMING_LOCK, POSITION_INCOMING_LOCK),
-		INCOMING_UNLOCK(PREFIX_INCOMING_UNLOCK, POSITION_INCOMING_UNLOCK);
+		INCOMING_UNLOCK(PREFIX_INCOMING_UNLOCK, POSITION_INCOMING_UNLOCK),
+		INCOMING_COMMAND(PREFIX_INCOMING_COMMAND, POSITION_INCOMING_COMMAND);
 
 		// Attributes
 		private final String m_prefix;

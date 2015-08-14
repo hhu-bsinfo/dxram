@@ -1,6 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.api;
 
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -17,7 +18,7 @@ public final class NodeID {
 
 	// Attributes
 	private static short m_localNodeID;
-	private static boolean m_superpeer;
+	private static Role m_role;
 
 	// Constructors
 	/**
@@ -35,11 +36,11 @@ public final class NodeID {
 	}
 
 	/**
-	 * Checks if the local node is a superpeer
-	 * @return true if the local node is a superpeer, false otherwise
+	 * Returns the node's role
+	 * @return the node's role
 	 */
-	public static boolean isSuperpeer() {
-		return m_superpeer;
+	public static Role getRole() {
+		return m_role;
 	}
 
 	// Setters
@@ -55,12 +56,12 @@ public final class NodeID {
 	}
 
 	/**
-	 * Determines if the local node is a peer or a superpper
-	 * @param p_superpeer
-	 *            true if the the local node is a superpeer, false if the local node is only a peer
+	 * Sets the role of the node
+	 * @param p_role
+	 *            the role (Superpeer, Peer or Monitor)
 	 */
-	public static void setSuperpeer(final boolean p_superpeer) {
-		m_superpeer = p_superpeer;
+	public static void setRole(final Role p_role) {
+		m_role = p_role;
 	}
 
 	// Methods

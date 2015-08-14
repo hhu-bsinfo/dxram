@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
@@ -62,7 +64,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	public void initialize() throws DXRAMException {
 		m_lookup.initialize();
 
-		if (!NodeID.isSuperpeer()) {
+		if (!NodeID.getRole().equals(Role.SUPERPEER)) {
 			m_cidCacheTree = new CacheTree(ORDER);
 			m_aidCache = new Cache<Integer, Long>(NS_CACHE_SIZE);
 			// m_aidCache.enableTTL();
@@ -99,8 +101,8 @@ public final class CachedTreeLookup implements LookupInterface {
 			if (ret != null) {
 				nodeID = ret.getPrimaryPeer();
 
-				m_cidCacheTree.cacheRange(((long)nodeID << 48) + ret.getRange()[0],
-						((long)nodeID << 48) + ret.getRange()[1], nodeID);
+				m_cidCacheTree.cacheRange(((long) nodeID << 48) + ret.getRange()[0],
+						((long) nodeID << 48) + ret.getRange()[1], nodeID);
 			}
 		}
 		return ret;

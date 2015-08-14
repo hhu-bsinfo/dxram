@@ -82,6 +82,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				ChunkMessages.MultiGetRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTIGET_RESPONSE,
 				ChunkMessages.MultiGetResponse.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_MESSAGE, ChunkMessages.CommandMessage.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_REQUEST, ChunkMessages.CommandRequest.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_RESPONSE,
+				ChunkMessages.CommandResponse.class);
 
 		// Log Messages
 		logType = LogMessages.TYPE;
