@@ -273,6 +273,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 						nodeID = m_hashGenerator.hash(--seed);
 					}
 					m_bloomFilter.add(nodeID);
+					// Set own NodeID
 					NodeID.setLocalNodeID(nodeID);
 					ZooKeeperHandler.create("nodes/new/" + nodeID, node.getBytes());
 				}
@@ -303,6 +304,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 	public void process(final WatchedEvent p_event) {
 		// TODO: Check this!
 		String path;
+		String prefix;
 
 		List<String> childs;
 		short nodeID;
@@ -314,13 +316,14 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 		} else {
 			try {
 				path = p_event.getPath();
+				prefix = ZooKeeperHandler.getPath() + "/";
 				while (m_isStarting) {
 					try {
 						Thread.sleep(100);
 					} catch (final InterruptedException e) {}
 				}
 				if (null != path) {
-					if (path.equals("nodes/new")) {
+					if (path.equals(prefix + "nodes/new")) {
 						childs = ZooKeeperHandler.getChildren("nodes/new", this);
 						for (String child : childs) {
 							nodeID = Short.parseShort(child);

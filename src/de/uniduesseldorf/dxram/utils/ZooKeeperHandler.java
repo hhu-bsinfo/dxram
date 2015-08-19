@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.utils;
 
 import java.io.IOException;
@@ -117,6 +118,14 @@ public final class ZooKeeperHandler {
 	}
 
 	/**
+	 * Returns the path
+	 * @return the path
+	 */
+	public static String getPath() {
+		return m_path;
+	}
+
+	/**
 	 * Checks if a node exists
 	 * @param p_path
 	 *            the node path
@@ -217,7 +226,7 @@ public final class ZooKeeperHandler {
 	 *             if node already exists in ZooKeeper
 	 */
 	public static void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException,
-			InterruptedException {
+	InterruptedException {
 		create(p_path, p_data, CreateMode.PERSISTENT);
 	}
 
@@ -297,7 +306,7 @@ public final class ZooKeeperHandler {
 	 *             if node already exists in ZooKeeper
 	 */
 	public static void createBarrier(final String p_path) throws ZooKeeperException, KeeperException,
-			InterruptedException {
+	InterruptedException {
 		create(p_path);
 	}
 

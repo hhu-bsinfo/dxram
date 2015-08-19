@@ -37,7 +37,7 @@ public final class Monitor {
 			Core.initialize(ConfigurationHandler
 					.getConfigurationFromFile("config/dxram.config"),
 					NodesConfigurationHandler
-							.getConfigurationFromFile("config/nodes.dxram"));
+					.getConfigurationFromFile("config/nodes.dxram"));
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}
