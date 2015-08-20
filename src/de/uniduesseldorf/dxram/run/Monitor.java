@@ -1,13 +1,11 @@
 
 package de.uniduesseldorf.dxram.run;
 
-import java.util.Arrays;
-import java.util.Scanner;
-
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.commands.Shell;
 
 /**
  * Monitoring peer
@@ -28,9 +26,6 @@ public final class Monitor {
 	 *            The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
-		Scanner scanner;
-		String command;
-		String[] arguments;
 
 		// Initialize DXRAM
 		try {
@@ -43,26 +38,9 @@ public final class Monitor {
 		}
 
 		System.out.println("Monitor started");
-
-		scanner = new Scanner(System.in);
-		while (true) {
-			System.out.print("Enter command (print 'help' for instructions): ");
-			command = scanner.nextLine();
-
-			if (command.equals("help")) {
-				System.out.println("A command is built as follows: 'type arg1 arg2 ...'");
-				System.out.println("Example: 'migrate CID FROM TO', whereas CID is the ChunkID of the Chunk "
-						+ "that is migrated, FROM is the NodeID of the peer the Chunk resides now "
-						+ "and TO is the NodeID of the peer the Chunk is sent to.");
-			} else {
-				arguments = command.split(" ");
-				try {
-					Core.execute(arguments[0], Arrays.copyOfRange(arguments, 1, arguments.length));
-				} catch (final DXRAMException e) {
-					scanner.close();
-				}
-			}
-		}
+	
+		System.out.println("Creating a shell ...");
+		Shell.loop();
 	}
 
 }

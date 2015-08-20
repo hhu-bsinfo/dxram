@@ -13,6 +13,8 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHelper;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandMessage;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandRequest;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandResponse;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.exceptions.ChunkException;
 import de.uniduesseldorf.dxram.core.exceptions.ComponentCreationException;
@@ -25,7 +27,6 @@ import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.PrimaryLogException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
-import de.uniduesseldorf.dxram.utils.CommandStringConverter;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
@@ -471,14 +472,39 @@ public final class Core {
 
 	/**
 	 * Executes given command
+	 * @param p_dest
+	 *            NID of destination node for this request
 	 * @param p_command
 	 *            the command
-	 * @param p_args
-	 *            the command's arguments
+	 * @param p_reply
+	 *            true: want reply (will be handled as request)
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static void execute(final String p_command, final String... p_args) throws DXRAMException {
+	
+	public static String execute(short p_dest, String p_command, boolean p_reply) throws DXRAMException {
+		// request with reply
+		if (p_reply) {
+			System.out.println("Core.execute: p_dest="+p_dest);
+			CommandRequest request = new CommandRequest(p_dest, p_command);
+			Contract.checkNotNull(request);
+			try {
+				request.sendSync(m_network);
+			} catch (final NetworkException e) {
+				System.out.println("error: sendSync failed in Core.execute:"+e.toString());
+			}
+			CommandResponse response = request.getResponse(CommandResponse.class);
+
+			String result = response.getAnswer();
+			return result;
+		}
+		// request without reply
+		else {
+			new CommandMessage(p_dest, p_command).send(m_network);
+		}
+		return null;
+	}
+	/*public static void execute(final String p_command, final String... p_args) throws DXRAMException {
 		short type;
 
 		type = CommandStringConverter.convert(p_command);
@@ -505,8 +531,8 @@ public final class Core {
 		default:
 			break;
 		}
-
 	}
+	*/
 
 	/**
 	 * Migrates the corresponding Chunk for the giving ID to another Node

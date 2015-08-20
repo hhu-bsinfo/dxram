@@ -1,5 +1,4 @@
-
-package de.uniduesseldorf.dxram.utils;
+package de.uniduesseldorf.dxram.commands;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +9,7 @@ import java.util.Map;
  *         12.08.2015
  */
 public final class CommandStringConverter {
-
+	
 	// Attributes
 	private static Map<String, Short> m_commandMap;
 
@@ -22,8 +21,8 @@ public final class CommandStringConverter {
 
 	static {
 		m_commandMap = new HashMap<String, Short>();
-		m_commandMap.put("migrate", (short) 1);
-		m_commandMap.put("show_nodes", (short) 2);
+		m_commandMap.put("list", (short) 1);
+		m_commandMap.put("migrate", (short) 2);
 	}
 
 	// Methods
@@ -31,7 +30,7 @@ public final class CommandStringConverter {
 	 * Converts a String into an integer
 	 * @param p_command
 	 *            the String
-	 * @return the short
+	 * @return the short, -1 = unknown command
 	 */
 	public static short convert(final String p_command) {
 		short ret = -1;

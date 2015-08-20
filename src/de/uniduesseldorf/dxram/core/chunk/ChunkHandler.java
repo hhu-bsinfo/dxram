@@ -502,7 +502,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				}
 
 				if (LOG_ACTIVE) {
-					// Send backups for logging (unreliable)
+					// Send backups for logging (unreliable) 
 					backupPeers = getBackupPeers(p_chunk.getChunkID());
 					if (backupPeers != null) {
 						for (int i = 0; i < backupPeers.length; i++) {
@@ -1669,14 +1669,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *            the CommandMessage
 	 */
 	private void incomingCommandMessage(final CommandMessage p_message) {
-		short type;
-		String[] args;
+		String cmd;
 
 		Operation.INCOMING_COMMAND.enter();
 
-		type = p_message.getCommandType();
-		args = p_message.getArguments();
-
+		cmd = p_message.getCommand();
+/*
 		switch (type) {
 		case 1:
 			// migrate: ChunkID, src, dest
@@ -1692,7 +1690,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		default:
 			break;
 		}
-
+*/
 		Operation.INCOMING_COMMAND.leave();
 	}
 
@@ -1702,16 +1700,17 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *            the CommandRequest
 	 */
 	private void incomingCommandRequest(final CommandRequest p_request) {
-		short type;
-		String answer = "";
-		String[] args;
+		String answer = "echo from  incomingCommandRequest";
+		String cmd;
 
 		Operation.INCOMING_COMMAND.enter();
 
-		type = p_request.getCommandType();
-		args = p_request.getArguments();
+		cmd = p_request.getArgument();
 
-		switch (type) {
+		System.out.println("incomingCommandRequest!: arg="+cmd);
+		
+		
+	/*	switch (type) {
 		case 1:
 			// migrate: ChunkID, src, dest
 			try {
@@ -1727,7 +1726,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		default:
 			break;
 		}
-
+*/
+		
 		try {
 			new CommandResponse(p_request, answer).send(m_network);
 		} catch (final NetworkException e) {

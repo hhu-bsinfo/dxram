@@ -925,13 +925,12 @@ public final class ChunkMessages {
 
 	/**
 	 * Message for command
-	 * @author Kevin Beineke 12.08.2015
+	 * @author Michael Schoettner 12.08.2015
 	 */
 	public static class CommandMessage extends AbstractMessage {
 
 		// Attributes
-		private short m_commandType;
-		private String[] m_args;
+		private String m_cmd;
 
 		// Constructors
 		/**
@@ -940,75 +939,57 @@ public final class ChunkMessages {
 		public CommandMessage() {
 			super();
 
-			m_commandType = -1;
-			m_args = null;
+			m_cmd = null;
 		}
 
 		/**
 		 * Creates an instance of CommandMessage
 		 * @param p_destination
 		 *            the destination
-		 * @param p_commandType
-		 *            the command's type
-		 * @param p_args
-		 *            the command's arguments
+		 * @param p_cmd
+		 *            the command
 		 */
-		public CommandMessage(final short p_destination, final short p_commandType, final String[] p_args) {
+		public CommandMessage(final short p_destination, final String p_cmd) {
 			super(p_destination, TYPE, SUBTYPE_COMMAND_MESSAGE);
-
-			Contract.check(p_commandType != -1, "no type given");
-			Contract.checkNotNull(p_args, "no arguments given");
-
-			m_commandType = p_commandType;
-			m_args = p_args;
+			Contract.checkNotNull(p_cmd, "no command given");
+			m_cmd = p_cmd;
 		}
 
 		// Getters
 		/**
-		 * Get the type
-		 * @return the command's type
+		 * Get the command
+		 * @return the command
 		 */
-		public final short getCommandType() {
-			return m_commandType;
-		}
-
-		/**
-		 * Get the arguments
-		 * @return the command's arguments
-		 */
-		public final String[] getArguments() {
-			return m_args;
+		public final String getCommand() {
+			return m_cmd;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeShort(p_buffer, m_commandType);
-			OutputHelper.writeStringArray(p_buffer, m_args);
+			OutputHelper.writeString(p_buffer, m_cmd);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_commandType = InputHelper.readShort(p_buffer);
-			m_args = InputHelper.readStringArray(p_buffer);
+			m_cmd = InputHelper.readString(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getShortWriteLength() + OutputHelper.getStringArrayWriteLength(m_args);
+			return OutputHelper.getStringsWriteLength(m_cmd);
 		}
 
 	}
 
 	/**
 	 * Request for command
-	 * @author Kevin Beineke 12.08.2015
+	 * @author Michael Schoettner 20.8.2015
 	 */
 	public static class CommandRequest extends AbstractRequest {
 
 		// Attributes
-		private short m_commandType;
-		private String[] m_args;
+		private String m_cmd;
 
 		// Constructors
 		/**
@@ -1016,63 +997,45 @@ public final class ChunkMessages {
 		 */
 		public CommandRequest() {
 			super();
-
-			m_commandType = -1;
-			m_args = null;
+			m_cmd = null;
 		}
 
 		/**
 		 * Creates an instance of CommandRequest
 		 * @param p_destination
 		 *            the destination
-		 * @param p_commandType
-		 *            the command's type
-		 * @param p_args
-		 *            the command's arguments
+		 * @param p_cmd
+		 *            the command
 		 */
-		public CommandRequest(final short p_destination, final short p_commandType, final String[] p_args) {
+		public CommandRequest(final short p_destination, final String p_cmd) {
 			super(p_destination, TYPE, SUBTYPE_COMMAND_REQUEST);
-
-			Contract.check(p_commandType != -1, "no type given");
-			Contract.checkNotNull(p_args, "no arguments given");
-
-			m_commandType = p_commandType;
-			m_args = p_args;
+			Contract.checkNotNull(p_cmd, "error: no argument given");
+			m_cmd = p_cmd;
 		}
 
-		// Getters
+		
 		/**
-		 * Get the type
-		 * @return the command's type
+		 * Get the command
+		 * @return the command
 		 */
-		public final short getCommandType() {
-			return m_commandType;
-		}
-
-		/**
-		 * Get the arguments
-		 * @return the command's arguments
-		 */
-		public final String[] getArguments() {
-			return m_args;
+		public final String getArgument() {
+			return m_cmd;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeShort(p_buffer, m_commandType);
-			OutputHelper.writeStringArray(p_buffer, m_args);
+			OutputHelper.writeString(p_buffer, m_cmd); 
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_commandType = InputHelper.readShort(p_buffer);
-			m_args = InputHelper.readStringArray(p_buffer);
+			m_cmd = InputHelper.readString(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getShortWriteLength() + OutputHelper.getStringArrayWriteLength(m_args);
+			return OutputHelper.getStringsWriteLength(m_cmd);
 		}
 
 	}
