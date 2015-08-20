@@ -2773,6 +2773,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 				m_failureLock.unlock();
 			} else if (0 <= Collections.binarySearch(m_peers, p_failedNode)) {
+				m_overlayLock.unlock();
 				try {
 					existsInZooKeeper = ZooKeeperHandler.exists("nodes/peers/" + p_failedNode);
 				} catch (final ZooKeeperException e) {
@@ -2797,7 +2798,6 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					System.out.println();
 				} else {
 					// Failed node was a peer
-					m_overlayLock.unlock();
 					System.out.println();
 					System.out.println();
 					System.out.println("********** ********** Node Failure ********** **********");
