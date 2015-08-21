@@ -502,7 +502,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				}
 
 				if (LOG_ACTIVE) {
-					// Send backups for logging (unreliable) 
+					// Send backups for logging (unreliable)
 					backupPeers = getBackupPeers(p_chunk.getChunkID());
 					if (backupPeers != null) {
 						for (int i = 0; i < backupPeers.length; i++) {
@@ -1049,7 +1049,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			m_rangeSize = 0;
 		} else if (1 == p_lid) {
 			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL,
-					new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+					new Locations(m_nodeID, new short[] {-1, -1, -1}, null));
 		}
 	}
 
@@ -1674,23 +1674,23 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Operation.INCOMING_COMMAND.enter();
 
 		cmd = p_message.getCommand();
-/*
-		switch (type) {
-		case 1:
-			// migrate: ChunkID, src, dest
-			try {
-				migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
-			} catch (final NumberFormatException | DXRAMException e) {
-				e.printStackTrace();
-			}
-			break;
-		case -1:
-			System.out.println("Command unknown!");
-			break;
-		default:
-			break;
-		}
-*/
+		/*
+		 * switch (type) {
+		 * case 1:
+		 * // migrate: ChunkID, src, dest
+		 * try {
+		 * migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
+		 * } catch (final NumberFormatException | DXRAMException e) {
+		 * e.printStackTrace();
+		 * }
+		 * break;
+		 * case -1:
+		 * System.out.println("Command unknown!");
+		 * break;
+		 * default:
+		 * break;
+		 * }
+		 */
 		Operation.INCOMING_COMMAND.leave();
 	}
 
@@ -1707,27 +1707,27 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		cmd = p_request.getArgument();
 
-		System.out.println("incomingCommandRequest!: arg="+cmd);
-		
-		
-	/*	switch (type) {
-		case 1:
-			// migrate: ChunkID, src, dest
-			try {
-				migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
-			} catch (final NumberFormatException | DXRAMException e) {
-				e.printStackTrace();
-			}
-			break;
-		case -1:
-			System.out.println("Command unknown!");
-			answer = "Unknown command";
-			break;
-		default:
-			break;
-		}
-*/
-		
+		System.out.println("incomingCommandRequest!: arg=" + cmd);
+
+		/*
+		 * switch (type) {
+		 * case 1:
+		 * // migrate: ChunkID, src, dest
+		 * try {
+		 * migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
+		 * } catch (final NumberFormatException | DXRAMException e) {
+		 * e.printStackTrace();
+		 * }
+		 * break;
+		 * case -1:
+		 * System.out.println("Command unknown!");
+		 * answer = "Unknown command";
+		 * break;
+		 * default:
+		 * break;
+		 * }
+		 */
+
 		try {
 			new CommandResponse(p_request, answer).send(m_network);
 		} catch (final NetworkException e) {

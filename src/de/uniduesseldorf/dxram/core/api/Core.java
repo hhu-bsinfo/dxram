@@ -30,8 +30,6 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
  * API for DXRAM
@@ -117,7 +115,7 @@ public final class Core {
 			m_network = CoreComponentFactory.getNetworkInterface();
 
 			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE)
-					&& !NodeID.getRole().equals(Role.SUPERPEER)) {
+					&& NodeID.getRole().equals(Role.PEER)) {
 				CoreComponentFactory.getLogInterface();
 			}
 
@@ -481,17 +479,18 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	
-	public static String execute(short p_dest, String p_command, boolean p_reply) throws DXRAMException {
+
+	public static String execute(final short p_dest, final String p_command, final boolean p_reply)
+			throws DXRAMException {
 		// request with reply
 		if (p_reply) {
-			System.out.println("Core.execute: p_dest="+p_dest);
+			System.out.println("Core.execute: p_dest=" + p_dest);
 			CommandRequest request = new CommandRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
 			} catch (final NetworkException e) {
-				System.out.println("error: sendSync failed in Core.execute:"+e.toString());
+				System.out.println("error: sendSync failed in Core.execute:" + e.toString());
 			}
 			CommandResponse response = request.getResponse(CommandResponse.class);
 
@@ -504,35 +503,37 @@ public final class Core {
 		}
 		return null;
 	}
-	/*public static void execute(final String p_command, final String... p_args) throws DXRAMException {
-		short type;
 
-		type = CommandStringConverter.convert(p_command);
-
-		switch (type) {
-		case 1:
-			// migrate: ChunkID, src, dest
-			new CommandMessage(Short.parseShort(p_args[1]), type, p_args).send(m_network);
-			break;
-		case 2:
-			// show_nodes:
-			try {
-				System.out.println("Superpeers:");
-				System.out.println(ZooKeeperHandler.getChildren("nodes/superpeers").toString());
-				System.out.println("Peers:");
-				System.out.println(ZooKeeperHandler.getChildren("nodes/peers").toString());
-			} catch (final ZooKeeperException e) {
-				System.out.println("Could not access ZooKeeper!");
-			}
-			break;
-		case -1:
-			System.out.println("Command unknown!");
-			break;
-		default:
-			break;
-		}
-	}
-	*/
+	/*
+	 * public static void execute(final String p_command, final String... p_args) throws DXRAMException {
+	 * short type;
+	 * 
+	 * type = CommandStringConverter.convert(p_command);
+	 * 
+	 * switch (type) {
+	 * case 1:
+	 * // migrate: ChunkID, src, dest
+	 * new CommandMessage(Short.parseShort(p_args[1]), type, p_args).send(m_network);
+	 * break;
+	 * case 2:
+	 * // show_nodes:
+	 * try {
+	 * System.out.println("Superpeers:");
+	 * System.out.println(ZooKeeperHandler.getChildren("nodes/superpeers").toString());
+	 * System.out.println("Peers:");
+	 * System.out.println(ZooKeeperHandler.getChildren("nodes/peers").toString());
+	 * } catch (final ZooKeeperException e) {
+	 * System.out.println("Could not access ZooKeeper!");
+	 * }
+	 * break;
+	 * case -1:
+	 * System.out.println("Command unknown!");
+	 * break;
+	 * default:
+	 * break;
+	 * }
+	 * }
+	 */
 
 	/**
 	 * Migrates the corresponding Chunk for the giving ID to another Node
