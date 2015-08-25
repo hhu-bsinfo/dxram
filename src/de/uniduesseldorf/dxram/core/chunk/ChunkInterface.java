@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.chunk;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
+import de.uniduesseldorf.dxram.core.api.CommandListener;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
@@ -19,6 +20,13 @@ public interface ChunkInterface extends CoreComponent {
 	 *            the IncomingChunkListener
 	 */
 	void setListener(IncomingChunkListener p_listener);
+
+	/**
+	 * Set the CommandListener
+	 * @param p_listener
+	 *            the CommandListener
+	 */
+	void setCmdListener(final CommandListener p_command_listener);
 
 	/**
 	 * Creates a new Chunk

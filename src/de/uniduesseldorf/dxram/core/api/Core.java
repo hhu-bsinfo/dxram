@@ -49,7 +49,7 @@ public final class Core {
 	private static NetworkInterface m_network;
 	private static ChunkInterface m_chunk;
 	private static ExceptionHandler m_exceptionHandler;
-
+	
 	// Constructors
 	/**
 	 * Creates an instance of DXRAM
@@ -81,6 +81,7 @@ public final class Core {
 	 */
 	public static void setListener(final IncomingChunkListener p_listener) {
 		m_chunk.setListener(p_listener);
+
 	}
 
 	/**
@@ -471,6 +472,16 @@ public final class Core {
 	}
 
 	/**
+	 * Registers command listener (listener is called when CommandMessages or CommandRequests arrive)
+	 * @param p_ci
+	 *            The command listener
+	 */
+	
+	public static void registerCmdListenerr(CommandListener p_command_listener) {
+		m_chunk.setCmdListener(p_command_listener);
+	}
+	
+	/**
 	 * Executes given command
 	 * @param p_dest
 	 *            NID of destination node for this request
@@ -494,8 +505,8 @@ public final class Core {
 				System.out.println("error: sendSync failed in Core.execute:"+e.toString());
 			}
 			CommandResponse response = request.getResponse(CommandResponse.class);
-
 			String result = response.getAnswer();
+			System.out.println("received response: "+result);
 			return result;
 		}
 		// request without reply

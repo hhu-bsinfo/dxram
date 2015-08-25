@@ -16,8 +16,10 @@ import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.api.CommandListener;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.api.CommandListener;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandMessage;
@@ -102,6 +104,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	private IncomingChunkListener m_listener;
 
+	private static CommandListener m_command_listener;
+
 	private Lock m_migrationLock;
 
 	private Lock m_mappingLock;
@@ -136,7 +140,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	public void setListener(final IncomingChunkListener p_listener) {
 		m_listener = p_listener;
 	}
-
+	
+	public void setCmdListener(final CommandListener p_command_listener) {
+		m_command_listener = p_command_listener;
+	}
+	
 	// Methods
 	@Override
 	public void initialize() throws DXRAMException {
@@ -1674,23 +1682,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Operation.INCOMING_COMMAND.enter();
 
 		cmd = p_message.getCommand();
-/*
-		switch (type) {
-		case 1:
-			// migrate: ChunkID, src, dest
-			try {
-				migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
-			} catch (final NumberFormatException | DXRAMException e) {
-				e.printStackTrace();
-			}
-			break;
-		case -1:
-			System.out.println("Command unknown!");
-			break;
-		default:
-			break;
-		}
-*/
+
+		if (m_command_listener!=null)
+			m_command_listener.processCmd(cmd, false);
+
 		Operation.INCOMING_COMMAND.leave();
 	}
 
@@ -1700,43 +1695,25 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *            the CommandRequest
 	 */
 	private void incomingCommandRequest(final CommandRequest p_request) {
-		String answer = "echo from  incomingCommandRequest";
-		String cmd;
+		String cmd,res=null;
 
 		Operation.INCOMING_COMMAND.enter();
 
 		cmd = p_request.getArgument();
 
-		System.out.println("incomingCommandRequest!: arg="+cmd);
-		
-		
-	/*	switch (type) {
-		case 1:
-			// migrate: ChunkID, src, dest
-			try {
-				migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
-			} catch (final NumberFormatException | DXRAMException e) {
-				e.printStackTrace();
-			}
-			break;
-		case -1:
-			System.out.println("Command unknown!");
-			answer = "Unknown command";
-			break;
-		default:
-			break;
-		}
-*/
-		
+		if (m_command_listener!=null)
+			res = m_command_listener.processCmd(cmd, true);
+
+		if (res==null) res="internal error";
 		try {
-			new CommandResponse(p_request, answer).send(m_network);
+			new CommandResponse(p_request, res).send(m_network);
 		} catch (final NetworkException e) {
 			e.printStackTrace();
 		}
-
 		Operation.INCOMING_COMMAND.leave();
 	}
 
+	
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		LOGGER.trace("Entering incomingMessage with: p_message=" + p_message);

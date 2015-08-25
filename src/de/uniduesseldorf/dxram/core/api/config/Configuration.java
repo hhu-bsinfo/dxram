@@ -323,6 +323,10 @@ public final class Configuration {
 		public static final ConfigurationEntry<String> JNI_LOCK_DIRECTORY = new ConfigurationEntry<String>(
 				"lock.jni_directory", String.class, "./jni/libJNILock.so");
 
+		// JNI console path
+		public static final ConfigurationEntry<String> JNI_CONSOLE_DIRECTORY = new ConfigurationEntry<String>(
+				"console.jni_directory", String.class, "./jni/libJNIconsole.so");
+
 		// Path in ZooKeeper
 		public static final ConfigurationEntry<String> ZOOKEEPER_PATH = new ConfigurationEntry<String>(
 				"zookeeper.path", String.class, "/dxram");

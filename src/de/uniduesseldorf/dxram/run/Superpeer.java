@@ -5,11 +5,12 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.commands.CommandHandler;
 
 
 /**
  * Superpeer
- * @author Kevin Beineke 27.04.2015
+ * @author Kevin Beineke 21.08.2015
  */
 public final class Superpeer {
 
@@ -36,6 +37,8 @@ public final class Superpeer {
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}
+
+		Core.registerCmdListenerr(new CommandHandler());
 
 		System.out.println("Superpeer started");
 

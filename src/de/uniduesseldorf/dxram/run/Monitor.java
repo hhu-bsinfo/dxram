@@ -5,6 +5,7 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.commands.CommandHandler;
 import de.uniduesseldorf.dxram.commands.Shell;
 
 /**
@@ -36,6 +37,7 @@ public final class Monitor {
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}
+		Core.registerCmdListenerr(new CommandHandler());
 
 		System.out.println("Monitor started");
 	
