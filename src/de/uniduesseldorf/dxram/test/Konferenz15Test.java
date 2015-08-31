@@ -14,7 +14,7 @@ import de.uniduesseldorf.dxram.utils.Tools;
 
 /*
  * Start-up:
- * 1) Start at least one superpeer: With parameter "superpeer", must also be a superpeer in nodes.dxram
+ * 1) Start at least one superpeer: With parameter "superpeer", must also be a superpeer in nodes.config
  * 2) Start server: With parameters "server x" whereas x is the number of messages that should be stored on server
  * 3) Set serverID to NodeID of server
  * 4) Start clients: No parameters
@@ -93,7 +93,7 @@ public final class Konferenz15Test {
 			// Initialize DXRAM
 			try {
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 
 				System.out.println("Superpeer initialized");
 			} catch (final DXRAMException e) {
@@ -157,7 +157,7 @@ public final class Konferenz15Test {
 				System.out.println("Initialize server");
 
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 				addMe = (long) NodeID.getLocalNodeID() << 48;
 
 				System.out.println("Server initialized");
@@ -248,7 +248,7 @@ public final class Konferenz15Test {
 				System.out.println("Initialize client");
 
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 
 				System.out.println("Client initialized");
 

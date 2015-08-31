@@ -11,7 +11,7 @@ import de.uniduesseldorf.dxram.utils.ArrayTools;
 
 /*
  * Start-up:
- * 1) Start at least one superpeer: With parameter "superpeer", must also be a superpeer in nodes.dxram
+ * 1) Start at least one superpeer: With parameter "superpeer", must also be a superpeer in nodes.config
  * 2) Start server: With parameters "server x" whereas x is the number of messages that should be stored on server
  * 3) Set serverID to NodeID of server
  * 4) Start clients: No parameters
@@ -76,7 +76,7 @@ public final class MailboxTest {
 				System.out.println("Superpeer starting...");
 
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 
 				System.out.println("Superpeer started");
 			} catch (final DXRAMException e) {
@@ -131,7 +131,7 @@ public final class MailboxTest {
 			// Initialize EPM
 			try {
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 			} catch (final DXRAMException e1) {
 				e1.printStackTrace();
 			}
@@ -239,7 +239,7 @@ public final class MailboxTest {
 			// Initialize EPM
 			try {
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 			} catch (final DXRAMException e1) {
 				e1.printStackTrace();
 			}
@@ -298,7 +298,7 @@ public final class MailboxTest {
 			// Initialize EPM
 			try {
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 			} catch (final DXRAMException e1) {
 				e1.printStackTrace();
 			}

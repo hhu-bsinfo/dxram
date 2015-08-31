@@ -73,7 +73,7 @@ public final class LogTest implements Runnable {
 		threads = new Thread[m_numberOfThreads];
 		try {
 			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 			log = CoreComponentFactory.getLogInterface();
 		} catch (final DXRAMException e) {
 			System.out.println("Error during initialization of DXRAM");
@@ -82,7 +82,7 @@ public final class LogTest implements Runnable {
 		timeStart = System.currentTimeMillis();
 		nodes = new short[m_numberOfThreads];
 		for (int i = 0; i < m_numberOfThreads; i++) {
-			nodes[i] = (short) ((Math.random() * (65536 - 1 + 1)) + 1);
+			nodes[i] = (short) (Math.random() * (65536 - 1 + 1) + 1);
 
 			threads[i] = new Thread(new LogTest(nodes[i], log, i));
 			threads[i].start();
@@ -134,7 +134,7 @@ public final class LogTest implements Runnable {
 			// Create new chunks
 			sizes = new int[(int) m_chunksPerThread];
 			for (int i = 0; i < m_chunksPerThread; i++) {
-				sizes[i] = rand.nextInt((m_maxChunkSize - m_minChunkSize) + 1) + m_minChunkSize;
+				sizes[i] = rand.nextInt(m_maxChunkSize - m_minChunkSize + 1) + m_minChunkSize;
 			}
 			chunks = Core.createNewChunk(sizes);
 			for (int i = 0; i < m_chunksPerThread; i++) {

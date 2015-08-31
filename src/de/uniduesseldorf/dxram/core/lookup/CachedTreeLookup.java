@@ -29,7 +29,7 @@ public final class CachedTreeLookup implements LookupInterface {
 
 	private static final short ORDER = 10;
 	private static final int NS_CACHE_SIZE = Core.getConfiguration().getIntValue(
-			ConfigurationConstants.LOOKUP_NS_CACHE_SIZE);
+			ConfigurationConstants.NAMESERVICE_CACHE_ENTRIES);
 
 	// Attributes
 	private LookupInterface m_lookup;

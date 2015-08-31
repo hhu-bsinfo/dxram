@@ -61,7 +61,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 
 		m_hashGenerator = new CRC16();
 		m_bloomFilter = new BloomFilter(Core.getConfiguration().getIntValue(
-				ConfigurationConstants.ZOOKEEPER_BITFIELDSIZE), 65536);
+				ConfigurationConstants.ZOOKEEPER_BITFIELD_SIZE), 65536);
 
 		barrier = "barrier";
 
@@ -100,7 +100,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 	}
 
 	/**
-	 * Parses nodes.dxram and stores routing information in net
+	 * Parses nodes.config and stores routing information in net
 	 * @param p_nodes
 	 *            the nodes to parse
 	 * @return the parsed nodes
@@ -160,7 +160,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 			ZooKeeperHandler.setChildrenWatch("nodes/free", this);
 
 			if (0 == NodeID.getLocalNodeID()) {
-				LOGGER.error("Bootstrap is not in nodes.dxram! Exit now!");
+				LOGGER.error("Bootstrap is not in nodes.config! Exit now!");
 				CoreComponentFactory.closeAll();
 				System.exit(-1);
 			}
@@ -182,7 +182,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 	}
 
 	/**
-	 * Parses nodes.dxram and stores routing information in net for nodes
+	 * Parses nodes.config and stores routing information in net for nodes
 	 * @param p_nodes
 	 *            the nodes to parse
 	 * @return the parsed nodes
@@ -254,7 +254,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 
 			// Add this node if it was not in start configuration
 			if (NodeID.getLocalNodeID() == 0) {
-				LOGGER.warn("node not in nodes.dxram");
+				LOGGER.warn("node not in nodes.config");
 
 				node = ownIP + "/" + ownPort + "/" + "P" + "/" + 0 + "/" + 0;
 

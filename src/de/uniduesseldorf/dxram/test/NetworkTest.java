@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.nio.ByteBuffer;
@@ -22,7 +23,7 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 public final class NetworkTest {
 
 	// Constants
-	private static final int MESSAGE_SIZE = ConfigurationConstants.NETWORK_BUFFERSIZE.getDefaultValue() * 3;
+	private static final int MESSAGE_SIZE = ConfigurationConstants.NETWORK_BUFFER_SIZE.getDefaultValue() * 3;
 
 	// Constructors
 	/**

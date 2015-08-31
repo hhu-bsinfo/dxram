@@ -91,9 +91,21 @@ public final class ConfigurationHelper {
 	 */
 	public int getIntValue(final ConfigurationEntry<Integer> p_entry) {
 		int ret = p_entry.getDefaultValue();
+		String value;
 
 		try {
-			ret = Integer.parseInt(m_configuration.getValue(p_entry.getKey()));
+			if (p_entry.getKey().toLowerCase().endsWith("size")) {
+				value = m_configuration.getValue(p_entry.getKey());
+				if (value.toLowerCase().endsWith("kb")) {
+					ret = Integer.parseInt(value.substring(0, value.length() - 2)) * 1024;
+				} else if (value.toLowerCase().endsWith("mb")) {
+					ret = Integer.parseInt(value.substring(0, value.length() - 2)) * 1024 * 1024;
+				} else if (value.toLowerCase().endsWith("gb")) {
+					ret = Integer.parseInt(value.substring(0, value.length() - 2)) * 1024 * 1024 * 1024;
+				}
+			} else {
+				ret = Integer.parseInt(m_configuration.getValue(p_entry.getKey()));
+			}
 		} catch (final RuntimeException e) {}
 
 		return ret;
@@ -107,9 +119,21 @@ public final class ConfigurationHelper {
 	 */
 	public long getLongValue(final ConfigurationEntry<Long> p_entry) {
 		long ret = p_entry.getDefaultValue();
+		String value;
 
 		try {
-			ret = Long.parseLong(m_configuration.getValue(p_entry.getKey()));
+			if (p_entry.getKey().toLowerCase().endsWith("size")) {
+				value = m_configuration.getValue(p_entry.getKey());
+				if (value.toLowerCase().endsWith("kb")) {
+					ret = Long.parseLong(value.substring(0, value.length() - 2)) * 1024;
+				} else if (value.toLowerCase().endsWith("mb")) {
+					ret = Long.parseLong(value.substring(0, value.length() - 2)) * 1024 * 1024;
+				} else if (value.toLowerCase().endsWith("gb")) {
+					ret = Long.parseLong(value.substring(0, value.length() - 2)) * 1024 * 1024 * 1024;
+				}
+			} else {
+				ret = Long.parseLong(m_configuration.getValue(p_entry.getKey()));
+			}
 		} catch (final RuntimeException e) {}
 
 		return ret;

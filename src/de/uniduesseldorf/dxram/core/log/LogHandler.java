@@ -62,7 +62,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			ConfigurationConstants.SECONDARY_LOG_SIZE);
 	public static final int SECLOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
 	public static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration()
-			.getIntValue(ConfigurationConstants.LOG_SEGMENTSIZE);
+			.getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
 	public static final int SECLOG_DEFAULT_BUFFER_SIZE = FLASHPAGE_SIZE * 2;
 
 	public static final int WRITE_BUFFER_SIZE = Core.getConfiguration().getIntValue(

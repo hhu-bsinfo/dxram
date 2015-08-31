@@ -158,7 +158,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
 			m_channel
-			.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
+					.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
 
 			m_incoming = new ArrayDeque<>();
 			m_outgoing = new ArrayDeque<>();
@@ -422,7 +422,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_selector = null;
 
 			m_executor = new TaskExecutor("NIO", Core.getConfiguration().getIntValue(
-					ConfigurationConstants.NETWORK_NIO_THREADCOUNT));
+					ConfigurationConstants.NETWORK_NIO_THREAD_COUNT));
 
 			m_changeRequests = new ArrayDeque<>();
 			m_closeRequests = new ArrayDeque<>();
@@ -476,7 +476,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			Iterator<SelectionKey> iterator;
 			Set<SelectionKey> selected;
 			SelectionKey key;
-			final Selector selector = this.m_selector;
+			final Selector selector = m_selector;
 
 			try {
 				// Handle pending ChangeOperationsRequests
