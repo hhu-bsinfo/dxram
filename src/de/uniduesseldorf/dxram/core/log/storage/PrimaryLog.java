@@ -47,7 +47,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 *             if the caller was interrupted
 	 */
 	public PrimaryLog(final long p_primaryLogSize) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N"
 				+ NodeID.getLocalNodeID() + "_"
 				+ LogHandler.PRIMLOG_FILENAME), p_primaryLogSize,
@@ -58,8 +58,6 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		} catch (final DXRAMException e) {
 			System.out.println("Could not get log interface");
 		}
-
-		System.out.println("MinPrimLogSize: " + LogHandler.PRIMLOG_MIN_SIZE + ", PrimLogSize: " + p_primaryLogSize);
 
 		if (p_primaryLogSize < LogHandler.PRIMLOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Primary log too small");
@@ -81,7 +79,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length,
 			final Object p_lengthByBackupRange)
-					throws IOException, InterruptedException {
+			throws IOException, InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -113,7 +111,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 */
 	private int bufferAndStoreSegmentsHashSort(final byte[] p_buffer,
 			final int p_offset, final int p_length, final Set<Entry<Long, Integer>> p_lengthByBackupRange)
-					throws InterruptedException, IOException {
+			throws InterruptedException, IOException {
 		int i = 0;
 		int offset = 0;
 		int bufferOffset = p_offset;
@@ -541,10 +539,10 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 
 		if (ChunkID.getCreatorID(p_chunkID) == -1) {
 			m_logHandler.getSecondaryLogBuffer(p_chunkID, p_source, (byte) p_chunkID)
-					.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
+			.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 		} else {
 			m_logHandler.getSecondaryLogBuffer(p_chunkID, p_source, (byte) -1)
-					.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
+			.flushAllDataToSecLog(p_buffer, p_bufferOffset, p_logEntrySize);
 		}
 	}
 
@@ -745,7 +743,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					index = i;
 					break;
 				} else if (LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i]
-				<= DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(true)) {
+						<= DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(true)) {
 					m_filledSegments[i] = true;
 					for (int j = m_startIndex; j <= m_currentSegment; j++) {
 						if (m_filledSegments[j]) {

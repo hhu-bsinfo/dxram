@@ -273,7 +273,7 @@ public final class CIDTreeOptimized implements Serializable {
 			if (tempResult != null) {
 				result = tempResult;
 				for (int i = 0; i < ret.length; i++) {
-					backupPeer = (short) ((result & (long) Math.pow(2, 16 * (i + 1))) >> (i * 8));
+					backupPeer = (short) ((result >> (i * 16)));
 					if (backupPeer != 0) {
 						ret[i] = backupPeer;
 					}
