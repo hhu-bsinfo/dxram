@@ -152,7 +152,7 @@ public final class InputHelper {
 
 		length = p_input.readInt();
 
-		ret = new Chunk(chunkID, length);
+		ret = new Chunk(chunkID, length, p_input.readInt());
 		data = ret.getData();
 
 		for (int i = 0; i < length; i++) {
@@ -180,7 +180,7 @@ public final class InputHelper {
 
 		length = p_buffer.getInt();
 
-		ret = new Chunk(chunkID, length);
+		ret = new Chunk(chunkID, length, p_buffer.getInt());
 		data = ret.getData();
 
 		for (int i = 0; i < length; i++) {

@@ -193,7 +193,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			LOGGER.error("a superpeer must not create chunks");
 		} else {
 			lid = MemoryManager.getNextLocalID();
-			ret = new Chunk(m_nodeID, lid, p_size);
+			ret = new Chunk(((long) m_nodeID << 48) + lid, p_size);
 			MemoryManager.put(ret);
 			initBackupRange(lid, p_size);
 		}
@@ -217,7 +217,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			if (lids != null) {
 				ret = new Chunk[p_sizes.length];
 				for (int i = 0; i < p_sizes.length; i++) {
-					ret[i] = new Chunk(m_nodeID, lids[i], p_sizes[i]);
+					ret[i] = new Chunk(((long) m_nodeID << 48) + lids[i], p_sizes[i]);
 					MemoryManager.put(ret[i]);
 					initBackupRange(lids[i], p_sizes[i]);
 				}
@@ -245,7 +245,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			mapping = MemoryManager.get((long) m_nodeID << 48);
 			if (null == mapping) {
 				// Create chunk to store mappings
-				mapping = new Chunk(m_nodeID, 0, INDEX_SIZE);
+				mapping = new Chunk((long) m_nodeID << 48, INDEX_SIZE);
 				mapping.getData().putInt(4);
 				// TODO: Check metadata management regarding chunk zero
 			}
@@ -272,7 +272,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			mapping = MemoryManager.get((long) m_nodeID << 48);
 			if (null == mapping) {
 				// Create chunk to store mappings
-				mapping = new Chunk(m_nodeID, 0, INDEX_SIZE);
+				mapping = new Chunk((long) m_nodeID << 48, INDEX_SIZE);
 				mapping.getData().putInt(4);
 				// TODO: Check metadata management regarding chunk zero
 			}
@@ -493,6 +493,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
+			p_chunk.incVersion();
 			if (MemoryManager.isResponsible(p_chunk.getChunkID())) {
 				// Local put
 				MemoryManager.put(p_chunk);
@@ -1310,9 +1311,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @throws DXRAMException
 	 *             if there is no fitting chunk
 	 */
-	private void
-	deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index)
-			throws DXRAMException {
+	private void deleteEntryInLastIndexFile(final Chunk p_indexChunk,
+			final Chunk p_predecessorChunk, final int p_index) throws DXRAMException {
 		int size;
 		byte[] data1;
 		byte[] data2;
@@ -1370,6 +1370,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	@Override
 	public void recoverFromLog() throws DXRAMException {
 		// TODO: recoverFromLog
+		// m_log.readAllEntries((short) 960, (960L << 48) + 1, (byte) -1, false);
+		m_log.printMetadataOfAllEntries((short) 960, (960L << 48) + 1, (byte) -1);
 	}
 
 	/**

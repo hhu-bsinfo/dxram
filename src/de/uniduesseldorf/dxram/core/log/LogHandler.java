@@ -273,7 +273,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public long logChunk(final Chunk p_chunk, final byte p_rangeID, final short p_source) throws DXRAMException {
 		byte[] logHeader;
 
-		// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", " + p_chunk.getSize());
+		System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", " + p_chunk.getSize() + ", "
+				+ p_chunk.getVersion());
 
 		if (p_rangeID == -1) {
 			logHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createHeader(p_chunk, (byte) -1, (short) -1);
@@ -559,7 +560,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID)
 			throws IOException,
 			InterruptedException {
-		SecondaryLogBuffer ret;
+		SecondaryLogBuffer ret = null;
 		LogCatalog cat;
 
 		// Can be executed by application/network thread or writer thread
@@ -569,7 +570,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		} else {
 			cat = m_logCatalogs.get(p_source & 0xFFFF);
 		}
-		ret = cat.getBuffer(p_chunkID, p_rangeID);
+
+		if (cat != null) {
+			ret = cat.getBuffer(p_chunkID, p_rangeID);
+		}
 		m_secondaryLogCreationLock.unlock();
 
 		return ret;
@@ -610,15 +614,19 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 	@Override
 	public void flushDataToSecondaryLogs() throws IOException, InterruptedException {
+		LogCatalog cat;
 		SecondaryLogBuffer[] buffers;
 
 		if (m_flushingInProgress.compareAndSet(false, true)) {
 			try {
 				for (int i = 0; i < LogHandler.MAX_NODE_CNT; i++) {
-					buffers = m_logCatalogs.get(i).getAllBuffers();
-					for (int j = 0; j < buffers.length; j++) {
-						if (buffers[i] != null && !buffers[i].isBufferEmpty()) {
-							buffers[i].flushSecLogBuffer();
+					cat = m_logCatalogs.get(i);
+					if (cat != null) {
+						buffers = cat.getAllBuffers();
+						for (int j = 0; j < buffers.length; j++) {
+							if (buffers[j] != null && !buffers[j].isBufferEmpty()) {
+								buffers[j].flushSecLogBuffer();
+							}
 						}
 					}
 				}

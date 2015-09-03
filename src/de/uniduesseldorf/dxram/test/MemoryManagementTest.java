@@ -148,7 +148,7 @@ public final class MemoryManagementTest {
 						try {
 							chunkID = MemoryManager.getNextLocalID();
 							data = new byte[random.nextInt(49) + 16];
-							chunk = new Chunk(chunkID, data);
+							chunk = new Chunk(chunkID, data, 0);
 
 							MemoryManager.put(chunk);
 						} catch (final MemoryException e) {

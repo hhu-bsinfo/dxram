@@ -419,6 +419,32 @@ public final class RawMemory {
 	}
 
 	/**
+	 * Reads the version of a chunk from the memory
+	 * @param p_address
+	 *            the address to read
+	 * @return the read version
+	 * @throws MemoryException
+	 *             if the version could not be read
+	 */
+	protected static int readVersion(final long p_address) throws MemoryException {
+		int ret;
+		int lengthFieldSize;
+		long offset;
+
+		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
+
+		// This method reads the version field of every chunk at (address, ..., address + 3)
+		try {
+			offset = m_memoryBase + p_address + lengthFieldSize;
+			ret = UNSAFE.getInt(offset);
+		} catch (final Throwable e) {
+			throw new MemoryException("Could not access memory", e);
+		}
+
+		return ret;
+	}
+
+	/**
 	 * Reads a block of bytes from the memory
 	 * @param p_address
 	 *            the address to start reading
@@ -435,11 +461,12 @@ public final class RawMemory {
 		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
 		size = (int) read(p_address, lengthFieldSize);
 
+		// This method skips the version field of every chunk at (address, ..., address + 3)
 		try {
-			ret = new byte[size];
+			ret = new byte[size - Integer.BYTES];
 
-			offset = m_memoryBase + p_address + lengthFieldSize;
-			for (int i = 0; i < size; i++) {
+			offset = m_memoryBase + p_address + lengthFieldSize + Integer.BYTES;
+			for (int i = 0; i < size - Integer.BYTES; i++) {
 				ret[i] = UNSAFE.getByte(offset + i);
 			}
 		} catch (final Throwable e) {
@@ -501,6 +528,30 @@ public final class RawMemory {
 	}
 
 	/**
+	 * Writes the version of a chunk to the memory
+	 * @param p_address
+	 *            the address to write
+	 * @param p_version
+	 *            the version to write
+	 * @throws MemoryException
+	 *             if the int could not be written
+	 */
+	protected static void writeVersion(final long p_address, final int p_version) throws MemoryException {
+		int lengthFieldSize;
+		long offset;
+
+		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
+
+		// This method writes the version field of every chunk at (address, ..., address + 3)
+		try {
+			offset = m_memoryBase + p_address + lengthFieldSize;
+			UNSAFE.putInt(offset, p_version);
+		} catch (final Throwable e) {
+			throw new MemoryException("Could not access memory", e);
+		}
+	}
+
+	/**
 	 * Writes a number of bytes to the memory
 	 * @param p_address
 	 *            the address to write
@@ -517,10 +568,11 @@ public final class RawMemory {
 		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
 		size = (int) read(p_address, lengthFieldSize);
 
-		Contract.check(p_value.length == size, "array size differs from memory size");
+		// This method skips the version field of every chunk at (address, ..., address + 3)
+		Contract.check(p_value.length + Integer.BYTES == size, "array size differs from memory size");
 
 		try {
-			offset = m_memoryBase + p_address + lengthFieldSize;
+			offset = m_memoryBase + p_address + lengthFieldSize + Integer.BYTES;
 			for (int i = 0; i < p_value.length; i++) {
 				UNSAFE.putByte(offset + i, p_value[i]);
 			}
@@ -1097,31 +1149,31 @@ public final class RawMemory {
 
 				// Calculate the number of bytes for the length field
 				size = p_size >> 8;
-				while (size > 0) {
-					lengthFieldSize++;
+			while (size > 0) {
+				lengthFieldSize++;
 
-					size = size >> 8;
-				}
+				size = size >> 8;
+			}
 
-				// Get the corresponding list
-				listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
+			// Get the corresponding list
+			listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
 
-				// Hook block in list
-				anchor = readPointer(listOffset);
+			// Hook block in list
+			anchor = readPointer(listOffset);
 
-				// Write pointer to list and successor
-				writePointer(p_address + lengthFieldSize, listOffset);
-				writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-				if (anchor != 0) {
-					// Write pointer of successor
-					writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
-				}
-				// Write pointer of list
-				writePointer(listOffset, p_address);
+			// Write pointer to list and successor
+			writePointer(p_address + lengthFieldSize, listOffset);
+			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+			if (anchor != 0) {
+				// Write pointer of successor
+				writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
+			}
+			// Write pointer of list
+			writePointer(listOffset, p_address);
 
-				// Write length
-				write(p_address, p_size, lengthFieldSize);
-				write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+			// Write length
+			write(p_address, p_size, lengthFieldSize);
+			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
 			}
 
 			// Write right and left marker

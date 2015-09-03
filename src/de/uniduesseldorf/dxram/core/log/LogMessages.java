@@ -86,7 +86,7 @@ public final class LogMessages {
 			if (m_chunk != null) {
 				OutputHelper.writeChunk(p_buffer, m_chunk);
 			} else {
-				OutputHelper.writeChunk(p_buffer, new Chunk(0, new byte[0]));
+				OutputHelper.writeChunk(p_buffer, new Chunk(-1, 0));
 			}
 		}
 

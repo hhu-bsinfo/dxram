@@ -507,6 +507,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		int offset = 0;
 		int logEntrySize;
 		int payloadSize;
+		int version;
 		long checksum;
 		long chunkID;
 		byte[][] logData;
@@ -525,6 +526,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(logData[i], offset, m_storesMigrations);
 					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(logData[i], offset, m_storesMigrations);
 					payloadSize = logEntryHeader.getLength(logData[i], offset, m_storesMigrations);
+					version = logEntryHeader.getVersion(logData[i], offset, m_storesMigrations);
 					checksum = logEntryHeader.getChecksum(logData[i], offset, m_storesMigrations);
 					logEntrySize = logEntryHeader.getHeaderSize(m_storesMigrations) + payloadSize;
 
@@ -543,7 +545,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 									continue;
 								}
 							}
-							chunkMap.put(chunkID, new Chunk(chunkID, payload));
+							chunkMap.put(chunkID, new Chunk(chunkID, payload, version));
 						}
 					}
 					offset += logEntrySize;
@@ -579,6 +581,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		int offset = 0;
 		int logEntrySize;
 		int payloadSize;
+		int version;
 		long checksum;
 		long chunkID;
 		long lid;
@@ -597,6 +600,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					// Determine header of next log entry
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(logData[i], offset, m_storesMigrations);
 					payloadSize = logEntryHeader.getLength(logData[i], offset, m_storesMigrations);
+					version = logEntryHeader.getVersion(logData[i], offset, m_storesMigrations);
 					logEntrySize = logEntryHeader.getHeaderSize(m_storesMigrations) + payloadSize;
 					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(logData[i], offset, m_storesMigrations);
 					lid = ChunkID.getLocalID(chunkID);
@@ -617,7 +621,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 									}
 								}
 								chunkMap.put(chunkID, new Chunk(chunkID,
-										payload));
+										payload, version));
 							}
 						}
 					}

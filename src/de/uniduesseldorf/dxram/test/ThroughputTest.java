@@ -257,7 +257,7 @@ public final class ThroughputTest {
 		 *             if the test could not be executed
 		 */
 		private TestResult evaluatePut(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
-				ExecutionException {
+		ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
@@ -277,7 +277,7 @@ public final class ThroughputTest {
 
 						for (int i = 1; i <= count; i++) {
 							try {
-								chunk = new Chunk(i + nodeID, new byte[40]);
+								chunk = new Chunk(i + nodeID, new byte[40], 0);
 								Core.put(chunk);
 							} catch (final DXRAMException e) {
 								e.printStackTrace();
@@ -310,7 +310,7 @@ public final class ThroughputTest {
 		 *             if the test could not be executed
 		 */
 		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
-				ExecutionException {
+		ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
@@ -672,7 +672,7 @@ public final class ThroughputTest {
 		 *             if the test could not be executed
 		 */
 		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
-				ExecutionException {
+		ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;

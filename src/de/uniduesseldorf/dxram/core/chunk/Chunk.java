@@ -24,31 +24,13 @@ public class Chunk implements Comparable<Chunk> {
 	// Constructors
 	/**
 	 * Creates an instance of Chunk
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_localID
-	 *            the LocalID
-	 * @param p_size
-	 *            the size
-	 * @param p_version
-	 *            the version
-	 */
-	public Chunk(final short p_nodeID, final long p_localID, final int p_size, final int p_version) {
-		this(((long) p_nodeID << 48) + p_localID, p_size);
-		m_version = p_version;
-	}
-
-	/**
-	 * Creates an instance of Chunk
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_localID
-	 *            the LocalID
+	 * @param p_chunkID
+	 *            the Chunk ID
 	 * @param p_size
 	 *            the size
 	 */
-	public Chunk(final short p_nodeID, final long p_localID, final int p_size) {
-		this(((long) p_nodeID << 48) + p_localID, p_size);
+	public Chunk(final long p_chunkID, final int p_size) {
+		this(p_chunkID, p_size, 0);
 	}
 
 	/**
@@ -57,12 +39,14 @@ public class Chunk implements Comparable<Chunk> {
 	 *            the Chunk ID
 	 * @param p_size
 	 *            the size
+	 * @param p_version
+	 *            the version
 	 */
-	public Chunk(final long p_chunkID, final int p_size) {
+	public Chunk(final long p_chunkID, final int p_size, final int p_version) {
 		Contract.check(p_size > 0 && p_size <= MAX_SIZE, "invalid size given");
 
 		m_chunkID = p_chunkID;
-		m_version = 0;
+		m_version = p_version;
 		m_data = ByteBuffer.allocate(p_size);
 	}
 
@@ -72,12 +56,14 @@ public class Chunk implements Comparable<Chunk> {
 	 *            the Chunk ID
 	 * @param p_data
 	 *            the data
+	 * @param p_version
+	 *            the version
 	 */
-	public Chunk(final long p_chunkID, final byte[] p_data) {
+	public Chunk(final long p_chunkID, final byte[] p_data, final int p_version) {
 		Contract.check(p_data != null && p_data.length <= MAX_SIZE, "invalid size given");
 
 		m_chunkID = p_chunkID;
-		m_version = 0;
+		m_version = p_version;
 		m_data = ByteBuffer.wrap(p_data);
 	}
 

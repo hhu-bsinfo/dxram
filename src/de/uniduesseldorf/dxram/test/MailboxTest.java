@@ -168,7 +168,7 @@ public final class MailboxTest {
 
 			try {
 				// Create anchor
-				chunk = new Chunk(NodeID.getLocalNodeID(), 500, data.length);
+				chunk = new Chunk(((long) NodeID.getLocalNodeID() << 48) + 500, data.length);
 				chunk.getData().put(data);
 				Core.put(chunk);
 			} catch (final DXRAMException e) {

@@ -20,6 +20,9 @@ import de.uniduesseldorf.dxram.utils.StatisticsManager;
  */
 public final class MemoryManager {
 
+	// Constants
+	private static final int VERSION_LENGTH = 4;
+
 	// Attributes
 	private static AtomicLong m_nextLocalID;
 
@@ -128,20 +131,23 @@ public final class MemoryManager {
 	 *             if the Chunk could not be put
 	 */
 	public static void put(final Chunk p_chunk) throws MemoryException {
+		int version;
 		long chunkID;
 		long address;
 
 		chunkID = p_chunk.getChunkID();
+		version = p_chunk.getVersion();
 
 		// Get the address from the CIDTable
 		address = CIDTable.get(chunkID);
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address <= 0) {
-			address = RawMemory.malloc(p_chunk.getSize());
+			address = RawMemory.malloc(p_chunk.getSize() + Integer.BYTES);
 			CIDTable.set(chunkID, address);
 		}
 
+		RawMemory.writeVersion(address, version);
 		RawMemory.writeBytes(address, p_chunk.getData().array());
 	}
 
@@ -155,6 +161,7 @@ public final class MemoryManager {
 	 */
 	public static Chunk get(final long p_chunkID) throws MemoryException {
 		Chunk ret = null;
+		int version;
 		long address;
 
 		// Get the address from the CIDTable
@@ -162,7 +169,8 @@ public final class MemoryManager {
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address > 0) {
-			ret = new Chunk(p_chunkID, RawMemory.readBytes(address));
+			version = RawMemory.readVersion(address);
+			ret = new Chunk(p_chunkID, RawMemory.readBytes(address), version);
 		}
 
 		return ret;
