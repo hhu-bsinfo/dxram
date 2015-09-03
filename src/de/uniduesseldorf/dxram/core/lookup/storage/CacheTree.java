@@ -41,7 +41,7 @@ public final class CacheTree {
 		Thread thread;
 		long ttl;
 
-		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHETTL), 1000);
+		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHE_TTL), 1000);
 
 		Contract.checkNotNull(p_order);
 		Contract.check(1 < p_order, "too small order for BTree");

@@ -69,7 +69,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_REQUEST, ChunkMessages.PutRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_RESPONSE, ChunkMessages.PutResponse.class);
 		MessageDirectory
-				.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_REQUEST, ChunkMessages.RemoveRequest.class);
+		.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_REQUEST, ChunkMessages.RemoveRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_RESPONSE,
 				ChunkMessages.RemoveResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_REQUEST, ChunkMessages.LockRequest.class);
@@ -301,7 +301,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 */
 		public MessageHandler() {
 			m_executor = new TaskExecutor("MessageHandler", Core.getConfiguration().getIntValue(
-					ConfigurationConstants.NETWORK_MESSAGEHANDLER_THREADCOUNT));
+					ConfigurationConstants.NETWORK_MESSAGE_HANDLER_THREAD_COUNT));
 			m_messages = new ArrayDeque<>();
 		}
 

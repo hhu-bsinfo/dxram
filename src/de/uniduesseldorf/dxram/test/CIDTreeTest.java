@@ -62,7 +62,7 @@ public final class CIDTreeTest {
 		// Initialize DXRAM
 		try {
 			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}

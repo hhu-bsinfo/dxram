@@ -36,7 +36,7 @@ public final class TaskExecutor {
 
 	static {
 		m_defaultExecutor = new TaskExecutor("Default", Core.getConfiguration().getIntValue(
-				ConfigurationConstants.NETWORK_TASKHANDLER_THREADCOUNT));
+				ConfigurationConstants.NETWORK_TASK_HANDLER_THREAD_COUNT));
 	}
 
 	// Constructors

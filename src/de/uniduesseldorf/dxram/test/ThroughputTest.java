@@ -20,7 +20,7 @@ import de.uniduesseldorf.dxram.utils.Tools;
 
 /*
  * Start-up:
- * 1) Start at least one superpeer: With parameter "superpeer", must also be a superpeer in nodes.dxram
+ * 1) Start at least one superpeer: With parameter "superpeer", must also be a superpeer in nodes.config
  * 2) Start server: With parameters "server x" whereas x is the number of messages that should be stored on server
  * 3) Set serverID to NodeID of server
  * 4) Start clients: No parameters
@@ -85,7 +85,7 @@ public final class ThroughputTest {
 			// Initialize DXRAM
 			try {
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 
 				System.out.println("Superpeer initialized");
 			} catch (final DXRAMException e) {
@@ -172,7 +172,7 @@ public final class ThroughputTest {
 		 */
 		private void init() throws DXRAMException {
 			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 		}
 
 		/**
@@ -312,7 +312,7 @@ public final class ThroughputTest {
 		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
 				ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
-			final long nodeID = ((long) NodeID.getLocalNodeID()) << 48;
+			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -362,7 +362,7 @@ public final class ThroughputTest {
 		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
-			final long nodeID = ((long) NodeID.getLocalNodeID()) << 48;
+			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			final long[] chunkIDs = new long[count];
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -415,7 +415,7 @@ public final class ThroughputTest {
 		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount)
 				throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
-			final long nodeID = ((long) NodeID.getLocalNodeID()) << 48;
+			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
 			Future<?>[] futures;
 			long time;
@@ -643,7 +643,7 @@ public final class ThroughputTest {
 			ByteBuffer data;
 
 			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 
 			System.out.println("Get Index Chunk");
 			chunk = Core.get("Idx");
