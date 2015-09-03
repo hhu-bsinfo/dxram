@@ -1,13 +1,8 @@
 package de.uniduesseldorf.dxram.commands;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-
 import java.util.HashMap;
 import java.util.Map;
 
-import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
-//import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.utils.JNIconsole;
 
 /**
@@ -24,13 +19,15 @@ public class Shell {
 		
 		m_commandMap = new HashMap<String, Cmd>();
 		
-		c = new CmdHelp();      m_commandMap.put(c.name, c);
-		c = new CmdClear();     m_commandMap.put(c.name, c);
-		c = new CmdNodes();     m_commandMap.put(c.name, c);
-		c = new CmdChunkinfo(); m_commandMap.put(c.name, c);
-		c = new CmdMigrate();   m_commandMap.put(c.name, c);
-		c = new CmdQuit();      m_commandMap.put(c.name, c);
-		c = new CmdPut();       m_commandMap.put(c.name, c);
+		c = new CmdHelp();      m_commandMap.put(c.get_name(), c);
+		c = new CmdClear();     m_commandMap.put(c.get_name(), c);
+		c = new CmdNodes();     m_commandMap.put(c.get_name(), c);
+		c = new CmdChunkinfo(); m_commandMap.put(c.get_name(), c);
+		c = new CmdMigrate();   m_commandMap.put(c.get_name(), c);
+		c = new CmdQuit();      m_commandMap.put(c.get_name(), c);
+		c = new CmdPut();       m_commandMap.put(c.get_name(), c);
+		c = new CmdGet();       m_commandMap.put(c.get_name(), c);
+		c = new CmdDel();       m_commandMap.put(c.get_name(), c);
 	}
 		
 	

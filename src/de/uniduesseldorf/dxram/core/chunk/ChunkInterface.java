@@ -22,13 +22,6 @@ public interface ChunkInterface extends CoreComponent {
 	void setListener(IncomingChunkListener p_listener);
 
 	/**
-	 * Set the CommandListener
-	 * @param p_listener
-	 *            the CommandListener
-	 */
-	void setCmdListener(final CommandListener p_command_listener);
-
-	/**
 	 * Creates a new Chunk
 	 * @param p_size
 	 *            the size of the new Chunk
@@ -188,10 +181,11 @@ public interface ChunkInterface extends CoreComponent {
 	 *            the ID
 	 * @param p_target
 	 *            the Node where to migrate the Chunk
+	 * @return true=success, false=failed
 	 * @throws DXRAMException
 	 *             if the Chunk could not be migrated
 	 */
-	void migrate(long p_chunkID, short p_target) throws DXRAMException;
+	boolean migrate(long p_chunkID, short p_target) throws DXRAMException;
 
 	/**
 	 * Migrates the corresponding Chunks for the giving ID range to another Node
@@ -201,10 +195,11 @@ public interface ChunkInterface extends CoreComponent {
 	 *            the last ID
 	 * @param p_target
 	 *            the Node where to migrate the Chunks
+	 * @return true=success, false=failed
 	 * @throws DXRAMException
 	 *             if the Chunks could not be migrated
 	 */
-	void migrateRange(long p_startChunkID, long p_endChunkID, short p_target) throws DXRAMException;
+	boolean migrateRange(long p_startChunkID, long p_endChunkID, short p_target) throws DXRAMException;
 
 	/**
 	 * Migrates all chunks to another node. Is called for promotion.

@@ -281,7 +281,7 @@ public final class Configuration {
 				"log.replication_factor", Integer.class, 3);
 		// Size of the primary log file (default 8 GB)
 		public static final ConfigurationEntry<Long> PRIMARY_LOG_SIZE = new ConfigurationEntry<Long>(
-				"log.primary_size", Long.class, 8589934592L);
+				"log.primary_size", Long.class, 2147483648L);
 		// Size of the secondary log file (default 512 MB)
 		public static final ConfigurationEntry<Long> SECONDARY_LOG_SIZE = new ConfigurationEntry<Long>(
 				"log.secondary_size", Long.class, 536870912L);

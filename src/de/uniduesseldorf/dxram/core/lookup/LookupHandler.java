@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
+import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -19,6 +21,8 @@ import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
@@ -191,6 +195,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_network.register(StartRecoveryMessage.class, this);
 		m_network.register(InsertIDRequest.class, this);
 		m_network.register(GetChunkIDRequest.class, this);
+		m_network.register(LookupReflectionRequest.class, this);
 
 		m_me = NodeID.getLocalNodeID();
 		Contract.check(-1 != m_me);
@@ -239,6 +244,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		LOGGER.trace("Exiting close");
 	}
+
 
 	@Override
 	public Locations get(final long p_chunkID) throws LookupException {
@@ -1642,6 +1648,67 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		}
 	}
 
+	// info about chunk, called by incomingReflectionRequest
+	private String chunkinfo(String cmd) {
+		String arguments[] = cmd.split(" ");
+		if (arguments==null) 
+			return "  error: problem in command";
+		if (arguments.length<3)  
+			return "  error: problem in command";
+		
+		
+		short NID = CmdUtils.get_NID_from_tuple(arguments[1]);
+		long LID = CmdUtils.get_LID_from_tuple(arguments[1]);
+		long CID = CmdUtils.calc_CID(NID, LID);
+		
+		System.out.println("chunkinfo for "+NID+","+LID);
+		//System.out.println("   getCIDTree:"+NID);
+		CIDTreeOptimized tree = getCIDTree((short)NID);
+		if (tree==null)
+			return "  error: no CIDtree for given NID="+NID;
+
+		// get meta-data from tree
+		Locations l = tree.getMetadata(CID);
+		if (l==null) {
+			System.out.println(" tree.getMetadata failed");
+			return "  error: tree.getMetadata failed";
+		}
+
+		return "  Stored on peer="+l.toString();
+	}
+
+	/**
+	 * Handles an incoming ReflectionRequest
+	 * @param p_lookupRequest
+	 *            the ReflectionRequest
+	 */
+	private void incomingReflectionRequest(final LookupReflectionRequest p_lookupRequest) {
+		String cmd,res=null;
+
+		cmd = p_lookupRequest.getArgument();
+		res = "success: incomingReflectionRequest";
+		
+		// process request
+		if ( NodeID.getRole().equals(Role.SUPERPEER) ) {
+			
+			if (cmd.indexOf("chunkinfo")>=0) {
+				res = chunkinfo(cmd);
+			}
+			
+		}
+		else {
+			res = "error: lookup command can be processed by superpeers only";
+		}
+		
+		// send response
+		try {
+			new LookupReflectionResponse(p_lookupRequest, res).send(m_network);
+			System.out.println("response sent");
+		} catch (final NetworkException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/**
 	 * Handles an incoming AskAboutBackupsRequest
 	 * @param p_askAboutBackupsRequest
@@ -2128,6 +2195,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					break;
 				case LookupMessages.SUBTYPE_GET_CHUNKID_REQUEST:
 					incomingGetChunkIDRequest((GetChunkIDRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST:
+					incomingReflectionRequest((LookupReflectionRequest) p_message);
 					break;
 				default:
 					break;

@@ -16,7 +16,7 @@ import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
  * Encapsulates messages for the LookupHandler
- * @author Kevin Beineke
+ * @author Kevin Beinekechun
  *         03.06.2013
  */
 public final class LookupMessages {
@@ -58,6 +58,8 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_GET_CHUNKID_RESPONSE = 33;
 	public static final byte SUBTYPE_GET_MAPPING_COUNT_REQUEST = 34;
 	public static final byte SUBTYPE_GET_MAPPING_COUNT_RESPONSE = 35;
+	public static final byte SUBTYPE_LOOKUP_REFLECTION_REQUEST = 36;
+	public static final byte SUBTYPE_LOOKUP_REFLECTION_RESPONSE = 37;
 
 	// Constructors
 	/**
@@ -2789,6 +2791,123 @@ public final class LookupMessages {
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getLongWriteLength();
+		}
+
+	}
+
+	/**
+	 * Request for command
+	 * @author Michael Schoettner 20.8.2015
+	 */
+	public static class LookupReflectionRequest extends AbstractRequest {
+
+		// Attributes
+		private String m_cmd;
+
+		// Constructors
+		/**
+		 * Creates an instance of CommandRequest
+		 */
+		public LookupReflectionRequest() {
+			super();
+			m_cmd = null;
+		}
+
+		/**
+		 * Creates an instance of CommandRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_cmd
+		 *            the command
+		 */
+		public LookupReflectionRequest(final short p_destination, final String p_cmd) {
+			super(p_destination, TYPE, SUBTYPE_LOOKUP_REFLECTION_REQUEST);
+			Contract.checkNotNull(p_cmd, "error: no argument given");
+			m_cmd = p_cmd;
+		}
+
+		
+		/**
+		 * Get the command
+		 * @return the command
+		 */
+		public final String getArgument() {
+			return m_cmd;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeString(p_buffer, m_cmd); 
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_cmd = InputHelper.readString(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getStringsWriteLength(m_cmd);
+		}
+
+	}
+
+	/**
+	 * Response to a CommandRequest
+	 * @author Florian Klein 05.07.2014
+	 */
+	public static class LookupReflectionResponse extends AbstractResponse {
+
+		// Attributes
+		private String m_answer;
+
+		// Constructors
+		/**
+		 * Creates an instance of CommpandResponse
+		 */
+		public LookupReflectionResponse() {
+			super();
+
+			m_answer = null;
+		}
+
+		/**
+		 * Creates an instance of CommandResponse
+		 * @param p_request
+		 *            the corresponding CommandRequest
+		 * @param p_answer
+		 *            the answer
+		 */
+		public LookupReflectionResponse(final LookupReflectionRequest p_request, final String p_answer) {
+			super(p_request, SUBTYPE_LOOKUP_REFLECTION_RESPONSE);
+
+			m_answer = p_answer;
+		}
+
+		// Getters
+		/**
+		 * Get the answer
+		 * @return the answer
+		 */
+		public final String getAnswer() {
+			return m_answer;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeString(p_buffer, m_answer);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_answer = InputHelper.readString(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getStringsWriteLength(m_answer);
 		}
 
 	}

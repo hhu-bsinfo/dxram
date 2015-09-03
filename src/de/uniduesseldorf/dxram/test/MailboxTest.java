@@ -186,20 +186,20 @@ public final class MailboxTest {
 				} catch (final InterruptedException e) {}
 				i++;
 			}
-			try {
-				// System.out.println("Migrating range(1,5) to " + 960);
-				// Core.migrateRange(((long) NodeID.getLocalNodeID() << 48) + 1,
-				// ((long) NodeID.getLocalNodeID() << 48) + 5,
-				// (short) 960);
-				System.out.println("Migrating object(1) to " + 320);
-				Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 1, (short) 320);
-//				Core.execute("migrate", "" + ((long) NodeID.getLocalNodeID() << 48) + 1, "" + Core.getNodeID(), ""
-//						+ (short) 320);
-				System.out.println("Migrating object(2) to " + (-15999));
-				Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 2, (short) (-15999));
-				System.out.println("Migrating object(3) to " + (-15615));
-				Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 3, (short) (-15615));
-			} catch (final DXRAMException e1) {}
+			// try {
+			// System.out.println("Migrating range(1,5) to " + 960);
+			// Core.migrateRange(((long) NodeID.getLocalNodeID() << 48) + 1,
+			// ((long) NodeID.getLocalNodeID() << 48) + 5,
+			// (short) 960);
+			// System.out.println("Migrating object(1) to " + 320);
+			// Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 1, (short) 320);
+			// Core.execute("migrate", "" + ((long) NodeID.getLocalNodeID() << 48) + 1, "" + Core.getNodeID(), ""
+			// + (short) 320);
+			// System.out.println("Migrating object(2) to " + (-15999));
+			// Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 2, (short) (-15999));
+			// System.out.println("Migrating object(3) to " + (-15615));
+			// Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 3, (short) (-15615));
+			// } catch (final DXRAMException e1) {}
 
 			while (true) {
 				// Wait a moment
