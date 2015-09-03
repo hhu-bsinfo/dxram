@@ -1,5 +1,5 @@
 /**
- * This package contains the DXRAM classes for configuration and logging
+ * This package contains the DXRAM classes for message logging
  */
 
 package de.uniduesseldorf.dxram;

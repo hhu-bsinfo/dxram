@@ -34,7 +34,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	private static final int INCOMING_BUFFER_SIZE = 65536 * 2;
 	private static final int OUTGOING_BUFFER_SIZE = 65536;
 	private static final int SEND_BYTES = 1024;
-	private static final int CONNECTION_TIMEOUT = 1000; // ms
+	private static final int CONNECTION_TIMEOUT = 1000;
 
 	private static final int MAX_OUTSTANDING_BYTES = BufferCache.MAX_MEMORY_CACHED;
 
@@ -159,7 +159,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
 			m_channel
-					.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
+			.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
 
 			m_incoming = new ArrayDeque<>();
 			m_outgoing = new ArrayDeque<>();

@@ -90,8 +90,6 @@ public final class CachedTreeLookup implements LookupInterface {
 		}
 	}
 
-
-	
 	@Override
 	public Locations get(final long p_chunkID) throws LookupException {
 		Locations ret;

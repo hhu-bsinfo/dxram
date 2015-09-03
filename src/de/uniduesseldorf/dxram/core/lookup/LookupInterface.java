@@ -171,5 +171,4 @@ public interface LookupInterface extends CoreComponent {
 	 * @return true if all superpeers are known, false otherwise
 	 */
 	boolean overlayIsStable();
-	
 }

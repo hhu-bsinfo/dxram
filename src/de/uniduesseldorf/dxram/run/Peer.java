@@ -1,11 +1,11 @@
 
 package de.uniduesseldorf.dxram.run;
 
+import de.uniduesseldorf.dxram.commands.CommandHandler;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.commands.CommandHandler;;
 
 /**
  * Peer
@@ -43,12 +43,15 @@ public final class Peer {
 			Thread.sleep(10000);
 		} catch (final InterruptedException e) {}
 
-		try {
-			Core.recoverFromLog();
-		} catch (DXRAMException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		/*
+		 * Test:
+		 * try {
+		 * Core.recoverFromLog();
+		 * } catch (final DXRAMException e1) {
+		 * // TODO Auto-generated catch block
+		 * e1.printStackTrace();
+		 * }
+		 */
 
 		while (true) {
 			// Wait a moment

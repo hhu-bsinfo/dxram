@@ -57,10 +57,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public static final int MAX_NODE_CNT = Short.MAX_VALUE * 2;
 	public static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(
 			ConfigurationConstants.PRIMARY_LOG_SIZE);
-	public static final int PRIMLOG_MIN_SIZE = 0;//MAX_NODE_CNT * FLASHPAGE_SIZE;
+	public static final int PRIMLOG_MIN_SIZE = MAX_NODE_CNT * FLASHPAGE_SIZE;
 	public static final long SECLOG_SIZE = Core.getConfiguration().getLongValue(
 			ConfigurationConstants.SECONDARY_LOG_SIZE);
-	public static final int SECLOG_MIN_SIZE = 0;//1024 * FLASHPAGE_SIZE;
+	public static final int SECLOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
 	public static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration()
 			.getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
 	public static final int SECLOG_DEFAULT_BUFFER_SIZE = FLASHPAGE_SIZE * 2;
@@ -415,7 +415,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					length = DEFAULT_SEC_LOG_ENTRY_HEADER.getLength(separatedEntry, 0, logStoresMigrations);
 					System.arraycopy(logEntries[i], 0, separatedEntry, readBytes,
 							DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(logStoresMigrations)
-									+ length - readBytes);
+							+ length - readBytes);
 					localID = DEFAULT_SEC_LOG_ENTRY_HEADER.getLID(separatedEntry, 0, logStoresMigrations);
 					version = DEFAULT_SEC_LOG_ENTRY_HEADER.getVersion(separatedEntry, 0, logStoresMigrations);
 					printMetadata(ChunkID.getCreatorID(p_chunkID), localID, separatedEntry, 0, length,
@@ -427,7 +427,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					readBytes *= -1;
 					System.arraycopy(logEntries[i], 0, separatedHeader, readBytes,
 							DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(logStoresMigrations)
-									- readBytes);
+							- readBytes);
 					length = DEFAULT_SEC_LOG_ENTRY_HEADER.getLength(separatedHeader, 0, logStoresMigrations);
 					localID = DEFAULT_SEC_LOG_ENTRY_HEADER.getLID(separatedHeader, 0, logStoresMigrations);
 					version = DEFAULT_SEC_LOG_ENTRY_HEADER.getVersion(separatedEntry, 0, logStoresMigrations);
@@ -449,7 +449,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					} else {
 						length = DEFAULT_SEC_LOG_ENTRY_HEADER.getLength(logEntries[i], readBytes, logStoresMigrations);
 						if (length + DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(logStoresMigrations)
-						> logEntries[i].length - readBytes) {
+								> logEntries[i].length - readBytes) {
 							// Entry is separated: The header is completely in
 							// this buffer (logEntries[i])
 							separatedEntry =
@@ -517,7 +517,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						+ new String(Arrays.copyOfRange(p_payload,
 								p_offset + DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(p_logStoresMigrations),
 								p_offset + DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(p_logStoresMigrations)
-										+ p_length), "UTF-8"));
+								+ p_length), "UTF-8"));
 			} else {
 				System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
 						+ (int) p_localID + ") \t Length - " + p_length + "\t Version - " + p_version

@@ -12,6 +12,9 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHelper;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandMessage;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandRequest;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandResponse;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.exceptions.ChunkException;
 import de.uniduesseldorf.dxram.core.exceptions.ComponentCreationException;
@@ -23,16 +26,12 @@ import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.PrimaryLogException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandMessage;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandResponse;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages.GetChunkIDResponse;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 
 /**
  * API for DXRAM
@@ -50,9 +49,9 @@ public final class Core {
 	private static NetworkInterface m_network;
 	private static ChunkInterface m_chunk;
 	private static ExceptionHandler m_exceptionHandler;
-	
-	// must be registered for handling 'execute' commands 
-	public static CommandListener m_command_listener;
+
+	// must be registered for handling 'execute' commands
+	public static CommandListener m_commandListener;
 
 	// Constructors
 	/**
@@ -466,13 +465,15 @@ public final class Core {
 	public static void remove(final long p_chunkID) throws DXRAMException {
 		ChunkID.check(p_chunkID);
 
-		//try {
-			if (m_chunk != null) {
-				m_chunk.remove(p_chunkID);
-			}
-	/*	} catch (final DXRAMException e) {
-			handleException(e, ExceptionSource.DXRAM_REMOVE, p_chunkID);
-		}*/
+		// try {
+		if (m_chunk != null) {
+			m_chunk.remove(p_chunkID);
+		}
+		/*
+		 * } catch (final DXRAMException e) {
+		 * handleException(e, ExceptionSource.DXRAM_REMOVE, p_chunkID);
+		 * }
+		 */
 	}
 
 	/**
@@ -480,11 +481,11 @@ public final class Core {
 	 * @param p_ci
 	 *            The command listener
 	 */
-	
+
 	public static void registerCmdListenerr(CommandListener p_command_listener) {
-		m_command_listener = p_command_listener;
+		m_commandListener = p_command_listener;
 	}
-	
+
 	/**
 	 * Executes given command, send to chunk handler
 	 * @param p_dest
@@ -499,10 +500,10 @@ public final class Core {
 	public static String execute_chunk_command(final short p_dest, final String p_command, final boolean p_reply)
 			throws DXRAMException {
 		String result;
-		
+
 		// request with reply
 		if (p_reply) {
-			//System.out.println("Core.execute: p_dest=" + p_dest);
+			// System.out.println("Core.execute: p_dest=" + p_dest);
 			ChunkCommandRequest request = new ChunkCommandRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
@@ -513,7 +514,7 @@ public final class Core {
 				System.out.println("error: sendSync failed in Core.execute_chunk_command:" + e.toString());
 				result = "error ChunkCommandRequest failed, invalid NID?";
 			}
-			//System.out.println("received response: "+result);
+			// System.out.println("received response: "+result);
 			return result;
 		}
 		// request without reply
@@ -522,9 +523,9 @@ public final class Core {
 		}
 		return null;
 	}
-	
+
 	/**
-	 * Executes given command, sent to lookup handler 
+	 * Executes given command, sent to lookup handler
 	 * @param p_dest
 	 *            NID of destination node for this request
 	 * @param p_command
@@ -537,28 +538,25 @@ public final class Core {
 	public static String execute_lookup_command(final short p_dest, final String p_command, final boolean p_reply)
 			throws DXRAMException {
 		String result;
-		
-		//m_chunk.lookup(p_command);
+
+		// m_chunk.lookup(p_command);
 
 		// request with reply
 		if (p_reply) {
 
-			
-			//System.out.println("Core.execute: p_dest=" + p_dest);
+			// System.out.println("Core.execute: p_dest=" + p_dest);
 			LookupReflectionRequest request = new LookupReflectionRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
 				LookupReflectionResponse response = request.getResponse(LookupReflectionResponse.class);
 				result = response.getAnswer();
-				
-				
-				
+
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_lookup_command:" + e.toString());
 				result = "error LookupReflectionRequest failed, invalid NID?";
 			}
-			//System.out.println("received response: "+result);
+			// System.out.println("received response: "+result);
 			return result;
 		}
 		return null;
@@ -567,9 +565,9 @@ public final class Core {
 	/*
 	 * public static void execute(final String p_command, final String... p_args) throws DXRAMException {
 	 * short type;
-	 * 
+	 *
 	 * type = CommandStringConverter.convert(p_command);
-	 * 
+	 *
 	 * switch (type) {
 	 * case 1:
 	 * // migrate: ChunkID, src, dest
@@ -606,18 +604,18 @@ public final class Core {
 	 *             if the chunk could not be migrated
 	 */
 	public static boolean migrate(final long p_chunkID, final short p_target) throws DXRAMException {
-		boolean ret=false;
-		
+		boolean ret = false;
+
 		ChunkID.check(p_chunkID);
 		NodeID.check(p_target);
 
 		try {
 			if (m_chunk != null) {
-				ret=m_chunk.migrate(p_chunkID, p_target);
+				ret = m_chunk.migrate(p_chunkID, p_target);
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_MIGRATE, p_chunkID, p_target);
-			ret=false;
+			ret = false;
 		}
 		return ret;
 	}
@@ -636,7 +634,7 @@ public final class Core {
 	 */
 	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
 			throws DXRAMException {
-		boolean ret=false;
+		boolean ret = false;
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
 		NodeID.check(p_target);
@@ -647,7 +645,7 @@ public final class Core {
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_MIGRATE, p_startChunkID, p_target);
-			ret=false;
+			ret = false;
 		}
 		return ret;
 	}

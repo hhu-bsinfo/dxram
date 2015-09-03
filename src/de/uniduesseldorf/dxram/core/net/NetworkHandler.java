@@ -82,8 +82,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				ChunkMessages.MultiGetRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTIGET_RESPONSE,
 				ChunkMessages.MultiGetResponse.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_MESSAGE, ChunkMessages.ChunkCommandMessage.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_REQUEST, ChunkMessages.ChunkCommandRequest.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_MESSAGE,
+				ChunkMessages.ChunkCommandMessage.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_REQUEST,
+				ChunkMessages.ChunkCommandRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_RESPONSE,
 				ChunkMessages.ChunkCommandResponse.class);
 
@@ -163,8 +165,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				LookupMessages.GetChunkIDRequest.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_CHUNKID_RESPONSE,
 				LookupMessages.GetChunkIDResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST, LookupMessages.LookupReflectionRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_RESPONSE, LookupMessages.LookupReflectionResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST,
+				LookupMessages.LookupReflectionRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_RESPONSE,
+				LookupMessages.LookupReflectionResponse.class);
 
 		m_manager = new ConnectionManager(AbstractConnectionCreator.getInstance(), this);
 

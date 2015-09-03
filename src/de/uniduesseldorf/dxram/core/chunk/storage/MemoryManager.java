@@ -20,9 +20,6 @@ import de.uniduesseldorf.dxram.utils.StatisticsManager;
  */
 public final class MemoryManager {
 
-	// Constants
-	private static final int VERSION_LENGTH = 4;
-
 	// Attributes
 	private static AtomicLong m_nextLocalID;
 
@@ -220,9 +217,9 @@ public final class MemoryManager {
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address > 0) {
 			RawMemory.free(address);
-		}
-		else
+		} else {
 			throw new MemoryException("MemoryManager.remove failed");
+		}
 	}
 
 	/**

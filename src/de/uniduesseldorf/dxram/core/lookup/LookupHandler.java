@@ -2,7 +2,6 @@
 package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -21,8 +20,6 @@ import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
@@ -42,6 +39,8 @@ import de.uniduesseldorf.dxram.core.lookup.LookupMessages.InsertIDRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.InsertIDResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.JoinRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.JoinResponse;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.MigrateMessage;
@@ -244,7 +243,6 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		LOGGER.trace("Exiting close");
 	}
-
 
 	@Override
 	public Locations get(final long p_chunkID) throws LookupException {
@@ -807,7 +805,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_stabilizationThread = new Thread(m_worker);
 		Contract.checkNotNull(m_stabilizationThread);
 		m_stabilizationThread
-				.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
+		.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
@@ -1232,7 +1230,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				insertPeer(joiningNode);
 				try {
 					new JoinResponse(p_joinRequest, (short) -1, (short) -1, (short) -1, null, m_superpeers, null, null)
-							.send(m_network);
+					.send(m_network);
 				} catch (final NetworkException e) {
 					// Joining node is not available anymore, ignore request
 				}
@@ -1242,7 +1240,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			superpeer = getResponsibleSuperpeer(joiningNode, NO_CHECK);
 			try {
 				new JoinResponse(p_joinRequest, superpeer, (short) -1, (short) -1, null, null, null, null)
-						.send(m_network);
+				.send(m_network);
 			} catch (final NetworkException e) {
 				// Joining node is not available anymore, ignore request
 			}
@@ -1649,32 +1647,34 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	// info about chunk, called by incomingReflectionRequest
-	private String chunkinfo(String cmd) {
-		String arguments[] = cmd.split(" ");
-		if (arguments==null) 
+	private String chunkinfo(final String cmd) {
+		String[] arguments = cmd.split(" ");
+		if (arguments == null) {
 			return "  error: problem in command";
-		if (arguments.length<3)  
+		}
+		if (arguments.length < 3) {
 			return "  error: problem in command";
-		
-		
+		}
+
 		short NID = CmdUtils.get_NID_from_tuple(arguments[1]);
 		long LID = CmdUtils.get_LID_from_tuple(arguments[1]);
 		long CID = CmdUtils.calc_CID(NID, LID);
-		
-		System.out.println("chunkinfo for "+NID+","+LID);
-		//System.out.println("   getCIDTree:"+NID);
-		CIDTreeOptimized tree = getCIDTree((short)NID);
-		if (tree==null)
-			return "  error: no CIDtree for given NID="+NID;
+
+		System.out.println("chunkinfo for " + NID + "," + LID);
+		// System.out.println("   getCIDTree:"+NID);
+		CIDTreeOptimized tree = getCIDTree((short) NID);
+		if (tree == null) {
+			return "  error: no CIDtree for given NID=" + NID;
+		}
 
 		// get meta-data from tree
 		Locations l = tree.getMetadata(CID);
-		if (l==null) {
+		if (l == null) {
 			System.out.println(" tree.getMetadata failed");
 			return "  error: tree.getMetadata failed";
 		}
 
-		return "  Stored on peer="+l.toString();
+		return "  Stored on peer=" + l.toString();
 	}
 
 	/**
@@ -1683,23 +1683,22 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 *            the ReflectionRequest
 	 */
 	private void incomingReflectionRequest(final LookupReflectionRequest p_lookupRequest) {
-		String cmd,res=null;
+		String cmd;
+		String res = null;
 
 		cmd = p_lookupRequest.getArgument();
 		res = "success: incomingReflectionRequest";
-		
+
 		// process request
-		if ( NodeID.getRole().equals(Role.SUPERPEER) ) {
-			
-			if (cmd.indexOf("chunkinfo")>=0) {
+		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+
+			if (cmd.indexOf("chunkinfo") >= 0) {
 				res = chunkinfo(cmd);
 			}
-			
-		}
-		else {
+		} else {
 			res = "error: lookup command can be processed by superpeers only";
 		}
-		
+
 		// send response
 		try {
 			new LookupReflectionResponse(p_lookupRequest, res).send(m_network);
@@ -2539,7 +2538,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						tree = getCIDTree(currentPeer);
 						if (null != tree) {
 							System.out
-									.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
+							.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
 							trees.add(tree);
 						}
 						if (index == m_nodeList.size()) {
@@ -2802,7 +2801,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				// Take over failed nodes peers and CIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
 					System.out
-					.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
+							.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndCIDTrees(m_predecessor);
 					promoteOnePeer = true;
 				}

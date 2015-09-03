@@ -2826,7 +2826,6 @@ public final class LookupMessages {
 			m_cmd = p_cmd;
 		}
 
-		
 		/**
 		 * Get the command
 		 * @return the command
@@ -2838,7 +2837,7 @@ public final class LookupMessages {
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeString(p_buffer, m_cmd); 
+			OutputHelper.writeString(p_buffer, m_cmd);
 		}
 
 		@Override

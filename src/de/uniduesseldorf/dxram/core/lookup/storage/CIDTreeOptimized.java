@@ -219,9 +219,8 @@ public final class CIDTreeOptimized implements Serializable {
 		Node node;
 		Entry predecessorEntry;
 
-		
 		Contract.checkNotNull(m_root);
-		
+
 		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
 		node = getNodeOrSuccessorsNode(lid);
 		if (node != null) {
@@ -1380,16 +1379,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_lid) {
-					low = mid + 1;
-				} else if (midVal > p_lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_lid) {
+				low = mid + 1;
+			} else if (midVal > p_lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1579,16 +1578,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLid(0);
+			midVal = m_children[mid].getLid(0);
 
-				if (midVal < lid) {
-					low = mid + 1;
-				} else if (midVal > lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < lid) {
+				low = mid + 1;
+			} else if (midVal > lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

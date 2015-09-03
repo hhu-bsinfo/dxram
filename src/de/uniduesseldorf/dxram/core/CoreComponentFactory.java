@@ -212,7 +212,7 @@ public final class CoreComponentFactory {
 
 		closeNetworkInterface();
 		closeLockInterface();
-		closeRecoveryInterface();     
+		closeRecoveryInterface();
 	}
 
 	/**
