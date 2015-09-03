@@ -37,6 +37,7 @@ public class Shell {
 		byte []arr;
 		
 
+		
 		System.out.println("DXRAM shell v. 0.1");
 		while (true) {
 
