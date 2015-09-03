@@ -13,16 +13,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
-
+import java.util.Arrays;
+import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.api.CommandListener;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandMessage;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandResponse;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandMessage;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandRequest;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.DataMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.DataRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.DataResponse;
@@ -93,7 +95,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	private BackupRange m_currentMigrationBackupRange;
 	private ArrayList<BackupRange> m_migrationBackupRanges;
-	private MigrationsTree m_migrationsTree;
+	private MigrationsTree m_migrationsTree;	// CID -> migration backup range
 
 	private NetworkInterface m_network;
 	private LookupInterface m_lookup;
@@ -136,7 +138,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	public void setListener(final IncomingChunkListener p_listener) {
 		m_listener = p_listener;
 	}
-
+	
 	// Methods
 	@Override
 	public void initialize() throws DXRAMException {
@@ -151,8 +153,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		m_network.register(DataRequest.class, this);
 		m_network.register(DataMessage.class, this);
 		m_network.register(MultiGetRequest.class, this);
-		m_network.register(CommandMessage.class, this);
-		m_network.register(CommandRequest.class, this);
+		m_network.register(ChunkCommandMessage.class, this);
+		m_network.register(ChunkCommandRequest.class, this);
 
 		m_lookup = CoreComponentFactory.getLookupInterface();
 		m_lookup.initChunkHandler();
@@ -163,7 +165,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		MemoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE));
 
-		if (NodeID.getRole().equals(Role.PEER)) {
+		if ( NodeID.getRole().equals(Role.PEER) ) {
 			m_migrationLock = new ReentrantLock(false);
 			registerPeer();
 
@@ -240,7 +242,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			ret = create(p_size);
 
 			m_lookup.insertID(p_id, ret.getChunkID());
-
 			m_mappingLock.lock();
 			mapping = MemoryManager.get((long) m_nodeID << 48);
 			if (null == mapping) {
@@ -303,9 +304,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			} else {
 				while (null == ret) {
 					primaryPeer = m_lookup.get(p_chunkID).getPrimaryPeer();
+	
 					if (primaryPeer == m_nodeID) {
 						// Local get
 						ret = MemoryManager.get(p_chunkID);
+						if (ret==null) {	// chunk does not exist
+							Operation.GET.leave();
+							return null;
+						}
 					} else {
 						// Remote get
 						request = new GetRequest(primaryPeer, p_chunkID);
@@ -563,6 +569,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		boolean success = false;
 		RemoveRequest request;
 
+
 		Operation.REMOVE.enter();
 
 		ChunkID.check(p_chunkID);
@@ -574,7 +581,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (!MemoryManager.wasMigrated(p_chunkID)) {
 					// Local remove
 					MemoryManager.remove(p_chunkID);
-
+					success=true;
+					
 					if (LOG_ACTIVE) {
 						// Send backups for logging (unreliable)
 						backupPeers = getBackupPeers(p_chunkID);
@@ -590,6 +598,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					// TODO: Migrate back and remove
 				}
 			} else {
+				System.out.println("delete on other node");
 				while (!success) {
 					locations = m_lookup.get(p_chunkID);
 					primaryPeer = locations.getPrimaryPeer();
@@ -626,6 +635,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		}
 
 		Operation.REMOVE.leave();
+	
+		if (success==false)
+			throw new DXRAMException("chunk removal failed");
+
 	}
 
 	@Override
@@ -732,11 +745,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	}
 
 	@Override
-	public void migrate(final long p_chunkID, final short p_target) throws DXRAMException, NetworkException {
+	public boolean migrate(final long p_chunkID, final short p_target) throws DXRAMException, NetworkException {
 		final long[] chunkIDs = new long[] {p_chunkID};
 		short[] backupPeers;
 		Chunk chunk;
 		DataRequest request;
+		boolean ret=false;
 
 		ChunkID.check(p_chunkID);
 		NodeID.check(p_target);
@@ -773,16 +787,19 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 							}
 						}
 					}
+					ret = true;
 				}
 			} else {
 				System.out.println("Chunk with ChunkID " + p_chunkID + " could not be migrated!");
+				ret = false;
 			}
 			m_migrationLock.unlock();
 		}
+		return ret;
 	}
 
 	@Override
-	public void migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
+	public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
 			throws DXRAMException {
 		long[] chunkIDs = null;
 		short[] backupPeers;
@@ -791,6 +808,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Chunk chunk;
 		Chunk[] chunks;
 		DataRequest request;
+		boolean ret=false;
 
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
@@ -845,14 +863,18 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						MemoryManager.remove(iter);
 						iter++;
 					}
+					ret=true;
 				} else {
 					System.out.println("Chunks could not be migrated because end of range is before start of range!");
+					ret=false;
 				}
 			} else {
 				System.out.println("Chunks could not be migrated!");
+				ret=false;
 			}
 			m_migrationLock.unlock();
 		}
+		return ret;
 	}
 
 	/**
@@ -1670,75 +1692,89 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @param p_message
 	 *            the CommandMessage
 	 */
-	private void incomingCommandMessage(final CommandMessage p_message) {
+	private void incomingCommandMessage(final ChunkCommandMessage p_message) {
 		String cmd;
 
 		Operation.INCOMING_COMMAND.enter();
 
 		cmd = p_message.getCommand();
-		/*
-		 * switch (type) {
-		 * case 1:
-		 * // migrate: ChunkID, src, dest
-		 * try {
-		 * migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
-		 * } catch (final NumberFormatException | DXRAMException e) {
-		 * e.printStackTrace();
-		 * }
-		 * break;
-		 * case -1:
-		 * System.out.println("Command unknown!");
-		 * break;
-		 * default:
-		 * break;
-		 * }
-		 */
+
+		if (Core.m_command_listener!=null)
+			Core.m_command_listener.processCmd(cmd, false);
+		else 
+			System.out.println("error: command message received but no command listener registered");
+
 		Operation.INCOMING_COMMAND.leave();
 	}
 
+	// chunkinfo command, belongs to "incomingCommandRequest"
+	private String chunkinfo(String p_command) {
+		String arguments[];
+		short[] backupPeers;
+		short primaryPeer;
+		
+		arguments = p_command.split(" ");
+		
+		short NID = CmdUtils.get_NID_from_tuple(arguments[1]);
+		long LID = CmdUtils.get_LID_from_tuple(arguments[1]);
+		System.out.println("   chunkinfo for "+NID+","+LID);
+		
+		long CID = CmdUtils.get_CID_from_tuple(arguments[1]);
+		
+		try {
+			
+			if (MemoryManager.isResponsible(CID)) {
+				backupPeers = getBackupPeers(CID);
+				return "  Stored on peer="+m_nodeID+", backup_peers="+Arrays.toString(backupPeers);
+			}
+			else {
+				primaryPeer = m_lookup.get(CID).getPrimaryPeer();
+				return "  Chunk not stored on this peer. Contact peer "+primaryPeer+" or a superpeer";
+			}
+		}
+		catch(DXRAMException de) {
+			return "error: "+de.toString();
+		}
+	}
+
+	
 	/**
 	 * Handles an incoming CommandRequest
 	 * @param p_request
 	 *            the CommandRequest
 	 */
-	private void incomingCommandRequest(final CommandRequest p_request) {
-		String answer = "echo from  incomingCommandRequest";
-		String cmd;
+	private void incomingCommandRequest(final ChunkCommandRequest p_request) {
+		String cmd,res=null;
 
 		Operation.INCOMING_COMMAND.enter();
 
 		cmd = p_request.getArgument();
 
-		System.out.println("incomingCommandRequest!: arg=" + cmd);
-
-		/*
-		 * switch (type) {
-		 * case 1:
-		 * // migrate: ChunkID, src, dest
-		 * try {
-		 * migrate(Long.parseLong(args[0]), Short.parseShort(args[2]));
-		 * } catch (final NumberFormatException | DXRAMException e) {
-		 * e.printStackTrace();
-		 * }
-		 * break;
-		 * case -1:
-		 * System.out.println("Command unknown!");
-		 * answer = "Unknown command";
-		 * break;
-		 * default:
-		 * break;
-		 * }
-		 */
-
+		// chunkinfo command?
+		if (cmd.indexOf("chunkinfo")>=0) {
+			res = chunkinfo(cmd);
+		}
+		// command handled in callback?
+		else {
+			if (Core.m_command_listener!=null) {
+				res = Core.m_command_listener.processCmd(cmd, true);
+			}
+			else {
+				res = "error: no command listener registered";
+				System.out.println("error: command request received but no command listener registered");
+			}
+		}
+		
+		// send back result
 		try {
-			new CommandResponse(p_request, answer).send(m_network);
+			new ChunkCommandResponse(p_request, res).send(m_network);
 		} catch (final NetworkException e) {
 			e.printStackTrace();
 		}
-
 		Operation.INCOMING_COMMAND.leave();
 	}
 
+	
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		LOGGER.trace("Entering incomingMessage with: p_message=" + p_message);
@@ -1770,11 +1806,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				case ChunkMessages.SUBTYPE_MULTIGET_REQUEST:
 					incomingMultiGetRequest((MultiGetRequest) p_message);
 					break;
-				case ChunkMessages.SUBTYPE_COMMAND_MESSAGE:
-					incomingCommandMessage((CommandMessage) p_message);
+				case ChunkMessages.SUBTYPE_CHUNK_COMMAND_MESSAGE:
+					incomingCommandMessage((ChunkCommandMessage) p_message);
 					break;
-				case ChunkMessages.SUBTYPE_COMMAND_REQUEST:
-					incomingCommandRequest((CommandRequest) p_message);
+				case ChunkMessages.SUBTYPE_CHUNK_COMMAND_REQUEST:
+					incomingCommandRequest((ChunkCommandRequest) p_message);
 					break;
 				default:
 					break;

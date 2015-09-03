@@ -57,10 +57,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public static final int MAX_NODE_CNT = Short.MAX_VALUE * 2;
 	public static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(
 			ConfigurationConstants.PRIMARY_LOG_SIZE);
-	public static final int PRIMLOG_MIN_SIZE = MAX_NODE_CNT * FLASHPAGE_SIZE;
+	public static final int PRIMLOG_MIN_SIZE = 0;//MAX_NODE_CNT * FLASHPAGE_SIZE;
 	public static final long SECLOG_SIZE = Core.getConfiguration().getLongValue(
 			ConfigurationConstants.SECONDARY_LOG_SIZE);
-	public static final int SECLOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
+	public static final int SECLOG_MIN_SIZE = 0;//1024 * FLASHPAGE_SIZE;
 	public static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration()
 			.getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
 	public static final int SECLOG_DEFAULT_BUFFER_SIZE = FLASHPAGE_SIZE * 2;

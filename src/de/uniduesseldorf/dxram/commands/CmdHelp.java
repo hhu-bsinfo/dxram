@@ -1,30 +1,20 @@
 package de.uniduesseldorf.dxram.commands;
 
-import java.io.IOException;
 import java.util.Set;
 
 public class CmdHelp extends Cmd {
-	public static String STR_CMD = "help";
-	public static String STR_UM  = "help [command]";
-	public static String STR_HM  = "Shows help information.\n   help: list all commands\n   help command: show help information about given command";
 
-	public CmdHelp() {
-		super(STR_CMD, STR_UM, STR_HM);
-	}
+	public String get_name()          {   return "help";   }
+	public String get_usage_message() {   return "help [command]";   }
+	public String get_help_message()  {   return "Shows help information.\nhelp: list all commands\nhelp command: show help information about given 'command'";   }
+	public String get_syntax()        {   return "help [STR]";   }
+
 	
-	// called by shell
-	public boolean areParametersSane (String arguments[]) {
-		if (arguments.length==1 || arguments.length==2) 
-			return true;
-		printUsgae();
-		return false;
-	}
-
 	// called after parameter have been checked
-	public int execute(String command) {
+	public int execute(String p_command) {
 		String[] arguments;
 
-		arguments = command.split(" ");
+		arguments = p_command.split(" ");
 		
 		if (arguments.length==1) { 
 			Set<String> s = Shell.m_commandMap.keySet();
@@ -32,6 +22,11 @@ public class CmdHelp extends Cmd {
 		}
 		else {
 			Cmd c = Shell.m_commandMap.get(arguments[1]);
+			if (c==null) {
+				System.out.println("  error: unknown command '"+arguments[1]+"'");
+				return -1;
+			}
+				
 			c.printHelpMsg();
 		}
 		return 0;

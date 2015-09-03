@@ -219,8 +219,9 @@ public final class CIDTreeOptimized implements Serializable {
 		Node node;
 		Entry predecessorEntry;
 
+		
 		Contract.checkNotNull(m_root);
-
+		
 		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
 		node = getNodeOrSuccessorsNode(lid);
 		if (node != null) {

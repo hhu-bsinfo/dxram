@@ -1,23 +1,11 @@
 package de.uniduesseldorf.dxram.commands;
 
-import java.io.IOException;
-
 public class CmdClear extends Cmd {
-	public static String STR_CMD = "clear";
-	public static String STR_UM  = "clear";
-	public static String STR_HM  = "Clears the console.";
-
-	public CmdClear() {
-		super(STR_CMD, STR_UM, STR_HM);
-	}
 	
-	// called by shell
-	public boolean areParametersSane (String arguments[]) {
-		if (arguments.length == 1) 
-			return true;
-		printUsgae();
-		return false;
-	}
+	public String get_name()          {   return "clear";   }
+	public String get_usage_message() {   return "clear";   }
+	public String get_help_message()  {   return "Clears the console.";   }
+	public String get_syntax()        {   return "clear";   }
 
 	// called after parameter have been checked
 	public int execute(String command) {

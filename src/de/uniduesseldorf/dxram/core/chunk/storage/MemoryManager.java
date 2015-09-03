@@ -221,6 +221,8 @@ public final class MemoryManager {
 		if (address > 0) {
 			RawMemory.free(address);
 		}
+		else
+			throw new MemoryException("MemoryManager.remove failed");
 	}
 
 	/**

@@ -5,10 +5,11 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.commands.CommandHandler;;
 
 /**
  * Peer
- * @author Kevin Beineke 27.04.2015
+ * @author Kevin Beineke 21.8.2015
  */
 public final class Peer {
 
@@ -34,6 +35,7 @@ public final class Peer {
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}
+		Core.registerCmdListenerr(new CommandHandler());
 
 		System.out.println("Peer started");
 

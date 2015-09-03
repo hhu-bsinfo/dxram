@@ -12,9 +12,6 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHelper;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandMessage;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.CommandResponse;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.exceptions.ChunkException;
 import de.uniduesseldorf.dxram.core.exceptions.ComponentCreationException;
@@ -30,6 +27,12 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandMessage;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandRequest;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandResponse;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.GetChunkIDResponse;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 
 /**
  * API for DXRAM
@@ -47,6 +50,9 @@ public final class Core {
 	private static NetworkInterface m_network;
 	private static ChunkInterface m_chunk;
 	private static ExceptionHandler m_exceptionHandler;
+	
+	// must be registered for handling 'execute' commands 
+	public static CommandListener m_command_listener;
 
 	// Constructors
 	/**
@@ -79,6 +85,7 @@ public final class Core {
 	 */
 	public static void setListener(final IncomingChunkListener p_listener) {
 		m_chunk.setListener(p_listener);
+
 	}
 
 	/**
@@ -408,9 +415,9 @@ public final class Core {
 	 * Requests and locks the corresponding Chunk for the giving ID
 	 * @param p_chunkID
 	 *            the ID of the corresponding Chunk
-	 * @return the Chunk for the given ID
 	 * @param p_readLock
 	 *            true if the lock is a read lock, false otherwise
+	 * @return the Chunk for the given ID
 	 * @throws DXRAMException
 	 *             if the chunk could not be locked
 	 */
@@ -459,17 +466,27 @@ public final class Core {
 	public static void remove(final long p_chunkID) throws DXRAMException {
 		ChunkID.check(p_chunkID);
 
-		try {
+		//try {
 			if (m_chunk != null) {
 				m_chunk.remove(p_chunkID);
 			}
-		} catch (final DXRAMException e) {
+	/*	} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_REMOVE, p_chunkID);
-		}
+		}*/
 	}
 
 	/**
-	 * Executes given command
+	 * Registers command listener (listener is called when CommandMessages or CommandRequests arrive)
+	 * @param p_ci
+	 *            The command listener
+	 */
+	
+	public static void registerCmdListenerr(CommandListener p_command_listener) {
+		m_command_listener = p_command_listener;
+	}
+	
+	/**
+	 * Executes given command, send to chunk handler
 	 * @param p_dest
 	 *            NID of destination node for this request
 	 * @param p_command
@@ -479,27 +496,70 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-
-	public static String execute(final short p_dest, final String p_command, final boolean p_reply)
+	public static String execute_chunk_command(final short p_dest, final String p_command, final boolean p_reply)
 			throws DXRAMException {
+		String result;
+		
 		// request with reply
 		if (p_reply) {
-			System.out.println("Core.execute: p_dest=" + p_dest);
-			CommandRequest request = new CommandRequest(p_dest, p_command);
+			//System.out.println("Core.execute: p_dest=" + p_dest);
+			ChunkCommandRequest request = new ChunkCommandRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
+				ChunkCommandResponse response = request.getResponse(ChunkCommandResponse.class);
+				result = response.getAnswer();
 			} catch (final NetworkException e) {
-				System.out.println("error: sendSync failed in Core.execute:" + e.toString());
+				System.out.println("error: sendSync failed in Core.execute_chunk_command:" + e.toString());
+				result = "error ChunkCommandRequest failed, invalid NID?";
 			}
-			CommandResponse response = request.getResponse(CommandResponse.class);
-
-			String result = response.getAnswer();
+			//System.out.println("received response: "+result);
 			return result;
 		}
 		// request without reply
 		else {
-			new CommandMessage(p_dest, p_command).send(m_network);
+			new ChunkCommandMessage(p_dest, p_command).send(m_network);
+		}
+		return null;
+	}
+	
+	/**
+	 * Executes given command, sent to lookup handler 
+	 * @param p_dest
+	 *            NID of destination node for this request
+	 * @param p_command
+	 *            the command
+	 * @param p_reply
+	 *            true: want reply (will be handled as request)
+	 * @throws DXRAMException
+	 *             if the chunk could not be get
+	 */
+	public static String execute_lookup_command(final short p_dest, final String p_command, final boolean p_reply)
+			throws DXRAMException {
+		String result;
+		
+		//m_chunk.lookup(p_command);
+
+		// request with reply
+		if (p_reply) {
+
+			
+			//System.out.println("Core.execute: p_dest=" + p_dest);
+			LookupReflectionRequest request = new LookupReflectionRequest(p_dest, p_command);
+			Contract.checkNotNull(request);
+			try {
+				request.sendSync(m_network);
+				LookupReflectionResponse response = request.getResponse(LookupReflectionResponse.class);
+				result = response.getAnswer();
+				
+				
+				
+			} catch (final NetworkException e) {
+				System.out.println("error: sendSync failed in Core.execute_lookup_command:" + e.toString());
+				result = "error LookupReflectionRequest failed, invalid NID?";
+			}
+			//System.out.println("received response: "+result);
+			return result;
 		}
 		return null;
 	}
@@ -541,20 +601,25 @@ public final class Core {
 	 *            the ID of the corresponding Chunk
 	 * @param p_target
 	 *            the Node where to migrate the Chunk
+	 * @return true=success, false=failed
 	 * @throws DXRAMException
 	 *             if the chunk could not be migrated
 	 */
-	public static void migrate(final long p_chunkID, final short p_target) throws DXRAMException {
+	public static boolean migrate(final long p_chunkID, final short p_target) throws DXRAMException {
+		boolean ret=false;
+		
 		ChunkID.check(p_chunkID);
 		NodeID.check(p_target);
 
 		try {
 			if (m_chunk != null) {
-				m_chunk.migrate(p_chunkID, p_target);
+				ret=m_chunk.migrate(p_chunkID, p_target);
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_MIGRATE, p_chunkID, p_target);
+			ret=false;
 		}
+		return ret;
 	}
 
 	/**
@@ -565,12 +630,13 @@ public final class Core {
 	 *            the last ID
 	 * @param p_target
 	 *            the Node where to migrate the Chunk
+	 * @return true=success, false=failed
 	 * @throws DXRAMException
 	 *             if the chunks could not be migrated
 	 */
-	public static void migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
+	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
 			throws DXRAMException {
-
+		boolean ret=false;
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
 		NodeID.check(p_target);
@@ -581,7 +647,9 @@ public final class Core {
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_MIGRATE, p_startChunkID, p_target);
+			ret=false;
 		}
+		return ret;
 	}
 
 	/**
@@ -639,7 +707,7 @@ public final class Core {
 		}
 	}
 
-	// Classe
+	// Class
 	/**
 	 * Shuts down DXRAM in case of the system exits
 	 * @author Florian Klein 03.09.2013
