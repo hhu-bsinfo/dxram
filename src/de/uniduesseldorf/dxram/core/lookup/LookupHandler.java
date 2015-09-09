@@ -1653,33 +1653,41 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 * @return the result String
 	 */
 	private String chunkinfo(final String p_cmd) {
-		final String[] arguments = p_cmd.split(" ");
+		String ret = null;
+		short nodeID;
+		long localID;
+		long chunkID;
+		String[] arguments;
+		CIDTreeOptimized tree;
+		Locations locations;
+
+		arguments = p_cmd.split(" ");
 		if (arguments == null) {
-			return "  error: problem in command";
-		}
-		if (arguments.length < 3) {
-			return "  error: problem in command";
-		}
+			ret = "  error: problem in command";
+		} else if (arguments.length < 3) {
+			ret = "  error: problem in command";
+		} else {
+			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+			localID = CmdUtils.getLIDfromTuple(arguments[1]);
+			chunkID = CmdUtils.calcCID(nodeID, localID);
 
-		final short nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
-		final long localID = CmdUtils.getLIDfromTuple(arguments[1]);
-		final long chunkID = CmdUtils.calcCID(nodeID, localID);
-
-		System.out.println("chunkinfo for " + nodeID + "," + localID);
-		// System.out.println("   getCIDTree:"+nodeID);
-		final CIDTreeOptimized tree = getCIDTree((short) nodeID);
-		if (tree == null) {
-			return "  error: no CIDtree for given NID=" + nodeID;
+			System.out.println("chunkinfo for " + nodeID + "," + localID);
+			// System.out.println("   getCIDTree:"+nodeID);
+			tree = getCIDTree((short) nodeID);
+			if (tree == null) {
+				ret = "  error: no CIDtree for given NID=" + nodeID;
+			} else {
+				// get meta-data from tree
+				locations = tree.getMetadata(chunkID);
+				if (locations == null) {
+					System.out.println(" tree.getMetadata failed");
+					ret = "  error: tree.getMetadata failed";
+				} else {
+					ret = "  Stored on peer=" + locations.toString();
+				}
+			}
 		}
-
-		// get meta-data from tree
-		final Locations l = tree.getMetadata(chunkID);
-		if (l == null) {
-			System.out.println(" tree.getMetadata failed");
-			return "  error: tree.getMetadata failed";
-		}
-
-		return "  Stored on peer=" + l.toString();
+		return ret;
 	}
 
 	/**

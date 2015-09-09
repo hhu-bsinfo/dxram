@@ -510,27 +510,29 @@ public final class Core {
 	 */
 	public static String executeChunkCommand(final short p_dest, final String p_command, final boolean p_reply)
 			throws DXRAMException {
-		String result;
+		String ret = null;
+		ChunkCommandRequest request;
+		ChunkCommandResponse response;
 
 		// request with reply
 		if (p_reply) {
 			// System.out.println("Core.execute: p_dest=" + p_dest);
-			final ChunkCommandRequest request = new ChunkCommandRequest(p_dest, p_command);
+			request = new ChunkCommandRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
-				final ChunkCommandResponse response = request.getResponse(ChunkCommandResponse.class);
-				result = response.getAnswer();
+				response = request.getResponse(ChunkCommandResponse.class);
+				ret = response.getAnswer();
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_chunk_command:" + e.toString());
-				result = "error ChunkCommandRequest failed, invalid NID?";
+				ret = "error ChunkCommandRequest failed, invalid NID?";
 			}
 			// System.out.println("received response: "+result);
-			return result;
 		} else {
 			new ChunkCommandMessage(p_dest, p_command).send(m_network);
 		}
-		return null;
+
+		return ret;
 	}
 
 	/**
@@ -547,37 +549,34 @@ public final class Core {
 	 */
 	public static String executeLookupCommand(final short p_dest, final String p_command, final boolean p_reply)
 			throws DXRAMException {
-		String result;
+		String ret = null;
+		LookupReflectionRequest request;
+		LookupReflectionResponse response;
 
 		// m_chunk.lookup(p_command);
 
 		// request with reply
 		if (p_reply) {
-
 			// System.out.println("Core.execute: p_dest=" + p_dest);
-			final LookupReflectionRequest request = new LookupReflectionRequest(p_dest, p_command);
+			request = new LookupReflectionRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
-				final LookupReflectionResponse response = request.getResponse(LookupReflectionResponse.class);
-				result = response.getAnswer();
-
+				response = request.getResponse(LookupReflectionResponse.class);
+				ret = response.getAnswer();
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_lookup_command:" + e.toString());
-				result = "error LookupReflectionRequest failed, invalid NID?";
+				ret = "error LookupReflectionRequest failed, invalid NID?";
 			}
 			// System.out.println("received response: "+result);
-			return result;
 		}
-		return null;
+		return ret;
 	}
 
 	/*
 	 * public static void execute(final String p_command, final String... p_args) throws DXRAMException {
 	 * short type;
-	 *
 	 * type = CommandStringConverter.convert(p_command);
-	 *
 	 * switch (type) {
 	 * case 1:
 	 * // migrate: ChunkID, src, dest

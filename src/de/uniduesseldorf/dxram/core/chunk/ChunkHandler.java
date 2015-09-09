@@ -308,11 +308,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					if (primaryPeer == m_nodeID) {
 						// Local get
 						ret = MemoryManager.get(p_chunkID);
-						if (ret == null) {
-							// chunk does not exist
-							Operation.GET.leave();
-							return null;
-						}
 					} else {
 						// Remote get
 						request = new GetRequest(primaryPeer, p_chunkID);
@@ -1716,31 +1711,35 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @return the result string
 	 */
 	private String cmdReqChunkinfo(final String p_command) {
-		String[] arguments;
-		short[] backupPeers;
+		short nodeID;
 		short primaryPeer;
-
+		short[] backupPeers;
+		long localID;
+		long chunkID;
+		String ret = null;
+		String[] arguments;
 
 		arguments = p_command.split(" ");
 
-		final short nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
-		final long localID = CmdUtils.getLIDfromTuple(arguments[1]);
+		nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+		localID = CmdUtils.getLIDfromTuple(arguments[1]);
+		chunkID = CmdUtils.getCIDfromTuple(arguments[1]);
 		System.out.println("   cmdReqChunkinfo for " + nodeID + "," + localID);
-
-		final long chunkID = CmdUtils.getCIDfromTuple(arguments[1]);
 
 		try {
 
 			if (MemoryManager.isResponsible(chunkID)) {
 				backupPeers = getBackupPeers(chunkID);
-				return "  Stored on peer=" + m_nodeID + ", backup_peers=" + Arrays.toString(backupPeers);
+				ret = "  Stored on peer=" + m_nodeID + ", backup_peers=" + Arrays.toString(backupPeers);
 			} else {
 				primaryPeer = m_lookup.get(chunkID).getPrimaryPeer();
-				return "  Chunk not stored on this peer. Contact peer " + primaryPeer + " or a superpeer";
+				ret = "  Chunk not stored on this peer. Contact peer " + primaryPeer + " or a superpeer";
 			}
 		} catch (final DXRAMException de) {
-			return "error: " + de.toString();
+			ret = "error: " + de.toString();
 		}
+
+		return ret;
 	}
 
 	/**
@@ -1750,22 +1749,25 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @return the result string
 	 */
 	private String cmdReqCIDT(final String p_command) {
+		String ret;
+		ArrayList<Long> cidLocalArray;
+		ArrayList<Long> cidMigratedArray;
 
 		try {
-//			de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.printDebugInfos();
+			// de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.printDebugInfos();
 			System.out.println("cmdReqCIDT 0");
-			final ArrayList<Long> cidLocalArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDrangesOfAllLocalChunks();
+			cidLocalArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDrangesOfAllLocalChunks();
 			System.out.println("cmdReqCIDT 1");
-			String ret = "  Local (ranges): ";
-			if (cidLocalArray==null) {
+			ret = "  Local (ranges): ";
+			if (cidLocalArray == null) {
 				ret = ret + "empty.\n";
-			} else if (cidLocalArray.size()==0) {
+			} else if (cidLocalArray.size() == 0) {
 				ret = ret + "empty.\n";
 			} else {
-				boolean first=true;
+				boolean first = true;
 				for (long l : cidLocalArray) {
 					if (first) {
-						first=false;
+						first = false;
 					} else {
 						ret = ret + ",";
 					}
@@ -1775,30 +1777,30 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			}
 			System.out.println("cmdReqCIDT 2");
 
-			final ArrayList<Long> cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
+			cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
 			System.out.println("cmdReqCIDT 3");
 
 			ret = ret + "  Migrated (NID,LID): ";
-			if (cidMigratedArray==null) {
+			if (cidMigratedArray == null) {
 				ret = ret + "empty.";
-			} else if (cidMigratedArray.size()==0) {
+			} else if (cidMigratedArray.size() == 0) {
 				ret = ret + "empty.";
 			} else {
-				boolean first=true;
+				boolean first = true;
 				for (long l : cidMigratedArray) {
 					if (first) {
-						first=false;
+						first = false;
 					} else {
 						ret = ret + "; ";
 					}
 					ret += CmdUtils.getTupleFromCID(l);
 				}
 			}
-			return ret;
-		} catch(final MemoryException me) {
+		} catch (final MemoryException me) {
 			System.out.println("cmdReqCIDT: MemoryException");
+			ret = "error: internal error";
 		}
-		return "error: internal error";
+		return ret;
 	}
 
 	/**
@@ -1818,8 +1820,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			// chunkinfo command?
 			res = cmdReqChunkinfo(cmd);
 		} else if (cmd.indexOf("cidt") >= 0) {
-				// CIDTable command?
-				res = cmdReqCIDT(cmd);
+			// CIDTable command?
+			res = cmdReqCIDT(cmd);
 		} else {
 			// command handled in callback?
 			if (Core.getCommandListener() != null) {

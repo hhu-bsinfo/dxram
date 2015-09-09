@@ -16,8 +16,7 @@ public final class CmdUtils {
 	/**
 	 * Constructor
 	 */
-	private CmdUtils() {
-	}
+	private CmdUtils() {}
 
 	/**
 	 * Parse NID from String
@@ -65,7 +64,7 @@ public final class CmdUtils {
 		long localID;
 
 		final String[] chunkID = p_str.split(",");
-		if (chunkID==null) {
+		if (chunkID == null) {
 			throw new NumberFormatException();
 		}
 		if (chunkID.length != 2) {
@@ -89,11 +88,11 @@ public final class CmdUtils {
 
 	/**
 	 * calc CID from given NID and LID
-	 * @param	p_nodeID
-	 * 				the NID
-	 * @param	p_localID
-	 * 				the LID
-	 * @return	chunkID
+	 * @param p_nodeID
+	 *            the NID
+	 * @param p_localID
+	 *            the LID
+	 * @return chunkID
 	 */
 	public static long calcCID(final short p_nodeID, final long p_localID) {
 		final long nodeID = (long) p_nodeID;
@@ -147,7 +146,7 @@ public final class CmdUtils {
 	 *             if an error occured
 	 */
 	public static String getTupleFromCID(final long p_chunkID) throws NumberFormatException {
-		
+
 		final int nodeID = (int) (p_chunkID >> 48);
 		final int localID = (int) (p_chunkID & 0x0000FFFFFFFFFFFFL);
 

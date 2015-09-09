@@ -1,7 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
-import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
@@ -32,7 +31,8 @@ public final class CIDTable {
 	public static final int LID_TABLE_OFFSET = (int) Math.ceil(Math.log(LID_TABLE_SIZE) / Math.log(1 << 8));
 	public static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
 	public static final int NID_TABLE_OFFSET = (int) Math.ceil(Math.log(NID_TABLE_SIZE) / Math.log(1 << 8));
-	private static final int LOCK_OFFSET = LID_TABLE_SIZE - 4;
+	private static final int LID_LOCK_OFFSET = LID_TABLE_SIZE - 4;
+	private static final int NID_LOCK_OFFSET = NID_TABLE_SIZE - 4;
 
 	private static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
 	private static final long BIT_FLAG = 0x8000000000L;
@@ -397,13 +397,14 @@ public final class CIDTable {
 	 *             if the CIDTable could not be completely accessed
 	 */
 	public static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
-		ArrayList<Long> ret = new ArrayList<Long>();
+		ArrayList<Long> ret = null;
 		long entry;
 
 		if (m_store != null) {
 
 			readLock(m_nodeIDTableDirectory);
 
+			ret = new ArrayList<Long>();
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
 				entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
 				if (entry > 0 && i != ((int) NodeID.getLocalNodeID() & 0xFFFF)) {
@@ -425,61 +426,65 @@ public final class CIDTable {
 	 *             if the CIDTable could not be completely accessed
 	 */
 	public static ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
-		final ArrayList<Long> ret = new ArrayList<Long>();
+		ArrayList<Long> ret = null;
 		long entry;
+		long intervalStart;
+		long intervalEnd;
 
 		if (m_store != null) {
 
 			readLock(m_nodeIDTableDirectory);
 
+			ret = new ArrayList<Long>();
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
 				entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
 				if (entry > 0) {
-					if ((i == ((int) NodeID.getLocalNodeID() & 0xFFFF))) {
+					if (i == ((int) NodeID.getLocalNodeID() & 0xFFFF)) {
 						ret.addAll(getAllRanges((long) i << 48, readEntry(m_nodeIDTableDirectory, i & NID_LEVEL_BITMASK)
-									& BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
-					} 
+								& BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+					}
 				}
 			}
 
 			readUnlock(m_nodeIDTableDirectory);
 		}
 
-/*		// dump CID ranges
-		System.out.println("getCIDrangesOfAllChunks: DUMP CIDranges");
-		for (int i=0; i<ret.size(); i++) {
-			System.out.println("   i="+i+", el: "+CmdUtils.getLIDfromCID(ret.get(i)));
-
-		}
-*/
+		/*
+		 * // dump CID ranges
+		 * System.out.println("getCIDrangesOfAllChunks: DUMP CIDranges");
+		 * for (int i=0; i<ret.size(); i++) {
+		 * System.out.println("   i="+i+", el: "+CmdUtils.getLIDfromCID(ret.get(i)));
+		 * }
+		 */
 		// compress intervals
-		if (ret.size()<2) {
-			return ret;
-		} else if ((ret.size()%2)!=0) {
-			throw new MemoryException("internal error in getCIDrangesOfAllChunks");
-//			System.out.println("error: in CIDrange list");
-		} else {
-			for (int i=0; i<ret.size()-2; i+=2) {
-				final long i1End = CmdUtils.getLIDfromCID(ret.get(i+1));
-				final long i2Start = CmdUtils.getLIDfromCID(ret.get(i+2));
 
-				// can we melt intervals?
-				if ((i1End+1)==i2Start) {
-					System.out.println("   remove el.");
-					ret.remove(i+1);
-					ret.remove(i+1);
-					i -= 2;
+		if (ret.size() >= 2) {
+			if ((ret.size() % 2) != 0) {
+				throw new MemoryException("internal error in getCIDrangesOfAllChunks");
+				// System.out.println("error: in CIDrange list");
+			} else {
+				for (int i = 0; i < ret.size() - 2; i += 2) {
+					intervalEnd = CmdUtils.getLIDfromCID(ret.get(i + 1));
+					intervalStart = CmdUtils.getLIDfromCID(ret.get(i + 2));
+
+					// can we melt intervals?
+					if ((intervalEnd + 1) == intervalStart) {
+						System.out.println("   remove el.");
+						ret.remove(i + 1);
+						ret.remove(i + 1);
+						i -= 2;
+					}
 				}
 			}
 		}
-/*
-		// dump CID ranges
-		System.out.println("getCIDrangesOfAllChunks: DUMP CIDranges after compression");
-		Iterator<Long> il = ret.iterator();
-		while (il.hasNext()) {
-			System.out.println("   el: "+CmdUtils.getLIDfromCID(il.next()));
-		}
-*/
+		/*
+		 * // dump CID ranges
+		 * System.out.println("getCIDrangesOfAllChunks: DUMP CIDranges after compression");
+		 * Iterator<Long> il = ret.iterator();
+		 * while (il.hasNext()) {
+		 * System.out.println("   el: "+CmdUtils.getLIDfromCID(il.next()));
+		 * }
+		 */
 		return ret;
 	}
 
@@ -499,30 +504,30 @@ public final class CIDTable {
 			throws MemoryException {
 		ArrayList<Long> ret;
 		long entry;
-		int range=0;
+		int range = 0;
 
 		ret = new ArrayList<Long>();
 		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 			entry = readEntry(p_table, i);
 			if (entry > 0) {
 
-				if ((entry&DELETED_FLAG)==0) {
+				if ((entry & DELETED_FLAG) == 0) {
 
 					if (p_level > 0) {
 						ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level),
 								entry & BITMASK_ADDRESS, p_level - 1));
 					} else {
-						if (range==0) {
-							range=1;
-						} else if (range==1) {
-							range=2;
-						} else if (range==2) {
-							ret.remove(ret.size()-1);
+						if (range == 0) {
+							range = 1;
+						} else if (range == 1) {
+							range = 2;
+						} else if (range == 2) {
+							ret.remove(ret.size() - 1);
 						}
 						ret.add(p_unfinishedCID + i);
 					}
 				} else {
-					range=0;
+					range = 0;
 				}
 			}
 		}
@@ -547,7 +552,7 @@ public final class CIDTable {
 		ArrayList<Long> ret;
 		long entry;
 
-		//System.out.println("Entering with " + Long.toHexString(p_unfinishedCID));
+		// System.out.println("Entering with " + Long.toHexString(p_unfinishedCID));
 
 		ret = new ArrayList<Long>();
 		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
@@ -587,7 +592,11 @@ public final class CIDTable {
 	 *            the address of the lock
 	 */
 	private static void readLock(final long p_address) {
-		JNILock.readLock(m_memoryBase + p_address + LOCK_OFFSET);
+		if (p_address == m_nodeIDTableDirectory) {
+			JNILock.readLock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+		} else {
+			JNILock.readLock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+		}
 	}
 
 	/**
@@ -596,7 +605,11 @@ public final class CIDTable {
 	 *            the address of the lock
 	 */
 	private static void readUnlock(final long p_address) {
-		JNILock.readUnlock(m_memoryBase + p_address + LOCK_OFFSET);
+		if (p_address == m_nodeIDTableDirectory) {
+			JNILock.readUnlock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+		} else {
+			JNILock.readUnlock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+		}
 	}
 
 	/**
@@ -605,7 +618,11 @@ public final class CIDTable {
 	 *            the address of the lock
 	 */
 	private static void writeLock(final long p_address) {
-		JNILock.writeLock(m_memoryBase + p_address + LOCK_OFFSET);
+		if (p_address == m_nodeIDTableDirectory) {
+			JNILock.writeLock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+		} else {
+			JNILock.writeLock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+		}
 	}
 
 	/**
@@ -614,7 +631,11 @@ public final class CIDTable {
 	 *            the address of the lock
 	 */
 	private static void writeUnlock(final long p_address) {
-		JNILock.writeUnlock(m_memoryBase + p_address + LOCK_OFFSET);
+		if (p_address == m_nodeIDTableDirectory) {
+			JNILock.writeUnlock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+		} else {
+			JNILock.writeUnlock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+		}
 	}
 
 	/**

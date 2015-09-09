@@ -110,7 +110,7 @@
       <property name="separated" value="true"/>
     </module>
     <module name="LineLength">
-      <property name="max" value="120"/>
+      <property name="max" value="200"/>
       <property name="tabWidth" value="4"/>
     </module>
     <module name="OuterTypeNumber"/>
@@ -164,6 +164,10 @@
       <property name="allowLineBreaks" value="true"/>
       <property name="tokens" value="DOT"/>
     </module>
+    <module name="ReturnCount">
+      <property name="max" value="1"/>
+    </module>
+    <module name="ReturnCount"/>
   </module>
   <module name="JavadocPackage"/>
   <module name="NewlineAtEndOfFile"/>
