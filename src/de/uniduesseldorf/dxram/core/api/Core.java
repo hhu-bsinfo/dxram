@@ -51,7 +51,7 @@ public final class Core {
 	private static ExceptionHandler m_exceptionHandler;
 
 	// must be registered for handling 'execute' commands
-	public static CommandListener m_commandListener;
+	private static CommandListener m_commandListener;
 
 	// Constructors
 	/**
@@ -60,6 +60,14 @@ public final class Core {
 	private Core() {}
 
 	// Getters
+	/**
+	 * Get commandlistener member
+	 * @return reference to the var.
+	 */
+	public static CommandListener getCommandListener() {
+		return m_commandListener;
+	}
+
 	/**
 	 * Get the DXRAM configuration
 	 * @return the configuration
@@ -478,12 +486,11 @@ public final class Core {
 
 	/**
 	 * Registers command listener (listener is called when CommandMessages or CommandRequests arrive)
-	 * @param p_ci
+	 * @param p_commandListener
 	 *            The command listener
 	 */
-
-	public static void registerCmdListenerr(CommandListener p_command_listener) {
-		m_commandListener = p_command_listener;
+	public static void registerCmdListener(final CommandListener p_commandListener) {
+		m_commandListener = p_commandListener;
 	}
 
 	/**
@@ -494,21 +501,22 @@ public final class Core {
 	 *            the command
 	 * @param p_reply
 	 *            true: want reply (will be handled as request)
+   	 * @return result string
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static String execute_chunk_command(final short p_dest, final String p_command, final boolean p_reply)
+	public static String executeChunkCommand(final short p_dest, final String p_command, final boolean p_reply)
 			throws DXRAMException {
 		String result;
 
 		// request with reply
 		if (p_reply) {
 			// System.out.println("Core.execute: p_dest=" + p_dest);
-			ChunkCommandRequest request = new ChunkCommandRequest(p_dest, p_command);
+			final ChunkCommandRequest request = new ChunkCommandRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
-				ChunkCommandResponse response = request.getResponse(ChunkCommandResponse.class);
+				final ChunkCommandResponse response = request.getResponse(ChunkCommandResponse.class);
 				result = response.getAnswer();
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_chunk_command:" + e.toString());
@@ -516,9 +524,7 @@ public final class Core {
 			}
 			// System.out.println("received response: "+result);
 			return result;
-		}
-		// request without reply
-		else {
+		} else {
 			new ChunkCommandMessage(p_dest, p_command).send(m_network);
 		}
 		return null;
@@ -532,10 +538,11 @@ public final class Core {
 	 *            the command
 	 * @param p_reply
 	 *            true: want reply (will be handled as request)
+   	 * @return result string
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static String execute_lookup_command(final short p_dest, final String p_command, final boolean p_reply)
+	public static String executeLookupCommand(final short p_dest, final String p_command, final boolean p_reply)
 			throws DXRAMException {
 		String result;
 
@@ -545,11 +552,11 @@ public final class Core {
 		if (p_reply) {
 
 			// System.out.println("Core.execute: p_dest=" + p_dest);
-			LookupReflectionRequest request = new LookupReflectionRequest(p_dest, p_command);
+			final LookupReflectionRequest request = new LookupReflectionRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
-				LookupReflectionResponse response = request.getResponse(LookupReflectionResponse.class);
+				final LookupReflectionResponse response = request.getResponse(LookupReflectionResponse.class);
 				result = response.getAnswer();
 
 			} catch (final NetworkException e) {

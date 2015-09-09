@@ -1646,9 +1646,14 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		}
 	}
 
-	// info about chunk, called by incomingReflectionRequest
-	private String chunkinfo(final String cmd) {
-		String[] arguments = cmd.split(" ");
+	/**
+	 * Info about chunk, called by incomingReflectionRequest
+	 * @param p_cmd
+	 *            the command string
+	 * @return the result String
+	 */
+	private String chunkinfo(final String p_cmd) {
+		final String[] arguments = p_cmd.split(" ");
 		if (arguments == null) {
 			return "  error: problem in command";
 		}
@@ -1656,19 +1661,19 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			return "  error: problem in command";
 		}
 
-		short NID = CmdUtils.get_NID_from_tuple(arguments[1]);
-		long LID = CmdUtils.get_LID_from_tuple(arguments[1]);
-		long CID = CmdUtils.calc_CID(NID, LID);
+		final short nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+		final long localID = CmdUtils.getLIDfromTuple(arguments[1]);
+		final long chunkID = CmdUtils.calcCID(nodeID, localID);
 
-		System.out.println("chunkinfo for " + NID + "," + LID);
-		// System.out.println("   getCIDTree:"+NID);
-		CIDTreeOptimized tree = getCIDTree((short) NID);
+		System.out.println("chunkinfo for " + nodeID + "," + localID);
+		// System.out.println("   getCIDTree:"+nodeID);
+		final CIDTreeOptimized tree = getCIDTree((short) nodeID);
 		if (tree == null) {
-			return "  error: no CIDtree for given NID=" + NID;
+			return "  error: no CIDtree for given NID=" + nodeID;
 		}
 
 		// get meta-data from tree
-		Locations l = tree.getMetadata(CID);
+		final Locations l = tree.getMetadata(chunkID);
 		if (l == null) {
 			System.out.println(" tree.getMetadata failed");
 			return "  error: tree.getMetadata failed";

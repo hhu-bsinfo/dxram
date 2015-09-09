@@ -3,36 +3,46 @@ package de.uniduesseldorf.dxram.commands;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 
-public class CmdQuit extends Cmd {
+/**
+ * Quit monitor.
+ * @author Michael Schoettner 03.09.2015
+ */
+public class CmdQuit extends AbstractCmd {
+
+	/**
+	 * Constructor
+	 */
+	public CmdQuit() {
+	}
 
 	@Override
-	public String get_name() {
+	public String getName() {
 		return "quit";
 	}
 
 	@Override
-	public String get_usage_message() {
+	public String getUsageMessage() {
 		return "quit";
 	}
 
 	@Override
-	public String get_help_message() {
+	public String getHelpMessage() {
 		return "Quit console and shutdown node.";
 	}
 
 	@Override
-	public String get_syntax() {
+	public String getSyntax() {
 		return "quit";
 	}
 
 	// called after parameter have been checked
 	@Override
-	public int execute(final String p_command) {
+	public boolean execute(final String p_command) {
 		if (!areYouSure()) {
-			return 1;
+			return false;
 		}
 		Core.close();
 		System.exit(0);
-		return 0;
+		return true;
 	}
 }

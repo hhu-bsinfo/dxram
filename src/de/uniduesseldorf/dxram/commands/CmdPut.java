@@ -7,59 +7,73 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
-public class CmdPut extends Cmd {
+/**
+ * Save a new chunk
+ * @author Michael Schoettner 03.09.2015
+ */
+public class CmdPut extends AbstractCmd {
+
+	/**
+	 * Constructor
+	 */
+	public CmdPut() {
+	}
 
 	@Override
-	public String get_name() {
+	public String getName() {
 		return "put";
 	}
 
 	@Override
-	public String get_usage_message() {
+	public String getUsageMessage() {
 		return "put NID text [strID] ";
 	}
 
 	@Override
-	public String get_help_message() {
-		return "Save data 'text' on node NID.\nOptionally, you can provide a name 'strID' to retrieve a chunk by name.\nReturns CID of created chunk in tuple format (NID,LID)";
+	public String getHelpMessage() {
+		final String line1 = "Save data 'text' on node NID.\n";
+		final String line2 = "Optionally, you can provide a name 'strID' to retrieve a chunk by name.\n";
+		final String line3 = "Returns CID of created chunk in tuple format (NID,LID)";
+		return line1+line2+line3;
 	}
 
 	@Override
-	public String get_syntax() {
+	public String getSyntax() {
 		return "put PNID STR [STR]";
 	}
 
 	// called after parameter have been checked
 	@Override
-	public int execute(final String p_command) {
+	public boolean execute(final String p_command) {
 		String[] arguments;
 
 		try {
 			arguments = p_command.split(" ");
-			short NID = CmdUtils.get_NID_from_string(arguments[1]);
+			final short nodeID = CmdUtils.getNIDfromString(arguments[1]);
 
-			String res = Core.execute_chunk_command(NID, p_command, true);
+			final String res = Core.executeChunkCommand(nodeID, p_command, true);
 
 			// did we get an error message back?
 			if (res.indexOf("error") > -1) {
 				System.out.println(res);
-				return -1;
+				return false;
 			}
 
 			// the call succeed, try to get the CID of the created chunk
 			arguments = res.split(" ");
-			String newCID = CmdUtils.get_tuple_from_CID_string(arguments[1]);
+			final String newCID = CmdUtils.getTupleFromCIDstring(arguments[1]);
 
 			System.out.println("  Created new chunk with CID=(" + newCID + ")");
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
+			return false;
 		}
-		return 0;
+		return true;
 	}
 
 	@Override
-	public String remote_execute(final String p_command) {
+	public String remoteExecute(final String p_command) {
 		Chunk c = null;
 		String[] arguments;
 
@@ -76,15 +90,14 @@ public class CmdPut extends Cmd {
 				if (c == null) {
 					return "  error: createNewChunk failed";
 				}
-			}
-			else {
+			} else {
 				c = Core.createNewChunk(p_command.length());
 				if (c == null) {
 					return "  error: createNewChunk failed";
 				}
 			}
 
-			ByteBuffer b = c.getData();
+			final ByteBuffer b = c.getData();
 			b.put(arguments[2].getBytes());
 
 			// now save the chunk

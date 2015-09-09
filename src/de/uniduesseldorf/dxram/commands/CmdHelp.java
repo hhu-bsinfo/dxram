@@ -3,47 +3,59 @@ package de.uniduesseldorf.dxram.commands;
 
 import java.util.Set;
 
-public class CmdHelp extends Cmd {
+/**
+ * Help
+ * @author Michael Schoettner 03.09.2015
+ */
+public class CmdHelp extends AbstractCmd {
+
+	/**
+	 * Constructor
+	 */
+	public CmdHelp() {
+	}
 
 	@Override
-	public String get_name() {
+	public String getName() {
 		return "help";
 	}
 
 	@Override
-	public String get_usage_message() {
+	public String getUsageMessage() {
 		return "help [command]";
 	}
 
 	@Override
-	public String get_help_message() {
-		return "Shows help information.\nhelp: list all commands\nhelp command: show help information about given 'command'";
+	public String getHelpMessage() {
+		final String line1 = "Shows help information.\nhelp: list all commands\n";
+		final String line2 = "help command: show help information about given 'command'";
+		return line1+line2;
 	}
 
 	@Override
-	public String get_syntax() {
+	public String getSyntax() {
 		return "help [STR]";
 	}
 
 	// called after parameter have been checked
 	@Override
-	public int execute(final String p_command) {
+	public boolean execute(final String p_command) {
 		String[] arguments;
 
 		arguments = p_command.split(" ");
 
 		if (arguments.length == 1) {
-			Set<String> s = Shell.m_commandMap.keySet();
+			final Set<String> s = Shell.getAllCommands();
 			System.out.println("known commands: " + s.toString());
 		} else {
-			Cmd c = Shell.m_commandMap.get(arguments[1]);
+			final AbstractCmd c = Shell.getCommand(arguments[1]);
 			if (c == null) {
 				System.out.println("  error: unknown command '" + arguments[1] + "'");
-				return -1;
+				return false;
 			}
 
 			c.printHelpMsg();
 		}
-		return 0;
+		return true;
 	}
 }

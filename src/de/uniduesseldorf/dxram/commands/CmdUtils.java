@@ -8,12 +8,16 @@ import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
 import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
- * Help methods for parsing and handling command strings
- * @author Florian Klein
- *         09.03.2012
+ * Help methods for parsing and handling command strings.
+ * @author Michael Schoettner 03.09.2015
  */
+public final class CmdUtils {
 
-public class CmdUtils {
+	/**
+	 * Constructor
+	 */
+	private CmdUtils() {
+	}
 
 	/**
 	 * Parse NID from String
@@ -23,11 +27,11 @@ public class CmdUtils {
 	 * @throws NumberFormatException
 	 *             if an error occured
 	 */
-	public static short get_NID_from_string(final String p_str) throws NumberFormatException {
-		short NID;
+	public static short getNIDfromString(final String p_str) throws NumberFormatException {
+		short nodeID;
 
-		NID = Short.parseShort(p_str);
-		return NID;
+		nodeID = Short.parseShort(p_str);
+		return nodeID;
 	}
 
 	/**
@@ -38,15 +42,15 @@ public class CmdUtils {
 	 * @throws NumberFormatException
 	 *             if an error occured
 	 */
-	public static short get_NID_from_tuple(String p_str) throws NumberFormatException {
-		short NID;
+	public static short getNIDfromTuple(final String p_str) throws NumberFormatException {
+		short nodeID;
 
-		String[] CID = p_str.split(",");
-		if (CID == null) {
+		final String[] chunkID = p_str.split(",");
+		if (chunkID == null) {
 			throw new NumberFormatException();
 		}
-		NID = Short.parseShort(CID[0]);
-		return NID;
+		nodeID = Short.parseShort(chunkID[0]);
+		return nodeID;
 	}
 
 	/**
@@ -57,31 +61,48 @@ public class CmdUtils {
 	 * @throws NumberFormatException
 	 *             if an error occured
 	 */
-	public static long get_LID_from_tuple(final String p_str) throws NumberFormatException {
-		long LID;
+	public static long getLIDfromTuple(final String p_str) throws NumberFormatException {
+		long localID;
 
-		String[] CID = p_str.split(",");
-		if (CID == null) {
+		final String[] chunkID = p_str.split(",");
+		if (chunkID==null) {
 			throw new NumberFormatException();
 		}
-		if (CID.length != 2) {
+		if (chunkID.length != 2) {
 			throw new NumberFormatException();
 		}
-		LID = Integer.parseInt(CID[1]);
-		return LID;
+		localID = Integer.parseInt(chunkID[1]);
+		return localID;
+	}
+
+	/**
+	 * Get LID from given p_cunkID
+	 * @param p_chunkID
+	 *            the p_cunkID
+	 * @return NID
+	 * @throws NumberFormatException
+	 *             if an error occured
+	 */
+	public static long getLIDfromCID(final long p_chunkID) throws NumberFormatException {
+		return p_chunkID & 0xFFFFFFFFFFFFL;
 	}
 
 	/**
 	 * calc CID from given NID and LID
+	 * @param	p_nodeID
+	 * 				the NID
+	 * @param	p_localID
+	 * 				the LID
+	 * @return	chunkID
 	 */
-	public static long calc_CID(final short p_NID, final long p_LID) {
-		long l_NID = (long) p_NID;
-		long l_LID = (long) p_LID;
-		long CID;
+	public static long calcCID(final short p_nodeID, final long p_localID) {
+		final long nodeID = (long) p_nodeID;
+		final long localID = (long) p_localID;
+		long chunkID;
 
-		CID = l_NID << 48;
-		CID = CID + l_LID;
-		return CID;
+		chunkID = nodeID << 48;
+		chunkID = chunkID + localID;
+		return chunkID;
 	}
 
 	/**
@@ -92,10 +113,10 @@ public class CmdUtils {
 	 * @throws NumberFormatException
 	 *             if an error occured
 	 */
-	public static long get_CID_from_tuple(final String p_str) throws NumberFormatException {
-		short NID = get_NID_from_tuple(p_str);
-		long LID = get_LID_from_tuple(p_str);
-		return calc_CID(NID, LID);
+	public static long getCIDfromTuple(final String p_str) throws NumberFormatException {
+		final short nodeID = getNIDfromTuple(p_str);
+		final long localID = getLIDfromTuple(p_str);
+		return calcCID(nodeID, localID);
 	}
 
 	/**
@@ -106,96 +127,112 @@ public class CmdUtils {
 	 * @throws NumberFormatException
 	 *             if an error occured
 	 */
-	public static String get_tuple_from_CID_string(final String p_str) throws NumberFormatException {
-		long CID = Long.parseLong(p_str);
+	public static String getTupleFromCIDstring(final String p_str) throws NumberFormatException {
+		final long chunkID = Long.parseLong(p_str);
 
-		int NID = (int) (CID >> 48);
-		int LID = (int) (CID & 0x0000FFFFFFFFFFFFl);
+		final int nodeID = (int) (chunkID >> 48);
+		final int localID = (int) (chunkID & 0x0000FFFFFFFFFFFFL);
 
-		String res = NID + "," + LID;
+		final String res = nodeID + "," + localID;
+
+		return res;
+	}
+
+	/**
+	 * Convert CID to tuple string NID,LID
+	 * @param p_chunkID
+	 *            the cid
+	 * @return NID,LID tuple
+	 * @throws NumberFormatException
+	 *             if an error occured
+	 */
+	public static String getTupleFromCID(final long p_chunkID) throws NumberFormatException {
+		
+		final int nodeID = (int) (p_chunkID >> 48);
+		final int localID = (int) (p_chunkID & 0x0000FFFFFFFFFFFFL);
+
+		final String res = nodeID + "," + localID;
 
 		return res;
 	}
 
 	/**
 	 * Check if given NID is known and whether it is a superpeer or peer
-	 * @param p_NID
+	 * @param p_nodeID
 	 *            the NID
 	 * @return superpeer, peer, unknwon
 	 */
-	public static String checkNID(final String p_NID) {
-		String res = "unknown";
-		List<String> node_list;
+	public static String checkNID(final String p_nodeID) {
+		List<String> nodeList;
 		Iterator<String> nli;
 
 		// search superpeers
 		try {
-			node_list = ZooKeeperHandler.getChildren("nodes/superpeers");
+			nodeList = ZooKeeperHandler.getChildren("nodes/superpeers");
 		} catch (final ZooKeeperException e) {
 			System.out.println("error: could not access ZooKeeper!");
 			return "error: could not access ZooKeeper!";
 		}
-		nli = node_list.iterator();
+		nli = nodeList.iterator();
 		while (nli.hasNext()) {
-			if (nli.next().compareTo(p_NID) == 0) {
+			if (nli.next().compareTo(p_nodeID) == 0) {
 				return "superpeer";
 			}
 		}
 		// search peers
 		try {
-			node_list = ZooKeeperHandler.getChildren("nodes/peers");
+			nodeList = ZooKeeperHandler.getChildren("nodes/peers");
 		} catch (final ZooKeeperException e) {
 			System.out.println("error: could not access ZooKeeper!");
 			return "error: could not access ZooKeeper!";
 		}
-		nli = node_list.iterator();
+		nli = nodeList.iterator();
 		while (nli.hasNext()) {
-			if (nli.next().compareTo(p_NID) == 0) {
+			if (nli.next().compareTo(p_nodeID) == 0) {
 				return "peer";
 			}
 		}
-
-		return res;
+		return "unknown";
 	}
 
 	/**
 	 * Check if given NID is a peer and otherwise print an error message for the command 'p_command'
-	 * @param p_NID
+	 * @param p_nodeID
 	 *            the NID
-	 * @param p_error_string
+	 * @param p_errorString
 	 *            the error string
 	 * @return true: NID is a known peer, false: unknown NID, or superpeer
 	 */
-	public static boolean mustBePeer(final short p_NID, final String p_error_string) {
-		String NIDok = checkNID(Short.toString(p_NID));
+	public static boolean mustBePeer(final short p_nodeID, final String p_errorString) {
+		final String nodeIDok = checkNID(Short.toString(p_nodeID));
 
-		if (NIDok.compareTo("peer") == 0) {
+		if (nodeIDok.compareTo("peer") == 0) {
 			return true;
-		} else if (NIDok.compareTo("unknown") == 0) {
+		} else if (nodeIDok.compareTo("unknown") == 0) {
 			System.out.println("error: unknown NID");
 		} else {
-			System.out.println("error: superpeer not allowed " + p_error_string);
+			System.out.println("error: superpeer not allowed " + p_errorString);
 		}
 		return false;
 	}
 
 	/**
 	 * Check if given NID is a superpeer and otherwise print an error message for the command 'p_command'
-	 * @param p_NID
+	 * @param p_nodeID
 	 *            the NID
-	 * @param p_error_string
+	 * @param p_errorString
 	 *            the error string
 	 * @return true: NID is a known superpeer, false: unknown NID, or peer
 	 */
-	public static boolean mustBeSuperpeer(final short p_NID, final String p_error_string) {
-		String NIDok = checkNID(Short.toString(p_NID));
+	public static boolean mustBeSuperpeer(final short p_nodeID, final String p_errorString) {
+		final String nodeIDok = checkNID(Short.toString(p_nodeID));
 
-		if (NIDok.compareTo("superpeer") == 0) {
+		if (nodeIDok.compareTo("superpeer") == 0) {
 			return true;
-		} else if (NIDok.compareTo("unknown") == 0) {
+		} else if (nodeIDok.compareTo("unknown") == 0) {
 			System.out.println("error: unknown NID");
 		} else {
-			System.out.println("error: peer not allowed " + p_error_string);
+			System.out.println("error: peer not allowed " + p_errorString);
 		}
 		return false;
 	}

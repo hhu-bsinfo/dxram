@@ -1,34 +1,44 @@
 
 package de.uniduesseldorf.dxram.commands;
 
-public class CmdClear extends Cmd {
+/**
+ * Clear console.
+ * @author Michael Schoettner 03.09.2015
+ */
+public class CmdClear extends AbstractCmd {
+
+	/**
+	 * Constructor
+	 */
+	public CmdClear() {
+	}
 
 	@Override
-	public String get_name() {
+	public String getName() {
 		return "clear";
 	}
 
 	@Override
-	public String get_usage_message() {
+	public String getUsageMessage() {
 		return "clear";
 	}
 
 	@Override
-	public String get_help_message() {
+	public String getHelpMessage() {
 		return "Clears the console.";
 	}
 
 	@Override
-	public String get_syntax() {
+	public String getSyntax() {
 		return "clear";
 	}
 
 	// called after parameter have been checked
 	@Override
-	public int execute(final String p_command) {
+	public boolean execute(final String p_command) {
 		// ANSI escape codes (clear screen, move cursor to first row and first column)
 		System.out.print("\033[H\033[2J");
 		System.out.flush();
-		return 0;
+		return true;
 	}
 }

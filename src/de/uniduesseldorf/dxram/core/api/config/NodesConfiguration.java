@@ -158,7 +158,7 @@ public final class NodesConfiguration {
 		 * @param p_acronym
 		 *            the role's acronym
 		 */
-		private Role(final char p_acronym) {
+		Role(final char p_acronym) {
 			m_acronym = p_acronym;
 		}
 

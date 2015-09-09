@@ -6,64 +6,76 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 // AppID später optional abfragen
 
-public class CmdChunkinfo extends Cmd {
+/**
+ * Get info about a chunk
+ * @author Michael Schoettner 03.09.2015
+ */
+public class CmdChunkinfo extends AbstractCmd {
+	/**
+	 * Constructor
+	 */
+	public CmdChunkinfo() {
+	}
 
 	@Override
-	public String get_name() {
+	public String getName() {
 		return "chunkinfo";
 	}
 
 	@Override
-	public String get_usage_message() {
+	public String getUsageMessage() {
 		return "chunkinfo NID,LID [destNID]";
 	}
 
 	@Override
-	public String get_help_message() {
-		return "Get information about chunk NID,LID (from peer NID).\nOptionally, the request can be sent to superpeer destNID. ";
+	public String getHelpMessage() {
+		final String line1 = "Get information about chunk NID,LID (from peer NID).\n";
+		final String line2 = "Optionally, the request can be sent to superpeer destNID.";
+		return line1+line2;
 	}
 
 	@Override
-	public String get_syntax() {
+	public String getSyntax() {
 		return "chunkinfo PNID,PNR [ANID]";
 	}
 
 	// called after parameter have been checked
 	@Override
-	public int execute(final String p_command) {
-		String res = "error";
+	public boolean execute(final String p_command) {
+		String res;
 		String[] arguments;
-		short NID;
+		short nodeID;
 
 		try {
 			arguments = p_command.split(" ");
 
 			// get NID to send command to
 			if (arguments.length > 2) {
-				NID = CmdUtils.get_NID_from_string(arguments[2]);
+				nodeID = CmdUtils.getNIDfromString(arguments[2]);
 			} else {
-				NID = CmdUtils.get_NID_from_tuple(arguments[1]);
+				nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 			}
 
-			if (CmdUtils.checkNID(Short.toString(NID)).compareTo("peer") == 0) {
+			if (CmdUtils.checkNID(Short.toString(nodeID)).compareTo("peer") == 0) {
 				// System.out.println("	   chunkinfo from peer");
-				res = Core.execute_chunk_command(NID, p_command, true);
+				res = Core.executeChunkCommand(nodeID, p_command, true);
 			} else {
 				// System.out.println("	   chunkinfo from superpeer");
-				res = Core.execute_lookup_command(NID, p_command, true);
+				res = Core.executeLookupCommand(nodeID, p_command, true);
 			}
 
 			// process result of remote call
 			if (res.indexOf("error") > -1) {
 				System.out.println(res);
-				return -1;
+				return false;
 			}
 			System.out.println(res);
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
+			return false;
 		}
 
-		return 0;
+		return true;
 	}
 }
