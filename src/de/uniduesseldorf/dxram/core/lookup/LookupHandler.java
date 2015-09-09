@@ -805,7 +805,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_stabilizationThread = new Thread(m_worker);
 		Contract.checkNotNull(m_stabilizationThread);
 		m_stabilizationThread
-		.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
+				.setName(SOWorker.class.getSimpleName() + " for " + LookupHandler.class.getSimpleName());
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
@@ -1230,7 +1230,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				insertPeer(joiningNode);
 				try {
 					new JoinResponse(p_joinRequest, (short) -1, (short) -1, (short) -1, null, m_superpeers, null, null)
-					.send(m_network);
+							.send(m_network);
 				} catch (final NetworkException e) {
 					// Joining node is not available anymore, ignore request
 				}
@@ -1240,7 +1240,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			superpeer = getResponsibleSuperpeer(joiningNode, NO_CHECK);
 			try {
 				new JoinResponse(p_joinRequest, superpeer, (short) -1, (short) -1, null, null, null, null)
-				.send(m_network);
+						.send(m_network);
 			} catch (final NetworkException e) {
 				// Joining node is not available anymore, ignore request
 			}
@@ -2538,7 +2538,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						tree = getCIDTree(currentPeer);
 						if (null != tree) {
 							System.out
-							.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
+									.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
 							trees.add(tree);
 						}
 						if (index == m_nodeList.size()) {
@@ -2801,7 +2801,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				// Take over failed nodes peers and CIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
 					System.out
-							.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
+					.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndCIDTrees(m_predecessor);
 					promoteOnePeer = true;
 				}
@@ -3654,8 +3654,12 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 			if (null != m_backupPeers) {
 				if (m_backupPeers.length == 3) {
-					ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", " + m_backupPeers[2]
-							+ "]";
+					if (m_backupPeers[0] == -1) {
+						ret = m_primaryPeer + ", backup peers unknown (ask " + m_primaryPeer + ")";
+					} else {
+						ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", "
+								+ m_backupPeers[2] + "]";
+					}
 				} else if (m_backupPeers.length == 2) {
 					ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + "]";
 				} else {

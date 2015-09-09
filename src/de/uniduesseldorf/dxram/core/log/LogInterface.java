@@ -145,14 +145,12 @@ public interface LogInterface extends CoreComponent {
 	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the RangeID
-	 * @param p_manipulateReadPtr
-	 *            whether the read pointer should be adjusted or not
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 * @return the local data
 	 * @note for testing only
 	 */
-	byte[][] readAllEntries(short p_owner, long p_chunkID, byte p_rangeID, boolean p_manipulateReadPtr)
+	byte[][] readAllEntries(short p_owner, long p_chunkID, byte p_rangeID)
 			throws DXRAMException;
 
 	/**

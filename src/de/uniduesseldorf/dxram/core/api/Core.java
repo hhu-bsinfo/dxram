@@ -3,6 +3,7 @@ package de.uniduesseldorf.dxram.core.api;
 
 import org.apache.log4j.Logger;
 
+import de.uniduesseldorf.dxram.commands.CommandHandler;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.config.Configuration;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
@@ -124,6 +125,8 @@ public final class Core {
 					&& NodeID.getRole().equals(Role.PEER)) {
 				CoreComponentFactory.getLogInterface();
 			}
+
+			registerCmdListenerr(new CommandHandler());
 
 			// Register shutdown thread
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread());
@@ -565,9 +568,9 @@ public final class Core {
 	/*
 	 * public static void execute(final String p_command, final String... p_args) throws DXRAMException {
 	 * short type;
-	 *
+	 * 
 	 * type = CommandStringConverter.convert(p_command);
-	 *
+	 * 
 	 * switch (type) {
 	 * case 1:
 	 * // migrate: ChunkID, src, dest

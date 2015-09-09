@@ -69,7 +69,7 @@ public abstract class AbstractLog {
 	 * Returns the number of bytes in log
 	 * @return the number of bytes in log
 	 */
-	public final long getOccupiedSpace() {
+	public long getOccupiedSpace() {
 		return m_bytesInRAF;
 	}
 

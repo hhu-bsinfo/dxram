@@ -244,7 +244,7 @@ public final class CIDTreeOptimized implements Serializable {
 			} else {
 				range[0] = 0;
 			}
-			ret = new Locations(nodeID, getBackupPeers(p_chunkID), range);
+			ret = new Locations(nodeID, getBackupPeers(p_chunkID, m_creator != nodeID), range);
 		}
 
 		return ret;
@@ -254,31 +254,38 @@ public final class CIDTreeOptimized implements Serializable {
 	 * Returns all the backup peers for given object
 	 * @param p_chunkID
 	 *            ChunkID of requested object
+	 * @param p_wasMigrated
+	 *            whether this Chunk was migrated or not
 	 * @return the NodeIDs of all backup peers for given object
 	 */
-	public short[] getBackupPeers(final long p_chunkID) {
+	public short[] getBackupPeers(final long p_chunkID, final boolean p_wasMigrated) {
 		short[] ret = null;
 		short backupPeer;
 		Long tempResult = null;
 		long result;
 
 		if (m_root != null) {
-			for (int i = m_backupRanges.size() - 1; i >= 0; i--) {
-				if (m_backupRanges.get(i)[0] <= p_chunkID) {
-					tempResult = m_backupRanges.get(i)[1];
-				}
-			}
-
-			ret = new short[] {-1, -1, -1};
-			if (tempResult != null) {
-				result = tempResult;
-				for (int i = 0; i < ret.length; i++) {
-					backupPeer = (short) ((result >> (i * 16)));
-					if (backupPeer != 0) {
-						ret[i] = backupPeer;
+			if (!p_wasMigrated) {
+				for (int i = m_backupRanges.size() - 1; i >= 0; i--) {
+					if (m_backupRanges.get(i)[0] <= p_chunkID) {
+						tempResult = m_backupRanges.get(i)[1];
 					}
 				}
+
+				ret = new short[] {-1, -1, -1};
+				if (tempResult != null) {
+					result = tempResult;
+					for (int i = 0; i < ret.length; i++) {
+						backupPeer = (short) ((result >> (i * 16)));
+						if (backupPeer != 0) {
+							ret[i] = backupPeer;
+						}
+					}
+				}
+			} else {
+				ret = new short[] {-1, -1, -1};
 			}
+
 		}
 		return ret;
 	}
@@ -1379,16 +1386,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_lid) {
-				low = mid + 1;
-			} else if (midVal > p_lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_lid) {
+					low = mid + 1;
+				} else if (midVal > p_lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1578,16 +1585,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLid(0);
+				midVal = m_children[mid].getLid(0);
 
-			if (midVal < lid) {
-				low = mid + 1;
-			} else if (midVal > lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < lid) {
+					low = mid + 1;
+				} else if (midVal > lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

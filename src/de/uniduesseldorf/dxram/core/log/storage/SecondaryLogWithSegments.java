@@ -32,6 +32,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	private final int m_entryHeaderSize;
 
 	private short m_nodeID;
+
+	private long m_numberOfBytes;
 	private int m_numberOfDeletes;
 	private AtomicBoolean m_isLocked;
 
@@ -87,6 +89,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		}
 
 		m_nodeID = p_nodeID;
+
+		m_numberOfBytes = 0;
 		m_numberOfDeletes = 0;
 
 		m_totalUsableSpace = super.getTotalUsableSpace();
@@ -104,6 +108,12 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		m_partlyUsedSegments = new LinkedList<Short>();
 
 		createLogAndWriteHeader();
+	}
+
+	// Getter
+	@Override
+	public long getOccupiedSpace() {
+		return m_numberOfBytes;
 	}
 
 	// Methods
@@ -154,6 +164,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					m_segmentHeaders[segment] = header;
 					writeToLog(p_data, p_offset, (long) segment
 							* LogHandler.SECLOG_SEGMENT_SIZE, length, true);
+					m_numberOfBytes += length;
 					if (header.getFreeBytes() > m_entryHeaderSize) {
 						m_partlyUsedSegments.add(segment);
 					}
@@ -163,6 +174,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					// Fill active segment
 					writeToLog(p_data, p_offset, m_activeSegment.getIndex() * LogHandler.SECLOG_SEGMENT_SIZE
 							+ m_activeSegment.getUsedBytes(), length, true);
+					m_numberOfBytes += length;
 					m_activeSegment.updateUsedBytes(length);
 				}
 			} else {
@@ -175,6 +187,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						offset = p_length - length + p_offset;
 						writeToLog(p_data, offset, (long) segment
 								* LogHandler.SECLOG_SEGMENT_SIZE, length, false);
+						m_numberOfBytes += length;
 						if (header.getFreeBytes() > m_entryHeaderSize) {
 							m_partlyUsedSegments.add(segment);
 						}
@@ -206,6 +219,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 								writeToLog(p_data, offset,
 										(long) segment * LogHandler.SECLOG_SEGMENT_SIZE
 												+ header.getUsedBytes(), rangeSize, false);
+								m_numberOfBytes += rangeSize;
 								header.updateUsedBytes(rangeSize);
 								length -= rangeSize;
 								offset += rangeSize;
@@ -225,6 +239,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 							offset = p_length - length + p_offset;
 							writeToLog(p_data, offset, (long) segment
 									* LogHandler.SECLOG_SEGMENT_SIZE, length, false);
+							m_numberOfBytes += length;
 							if (header.getFreeBytes() > m_entryHeaderSize) {
 								m_partlyUsedSegments.add(segment);
 							}
@@ -756,7 +771,6 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		SegmentHeader header;
 		LogEntryHeaderInterface logEntryHeader;
 
-		// System.out.println("--Segment: " + p_segmentIndex);
 		if (-1 != p_segmentIndex) {
 			try {
 				segmentData = readSegment(p_segmentIndex);
@@ -794,6 +808,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						header = getSegmentHeader(p_segmentIndex);
 						header.reset();
 						header.updateUsedBytes(writtenBytes);
+						m_numberOfBytes -= readBytes - writtenBytes;
 					} else {
 						freeSegment(p_segmentIndex);
 						getSegmentHeader(p_segmentIndex).reset();
@@ -803,8 +818,13 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				System.out.println("Reorganization failed!");
 			}
 
-			System.out.println("--" + removedObjects + " entries removed");
-			System.out.println("--" + removedTombstones + " tombstones removed");
+			if (removedObjects != 0 || removedTombstones != 0) {
+				System.out.println();
+				System.out.println("-Reorganization of Segment: " + p_segmentIndex + "(" + m_nodeID + ") finished:");
+				System.out.println("--" + removedObjects + " entries removed");
+				System.out.println("--" + removedTombstones + " tombstones removed");
+				System.out.println();
+			}
 		}
 	}
 
@@ -932,23 +952,14 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * Prints all segment sizes
 	 */
 	public final void printSegmentDistribution() {
-		String s = "";
-		int counter = 0;
+		String s = "++++Distribution: | ";
 
 		for (SegmentHeader header : m_segmentHeaders) {
 			if (header != null) {
-				if (counter == 18) {
-					// System.out.println(s);
-					counter = 0;
-					s = "";
-				}
-				s += header.getUsedBytes() + "\t";
-				counter++;
+				s += header.getUsedBytes() + " | ";
 			}
 		}
 		System.out.println(s);
-		System.out.println();
-		System.out.println();
 	}
 
 	// Classes

@@ -1572,7 +1572,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 				if (LOG_ACTIVE) {
 					logEntrySize = chunk.getSize() + m_log.getHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()));
-					if (m_migrationsTree.fits(size + logEntrySize)) {
+					if (m_migrationsTree.fits(size + logEntrySize) && m_migrationsTree.size() != 0) {
 						// Chunk fits in current migration backup range
 						size += logEntrySize;
 					} else {
@@ -1582,10 +1582,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 						determineBackupPeers(-1);
 
-						m_lookup.initRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
-								new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
-						m_log.initBackupRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
-								m_currentBackupRange.getBackupPeers());
+						m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
+								new Locations(m_nodeID, m_currentMigrationBackupRange.getBackupPeers(), null));
+						m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
+								m_currentMigrationBackupRange.getBackupPeers());
 					}
 				}
 			}
@@ -1606,7 +1606,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
 								new LogMessage(backupPeers[i], new Chunk[] {chunk},
 										(byte) m_currentMigrationBackupRange.getRangeID())
-								.send(m_network);
+										.send(m_network);
 							}
 						}
 					}
@@ -1641,7 +1641,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 				if (LOG_ACTIVE) {
 					logEntrySize = chunk.getSize() + m_log.getHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()));
-					if (m_migrationsTree.fits(size + logEntrySize)) {
+					if (m_migrationsTree.fits(size + logEntrySize) && m_migrationsTree.size() != 0) {
 						// Chunk fits in current migration backup range
 						size += logEntrySize;
 					} else {
@@ -1651,10 +1651,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 						determineBackupPeers(-1);
 
-						m_lookup.initRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
-								new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
-						m_log.initBackupRange(((long) -1 << 48) + m_currentBackupRange.getRangeID(),
-								m_currentBackupRange.getBackupPeers());
+						m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
+								new Locations(m_nodeID, m_currentMigrationBackupRange.getBackupPeers(), null));
+						m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
+								m_currentMigrationBackupRange.getBackupPeers());
 					}
 				}
 			}
@@ -1675,7 +1675,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
 								new LogMessage(backupPeers[i], new Chunk[] {chunk},
 										(byte) m_currentMigrationBackupRange.getRangeID())
-										.send(m_network);
+								.send(m_network);
 							}
 						}
 					}
