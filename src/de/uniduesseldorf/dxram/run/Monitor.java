@@ -37,7 +37,7 @@ public final class Monitor {
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}
-		Core.registerCmdListenerr(new CommandHandler());
+		Core.registerCmdListener(new CommandHandler());
 
 		System.out.println("Monitor started");
 

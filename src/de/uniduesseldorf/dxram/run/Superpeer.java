@@ -36,7 +36,7 @@ public final class Superpeer {
 			e1.printStackTrace();
 		}
 
-		Core.registerCmdListenerr(new CommandHandler());
+		Core.registerCmdListener(new CommandHandler());
 
 		System.out.println("Superpeer started");
 

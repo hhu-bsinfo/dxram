@@ -1,11 +1,14 @@
 
 package de.uniduesseldorf.dxram.run;
 
+import java.nio.ByteBuffer;
+
 import de.uniduesseldorf.dxram.commands.CommandHandler;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.chunk.Chunk;
 
 /**
  * Peer
@@ -35,7 +38,7 @@ public final class Peer {
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}
-		Core.registerCmdListenerr(new CommandHandler());
+		Core.registerCmdListener(new CommandHandler());
 
 		System.out.println("Peer started");
 
@@ -43,6 +46,27 @@ public final class Peer {
 			Thread.sleep(10000);
 		} catch (final InterruptedException e) {}
 
+
+/*		// create some data
+		System.out.println("Generating test data");
+		try {
+			for (int i=0; i<1; i++) {
+				final String str = Integer.toString(i);
+				final Chunk c = Core.createNewChunk(str.length());
+				if (c == null) {
+					System.out.println("error: createNewChunk failed while generating test data");
+					return ;
+				}
+				final ByteBuffer b = c.getData();
+				b.put(str.getBytes());
+
+				Core.put(c);
+			}
+		} catch (final DXRAMException de) {
+			System.out.println("DXRAMException while generating test data");
+		}
+		System.out.println("Done.");
+*/
 		/*
 		 * Test:
 		 * try {
