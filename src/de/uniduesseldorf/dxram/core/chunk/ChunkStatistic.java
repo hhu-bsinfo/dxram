@@ -124,7 +124,7 @@ final class ChunkStatistic implements Statistic {
 		 * @param p_position
 		 *            the position
 		 */
-		private Operation(final String p_prefix, final int p_position) {
+		Operation(final String p_prefix, final int p_position) {
 			m_prefix = p_prefix;
 			m_position = p_position;
 			m_statistic = new OperationStatistic();

@@ -4,34 +4,43 @@ package de.uniduesseldorf.dxram.commands;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
-public class CmdDel extends Cmd {
-	private final static int MAX_DATA_TRANSFER = 100;
+/**
+ * Delete a chunk.
+ * @author Michael Schoettner 03.09.2015
+ */
+public class CmdDel extends AbstractCmd {
+
+	/**
+	 * Constructor
+	 */
+	public CmdDel() {
+	}
 
 	@Override
-	public String get_name() {
+	public String getName() {
 		return "del";
 	}
 
 	@Override
-	public String get_usage_message() {
+	public String getUsageMessage() {
 		return "del NID,LID [destNID]";
 	}
 
 	@Override
-	public String get_help_message() {
+	public String getHelpMessage() {
 		return "Delete chunk NID,LID.\nOptionally, the request can be sent to node destNID (must not be a superpeer).";
 	}
 
 	@Override
-	public String get_syntax() {
+	public String getSyntax() {
 		return "del PNID,PNR [PNID]";
 	}
 
 	// called after parameter have been checked
 	@Override
-	public int execute(final String p_command) {
+	public boolean execute(final String p_command) {
 		String[] arguments;
-		short NID;
+		short nodeID;
 
 		try {
 			arguments = p_command.split(" ");
@@ -40,29 +49,31 @@ public class CmdDel extends Cmd {
 			// System.out.println("del: arguments.length="+arguments.length);
 
 			if (arguments.length < 3) {
-				NID = CmdUtils.get_NID_from_tuple(arguments[1]);
+				nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 			} else {
-				NID = CmdUtils.get_NID_from_string(arguments[2]); // System.out.println("get from:"+NID);
+				nodeID = CmdUtils.getNIDfromString(arguments[2]);
+				// System.out.println("get from:"+nodeID);
 			}
 
-			String res = Core.execute_chunk_command(NID, p_command, true);
+			final String res = Core.executeChunkCommand(nodeID, p_command, true);
 
 			// did we get an error message back?
 			if (res.indexOf("error") > -1) {
 				System.out.println(res);
-				return -1;
+				return false;
 			}
 
 			System.out.println(res);
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
+			return false;
 		}
-		return 0;
+		return true;
 	}
 
 	@Override
-	public String remote_execute(final String p_command) {
+	public String remoteExecute(final String p_command) {
 		String[] arguments;
 
 		if (p_command == null) {
@@ -72,7 +83,7 @@ public class CmdDel extends Cmd {
 		try {
 			arguments = p_command.split(" ");
 
-			Core.remove(CmdUtils.get_CID_from_tuple(arguments[1]));
+			Core.remove(CmdUtils.getCIDfromTuple(arguments[1]));
 
 			return "  Chunk deleted.";
 

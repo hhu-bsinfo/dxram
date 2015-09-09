@@ -4,29 +4,47 @@ package de.uniduesseldorf.dxram.commands;
 import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
 import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
-public class CmdNodes extends Cmd {
+/**
+ * Info about nodes
+ * @author Michael Schoettner 03.09.2015
+ */
+public class CmdNodes extends AbstractCmd {
+
+	/**
+	 * Constructor
+	 */
+	public CmdNodes() {
+	}
 
 	@Override
-	public String get_name() {
+	public String getName() {
 		return "nodes";
 	}
 
 	@Override
-	public String get_usage_message() {
+	public String getUsageMessage() {
 		return "nodes superpeers|peers|all";
 	}
 
 	@Override
-	public String get_help_message() {
-		return "List active nodes known by Zookeeper.\n   superpeers: all superpeers\n   peers: all peers\n   all: all nodes";
+	public String getHelpMessage() {
+		final String line1 = "List active nodes known by Zookeeper.\n";
+		final String line2 = "   superpeers: all superpeers\n   peers: all peers\n   all: all nodes";
+		return line1 + line2;
 	}
 
 	@Override
-	public String get_syntax() {
+	public String getSyntax() {
 		return "nodes STR";
 	}
 
-	private static int get_param(final String[] p_arguments) {
+	/**
+	 * returns a number for the argument
+	 * @param p_arguments
+	 * 			argument
+	 * @return 0,1,2
+	 */
+	private static int getParam(final String[] p_arguments) {
 		int param = -1;
 
 		if (p_arguments.length == 2) {
@@ -43,14 +61,13 @@ public class CmdNodes extends Cmd {
 		return param;
 	}
 
-	// called by shell
 	@Override
 	public boolean areParametersSane(final String[] p_arguments) {
 		if (!super.areParametersSane(p_arguments)) {
 			return false;
 		}
 
-		if (get_param(p_arguments) >= 0) {
+		if (getParam(p_arguments) >= 0) {
 			return true;
 		}
 
@@ -58,15 +75,14 @@ public class CmdNodes extends Cmd {
 		return false;
 	}
 
-	// called after parameter have been checked
 	@Override
-	public int execute(final String p_command) {
+	public boolean execute(final String p_command) {
 		String[] arguments;
 
 		try {
 			arguments = p_command.split(" ");
 
-			switch (get_param(arguments)) {
+			switch (getParam(arguments)) {
 			case 0:
 				System.out.println("superpeers:");
 				System.out.println("   " + ZooKeeperHandler.getChildren("nodes/superpeers").toString());
@@ -86,8 +102,8 @@ public class CmdNodes extends Cmd {
 			}
 		} catch (final ZooKeeperException e) {
 			System.out.println("  error: could not access ZooKeeper!");
-			return -1;
+			return false;
 		}
-		return 0;
+		return true;
 	}
 }

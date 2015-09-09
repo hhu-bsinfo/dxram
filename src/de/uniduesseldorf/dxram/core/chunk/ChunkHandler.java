@@ -1700,8 +1700,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		cmd = p_message.getCommand();
 
-		if (Core.m_commandListener != null) {
-			Core.m_commandListener.processCmd(cmd, false);
+		if (Core.getCommandListener() != null) {
+			Core.getCommandListener().processCmd(cmd, false);
 		} else {
 			System.out.println("error: command message received but no command listener registered");
 		}
@@ -1709,32 +1709,96 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Operation.INCOMING_COMMAND.leave();
 	}
 
-	// chunkinfo command, belongs to "incomingCommandRequest"
-	private String chunkinfo(final String p_command) {
+	/**
+	 * Handles 'chunkinfo' command. Called by incomingCommandRequest
+	 * @param p_command
+	 *            the CommandMessage
+	 * @return the result string
+	 */
+	private String cmdReqChunkinfo(final String p_command) {
 		String[] arguments;
 		short[] backupPeers;
 		short primaryPeer;
 
+
 		arguments = p_command.split(" ");
 
-		short NID = CmdUtils.get_NID_from_tuple(arguments[1]);
-		long LID = CmdUtils.get_LID_from_tuple(arguments[1]);
-		System.out.println("   chunkinfo for " + NID + "," + LID);
+		final short nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+		final long localID = CmdUtils.getLIDfromTuple(arguments[1]);
+		System.out.println("   cmdReqChunkinfo for " + nodeID + "," + localID);
 
-		long CID = CmdUtils.get_CID_from_tuple(arguments[1]);
+		final long chunkID = CmdUtils.getCIDfromTuple(arguments[1]);
 
 		try {
 
-			if (MemoryManager.isResponsible(CID)) {
-				backupPeers = getBackupPeers(CID);
+			if (MemoryManager.isResponsible(chunkID)) {
+				backupPeers = getBackupPeers(chunkID);
 				return "  Stored on peer=" + m_nodeID + ", backup_peers=" + Arrays.toString(backupPeers);
 			} else {
-				primaryPeer = m_lookup.get(CID).getPrimaryPeer();
+				primaryPeer = m_lookup.get(chunkID).getPrimaryPeer();
 				return "  Chunk not stored on this peer. Contact peer " + primaryPeer + " or a superpeer";
 			}
 		} catch (final DXRAMException de) {
 			return "error: " + de.toString();
 		}
+	}
+
+	/**
+	 * Handles 'chunkinfo' command. Called by incomingCommandRequest
+	 * @param p_command
+	 *            the CommandMessage
+	 * @return the result string
+	 */
+	private String cmdReqCIDT(final String p_command) {
+
+		try {
+//			de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.printDebugInfos();
+			System.out.println("cmdReqCIDT 0");
+			final ArrayList<Long> cidLocalArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDrangesOfAllLocalChunks();
+			System.out.println("cmdReqCIDT 1");
+			String ret = "  Local (ranges): ";
+			if (cidLocalArray==null) {
+				ret = ret + "empty.\n";
+			} else if (cidLocalArray.size()==0) {
+				ret = ret + "empty.\n";
+			} else {
+				boolean first=true;
+				for (long l : cidLocalArray) {
+					if (first) {
+						first=false;
+					} else {
+						ret = ret + ",";
+					}
+					ret += CmdUtils.getLIDfromCID(l);
+				}
+				ret = ret + "\n";
+			}
+			System.out.println("cmdReqCIDT 2");
+
+			final ArrayList<Long> cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
+			System.out.println("cmdReqCIDT 3");
+
+			ret = ret + "  Migrated (NID,LID): ";
+			if (cidMigratedArray==null) {
+				ret = ret + "empty.";
+			} else if (cidMigratedArray.size()==0) {
+				ret = ret + "empty.";
+			} else {
+				boolean first=true;
+				for (long l : cidMigratedArray) {
+					if (first) {
+						first=false;
+					} else {
+						ret = ret + "; ";
+					}
+					ret += CmdUtils.getTupleFromCID(l);
+				}
+			}
+			return ret;
+		} catch(final MemoryException me) {
+			System.out.println("cmdReqCIDT: MemoryException");
+		}
+		return "error: internal error";
 	}
 
 	/**
@@ -1752,11 +1816,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		if (cmd.indexOf("chunkinfo") >= 0) {
 			// chunkinfo command?
-			res = chunkinfo(cmd);
+			res = cmdReqChunkinfo(cmd);
+		} else if (cmd.indexOf("cidt") >= 0) {
+				// CIDTable command?
+				res = cmdReqCIDT(cmd);
 		} else {
 			// command handled in callback?
-			if (Core.m_commandListener != null) {
-				res = Core.m_commandListener.processCmd(cmd, true);
+			if (Core.getCommandListener() != null) {
+				res = Core.getCommandListener().processCmd(cmd, true);
 			} else {
 				res = "error: no command listener registered";
 				System.out.println("error: command request received but no command listener registered");
