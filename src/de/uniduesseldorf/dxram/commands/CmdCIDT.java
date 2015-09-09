@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.commands;
 
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -8,11 +9,11 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
  * @author Michael Schoettner 07.09.2015
  */
 public class CmdCIDT extends AbstractCmd {
+
 	/**
 	 * Constructor
 	 */
-	public CmdCIDT() {
-	}
+	public CmdCIDT() {}
 
 	@Override
 	public String getName() {
@@ -38,6 +39,7 @@ public class CmdCIDT extends AbstractCmd {
 	// called after parameter have been checked
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
 		String res;
 		String[] arguments;
 		short nodeID;
@@ -52,16 +54,15 @@ public class CmdCIDT extends AbstractCmd {
 
 			// process result of remote call
 			if (res.indexOf("error") > -1) {
-				System.out.println(res);
-				return false;
+				ret = false;
 			}
 			System.out.println(res);
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
-			return false;
+			ret = false;
 		}
 
-		return true;
+		return ret;
 	}
 }

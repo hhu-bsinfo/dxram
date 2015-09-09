@@ -13,8 +13,7 @@ public class CmdDel extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdDel() {
-	}
+	public CmdDel() {}
 
 	@Override
 	public String getName() {
@@ -39,6 +38,7 @@ public class CmdDel extends AbstractCmd {
 	// called after parameter have been checked
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
 		String[] arguments;
 		short nodeID;
 
@@ -59,39 +59,38 @@ public class CmdDel extends AbstractCmd {
 
 			// did we get an error message back?
 			if (res.indexOf("error") > -1) {
-				System.out.println(res);
-				return false;
+				ret = false;
 			}
-
 			System.out.println(res);
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
-			return false;
+			ret = false;
 		}
-		return true;
+		return ret;
 	}
 
 	@Override
 	public String remoteExecute(final String p_command) {
+		String ret;
 		String[] arguments;
 
 		if (p_command == null) {
-			return "  error: internal error";
+			ret = "  error: internal error";
+		} else {
+			try {
+				arguments = p_command.split(" ");
+
+				Core.remove(CmdUtils.getCIDfromTuple(arguments[1]));
+
+				ret = "  Chunk deleted.";
+			} catch (final DXRAMException e) {
+				System.out.println("Core.remove failed.");
+				ret = "  error: 'delete' failed";
+			}
 		}
 
-		try {
-			arguments = p_command.split(" ");
-
-			Core.remove(CmdUtils.getCIDfromTuple(arguments[1]));
-
-			return "  Chunk deleted.";
-
-		} catch (final DXRAMException e) {
-			System.out.println("Core.remove failed.");
-			return "  error: 'delete' failed";
-
-		}
+		return ret;
 	}
 
 }

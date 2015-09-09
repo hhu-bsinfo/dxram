@@ -17,8 +17,7 @@ public class CmdGet extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdGet() {
-	}
+	public CmdGet() {}
 
 	@Override
 	public String getName() {
@@ -35,7 +34,7 @@ public class CmdGet extends AbstractCmd {
 		final String line1 = "Get data of chunk NID,LID.\n";
 		final String line2 = "Optionally, the request can be sent to node destNID (must not be a superpeer).\n";
 		final String line3 = "Important: Only a maximum of 100 byte of data is transfered.";
-		return line1+line2+line3;
+		return line1 + line2 + line3;
 	}
 
 	@Override
@@ -46,6 +45,7 @@ public class CmdGet extends AbstractCmd {
 	// called after parameter have been checked
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
 		String[] arguments;
 		short nodeID;
 
@@ -69,59 +69,61 @@ public class CmdGet extends AbstractCmd {
 
 			// did we get an error message back?
 			if (res.indexOf("error") > -1) {
-				System.out.println(res);
-				return false;
+				ret = false;
 			}
-
 			System.out.println(res);
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
-			return false;
+			ret = false;
 		}
-		return true;
+
+		return ret;
 	}
 
 	@Override
 	public String remoteExecute(final String p_command) {
-		Chunk c = null;
+		String ret;
 		String data = null;
 		String[] arguments;
+		Chunk c = null;
+		ByteBuffer b;
 
 		if (p_command == null) {
-			return "  error: internal error";
+			ret = "  error: internal error";
+		} else {
+			try {
+				arguments = p_command.split(" ");
+
+				c = Core.get(CmdUtils.getCIDfromTuple(arguments[1]));
+				if (c == null) {
+					ret = "  error: CID(" + arguments[1] + ") not found";
+				} else {
+					b = c.getData();
+
+					// send back max. MAX_DATA_TRANSFER byte
+					if (c.getSize() <= MAX_DATA_TRANSFER) {
+						data = new String(b.array());
+					} else {
+						final byte[] buff = new byte[MAX_DATA_TRANSFER];
+						for (int i = 0; i < MAX_DATA_TRANSFER - 3; i++) {
+							buff[i] = b.get(i);
+						}
+						for (int i = MAX_DATA_TRANSFER - 3; i < MAX_DATA_TRANSFER; i++) {
+							buff[i] = (byte) '.';
+						}
+						data = new String(buff);
+					}
+					// System.out.println(data);
+
+					ret = "  Chunk data: " + data;
+				}
+			} catch (final DXRAMException e) {
+				ret = "  error: 'get' failed";
+			}
 		}
 
-		try {
-			arguments = p_command.split(" ");
-
-			c = Core.get(CmdUtils.getCIDfromTuple(arguments[1]));
-			if (c == null) {
-				return "  error: CID(" + arguments[1] + ") not found";
-			}
-
-			final ByteBuffer b = c.getData();
-
-			// send back max. MAX_DATA_TRANSFER byte
-			if (c.getSize() <= MAX_DATA_TRANSFER) {
-				data = new String(b.array());
-			} else {
-				final byte[] buff = new byte[MAX_DATA_TRANSFER];
-				for (int i = 0; i < (MAX_DATA_TRANSFER - 3); i++) {
-					buff[i] = b.get(i);
-				}
-				for (int i = MAX_DATA_TRANSFER - 3; i < MAX_DATA_TRANSFER; i++) {
-					buff[i] = (byte) '.';
-				}
-				data = new String(buff);
-			}
-			// System.out.println(data);
-
-			return "  Chunk data: " + data;
-
-		} catch (final DXRAMException e) {}
-
-		return "  error: 'get' failed";
+		return ret;
 	}
 
 }

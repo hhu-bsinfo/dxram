@@ -15,8 +15,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.AbstractKeyValueList.KeyValuePair;
  * @param <ValueType>
  *            the type of the value
  */
-public abstract class AbstractKeyValueList<KeyType, ValueType> extends
-		AbstractList<KeyValuePair<KeyType, ValueType>> {
+public abstract class AbstractKeyValueList<KeyType, ValueType> extends AbstractList<KeyValuePair<KeyType, ValueType>> {
 
 	// Attributes
 	private final int m_valueOffset;
@@ -244,7 +243,7 @@ public abstract class AbstractKeyValueList<KeyType, ValueType> extends
 			boolean ret = false;
 
 			if (p_object instanceof KeyValuePair) {
-				ret = m_key.equals(((KeyValuePair<?, ?>)p_object).getKey());
+				ret = m_key.equals(((KeyValuePair<?, ?>) p_object).getKey());
 			}
 
 			return ret;

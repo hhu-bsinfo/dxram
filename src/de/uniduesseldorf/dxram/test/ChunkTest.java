@@ -34,8 +34,7 @@ public final class ChunkTest {
 		Chunk getChunk;
 
 		// Initialize EPM
-		Core.initialize(ConfigurationHandler.getDefaultConfiguration(),
-				NodesConfigurationHandler.getLocalConfiguration());
+		Core.initialize(ConfigurationHandler.getDefaultConfiguration(), NodesConfigurationHandler.getLocalConfiguration());
 
 		try {
 			putChunk = Core.createNewChunk(CHUNK_SIZE);

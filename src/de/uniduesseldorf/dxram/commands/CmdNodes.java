@@ -13,8 +13,7 @@ public class CmdNodes extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdNodes() {
-	}
+	public CmdNodes() {}
 
 	@Override
 	public String getName() {
@@ -41,7 +40,7 @@ public class CmdNodes extends AbstractCmd {
 	/**
 	 * returns a number for the argument
 	 * @param p_arguments
-	 * 			argument
+	 *            argument
 	 * @return 0,1,2
 	 */
 	private static int getParam(final String[] p_arguments) {
@@ -63,20 +62,23 @@ public class CmdNodes extends AbstractCmd {
 
 	@Override
 	public boolean areParametersSane(final String[] p_arguments) {
+		boolean ret;
+
 		if (!super.areParametersSane(p_arguments)) {
-			return false;
+			ret = false;
+		} else if (getParam(p_arguments) >= 0) {
+			ret = true;
+		} else {
+			printUsgae();
+			ret = false;
 		}
 
-		if (getParam(p_arguments) >= 0) {
-			return true;
-		}
-
-		printUsgae();
-		return false;
+		return ret;
 	}
 
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
 		String[] arguments;
 
 		try {
@@ -102,8 +104,9 @@ public class CmdNodes extends AbstractCmd {
 			}
 		} catch (final ZooKeeperException e) {
 			System.out.println("  error: could not access ZooKeeper!");
-			return false;
+			ret = false;
 		}
-		return true;
+
+		return ret;
 	}
 }

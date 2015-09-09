@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.util.concurrent.Semaphore;
@@ -168,7 +169,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > 1200 && !m_ignoreTimeout) {
 				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
-				System.out.println("wait-for-response time-out: " + this.print());
+				System.out.println("wait-for-response time-out: " + print());
 				throw new NetworkException("Timeout Occurred");
 			}
 			try {

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.io.IOException;
@@ -63,8 +64,7 @@ abstract class AbstractConnectionCreator {
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	public abstract AbstractConnection createConnection(short p_destination, DataReceiver p_listener)
-			throws IOException;
+	public abstract AbstractConnection createConnection(short p_destination, DataReceiver p_listener) throws IOException;
 
 	/**
 	 * Informs the ConnectionCreatorListener about a new connection

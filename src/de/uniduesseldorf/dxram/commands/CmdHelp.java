@@ -12,8 +12,7 @@ public class CmdHelp extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdHelp() {
-	}
+	public CmdHelp() {}
 
 	@Override
 	public String getName() {
@@ -29,7 +28,7 @@ public class CmdHelp extends AbstractCmd {
 	public String getHelpMessage() {
 		final String line1 = "Shows help information.\nhelp: list all commands\n";
 		final String line2 = "help command: show help information about given 'command'";
-		return line1+line2;
+		return line1 + line2;
 	}
 
 	@Override
@@ -40,6 +39,7 @@ public class CmdHelp extends AbstractCmd {
 	// called after parameter have been checked
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
 		String[] arguments;
 
 		arguments = p_command.split(" ");
@@ -51,11 +51,12 @@ public class CmdHelp extends AbstractCmd {
 			final AbstractCmd c = Shell.getCommand(arguments[1]);
 			if (c == null) {
 				System.out.println("  error: unknown command '" + arguments[1] + "'");
-				return false;
+				ret = false;
 			}
 
 			c.printHelpMsg();
 		}
-		return true;
+
+		return ret;
 	}
 }

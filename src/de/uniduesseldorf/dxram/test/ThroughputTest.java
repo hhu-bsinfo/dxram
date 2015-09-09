@@ -207,8 +207,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateCreate(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateCreate(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -256,8 +255,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluatePut(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
-		ExecutionException {
+		private TestResult evaluatePut(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
@@ -309,8 +307,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
-		ExecutionException {
+		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
@@ -359,8 +356,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			final long[] chunkIDs = new long[count];
@@ -412,8 +408,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			final long nodeID = (long) NodeID.getLocalNodeID() << 48;
 			ExecutorService executorService;
@@ -463,8 +458,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateCreateNS(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateCreateNS(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -512,8 +506,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -567,8 +560,7 @@ public final class ThroughputTest {
 
 			output.append("\n" + p_test + ":");
 			output.append("\nOverall Time:\t" + Tools.readableNanoTime(p_result.getTime()));
-			output.append("\nTime / Op:\t" + format.format(p_result.getTime() / (p_chunkCount * 1.0))
-					+ " nanoseconds");
+			output.append("\nTime / Op:\t" + format.format(p_result.getTime() / (p_chunkCount * 1.0)) + " nanoseconds");
 			output.append("\nOps / Second:\t" + format.format(p_chunkCount * 1000000000.0 / p_result.getTime()));
 
 			System.out.println(output);
@@ -671,8 +663,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException,
-		ExecutionException {
+		private TestResult evaluateGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -720,8 +711,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateMultiGet(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			final long[] chunkIDs;
 			ExecutorService executorService;
@@ -773,8 +763,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateLock(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -823,8 +812,7 @@ public final class ThroughputTest {
 		 * @throws ExecutionException
 		 *             if the test could not be executed
 		 */
-		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount)
-				throws InterruptedException, ExecutionException {
+		private TestResult evaluateGetNS(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 			final int count = p_chunkCount / p_threadCount;
 			ExecutorService executorService;
 			Future<?>[] futures;
@@ -878,8 +866,7 @@ public final class ThroughputTest {
 
 			output.append("\n" + p_test + ":");
 			output.append("\nOverall Time:\t" + Tools.readableNanoTime(p_result.getTime()));
-			output.append("\nTime / Op:\t" + format.format(p_result.getTime() / (p_chunkCount * 1.0))
-					+ " nanoseconds");
+			output.append("\nTime / Op:\t" + format.format(p_result.getTime() / (p_chunkCount * 1.0)) + " nanoseconds");
 			output.append("\nOps / Second:\t" + format.format(p_chunkCount * 1000000000.0 / p_result.getTime()));
 
 			System.out.println(output);

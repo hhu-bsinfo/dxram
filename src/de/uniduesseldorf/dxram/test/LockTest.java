@@ -92,8 +92,7 @@ public final class LockTest {
 	 * @throws ExecutionException
 	 *             if the test could not be executed
 	 */
-	private static TestResult evaluateNoLock(final int p_rounds, final int p_threadCount)
-			throws InterruptedException, ExecutionException {
+	private static TestResult evaluateNoLock(final int p_rounds, final int p_threadCount) throws InterruptedException, ExecutionException {
 		long time;
 
 		time = evaluateLock(new NoLock(), p_rounds, p_threadCount);
@@ -113,8 +112,7 @@ public final class LockTest {
 	 * @throws ExecutionException
 	 *             if the test could not be executed
 	 */
-	private static TestResult evaluateJNILock(final int p_rounds, final int p_threadCount)
-			throws InterruptedException, ExecutionException {
+	private static TestResult evaluateJNILock(final int p_rounds, final int p_threadCount) throws InterruptedException, ExecutionException {
 		long time;
 
 		time = evaluateLock(new JNISpinLock(), p_rounds, p_threadCount);
@@ -134,8 +132,7 @@ public final class LockTest {
 	 * @throws ExecutionException
 	 *             if the test could not be executed
 	 */
-	private static TestResult evaluateSpinLock(final int p_rounds, final int p_threadCount)
-			throws InterruptedException, ExecutionException {
+	private static TestResult evaluateSpinLock(final int p_rounds, final int p_threadCount) throws InterruptedException, ExecutionException {
 		long time;
 
 		time = evaluateLock(new SpinLock(), p_rounds, p_threadCount);
@@ -155,8 +152,7 @@ public final class LockTest {
 	 * @throws ExecutionException
 	 *             if the test could not be executed
 	 */
-	private static TestResult evaluateJavaLock(final int p_rounds, final int p_threadCount)
-			throws InterruptedException, ExecutionException {
+	private static TestResult evaluateJavaLock(final int p_rounds, final int p_threadCount) throws InterruptedException, ExecutionException {
 		long time;
 
 		time = evaluateLock(new ReentrantLock(false), p_rounds, p_threadCount);
@@ -178,8 +174,7 @@ public final class LockTest {
 	 * @throws ExecutionException
 	 *             if the test could not be executed
 	 */
-	private static long evaluateLock(final Lock p_lock, final int p_rounds, final int p_threadCount)
-			throws InterruptedException, ExecutionException {
+	private static long evaluateLock(final Lock p_lock, final int p_rounds, final int p_threadCount) throws InterruptedException, ExecutionException {
 		ExecutorService executorService;
 		Future<?>[] futures;
 		long ret;

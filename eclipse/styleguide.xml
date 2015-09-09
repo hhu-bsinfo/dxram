@@ -110,7 +110,7 @@
       <property name="separated" value="true"/>
     </module>
     <module name="LineLength">
-      <property name="max" value="200"/>
+      <property name="max" value="160"/>
       <property name="tabWidth" value="4"/>
     </module>
     <module name="OuterTypeNumber"/>

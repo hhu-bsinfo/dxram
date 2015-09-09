@@ -555,8 +555,7 @@ public class Cache<KeyType, ValueType> {
 		 *            the current cache entries
 		 */
 		@Override
-		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry,
-				final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
+		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
 
 	}
 
@@ -626,8 +625,7 @@ public class Cache<KeyType, ValueType> {
 		 *            the current cache entries
 		 */
 		@Override
-		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry,
-				final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
+		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
 
 	}
 

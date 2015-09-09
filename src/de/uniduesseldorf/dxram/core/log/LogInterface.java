@@ -37,8 +37,7 @@ public interface LogInterface extends CoreComponent {
 	 * @throws InterruptedException
 	 *             if the secondary log could not be returned
 	 */
-	SecondaryLogWithSegments getSecondaryLog(long p_chunkID, short p_source, byte p_rangeID)
-			throws IOException, InterruptedException;
+	SecondaryLogWithSegments getSecondaryLog(long p_chunkID, short p_source, byte p_rangeID) throws IOException, InterruptedException;
 
 	/**
 	 * Returns the secondary log buffer
@@ -54,8 +53,7 @@ public interface LogInterface extends CoreComponent {
 	 * @throws InterruptedException
 	 *             if the secondary log buffer could not be returned
 	 */
-	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID, short p_source, byte p_rangeID)
-			throws IOException, InterruptedException;
+	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID, short p_source, byte p_rangeID) throws IOException, InterruptedException;
 
 	/**
 	 * Returns the backup range
@@ -134,8 +132,7 @@ public interface LogInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	void recoverRange(short p_owner, long p_low, long p_high)
-			throws DXRAMException;
+	void recoverRange(short p_owner, long p_low, long p_high) throws DXRAMException;
 
 	/**
 	 * Reads the local data of one log
@@ -150,8 +147,7 @@ public interface LogInterface extends CoreComponent {
 	 * @return the local data
 	 * @note for testing only
 	 */
-	byte[][] readAllEntries(short p_owner, long p_chunkID, byte p_rangeID)
-			throws DXRAMException;
+	byte[][] readAllEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
 	 * Prints the metadata of one node's log

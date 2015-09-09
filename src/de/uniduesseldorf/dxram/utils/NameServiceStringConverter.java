@@ -15,10 +15,8 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
 public final class NameServiceStringConverter {
 
 	// Constants
-	private static final String NAMESERVICE_TYPE = Core.getConfiguration().getStringValue(
-			ConfigurationConstants.NAMESERVICE_TYPE);
-	private static final int KEY_LENGTH = Core.getConfiguration().getIntValue(
-			ConfigurationConstants.NAMESERVICE_KEY_LENGTH);
+	private static final String NAMESERVICE_TYPE = Core.getConfiguration().getStringValue(ConfigurationConstants.NAMESERVICE_TYPE);
+	private static final int KEY_LENGTH = Core.getConfiguration().getIntValue(ConfigurationConstants.NAMESERVICE_KEY_LENGTH);
 
 	// Attributes
 	private static Map<Character, Integer> m_charMap;
@@ -115,9 +113,9 @@ public final class NameServiceStringConverter {
 
 		if (NAMESERVICE_TYPE.equals("NAME")) {
 			chars = p_name.toCharArray();
-			for (int i = 0; (i < KEY_LENGTH / 6) && (i < chars.length); i++) {
+			for (int i = 0; i < KEY_LENGTH / 6 && i < chars.length; i++) {
 				value = m_charMap.get(chars[i]);
-				ret += value << (i * 6);
+				ret += value << i * 6;
 			}
 		} else {
 			ret = Integer.parseInt(p_name);

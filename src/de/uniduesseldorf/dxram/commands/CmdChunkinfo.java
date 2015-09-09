@@ -14,8 +14,7 @@ public class CmdChunkinfo extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdChunkinfo() {
-	}
+	public CmdChunkinfo() {}
 
 	@Override
 	public String getName() {
@@ -31,7 +30,7 @@ public class CmdChunkinfo extends AbstractCmd {
 	public String getHelpMessage() {
 		final String line1 = "Get information about chunk NID,LID (from peer NID).\n";
 		final String line2 = "Optionally, the request can be sent to superpeer destNID.";
-		return line1+line2;
+		return line1 + line2;
 	}
 
 	@Override
@@ -42,6 +41,7 @@ public class CmdChunkinfo extends AbstractCmd {
 	// called after parameter have been checked
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
 		String res;
 		String[] arguments;
 		short nodeID;
@@ -66,16 +66,15 @@ public class CmdChunkinfo extends AbstractCmd {
 
 			// process result of remote call
 			if (res.indexOf("error") > -1) {
-				System.out.println(res);
-				return false;
+				ret = false;
 			}
 			System.out.println(res);
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
-			return false;
+			ret = false;
 		}
 
-		return true;
+		return ret;
 	}
 }

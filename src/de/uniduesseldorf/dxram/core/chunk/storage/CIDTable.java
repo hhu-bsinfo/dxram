@@ -68,8 +68,7 @@ public final class CIDTable {
 		m_defragmenter = new Defragmenter();
 		// TODO: new Thread(m_defragmenter).start();
 
-		System.out.println("CIDTable: init success (page directory at: 0x" + Long.toHexString(m_nodeIDTableDirectory)
-				+ ")");
+		System.out.println("CIDTable: init success (page directory at: 0x" + Long.toHexString(m_nodeIDTableDirectory) + ")");
 	}
 
 	/**
@@ -287,8 +286,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private static void setEntry(final long p_cid, final long p_address, final long p_table, final int p_level)
-			throws MemoryException {
+	private static void setEntry(final long p_cid, final long p_address, final long p_table, final int p_level) throws MemoryException {
 		long index;
 		long entry;
 
@@ -407,9 +405,8 @@ public final class CIDTable {
 			ret = new ArrayList<Long>();
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
 				entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
-				if (entry > 0 && i != ((int) NodeID.getLocalNodeID() & 0xFFFF)) {
-					ret.addAll(getAllEntries((long) i << 48, readEntry(m_nodeIDTableDirectory, i & NID_LEVEL_BITMASK)
-							& BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+				if (entry > 0 && i != (NodeID.getLocalNodeID() & 0xFFFF)) {
+					ret.addAll(getAllEntries((long) i << 48, readEntry(m_nodeIDTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
 				}
 			}
 
@@ -439,9 +436,9 @@ public final class CIDTable {
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
 				entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
 				if (entry > 0) {
-					if (i == ((int) NodeID.getLocalNodeID() & 0xFFFF)) {
-						ret.addAll(getAllRanges((long) i << 48, readEntry(m_nodeIDTableDirectory, i & NID_LEVEL_BITMASK)
-								& BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+					if (i == (NodeID.getLocalNodeID() & 0xFFFF)) {
+						ret.addAll(getAllRanges((long) i << 48, readEntry(m_nodeIDTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
+								LID_TABLE_LEVELS - 1));
 					}
 				}
 			}
@@ -459,7 +456,7 @@ public final class CIDTable {
 		// compress intervals
 
 		if (ret.size() >= 2) {
-			if ((ret.size() % 2) != 0) {
+			if (ret.size() % 2 != 0) {
 				throw new MemoryException("internal error in getCIDrangesOfAllChunks");
 				// System.out.println("error: in CIDrange list");
 			} else {
@@ -468,7 +465,7 @@ public final class CIDTable {
 					intervalStart = CmdUtils.getLIDfromCID(ret.get(i + 2));
 
 					// can we melt intervals?
-					if ((intervalEnd + 1) == intervalStart) {
+					if (intervalEnd + 1 == intervalStart) {
 						System.out.println("   remove el.");
 						ret.remove(i + 1);
 						ret.remove(i + 1);
@@ -500,8 +497,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	private static ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level)
-			throws MemoryException {
+	private static ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
 		ArrayList<Long> ret;
 		long entry;
 		int range = 0;
@@ -514,8 +510,7 @@ public final class CIDTable {
 				if ((entry & DELETED_FLAG) == 0) {
 
 					if (p_level > 0) {
-						ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level),
-								entry & BITMASK_ADDRESS, p_level - 1));
+						ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1));
 					} else {
 						if (range == 0) {
 							range = 1;
@@ -547,8 +542,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	private static ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level)
-			throws MemoryException {
+	private static ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
 		ArrayList<Long> ret;
 		long entry;
 
@@ -559,8 +553,7 @@ public final class CIDTable {
 			entry = readEntry(p_table, i);
 			if (entry > 0) {
 				if (p_level > 0) {
-					ret.addAll(getAllEntries(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level),
-							entry & BITMASK_ADDRESS, p_level - 1));
+					ret.addAll(getAllEntries(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1));
 				} else {
 					ret.add(p_unfinishedCID + i);
 				}
@@ -823,8 +816,7 @@ public final class CIDTable {
 		 * @throws MemoryException
 		 *             if the CIDTable could not be accessed
 		 */
-		private boolean findFreeCIDs(final long p_table, final int p_level,
-				final long p_offset) throws MemoryException {
+		private boolean findFreeCIDs(final long p_table, final int p_level, final long p_offset) throws MemoryException {
 			boolean ret = false;
 			long entry;
 

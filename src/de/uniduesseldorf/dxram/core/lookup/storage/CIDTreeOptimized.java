@@ -157,8 +157,7 @@ public final class CIDTreeOptimized implements Serializable {
 	 *            the backup peers
 	 * @return true if insertion was successful
 	 */
-	public boolean initRange(final long p_startID, final short p_creator,
-			final short[] p_backupPeers) {
+	public boolean initRange(final long p_startID, final short p_creator, final short[] p_backupPeers) {
 		long backupPeers;
 
 		if (0 == p_startID) {
@@ -167,8 +166,7 @@ public final class CIDTreeOptimized implements Serializable {
 			if (null == m_root) {
 				createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
 			}
-			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
-					+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
+			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
 			m_backupRanges.add(new long[] {p_startID, backupPeers});
 		}
 		return true;
@@ -184,11 +182,10 @@ public final class CIDTreeOptimized implements Serializable {
 	 *            the backup peers
 	 * @return true if insertion was successful
 	 */
-	public boolean initMigrationRange(final int p_rangeID, final short p_creator,
-			final short[] p_backupPeers) {
+	public boolean initMigrationRange(final int p_rangeID, final short p_creator, final short[] p_backupPeers) {
 
-		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
-				+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF));
+		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
+				+ (p_backupPeers[0] & 0x0000FFFF));
 
 		return true;
 	}
@@ -276,7 +273,7 @@ public final class CIDTreeOptimized implements Serializable {
 				if (tempResult != null) {
 					result = tempResult;
 					for (int i = 0; i < ret.length; i++) {
-						backupPeer = (short) ((result >> (i * 16)));
+						backupPeer = (short) (result >> i * 16);
 						if (backupPeer != 0) {
 							ret[i] = backupPeer;
 						}
@@ -397,19 +394,16 @@ public final class CIDTreeOptimized implements Serializable {
 		for (int i = 0; i < m_backupRanges.size(); i++) {
 			element = m_backupRanges.get(i);
 			backupNodes = element[1];
-			backupPeers = new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16),
-					(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
+			backupPeers =
+					new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16), (short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
 			if (p_failedPeer == backupPeers[0]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
 				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[1]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
 				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[2]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
 				element[1] = backupNodes;
 			}
 		}
@@ -1045,8 +1039,7 @@ public final class CIDTreeOptimized implements Serializable {
 				p_node.addEntry(parentLid, parentNodeID);
 
 				p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
-				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(),
-						p_node.getNumberOfChildren());
+				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
 
 				if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
 					// Removing key made parent too small, combined up tree
@@ -1386,16 +1379,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_lid) {
-					low = mid + 1;
-				} else if (midVal > p_lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_lid) {
+				low = mid + 1;
+			} else if (midVal > p_lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1585,16 +1578,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLid(0);
+			midVal = m_children[mid].getLid(0);
 
-				if (midVal < lid) {
-					low = mid + 1;
-				} else if (midVal > lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < lid) {
+				low = mid + 1;
+			} else if (midVal > lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

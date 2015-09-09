@@ -27,10 +27,8 @@ public final class Superpeer {
 	public static void main(final String[] p_arguments) {
 		// Initialize DXRAM
 		try {
-			Core.initialize(ConfigurationHandler
-					.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler
-					.getConfigurationFromFile("config/nodes.config"));
+			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}

@@ -35,8 +35,7 @@ public final class Konferenz15Test {
 	private static final int MIN_SIZE = 1;
 	private static final int MAX_SIZE = 100;
 
-	private static final String PROGRESSBAR =
-			"|0%_____10%_______20%_______30%_______40%_______50%_______60%_______70%_______80%_______90%______100%|";
+	private static final String PROGRESSBAR = "|0%_____10%_______20%_______30%_______40%_______50%_______60%_______70%_______80%_______90%______100%|";
 
 	// Constructors
 	/**
@@ -205,8 +204,7 @@ public final class Konferenz15Test {
 					migrations -= size;
 				}
 				time = System.nanoTime() - time;
-				System.out.println(m_migrations + " Chunks (" + ranges + " Ranges) migrated in "
-						+ Tools.readableNanoTime(time));
+				System.out.println(m_migrations + " Chunks (" + ranges + " Ranges) migrated in " + Tools.readableNanoTime(time));
 				System.out.println("Time/Op: " + Tools.readableNanoTime(time / ranges));
 
 				System.out.println("Server started");

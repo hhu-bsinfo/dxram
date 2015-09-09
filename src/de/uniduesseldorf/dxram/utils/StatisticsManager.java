@@ -272,7 +272,7 @@ public final class StatisticsManager {
 			if (m_count == 1) {
 				m_avg = p_time;
 			} else {
-				m_avg = ((m_avg * (m_count - 1)) + p_time) / m_count;
+				m_avg = (m_avg * (m_count - 1) + p_time) / m_count;
 			}
 
 			m_lock.unlock();

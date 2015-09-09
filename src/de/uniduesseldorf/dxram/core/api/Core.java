@@ -115,8 +115,7 @@ public final class Core {
 	 *            the nodes configuration to use
 	 */
 	public static void initialize(final Configuration p_configuration, final NodesConfiguration p_nodesConfiguration) {
-		LOGGER.trace("Entering initialize with: p_configuration=" + p_configuration + ", p_nodesConfiguration="
-				+ p_nodesConfiguration);
+		LOGGER.trace("Entering initialize with: p_configuration=" + p_configuration + ", p_nodesConfiguration=" + p_nodesConfiguration);
 
 		try {
 			p_configuration.makeImmutable();
@@ -129,8 +128,7 @@ public final class Core {
 
 			m_network = CoreComponentFactory.getNetworkInterface();
 
-			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE)
-					&& NodeID.getRole().equals(Role.PEER)) {
+			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE) && NodeID.getRole().equals(Role.PEER)) {
 				CoreComponentFactory.getLogInterface();
 			}
 
@@ -508,8 +506,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static String executeChunkCommand(final short p_dest, final String p_command, final boolean p_reply)
-			throws DXRAMException {
+	public static String executeChunkCommand(final short p_dest, final String p_command, final boolean p_reply) throws DXRAMException {
 		String ret = null;
 		ChunkCommandRequest request;
 		ChunkCommandResponse response;
@@ -547,8 +544,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static String executeLookupCommand(final short p_dest, final String p_command, final boolean p_reply)
-			throws DXRAMException {
+	public static String executeLookupCommand(final short p_dest, final String p_command, final boolean p_reply) throws DXRAMException {
 		String ret = null;
 		LookupReflectionRequest request;
 		LookupReflectionResponse response;
@@ -641,8 +637,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunks could not be migrated
 	 */
-	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
-			throws DXRAMException {
+	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) throws DXRAMException {
 		boolean ret = false;
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
@@ -683,8 +678,7 @@ public final class Core {
 	 * @param p_parameters
 	 *            the parameters of the method in which the exception occured (optional)
 	 */
-	public static void handleException(final Exception p_exception, final ExceptionSource p_source,
-			final Object... p_parameters) {
+	public static void handleException(final Exception p_exception, final ExceptionSource p_source, final Object... p_parameters) {
 		boolean ret = false;
 
 		LOGGER.error("ERROR in " + p_source.toString(), p_exception);
@@ -701,9 +695,7 @@ public final class Core {
 			} else if (p_exception instanceof RecoveryException) {
 				ret = m_exceptionHandler.handleException((RecoveryException) p_exception, p_source, p_parameters);
 			} else if (p_exception instanceof ComponentCreationException) {
-				ret =
-						m_exceptionHandler.handleException((ComponentCreationException) p_exception, p_source,
-								p_parameters);
+				ret = m_exceptionHandler.handleException((ComponentCreationException) p_exception, p_source, p_parameters);
 			} else {
 				ret = m_exceptionHandler.handleException(p_exception, p_source, p_parameters);
 			}

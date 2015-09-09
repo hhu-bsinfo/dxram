@@ -72,8 +72,7 @@ public final class NodesConfiguration {
 		 * @param p_role
 		 *            the role of the node
 		 */
-		public NodesConfigurationEntry(final String p_ip, final int p_port, final short p_rack,
-				final short p_switch, final Role p_role) {
+		public NodesConfigurationEntry(final String p_ip, final int p_port, final short p_rack, final short p_switch, final Role p_role) {
 			Contract.checkNotNull(p_ip, "no IP given");
 			Contract.check(p_port > 0 && p_port < 65536, "invalid port given");
 			Contract.check(p_rack >= 0, "invalid rack given");
@@ -131,8 +130,8 @@ public final class NodesConfiguration {
 		// Methods
 		@Override
 		public String toString() {
-			return "NodesConfigurationEntry [m_ip=" + m_ip + ", m_port=" + m_port + ", m_rack=" + m_rack
-					+ ", m_switch=" + m_switch + ", m_role=" + m_role.getAcronym() + "]";
+			return "NodesConfigurationEntry [m_ip=" + m_ip + ", m_port=" + m_port + ", m_rack=" + m_rack + ", m_switch=" + m_switch + ", m_role="
+					+ m_role.getAcronym() + "]";
 		}
 
 	}
@@ -145,9 +144,7 @@ public final class NodesConfiguration {
 	public static enum Role {
 
 		// Constants
-		PEER('P'),
-		SUPERPEER('S'),
-		MONITOR('M');
+		PEER('P'), SUPERPEER('S'), MONITOR('M');
 
 		// Attributes
 		private char m_acronym;

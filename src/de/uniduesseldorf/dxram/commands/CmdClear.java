@@ -10,8 +10,7 @@ public class CmdClear extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdClear() {
-	}
+	public CmdClear() {}
 
 	@Override
 	public String getName() {

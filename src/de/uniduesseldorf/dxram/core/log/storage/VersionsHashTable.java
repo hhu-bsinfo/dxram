@@ -315,14 +315,12 @@ public class VersionsHashTable {
 		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newMap;
 
-		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity
-				+ " ... ");
+		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
 
 		oldCount = m_count;
 		while (index < oldThreshold) {
 			if (oldMap[index * 3] != 0) {
-				put((long) oldMap[index * 3] << 32 | oldMap[index * 3 + 1] & 0xFFFFFFFFL,
-						oldMap[index * 3 + 2] - 1);
+				put((long) oldMap[index * 3] << 32 | oldMap[index * 3 + 1] & 0xFFFFFFFFL, oldMap[index * 3 + 2] - 1);
 			}
 			index = (index + 1) % m_elementCapacity;
 		}

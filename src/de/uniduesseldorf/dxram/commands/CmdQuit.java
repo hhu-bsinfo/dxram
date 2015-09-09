@@ -12,8 +12,7 @@ public class CmdQuit extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdQuit() {
-	}
+	public CmdQuit() {}
 
 	@Override
 	public String getName() {
@@ -38,11 +37,16 @@ public class CmdQuit extends AbstractCmd {
 	// called after parameter have been checked
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
+
 		if (!areYouSure()) {
-			return false;
+			ret = false;
+		} else {
+			Core.close();
+			System.exit(0);
 		}
-		Core.close();
-		System.exit(0);
-		return true;
+
+		return ret;
 	}
+
 }

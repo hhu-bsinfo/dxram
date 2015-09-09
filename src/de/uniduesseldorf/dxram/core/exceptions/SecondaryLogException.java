@@ -57,7 +57,6 @@ public class SecondaryLogException extends DXRAMException {
 		m_dataSize = p_dataSize;
 	}
 
-
 	// Getters
 	/**
 	 * Returns the NodeID

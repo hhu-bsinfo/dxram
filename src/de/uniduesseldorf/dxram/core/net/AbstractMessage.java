@@ -85,8 +85,7 @@ public abstract class AbstractMessage {
 	 * @param p_ratingValue
 	 *            the rating value of the message
 	 */
-	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype,
-			final byte p_ratingValue) {
+	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
 		this(getNextMessageID(), p_destination, p_type, p_subtype, p_ratingValue);
 	}
 
@@ -101,8 +100,7 @@ public abstract class AbstractMessage {
 	 * @param p_subtype
 	 *            the message subtype
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type,
-			final byte p_subtype) {
+	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
 		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
 	}
 
@@ -119,8 +117,7 @@ public abstract class AbstractMessage {
 	 * @param p_ratingValue
 	 *            the rating value of the message
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type,
-			final byte p_subtype, final byte p_ratingValue) {
+	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
 		NodeID.check(p_destination);
 
 		m_messageID = p_messageID;

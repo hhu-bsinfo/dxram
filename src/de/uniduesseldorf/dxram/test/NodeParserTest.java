@@ -101,8 +101,7 @@ public final class NodeParserTest {
 	 * @param p_racksPerSwitch
 	 *            the number of racks per switch
 	 */
-	private static void addNodes(final NodesConfiguration p_configuration, final int p_count,
-			final byte p_nodesPerRack, final byte p_racksPerSwitch) {
+	private static void addNodes(final NodesConfiguration p_configuration, final int p_count, final byte p_nodesPerRack, final byte p_racksPerSwitch) {
 		String ip;
 		int port;
 		short s;

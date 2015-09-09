@@ -39,15 +39,13 @@ public final class MessageDirectory {
 		Constructor<?> constructor;
 
 		if (contains(p_type, p_subtype)) {
-			throw new IllegalArgumentException("Type " + p_type + " with subtype " + p_subtype
-					+ " is already registered");
+			throw new IllegalArgumentException("Type " + p_type + " with subtype " + p_subtype + " is already registered");
 		}
 
 		try {
 			constructor = p_class.getDeclaredConstructor();
 		} catch (final NoSuchMethodException e) {
-			throw new IllegalArgumentException(
-					"Class " + p_class.getCanonicalName() + " has no default constructor", e);
+			throw new IllegalArgumentException("Class " + p_class.getCanonicalName() + " has no default constructor", e);
 		}
 
 		// enlarge array
@@ -131,8 +129,7 @@ public final class MessageDirectory {
 		constructor = getConstructor(p_type, p_subtype);
 
 		if (constructor == null) {
-			throw new NetworkException("ERR::Could not create message instance: Message type (" + p_type + ":"
-					+ p_subtype + ") not registered");
+			throw new NetworkException("ERR::Could not create message instance: Message type (" + p_type + ":" + p_subtype + ") not registered");
 		}
 
 		try {

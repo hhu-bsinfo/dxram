@@ -10,6 +10,7 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
  *         25.06.2015
  */
 public class DefaultSecLogTombstone implements LogEntryHeaderInterface {
+
 	// Attributes
 	public static final short SIZE = 10;
 	public static final byte VER_OFFSET = LogHandler.LOG_ENTRY_LID_SIZE;
@@ -60,9 +61,8 @@ public class DefaultSecLogTombstone implements LogEntryHeaderInterface {
 			offset += LogHandler.LOG_ENTRY_NID_SIZE;
 		}
 
-		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
-				+ ((p_buffer[offset + 2] & 0xff) << 16) + (((long) p_buffer[offset + 3] & 0xff) << 24)
-				+ (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
+		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
+				+ (((long) p_buffer[offset + 3] & 0xff) << 24) + (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
 	}
 
 	@Override
@@ -70,8 +70,7 @@ public class DefaultSecLogTombstone implements LogEntryHeaderInterface {
 		long ret = -1;
 
 		if (p_logStoresMigrations) {
-			ret = ((long) getNodeID(p_buffer, p_offset, p_logStoresMigrations) << 48)
-					+ getLID(p_buffer, p_offset, p_logStoresMigrations);
+			ret = ((long) getNodeID(p_buffer, p_offset, p_logStoresMigrations) << 48) + getLID(p_buffer, p_offset, p_logStoresMigrations);
 		} else {
 			System.out.println("No ChunkID available!");
 		}
@@ -92,8 +91,7 @@ public class DefaultSecLogTombstone implements LogEntryHeaderInterface {
 			offset += LogHandler.LOG_ENTRY_NID_SIZE;
 		}
 
-		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
-				+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
+		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 	}
 
 	@Override

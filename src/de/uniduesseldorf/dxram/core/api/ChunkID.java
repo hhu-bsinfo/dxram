@@ -33,7 +33,7 @@ public final class ChunkID {
 	public static short getCreatorID(final long p_chunkID) {
 		check(p_chunkID);
 
-		return (short)((p_chunkID & CREATORID_BITMASK) >> 48);
+		return (short) ((p_chunkID & CREATORID_BITMASK) >> 48);
 	}
 
 	/**

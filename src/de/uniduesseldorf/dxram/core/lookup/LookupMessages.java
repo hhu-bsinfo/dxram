@@ -196,10 +196,8 @@ public final class LookupMessages {
 		 * @param p_trees
 		 *            the CIDTrees of the peers
 		 */
-		public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer,
-				final short p_predecessor, final short p_successor, final byte[] p_mappings,
-				final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers,
-				final ArrayList<CIDTreeOptimized> p_trees) {
+		public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor, final short p_successor,
+				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_request, SUBTYPE_JOIN_RESPONSE);
 
 			m_newContactSuperpeer = p_newContactSuperpeer;
@@ -551,8 +549,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID,
-				final boolean p_isBackup) {
+		public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_MIGRATE_REQUEST);
 
 			m_chunkID = p_chunkID;
@@ -602,8 +599,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -703,8 +699,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public MigrateMessage(final short p_destination, final long p_chunkID, final short p_nodeID,
-				final boolean p_isBackup) {
+		public MigrateMessage(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_MIGRATE_MESSAGE);
 
 			m_chunkID = p_chunkID;
@@ -754,8 +749,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -799,8 +793,8 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public MigrateRangeRequest(final short p_destination, final long p_startChunkID, final long p_endChunkID,
-				final short p_nodeID, final boolean p_isBackup) {
+		public MigrateRangeRequest(final short p_destination, final long p_startChunkID,
+				final long p_endChunkID, final short p_nodeID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_MIGRATE_RANGE_REQUEST);
 
 			m_startChunkID = p_startChunkID;
@@ -861,8 +855,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() * 2 + OutputHelper.getNodeIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() * 2 + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -962,8 +955,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_locations,
-				final boolean p_isBackup) {
+		public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_locations, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_INIT_RANGE_REQUEST);
 
 			m_startChunkIDOrRangeID = p_startChunkID;
@@ -1013,8 +1005,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getLongWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getLongWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -1223,8 +1214,7 @@ public final class LookupMessages {
 			if (m_backupSuperpeers == null) {
 				ret = OutputHelper.getBooleanWriteLength();
 			} else {
-				ret = OutputHelper.getBooleanWriteLength()
-						+ OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
+				ret = OutputHelper.getBooleanWriteLength() + OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
 			}
 
 			return ret;
@@ -1343,9 +1333,7 @@ public final class LookupMessages {
 		 * @param p_mappings
 		 *            the missing id mappings
 		 */
-		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request,
-				final ArrayList<CIDTreeOptimized> p_trees,
-				final byte[] p_mappings) {
+		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request, final ArrayList<CIDTreeOptimized> p_trees, final byte[] p_mappings) {
 			super(p_request, SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE);
 
 			m_trees = p_trees;
@@ -1668,8 +1656,7 @@ public final class LookupMessages {
 		 * @param p_trees
 		 *            the CIDTrees
 		 */
-		public SendBackupsMessage(final short p_destination, final byte[] p_mappings,
-				final ArrayList<CIDTreeOptimized> p_trees) {
+		public SendBackupsMessage(final short p_destination, final byte[] p_mappings, final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_SEND_BACKUPS_MESSAGE);
 
 			m_mappings = p_mappings;
@@ -1908,9 +1895,8 @@ public final class LookupMessages {
 		 * @param p_trees
 		 *            the CIDTrees of the peers
 		 */
-		public PromotePeerRequest(final short p_destination, final short p_predecessor, final short p_successor,
-				final short p_replacement, final byte[] p_mappings, final ArrayList<Short> p_superpeers,
-				final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
+		public PromotePeerRequest(final short p_destination, final short p_predecessor, final short p_successor, final short p_replacement,
+				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_PROMOTE_PEER_REQUEST);
 
 			m_predecessor = p_predecessor;
@@ -2458,8 +2444,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public InsertIDRequest(final short p_destination, final int p_id, final long p_chunkID,
-				final boolean p_isBackup) {
+		public InsertIDRequest(final short p_destination, final int p_id, final long p_chunkID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_INSERT_ID_REQUEST);
 
 			m_id = p_id;
@@ -2509,8 +2494,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getIntWriteLength() + OutputHelper.getChunkIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getIntWriteLength() + OutputHelper.getChunkIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -2582,8 +2566,7 @@ public final class LookupMessages {
 			if (m_backupSuperpeers == null) {
 				ret = OutputHelper.getBooleanWriteLength();
 			} else {
-				ret = OutputHelper.getBooleanWriteLength()
-						+ OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
+				ret = OutputHelper.getBooleanWriteLength() + OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
 			}
 
 			return ret;

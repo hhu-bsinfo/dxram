@@ -13,21 +13,24 @@ public final class CommandHandler implements CommandListener {
 	/**
 	 * Constructor
 	 */
-	public CommandHandler() {
-	}
+	public CommandHandler() {}
 
 	@Override
 	public String processCmd(final String p_command, final boolean p_needReply) {
+		String ret;
 		final String[] arguments = p_command.split(" ");
 		final AbstractCmd c = Shell.getCommand(arguments[0]);
 
 		if (c == null) {
-			return "error: unknown command";
+			ret = "error: unknown command";
 		} else {
 			if (c.areParametersSane(arguments)) {
-				return c.remoteExecute(p_command);
+				ret = c.remoteExecute(p_command);
+			} else {
+				ret = "internal error";
 			}
 		}
-		return "internal error";
+
+		return ret;
 	}
 }

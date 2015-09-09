@@ -227,8 +227,7 @@ public final class CoreComponentFactory {
 	 * @throws DXRAMException
 	 *             if the CoreComponent could not be created
 	 */
-	private static <T extends CoreComponent> T newInstance(final ConfigurationEntry<String> p_entry,
-			final Class<T> p_class) throws DXRAMException {
+	private static <T extends CoreComponent> T newInstance(final ConfigurationEntry<String> p_entry, final Class<T> p_class) throws DXRAMException {
 		T ret = null;
 		Object o;
 
