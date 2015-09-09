@@ -134,7 +134,7 @@ public final class Core {
 				CoreComponentFactory.getLogInterface();
 			}
 
-			registerCmdListenerr(new CommandHandler());
+			registerCmdListener(new CommandHandler());
 
 			// Register shutdown thread
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread());
@@ -504,7 +504,7 @@ public final class Core {
 	 *            the command
 	 * @param p_reply
 	 *            true: want reply (will be handled as request)
-   	 * @return result string
+	 * @return result string
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
@@ -541,7 +541,7 @@ public final class Core {
 	 *            the command
 	 * @param p_reply
 	 *            true: want reply (will be handled as request)
-   	 * @return result string
+	 * @return result string
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
@@ -575,9 +575,9 @@ public final class Core {
 	/*
 	 * public static void execute(final String p_command, final String... p_args) throws DXRAMException {
 	 * short type;
-	 * 
+	 *
 	 * type = CommandStringConverter.convert(p_command);
-	 * 
+	 *
 	 * switch (type) {
 	 * case 1:
 	 * // migrate: ChunkID, src, dest
