@@ -29,8 +29,8 @@ public class CmdChunkinfo extends AbstractCmd {
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Get information about chunk NID,LID (from peer NID).\n";
-		final String line2 = "Optionally, the request can be sent to superpeer destNID.";
+		final String line1 = "Get information about chunk NID,LID. Request send to NID.\n";
+		final String line2 = "destNID: explicit destination of request (peer or superpeer)";
 		return line1+line2;
 	}
 

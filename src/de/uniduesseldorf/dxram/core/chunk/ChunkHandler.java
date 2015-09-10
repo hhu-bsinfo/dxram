@@ -1802,6 +1802,25 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	}
 
 	/**
+	 * Handles 'backups' command. Called by incomingCommandRequest
+	 * @param p_command
+	 *            the CommandMessage
+	 * @return the result string
+	 */
+	private String cmdReqBackups(final String p_command) {
+		System.out.println("cmdReqBackups");
+		for (int i=0; i<m_ownBackupRanges.size(); i++) {
+			final BackupRange br = m_ownBackupRanges.get(i);
+			System.out.println("   BackupRange: "+i);
+			for (int j=0; i<br.m_backupPeers.length; j++) {
+				System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
+			}
+			System.out.println();
+		}
+		return "OK";
+	}
+
+	/**
 	 * Handles an incoming CommandRequest
 	 * @param p_request
 	 *            the CommandRequest
@@ -1815,11 +1834,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		cmd = p_request.getArgument();
 
 		if (cmd.indexOf("chunkinfo") >= 0) {
-			// chunkinfo command?
 			res = cmdReqChunkinfo(cmd);
 		} else if (cmd.indexOf("cidt") >= 0) {
-				// CIDTable command?
-				res = cmdReqCIDT(cmd);
+			res = cmdReqCIDT(cmd);
+		} else if (cmd.indexOf("backups") >= 0) {
+			res = cmdReqBackups(cmd);
 		} else {
 			// command handled in callback?
 			if (Core.getCommandListener() != null) {

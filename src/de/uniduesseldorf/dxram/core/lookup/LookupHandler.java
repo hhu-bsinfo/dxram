@@ -1652,7 +1652,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 *            the command string
 	 * @return the result String
 	 */
-	private String chunkinfo(final String p_cmd) {
+	private String cmdReqChunkinfo(final String p_cmd) {
 		final String[] arguments = p_cmd.split(" ");
 		if (arguments == null) {
 			return "  error: problem in command";
@@ -1683,6 +1683,16 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	/**
+	 * Handles 'backups' command. Called by incomingReflectionRequest
+	 * @param p_command
+	 *            the CommandMessage
+	 * @return the result string
+	 */
+	private String cmdReqBackups(final String p_command) {
+		return "";
+	}
+
+	/**
 	 * Handles an incoming ReflectionRequest
 	 * @param p_lookupRequest
 	 *            the ReflectionRequest
@@ -1698,10 +1708,12 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 
 			if (cmd.indexOf("chunkinfo") >= 0) {
-				res = chunkinfo(cmd);
+				res = cmdReqChunkinfo(cmd);
+			} else if (cmd.indexOf("backups") >= 0) {
+				res = cmdReqBackups(cmd);
 			}
 		} else {
-			res = "error: lookup command can be processed by superpeers only";
+				res = "error: reflection command can be processed by superpeers only";
 		}
 
 		// send response
