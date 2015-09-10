@@ -125,6 +125,22 @@ public final class LogCatalog {
 	}
 
 	/**
+	 * Gets all creator secondary logs from this node
+	 * @return the creator secondary log array
+	 */
+	public SecondaryLogWithSegments[] getAllCreatorLogs() {
+		return m_creatorLogs.toArray(new SecondaryLogWithSegments[m_creatorLogs.size()]);
+	}
+
+	/**
+	 * Gets all migration secondary logs from this node
+	 * @return the migration secondary log array
+	 */
+	public SecondaryLogWithSegments[] getAllMigrationLogs() {
+		return m_migrationLogs.toArray(new SecondaryLogWithSegments[m_migrationLogs.size()]);
+	}
+
+	/**
 	 * Gets all secondary log buffers from this node
 	 * @return the secondary log buffer array
 	 */

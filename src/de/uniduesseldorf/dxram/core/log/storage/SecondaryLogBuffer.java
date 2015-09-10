@@ -121,11 +121,7 @@ public final class SecondaryLogBuffer {
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry
 			logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, oldBufferOffset);
-			if (m_storesMigrations) {
-				logEntrySize = logEntryHeader.getHeaderSize(true) + logEntryHeader.getLength(p_buffer, oldBufferOffset, true);
-			} else {
-				logEntrySize = logEntryHeader.getHeaderSize(false) + logEntryHeader.getLength(p_buffer, oldBufferOffset, false);
-			}
+			logEntrySize = logEntryHeader.getHeaderSize(m_storesMigrations) + logEntryHeader.getLength(p_buffer, oldBufferOffset, m_storesMigrations);
 
 			// Copy primary log header, but skip NodeID and RangeID
 			System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize - secLogOffset);

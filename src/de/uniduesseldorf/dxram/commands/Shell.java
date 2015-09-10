@@ -30,6 +30,8 @@ public final class Shell {
 		m_commandMap.put(c.getName(), c);
 		c = new CmdChunkinfo();
 		m_commandMap.put(c.getName(), c);
+		c = new CmdLogInfo();
+		m_commandMap.put(c.getName(), c);
 		c = new CmdMigrate();
 		m_commandMap.put(c.getName(), c);
 		c = new CmdQuit();

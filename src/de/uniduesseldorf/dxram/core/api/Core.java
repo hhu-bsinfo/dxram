@@ -27,6 +27,8 @@ import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.PrimaryLogException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
+import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandRequest;
+import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
@@ -566,6 +568,36 @@ public final class Core {
 			}
 			// System.out.println("received response: "+result);
 		}
+		return ret;
+	}
+
+	/**
+	 * Executes given command, send to log handler
+	 * @param p_dest
+	 *            NID of destination node for this request
+	 * @param p_command
+	 *            the command
+	 * @return result string
+	 * @throws DXRAMException
+	 *             if the chunk could not be get
+	 */
+	public static String executeLogCommand(final short p_dest, final String p_command) throws DXRAMException {
+		String ret = null;
+		LogCommandRequest request;
+		LogCommandResponse response;
+
+		// System.out.println("Core.execute: p_dest=" + p_dest);
+		request = new LogCommandRequest(p_dest, p_command);
+		Contract.checkNotNull(request);
+		try {
+			request.sendSync(m_network);
+			response = request.getResponse(LogCommandResponse.class);
+			ret = response.getAnswer();
+		} catch (final NetworkException e) {
+			System.out.println("error: sendSync failed in Core.execute_log_command:" + e.toString());
+			ret = "error LogCommandRequest failed, invalid NID?";
+		}
+
 		return ret;
 	}
 

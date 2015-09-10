@@ -88,26 +88,48 @@ public class CmdPut extends AbstractCmd {
 				// copy data from command to ByteBuffer of chunk
 				arguments = p_command.split(" ");
 
-				// create chunk with name?
-				if (arguments.length > 3) {
-					c = Core.createNewChunk(p_command.length(), arguments[3]);
-					if (c == null) {
-						ret = "  error: createNewChunk failed";
+				if (arguments[2].toLowerCase().startsWith("size:")) {
+					// create chunk with name?
+					if (arguments.length > 3) {
+						c = Core.createNewChunk(Integer.parseInt(arguments[2].split(":")[1]), arguments[3]);
+						if (c == null) {
+							ret = "  error: createNewChunk failed";
+						}
+					} else {
+						c = Core.createNewChunk(Integer.parseInt(arguments[2].split(":")[1]));
+						if (c == null) {
+							ret = "  error: createNewChunk failed";
+						}
+					}
+
+					if (ret == null) {
+						// now save the chunk
+						Core.put(c);
+
+						ret = "success: " + Long.toString(c.getChunkID());
 					}
 				} else {
-					c = Core.createNewChunk(p_command.length());
-					if (c == null) {
-						ret = "  error: createNewChunk failed";
+					// create chunk with name?
+					if (arguments.length > 3) {
+						c = Core.createNewChunk(arguments[2].length(), arguments[3]);
+						if (c == null) {
+							ret = "  error: createNewChunk failed";
+						}
+					} else {
+						c = Core.createNewChunk(arguments[2].length());
+						if (c == null) {
+							ret = "  error: createNewChunk failed";
+						}
 					}
-				}
 
-				if (ret == null) {
-					final ByteBuffer b = c.getData();
-					b.put(arguments[2].getBytes());
+					if (ret == null) {
+						final ByteBuffer b = c.getData();
+						b.put(arguments[2].getBytes());
 
-					// now save the chunk
-					Core.put(c);
-					ret = "success: " + Long.toString(c.getChunkID());
+						// now save the chunk
+						Core.put(c);
+						ret = "success: " + Long.toString(c.getChunkID());
+					}
 				}
 			} catch (final DXRAMException e) {
 				System.out.println("  error: Core.createNewChunk failed");
