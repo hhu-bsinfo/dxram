@@ -10,6 +10,7 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
  *         25.06.2015
  */
 public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
+
 	// Attributes
 	public static final short SIZE = 13;
 	public static final byte NID_OFFSET = LogHandler.LOG_ENTRY_TYP_SIZE;
@@ -57,15 +58,13 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 	public long getLID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + LID_OFFSET;
 
-		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
-				+ ((p_buffer[offset + 2] & 0xff) << 16) + (((long) p_buffer[offset + 3] & 0xff) << 24)
-				+ (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
+		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
+				+ (((long) p_buffer[offset + 3] & 0xff) << 24) + (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
 	}
 
 	@Override
 	public long getChunkID(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
-		return ((long) getNodeID(p_buffer, p_offset, p_logStoresMigrations) << 48)
-				+ getLID(p_buffer, p_offset, p_logStoresMigrations);
+		return ((long) getNodeID(p_buffer, p_offset, p_logStoresMigrations) << 48) + getLID(p_buffer, p_offset, p_logStoresMigrations);
 	}
 
 	@Override
@@ -77,8 +76,7 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 	public int getVersion(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		final int offset = p_offset + VER_OFFSET;
 
-		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
-				+ ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
+		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 	}
 
 	@Override

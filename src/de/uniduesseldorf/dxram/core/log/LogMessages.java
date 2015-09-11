@@ -248,8 +248,7 @@ public final class LogMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunksWriteLength(m_chunks)
-					+ OutputHelper.getByteWriteLength();
+			return OutputHelper.getChunksWriteLength(m_chunks) + OutputHelper.getByteWriteLength();
 		}
 	}
 
@@ -336,8 +335,7 @@ public final class LogMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length)
-					+ OutputHelper.getByteWriteLength();
+			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length) + OutputHelper.getByteWriteLength();
 		}
 	}
 

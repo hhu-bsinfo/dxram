@@ -155,9 +155,7 @@ public final class LogCatalog {
 	 * @throws InterruptedException
 	 *             if no new secondary log could be created
 	 */
-	public void insertRange(final long p_firstChunkIDOrRangeID, final SecondaryLogWithSegments p_log)
-			throws IOException,
-			InterruptedException {
+	public void insertRange(final long p_firstChunkIDOrRangeID, final SecondaryLogWithSegments p_log) throws IOException, InterruptedException {
 		SecondaryLogBuffer buffer;
 		int rangeID;
 

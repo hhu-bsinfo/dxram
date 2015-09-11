@@ -60,8 +60,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 		boolean parsed = false;
 
 		m_hashGenerator = new CRC16();
-		m_bloomFilter = new BloomFilter(Core.getConfiguration().getIntValue(
-				ConfigurationConstants.ZOOKEEPER_BITFIELD_SIZE), 65536);
+		m_bloomFilter = new BloomFilter(Core.getConfiguration().getIntValue(ConfigurationConstants.ZOOKEEPER_BITFIELD_SIZE), 65536);
 
 		barrier = "barrier";
 
@@ -266,8 +265,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 					ZooKeeperHandler.delete("nodes/free/" + nodeID);
 				} else {
 					splits = ownIP.split("\\.");
-					seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer
-							.parseInt(splits[3])) * -1;
+					seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(splits[3])) * -1;
 					nodeID = m_hashGenerator.hash(seed);
 					while (m_bloomFilter.contains(nodeID) || -1 == nodeID) {
 						nodeID = m_hashGenerator.hash(--seed);
@@ -330,8 +328,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 							node = new String(ZooKeeperHandler.getData("nodes/new/" + nodeID));
 							splits = node.split("/");
 
-							Core.getNodesConfiguration().addNewNode(nodeID,
-									parseNode(splits[0], Integer.parseInt(splits[1]), nodeID));
+							Core.getNodesConfiguration().addNewNode(nodeID, parseNode(splits[0], Integer.parseInt(splits[1]), nodeID));
 						}
 					}
 				}

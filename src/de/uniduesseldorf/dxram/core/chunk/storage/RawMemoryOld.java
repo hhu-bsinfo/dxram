@@ -127,8 +127,7 @@ public final class RawMemoryOld {
 		}
 		m_arenaManager = new ArenaManager();
 
-		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x"
-				+ Long.toHexString(m_memoryBase) + ")");
+		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x" + Long.toHexString(m_memoryBase) + ")");
 
 		ret = m_memorySize;
 
@@ -610,8 +609,8 @@ public final class RawMemoryOld {
 		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(FULL_SEGMENT_SIZE));
 		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
 		for (int i = 0; i < stati.length; i++) {
-			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assigned + "): "
-					+ Tools.readableSize(stati[i].m_freeSpace) + " in " + stati[i].m_freeBlocks + " blocks");
+			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assigned + "): " + Tools.readableSize(stati[i].m_freeSpace) + " in "
+					+ stati[i].m_freeBlocks + " blocks");
 		}
 		output.append("\n");
 
@@ -1259,8 +1258,7 @@ public final class RawMemoryOld {
 
 			@Override
 			public String toString() {
-				return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks="
-						+ m_smallBlocks + "]";
+				return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks=" + m_smallBlocks + "]";
 			}
 
 		}

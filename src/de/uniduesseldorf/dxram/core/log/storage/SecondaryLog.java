@@ -49,11 +49,9 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public SecondaryLog(final Lock p_reorganizationLock, final Condition p_thresholdReachedCondition,
-			final Condition p_reorganizationFinishedCondition, final short p_nodeID) throws IOException,
-			InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_"
-				+ LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
+	public SecondaryLog(final Lock p_reorganizationLock, final Condition p_thresholdReachedCondition, final Condition p_reorganizationFinishedCondition,
+			final short p_nodeID) throws IOException, InterruptedException {
+		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
 				+ LogHandler.SECLOG_POSTFIX_FILENAME), LogHandler.SECLOG_SIZE, LogHandler.SECLOG_MAGIC_HEADER_SIZE);
 
 		m_totalUsableSpace = super.getTotalUsableSpace();
@@ -63,8 +61,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 		m_reorganizationFinishedCondition = p_reorganizationFinishedCondition;
 		m_thresholdReachedCondition = p_thresholdReachedCondition;
 
-		m_secondaryLogReorgThreshold = (int)
-				(LogHandler.SECLOG_SIZE * (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
+		m_secondaryLogReorgThreshold = (int) (LogHandler.SECLOG_SIZE * (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
 
 		createLogAndWriteHeader();
 	}
@@ -86,11 +83,9 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public SecondaryLog(final long p_secLogSize, final Lock p_reorganizationLock,
-			final Condition p_thresholdReachedCondition, final Condition p_reorganizationFinishedCondition,
-			final short p_nodeID) throws IOException, InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_"
-				+ LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
+	public SecondaryLog(final long p_secLogSize, final Lock p_reorganizationLock, final Condition p_thresholdReachedCondition,
+			final Condition p_reorganizationFinishedCondition, final short p_nodeID) throws IOException, InterruptedException {
+		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
 				+ LogHandler.SECLOG_POSTFIX_FILENAME), p_secLogSize, LogHandler.SECLOG_MAGIC_HEADER_SIZE);
 		if (p_secLogSize < LogHandler.SECLOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
@@ -118,8 +113,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 	}
 
 	@Override
-	public final int appendData(final byte[] p_data, final int p_offset,
-			final int p_length, final Object p_unused) throws IOException, InterruptedException {
+	public final int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_unused) throws IOException, InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -172,8 +166,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 	 *             if the caller was interrupted
 	 * @return ArrayList with all log entries as chunks
 	 */
-	public final ArrayList<Chunk> recoverAllLogEntries(final boolean p_doCRCCheck) throws IOException,
-	InterruptedException {
+	public final ArrayList<Chunk> recoverAllLogEntries(final boolean p_doCRCCheck) throws IOException, InterruptedException {
 		/*
 		 * int i = 0;
 		 * int offset = 0;
@@ -241,8 +234,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 	 *             if the caller was interrupted
 	 * @return ArrayList with all log entries as chunks
 	 */
-	public final ArrayList<Chunk> recoverRange(final boolean p_doCRCCheck,
-			final long p_low, final long p_high) throws IOException, InterruptedException {
+	public final ArrayList<Chunk> recoverRange(final boolean p_doCRCCheck, final long p_low, final long p_high) throws IOException, InterruptedException {
 		/*
 		 * int i = 0;
 		 * int offset = 0;

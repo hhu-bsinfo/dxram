@@ -63,8 +63,8 @@ public final class NodesConfigurationHelper {
 
 		value = m_nodesArray[p_nodeID & 0x0000FFFF] & 0x0000FFFFFFFFFFFFL;
 		ret =
-				((value & 0xFF0000000000L) >> 40) + "." + ((value & 0x00FF00000000L) >> 32) + "."
-						+ ((value & 0x0000FF000000L) >> 24) + "." + ((value & 0x000000FF0000L) >> 16);
+				((value & 0xFF0000000000L) >> 40) + "." + ((value & 0x00FF00000000L) >> 32) + "." + ((value & 0x0000FF000000L) >> 24) + "."
+						+ ((value & 0x000000FF0000L) >> 16);
 
 		return ret;
 	}
@@ -78,7 +78,7 @@ public final class NodesConfigurationHelper {
 	public int getPort(final short p_nodeID) {
 		int ret;
 
-		ret = (int)(m_nodesArray[p_nodeID & 0x0000FFFF] & 0xFFFF);
+		ret = (int) (m_nodesArray[p_nodeID & 0x0000FFFF] & 0xFFFF);
 
 		return ret;
 	}
@@ -95,7 +95,7 @@ public final class NodesConfigurationHelper {
 		long value;
 
 		value = m_parser.parseNewNode(p_node, m_nodesArray);
-		nodeID = (int)(value & 0xFFFF000000000000L >> 48);
+		nodeID = (int) (value & 0xFFFF000000000000L >> 48);
 
 		if (nodeID >= 0) {
 			m_nodesArray[nodeID & 0x0000FFFF] = value;
@@ -129,9 +129,9 @@ public final class NodesConfigurationHelper {
 		List<Short> nodes;
 
 		nodes = new ArrayList<Short>();
-		for (int i = 0;i <= NodeID.MAX_ID;i++) {
+		for (int i = 0; i <= NodeID.MAX_ID; i++) {
 			if (-1 != m_nodesArray[i]) {
-				nodes.add((short)i);
+				nodes.add((short) i);
 			}
 		}
 

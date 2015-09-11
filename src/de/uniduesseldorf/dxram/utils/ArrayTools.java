@@ -36,7 +36,7 @@ public final class ArrayTools {
 		Contract.checkNotNull(p_collection, "no collection given");
 		Contract.checkNotNull(p_class, "no class given");
 
-		ret = (T[])Array.newInstance(p_class, p_collection.size());
+		ret = (T[]) Array.newInstance(p_class, p_collection.size());
 		i = 0;
 		for (T element : p_collection) {
 			ret[i++] = element;
@@ -69,7 +69,7 @@ public final class ArrayTools {
 			length += array.length;
 		}
 
-		ret = (T[])Array.newInstance(p_class, length);
+		ret = (T[]) Array.newInstance(p_class, length);
 		i = 0;
 		for (T[] array : p_arrays) {
 			for (T element : array) {
@@ -131,7 +131,7 @@ public final class ArrayTools {
 
 		ret = new byte[length][];
 		array = -1;
-		for (int i = 0;i < p_array.length;i++) {
+		for (int i = 0; i < p_array.length; i++) {
 			if (i % p_length == 0) {
 				ret[++array] = new byte[p_length];
 			}
@@ -159,11 +159,11 @@ public final class ArrayTools {
 		ret = p_target.length - p_source.length;
 
 		if (p_source.length > p_target.length) {
-			for (int i = 0;i < p_target.length;i++) {
+			for (int i = 0; i < p_target.length; i++) {
 				p_target[i] = p_source[i];
 			}
 		} else {
-			for (int i = 0;i < p_source.length;i++) {
+			for (int i = 0; i < p_source.length; i++) {
 				p_target[i] = p_source[i];
 			}
 		}

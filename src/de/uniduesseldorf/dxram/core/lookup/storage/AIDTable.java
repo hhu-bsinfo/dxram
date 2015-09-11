@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup.storage;
 
 import java.nio.ByteBuffer;
@@ -51,10 +52,10 @@ public class AIDTable {
 		m_loadFactor = p_loadFactor;
 		if (p_initialCapacity == 0) {
 			m_table = new Entry[1];
-			m_threshold = (int)p_loadFactor;
+			m_threshold = (int) p_loadFactor;
 		} else {
 			m_table = new Entry[p_initialCapacity];
-			m_threshold = (int)(p_initialCapacity * p_loadFactor);
+			m_threshold = (int) (p_initialCapacity * p_loadFactor);
 		}
 
 	}
@@ -125,7 +126,7 @@ public class AIDTable {
 	 * Returns the value to which the specified key is mapped in IDHashTable
 	 * @param p_key
 	 *            the searched key
-	 * @return  the value to which the key is mapped in IDHashTable
+	 * @return the value to which the key is mapped in IDHashTable
 	 */
 	public final long get(final int p_key) {
 		long ret = 0;
@@ -259,7 +260,7 @@ public class AIDTable {
 		newCapacity = oldCapacity * 2 + 1;
 		newMap = new Entry[newCapacity];
 
-		m_threshold = (int)(newCapacity * m_loadFactor);
+		m_threshold = (int) (newCapacity * m_loadFactor);
 		m_table = newMap;
 
 		System.out.print("Rehashing. New size: " + newCapacity + "...");
@@ -287,11 +288,13 @@ public class AIDTable {
 	public final int hash(final int p_key) {
 		int hash = p_key;
 
-		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		return (hash >> 16) ^ hash;
-		/*hash ^= (hash >>> 20) ^ (hash >>> 12);
-		return hash ^ (hash >>> 7) ^ (hash >>> 4);*/
+		hash = (hash >> 16 ^ hash) * 0x45d9f3b;
+		hash = (hash >> 16 ^ hash) * 0x45d9f3b;
+		return hash >> 16 ^ hash;
+		/*
+		 * hash ^= (hash >>> 20) ^ (hash >>> 12);
+		 * return hash ^ (hash >>> 7) ^ (hash >>> 4);
+		 */
 	}
 
 	/**
@@ -333,8 +336,7 @@ public class AIDTable {
 	 *            the type of interval
 	 * @return all data in IDHashTable
 	 */
-	public final byte[] toArray(final short p_bound1, final short p_bound2,
-			final boolean p_isOnlySuperpeer, final short p_interval) {
+	public final byte[] toArray(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer, final short p_interval) {
 		ByteBuffer data;
 		Entry iter;
 
@@ -343,16 +345,14 @@ public class AIDTable {
 		for (int i = 0; i < m_table.length; i++) {
 			iter = m_table[i];
 			if (iter != null) {
-				if (p_isOnlySuperpeer || LookupHandler.isNodeInRange(ChunkID.getCreatorID(iter.m_value),
-						p_bound1, p_bound2, p_interval)) {
+				if (p_isOnlySuperpeer || LookupHandler.isNodeInRange(ChunkID.getCreatorID(iter.m_value), p_bound1, p_bound2, p_interval)) {
 					data.putInt(iter.m_key);
 					data.putLong(iter.m_value);
 				}
 				while (iter != null) {
 					iter = iter.m_next;
 					if (iter != null) {
-						if (p_isOnlySuperpeer || LookupHandler.isNodeInRange(ChunkID.getCreatorID(iter.m_value),
-								p_bound1, p_bound2, p_interval)) {
+						if (p_isOnlySuperpeer || LookupHandler.isNodeInRange(ChunkID.getCreatorID(iter.m_value), p_bound1, p_bound2, p_interval)) {
 							data.putInt(iter.m_key);
 							data.putLong(iter.m_value);
 						}
@@ -407,9 +407,9 @@ public class AIDTable {
 		Entry iter;
 		Collection<Entry> list;
 
-		list = new TreeSet<Entry>(new Comparator<Entry>(){
+		list = new TreeSet<Entry>(new Comparator<Entry>() {
 			@Override
-			public int compare(final Entry p_a, final Entry p_b){
+			public int compare(final Entry p_a, final Entry p_b) {
 				return p_a.m_key - p_b.m_key;
 			}
 		});
@@ -441,26 +441,27 @@ public class AIDTable {
 		m_count = 0;
 	}
 
-	/*public final int numberOfCollisions() {
-		int ret = 0;
-		Entry iter;
-
-		for (int i = 0; i < m_table.length; i++) {
-			iter = m_table[i];
-			if (iter == null) {
-				continue;
-			}
-			while (true) {
-				iter = iter.m_next;
-				if (iter == null) {
-					break;
-				} else {
-					ret++;
-				}
-			}
-		}
-		return ret;
-	}*/
+	/*
+	 * public final int numberOfCollisions() {
+	 * int ret = 0;
+	 * Entry iter;
+	 * for (int i = 0; i < m_table.length; i++) {
+	 * iter = m_table[i];
+	 * if (iter == null) {
+	 * continue;
+	 * }
+	 * while (true) {
+	 * iter = iter.m_next;
+	 * if (iter == null) {
+	 * break;
+	 * } else {
+	 * ret++;
+	 * }
+	 * }
+	 * }
+	 * return ret;
+	 * }
+	 */
 
 	/**
 	 * A single Entry in IDHashTable

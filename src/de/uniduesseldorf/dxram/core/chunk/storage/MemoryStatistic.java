@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.text.NumberFormat;
@@ -58,7 +59,8 @@ final class MemoryStatistic implements Statistic {
 
 	/**
 	 * Initialize the size of the memory
-	 * @param p_size the size of the memory
+	 * @param p_size
+	 *            the size of the memory
 	 */
 	public void initMemory(final long p_size) {
 		m_lock.lock();
@@ -70,7 +72,8 @@ final class MemoryStatistic implements Statistic {
 
 	/**
 	 * Journalizes a malloc call
-	 * @param p_size the size of the malloc
+	 * @param p_size
+	 *            the size of the malloc
 	 */
 	public void malloc(final long p_size) {
 		m_lock.lock();
@@ -83,7 +86,8 @@ final class MemoryStatistic implements Statistic {
 
 	/**
 	 * Journalizes a free call
-	 * @param p_size the size of the malloc
+	 * @param p_size
+	 *            the size of the malloc
 	 */
 	public void free(final long p_size) {
 		m_lock.lock();

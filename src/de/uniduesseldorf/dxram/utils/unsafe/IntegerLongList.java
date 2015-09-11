@@ -54,8 +54,7 @@ public final class IntegerLongList extends AbstractKeyValueList<Integer, Long> {
 	}
 
 	@Override
-	public List<de.uniduesseldorf.dxram.utils.unsafe.AbstractKeyValueList.KeyValuePair<Integer, Long>> subList(
-			final int p_fromIndex, final int p_toIndex) {
+	public List<de.uniduesseldorf.dxram.utils.unsafe.AbstractKeyValueList.KeyValuePair<Integer, Long>> subList(final int p_fromIndex, final int p_toIndex) {
 		return new IntegerLongList(getList().subList(p_fromIndex, p_toIndex));
 	}
 

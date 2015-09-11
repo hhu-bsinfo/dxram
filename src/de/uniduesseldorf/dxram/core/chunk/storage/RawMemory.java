@@ -120,8 +120,7 @@ public final class RawMemory {
 
 		MemoryStatistic.getInstance().initMemory(p_size);
 
-		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x"
-				+ Long.toHexString(m_memoryBase) + ")");
+		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x" + Long.toHexString(m_memoryBase) + ")");
 
 		ret = m_memorySize;
 
@@ -644,8 +643,8 @@ public final class RawMemory {
 		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(FULL_SEGMENT_SIZE));
 		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
 		for (int i = 0; i < stati.length; i++) {
-			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assignedThread + "): "
-					+ Tools.readableSize(stati[i].m_freeSpace) + " in " + stati[i].m_freeBlocks + " blocks");
+			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assignedThread + "): " + Tools.readableSize(stati[i].m_freeSpace) + " in "
+					+ stati[i].m_freeBlocks + " blocks");
 		}
 		output.append("\n");
 
@@ -1214,8 +1213,8 @@ public final class RawMemory {
 
 		@Override
 		public String toString() {
-			return "Segment [m_segmentID=" + m_segmentID + ", m_status=" + m_status + ", m_pointerOffset="
-					+ m_pointerOffset + ". m_assignedThread=" + m_assignedThread + "]";
+			return "Segment [m_segmentID=" + m_segmentID + ", m_status=" + m_status + ", m_pointerOffset=" + m_pointerOffset + ". m_assignedThread="
+					+ m_assignedThread + "]";
 		}
 
 		// Classes
@@ -1339,8 +1338,7 @@ public final class RawMemory {
 
 			@Override
 			public String toString() {
-				return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks="
-						+ m_smallBlocks + "]";
+				return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks=" + m_smallBlocks + "]";
 			}
 
 		}
@@ -1413,8 +1411,7 @@ public final class RawMemory {
 		 * @throws MemoryException
 		 *             if no Segment could be assigned
 		 */
-		private Segment assignNewSegment(final long p_threadID, final Segment p_current, final int p_minSize)
-				throws MemoryException {
+		private Segment assignNewSegment(final long p_threadID, final Segment p_current, final int p_minSize) throws MemoryException {
 			Segment ret = null;
 			Segment tempUnassigned;
 			double fragmentationUnassigned;
@@ -1447,8 +1444,7 @@ public final class RawMemory {
 							fragmentationTemp = m_segments[i].getFragmentation();
 							freeTemp = m_segments[i].m_status.getFreeSpace();
 
-							if (fragmentationTemp < fragmentationAssigned || fragmentationTemp == fragmentationAssigned
-									&& freeTemp > freeAssigned) {
+							if (fragmentationTemp < fragmentationAssigned || fragmentationTemp == fragmentationAssigned && freeTemp > freeAssigned) {
 								if (tempAssigned != null) {
 									tempAssigned.unlock();
 								}
@@ -1462,8 +1458,7 @@ public final class RawMemory {
 							fragmentationTemp = m_segments[i].getFragmentation();
 							freeTemp = m_segments[i].m_status.getFreeSpace();
 
-							if (fragmentationTemp < fragmentationUnassigned
-									|| fragmentationTemp == fragmentationUnassigned && freeTemp > freeUnassigned) {
+							if (fragmentationTemp < fragmentationUnassigned || fragmentationTemp == fragmentationUnassigned && freeTemp > freeUnassigned) {
 								if (tempUnassigned != null) {
 									tempUnassigned.unlock();
 								}

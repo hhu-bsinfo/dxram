@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.lookup.storage;
 
 import java.nio.ByteBuffer;
@@ -56,10 +57,10 @@ public class AIDTableOptimized {
 
 		if (m_elementCapacity == 0) {
 			m_table = new int[3];
-			m_threshold = (int)m_loadFactor;
+			m_threshold = (int) m_loadFactor;
 		} else {
 			m_table = new int[m_elementCapacity * 3];
-			m_threshold = (int)(m_elementCapacity * m_loadFactor);
+			m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		}
 	}
 
@@ -75,10 +76,10 @@ public class AIDTableOptimized {
 	public final void set(final int p_index, final int p_key, final long p_value) {
 		int index;
 
-		index = (p_index % m_elementCapacity) * 3;
+		index = p_index % m_elementCapacity * 3;
 		m_table[index] = p_key;
-		m_table[index + 1] = (int)(p_value >> 32);
-		m_table[index + 2] = (int)p_value;
+		m_table[index + 1] = (int) (p_value >> 32);
+		m_table[index + 2] = (int) p_value;
 	}
 
 	/**
@@ -88,7 +89,7 @@ public class AIDTableOptimized {
 	 * @return the key
 	 */
 	public final int getKey(final int p_index) {
-		return m_table[(p_index % m_elementCapacity) * 3];
+		return m_table[p_index % m_elementCapacity * 3];
 	}
 
 	/**
@@ -100,8 +101,8 @@ public class AIDTableOptimized {
 	public final long getValue(final int p_index) {
 		int index;
 
-		index = (p_index % m_elementCapacity) * 3 + 1;
-		return (long)m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
+		index = p_index % m_elementCapacity * 3 + 1;
+		return (long) m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
 	}
 
 	/**
@@ -319,17 +320,15 @@ public class AIDTableOptimized {
 
 		m_elementCapacity = m_elementCapacity * 2 + 1;
 		newTable = new int[m_elementCapacity * 3];
-		m_threshold = (int)(m_elementCapacity * m_loadFactor);
+		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newTable;
 
-		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity
-				+ " ... ");
+		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
 
 		m_count = 0;
 		while (index < oldElementCapacity) {
 			if (oldTable[index * 3] != 0) {
-				put(oldTable[index * 3] - 1, (long)oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2]
-						& 0xFFFFFFFFL);
+				put(oldTable[index * 3] - 1, (long) oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2] & 0xFFFFFFFFL);
 			}
 			index = (index + 1) % m_elementCapacity;
 		}
@@ -346,9 +345,9 @@ public class AIDTableOptimized {
 	public final int hash(final int p_key) {
 		int hash = p_key;
 
-		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		return (hash >> 16) ^ hash;
+		hash = (hash >> 16 ^ hash) * 0x45d9f3b;
+		hash = (hash >> 16 ^ hash) * 0x45d9f3b;
+		return hash >> 16 ^ hash;
 		/*
 		 * hash ^= (hash >>> 20) ^ (hash >>> 12);
 		 * return hash ^ (hash >>> 7) ^ (hash >>> 4);
@@ -387,8 +386,7 @@ public class AIDTableOptimized {
 	 *            the type of interval
 	 * @return all data in IDHashTable
 	 */
-	public final byte[] toArray(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer,
-			final short p_interval) {
+	public final byte[] toArray(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer, final short p_interval) {
 		int count = 0;
 		int iter;
 		long value;
@@ -400,8 +398,7 @@ public class AIDTableOptimized {
 			iter = getKey(i);
 			value = getValue(i);
 			if (iter != 0) {
-				if (p_isOnlySuperpeer
-						|| LookupHandler.isNodeInRange(ChunkID.getCreatorID(value), p_bound1, p_bound2, p_interval)) {
+				if (p_isOnlySuperpeer || LookupHandler.isNodeInRange(ChunkID.getCreatorID(value), p_bound1, p_bound2, p_interval)) {
 					data.putInt(iter);
 					data.putLong(getValue(i));
 					count++;
@@ -449,7 +446,7 @@ public class AIDTableOptimized {
 		int iter;
 		Collection<Entry> list;
 
-		list = new TreeSet<Entry>(new Comparator<Entry>(){
+		list = new TreeSet<Entry>(new Comparator<Entry>() {
 
 			@Override
 			public int compare(final Entry p_entryA, final Entry p_entryB) {

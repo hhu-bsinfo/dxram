@@ -30,8 +30,8 @@ public final class CIDTreeOptimized implements Serializable {
 	private short m_creator;
 	private boolean m_status;
 
-	private ArrayList<long[]> m_backupRanges;
-	private ArrayList<Long> m_migrationBackupRanges;
+	private ArrayList<long[]> m_backupRanges; // backup nodes (erste ChunkID + backup nodes)
+	private ArrayList<Long> m_migrationBackupRanges; // in einem Long sind 3 NIDs
 
 	private Entry m_changedEntry;
 
@@ -157,8 +157,7 @@ public final class CIDTreeOptimized implements Serializable {
 	 *            the backup peers
 	 * @return true if insertion was successful
 	 */
-	public boolean initRange(final long p_startID, final short p_creator,
-			final short[] p_backupPeers) {
+	public boolean initRange(final long p_startID, final short p_creator, final short[] p_backupPeers) {
 		long backupPeers;
 
 		if (0 == p_startID) {
@@ -167,8 +166,7 @@ public final class CIDTreeOptimized implements Serializable {
 			if (null == m_root) {
 				createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
 			}
-			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
-					+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
+			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
 			m_backupRanges.add(new long[] {p_startID, backupPeers});
 		}
 		return true;
@@ -184,11 +182,10 @@ public final class CIDTreeOptimized implements Serializable {
 	 *            the backup peers
 	 * @return true if insertion was successful
 	 */
-	public boolean initMigrationRange(final int p_rangeID, final short p_creator,
-			final short[] p_backupPeers) {
+	public boolean initMigrationRange(final int p_rangeID, final short p_creator, final short[] p_backupPeers) {
 
-		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
-				+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF));
+		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
+				+ (p_backupPeers[0] & 0x0000FFFF));
 
 		return true;
 	}
@@ -244,7 +241,7 @@ public final class CIDTreeOptimized implements Serializable {
 			} else {
 				range[0] = 0;
 			}
-			ret = new Locations(nodeID, getBackupPeers(p_chunkID), range);
+			ret = new Locations(nodeID, getBackupPeers(p_chunkID, m_creator != nodeID), range);
 		}
 
 		return ret;
@@ -254,31 +251,38 @@ public final class CIDTreeOptimized implements Serializable {
 	 * Returns all the backup peers for given object
 	 * @param p_chunkID
 	 *            ChunkID of requested object
+	 * @param p_wasMigrated
+	 *            whether this Chunk was migrated or not
 	 * @return the NodeIDs of all backup peers for given object
 	 */
-	public short[] getBackupPeers(final long p_chunkID) {
+	public short[] getBackupPeers(final long p_chunkID, final boolean p_wasMigrated) {
 		short[] ret = null;
 		short backupPeer;
 		Long tempResult = null;
 		long result;
 
 		if (m_root != null) {
-			for (int i = m_backupRanges.size() - 1; i >= 0; i--) {
-				if (m_backupRanges.get(i)[0] <= p_chunkID) {
-					tempResult = m_backupRanges.get(i)[1];
-				}
-			}
-
-			ret = new short[] {-1, -1, -1};
-			if (tempResult != null) {
-				result = tempResult;
-				for (int i = 0; i < ret.length; i++) {
-					backupPeer = (short) ((result >> (i * 16)));
-					if (backupPeer != 0) {
-						ret[i] = backupPeer;
+			if (!p_wasMigrated) {
+				for (int i = m_backupRanges.size() - 1; i >= 0; i--) {
+					if (m_backupRanges.get(i)[0] <= p_chunkID) {
+						tempResult = m_backupRanges.get(i)[1];
 					}
 				}
+
+				ret = new short[] {-1, -1, -1};
+				if (tempResult != null) {
+					result = tempResult;
+					for (int i = 0; i < ret.length; i++) {
+						backupPeer = (short) (result >> i * 16);
+						if (backupPeer != 0) {
+							ret[i] = backupPeer;
+						}
+					}
+				}
+			} else {
+				ret = new short[] {-1, -1, -1};
 			}
+
 		}
 		return ret;
 	}
@@ -390,19 +394,16 @@ public final class CIDTreeOptimized implements Serializable {
 		for (int i = 0; i < m_backupRanges.size(); i++) {
 			element = m_backupRanges.get(i);
 			backupNodes = element[1];
-			backupPeers = new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16),
-					(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
+			backupPeers =
+					new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16), (short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
 			if (p_failedPeer == backupPeers[0]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
 				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[1]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
 				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[2]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
-						+ ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
 				element[1] = backupNodes;
 			}
 		}
@@ -1038,8 +1039,7 @@ public final class CIDTreeOptimized implements Serializable {
 				p_node.addEntry(parentLid, parentNodeID);
 
 				p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
-				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(),
-						p_node.getNumberOfChildren());
+				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
 
 				if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
 					// Removing key made parent too small, combined up tree

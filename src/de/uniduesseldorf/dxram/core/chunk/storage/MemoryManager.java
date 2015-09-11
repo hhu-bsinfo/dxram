@@ -141,8 +141,7 @@ public final class MemoryManager {
 
 		// Get the address from the CIDTable
 		address = CIDTable.get(chunkID);
-		System.out.println("   chunkID="+CmdUtils.getTupleFromCID(chunkID));
-
+		System.out.println("   chunkID=" + CmdUtils.getTupleFromCID(chunkID));
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address <= 0) {
@@ -151,20 +150,21 @@ public final class MemoryManager {
 
 			System.out.println("   dump migrated chunks");
 			cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
-			for (int i=0; i<cidMigratedArray.size(); i++)
-				System.out.println("   i="+i+", "+cidMigratedArray.get(i));
+			for (int i = 0; i < cidMigratedArray.size(); i++) {
+				System.out.println("   i=" + i + ", " + cidMigratedArray.get(i));
+			}
 			System.out.println("   end of migrated chunks");
 
 			CIDTable.set(chunkID, address);
 
 			System.out.println("   dump migrated chunks");
 			cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
-			for (int i=0; i<cidMigratedArray.size(); i++)
-				System.out.println("   i="+i+", "+cidMigratedArray.get(i));
+			for (int i = 0; i < cidMigratedArray.size(); i++) {
+				System.out.println("   i=" + i + ", " + cidMigratedArray.get(i));
+			}
 			System.out.println("   end of migrated chunks");
-}
+		}
 
-		
 		RawMemory.writeVersion(address, version);
 		RawMemory.writeBytes(address, p_chunk.getData().array());
 	}

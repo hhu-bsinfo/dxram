@@ -66,8 +66,7 @@ public final class LogTest implements Runnable {
 		} else if (p_arguments.length > 4) {
 			System.out.println("Too many program arguments");
 		} else {
-			System.out.println("Missing program arguments (#threads, number of chunks, "
-					+ "minimal chunk size, maximal chunk size)");
+			System.out.println("Missing program arguments (#threads, number of chunks, " + "minimal chunk size, maximal chunk size)");
 		}
 
 		threads = new Thread[m_numberOfThreads];
@@ -117,8 +116,7 @@ public final class LogTest implements Runnable {
 		ArrayList<Integer> list;
 		Random rand;
 
-		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize
-				+ " Bytes and " + m_maxChunkSize + " Bytes");
+		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize + " Bytes and " + m_maxChunkSize + " Bytes");
 
 		rand = new Random();
 		try {

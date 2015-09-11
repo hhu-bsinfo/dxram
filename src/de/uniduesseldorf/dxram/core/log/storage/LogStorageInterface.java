@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
@@ -13,9 +14,9 @@ public interface LogStorageInterface {
 	/**
 	 * Closes the log
 	 * @throws InterruptedException
-	 *            if the closure fails
+	 *             if the closure fails
 	 * @throws IOException
-	 *            if the flushing during closure fails
+	 *             if the flushing during closure fails
 	 */
 	void closeLog() throws InterruptedException, IOException;
 
@@ -30,12 +31,11 @@ public interface LogStorageInterface {
 	 * @param p_additionalInformation
 	 *            place holder for additional information
 	 * @throws InterruptedException
-	 *            if the write access fails
+	 *             if the write access fails
 	 * @throws IOException
-	 *            if the write access fails
+	 *             if the write access fails
 	 * @return number of successfully written bytes
 	 */
-	int appendData(final byte[] p_data, final int p_offset, final int p_length,
-			final Object p_additionalInformation) throws IOException, InterruptedException;
+	int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_additionalInformation) throws IOException, InterruptedException;
 
 }

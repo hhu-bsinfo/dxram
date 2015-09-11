@@ -37,8 +37,7 @@ public final class NetworkTest {
 	 *            The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
-		Core.initialize(ConfigurationHandler.getDefaultConfiguration(),
-				NodesConfigurationHandler.getLocalConfiguration());
+		Core.initialize(ConfigurationHandler.getDefaultConfiguration(), NodesConfigurationHandler.getLocalConfiguration());
 
 		NetworkInterface network;
 

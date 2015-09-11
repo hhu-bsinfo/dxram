@@ -1,7 +1,6 @@
 
 package de.uniduesseldorf.dxram.run;
 
-import de.uniduesseldorf.dxram.commands.CommandHandler;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
@@ -28,15 +27,11 @@ public final class Superpeer {
 	public static void main(final String[] p_arguments) {
 		// Initialize DXRAM
 		try {
-			Core.initialize(ConfigurationHandler
-					.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler
-							.getConfigurationFromFile("config/nodes.config"));
+			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}
-
-		Core.registerCmdListener(new CommandHandler());
 
 		System.out.println("Superpeer started");
 

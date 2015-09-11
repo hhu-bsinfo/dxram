@@ -15,8 +15,6 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
  */
 public abstract class AbstractLog {
 
-	// Constants
-
 	// Attributes
 	// m_logFileSize must be a multiple of a flash page!
 	private final long m_logFileSize;
@@ -40,8 +38,7 @@ public abstract class AbstractLog {
 	 * @param p_logHeaderSize
 	 *            the size in byte of the log header
 	 */
-	public AbstractLog(final File p_logFile, final long p_logSize,
-			final int p_logHeaderSize) {
+	public AbstractLog(final File p_logFile, final long p_logSize, final int p_logHeaderSize) {
 		m_logFile = p_logFile;
 		m_logFileSize = p_logSize + p_logHeaderSize;
 		m_logFileHeaderSize = p_logHeaderSize;
@@ -69,7 +66,7 @@ public abstract class AbstractLog {
 	 * Returns the number of bytes in log
 	 * @return the number of bytes in log
 	 */
-	public final long getOccupiedSpace() {
+	public long getOccupiedSpace() {
 		return m_bytesInRAF;
 	}
 
@@ -257,8 +254,7 @@ public abstract class AbstractLog {
 	 *             if reading the random access file failed
 	 * @return number of bytes that were read successfully
 	 */
-	protected final int readOnRAFRing(final byte[] p_data, final int p_length,
-			final boolean p_manipulateReadPtr, final boolean p_accessed) throws IOException {
+	protected final int readOnRAFRing(final byte[] p_data, final int p_length, final boolean p_manipulateReadPtr, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd = m_totalUsableSpace - m_readPos;
 
 		if (p_length > 0) {
@@ -298,8 +294,7 @@ public abstract class AbstractLog {
 	 * @throws IOException
 	 *             if reading the random access file failed
 	 */
-	protected final void readOnRAFRingRandomly(final byte[] p_data, final int p_length,
-			final long p_readPos, final boolean p_accessed) throws IOException {
+	protected final void readOnRAFRingRandomly(final byte[] p_data, final int p_length, final long p_readPos, final boolean p_accessed) throws IOException {
 		final long innerLogSeekPos = m_logFileHeaderSize + p_readPos;
 		final long bytesUntilEnd = m_totalUsableSpace - p_readPos;
 
@@ -337,8 +332,7 @@ public abstract class AbstractLog {
 	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
-	protected final int appendToLog(final byte[] p_data, final int p_bufferOffset,
-			final int p_length, final boolean p_accessed) throws IOException {
+	protected final int appendToLog(final byte[] p_data, final int p_bufferOffset, final int p_length, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd;
 		final long freeSpace = getWritableSpace();
 		final int writableBytes = (int) Math.min(p_length, freeSpace);
@@ -389,8 +383,8 @@ public abstract class AbstractLog {
 	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
-	protected final int appendToLogWithoutPtrManipulation(final byte[] p_data, final int p_offset,
-			final int p_length, final long p_innerWritePos, final boolean p_accessed) throws IOException {
+	protected final int appendToLogWithoutPtrManipulation(final byte[] p_data, final int p_offset, final int p_length, final long p_innerWritePos,
+			final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd;
 		final long freeSpace = getFreeSpaceBetweenReadAndReorgPos();
 		final int writableData = (int) Math.min(p_length, freeSpace);
@@ -439,8 +433,8 @@ public abstract class AbstractLog {
 	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
-	protected final int writeToLog(final byte[] p_data, final int p_bufferOffset, final long p_logOffset,
-			final int p_length, final boolean p_accessed) throws IOException {
+	protected final int writeToLog(final byte[] p_data, final int p_bufferOffset, final long p_logOffset, final int p_length, final boolean p_accessed)
+			throws IOException {
 		final long bytesUntilEnd;
 
 		if (p_length > 0) {
@@ -482,8 +476,8 @@ public abstract class AbstractLog {
 	 *             if reading the random access file failed
 	 * @return number of bytes that were written successfully
 	 */
-	protected final int overwriteLog(final byte[] p_data, final int p_bufferOffset, final long p_logOffset,
-			final int p_length, final boolean p_accessed) throws IOException {
+	protected final int overwriteLog(final byte[] p_data, final int p_bufferOffset, final long p_logOffset, final int p_length, final boolean p_accessed)
+			throws IOException {
 		final long bytesUntilEnd;
 
 		if (p_length > 0) {

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.text.NumberFormat;
@@ -105,7 +106,7 @@ public final class RequestStatistic implements Statistic {
 			m_requestCount++;
 
 			time = System.currentTimeMillis() - start;
-			m_times[(int)(time / TIME_FACTOR)]++;
+			m_times[(int) (time / TIME_FACTOR)]++;
 
 			values = m_requestValues.get(p_class);
 			if (values == null) {
@@ -183,25 +184,21 @@ public final class RequestStatistic implements Statistic {
 
 		m_lock.lock();
 
-		ret.add(new StatisticEntry(OFFSET_REQUEST_COUNT, NAME_PREFIX_OVERALL + NAME_REQUEST_COUNT, NUMBER_FORMAT
-				.format(m_requestCount)));
-		ret.add(new StatisticEntry(OFFSET_TIMEOUT_COUNT, NAME_PREFIX_OVERALL + NAME_TIMEOUT_COUNT, NUMBER_FORMAT
-				.format(m_timeoutCount)));
-		ret.add(new StatisticEntry(OFFSET_ABORT_COUNT, NAME_PREFIX_OVERALL + NAME_ABORT_COUNT, NUMBER_FORMAT
-				.format(m_abortCount)));
+		ret.add(new StatisticEntry(OFFSET_REQUEST_COUNT, NAME_PREFIX_OVERALL + NAME_REQUEST_COUNT, NUMBER_FORMAT.format(m_requestCount)));
+		ret.add(new StatisticEntry(OFFSET_TIMEOUT_COUNT, NAME_PREFIX_OVERALL + NAME_TIMEOUT_COUNT, NUMBER_FORMAT.format(m_timeoutCount)));
+		ret.add(new StatisticEntry(OFFSET_ABORT_COUNT, NAME_PREFIX_OVERALL + NAME_ABORT_COUNT, NUMBER_FORMAT.format(m_abortCount)));
 
-		for (int i = 0;i < MAX_VALUES;i++) {
+		for (int i = 0; i < MAX_VALUES; i++) {
 			if (m_times[i] > 0) {
-				ret.add(new StatisticEntry(OFFSET_TIMES + i, NAME_PREFIX_OVERALL + NAME_TIMES
-						+ Tools.readableTime((i + 1) * TIME_FACTOR), NUMBER_FORMAT.format(m_times[i])));
+				ret.add(new StatisticEntry(OFFSET_TIMES + i, NAME_PREFIX_OVERALL + NAME_TIMES + Tools.readableTime((i + 1) * TIME_FACTOR), NUMBER_FORMAT
+						.format(m_times[i])));
 			}
 		}
 
 		if (p_withDetails) {
 			requests = 1;
 			for (Entry<Class<? extends AbstractRequest>, RequestValues> entry : m_requestValues.entrySet()) {
-				entry.getValue().addValues(ret, "(" + entry.getKey().getSimpleName() + ") ",
-						OFFSET_REQUEST * requests);
+				entry.getValue().addValues(ret, "(" + entry.getKey().getSimpleName() + ") ", OFFSET_REQUEST * requests);
 
 				requests++;
 			}
@@ -244,7 +241,7 @@ public final class RequestStatistic implements Statistic {
 		 */
 		public void responseReceived(final long p_time) {
 			m_requestCount++;
-			m_times[(int)p_time / TIME_FACTOR]++;
+			m_times[(int) p_time / TIME_FACTOR]++;
 		}
 
 		/**
@@ -271,17 +268,14 @@ public final class RequestStatistic implements Statistic {
 		 *            the start offset
 		 */
 		public void addValues(final List<StatisticEntry> p_list, final String p_prefix, final int p_start) {
-			p_list.add(new StatisticEntry(p_start + OFFSET_REQUEST_COUNT, p_prefix + NAME_REQUEST_COUNT,
-					NUMBER_FORMAT.format(m_requestCount)));
-			p_list.add(new StatisticEntry(p_start + OFFSET_TIMEOUT_COUNT, p_prefix + NAME_TIMEOUT_COUNT,
-					NUMBER_FORMAT.format(m_timeouts)));
-			p_list.add(new StatisticEntry(p_start + OFFSET_ABORT_COUNT, p_prefix + NAME_ABORT_COUNT, NUMBER_FORMAT
-					.format(m_aborts)));
+			p_list.add(new StatisticEntry(p_start + OFFSET_REQUEST_COUNT, p_prefix + NAME_REQUEST_COUNT, NUMBER_FORMAT.format(m_requestCount)));
+			p_list.add(new StatisticEntry(p_start + OFFSET_TIMEOUT_COUNT, p_prefix + NAME_TIMEOUT_COUNT, NUMBER_FORMAT.format(m_timeouts)));
+			p_list.add(new StatisticEntry(p_start + OFFSET_ABORT_COUNT, p_prefix + NAME_ABORT_COUNT, NUMBER_FORMAT.format(m_aborts)));
 
-			for (int i = 0;i < MAX_VALUES;i++) {
+			for (int i = 0; i < MAX_VALUES; i++) {
 				if (m_times[i] > 0) {
-					p_list.add(new StatisticEntry(p_start + OFFSET_TIMES + i, p_prefix + NAME_TIMES
-							+ Tools.readableTime((i + 1) * TIME_FACTOR), NUMBER_FORMAT.format(m_times[i])));
+					p_list.add(new StatisticEntry(p_start + OFFSET_TIMES + i, p_prefix + NAME_TIMES + Tools.readableTime((i + 1) * TIME_FACTOR), NUMBER_FORMAT
+							.format(m_times[i])));
 				}
 			}
 		}

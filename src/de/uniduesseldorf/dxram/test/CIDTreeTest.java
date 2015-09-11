@@ -99,8 +99,8 @@ public final class CIDTreeTest {
 			rndm = (long) (Math.pow(2, 22) * Math.random() + addMe);
 			cidTree.getPrimaryPeer(rndm);
 		}
-		System.out.println("BTree: Append: " + (append - timeStart) + " ms, insert: " + (insert - append)
-				+ "ms, get: " + (System.currentTimeMillis() - insert) + "ms");
+		System.out.println("BTree: Append: " + (append - timeStart) + " ms, insert: " + (insert - append) + "ms, get: " + (System.currentTimeMillis() - insert)
+				+ "ms");
 		if (cidTree.validate()) {
 			System.out.println("Number of entries in btree: " + cidTree.size() + ", btree is valid");
 		} else {

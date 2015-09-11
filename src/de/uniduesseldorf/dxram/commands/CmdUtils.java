@@ -16,8 +16,7 @@ public final class CmdUtils {
 	/**
 	 * Constructor
 	 */
-	private CmdUtils() {
-	}
+	private CmdUtils() {}
 
 	/**
 	 * Parse NID from String
@@ -65,7 +64,7 @@ public final class CmdUtils {
 		long localID;
 
 		final String[] chunkID = p_str.split(",");
-		if (chunkID==null) {
+		if (chunkID == null) {
 			throw new NumberFormatException();
 		}
 		if (chunkID.length != 2) {
@@ -89,15 +88,15 @@ public final class CmdUtils {
 
 	/**
 	 * calc CID from given NID and LID
-	 * @param	p_nodeID
-	 * 				the NID
-	 * @param	p_localID
-	 * 				the LID
-	 * @return	chunkID
+	 * @param p_nodeID
+	 *            the NID
+	 * @param p_localID
+	 *            the LID
+	 * @return chunkID
 	 */
 	public static long calcCID(final short p_nodeID, final long p_localID) {
-		final long nodeID = (long) p_nodeID;
-		final long localID = (long) p_localID;
+		final long nodeID = p_nodeID;
+		final long localID = p_localID;
 		long chunkID;
 
 		chunkID = nodeID << 48;
@@ -147,7 +146,7 @@ public final class CmdUtils {
 	 *             if an error occured
 	 */
 	public static String getTupleFromCID(final long p_chunkID) throws NumberFormatException {
-		
+
 		final int nodeID = (int) (p_chunkID >> 48);
 		final int localID = (int) (p_chunkID & 0x0000FFFFFFFFFFFFL);
 
@@ -163,7 +162,8 @@ public final class CmdUtils {
 	 * @return superpeer, peer, unknwon
 	 */
 	public static String checkNID(final String p_nodeID) {
-		List<String> nodeList;
+		String ret = null;
+		List<String> nodeList = null;
 		Iterator<String> nli;
 
 		// search superpeers
@@ -171,28 +171,45 @@ public final class CmdUtils {
 			nodeList = ZooKeeperHandler.getChildren("nodes/superpeers");
 		} catch (final ZooKeeperException e) {
 			System.out.println("error: could not access ZooKeeper!");
-			return "error: could not access ZooKeeper!";
+			ret = "error: could not access ZooKeeper!";
 		}
-		nli = nodeList.iterator();
-		while (nli.hasNext()) {
-			if (nli.next().compareTo(p_nodeID) == 0) {
-				return "superpeer";
+
+		if (nodeList != null) {
+			nli = nodeList.iterator();
+			while (nli.hasNext()) {
+				if (nli.next().compareTo(p_nodeID) == 0) {
+					ret = "superpeer";
+					break;
+				}
+			}
+
+			if (ret == null) {
+				// search peers
+				nodeList = null;
+				try {
+					nodeList = ZooKeeperHandler.getChildren("nodes/peers");
+				} catch (final ZooKeeperException e) {
+					System.out.println("error: could not access ZooKeeper!");
+					ret = "error: could not access ZooKeeper!";
+				}
+
+				if (nodeList != null) {
+					nli = nodeList.iterator();
+					while (nli.hasNext()) {
+						if (nli.next().compareTo(p_nodeID) == 0) {
+							ret = "peer";
+							break;
+						}
+					}
+				}
 			}
 		}
-		// search peers
-		try {
-			nodeList = ZooKeeperHandler.getChildren("nodes/peers");
-		} catch (final ZooKeeperException e) {
-			System.out.println("error: could not access ZooKeeper!");
-			return "error: could not access ZooKeeper!";
+
+		if (ret == null) {
+			ret = "unknown";
 		}
-		nli = nodeList.iterator();
-		while (nli.hasNext()) {
-			if (nli.next().compareTo(p_nodeID) == 0) {
-				return "peer";
-			}
-		}
-		return "unknown";
+
+		return ret;
 	}
 
 	/**
@@ -204,16 +221,18 @@ public final class CmdUtils {
 	 * @return true: NID is a known peer, false: unknown NID, or superpeer
 	 */
 	public static boolean mustBePeer(final short p_nodeID, final String p_errorString) {
+		boolean ret = false;
 		final String nodeIDok = checkNID(Short.toString(p_nodeID));
 
 		if (nodeIDok.compareTo("peer") == 0) {
-			return true;
+			ret = true;
 		} else if (nodeIDok.compareTo("unknown") == 0) {
 			System.out.println("error: unknown NID");
 		} else {
 			System.out.println("error: superpeer not allowed " + p_errorString);
 		}
-		return false;
+
+		return ret;
 	}
 
 	/**
@@ -225,15 +244,17 @@ public final class CmdUtils {
 	 * @return true: NID is a known superpeer, false: unknown NID, or peer
 	 */
 	public static boolean mustBeSuperpeer(final short p_nodeID, final String p_errorString) {
+		boolean ret = false;
 		final String nodeIDok = checkNID(Short.toString(p_nodeID));
 
 		if (nodeIDok.compareTo("superpeer") == 0) {
-			return true;
+			ret = true;
 		} else if (nodeIDok.compareTo("unknown") == 0) {
 			System.out.println("error: unknown NID");
 		} else {
 			System.out.println("error: peer not allowed " + p_errorString);
 		}
-		return false;
+
+		return ret;
 	}
 }

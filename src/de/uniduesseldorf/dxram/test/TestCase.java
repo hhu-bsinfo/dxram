@@ -123,8 +123,7 @@ public final class TestCase {
 					success &= operation.execute(context);
 				} catch (final Exception e) {
 					if (p_abortOnException) {
-						throw new TestCaseException("Test aborted on exception",
-								new OperationException(operation, e));
+						throw new TestCaseException("Test aborted on exception", new OperationException(operation, e));
 					}
 
 					m_result.addException(new OperationException(operation, e));
@@ -182,8 +181,7 @@ public final class TestCase {
 	 * @throws TestCaseException
 	 *             in case of an exception during (de-)initialization or with the input
 	 */
-	public List<TestResult> executeMultiple(final int p_times, final boolean p_abortOnException)
-			throws TestCaseException {
+	public List<TestResult> executeMultiple(final int p_times, final boolean p_abortOnException) throws TestCaseException {
 		List<TestResult> ret;
 		int div;
 
@@ -320,8 +318,7 @@ public final class TestCase {
 	 * @param p_details
 	 *            if true every test is listed
 	 */
-	public static void printStatus(final List<TestResult> p_results, final TestResultEvaluation p_evaluation,
-			final boolean p_details) {
+	public static void printStatus(final List<TestResult> p_results, final TestResultEvaluation p_evaluation, final boolean p_details) {
 		int i;
 		StringBuilder out;
 		Throwable e;
@@ -342,8 +339,8 @@ public final class TestCase {
 						e = result.getExceptions().get(0).getCause();
 						out.append(e.getClass().getSimpleName() + ": " + e.getMessage() + "\n");
 						for (StackTraceElement element : e.getStackTrace()) {
-							out.append("\tat " + element.getClassName() + "." + element.getMethodName() + "("
-									+ element.getFileName() + ":" + element.getLineNumber() + ")\n");
+							out.append("\tat " + element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":"
+									+ element.getLineNumber() + ")\n");
 						}
 						e = e.getCause();
 						if (e != null) {
@@ -401,8 +398,7 @@ public final class TestCase {
 	 *            the operations
 	 * @return a test case input
 	 */
-	public static AbstractInput createMemoryInput(final AbstractOperation p_init, final AbstractOperation p_deinit,
-			final AbstractOperation... p_operations) {
+	public static AbstractInput createMemoryInput(final AbstractOperation p_init, final AbstractOperation p_deinit, final AbstractOperation... p_operations) {
 		AbstractInput ret;
 
 		ret = new MemoryInput();
@@ -441,8 +437,8 @@ public final class TestCase {
 	 *            the operations
 	 * @return a test case input
 	 */
-	public static AbstractInput createMemoryInput(final String p_prefix, final AbstractOperation p_init,
-			final AbstractOperation p_deinit, final AbstractOperation... p_operations) {
+	public static AbstractInput createMemoryInput(final String p_prefix, final AbstractOperation p_init, final AbstractOperation p_deinit,
+			final AbstractOperation... p_operations) {
 		AbstractInput ret;
 
 		ret = new FileInput(p_prefix);
@@ -1136,8 +1132,7 @@ public final class TestCase {
 		 * @throws ReflectiveOperationException
 		 *             if the init operation could not be set
 		 */
-		protected abstract void doSetInit(final AbstractOperation p_init) throws IOException,
-				ReflectiveOperationException;
+		protected abstract void doSetInit(final AbstractOperation p_init) throws IOException, ReflectiveOperationException;
 
 		/**
 		 * Gets the deinit operation

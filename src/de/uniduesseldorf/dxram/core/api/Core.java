@@ -3,6 +3,7 @@ package de.uniduesseldorf.dxram.core.api;
 
 import org.apache.log4j.Logger;
 
+import de.uniduesseldorf.dxram.commands.CommandHandler;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.config.Configuration;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
@@ -114,8 +115,7 @@ public final class Core {
 	 *            the nodes configuration to use
 	 */
 	public static void initialize(final Configuration p_configuration, final NodesConfiguration p_nodesConfiguration) {
-		LOGGER.trace("Entering initialize with: p_configuration=" + p_configuration + ", p_nodesConfiguration="
-				+ p_nodesConfiguration);
+		LOGGER.trace("Entering initialize with: p_configuration=" + p_configuration + ", p_nodesConfiguration=" + p_nodesConfiguration);
 
 		try {
 			p_configuration.makeImmutable();
@@ -128,10 +128,11 @@ public final class Core {
 
 			m_network = CoreComponentFactory.getNetworkInterface();
 
-			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE)
-					&& NodeID.getRole().equals(Role.PEER)) {
+			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE) && NodeID.getRole().equals(Role.PEER)) {
 				CoreComponentFactory.getLogInterface();
 			}
+
+			registerCmdListener(new CommandHandler());
 
 			// Register shutdown thread
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread());
@@ -501,33 +502,34 @@ public final class Core {
 	 *            the command
 	 * @param p_reply
 	 *            true: want reply (will be handled as request)
-   	 * @return result string
+	 * @return result string
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static String executeChunkCommand(final short p_dest, final String p_command, final boolean p_reply)
-			throws DXRAMException {
-		String result;
+	public static String executeChunkCommand(final short p_dest, final String p_command, final boolean p_reply) throws DXRAMException {
+		String ret = null;
+		ChunkCommandRequest request;
+		ChunkCommandResponse response;
 
 		// request with reply
 		if (p_reply) {
 			// System.out.println("Core.execute: p_dest=" + p_dest);
-			final ChunkCommandRequest request = new ChunkCommandRequest(p_dest, p_command);
+			request = new ChunkCommandRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
-				final ChunkCommandResponse response = request.getResponse(ChunkCommandResponse.class);
-				result = response.getAnswer();
+				response = request.getResponse(ChunkCommandResponse.class);
+				ret = response.getAnswer();
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_chunk_command:" + e.toString());
-				result = "error ChunkCommandRequest failed, invalid NID?";
+				ret = "error ChunkCommandRequest failed, invalid NID?";
 			}
 			// System.out.println("received response: "+result);
-			return result;
 		} else {
 			new ChunkCommandMessage(p_dest, p_command).send(m_network);
 		}
-		return null;
+
+		return ret;
 	}
 
 	/**
@@ -538,43 +540,39 @@ public final class Core {
 	 *            the command
 	 * @param p_reply
 	 *            true: want reply (will be handled as request)
-   	 * @return result string
+	 * @return result string
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static String executeLookupCommand(final short p_dest, final String p_command, final boolean p_reply)
-			throws DXRAMException {
-		String result;
+	public static String executeLookupCommand(final short p_dest, final String p_command, final boolean p_reply) throws DXRAMException {
+		String ret = null;
+		LookupReflectionRequest request;
+		LookupReflectionResponse response;
 
 		// m_chunk.lookup(p_command);
 
 		// request with reply
 		if (p_reply) {
-
 			// System.out.println("Core.execute: p_dest=" + p_dest);
-			final LookupReflectionRequest request = new LookupReflectionRequest(p_dest, p_command);
+			request = new LookupReflectionRequest(p_dest, p_command);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
-				final LookupReflectionResponse response = request.getResponse(LookupReflectionResponse.class);
-				result = response.getAnswer();
-
+				response = request.getResponse(LookupReflectionResponse.class);
+				ret = response.getAnswer();
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_lookup_command:" + e.toString());
-				result = "error LookupReflectionRequest failed, invalid NID?";
+				ret = "error LookupReflectionRequest failed, invalid NID?";
 			}
 			// System.out.println("received response: "+result);
-			return result;
 		}
-		return null;
+		return ret;
 	}
 
 	/*
 	 * public static void execute(final String p_command, final String... p_args) throws DXRAMException {
 	 * short type;
-	 *
 	 * type = CommandStringConverter.convert(p_command);
-	 *
 	 * switch (type) {
 	 * case 1:
 	 * // migrate: ChunkID, src, dest
@@ -639,8 +637,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunks could not be migrated
 	 */
-	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target)
-			throws DXRAMException {
+	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) throws DXRAMException {
 		boolean ret = false;
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
@@ -681,8 +678,7 @@ public final class Core {
 	 * @param p_parameters
 	 *            the parameters of the method in which the exception occured (optional)
 	 */
-	public static void handleException(final Exception p_exception, final ExceptionSource p_source,
-			final Object... p_parameters) {
+	public static void handleException(final Exception p_exception, final ExceptionSource p_source, final Object... p_parameters) {
 		boolean ret = false;
 
 		LOGGER.error("ERROR in " + p_source.toString(), p_exception);
@@ -699,9 +695,7 @@ public final class Core {
 			} else if (p_exception instanceof RecoveryException) {
 				ret = m_exceptionHandler.handleException((RecoveryException) p_exception, p_source, p_parameters);
 			} else if (p_exception instanceof ComponentCreationException) {
-				ret =
-						m_exceptionHandler.handleException((ComponentCreationException) p_exception, p_source,
-								p_parameters);
+				ret = m_exceptionHandler.handleException((ComponentCreationException) p_exception, p_source, p_parameters);
 			} else {
 				ret = m_exceptionHandler.handleException(p_exception, p_source, p_parameters);
 			}

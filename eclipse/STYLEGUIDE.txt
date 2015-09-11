@@ -36,7 +36,7 @@ The most common styleguide rules are presented below:
 4.5. Import order: java, javax, sun, de.uniduesseldorf.dxram, org, com
 
 5. Size Violations
-5.1. Maximum line width: 120
+5.1. Maximum line width: 200
 5.2. Only one outer class is allowed per file
 
 6. Whitespace

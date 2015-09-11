@@ -13,8 +13,7 @@ public class CmdMigrate extends AbstractCmd {
 	/**
 	 * Constructor
 	 */
-	public CmdMigrate() {
-	}
+	public CmdMigrate() {}
 
 	@Override
 	public String getName() {
@@ -39,6 +38,9 @@ public class CmdMigrate extends AbstractCmd {
 	// called after parameter have been checked
 	@Override
 	public boolean execute(final String p_command) {
+		boolean ret = true;
+		short nodeID;
+		String res;
 		String[] arguments;
 
 		try {
@@ -48,53 +50,60 @@ public class CmdMigrate extends AbstractCmd {
 			 * System.out.println("migrate: command="+p_command);
 			 * System.out.println("migrate: arguments.length="+arguments.length);
 			 */
-			final short nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 
-			final String res = Core.executeChunkCommand(nodeID, p_command, true);
+			res = Core.executeChunkCommand(nodeID, p_command, true);
 
 			System.out.println(res);
 
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
-			return false;
+			ret = false;
 		}
-		return true;
+
+		return ret;
 	}
 
 	@Override
 	public String remoteExecute(final String p_command) {
+		String ret;
+		short nodeID;
+		short destNID;
+		long localID;
+		long chunkID;
+		boolean result;
 		String[] arguments;
-		boolean ret;
 
 		// System.out.println("remote_execute: migrate");
 
 		if (p_command == null) {
-			return "  error: internal error";
-		}
+			ret = "  error: internal error";
+		} else {
+			try {
+				arguments = p_command.split(" ");
 
-		try {
-			arguments = p_command.split(" ");
+				nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+				localID = CmdUtils.getLIDfromTuple(arguments[1]);
+				destNID = CmdUtils.getNIDfromString(arguments[2]);
 
-			final short nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
-			final long localID = CmdUtils.getLIDfromTuple(arguments[1]);
-			final short destNID = CmdUtils.getNIDfromString(arguments[2]);
+				System.out.println("migrating chunk " + nodeID + "," + localID + " to " + destNID);
 
-			System.out.println("migrating chunk " + nodeID + "," + localID + " to " + destNID);
+				chunkID = CmdUtils.calcCID(nodeID, localID);
 
-			final long chunkID = CmdUtils.calcCID(nodeID, localID);
+				result = Core.migrate(chunkID, destNID);
 
-			ret = Core.migrate(chunkID, destNID);
-
-			if (!ret) {
-				return "  error: migration failed";
-			} else {
-				return "  Chunk migrated.";
+				if (!result) {
+					ret = "  error: migration failed";
+				} else {
+					ret = "  Chunk migrated.";
+				}
+			} catch (final DXRAMException e) {
+				System.out.println("   DXRAMException");
+				ret = "  error: 'get' failed";
 			}
-		} catch (final DXRAMException e) {
-			System.out.println("   DXRAMException");
-
 		}
-		return "  error: 'get' failed";
+
+		return ret;
 	}
 
 }

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.commands;
 
 import de.uniduesseldorf.dxram.utils.JNIconsole;
@@ -5,15 +6,14 @@ import de.uniduesseldorf.dxram.utils.JNIconsole;
 /**
  * Base class for commands
  * @author Michael Schoettner 03.09.2015
- *
- * Syntax must be described using a string, keywords:
- * 	STR		string, any chars
- *  PNR		positive number, e.g. LID (may be 0)
- *  ANID	any existing NID
- *  PNID	any existing peer NID
- *  SNID 	any existing superpeer NID
- *  ,		for NID,LID tuples
- *  []		optional parameters (at the end only)
+ *         Syntax must be described using a string, keywords:
+ *         STR string, any chars
+ *         PNR positive number, e.g. LID (may be 0)
+ *         ANID any existing NID
+ *         PNID any existing peer NID
+ *         SNID any existing superpeer NID
+ *         , for NID,LID tuples
+ *         [] optional parameters (at the end only)
  */
 public abstract class AbstractCmd {
 
@@ -45,7 +45,7 @@ public abstract class AbstractCmd {
 	 * Execution method of a command.
 	 * Called from local node, parameters are checked before.
 	 * @param p_command
-	 * 				the string entered by the user
+	 *            the string entered by the user
 	 * @return true: success, false: failed
 	 */
 	public abstract boolean execute(String p_command);
@@ -55,7 +55,7 @@ public abstract class AbstractCmd {
 	 * Called on remote node, if overwritten.
 	 * Some methods may me implemented in ChunkHandler or LookupHandler
 	 * @param p_command
-	 * 				the string received from sending node
+	 *            the string received from sending node
 	 * @return result string, depending on command
 	 */
 	public String remoteExecute(final String p_command) {
@@ -94,6 +94,7 @@ public abstract class AbstractCmd {
 	 * @return true: yes, false: no
 	 */
 	public boolean areYouSure() {
+		boolean ret;
 		byte[] arr;
 
 		while (true) {
@@ -102,132 +103,133 @@ public abstract class AbstractCmd {
 			arr = JNIconsole.readline();
 			if (arr != null) {
 				if (arr[0] == 'y' || arr[0] == 'Y') {
-					return true;
-				}
-				if (arr[0] == 'n' || arr[0] == 'N') {
-					return false;
+					ret = true;
+					break;
+				} else if (arr[0] == 'n' || arr[0] == 'N') {
+					ret = false;
+					break;
 				}
 			} else {
-				return false;
+				ret = false;
+				break;
 			}
 		}
+
+		return ret;
 	}
 
 	/**
 	 * Check syntax & semantic of token of a command using expected token (from syntax string)
 	 * (This method is used by 'areParametersSane')
 	 * @param p_expected
-	 * 				expected token
+	 *            expected token
 	 * @param p_found
-	 * 				actual token of command
+	 *            actual token of command
 	 * @return true: syntax is OK, false: syntax error
 	 */
 	private boolean parseToken(final String p_expected, final String p_found) {
+		boolean ret = true;
 
-		if (p_expected.compareTo("STR") == 0
-		 || p_expected.compareTo("[STR]") == 0) {
-			return true;
-		} else if (p_expected.compareTo("PNR") == 0
-				|| p_expected.compareTo("[PNR]") == 0) {
+		if (p_expected.compareTo("STR") == 0 || p_expected.compareTo("[STR]") == 0) {
+			ret = true;
+		} else if (p_expected.compareTo("PNR") == 0 || p_expected.compareTo("[PNR]") == 0) {
 			try {
 				Long.parseLong(p_found);
 			} catch (final NumberFormatException nfe) {
 				System.out.println("  error: expected positive number but found '" + p_found + "'");
-				return false;
+				ret = false;
 			}
-
-		} else if (p_expected.compareTo("ANID") == 0 || p_expected.compareTo("[ANID]") == 0
-				|| p_expected.compareTo("PNID") == 0 || p_expected.compareTo("[PNID]") == 0
-				|| p_expected.compareTo("SNID") == 0 || p_expected.compareTo("[SNID]") == 0) {
+		} else if (p_expected.compareTo("ANID") == 0 || p_expected.compareTo("[ANID]") == 0 || p_expected.compareTo("PNID") == 0
+				|| p_expected.compareTo("[PNID]") == 0 || p_expected.compareTo("SNID") == 0 || p_expected.compareTo("[SNID]") == 0) {
 
 			// do we have a short number?
 			try {
 				Short.parseShort(p_found);
 			} catch (final NumberFormatException nfe) {
 				System.out.println("  error: expected NID number but found '" + p_found + "'");
-				return false;
+				ret = false;
 			}
 
-			if (CmdUtils.checkNID(p_found).compareTo("unknown") == 0) {
-				System.out.println("  error: unknwon NID '" + p_found + "'");
-				return false;
-
-			}
-
-			if (p_expected.compareTo("PNID") == 0
-			 || p_expected.compareTo("[PNID]") == 0) {
-				if (CmdUtils.checkNID(p_found).compareTo("superpeer") == 0) {
-					System.out.println("  error: superpeer NID not allowed '" + p_found + "'");
-					return false;
-				}
-			} else if (p_expected.compareTo("SNID") == 0
-					|| p_expected.compareTo("[SNID]") == 0) {
-				if (CmdUtils.checkNID(p_found).compareTo("peer") == 0) {
-					System.out.println("  error: peer NID not allowed '" + p_found + "'");
-					return false;
+			if (ret) {
+				if (CmdUtils.checkNID(p_found).compareTo("unknown") == 0) {
+					System.out.println("  error: unknwon NID '" + p_found + "'");
+					ret = false;
+				} else {
+					if (p_expected.compareTo("PNID") == 0 || p_expected.compareTo("[PNID]") == 0) {
+						if (CmdUtils.checkNID(p_found).compareTo("superpeer") == 0) {
+							System.out.println("  error: superpeer NID not allowed '" + p_found + "'");
+							ret = false;
+						}
+					} else if (p_expected.compareTo("SNID") == 0 || p_expected.compareTo("[SNID]") == 0) {
+						if (CmdUtils.checkNID(p_found).compareTo("peer") == 0) {
+							System.out.println("  error: peer NID not allowed '" + p_found + "'");
+							ret = false;
+						}
+					}
 				}
 			}
 		}
-		return true;
+
+		return ret;
 	}
 
 	/**
 	 * Check if parameters of a given command are sane according to its syntax definition.
 	 * (arguments[0] is the command name)
 	 * @param p_arguments
-	 * 				tokens of the given command
+	 *            tokens of the given command
 	 * @return true: parameters are OK, false: syntax error
 	 */
 	public boolean areParametersSane(final String[] p_arguments) {
+		boolean ret = true;
 		final String[] token = getSyntax().split(" ");
+		String[] subarg;
 		String[] subtoken;
 
 		// too many params?
 		// System.out.println("token.length="+token.length+", p_arguments.length="+p_arguments.length);
 		if (p_arguments.length > token.length) {
 			System.out.println("  error: too many arguments");
-			return false;
-		}
-
-		// parse and check params of command
-		for (int i = 1; i < token.length; i++) {
-
-			// not enough params?
-			if (i >= p_arguments.length) {
-				if (token[i].indexOf('[') >= 0) {
-					return true;
-				}
-				System.out.println("  error: argument missing");
-				printUsgae();
-				return false;
-			}
-
-			// check next expected symbol?
-			// System.out.println(i+". token:"+token[i]);
-
-			// is a tuple NID,LID expected next?
-			if (token[i].indexOf(',') >= 0) {
-				subtoken = token[i].split(",");
-				final String[] subarg = p_arguments[i].split(",");
-				if ((subarg == null) || (subarg.length < 2)) {
-					System.out.println("  error: expected NID,LID tuple but found '" + p_arguments[i] + "'");
-					return false;
-				} else {
-					if (!parseToken(subtoken[0], subarg[0])) {
-						return false;
+			ret = false;
+		} else {
+			// parse and check params of command
+			for (int i = 1; i < token.length; i++) {
+				// not enough params?
+				if (i >= p_arguments.length) {
+					if (token[i].indexOf('[') >= 0) {
+						ret = true;
+					} else {
+						System.out.println("  error: argument missing");
+						printUsgae();
+						ret = false;
 					}
-					if (!parseToken(subtoken[1], subarg[1])) {
-						return false;
+					break;
+				}
+
+				// check next expected symbol?
+				// System.out.println(i+". token:"+token[i]);
+
+				// is a tuple NID,LID expected next?
+				if (token[i].indexOf(',') >= 0) {
+					subtoken = token[i].split(",");
+					subarg = p_arguments[i].split(",");
+					if (subarg == null || subarg.length < 2) {
+						System.out.println("  error: expected NID,LID tuple but found '" + p_arguments[i] + "'");
+						ret = false;
+					} else if (!parseToken(subtoken[0], subarg[0])) {
+						ret = false;
+					} else if (!parseToken(subtoken[1], subarg[1])) {
+						ret = false;
 					}
 				}
-			}
 
-			if (!parseToken(token[i], p_arguments[i])) {
-				return false;
+				if (!parseToken(token[i], p_arguments[i])) {
+					ret = false;
+				}
 			}
 		}
 
-		return true;
+		return ret;
 	}
 
 }

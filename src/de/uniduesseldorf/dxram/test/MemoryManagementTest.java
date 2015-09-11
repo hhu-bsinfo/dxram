@@ -122,8 +122,7 @@ public final class MemoryManagementTest {
 	 * @throws ExecutionException
 	 *             if the test could not be executed
 	 */
-	private static TestResult evaluatePuts(final int p_chunkCount, final int p_threadCount)
-			throws InterruptedException, ExecutionException {
+	private static TestResult evaluatePuts(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 		ExecutorService executorService;
 		Future<?>[] futures;
 		long time;
@@ -181,8 +180,7 @@ public final class MemoryManagementTest {
 	 * @throws ExecutionException
 	 *             if the test could not be executed
 	 */
-	private static TestResult evaluateGets(final int p_chunkCount, final int p_threadCount)
-			throws InterruptedException, ExecutionException {
+	private static TestResult evaluateGets(final int p_chunkCount, final int p_threadCount) throws InterruptedException, ExecutionException {
 		ExecutorService executorService;
 		Future<?>[] futures;
 		long time;

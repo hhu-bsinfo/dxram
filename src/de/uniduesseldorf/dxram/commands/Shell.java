@@ -49,8 +49,7 @@ public final class Shell {
 	/**
 	 * Constructor
 	 */
-	private Shell() {
-	}
+	private Shell() {}
 
 	/**
 	 * Get command object.
