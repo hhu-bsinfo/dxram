@@ -75,7 +75,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@SuppressWarnings("unchecked")
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_lengthByBackupRange) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -182,7 +182,6 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					}
 
 					bufferNode = map.get(rangeID);
-					System.out.println();
 					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
 						bufferNode.putSource(logEntryHeader.getSource(p_buffer, bufferOffset + offset));
 					}

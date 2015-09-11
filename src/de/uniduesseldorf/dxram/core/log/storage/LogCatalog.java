@@ -159,6 +159,22 @@ public final class LogCatalog {
 		return ret;
 	}
 
+	/**
+	 * Gets all creator secondary log buffers from this node
+	 * @return the creator secondary log buffer array
+	 */
+	public SecondaryLogBuffer[] getAllCreatorBuffers() {
+		return m_creatorBuffers.toArray(new SecondaryLogBuffer[m_creatorBuffers.size()]);
+	}
+
+	/**
+	 * Gets all migration secondary log buffers from this node
+	 * @return the migration secondary log buffer array
+	 */
+	public SecondaryLogBuffer[] getAllMigrationBuffers() {
+		return m_migrationBuffers.toArray(new SecondaryLogBuffer[m_migrationBuffers.size()]);
+	}
+
 	// Setter
 	/**
 	 * Inserts a new range

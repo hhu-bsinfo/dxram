@@ -274,12 +274,12 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		if (p_rangeID == -1) {
 			logHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createHeader(p_chunk, (byte) -1, (short) -1);
-			System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
-					+ (p_chunk.getSize() + DEFAULT_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; default");
+			// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
+			// + (p_chunk.getSize() + DEFAULT_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; default");
 		} else {
 			logHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createHeader(p_chunk, p_rangeID, p_source);
-			System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
-					+ (p_chunk.getSize() + MIGRATION_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; migrated");
+			// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
+			// + (p_chunk.getSize() + MIGRATION_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; migrated");
 		}
 
 		try {
@@ -298,11 +298,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		if (p_rangeID == -1) {
 			tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createHeader(null, (byte) -1, (short) -1);
 			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, DEFAULT_PRIM_LOG_TOMBSTONE.getNIDOffset());
-			System.out.println("Logging Tombstone: " + p_chunkID + ", " + DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; default");
+			// System.out.println("Logging Tombstone: " + p_chunkID + ", " + DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; default");
 		} else {
 			tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createHeader(null, (byte) -1, (short) -1);
 			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, MIGRATION_PRIM_LOG_TOMBSTONE.getNIDOffset());
-			System.out.println("Logging Tombstone: " + p_chunkID + ", " + MIGRATION_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; migrated");
+			// System.out.println("Logging Tombstone: " + p_chunkID + ", " + MIGRATION_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; migrated");
 		}
 
 		try {
@@ -633,8 +633,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 */
 	public String getCurrentUtilization() {
 		String ret;
-		SecondaryLogWithSegments secondaryLog;
 		SecondaryLogWithSegments[] secondaryLogs;
+		SecondaryLogBuffer[] secLogBuffers;
 		LogCatalog cat;
 
 		ret = "***********************************************************************\n"
@@ -648,21 +648,21 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			if (cat != null) {
 				ret += "++Node " + (short) i + ":\n";
 				secondaryLogs = cat.getAllCreatorLogs();
+				secLogBuffers = cat.getAllCreatorBuffers();
 				for (int j = 0; j < secondaryLogs.length; j++) {
 					ret += "+++Creator backup range " + j + ": ";
-					secondaryLog = secondaryLogs[j];
-					if (secondaryLog != null) {
-						ret += secondaryLog.getOccupiedSpace() + " bytes\n";
-						ret += secondaryLog.getSegmentDistribution() + "\n";
+					if (secondaryLogs[j] != null) {
+						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
 					}
 				}
 				secondaryLogs = cat.getAllMigrationLogs();
+				secLogBuffers = cat.getAllMigrationBuffers();
 				for (int j = 0; j < secondaryLogs.length; j++) {
 					ret += "+++Migration backup range " + j + ": ";
-					secondaryLog = secondaryLogs[j];
-					if (secondaryLog != null) {
-						ret += secondaryLog.getOccupiedSpace() + " bytes\n";
-						ret += secondaryLog.getSegmentDistribution() + "\n";
+					if (secondaryLogs[j] != null) {
+						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
 					}
 				}
 			}
@@ -771,7 +771,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private void incomingCommandRequest(final LogCommandRequest p_request) {
 		String res;
 
-		if (p_request.getArgument().contains("logInfo")) {
+		if (p_request.getArgument().contains("loginfo")) {
 			res = getCurrentUtilization();
 		} else {
 			res = "error";
