@@ -76,11 +76,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		}
 
 		m_storesMigrations = p_storesMigrations;
-		if (!p_storesMigrations) {
-			m_entryHeaderSize = DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(true);
-		} else {
-			m_entryHeaderSize = DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(false);
-		}
+		m_entryHeaderSize = DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(m_storesMigrations);
 
 		m_nodeID = p_nodeID;
 
@@ -355,7 +351,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @note executed only by reorganization thread
 	 */
 	public final void invalidateLogEntry(final byte[] p_buffer, final int p_bufferOffset, final long p_logOffset, final int p_segmentIndex) throws IOException,
-			InterruptedException {
+	InterruptedException {
 
 		AbstractLogEntryHeader.markAsInvalid(p_buffer, p_bufferOffset, m_storesMigrations);
 
@@ -902,17 +898,19 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	}
 
 	/**
-	 * Prints all segment sizes
+	 * Returns all segment sizes
+	 * @return all segment sizes
 	 */
-	public final void printSegmentDistribution() {
-		String s = "++++Distribution: | ";
+	public final String getSegmentDistribution() {
+		String ret = "++++Distribution: | ";
 
 		for (SegmentHeader header : m_segmentHeaders) {
 			if (header != null) {
-				s += header.getUsedBytes() + " | ";
+				ret += header.getUsedBytes() + " | ";
 			}
 		}
-		System.out.println(s);
+
+		return ret;
 	}
 
 	// Classes

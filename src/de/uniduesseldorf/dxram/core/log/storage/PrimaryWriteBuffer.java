@@ -157,11 +157,11 @@ public class PrimaryWriteBuffer {
 
 		logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_header, 0);
 		if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
-			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0, true);
-			bytesToWrite = logEntryHeader.getHeaderSize(true) + payloadLength;
+			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
+			bytesToWrite = logEntryHeader.getHeaderSize() + payloadLength;
 		} else {
-			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0, false));
-			bytesToWrite = logEntryHeader.getHeaderSize(false) + payloadLength;
+			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0));
+			bytesToWrite = logEntryHeader.getHeaderSize() + payloadLength;
 		}
 
 		if (bytesToWrite > m_ringBufferSize) {

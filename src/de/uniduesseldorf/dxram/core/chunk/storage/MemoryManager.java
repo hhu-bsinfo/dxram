@@ -4,7 +4,6 @@ package de.uniduesseldorf.dxram.core.chunk.storage;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
@@ -133,36 +132,16 @@ public final class MemoryManager {
 		long chunkID;
 		long address;
 
-		System.out.println("****************** MemoryManager.PUT");
-		ArrayList<Long> cidMigratedArray;
-
 		chunkID = p_chunk.getChunkID();
 		version = p_chunk.getVersion();
 
 		// Get the address from the CIDTable
 		address = CIDTable.get(chunkID);
-		System.out.println("   chunkID=" + CmdUtils.getTupleFromCID(chunkID));
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address <= 0) {
-
 			address = RawMemory.malloc(p_chunk.getSize() + Integer.BYTES);
-
-			System.out.println("   dump migrated chunks");
-			cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
-			for (int i = 0; i < cidMigratedArray.size(); i++) {
-				System.out.println("   i=" + i + ", " + cidMigratedArray.get(i));
-			}
-			System.out.println("   end of migrated chunks");
-
 			CIDTable.set(chunkID, address);
-
-			System.out.println("   dump migrated chunks");
-			cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
-			for (int i = 0; i < cidMigratedArray.size(); i++) {
-				System.out.println("   i=" + i + ", " + cidMigratedArray.get(i));
-			}
-			System.out.println("   end of migrated chunks");
 		}
 
 		RawMemory.writeVersion(address, version);

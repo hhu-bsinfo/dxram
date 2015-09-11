@@ -25,6 +25,8 @@ import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitResponse;
+import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandRequest;
+import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandResponse;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
@@ -155,6 +157,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		m_network.register(LogMessage.class, this);
 		m_network.register(RemoveMessage.class, this);
 		m_network.register(InitRequest.class, this);
+		m_network.register(LogCommandRequest.class, this);
 
 		// Create primary log
 		try {
@@ -269,13 +272,16 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public long logChunk(final Chunk p_chunk, final byte p_rangeID, final short p_source) throws DXRAMException {
 		byte[] logHeader;
 
-		System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", " + p_chunk.getSize() + ", " + p_chunk.getVersion());
-
 		if (p_rangeID == -1) {
 			logHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createHeader(p_chunk, (byte) -1, (short) -1);
+			// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
+			// + (p_chunk.getSize() + DEFAULT_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; default");
 		} else {
 			logHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createHeader(p_chunk, p_rangeID, p_source);
+			// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
+			// + (p_chunk.getSize() + MIGRATION_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; migrated");
 		}
+
 		try {
 			m_writeBuffer.putLogData(logHeader, p_chunk.getData().array());
 		} catch (final IOException | InterruptedException e) {
@@ -291,10 +297,12 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		if (p_rangeID == -1) {
 			tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createHeader(null, (byte) -1, (short) -1);
-			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, DEFAULT_PRIM_LOG_TOMBSTONE.getNIDOffset(false));
+			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, DEFAULT_PRIM_LOG_TOMBSTONE.getNIDOffset());
+			// System.out.println("Logging Tombstone: " + p_chunkID + ", " + DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; default");
 		} else {
 			tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createHeader(null, (byte) -1, (short) -1);
-			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, MIGRATION_PRIM_LOG_TOMBSTONE.getNIDOffset(false));
+			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, MIGRATION_PRIM_LOG_TOMBSTONE.getNIDOffset());
+			// System.out.println("Logging Tombstone: " + p_chunkID + ", " + MIGRATION_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; migrated");
 		}
 
 		try {
@@ -303,6 +311,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
+
 	}
 
 	@Override
@@ -557,15 +566,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 	@Override
 	public short getHeaderSize(final short p_nodeID) {
-		short ret;
-
-		if (NodeID.getLocalNodeID() == p_nodeID) {
-			ret = DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(false);
-		} else {
-			ret = DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(true);
-		}
-
-		return ret;
+		return DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(NodeID.getLocalNodeID() != p_nodeID);
 	}
 
 	@Override
@@ -624,6 +625,51 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		if (m_reorgThreadWaits) {
 			m_accessGranted = true;
 		}
+	}
+
+	/**
+	 * Returns the current utilization of primary log and all secondary logs
+	 * @return the current utilization
+	 */
+	public String getCurrentUtilization() {
+		String ret;
+		SecondaryLogWithSegments[] secondaryLogs;
+		SecondaryLogBuffer[] secLogBuffers;
+		LogCatalog cat;
+
+		ret = "***********************************************************************\n"
+				+ "*Primary log: " + m_primaryLog.getOccupiedSpace() + " bytes\n"
+				+ "***********************************************************************\n\n"
+				+ "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+				+ "+Secondary logs:\n";
+
+		for (int i = 0; i < m_logCatalogs.length(); i++) {
+			cat = m_logCatalogs.get(i);
+			if (cat != null) {
+				ret += "++Node " + (short) i + ":\n";
+				secondaryLogs = cat.getAllCreatorLogs();
+				secLogBuffers = cat.getAllCreatorBuffers();
+				for (int j = 0; j < secondaryLogs.length; j++) {
+					ret += "+++Creator backup range " + j + ": ";
+					if (secondaryLogs[j] != null) {
+						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
+					}
+				}
+				secondaryLogs = cat.getAllMigrationLogs();
+				secLogBuffers = cat.getAllMigrationBuffers();
+				for (int j = 0; j < secondaryLogs.length; j++) {
+					ret += "+++Migration backup range " + j + ": ";
+					if (secondaryLogs[j] != null) {
+						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
+					}
+				}
+			}
+		}
+		ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+
+		return ret;
 	}
 
 	/**
@@ -717,6 +763,27 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		}
 	}
 
+	/**
+	 * Handles an incoming LogCommandRequest
+	 * @param p_request
+	 *            the CommandRequest
+	 */
+	private void incomingCommandRequest(final LogCommandRequest p_request) {
+		String res;
+
+		if (p_request.getArgument().contains("loginfo")) {
+			res = getCurrentUtilization();
+		} else {
+			res = "error";
+		}
+
+		try {
+			new LogCommandResponse(p_request, res).send(m_network);
+		} catch (final NetworkException e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 
@@ -734,6 +801,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					break;
 				case LogMessages.SUBTYPE_INIT_REQUEST:
 					incomingInitRequest((InitRequest) p_message);
+					break;
+				case LogMessages.SUBTYPE_LOG_COMMAND_REQUEST:
+					incomingCommandRequest((LogCommandRequest) p_message);
 					break;
 				default:
 					break;
@@ -846,10 +916,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		@Override
 		public void run() {
 			SecondaryLogWithSegments secondaryLog;
-			SecondaryLogWithSegments[] secondaryLogs;
-			LogCatalog cat;
+			// SecondaryLogWithSegments[] secondaryLogs;
+			// LogCatalog cat;
 
-			long start = 0;
+			// long start = 0;
 
 			while (!m_isShuttingDown) {
 				try {
@@ -857,12 +927,12 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					if (m_isShuttingDown) {
 						break;
 					}
-					if (start == 0 || System.currentTimeMillis() - start > 10000) {
+					/*-if (start == 0 || System.currentTimeMillis() - start > 10000) {
 						start = System.currentTimeMillis();
 						System.out.println("***********************************************************************");
 						System.out.println("*Primary log: " + m_primaryLog.getOccupiedSpace() + " bytes");
 						System.out.println("***********************************************************************");
-					}
+					}*/
 
 					secondaryLog = chooseLog();
 					if (null != secondaryLog) {
@@ -894,25 +964,25 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						}
 						secondaryLog.setAccessFlag(false);
 
-						System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+						/*-System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 						System.out.println("+Secondary logs:");
 						for (int i = 0; i < m_logCatalogs.length(); i++) {
 							cat = m_logCatalogs.get(i);
 							if (cat != null) {
-								System.out.println("++Node " + i + ":");
+								System.out.println("++Node " + (short) i + ":");
 								secondaryLogs = cat.getAllLogs();
 								for (int j = 0; j < secondaryLogs.length; j++) {
 									System.out.print("+++Backup range " + j + ": ");
 									secondaryLog = secondaryLogs[j];
 									if (secondaryLog != null) {
 										System.out.println(secondaryLog.getOccupiedSpace() + " bytes");
-										secondaryLog.printSegmentDistribution();
+										secondaryLog.getSegmentDistribution();
 									}
 								}
 							}
 						}
 						System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-						System.out.println();
+						System.out.println();*/
 
 					} else {
 						// All secondary logs empty -> sleep
