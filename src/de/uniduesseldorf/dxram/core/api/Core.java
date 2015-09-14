@@ -488,6 +488,21 @@ public final class Core {
 	}
 
 	/**
+	 * Removes the corresponding Chunk for the giving ID
+	 * @param p_chunkIDs
+	 *            the IDs of the corresponding Chunks
+	 * @throws DXRAMException
+	 *             if the chunks could not be removed
+	 */
+	public static void remove(final long[] p_chunkIDs) throws DXRAMException {
+		ChunkID.check(p_chunkIDs);
+
+		if (m_chunk != null) {
+			m_chunk.remove(p_chunkIDs);
+		}
+	}
+
+	/**
 	 * Registers command listener (listener is called when CommandMessages or CommandRequests arrive)
 	 * @param p_commandListener
 	 *            The command listener

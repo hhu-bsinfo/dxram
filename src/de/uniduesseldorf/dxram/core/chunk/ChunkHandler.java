@@ -555,12 +555,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	@Override
 	public void remove(final long p_chunkID) throws DXRAMException {
-		final long[] chunkIDs = new long[] {p_chunkID};
-		Locations locations;
-		short primaryPeer;
-		short[] backupPeers;
 		boolean success = false;
-		RemoveRequest request;
 
 		Operation.REMOVE.enter();
 
@@ -569,60 +564,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (MemoryManager.isResponsible(p_chunkID)) {
-				if (!MemoryManager.wasMigrated(p_chunkID)) {
-					// Local remove
-					MemoryManager.remove(p_chunkID);
-					success = true;
-
-					if (LOG_ACTIVE) {
-						// Send backups for logging (unreliable)
-						backupPeers = getBackupPeers(p_chunkID);
-						if (backupPeers != null) {
-							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], chunkIDs).send(m_network);
-								}
-							}
-						}
-					}
-				} else {
-					// TODO: Migrate back and remove
-				}
-			} else {
-				System.out.println("delete on other node");
-				while (!success) {
-					locations = m_lookup.get(p_chunkID);
-					primaryPeer = locations.getPrimaryPeer();
-					backupPeers = locations.getBackupPeers();
-
-					if (primaryPeer == m_nodeID) {
-						// Local remove
-						MemoryManager.remove(p_chunkID);
-						success = true;
-					} else {
-						// Remote remove
-						request = new RemoveRequest(primaryPeer, p_chunkID);
-						try {
-							request.sendSync(m_network);
-						} catch (final NetworkException e) {
-							m_lookup.invalidate(p_chunkID);
-							continue;
-						}
-						success = request.getResponse(RemoveResponse.class).getStatus();
-					}
-					if (success && LOG_ACTIVE) {
-						// Send backups for logging (unreliable)
-						if (backupPeers != null) {
-							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], chunkIDs).send(m_network);
-								}
-							}
-						}
-					}
-				}
-			}
+			success = deleteChunkData(p_chunkID);
 			m_lookup.remove(p_chunkID);
 		}
 
@@ -632,6 +574,105 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			throw new DXRAMException("chunk removal failed");
 		}
 
+	}
+
+	@Override
+	public void remove(final long[] p_chunkIDs) throws DXRAMException {
+		boolean success = false;
+
+		Operation.REMOVE.enter();
+
+		ChunkID.check(p_chunkIDs);
+
+		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+			LOGGER.error("a superpeer must not use chunks");
+		} else {
+			success = true;
+			for (long chunkID : p_chunkIDs) {
+				success = success && deleteChunkData(chunkID);
+			}
+			m_lookup.remove(p_chunkIDs);
+		}
+
+		Operation.REMOVE.leave();
+
+		if (!success) {
+			throw new DXRAMException("chunks removal failed");
+		}
+
+	}
+
+	/**
+	 * Deletes the data (Chunk + Log) of one Chunk
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return whether this operation was successful or not
+	 * @throws DXRAMException
+	 *             if the Chunk could not be deleted
+	 */
+	public boolean deleteChunkData(final long p_chunkID) throws DXRAMException {
+		Locations locations;
+		short primaryPeer;
+		short[] backupPeers;
+		boolean ret = false;
+		RemoveRequest request;
+
+		if (MemoryManager.isResponsible(p_chunkID)) {
+			if (!MemoryManager.wasMigrated(p_chunkID)) {
+				// Local remove
+				MemoryManager.remove(p_chunkID);
+				ret = true;
+
+				if (LOG_ACTIVE) {
+					// Send backups for logging (unreliable)
+					backupPeers = getBackupPeers(p_chunkID);
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+								new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+							}
+						}
+					}
+				}
+			} else {
+				// TODO: Migrate back and remove
+			}
+		} else {
+			System.out.println("delete on other node");
+			while (!ret) {
+				locations = m_lookup.get(p_chunkID);
+				primaryPeer = locations.getPrimaryPeer();
+				backupPeers = locations.getBackupPeers();
+
+				if (primaryPeer == m_nodeID) {
+					// Local remove
+					MemoryManager.remove(p_chunkID);
+					ret = true;
+				} else {
+					// Remote remove
+					request = new RemoveRequest(primaryPeer, p_chunkID);
+					try {
+						request.sendSync(m_network);
+					} catch (final NetworkException e) {
+						m_lookup.invalidate(p_chunkID);
+						continue;
+					}
+					ret = request.getResponse(RemoveResponse.class).getStatus();
+				}
+				if (ret && LOG_ACTIVE) {
+					// Send backups for logging (unreliable)
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+								new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return ret;
 	}
 
 	@Override

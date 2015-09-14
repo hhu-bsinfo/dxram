@@ -1078,7 +1078,7 @@ public final class LookupMessages {
 	public static class RemoveRequest extends AbstractRequest {
 
 		// Attributes
-		private long m_chunkID;
+		private long[] m_chunkIDs;
 		private boolean m_isBackup;
 
 		// Constructors
@@ -1088,7 +1088,7 @@ public final class LookupMessages {
 		public RemoveRequest() {
 			super();
 
-			m_chunkID = -1;
+			m_chunkIDs = null;
 			m_isBackup = false;
 		}
 
@@ -1096,17 +1096,17 @@ public final class LookupMessages {
 		 * Creates an instance of RemoveRequest
 		 * @param p_destination
 		 *            the destination
-		 * @param p_chunkID
-		 *            the ChunkID that has to be removed
+		 * @param p_chunkIDs
+		 *            the ChunkIDs that have to be removed
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public RemoveRequest(final short p_destination, final long p_chunkID, final boolean p_isBackup) {
+		public RemoveRequest(final short p_destination, final long[] p_chunkIDs, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_REMOVE_REQUEST);
 
-			Contract.checkNotNull(p_chunkID, "no ChunkID given");
+			Contract.checkNotNull(p_chunkIDs, "no ChunkIDs given");
 
-			m_chunkID = p_chunkID;
+			m_chunkIDs = p_chunkIDs;
 			m_isBackup = p_isBackup;
 		}
 
@@ -1115,8 +1115,8 @@ public final class LookupMessages {
 		 * Get the ChunkID
 		 * @return the ChunkID
 		 */
-		public final long getChunkID() {
-			return m_chunkID;
+		public final long[] getChunkIDs() {
+			return m_chunkIDs;
 		}
 
 		/**
@@ -1130,19 +1130,19 @@ public final class LookupMessages {
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunkID(p_buffer, m_chunkID);
+			OutputHelper.writeChunkIDs(p_buffer, m_chunkIDs);
 			OutputHelper.writeBoolean(p_buffer, m_isBackup);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunkID = InputHelper.readChunkID(p_buffer);
+			m_chunkIDs = InputHelper.readChunkIDs(p_buffer);
 			m_isBackup = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length) + OutputHelper.getBooleanWriteLength();
 		}
 
 	}

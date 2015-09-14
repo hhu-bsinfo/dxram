@@ -190,6 +190,15 @@ public final class CachedTreeLookup implements LookupInterface {
 	}
 
 	@Override
+	public void remove(final long[] p_chunkIDs) throws LookupException {
+		ChunkID.check(p_chunkIDs);
+
+		invalidate(p_chunkIDs);
+
+		m_lookup.remove(p_chunkIDs);
+	}
+
+	@Override
 	public void invalidate(final long... p_chunkIDs) {
 		for (long chunkID : p_chunkIDs) {
 			m_cidCacheTree.invalidateChunkID(chunkID);

@@ -47,6 +47,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 
 	private boolean m_isAccessed;
 	private SegmentHeader m_activeSegment;
+	private int m_reorgSegment = -1;
 
 	private boolean m_storesMigrations;
 
@@ -808,12 +809,14 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				// + ", Utilization: " + currentSegment.getUtilization()
 				// + ", Used Bytes: " + currentSegment.getUsedBytes());
 
-				if (costBenefitRatio > max && (m_activeSegment == null || i != m_activeSegment.getIndex())) {
+				if (costBenefitRatio > max && (m_activeSegment == null || i != m_activeSegment.getIndex()) && i != m_reorgSegment) {
 					max = costBenefitRatio;
 					ret = i;
 				}
 			}
 		}
+		m_reorgSegment = ret;
+
 		return ret;
 	}
 

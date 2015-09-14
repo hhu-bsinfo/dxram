@@ -144,6 +144,15 @@ public interface ChunkInterface extends CoreComponent {
 	void remove(long p_chunkID) throws DXRAMException;
 
 	/**
+	 * Removes the corresponding Chunks for the given IDs
+	 * @param p_chunkIDs
+	 *            the IDs
+	 * @throws DXRAMException
+	 *             if the Chunks could not be removed
+	 */
+	void remove(long[] p_chunkIDs) throws DXRAMException;
+
+	/**
 	 * Requests and locks the corresponding Chunk for the giving ID
 	 * @param p_chunkID
 	 *            the ID

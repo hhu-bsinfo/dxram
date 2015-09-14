@@ -113,7 +113,7 @@ public final class LogTest implements Runnable {
 	public void run() {
 		int[] sizes;
 		Chunk[] chunks;
-		ArrayList<Integer> list;
+		ArrayList<Long> list;
 		Random rand;
 
 		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize + " Bytes and " + m_maxChunkSize + " Bytes");
@@ -140,9 +140,9 @@ public final class LogTest implements Runnable {
 			}
 
 			// Create list for deletion
-			list = new ArrayList<Integer>();
+			list = new ArrayList<Long>();
 			for (int i = 1; i < m_chunksPerThread; i++) {
-				list.add(new Integer(i));
+				list.add(chunks[i].getChunkID());
 			}
 			Collections.shuffle(list);
 
@@ -155,13 +155,11 @@ public final class LogTest implements Runnable {
 
 			// Delete
 			System.out.print("Starting deletion...");
-			for (int i = 0; i < 10000; i++) {
-				Core.remove(chunks[list.get(i)].getChunkID());
-			}
+			Core.remove(list.subList(0, 10000).stream().mapToLong(l -> l).toArray());
 			System.out.println("done");
 
 			// Put dummies to change active segment
-			System.out.print("Starting deletion...");
+			System.out.print("Starting fill replication...");
 			for (int i = 0; i < 10; i++) {
 				Core.put(Core.createNewChunk(1048576));
 			}
