@@ -241,10 +241,10 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	public static LogEntryHeaderInterface getSecondaryHeader(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		LogEntryHeaderInterface ret = null;
 
-		if (DEFAULT_SEC_LOG_ENTRY_HEADER.getVersion(p_buffer, p_offset, p_logStoresMigrations) >= 0) {
-			ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
-		} else {
+		if (DEFAULT_SEC_LOG_TOMBSTONE.getVersion(p_buffer, p_offset, p_logStoresMigrations) == -1) {
 			ret = DEFAULT_SEC_LOG_TOMBSTONE;
+		} else {
+			ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
 		}
 
 		return ret;

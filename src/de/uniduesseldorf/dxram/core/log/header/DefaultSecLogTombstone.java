@@ -13,6 +13,7 @@ public class DefaultSecLogTombstone implements LogEntryHeaderInterface {
 
 	// Attributes
 	public static final short SIZE = 10;
+	public static final byte LID_OFFSET = 0;
 	public static final byte VER_OFFSET = LogHandler.LOG_ENTRY_LID_SIZE;
 
 	// Constructors

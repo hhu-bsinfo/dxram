@@ -155,8 +155,15 @@ public final class LogTest implements Runnable {
 
 			// Delete
 			System.out.print("Starting deletion...");
-			for (int i = 0; i < 100000; i++) {
+			for (int i = 0; i < 10000; i++) {
 				Core.remove(chunks[list.get(i)].getChunkID());
+			}
+			System.out.println("done");
+
+			// Put dummies to change active segment
+			System.out.print("Starting deletion...");
+			for (int i = 0; i < 10; i++) {
+				Core.put(Core.createNewChunk(1048576));
 			}
 			System.out.println("done");
 

@@ -156,10 +156,9 @@ public final class SecondaryLogBuffer {
 			m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize, null);
 		} else {
 			// Data in secondary log buffer -> Flush buffer and write new data in secondary log with one access
-
 			dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
 			System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
-			System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_buffer.length);
+			System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_entryOrRangeSize);
 
 			m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length, null);
 			m_bytesInBuffer = 0;
