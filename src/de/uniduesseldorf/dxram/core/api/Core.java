@@ -117,6 +117,8 @@ public final class Core {
 	 *            the nodes configuration to use
 	 */
 	public static void initialize(final Configuration p_configuration, final NodesConfiguration p_nodesConfiguration) {
+		int interval;
+
 		LOGGER.trace("Entering initialize with: p_configuration=" + p_configuration + ", p_nodesConfiguration=" + p_nodesConfiguration);
 
 		try {
@@ -139,7 +141,10 @@ public final class Core {
 			// Register shutdown thread
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread());
 
-			StatisticsManager.setupOutput(60);
+			interval = Core.getConfiguration().getIntValue(ConfigurationConstants.STATISTIC_PRINT);
+			if (interval > 0) {
+				StatisticsManager.setupOutput(interval);
+			}
 		} catch (final Exception e) {
 			LOGGER.fatal("FATAL::Could not instantiate DXRAM", e);
 

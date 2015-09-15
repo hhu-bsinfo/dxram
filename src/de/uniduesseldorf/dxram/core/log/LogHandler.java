@@ -652,6 +652,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				for (int j = 0; j < secondaryLogs.length; j++) {
 					ret += "+++Creator backup range " + j + ": ";
 					if (secondaryLogs[j] != null) {
+						if (secondaryLogs[j].isAccessed()) {
+							ret += "#Active log# ";
+						}
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
 					}
@@ -661,6 +664,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				for (int j = 0; j < secondaryLogs.length; j++) {
 					ret += "+++Migration backup range " + j + ": ";
 					if (secondaryLogs[j] != null) {
+						if (secondaryLogs[j].isAccessed()) {
+							ret += "#Active log# ";
+						}
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
 					}

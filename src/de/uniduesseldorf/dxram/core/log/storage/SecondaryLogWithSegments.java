@@ -47,7 +47,6 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 
 	private boolean m_isAccessed;
 	private SegmentHeader m_activeSegment;
-	private int m_reorgSegment = -1;
 
 	private boolean m_storesMigrations;
 
@@ -352,7 +351,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 * @note executed only by reorganization thread
 	 */
 	public final void invalidateLogEntry(final byte[] p_buffer, final int p_bufferOffset, final long p_logOffset, final int p_segmentIndex) throws IOException,
-			InterruptedException {
+	InterruptedException {
 
 		AbstractLogEntryHeader.markAsInvalid(p_buffer, p_bufferOffset, m_storesMigrations);
 
@@ -734,7 +733,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 
 		if (-1 != p_segmentIndex) {
 			try {
-				System.out.println("Reorganization of Segment: " + p_segmentIndex);
+				// System.out.println("Reorganization of Segment: " + p_segmentIndex);
 				segmentData = readSegment(p_segmentIndex);
 				newData = new byte[LogHandler.SECLOG_SEGMENT_SIZE];
 
@@ -778,11 +777,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			}
 
 			if (removedObjects != 0 || removedTombstones != 0) {
-				System.out.println();
-				System.out.println("-Reorganization of Segment: " + p_segmentIndex + "(" + m_nodeID + ") finished:");
-				System.out.println("--" + removedObjects + " entries removed");
-				System.out.println("--" + removedTombstones + " tombstones removed");
-				System.out.println();
+				System.out.println("\n- Reorganization of Segment: " + p_segmentIndex + "(" + m_nodeID + ") finished:");
+				System.out.println("-- " + removedObjects + " entries removed");
+				System.out.println("-- " + removedTombstones + " tombstones removed\n");
 			}
 		}
 	}
@@ -801,21 +798,17 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		for (int i = 0; i < m_segmentHeaders.length; i++) {
 			currentSegment = m_segmentHeaders[i];
 			if (currentSegment != null) {
-				costBenefitRatio = (long) ((1 - currentSegment.getUtilization()) * currentSegment.getLastAccess() / (1 + currentSegment.getUtilization()));
-				System.out.println("Cost-Benefit-Ratio of segment " + i + ": " + costBenefitRatio);
+				costBenefitRatio = (long) ((1 - currentSegment.getUtilization()) * currentSegment.getAge() / (1 + currentSegment.getUtilization()));
 
-				// System.out.println("Cost-Benefit-Ratio: " + costBenefitRatio
-				// + ", Age:" + currentSegment.getLastAccess()
-				// + ", Utilization: " + currentSegment.getUtilization()
-				// + ", Used Bytes: " + currentSegment.getUsedBytes());
+				// System.out.println("Cost-Benefit-Ratio: " + costBenefitRatio + ", Age:" + currentSegment.getAge()
+				// + ", Utilization: " + currentSegment.getUtilization() + ", Used Bytes: " + currentSegment.getUsedBytes());
 
-				if (costBenefitRatio > max && (m_activeSegment == null || i != m_activeSegment.getIndex()) && i != m_reorgSegment) {
+				if (costBenefitRatio > max && (m_activeSegment == null || i != m_activeSegment.getIndex())) {
 					max = costBenefitRatio;
 					ret = i;
 				}
 			}
 		}
-		m_reorgSegment = ret;
 
 		return ret;
 	}
@@ -830,13 +823,13 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		int readBytes = 0;
 		int hashVersion;
 		int logVersion;
+		int deleteCounter = 0;
 		long localID;
 		boolean wasUpdated = false;
 		byte[][] segments;
 		byte[] segment;
 		LogEntryHeaderInterface logEntryHeader;
 
-		System.out.println("\n............Removing tombstones(" + getNodeID() + ")............");
 		timeStart = System.currentTimeMillis();
 
 		p_hashtable.clear();
@@ -848,11 +841,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				readBytes = 0;
 				if (segments[i] != null) {
 					segment = segments[i];
-					System.out.println("Segment " + i + ": " + segment.length);
 					while (readBytes < segment.length) {
-						if (readBytes < 0) {
-							System.out.println("error");
-						}
 						// Put object versions to hashtable
 						// Collision: Store the higher version number if not
 						// -1 (^= deleted)
@@ -865,7 +854,6 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				}
 			}
 			readBytes = 0;
-			System.out.println("..Entries in hashtable: " + p_hashtable.size());
 
 			// Mark out-dated and deleted entries
 			for (int i = 0; i < segments.length; i++) {
@@ -881,9 +869,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						if ((hashVersion == -1 || hashVersion > logVersion) && localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
 							// Set LID of out-dated and deleted objects and
 							// tombstones to -1
-							System.out.println("##################Found deleted chunk version#################");
 							invalidateLogEntry(segment, readBytes, i * LogHandler.SECLOG_SEGMENT_SIZE + readBytes, i);
 							wasUpdated = true;
+							deleteCounter++;
 						}
 						readBytes += logEntryHeader.getHeaderSize(m_storesMigrations) + logEntryHeader.getLength(segment, readBytes, m_storesMigrations);
 					}
@@ -897,8 +885,12 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			System.out.println("Removing tombstones failed!");
 		}
 
-		System.out.println("..All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms");
-		System.out.println(".............Finished removing(" + getNodeID() + ").............\n");
+		if (deleteCounter > 0) {
+			System.out.println("\n+ Marking invalid objects(" + getNodeID() + ")");
+			System.out.println("++ Entries in hashtable: " + p_hashtable.size());
+			System.out.println("++ " + deleteCounter + " entries invalidated");
+			System.out.println("++ All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms\n");
+		}
 	}
 
 	/**
@@ -910,7 +902,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 
 		for (SegmentHeader header : m_segmentHeaders) {
 			if (header != null) {
-				ret += header.getUsedBytes() + " | ";
+				ret += header.getUsedBytes() + ", u=" + String.format("%.2f", header.getUtilization()) + " | ";
 			}
 		}
 
@@ -954,8 +946,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			float ret = 1;
 
 			if (m_usedBytes > 0) {
-				ret = (float) (m_usedBytes - m_deletedBytes) / LogHandler.SECLOG_SEGMENT_SIZE;
+				ret = 1 - ((float) m_deletedBytes / m_usedBytes);
 			}
+
 			return ret;
 		}
 
@@ -992,11 +985,11 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		}
 
 		/**
-		 * Returns the timestamp of last access
-		 * @return the timestamp of last access
+		 * Returns the age of this segment
+		 * @return the age of this segment
 		 */
-		public final long getLastAccess() {
-			return m_lastAccess;
+		public final long getAge() {
+			return System.currentTimeMillis() - m_lastAccess;
 		}
 
 		// Setter

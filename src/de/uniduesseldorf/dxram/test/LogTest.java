@@ -113,6 +113,7 @@ public final class LogTest implements Runnable {
 	public void run() {
 		int[] sizes;
 		Chunk[] chunks;
+		Chunk[] fillChunks;
 		ArrayList<Long> list;
 		Random rand;
 
@@ -146,6 +147,9 @@ public final class LogTest implements Runnable {
 			}
 			Collections.shuffle(list);
 
+			// Create fill chunks
+			fillChunks = Core.createNewChunk(new int[] {1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576});
+
 			// Put
 			System.out.print("Starting replication...");
 			for (int i = 0; i < m_chunksPerThread; i++) {
@@ -161,7 +165,7 @@ public final class LogTest implements Runnable {
 			// Put dummies to change active segment
 			System.out.print("Starting fill replication...");
 			for (int i = 0; i < 10; i++) {
-				Core.put(Core.createNewChunk(1048576));
+				Core.put(fillChunks[i]);
 			}
 			System.out.println("done");
 

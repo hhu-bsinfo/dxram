@@ -1842,6 +1842,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		} else if (cmd.indexOf("cidt") >= 0) {
 			// CIDTable command?
 			res = cmdReqCIDT(cmd);
+		} else if (cmd.indexOf("stats") >= 0) {
+			// stats command?
+			res = StatisticsManager.getStatistics();
 		} else {
 			// command handled in callback?
 			if (Core.getCommandListener() != null) {
@@ -2024,7 +2027,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-									+ (m_backupPeers[0] & 0x000000000000FFFFL);
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {

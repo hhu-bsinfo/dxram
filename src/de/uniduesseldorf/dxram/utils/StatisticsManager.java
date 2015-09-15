@@ -26,6 +26,9 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
  */
 public final class StatisticsManager {
 
+	// Constants
+	private static final String SEPERATOR = "--------------------------------------------------";
+
 	// Attributes
 	private static Map<String, Statistic> m_statistics;
 	private static boolean m_printDetails = true;
@@ -56,6 +59,71 @@ public final class StatisticsManager {
 	 */
 	public static void setPrintDetails(final boolean p_printDetails) {
 		m_printDetails = p_printDetails;
+	}
+
+	/**
+	 * Prints the statistics
+	 * @return the statistics String
+	 */
+	public static String getStatistics() {
+		StringBuffer buffer;
+
+		buffer = new StringBuffer();
+		buffer.append("\n");
+		buffer.append(DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(new Date()));
+		buffer.append("\n");
+		buffer.append("\n");
+
+		m_lock.lock();
+
+		if (m_statistics != null) {
+			for (Entry<String, Statistic> entry : m_statistics.entrySet()) {
+				buffer.append(entry.getKey() + ":\n");
+				buffer.append(SEPERATOR + "\n");
+				appendStatistic(buffer, entry.getValue());
+				buffer.append(SEPERATOR + "\n");
+				buffer.append("\n");
+			}
+		}
+
+		m_lock.unlock();
+
+		return buffer.toString();
+	}
+
+	/**
+	 * Appends a statistic to a buffer
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_statistic
+	 *            the statistic
+	 */
+	private static void appendStatistic(final StringBuffer p_buffer, final Statistic p_statistic) {
+		List<StatisticEntry> values;
+		String name;
+		int maxLength;
+
+		values = p_statistic.getValues(m_printDetails);
+		Collections.sort(values);
+		if (values != null) {
+			maxLength = 0;
+			for (StatisticEntry entry : values) {
+				name = entry.getName();
+				if (name.length() > maxLength) {
+					maxLength = name.length();
+				}
+			}
+
+			for (StatisticEntry entry : values) {
+				name = entry.getName();
+
+				p_buffer.append(name + ": ");
+				for (int i = name.length(); i < maxLength; i++) {
+					p_buffer.append(" ");
+				}
+				p_buffer.append(entry.getValue() + "\n");
+			}
+		}
 	}
 
 	// Methods
@@ -322,9 +390,6 @@ public final class StatisticsManager {
 	 */
 	private static class StatisticsTask extends TimerTask {
 
-		// Constants
-		private static final String SEPERATOR = "--------------------------------------------------";
-
 		// Attributes
 		private PrintStream m_stream;
 
@@ -364,41 +429,6 @@ public final class StatisticsManager {
 			m_lock.unlock();
 
 			m_stream.println(buffer);
-		}
-
-		/**
-		 * Appends a statistic to a buffer
-		 * @param p_buffer
-		 *            the buffer
-		 * @param p_statistic
-		 *            the statistic
-		 */
-		private void appendStatistic(final StringBuffer p_buffer, final Statistic p_statistic) {
-			List<StatisticEntry> values;
-			String name;
-			int maxLength;
-
-			values = p_statistic.getValues(m_printDetails);
-			Collections.sort(values);
-			if (values != null) {
-				maxLength = 0;
-				for (StatisticEntry entry : values) {
-					name = entry.getName();
-					if (name.length() > maxLength) {
-						maxLength = name.length();
-					}
-				}
-
-				for (StatisticEntry entry : values) {
-					name = entry.getName();
-
-					p_buffer.append(name + ": ");
-					for (int i = name.length(); i < maxLength; i++) {
-						p_buffer.append(" ");
-					}
-					p_buffer.append(entry.getValue() + "\n");
-				}
-			}
 		}
 
 	}

@@ -152,7 +152,7 @@ public abstract class AbstractCmd {
 
 			if (ret) {
 				if (CmdUtils.checkNID(p_found).compareTo("unknown") == 0) {
-					System.out.println("  error: unknwon NID '" + p_found + "'");
+					System.out.println("  error: unknown NID '" + p_found + "'");
 					ret = false;
 				} else {
 					if (p_expected.compareTo("PNID") == 0 || p_expected.compareTo("[PNID]") == 0) {

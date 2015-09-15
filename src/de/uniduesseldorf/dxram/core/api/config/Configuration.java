@@ -311,6 +311,8 @@ public final class Configuration {
 		public static final ConfigurationEntry<Integer> ZOOKEEPER_BITFIELD_SIZE = new ConfigurationEntry<Integer>("zookeeper.bitfield_size", Integer.class,
 				256 * 1024);
 
+		// Periodically print statistics?
+		public static final ConfigurationEntry<Integer> STATISTIC_PRINT = new ConfigurationEntry<Integer>("statistic.print", Integer.class, 0);
 		// Chunk-Statistic
 		public static final ConfigurationEntry<Boolean> STATISTIC_CHUNK = new ConfigurationEntry<Boolean>("statistic.chunk", Boolean.class, true);
 		// Memory-Statistic
@@ -320,7 +322,7 @@ public final class Configuration {
 		// Throughput-Statistic
 		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>("statistic.throughput", Boolean.class, true);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 44;
+		public static final int CONFIGURATION_ENTRY_COUNT = 45;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
 			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
@@ -365,6 +367,7 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_CONNECTION_STRING);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_TIMEOUT);
 			CONFIGURATION_ENTRIES.add(ZOOKEEPER_BITFIELD_SIZE);
+			CONFIGURATION_ENTRIES.add(STATISTIC_PRINT);
 			CONFIGURATION_ENTRIES.add(STATISTIC_CHUNK);
 			CONFIGURATION_ENTRIES.add(STATISTIC_MEMORY);
 			CONFIGURATION_ENTRIES.add(STATISTIC_REQUEST);
