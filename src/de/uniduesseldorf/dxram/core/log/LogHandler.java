@@ -307,7 +307,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		try {
 			m_writeBuffer.putLogData(tombstone, null);
-			getSecondaryLog(p_chunkID, p_source, p_rangeID).incDeleteCounter();
+			getSecondaryLog(p_chunkID, p_source, p_rangeID).incLogDeleteCounter();
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
@@ -608,7 +608,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @param p_secLog
 	 *            the Secondary Log
 	 */
-	public void getAccess(final SecondaryLogWithSegments p_secLog) {
+	public void getAccessToSecLog(final SecondaryLogWithSegments p_secLog) {
 		if (!p_secLog.isAccessed()) {
 			p_secLog.setAccessFlag(true);
 			m_reorgThreadWaits = true;
@@ -617,6 +617,17 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				Thread.yield();
 			}
 			m_accessGranted = false;
+		}
+	}
+
+	/**
+	 * Get access to secondary log for reorganization thread
+	 * @param p_secLog
+	 *            the Secondary Log
+	 */
+	public void leaveSecLog(final SecondaryLogWithSegments p_secLog) {
+		if (p_secLog.isAccessed()) {
+			p_secLog.setAccessFlag(false);
 		}
 	}
 
@@ -886,23 +897,41 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			long max = 0;
 			long current;
 			LogCatalog cat;
+			ArrayList<LogCatalog> cats;
 			SecondaryLogWithSegments[] secLogs;
 			SecondaryLogWithSegments secLog;
 
+			cats = new ArrayList<LogCatalog>();
 			for (int i = 0; i < m_logCatalogs.length(); i++) {
 				cat = m_logCatalogs.get(i);
 				if (cat != null) {
-					secLogs = cat.getAllLogs();
-					for (int j = 0; j < secLogs.length; j++) {
-						secLog = secLogs[j];
-						if (secLog != null) {
-							current = secLog.getDeleteCounter() * 100 + secLog.getOccupiedSpace();
-							if (current > max) {
-								max = current;
-								ret = secLog;
-							}
+					cats.add(cat);
+				}
+			}
+
+			for (LogCatalog currentCat : cats) {
+				secLogs = currentCat.getAllLogs();
+				for (int j = 0; j < secLogs.length; j++) {
+					secLog = secLogs[j];
+					if (secLog != null) {
+						current = secLog.getLogDeleteCounter();// * 100 + secLog.getOccupiedSpace();
+						if (current != 0) {
+							System.out.println("Log " + j + ": " + current);
+						}
+						if (current > max) {
+							max = current;
+							ret = secLog;
 						}
 					}
+				}
+			}
+			if (ret == null && !cats.isEmpty()) {
+				// Choose one secondary log randomly
+				cat = cats.get(Tools.getRandomValue(cats.size() - 1));
+				secLogs = cat.getAllLogs();
+				if (secLogs.length > 0) {
+					ret = secLogs[Tools.getRandomValue(secLogs.length - 1)];
+					System.out.println("Random choice: " + ret);
 				}
 			}
 
@@ -942,7 +971,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 					secondaryLog = chooseLog();
 					if (null != secondaryLog) {
-						getAccess(secondaryLog);
+						getAccessToSecLog(secondaryLog);
 						secondaryLog.markInvalidObjects(m_versionsHT);
 						for (int i = 0; i < 10; i++) {
 							// m_writeBuffer.printThroughput();
@@ -952,10 +981,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								}
 								// Reorganization thread was signaled ->
 								// process given log completely
-								getAccess(m_secLog);
+								getAccessToSecLog(m_secLog);
 								m_secLog.markInvalidObjects(new VersionsHashTable(6400000, 0.9f));
 								m_secLog.reorganizeAll();
 								m_secLog = null;
+								leaveSecLog(secondaryLog);
 								m_secLog.setAccessFlag(false);
 								m_reorganizationFinishedCondition.signal();
 							} else {
@@ -964,7 +994,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								}
 								// Time-out -> reorganize another segment in
 								// current log
-								getAccess(secondaryLog);
+								getAccessToSecLog(secondaryLog);
 								secondaryLog.reorganizeIteratively();
 							}
 						}
