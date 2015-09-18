@@ -768,10 +768,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		try {
 			if (owner == ChunkID.getCreatorID(firstChunkIDOrRangeID)) {
 				// Create new secondary log
-				secLog = new SecondaryLogWithSegments(SECLOG_SIZE, m_secondaryLogsReorgThread, owner, false);
+				secLog = new SecondaryLogWithSegments(SECLOG_SIZE, m_secondaryLogsReorgThread, owner, ChunkID.getLocalID(firstChunkIDOrRangeID), false);
 			} else {
 				// Create new secondary log for migrations
-				secLog = new SecondaryLogWithSegments(SECLOG_SIZE, m_secondaryLogsReorgThread, owner, true);
+				secLog = new SecondaryLogWithSegments(SECLOG_SIZE, m_secondaryLogsReorgThread, owner, firstChunkIDOrRangeID, true);
 			}
 			// Insert range in log catalog
 			cat.insertRange(firstChunkIDOrRangeID, secLog);

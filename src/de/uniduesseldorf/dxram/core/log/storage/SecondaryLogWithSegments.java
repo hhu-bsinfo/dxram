@@ -29,6 +29,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 
 	// Attributes
 	private short m_nodeID;
+	private long m_rangeIDOrFirstLocalID;
 
 	private long m_numberOfBytes;
 	private int m_numberOfInvalidsInLog;
@@ -58,6 +59,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 *            the reorganization thread
 	 * @param p_nodeID
 	 *            the NodeID
+	 * @param p_rangeIDOrFirstLocalID
+	 *            the RangeID (for migrations) or the first localID of the backup range
 	 * @param p_storesMigrations
 	 *            whether this secondary log stores migrations or not
 	 * @throws IOException
@@ -66,7 +69,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 *             if the caller was interrupted
 	 */
 	public SecondaryLogWithSegments(final long p_secLogSize, final SecondaryLogsReorgThread p_reorganizationThread, final short p_nodeID,
-			final boolean p_storesMigrations) throws IOException, InterruptedException {
+			final long p_rangeIDOrFirstLocalID, final boolean p_storesMigrations) throws IOException, InterruptedException {
 		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
 				+ LogHandler.SECLOG_POSTFIX_FILENAME), p_secLogSize, LogHandler.SECLOG_MAGIC_HEADER_SIZE);
 		if (p_secLogSize < LogHandler.SECLOG_MIN_SIZE) {
@@ -76,6 +79,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		m_storesMigrations = p_storesMigrations;
 
 		m_nodeID = p_nodeID;
+		m_rangeIDOrFirstLocalID = p_rangeIDOrFirstLocalID;
 
 		m_numberOfBytes = 0;
 		m_numberOfInvalidsInLog = 0;
@@ -272,6 +276,14 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	 */
 	public final short getNodeID() {
 		return m_nodeID;
+	}
+
+	/**
+	 * Returns the RangeID (for migrations) or first ChunkID of backup range
+	 * @return the RangeID or first ChunkID
+	 */
+	public final long getRangeIDOrFirstLocalID() {
+		return m_rangeIDOrFirstLocalID;
 	}
 
 	/**
@@ -797,7 +809,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 			}
 
 			if (removedObjects != 0 || removedTombstones != 0) {
-				System.out.println("\n- Reorganization of Segment: " + p_segmentIndex + "(" + m_nodeID + ") finished:");
+				System.out.println("\n- Reorganization of Segment: " + p_segmentIndex
+						+ "(Peer: " + m_nodeID + ", Range: " + getRangeIDOrFirstLocalID() + ") finished:");
 				System.out.println("-- " + removedObjects + " entries removed");
 				System.out.println("-- " + removedTombstones + " tombstones removed\n");
 			}
@@ -906,7 +919,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		}
 
 		if (deleteCounter > 0) {
-			System.out.println("\n+ Marking invalid objects(" + getNodeID() + ")");
+			System.out.println("\n+ Marking invalid objects(Peer: " + getNodeID() + ", Range: " + getRangeIDOrFirstLocalID() + ")");
 			System.out.println("++ Entries in hashtable: " + p_hashtable.size());
 			System.out.println("++ " + deleteCounter + " entries invalidated");
 			System.out.println("++ All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms\n");
