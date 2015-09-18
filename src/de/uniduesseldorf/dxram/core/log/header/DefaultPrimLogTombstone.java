@@ -32,6 +32,7 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 		result = new byte[SIZE];
 		AbstractLogEntryHeader.putType(result, (byte) 2, (byte) 0);
 		AbstractLogEntryHeader.putVersion(result, -1, VER_OFFSET);
+		// ChunkID must be set later
 
 		return result;
 	}

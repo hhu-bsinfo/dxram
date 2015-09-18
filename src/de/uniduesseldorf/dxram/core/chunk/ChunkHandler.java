@@ -554,13 +554,79 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	}
 
 	@Override
-	public void remove(final long p_chunkID) throws DXRAMException {
-		final long[] chunkIDs = new long[] {p_chunkID};
+	public void put(final Chunk[] p_chunks) throws DXRAMException {
 		Locations locations;
 		short primaryPeer;
 		short[] backupPeers;
 		boolean success = false;
-		RemoveRequest request;
+		PutRequest request;
+
+		Operation.PUT.enter();
+
+		Contract.checkNotNull(p_chunks, "no chunks given");
+
+		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+			LOGGER.error("a superpeer must not use chunks");
+		} else {
+			for (Chunk chunk : p_chunks) {
+				chunk.incVersion();
+				if (MemoryManager.isResponsible(chunk.getChunkID())) {
+					// Local put
+					MemoryManager.put(chunk);
+
+					if (LOG_ACTIVE) {
+						// Send backups for logging (unreliable)
+						backupPeers = getBackupPeers(chunk.getChunkID());
+						if (backupPeers != null) {
+							for (int i = 0; i < backupPeers.length; i++) {
+								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+									new LogMessage(backupPeers[i], new Chunk[] {chunk}).send(m_network);
+								}
+							}
+						}
+					}
+				} else {
+					while (!success) {
+						locations = m_lookup.get(chunk.getChunkID());
+						primaryPeer = locations.getPrimaryPeer();
+						backupPeers = locations.getBackupPeers();
+
+						if (primaryPeer == m_nodeID) {
+							// Local put
+							MemoryManager.put(chunk);
+							success = true;
+						} else {
+							// Remote put
+							request = new PutRequest(primaryPeer, chunk, false);
+							try {
+								request.sendSync(m_network);
+							} catch (final NetworkException e) {
+								m_lookup.invalidate(chunk.getChunkID());
+								continue;
+							}
+							success = request.getResponse(PutResponse.class).getStatus();
+						}
+						if (success && LOG_ACTIVE) {
+							// Send backups for logging (unreliable)
+							if (backupPeers != null) {
+								for (int i = 0; i < backupPeers.length; i++) {
+									if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+										new LogMessage(backupPeers[i], new Chunk[] {chunk}).send(m_network);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		Operation.PUT.leave();
+	}
+
+	@Override
+	public void remove(final long p_chunkID) throws DXRAMException {
+		boolean success = false;
 
 		Operation.REMOVE.enter();
 
@@ -569,60 +635,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (MemoryManager.isResponsible(p_chunkID)) {
-				if (!MemoryManager.wasMigrated(p_chunkID)) {
-					// Local remove
-					MemoryManager.remove(p_chunkID);
-					success = true;
-
-					if (LOG_ACTIVE) {
-						// Send backups for logging (unreliable)
-						backupPeers = getBackupPeers(p_chunkID);
-						if (backupPeers != null) {
-							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], chunkIDs).send(m_network);
-								}
-							}
-						}
-					}
-				} else {
-					// TODO: Migrate back and remove
-				}
-			} else {
-				System.out.println("delete on other node");
-				while (!success) {
-					locations = m_lookup.get(p_chunkID);
-					primaryPeer = locations.getPrimaryPeer();
-					backupPeers = locations.getBackupPeers();
-
-					if (primaryPeer == m_nodeID) {
-						// Local remove
-						MemoryManager.remove(p_chunkID);
-						success = true;
-					} else {
-						// Remote remove
-						request = new RemoveRequest(primaryPeer, p_chunkID);
-						try {
-							request.sendSync(m_network);
-						} catch (final NetworkException e) {
-							m_lookup.invalidate(p_chunkID);
-							continue;
-						}
-						success = request.getResponse(RemoveResponse.class).getStatus();
-					}
-					if (success && LOG_ACTIVE) {
-						// Send backups for logging (unreliable)
-						if (backupPeers != null) {
-							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], chunkIDs).send(m_network);
-								}
-							}
-						}
-					}
-				}
-			}
+			success = deleteChunkData(p_chunkID);
 			m_lookup.remove(p_chunkID);
 		}
 
@@ -632,6 +645,105 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			throw new DXRAMException("chunk removal failed");
 		}
 
+	}
+
+	@Override
+	public void remove(final long[] p_chunkIDs) throws DXRAMException {
+		boolean success = false;
+
+		Operation.REMOVE.enter();
+
+		ChunkID.check(p_chunkIDs);
+
+		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+			LOGGER.error("a superpeer must not use chunks");
+		} else {
+			success = true;
+			for (long chunkID : p_chunkIDs) {
+				success = success && deleteChunkData(chunkID);
+			}
+			m_lookup.remove(p_chunkIDs);
+		}
+
+		Operation.REMOVE.leave();
+
+		if (!success) {
+			throw new DXRAMException("chunks removal failed");
+		}
+
+	}
+
+	/**
+	 * Deletes the data (Chunk + Log) of one Chunk
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return whether this operation was successful or not
+	 * @throws DXRAMException
+	 *             if the Chunk could not be deleted
+	 */
+	public boolean deleteChunkData(final long p_chunkID) throws DXRAMException {
+		Locations locations;
+		short primaryPeer;
+		short[] backupPeers;
+		boolean ret = false;
+		RemoveRequest request;
+
+		if (MemoryManager.isResponsible(p_chunkID)) {
+			if (!MemoryManager.wasMigrated(p_chunkID)) {
+				// Local remove
+				MemoryManager.remove(p_chunkID);
+				ret = true;
+
+				if (LOG_ACTIVE) {
+					// Send backups for logging (unreliable)
+					backupPeers = getBackupPeers(p_chunkID);
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+								new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+							}
+						}
+					}
+				}
+			} else {
+				// TODO: Migrate back and remove
+			}
+		} else {
+			System.out.println("delete on other node");
+			while (!ret) {
+				locations = m_lookup.get(p_chunkID);
+				primaryPeer = locations.getPrimaryPeer();
+				backupPeers = locations.getBackupPeers();
+
+				if (primaryPeer == m_nodeID) {
+					// Local remove
+					MemoryManager.remove(p_chunkID);
+					ret = true;
+				} else {
+					// Remote remove
+					request = new RemoveRequest(primaryPeer, p_chunkID);
+					try {
+						request.sendSync(m_network);
+					} catch (final NetworkException e) {
+						m_lookup.invalidate(p_chunkID);
+						continue;
+					}
+					ret = request.getResponse(RemoveResponse.class).getStatus();
+				}
+				if (ret && LOG_ACTIVE) {
+					// Send backups for logging (unreliable)
+					if (backupPeers != null) {
+						for (int i = 0; i < backupPeers.length; i++) {
+							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+								new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return ret;
 	}
 
 	@Override
@@ -1024,7 +1136,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		if (ChunkID.getCreatorID(p_chunkID) == NodeID.getLocalNodeID()) {
 			for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
-				if (m_ownBackupRanges.get(i).getBackupPeers()[0] <= ChunkID.getLocalID(ChunkID.getLocalID(p_chunkID))) {
+				if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
 					ret = m_ownBackupRanges.get(i).getBackupPeers();
 					break;
 				}
@@ -1054,12 +1166,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				determineBackupPeers(0);
 				m_lookup.initRange((long) m_nodeID << 48, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
 				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
+				m_rangeSize = 0;
 			} else if (m_rangeSize > SECONDARY_LOG_SIZE / 2) {
 				determineBackupPeers(p_lid);
 				m_lookup.initRange(((long) m_nodeID << 48) + p_lid, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
 				m_log.initBackupRange(((long) m_nodeID << 48) + p_lid, m_currentBackupRange.getBackupPeers());
+				m_rangeSize = 0;
 			}
-			m_rangeSize = 0;
 		} else if (1 == p_lid) {
 			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, new Locations(m_nodeID, new short[] {-1, -1, -1}, null));
 		}
@@ -1874,6 +1987,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			res = cmdReqBackups(cmd);
 		} else if (cmd.indexOf("cidt") >= 0) {
 			res = cmdReqCIDT(cmd);
+		} else if (cmd.indexOf("stats") >= 0) {
+			// stats command?
+			res = StatisticsManager.getStatistics();
 		} else {
 			// command handled in callback?
 			if (Core.getCommandListener() != null) {
@@ -2056,7 +2172,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-									+ (m_backupPeers[0] & 0x000000000000FFFFL);
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {

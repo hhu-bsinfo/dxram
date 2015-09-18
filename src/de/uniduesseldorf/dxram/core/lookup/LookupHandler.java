@@ -601,7 +601,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		while (true) {
 			responsibleSuperpeer = m_mySuperpeer;
 
-			request = new RemoveRequest(responsibleSuperpeer, p_chunkID, NO_BACKUP);
+			request = new RemoveRequest(responsibleSuperpeer, new long[] {p_chunkID}, NO_BACKUP);
 			Contract.checkNotNull(request);
 			try {
 				request.sendSync(m_network);
@@ -620,7 +620,58 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (-1 != backupSuperpeers[0]) {
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
-						request = new RemoveRequest(backupSuperpeers[i], p_chunkID, BACKUP);
+						request = new RemoveRequest(backupSuperpeers[i], new long[] {p_chunkID}, BACKUP);
+						Contract.checkNotNull(request);
+						try {
+							request.sendSync(m_network);
+						} catch (final NetworkException e) {
+							// Ignore superpeer failure, own superpeer will fix this
+							continue;
+						}
+					}
+				}
+				break;
+			}
+		}
+
+		LOGGER.trace("Exiting remove");
+	}
+
+	@Override
+	public void remove(final long[] p_chunkIDs) throws LookupException {
+		short responsibleSuperpeer;
+		short[] backupSuperpeers;
+
+		RemoveRequest request;
+		RemoveResponse response;
+
+		LOGGER.trace("Entering remove with: p_chunkIDs=" + p_chunkIDs);
+
+		Contract.check(!NodeID.getRole().equals(Role.SUPERPEER));
+
+		while (true) {
+			responsibleSuperpeer = m_mySuperpeer;
+
+			request = new RemoveRequest(responsibleSuperpeer, p_chunkIDs, NO_BACKUP);
+			Contract.checkNotNull(request);
+			try {
+				request.sendSync(m_network);
+			} catch (final NetworkException e) {
+				// Responsible superpeer is not available, try again (superpeers will be updated
+				// automatically by network thread)
+				try {
+					Thread.sleep(1000);
+				} catch (final InterruptedException e1) {}
+				continue;
+			}
+			response = request.getResponse(RemoveResponse.class);
+
+			backupSuperpeers = response.getBackupSuperpeers();
+			if (null != backupSuperpeers) {
+				if (-1 != backupSuperpeers[0]) {
+					// Send backups
+					for (int i = 0; i < backupSuperpeers.length; i++) {
+						request = new RemoveRequest(backupSuperpeers[i], p_chunkIDs, BACKUP);
 						Contract.checkNotNull(request);
 						try {
 							request.sendSync(m_network);
@@ -1522,7 +1573,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 *            the RemoveRequest
 	 */
 	private void incomingRemoveRequest(final RemoveRequest p_removeRequest) {
-		long chunkID;
+		long[] chunkIDs;
 		short creator;
 		short[] backupSuperpeers;
 		boolean isBackup;
@@ -1530,54 +1581,56 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		LOGGER.trace("Got Message: REMOVE_REQUEST from " + p_removeRequest.getSource());
 
-		chunkID = p_removeRequest.getChunkID();
-		creator = ChunkID.getCreatorID(chunkID);
+		chunkIDs = p_removeRequest.getChunkIDs();
 		isBackup = p_removeRequest.isBackup();
 
-		if (isOnlySuperpeer() || isNodeInRange(creator, m_predecessor, m_me, OPEN_INTERVAL)) {
-			m_dataLock.lock();
-			tree = getCIDTree(creator);
-			if (null == tree) {
-				m_dataLock.unlock();
-				LOGGER.error("CIDTree range not initialized on responsible superpeer " + m_me);
-				try {
-					new RemoveResponse(p_removeRequest, new short[] {-1}).send(m_network);
-				} catch (final NetworkException e) {
-					// Requesting peer is not available anymore, ignore it
-				}
-			} else {
-				tree.removeObject(chunkID);
-				m_dataLock.unlock();
+		for (long chunkID : chunkIDs) {
+			creator = ChunkID.getCreatorID(chunkID);
+			if (isOnlySuperpeer() || isNodeInRange(creator, m_predecessor, m_me, OPEN_INTERVAL)) {
+				m_dataLock.lock();
+				tree = getCIDTree(creator);
+				if (null == tree) {
+					m_dataLock.unlock();
+					LOGGER.error("CIDTree range not initialized on responsible superpeer " + m_me);
+					try {
+						new RemoveResponse(p_removeRequest, new short[] {-1}).send(m_network);
+					} catch (final NetworkException e) {
+						// Requesting peer is not available anymore, ignore it
+					}
+				} else {
+					tree.removeObject(chunkID);
+					m_dataLock.unlock();
 
-				m_overlayLock.lock();
-				backupSuperpeers = getBackupSuperpeers(m_me);
-				m_overlayLock.unlock();
+					m_overlayLock.lock();
+					backupSuperpeers = getBackupSuperpeers(m_me);
+					m_overlayLock.unlock();
+					try {
+						new RemoveResponse(p_removeRequest, backupSuperpeers).send(m_network);
+					} catch (final NetworkException e) {
+						// Requesting peer is not available anymore, ignore it
+					}
+				}
+			} else if (isBackup) {
+				m_dataLock.lock();
+				tree = getCIDTree(creator);
+				if (null == tree) {
+					LOGGER.warn("CIDTree range not initialized on backup superpeer " + m_me);
+				} else {
+					tree.removeObject(chunkID);
+				}
+				m_dataLock.unlock();
 				try {
-					new RemoveResponse(p_removeRequest, backupSuperpeers).send(m_network);
+					new RemoveResponse(p_removeRequest, null).send(m_network);
 				} catch (final NetworkException e) {
 					// Requesting peer is not available anymore, ignore it
 				}
-			}
-		} else if (isBackup) {
-			m_dataLock.lock();
-			tree = getCIDTree(creator);
-			if (null == tree) {
-				LOGGER.warn("CIDTree range not initialized on backup superpeer " + m_me);
 			} else {
-				tree.removeObject(chunkID);
-			}
-			m_dataLock.unlock();
-			try {
-				new RemoveResponse(p_removeRequest, null).send(m_network);
-			} catch (final NetworkException e) {
-				// Requesting peer is not available anymore, ignore it
-			}
-		} else {
-			// Not responsible for requesting peer
-			try {
-				new RemoveResponse(p_removeRequest, null).send(m_network);
-			} catch (final NetworkException e) {
-				// Requesting peer is not available anymore, ignore it
+				// Not responsible for requesting peer
+				try {
+					new RemoveResponse(p_removeRequest, null).send(m_network);
+				} catch (final NetworkException e) {
+					// Requesting peer is not available anymore, ignore it
+				}
 			}
 		}
 

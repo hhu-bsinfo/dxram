@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.log.storage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 
@@ -26,7 +26,7 @@ public abstract class AbstractLog {
 	private volatile long m_bytesInRAF;
 	private File m_logFile;
 	private RandomAccessFile m_logRAF;
-	private ReentrantLock m_lock;
+	private ReentrantReadWriteLock m_lock;
 
 	// Constructors
 	/**
@@ -50,7 +50,7 @@ public abstract class AbstractLog {
 		m_bytesInRAF = 0;
 		m_logRAF = null;
 
-		m_lock = new ReentrantLock(false);
+		m_lock = new ReentrantReadWriteLock(false);
 	}
 
 	// Getter
@@ -259,7 +259,7 @@ public abstract class AbstractLog {
 
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.lock();
+				m_lock.readLock().lock();
 			}
 			m_logRAF.seek(m_logFileHeaderSize + m_readPos);
 			if (p_length <= bytesUntilEnd) {
@@ -275,7 +275,7 @@ public abstract class AbstractLog {
 				calcAndSetReadPos(p_length);
 			}
 			if (p_accessed) {
-				m_lock.unlock();
+				m_lock.readLock().unlock();
 			}
 		}
 		return p_length;
@@ -300,7 +300,7 @@ public abstract class AbstractLog {
 
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.lock();
+				m_lock.readLock().lock();
 			}
 			m_logRAF.seek(innerLogSeekPos);
 			if (p_length <= bytesUntilEnd) {
@@ -313,7 +313,7 @@ public abstract class AbstractLog {
 				m_logRAF.readFully(p_data, (int) bytesUntilEnd, p_length - (int) bytesUntilEnd);
 			}
 			if (p_accessed) {
-				m_lock.unlock();
+				m_lock.readLock().unlock();
 			}
 		}
 	}
@@ -339,7 +339,7 @@ public abstract class AbstractLog {
 
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.lock();
+				m_lock.writeLock().lock();
 			}
 			if (m_writePos >= m_readPos) {
 				bytesUntilEnd = m_totalUsableSpace - m_writePos;
@@ -361,7 +361,7 @@ public abstract class AbstractLog {
 			// m_logRAF.getFD().sync();
 			m_bytesInRAF += writableBytes;
 			if (p_accessed) {
-				m_lock.unlock();
+				m_lock.writeLock().unlock();
 			}
 		}
 		return writableBytes;
@@ -397,7 +397,7 @@ public abstract class AbstractLog {
 
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.lock();
+				m_lock.writeLock().lock();
 			}
 			m_logRAF.seek(m_logFileHeaderSize + p_innerWritePos);
 			if (writableData <= bytesUntilEnd) {
@@ -411,7 +411,7 @@ public abstract class AbstractLog {
 			}
 			// m_logRAF.getFD().sync();
 			if (p_accessed) {
-				m_lock.unlock();
+				m_lock.writeLock().unlock();
 			}
 		}
 		return writableData;
@@ -439,7 +439,7 @@ public abstract class AbstractLog {
 
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.lock();
+				m_lock.writeLock().lock();
 			}
 			m_logRAF.seek(m_logFileHeaderSize + p_logOffset);
 			if (p_logOffset + p_length <= m_totalUsableSpace) {
@@ -454,7 +454,7 @@ public abstract class AbstractLog {
 			}
 			m_bytesInRAF += p_length;
 			if (p_accessed) {
-				m_lock.unlock();
+				m_lock.writeLock().unlock();
 			}
 		}
 		return p_length;
@@ -482,7 +482,7 @@ public abstract class AbstractLog {
 
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.lock();
+				m_lock.writeLock().lock();
 			}
 			m_logRAF.seek(m_logFileHeaderSize + p_logOffset);
 			if (p_logOffset + p_length <= m_totalUsableSpace) {
@@ -496,7 +496,7 @@ public abstract class AbstractLog {
 				m_logRAF.write(p_data, p_bufferOffset + (int) bytesUntilEnd, p_length - (int) bytesUntilEnd);
 			}
 			if (p_accessed) {
-				m_lock.unlock();
+				m_lock.writeLock().unlock();
 			}
 		}
 		return p_length;

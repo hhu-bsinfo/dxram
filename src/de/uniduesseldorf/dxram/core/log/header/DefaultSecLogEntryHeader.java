@@ -13,6 +13,7 @@ public class DefaultSecLogEntryHeader implements LogEntryHeaderInterface {
 
 	// Attributes
 	public static final short SIZE = 22;
+	public static final byte LID_OFFSET = 0;
 	public static final byte LEN_OFFSET = LogHandler.LOG_ENTRY_LID_SIZE;
 	public static final byte VER_OFFSET = LEN_OFFSET + LogHandler.LOG_ENTRY_LEN_SIZE;
 	public static final byte CRC_OFFSET = VER_OFFSET + LogHandler.LOG_ENTRY_VER_SIZE;

@@ -117,6 +117,8 @@ public final class Core {
 	 *            the nodes configuration to use
 	 */
 	public static void initialize(final Configuration p_configuration, final NodesConfiguration p_nodesConfiguration) {
+		int interval;
+
 		LOGGER.trace("Entering initialize with: p_configuration=" + p_configuration + ", p_nodesConfiguration=" + p_nodesConfiguration);
 
 		try {
@@ -139,7 +141,10 @@ public final class Core {
 			// Register shutdown thread
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread());
 
-			StatisticsManager.setupOutput(60);
+			interval = Core.getConfiguration().getIntValue(ConfigurationConstants.STATISTIC_PRINT);
+			if (interval > 0) {
+				StatisticsManager.setupOutput(interval);
+			}
 		} catch (final Exception e) {
 			LOGGER.fatal("FATAL::Could not instantiate DXRAM", e);
 
@@ -198,7 +203,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunks could not be created
 	 */
-	public static Chunk[] createNewChunk(final int[] p_sizes) throws DXRAMException {
+	public static Chunk[] createNewChunks(final int[] p_sizes) throws DXRAMException {
 		Chunk[] ret = null;
 
 		try {
@@ -246,7 +251,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunks could not be created
 	 */
-	public static Chunk[] createNewChunk(final int[] p_sizes, final String p_name) throws DXRAMException {
+	public static Chunk[] createNewChunks(final int[] p_sizes, final String p_name) throws DXRAMException {
 		Chunk[] ret = null;
 
 		try {
@@ -410,6 +415,25 @@ public final class Core {
 	}
 
 	/**
+	 * Updates given Chunks
+	 * @param p_chunks
+	 *            the Chunks to be updated
+	 * @throws DXRAMException
+	 *             if the chunks could not be put
+	 */
+	public static void put(final Chunk[] p_chunks) throws DXRAMException {
+		Contract.checkNotNull(p_chunks, "no chunks given");
+
+		try {
+			if (m_chunk != null) {
+				m_chunk.put(p_chunks);
+			}
+		} catch (final DXRAMException e) {
+			handleException(e, ExceptionSource.DXRAM_PUT, (Object[]) p_chunks);
+		}
+	}
+
+	/**
 	 * Requests and locks the corresponding Chunk for the giving ID
 	 * @param p_chunkID
 	 *            the ID of the corresponding Chunk
@@ -485,6 +509,21 @@ public final class Core {
 		 * handleException(e, ExceptionSource.DXRAM_REMOVE, p_chunkID);
 		 * }
 		 */
+	}
+
+	/**
+	 * Removes the corresponding Chunk for the giving ID
+	 * @param p_chunkIDs
+	 *            the IDs of the corresponding Chunks
+	 * @throws DXRAMException
+	 *             if the chunks could not be removed
+	 */
+	public static void remove(final long[] p_chunkIDs) throws DXRAMException {
+		ChunkID.check(p_chunkIDs);
+
+		if (m_chunk != null) {
+			m_chunk.remove(p_chunkIDs);
+		}
 	}
 
 	/**

@@ -81,7 +81,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public static final short SECLOGS_REORG_SHUTDOWNTIME = 5;
 	public static final long FLUSHING_WAITTIME = 1000L;
 	public static final long WRITERTHREAD_TIMEOUTTIME = 500L;
-	public static final long REORGTHREAD_TIMEOUT = 1000L;
+	public static final long REORGTHREAD_TIMEOUT = 500L;
 
 	// Log header component sizes
 	public static final byte LOG_ENTRY_TYP_SIZE = 1;
@@ -169,7 +169,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		// Create primary log buffer
 		m_writeBuffer = new PrimaryWriteBuffer(m_primaryLog, WRITE_BUFFER_SIZE);
 
-		// Create secondary log and secondary log buffer catalagues
+		// Create secondary log and secondary log buffer catalogs
 		m_logCatalogs = new AtomicReferenceArray<LogCatalog>(LogHandler.MAX_NODE_CNT);
 
 		m_secondaryLogCreationLock = new ReentrantLock();
@@ -284,6 +284,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		try {
 			m_writeBuffer.putLogData(logHeader, p_chunk.getData().array());
+			if (p_chunk.getVersion() > 1) {
+				getSecondaryLog(p_chunk.getChunkID(), p_source, p_rangeID).incLogInvalidCounter();
+			}
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during logging (" + p_chunk.getChunkID() + ")!");
 		}
@@ -300,14 +303,14 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, DEFAULT_PRIM_LOG_TOMBSTONE.getNIDOffset());
 			// System.out.println("Logging Tombstone: " + p_chunkID + ", " + DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; default");
 		} else {
-			tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createHeader(null, (byte) -1, (short) -1);
+			tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createHeader(null, p_rangeID, p_source);
 			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, MIGRATION_PRIM_LOG_TOMBSTONE.getNIDOffset());
 			// System.out.println("Logging Tombstone: " + p_chunkID + ", " + MIGRATION_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + "; migrated");
 		}
 
 		try {
 			m_writeBuffer.putLogData(tombstone, null);
-			getSecondaryLog(p_chunkID, p_source, p_rangeID).incDeleteCounter();
+			getSecondaryLog(p_chunkID, p_source, p_rangeID).incLogInvalidCounter();
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
@@ -608,7 +611,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @param p_secLog
 	 *            the Secondary Log
 	 */
-	public void getAccess(final SecondaryLogWithSegments p_secLog) {
+	public void getAccessToSecLog(final SecondaryLogWithSegments p_secLog) {
 		if (!p_secLog.isAccessed()) {
 			p_secLog.setAccessFlag(true);
 			m_reorgThreadWaits = true;
@@ -617,6 +620,17 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				Thread.yield();
 			}
 			m_accessGranted = false;
+		}
+	}
+
+	/**
+	 * Get access to secondary log for reorganization thread
+	 * @param p_secLog
+	 *            the Secondary Log
+	 */
+	public void leaveSecLog(final SecondaryLogWithSegments p_secLog) {
+		if (p_secLog.isAccessed()) {
+			p_secLog.setAccessFlag(false);
 		}
 	}
 
@@ -633,6 +647,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 */
 	public String getCurrentUtilization() {
 		String ret;
+		int counter;
 		SecondaryLogWithSegments[] secondaryLogs;
 		SecondaryLogBuffer[] secLogBuffers;
 		LogCatalog cat;
@@ -646,14 +661,19 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		for (int i = 0; i < m_logCatalogs.length(); i++) {
 			cat = m_logCatalogs.get(i);
 			if (cat != null) {
+				counter = 0;
 				ret += "++Node " + (short) i + ":\n";
 				secondaryLogs = cat.getAllCreatorLogs();
 				secLogBuffers = cat.getAllCreatorBuffers();
 				for (int j = 0; j < secondaryLogs.length; j++) {
 					ret += "+++Creator backup range " + j + ": ";
 					if (secondaryLogs[j] != null) {
+						if (secondaryLogs[j].isAccessed()) {
+							ret += "#Active log# ";
+						}
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
+						counter += secondaryLogs[j].getOccupiedSpace();
 					}
 				}
 				secondaryLogs = cat.getAllMigrationLogs();
@@ -661,10 +681,15 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				for (int j = 0; j < secondaryLogs.length; j++) {
 					ret += "+++Migration backup range " + j + ": ";
 					if (secondaryLogs[j] != null) {
+						if (secondaryLogs[j].isAccessed()) {
+							ret += "#Active log# ";
+						}
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
+						counter += secondaryLogs[j].getOccupiedSpace();
 					}
 				}
+				ret += "++Bytes per node: " + counter + "\n";
 			}
 		}
 		ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
@@ -880,23 +905,37 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			long max = 0;
 			long current;
 			LogCatalog cat;
+			ArrayList<LogCatalog> cats;
 			SecondaryLogWithSegments[] secLogs;
 			SecondaryLogWithSegments secLog;
 
+			cats = new ArrayList<LogCatalog>();
 			for (int i = 0; i < m_logCatalogs.length(); i++) {
 				cat = m_logCatalogs.get(i);
 				if (cat != null) {
-					secLogs = cat.getAllLogs();
-					for (int j = 0; j < secLogs.length; j++) {
-						secLog = secLogs[j];
-						if (secLog != null) {
-							current = secLog.getDeleteCounter() * 100 + secLog.getOccupiedSpace();
-							if (current > max) {
-								max = current;
-								ret = secLog;
-							}
+					cats.add(cat);
+				}
+			}
+
+			for (LogCatalog currentCat : cats) {
+				secLogs = currentCat.getAllLogs();
+				for (int j = 0; j < secLogs.length; j++) {
+					secLog = secLogs[j];
+					if (secLog != null) {
+						current = secLog.getLogInvalidCounter();
+						if (current > max) {
+							max = current;
+							ret = secLog;
 						}
 					}
+				}
+			}
+			if (ret == null && !cats.isEmpty()) {
+				// Choose one secondary log randomly
+				cat = cats.get(Tools.getRandomValue(cats.size() - 1));
+				secLogs = cat.getAllLogs();
+				if (secLogs.length > 0) {
+					ret = secLogs[Tools.getRandomValue(secLogs.length - 1)];
 				}
 			}
 
@@ -936,7 +975,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 					secondaryLog = chooseLog();
 					if (null != secondaryLog) {
-						getAccess(secondaryLog);
+						getAccessToSecLog(secondaryLog);
 						secondaryLog.markInvalidObjects(m_versionsHT);
 						for (int i = 0; i < 10; i++) {
 							// m_writeBuffer.printThroughput();
@@ -946,10 +985,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								}
 								// Reorganization thread was signaled ->
 								// process given log completely
-								getAccess(m_secLog);
+								getAccessToSecLog(m_secLog);
 								m_secLog.markInvalidObjects(new VersionsHashTable(6400000, 0.9f));
 								m_secLog.reorganizeAll();
 								m_secLog = null;
+								leaveSecLog(secondaryLog);
 								m_secLog.setAccessFlag(false);
 								m_reorganizationFinishedCondition.signal();
 							} else {
@@ -958,7 +998,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								}
 								// Time-out -> reorganize another segment in
 								// current log
-								getAccess(secondaryLog);
+								getAccessToSecLog(secondaryLog);
 								secondaryLog.reorganizeIteratively();
 							}
 						}
@@ -988,11 +1028,13 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						// All secondary logs empty -> sleep
 						Thread.sleep(100);
 					}
+					m_reorganizationLock.unlock();
 				} catch (final InterruptedException e) {
 					System.out.println("Error in reorganization thread: Shutting down!");
+					if (m_reorganizationLock != null && m_reorganizationLock.tryLock()) {
+						m_reorganizationLock.unlock();
+					}
 					break;
-				} finally {
-					m_reorganizationLock.unlock();
 				}
 			}
 		}

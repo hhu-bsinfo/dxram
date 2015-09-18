@@ -135,6 +135,15 @@ public interface ChunkInterface extends CoreComponent {
 	void put(Chunk p_chunk, boolean p_releaseLock) throws DXRAMException;
 
 	/**
+	 * Updates given Chunks
+	 * @param p_chunks
+	 *            the Chunks
+	 * @throws DXRAMException
+	 *             if the Chunks could not be put
+	 */
+	void put(Chunk[] p_chunks) throws DXRAMException;
+
+	/**
 	 * Removes the corresponding Chunk for the given ID
 	 * @param p_chunkID
 	 *            the ID
@@ -142,6 +151,15 @@ public interface ChunkInterface extends CoreComponent {
 	 *             if the Chunk could not be removed
 	 */
 	void remove(long p_chunkID) throws DXRAMException;
+
+	/**
+	 * Removes the corresponding Chunks for the given IDs
+	 * @param p_chunkIDs
+	 *            the IDs
+	 * @throws DXRAMException
+	 *             if the Chunks could not be removed
+	 */
+	void remove(long[] p_chunkIDs) throws DXRAMException;
 
 	/**
 	 * Requests and locks the corresponding Chunk for the giving ID
