@@ -554,6 +554,77 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	}
 
 	@Override
+	public void put(final Chunk[] p_chunks) throws DXRAMException {
+		Locations locations;
+		short primaryPeer;
+		short[] backupPeers;
+		boolean success = false;
+		PutRequest request;
+
+		Operation.PUT.enter();
+
+		Contract.checkNotNull(p_chunks, "no chunks given");
+
+		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+			LOGGER.error("a superpeer must not use chunks");
+		} else {
+			for (Chunk chunk : p_chunks) {
+				chunk.incVersion();
+				if (MemoryManager.isResponsible(chunk.getChunkID())) {
+					// Local put
+					MemoryManager.put(chunk);
+
+					if (LOG_ACTIVE) {
+						// Send backups for logging (unreliable)
+						backupPeers = getBackupPeers(chunk.getChunkID());
+						if (backupPeers != null) {
+							for (int i = 0; i < backupPeers.length; i++) {
+								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+									new LogMessage(backupPeers[i], new Chunk[] {chunk}).send(m_network);
+								}
+							}
+						}
+					}
+				} else {
+					while (!success) {
+						locations = m_lookup.get(chunk.getChunkID());
+						primaryPeer = locations.getPrimaryPeer();
+						backupPeers = locations.getBackupPeers();
+
+						if (primaryPeer == m_nodeID) {
+							// Local put
+							MemoryManager.put(chunk);
+							success = true;
+						} else {
+							// Remote put
+							request = new PutRequest(primaryPeer, chunk, false);
+							try {
+								request.sendSync(m_network);
+							} catch (final NetworkException e) {
+								m_lookup.invalidate(chunk.getChunkID());
+								continue;
+							}
+							success = request.getResponse(PutResponse.class).getStatus();
+						}
+						if (success && LOG_ACTIVE) {
+							// Send backups for logging (unreliable)
+							if (backupPeers != null) {
+								for (int i = 0; i < backupPeers.length; i++) {
+									if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+										new LogMessage(backupPeers[i], new Chunk[] {chunk}).send(m_network);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		Operation.PUT.leave();
+	}
+
+	@Override
 	public void remove(final long p_chunkID) throws DXRAMException {
 		boolean success = false;
 
@@ -1065,7 +1136,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		if (ChunkID.getCreatorID(p_chunkID) == NodeID.getLocalNodeID()) {
 			for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
-				if (m_ownBackupRanges.get(i).getBackupPeers()[0] <= ChunkID.getLocalID(ChunkID.getLocalID(p_chunkID))) {
+				if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
 					ret = m_ownBackupRanges.get(i).getBackupPeers();
 					break;
 				}
@@ -2028,7 +2099,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-									+ (m_backupPeers[0] & 0x000000000000FFFFL);
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {

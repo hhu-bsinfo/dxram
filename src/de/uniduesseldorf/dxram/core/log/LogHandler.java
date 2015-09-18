@@ -81,7 +81,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public static final short SECLOGS_REORG_SHUTDOWNTIME = 5;
 	public static final long FLUSHING_WAITTIME = 1000L;
 	public static final long WRITERTHREAD_TIMEOUTTIME = 500L;
-	public static final long REORGTHREAD_TIMEOUT = 1000L;
+	public static final long REORGTHREAD_TIMEOUT = 500L;
 
 	// Log header component sizes
 	public static final byte LOG_ENTRY_TYP_SIZE = 1;
@@ -169,7 +169,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		// Create primary log buffer
 		m_writeBuffer = new PrimaryWriteBuffer(m_primaryLog, WRITE_BUFFER_SIZE);
 
-		// Create secondary log and secondary log buffer catalagues
+		// Create secondary log and secondary log buffer catalogs
 		m_logCatalogs = new AtomicReferenceArray<LogCatalog>(LogHandler.MAX_NODE_CNT);
 
 		m_secondaryLogCreationLock = new ReentrantLock();
@@ -284,6 +284,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		try {
 			m_writeBuffer.putLogData(logHeader, p_chunk.getData().array());
+			if (p_chunk.getVersion() > 1) {
+				getSecondaryLog(p_chunk.getChunkID(), p_source, p_rangeID).incLogInvalidCounter();
+			}
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during logging (" + p_chunk.getChunkID() + ")!");
 		}
@@ -307,7 +310,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		try {
 			m_writeBuffer.putLogData(tombstone, null);
-			getSecondaryLog(p_chunkID, p_source, p_rangeID).incLogDeleteCounter();
+			getSecondaryLog(p_chunkID, p_source, p_rangeID).incLogInvalidCounter();
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
@@ -644,6 +647,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 */
 	public String getCurrentUtilization() {
 		String ret;
+		int counter;
 		SecondaryLogWithSegments[] secondaryLogs;
 		SecondaryLogBuffer[] secLogBuffers;
 		LogCatalog cat;
@@ -657,6 +661,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		for (int i = 0; i < m_logCatalogs.length(); i++) {
 			cat = m_logCatalogs.get(i);
 			if (cat != null) {
+				counter = 0;
 				ret += "++Node " + (short) i + ":\n";
 				secondaryLogs = cat.getAllCreatorLogs();
 				secLogBuffers = cat.getAllCreatorBuffers();
@@ -668,6 +673,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						}
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
+						counter += secondaryLogs[j].getOccupiedSpace();
 					}
 				}
 				secondaryLogs = cat.getAllMigrationLogs();
@@ -680,8 +686,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						}
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
+						counter += secondaryLogs[j].getOccupiedSpace();
 					}
 				}
+				ret += "++Bytes per node: " + counter + "\n";
 			}
 		}
 		ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
@@ -914,10 +922,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				for (int j = 0; j < secLogs.length; j++) {
 					secLog = secLogs[j];
 					if (secLog != null) {
-						current = secLog.getLogDeleteCounter();// * 100 + secLog.getOccupiedSpace();
-						if (current != 0) {
-							System.out.println("Log " + j + ": " + current);
-						}
+						current = secLog.getLogInvalidCounter();
 						if (current > max) {
 							max = current;
 							ret = secLog;
@@ -931,7 +936,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				secLogs = cat.getAllLogs();
 				if (secLogs.length > 0) {
 					ret = secLogs[Tools.getRandomValue(secLogs.length - 1)];
-					System.out.println("Random choice: " + ret);
 				}
 			}
 
@@ -1024,11 +1028,13 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						// All secondary logs empty -> sleep
 						Thread.sleep(100);
 					}
+					m_reorganizationLock.unlock();
 				} catch (final InterruptedException e) {
 					System.out.println("Error in reorganization thread: Shutting down!");
+					if (m_reorganizationLock != null && m_reorganizationLock.tryLock()) {
+						m_reorganizationLock.unlock();
+					}
 					break;
-				} finally {
-					m_reorganizationLock.unlock();
 				}
 			}
 		}

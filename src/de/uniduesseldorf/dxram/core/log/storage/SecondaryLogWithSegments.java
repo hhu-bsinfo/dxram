@@ -31,7 +31,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	private short m_nodeID;
 
 	private long m_numberOfBytes;
-	private int m_numberOfDeletesInLog;
+	private int m_numberOfInvalidsInLog;
 	private AtomicBoolean m_isLocked;
 
 	private long m_secondaryLogReorgThreshold;
@@ -78,7 +78,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		m_nodeID = p_nodeID;
 
 		m_numberOfBytes = 0;
-		m_numberOfDeletesInLog = 0;
+		m_numberOfInvalidsInLog = 0;
 
 		m_totalUsableSpace = super.getTotalUsableSpace();
 
@@ -258,10 +258,12 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	public final void setAccessFlag(final boolean p_flag) {
 		m_isAccessed = p_flag;
 
-		// TODO: May cause null pointer exception for writer thread
-		if (!p_flag) {
-			m_activeSegment = null;
-		}
+		/*
+		 * // Helpful for debugging, but may cause null pointer exception for writer thread
+		 * if (!p_flag) {
+		 * m_activeSegment = null;
+		 * }
+		 */
 	}
 
 	/**
@@ -283,25 +285,25 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	}
 
 	/**
-	 * Returns the delete counter
-	 * @return the delete counter
+	 * Returns the invalid counter
+	 * @return the invalid counter
 	 */
-	public final int getLogDeleteCounter() {
-		return m_numberOfDeletesInLog;
+	public final int getLogInvalidCounter() {
+		return m_numberOfInvalidsInLog;
 	}
 
 	/**
-	 * Increments delete counter
+	 * Increments invalid counter
 	 */
-	public final void incLogDeleteCounter() {
-		m_numberOfDeletesInLog++;
+	public final void incLogInvalidCounter() {
+		m_numberOfInvalidsInLog++;
 	}
 
 	/**
-	 * Resets delete counter
+	 * Resets invalid counter
 	 */
-	public final void resetLogDeleteCounter() {
-		m_numberOfDeletesInLog = 0;
+	public final void resetLogInvalidCounter() {
+		m_numberOfInvalidsInLog = 0;
 	}
 
 	/**
@@ -784,11 +786,11 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						header = getSegmentHeader(p_segmentIndex);
 						header.reset();
 						header.updateUsedBytes(writtenBytes);
-						m_numberOfBytes -= readBytes - writtenBytes;
 					} else {
 						freeSegment(p_segmentIndex);
 						getSegmentHeader(p_segmentIndex).reset();
 					}
+					m_numberOfBytes -= readBytes - writtenBytes;
 				}
 			} catch (final IOException | InterruptedException e) {
 				System.out.println("Reorganization failed!");
@@ -898,7 +900,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					}
 				}
 			}
-			resetLogDeleteCounter();
+			resetLogInvalidCounter();
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Removing tombstones failed!");
 		}

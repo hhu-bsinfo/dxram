@@ -203,7 +203,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunks could not be created
 	 */
-	public static Chunk[] createNewChunk(final int[] p_sizes) throws DXRAMException {
+	public static Chunk[] createNewChunks(final int[] p_sizes) throws DXRAMException {
 		Chunk[] ret = null;
 
 		try {
@@ -251,7 +251,7 @@ public final class Core {
 	 * @throws DXRAMException
 	 *             if the chunks could not be created
 	 */
-	public static Chunk[] createNewChunk(final int[] p_sizes, final String p_name) throws DXRAMException {
+	public static Chunk[] createNewChunks(final int[] p_sizes, final String p_name) throws DXRAMException {
 		Chunk[] ret = null;
 
 		try {
@@ -411,6 +411,25 @@ public final class Core {
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_PUT, p_chunk);
+		}
+	}
+
+	/**
+	 * Updates given Chunks
+	 * @param p_chunks
+	 *            the Chunks to be updated
+	 * @throws DXRAMException
+	 *             if the chunks could not be put
+	 */
+	public static void put(final Chunk[] p_chunks) throws DXRAMException {
+		Contract.checkNotNull(p_chunks, "no chunks given");
+
+		try {
+			if (m_chunk != null) {
+				m_chunk.put(p_chunks);
+			}
+		} catch (final DXRAMException e) {
+			handleException(e, ExceptionSource.DXRAM_PUT, (Object[]) p_chunks);
 		}
 	}
 
