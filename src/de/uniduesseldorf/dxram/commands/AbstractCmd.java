@@ -5,7 +5,7 @@ import de.uniduesseldorf.dxram.utils.JNIconsole;
 
 /**
  * Base class for commands
- * @author Michael Schoettner 03.09.2015
+ * @author Michael Schoettner 16.09.2015
  *         Syntax must be described using a string, keywords:
  *         STR string, any chars
  *         PNR positive number, e.g. LID (may be 0)
@@ -13,7 +13,9 @@ import de.uniduesseldorf.dxram.utils.JNIconsole;
  *         PNID any existing peer NID
  *         SNID any existing superpeer NID
  *         , for NID,LID tuples
- *         [] optional parameters (at the end only)
+ *         [] optional parameter; only one and at the end only.
+ *              [-STR]
+ *              or [-STR=STR|PNR|ANID|PNID|SNID]
  */
 public abstract class AbstractCmd {
 
@@ -36,10 +38,16 @@ public abstract class AbstractCmd {
 	public abstract String getHelpMessage();
 
 	/**
-	 * Get syntax string for command.
+	 * Get syntax & semantic of mandatory parameters (order will be enforced)
 	 * @return the syntax string
 	 */
-	public abstract String getSyntax();
+	public abstract String[] getMandParams();
+
+	/**
+	 * Get syntax & semantic of optional parameters (any order)
+	 * @return the syntax string
+	 */
+	public abstract String[] getOptParams();
 
 	/**
 	 * Execution method of a command.
@@ -65,7 +73,7 @@ public abstract class AbstractCmd {
 	/**
 	 * Print usage message.
 	 */
-	public void printUsgae() {
+	public void printUsage() {
 		System.out.println("  usage: " + getUsageMessage());
 	}
 
@@ -118,118 +126,269 @@ public abstract class AbstractCmd {
 		return ret;
 	}
 
-	/**
-	 * Check syntax & semantic of token of a command using expected token (from syntax string)
-	 * (This method is used by 'areParametersSane')
-	 * @param p_expected
-	 *            expected token
-	 * @param p_found
-	 *            actual token of command
-	 * @return true: syntax is OK, false: syntax error
+   /**
+	 * Check syntax and semantic of a single given parameter
+	 * @param p_expectedParam
+	 *            expected parameter
+	 * @param p_givenParam
+	 *            given parameter
+	 * @return true: no problems, false: errors
 	 */
-	private boolean parseToken(final String p_expected, final String p_found) {
-		boolean ret = true;
+    private static boolean checkSingleParam(final String p_expectedParam, final String p_givenParam) {
+    	boolean ret = true;
+        String pattern="";
 
-		if (p_expected.compareTo("STR") == 0 || p_expected.compareTo("[STR]") == 0) {
-			ret = true;
-		} else if (p_expected.compareTo("PNR") == 0 || p_expected.compareTo("[PNR]") == 0) {
-			try {
-				Long.parseLong(p_found);
-			} catch (final NumberFormatException nfe) {
-				System.out.println("  error: expected positive number but found '" + p_found + "'");
-				ret = false;
-			}
-		} else if (p_expected.compareTo("ANID") == 0 || p_expected.compareTo("[ANID]") == 0 || p_expected.compareTo("PNID") == 0
-				|| p_expected.compareTo("[PNID]") == 0 || p_expected.compareTo("SNID") == 0 || p_expected.compareTo("[SNID]") == 0) {
+        //System.out.println("p_expectedParam="+p_expectedParam+", p_givenParam="+p_givenParam);
 
-			// do we have a short number?
-			try {
-				Short.parseShort(p_found);
-			} catch (final NumberFormatException nfe) {
-				System.out.println("  error: expected NID number but found '" + p_found + "'");
-				ret = false;
-			}
+        // next is a NID,LID tuple?
+        if (p_expectedParam.indexOf(",")>1) {
+        	// check syntax
+            pattern = pattern + "-?([0-9])+,([0-9])+";
+            ret = p_givenParam.matches(pattern);
+            if (!ret) {
+            	System.out.println("  error: bad parameter: '"+p_givenParam+"'");
+            // check semantic
+            } else {
+                final String[] chunkIDtuple = p_givenParam.split(",");
+                ret = checkValidNode(p_expectedParam, chunkIDtuple[0]);
+            }
 
-			if (ret) {
-				if (CmdUtils.checkNID(p_found).compareTo("unknown") == 0) {
-					System.out.println("  error: unknwon NID '" + p_found + "'");
-					ret = false;
-				} else {
-					if (p_expected.compareTo("PNID") == 0 || p_expected.compareTo("[PNID]") == 0) {
-						if (CmdUtils.checkNID(p_found).compareTo("superpeer") == 0) {
-							System.out.println("  error: superpeer NID not allowed '" + p_found + "'");
-							ret = false;
-						}
-					} else if (p_expected.compareTo("SNID") == 0 || p_expected.compareTo("[SNID]") == 0) {
-						if (CmdUtils.checkNID(p_found).compareTo("peer") == 0) {
-							System.out.println("  error: peer NID not allowed '" + p_found + "'");
-							ret = false;
-						}
-					}
-				}
+        // next is a node number (positive or negative)?
+        } else if (p_expectedParam.compareTo("PNID")==0
+                   || p_expectedParam.compareTo("SNID")==0
+                   || p_expectedParam.compareTo("ANID")==0
+                   ) {
+            pattern = pattern + "-?([0-9])+";
+            ret = p_givenParam.matches(pattern);
+            if (!ret) {
+            	System.out.println("  error: bad parameter. Given '"+p_givenParam+"' but expected was '"+p_expectedParam+"'");
+            // check semantic
+            } else {
+                ret = checkValidNode(p_expectedParam, p_givenParam);
+            }
+
+        // next is a positve number >0 ?
+        } else if (p_expectedParam.compareTo("PNR")==0) {
+            pattern = pattern + "([0-9])+";
+            ret = p_givenParam.matches(pattern);
+
+        // next is a string?
+        } else if (p_expectedParam.compareTo("STR")==0) {
+            pattern = pattern + "[A-Za-z]([A-Za-z0-9])*";
+            ret = p_givenParam.matches(pattern);
+            if (!ret) {
+            	System.out.println("  error: bad parameter. Given '"+p_givenParam+"' but expected was a string.");
+            }
+        } else {
+            System.out.println("  error: bad token '"+p_expectedParam+"' in syntax definition");
+            ret = false;
+        }
+
+        return ret;
+    }
+
+    /**
+	 * Check if there are duplicates in the given params
+	 * @param p_search
+	 *            argument to check for duplication
+	 * @param p_givenParams
+	 *            given params
+	 * @param p_foundIdx
+	 *            position of p_search in p_givenParams
+	 * @return true: p_search is duplicated, false: OK
+	 */
+    private static boolean duplicatesInOptParams(final String p_search, final String[] p_givenParams, final int p_foundIdx) {
+        boolean duplicates=false;
+
+        for (int i=1; i<p_givenParams.length; i++) {
+            final String[] kvParam2 = p_givenParams[i].split("=");
+            if (p_search.compareTo(kvParam2[0])==0 && i!=p_foundIdx) {
+                duplicates=true;
+                System.out.println("  error: duplicate parameter '"+p_search+"'");
+                break;
+            }
+        }
+        return duplicates;
+    }
+
+    /**
+	 * Get the given arguments (arguments[0] is the command name)
+	 * @param p_arguments
+	 *            tokens of the given command
+	 * @return given parameters (may be null if none are given)
+	 */
+	private String[] getGivenArguments(final String[] p_arguments) {
+       String[] givenParams=null;
+
+		// get the given params
+		if (p_arguments.length>1) {
+			givenParams = new String[p_arguments.length-1];
+			//System.out.print("   givenParams: ");
+			for (int i=1; i<p_arguments.length; i++) {
+				givenParams[i-1] = p_arguments[i];
+				//System.out.print(givenParams[i-1]+"; ");
 			}
+			//System.out.println();
 		}
+		return givenParams;
+    }
 
-		return ret;
-	}
-
-	/**
-	 * Check if parameters of a given command are sane according to its syntax definition.
+  /**
+	 * Check if parameters of a given command are sane according to its syntax and semantic definition.
 	 * (arguments[0] is the command name)
 	 * @param p_arguments
 	 *            tokens of the given command
 	 * @return true: parameters are OK, false: syntax error
 	 */
 	public boolean areParametersSane(final String[] p_arguments) {
-		boolean ret = true;
-		final String[] token = getSyntax().split(" ");
-		String[] subarg;
-		String[] subtoken;
+        final String[] expectedMandParams = getMandParams();
+        final String[] expectedOptParams = getOptParams();
+        String[] givenParams=null;
+       // String pattern=null;
+        boolean ret=true;
+        int nrOfexpectedMandParams;
+        int nrOfexpectedOptParams;
 
-		// too many params?
-		// System.out.println("token.length="+token.length+", p_arguments.length="+p_arguments.length);
-		if (p_arguments.length > token.length) {
-			System.out.println("  error: too many arguments");
+
+        givenParams = getGivenArguments(p_arguments);
+
+        // calc number of expected params
+        if (expectedMandParams==null) {
+            nrOfexpectedMandParams=0;
+        } else {
+            nrOfexpectedMandParams = expectedMandParams.length;
+        }
+        // calc number of max. optional params
+        if (expectedOptParams==null) {
+            nrOfexpectedOptParams=0;
+        } else {
+            nrOfexpectedOptParams = expectedOptParams.length;
+        }
+
+        // no params expected and none given?
+        if (givenParams==null && nrOfexpectedMandParams==0) {
+        	ret=true;
+            // not enough mandatory params?
+        } else if ((givenParams==null && nrOfexpectedMandParams>0) || (givenParams.length < nrOfexpectedMandParams)) {
+            System.out.println("  error: not enough mandatory parameters");
+            ret=false;
+        // too much params?
+        } else if (givenParams.length > (nrOfexpectedMandParams+nrOfexpectedOptParams)) {
+            System.out.println("  error: too many parameters");
+            ret=false;
+        } else {
+            // check syntax of mandatory parameters
+            if (expectedMandParams!=null) {
+                for (int i=0; i<expectedMandParams.length; i++) {
+                    ret = checkSingleParam(expectedMandParams[i], givenParams[i]);
+                    //ret = givenParams[i].matches(pattern);
+                    if (!ret) {
+                        //System.out.println("  error: bad parameter: '"+givenParams[i]+"'");
+                        break;
+                    }
+                }
+            }
+
+            // check syntax of any optional parameters, if allowed and no errors so far
+            if (expectedOptParams!=null && ret && givenParams.length > nrOfexpectedMandParams) {
+
+                // iterate over given optional params
+                boolean found;
+                //System.out.println("Check optional parameters");
+                for (int i=nrOfexpectedMandParams; i<givenParams.length; i++) {
+                    //System.out.println("   check given param: "+givenParams[i]);
+                    final String[] givenKVOptParam = givenParams[i].split("=");
+                    if (givenKVOptParam[0].indexOf("-")<0) {
+                        System.out.println("  error: bad optional parameter '"+givenParams[i]+"'");
+                        ret=false;
+                        break;
+                    } else {
+
+                        if (!duplicatesInOptParams(givenKVOptParam[0], givenParams, i)) {
+
+                            // find param
+                            found=false;
+                            for (int j=0; j<expectedOptParams.length; j++) {
+                                final String[] expectedKVOptParam = expectedOptParams[j].split("=");
+
+                                if (expectedKVOptParam[0].compareTo(givenKVOptParam[0]) == 0) {
+
+                                    /*System.out.print("   found expectedKVOptParam[0]="+expectedKVOptParam[0]);
+                                    if (expectedKVOptParam.length>1) {
+                                        System.out.print(", expectedKVOptParam[1]="+expectedKVOptParam[1]);
+                                    }
+                                    System.out.println();
+                                     */
+                                    found=true;
+
+                                    // -key=value?
+                                    if (expectedKVOptParam.length==2 && givenKVOptParam.length==2) {
+                                        ret = checkSingleParam(expectedKVOptParam[1], givenKVOptParam[1]);
+                                        //ret = givenKVOptParam[1].matches(pattern);
+                                        if (!ret) {
+                                            System.out.println("  error: bad parameter: '"+givenParams[i]+"'");
+                                            break;
+                                        }
+                                    // -key?
+                                    } else if (expectedKVOptParam.length==1 && givenKVOptParam.length==1) {
+                                        System.out.println("  simple switch");
+                                        ret=true;
+                                    // error?
+                                    } else {
+                                        System.out.println("  error: bad parameter: '"+givenParams[i]+"'");
+                                        ret=false;
+                                    }
+                                }
+                            }
+
+                            // stop if unknown optional parameter
+                            if (!found) {
+                                System.out.println("  error: unknown parameter'"+givenParams[i]+"'");
+                                ret=false;
+                                break;
+                                // stop if known optional parameter but syntax error
+                            } else if (found && !ret) {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
+   /**
+	 * Check semantic of NID
+	 * @param p_expectedNID
+	 *            the expected NID
+	 * @param p_foundNID
+	 *            the given NID
+	 * @return true: parameters are OK, false: syntax error
+	 */
+   private static boolean checkValidNode(final String p_expectedNID, final String p_foundNID) {
+	   boolean ret=true;
+
+		if (CmdUtils.checkNID(p_foundNID).compareTo("unknown") == 0) {
+			System.out.println("  error: unknown NID '" + p_foundNID + "'");
 			ret = false;
 		} else {
-			// parse and check params of command
-			for (int i = 1; i < token.length; i++) {
-				// not enough params?
-				if (i >= p_arguments.length) {
-					if (token[i].indexOf('[') >= 0) {
-						ret = true;
-					} else {
-						System.out.println("  error: argument missing");
-						printUsgae();
-						ret = false;
-					}
-					break;
+			if (p_expectedNID.compareTo("PNID") == 0) {
+				if (CmdUtils.checkNID(p_foundNID).compareTo("superpeer") == 0) {
+					System.out.println("  error: superpeer NID not allowed '" + p_foundNID + "'");
+					ret = false;
 				}
-
-				// check next expected symbol?
-				// System.out.println(i+". token:"+token[i]);
-
-				// is a tuple NID,LID expected next?
-				if (token[i].indexOf(',') >= 0) {
-					subtoken = token[i].split(",");
-					subarg = p_arguments[i].split(",");
-					if (subarg == null || subarg.length < 2) {
-						System.out.println("  error: expected NID,LID tuple but found '" + p_arguments[i] + "'");
-						ret = false;
-					} else if (!parseToken(subtoken[0], subarg[0])) {
-						ret = false;
-					} else if (!parseToken(subtoken[1], subarg[1])) {
-						ret = false;
-					}
-				}
-
-				if (!parseToken(token[i], p_arguments[i])) {
+			} else if (p_expectedNID.compareTo("SNID") == 0) {
+				if (CmdUtils.checkNID(p_foundNID).compareTo("peer") == 0) {
+					System.out.println("  error: peer NID not allowed '" + p_foundNID + "'");
 					ret = false;
 				}
 			}
 		}
-
-		return ret;
-	}
+ 	return ret;
+    }
 
 }

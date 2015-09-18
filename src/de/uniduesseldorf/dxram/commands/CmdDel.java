@@ -6,7 +6,7 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 /**
  * Delete a chunk.
- * @author Michael Schoettner 03.09.2015
+ * @author Michael Schoettner 15.09.2015
  */
 public class CmdDel extends AbstractCmd {
 
@@ -22,18 +22,27 @@ public class CmdDel extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "del NID,LID [destNID]";
+		return "del NID,LID [-dest=NID]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		return "Delete chunk NID,LID.\nOptionally, the request can be sent to node destNID (must not be a superpeer).";
+		final String line1 = "Delete chunk NID,LID.\n";
+		final String line2 = "-dest=NID sent request to node NID (must not be a superpeer).\n";
+		return line1 + line2;
 	}
 
 	@Override
-	public String getSyntax() {
-		return "del PNID,PNR [PNID]";
+	public String[] getMandParams() {
+		final String[] ret = {"PNID,PNR"};
+	    return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        final String[] ret = {"-dest=PNID"};
+        return ret;
+    }
 
 	// called after parameter have been checked
 	@Override
@@ -51,8 +60,8 @@ public class CmdDel extends AbstractCmd {
 			if (arguments.length < 3) {
 				nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 			} else {
-				nodeID = CmdUtils.getNIDfromString(arguments[2]);
-				// System.out.println("get from:"+nodeID);
+				final String[] v = arguments[2].split("=");
+				nodeID = CmdUtils.getNIDfromString(v[1]);
 			}
 
 			final String res = Core.executeChunkCommand(nodeID, p_command, true);

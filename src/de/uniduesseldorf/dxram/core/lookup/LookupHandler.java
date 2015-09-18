@@ -1687,7 +1687,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		System.out.println("LookupHandler.cmdReqBackups");
 
-		if (m_ownBackupRanges!=null) {
+/*		if (m_ownBackupRanges!=null) {
 			for (int i=0; i<m_ownBackupRanges.size(); i++) {
 				final BackupRange br = m_ownBackupRanges.get(i);
 				ret = ret + "  BR" + Integer.toString(i) + ":";
@@ -1712,6 +1712,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		} else {
 			ret = "  No backups.";
 		}
+		*/
 		return ret;
 	}
 

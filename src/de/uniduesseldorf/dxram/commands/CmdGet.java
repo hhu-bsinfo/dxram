@@ -9,7 +9,7 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 /**
  * Get a chunk.
- * @author Michael Schoettner 03.09.2015
+ * @author Michael Schoettner 15.09.2015
  */
 public class CmdGet extends AbstractCmd {
 	private static final int MAX_DATA_TRANSFER = 100;
@@ -25,21 +25,28 @@ public class CmdGet extends AbstractCmd {
 	}
 
 	@Override
+	public String[] getMandParams() {
+		final String[] ret = {"PNID,PNR"};
+	    return ret;
+	}
+
+	@Override
+    public  String[] getOptParams() {
+        final String[] ret = {"-dest=PNID"};
+        return ret;
+    }
+
+	@Override
 	public String getUsageMessage() {
-		return "get NID,LID [destNID]";
+		return "get NID,LID [-dest=NID]";
 	}
 
 	@Override
 	public String getHelpMessage() {
 		final String line1 = "Get data of chunk NID,LID.\n";
-		final String line2 = "Optionally, the request can be sent to node destNID (must not be a superpeer).\n";
-		final String line3 = "Important: Only a maximum of 100 byte of data is transfered.";
+		final String line2 = "-dest=NID sent request to node NID (must not be a superpeer).\n";
+		final String line3 = "(Only a maximum of 100 byte of data is transfered.)";
 		return line1 + line2 + line3;
-	}
-
-	@Override
-	public String getSyntax() {
-		return "get PNID,PNR [ANID]";
 	}
 
 	// called after parameter have been checked
@@ -58,8 +65,11 @@ public class CmdGet extends AbstractCmd {
 			if (arguments.length < 3) {
 				nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 			} else {
-				nodeID = CmdUtils.getNIDfromString(arguments[2]);
+				final String[] v = arguments[2].split("=");
+				nodeID = CmdUtils.getNIDfromString(v[1]);
 			}
+			
+			
 
 			// nodeID = Short.parseShort(arguments[2]);
 

@@ -4,7 +4,7 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 /**
- * Get info about a CIDTable
+ * Get info about backups
  * @author Michael Schoettner 07.09.2015
  */
 public class CmdBackups extends AbstractCmd {
@@ -21,19 +21,28 @@ public class CmdBackups extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "backups NID";
+		return "backups NID [-mTree]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Get information about all backups for the given NID\nThe command can be send to a peer or superpeer";
-		return line1;
+		final String line1 = "Get information about all backups for the given NID\n";
+		final String line2 = "The command can be send to a peer or superpeer/n";
+		final String line3 = "-mTree: Optional parameter. Include migrateTree; only available when requesting peer.";
+		return line1+line2+line3;
 	}
 
 	@Override
-	public String getSyntax() {
-		return "backups ANID";
+	public String[] getMandParams() {
+		final String[] ret = {"ANID"};
+	    return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        final String[] ret = {"-mTree"};
+        return ret;
+    }
 
 	// called after parameter have been checked
 	@Override

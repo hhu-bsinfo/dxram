@@ -33,9 +33,15 @@ public class CmdNodes extends AbstractCmd {
 	}
 
 	@Override
-	public String getSyntax() {
-		return "nodes STR";
+	public String[] getMandParams() {
+		final String[] ret = {"STR"};
+	    return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        return null;
+    }
 
 	/**
 	 * returns a number for the argument
@@ -62,15 +68,12 @@ public class CmdNodes extends AbstractCmd {
 
 	@Override
 	public boolean areParametersSane(final String[] p_arguments) {
-		boolean ret;
+		boolean ret=false;
 
 		if (!super.areParametersSane(p_arguments)) {
 			ret = false;
 		} else if (getParam(p_arguments) >= 0) {
 			ret = true;
-		} else {
-			printUsgae();
-			ret = false;
 		}
 
 		return ret;

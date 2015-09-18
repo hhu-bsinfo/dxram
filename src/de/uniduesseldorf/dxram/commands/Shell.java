@@ -95,6 +95,8 @@ public final class Shell {
 				} else {
 					if (c.areParametersSane(arguments)) {
 						c.execute(command);
+					} else {
+						c.printUsage();
 					}
 				}
 			}
