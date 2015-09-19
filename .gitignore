@@ -1,4 +1,5 @@
 /bin/
+/build/
 /.checkstyle
 /.classpath
 /.project
