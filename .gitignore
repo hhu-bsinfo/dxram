@@ -1,1 +1,7 @@
 /bin/
+/.checkstyle
+/.classpath
+/.project
+/monitor.command
+/.settings
+/hs_err*
