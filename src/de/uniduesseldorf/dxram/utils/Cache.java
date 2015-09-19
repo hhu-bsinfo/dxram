@@ -62,7 +62,7 @@ public class Cache<KeyType, ValueType> {
 	 *            the POLICY
 	 */
 	public Cache(final POLICY p_policyEnum) {
-		final int maxSize = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_CACHESIZE);
+		final int maxSize = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_CACHE_ENTRIES);
 		EvictionPolicy<KeyType, ValueType> policy = null;
 
 		Contract.check(maxSize > 0, "max size must be greater or equal 1");
@@ -219,7 +219,7 @@ public class Cache<KeyType, ValueType> {
 		Thread t;
 		long ttl;
 
-		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHETTL), 1000);
+		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHE_TTL), 1000);
 
 		if (m_ttlHandler != null && m_ttlHandler.isRunning()) {
 			m_ttlHandler.stop();
@@ -555,8 +555,7 @@ public class Cache<KeyType, ValueType> {
 		 *            the current cache entries
 		 */
 		@Override
-		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry,
-				final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
+		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
 
 	}
 
@@ -626,8 +625,7 @@ public class Cache<KeyType, ValueType> {
 		 *            the current cache entries
 		 */
 		@Override
-		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry,
-				final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
+		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
 
 	}
 

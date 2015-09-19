@@ -15,8 +15,6 @@ import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
  */
 public final class SecondaryLogBuffer {
 
-	// Constants
-
 	// Attributes
 	private byte[] m_buffer;
 	private int m_bytesInBuffer;
@@ -86,8 +84,7 @@ public final class SecondaryLogBuffer {
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public void bufferData(final byte[] p_buffer, final int p_bufferOffset,
-			final int p_entryOrRangeSize) throws IOException, InterruptedException {
+	public void bufferData(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
 		byte[] buffer;
 
 		// Trim log entries (removes all NodeIDs)
@@ -124,17 +121,10 @@ public final class SecondaryLogBuffer {
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry
 			logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, oldBufferOffset);
-			if (m_storesMigrations) {
-				logEntrySize = logEntryHeader.getHeaderSize(true)
-						+ logEntryHeader.getLength(p_buffer, oldBufferOffset, true);
-			} else {
-				logEntrySize = logEntryHeader.getHeaderSize(false)
-						+ logEntryHeader.getLength(p_buffer, oldBufferOffset, false);
-			}
+			logEntrySize = logEntryHeader.getHeaderSize(m_storesMigrations) + logEntryHeader.getLength(p_buffer, oldBufferOffset, m_storesMigrations);
 
 			// Copy primary log header, but skip NodeID and RangeID
-			System.arraycopy(p_buffer, oldBufferOffset + secLogOffset,
-					buffer, newBufferOffset, logEntrySize - secLogOffset);
+			System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize - secLogOffset);
 
 			oldBufferOffset += logEntrySize;
 			newBufferOffset += logEntrySize - secLogOffset;
@@ -158,8 +148,7 @@ public final class SecondaryLogBuffer {
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public void flushAllDataToSecLog(final byte[] p_buffer, final int p_bufferOffset,
-			final int p_entryOrRangeSize) throws IOException, InterruptedException {
+	public void flushAllDataToSecLog(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
 		byte[] dataToWrite;
 
 		if (isBufferEmpty()) {
@@ -167,10 +156,9 @@ public final class SecondaryLogBuffer {
 			m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize, null);
 		} else {
 			// Data in secondary log buffer -> Flush buffer and write new data in secondary log with one access
-
 			dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
 			System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
-			System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_buffer.length);
+			System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_entryOrRangeSize);
 
 			m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length, null);
 			m_bytesInBuffer = 0;

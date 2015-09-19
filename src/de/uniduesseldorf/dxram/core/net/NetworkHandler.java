@@ -59,8 +59,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		// Network Messages
 		networkType = NIOConnectionCreator.FlowControlMessage.TYPE;
-		MessageDirectory.register(networkType, NIOConnectionCreator.FlowControlMessage.SUBTYPE,
-				NIOConnectionCreator.FlowControlMessage.class);
+		MessageDirectory.register(networkType, NIOConnectionCreator.FlowControlMessage.SUBTYPE, NIOConnectionCreator.FlowControlMessage.class);
 
 		// Chunk Messages
 		chunkType = ChunkMessages.TYPE;
@@ -68,24 +67,19 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_GET_RESPONSE, ChunkMessages.GetResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_REQUEST, ChunkMessages.PutRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_RESPONSE, ChunkMessages.PutResponse.class);
-		MessageDirectory
-				.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_REQUEST, ChunkMessages.RemoveRequest.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_RESPONSE,
-				ChunkMessages.RemoveResponse.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_REQUEST, ChunkMessages.RemoveRequest.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_RESPONSE, ChunkMessages.RemoveResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_REQUEST, ChunkMessages.LockRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_RESPONSE, ChunkMessages.LockResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_UNLOCK_MESSAGE, ChunkMessages.UnlockMessage.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_DATA_REQUEST, ChunkMessages.DataRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_DATA_RESPONSE, ChunkMessages.DataResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_DATA_MESSAGE, ChunkMessages.DataMessage.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTIGET_REQUEST,
-				ChunkMessages.MultiGetRequest.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTIGET_RESPONSE,
-				ChunkMessages.MultiGetResponse.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_MESSAGE, ChunkMessages.CommandMessage.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_REQUEST, ChunkMessages.CommandRequest.class);
-		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_COMMAND_RESPONSE,
-				ChunkMessages.CommandResponse.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTIGET_REQUEST, ChunkMessages.MultiGetRequest.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTIGET_RESPONSE, ChunkMessages.MultiGetResponse.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_MESSAGE, ChunkMessages.ChunkCommandMessage.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_REQUEST, ChunkMessages.ChunkCommandRequest.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_CHUNK_COMMAND_RESPONSE, ChunkMessages.ChunkCommandResponse.class);
 
 		// Log Messages
 		logType = LogMessages.TYPE;
@@ -95,74 +89,47 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_REMOVE_MESSAGE, LogMessages.RemoveMessage.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_REQUEST, LogMessages.InitRequest.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_RESPONSE, LogMessages.InitResponse.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_COMMAND_REQUEST, LogMessages.LogCommandRequest.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_COMMAND_RESPONSE, LogMessages.LogCommandResponse.class);
 
 		// Lookup Messages
 		lookupType = LookupMessages.TYPE;
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_JOIN_REQUEST, LookupMessages.JoinRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_JOIN_RESPONSE,
-				LookupMessages.JoinResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST,
-				LookupMessages.InitRangeRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE,
-				LookupMessages.InitRangeResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REQUEST,
-				LookupMessages.LookupRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_RESPONSE,
-				LookupMessages.LookupResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_REQUEST,
-				LookupMessages.MigrateRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RESPONSE,
-				LookupMessages.MigrateResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_MESSAGE,
-				LookupMessages.MigrateMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST,
-				LookupMessages.MigrateRangeRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RANGE_RESPONSE,
-				LookupMessages.MigrateRangeResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_REMOVE_REQUEST,
-				LookupMessages.RemoveRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_REMOVE_RESPONSE,
-				LookupMessages.RemoveResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE,
-				LookupMessages.SendBackupsMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE,
-				LookupMessages.SendSuperpeersMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST,
-				LookupMessages.AskAboutBackupsRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE,
-				LookupMessages.AskAboutBackupsResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST,
-				LookupMessages.AskAboutSuccessorRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE,
-				LookupMessages.AskAboutSuccessorResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_JOIN_RESPONSE, LookupMessages.JoinResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST, LookupMessages.InitRangeRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE, LookupMessages.InitRangeResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REQUEST, LookupMessages.LookupRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_RESPONSE, LookupMessages.LookupResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_REQUEST, LookupMessages.MigrateRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RESPONSE, LookupMessages.MigrateResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_MESSAGE, LookupMessages.MigrateMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST, LookupMessages.MigrateRangeRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RANGE_RESPONSE, LookupMessages.MigrateRangeResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_REMOVE_REQUEST, LookupMessages.RemoveRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_REMOVE_RESPONSE, LookupMessages.RemoveResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE, LookupMessages.SendBackupsMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, LookupMessages.SendSuperpeersMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST, LookupMessages.AskAboutBackupsRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE, LookupMessages.AskAboutBackupsResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, LookupMessages.AskAboutSuccessorRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, LookupMessages.AskAboutSuccessorResponse.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE,
 				LookupMessages.NotifyAboutNewPredecessorMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE,
-				LookupMessages.NotifyAboutNewSuccessorMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE,
-				LookupMessages.PingSuperpeerMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_REQUEST,
-				LookupMessages.SearchForPeerRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_RESPONSE,
-				LookupMessages.SearchForPeerResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_PROMOTE_PEER_REQUEST,
-				LookupMessages.PromotePeerRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_PROMOTE_PEER_RESPONSE,
-				LookupMessages.PromotePeerResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE,
-				LookupMessages.DelegatePromotePeerMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE,
-				LookupMessages.NotifyAboutFailedPeerMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE,
-				LookupMessages.StartRecoveryMessage.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INSERT_ID_REQUEST,
-				LookupMessages.InsertIDRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INSERT_ID_RESPONSE,
-				LookupMessages.InsertIDResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_CHUNKID_REQUEST,
-				LookupMessages.GetChunkIDRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_CHUNKID_RESPONSE,
-				LookupMessages.GetChunkIDResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, LookupMessages.NotifyAboutNewSuccessorMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, LookupMessages.PingSuperpeerMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_REQUEST, LookupMessages.SearchForPeerRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_RESPONSE, LookupMessages.SearchForPeerResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_PROMOTE_PEER_REQUEST, LookupMessages.PromotePeerRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_PROMOTE_PEER_RESPONSE, LookupMessages.PromotePeerResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE, LookupMessages.DelegatePromotePeerMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE, LookupMessages.NotifyAboutFailedPeerMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE, LookupMessages.StartRecoveryMessage.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INSERT_ID_REQUEST, LookupMessages.InsertIDRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INSERT_ID_RESPONSE, LookupMessages.InsertIDResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_CHUNKID_REQUEST, LookupMessages.GetChunkIDRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_CHUNKID_RESPONSE, LookupMessages.GetChunkIDResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST, LookupMessages.LookupReflectionRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_RESPONSE, LookupMessages.LookupReflectionResponse.class);
 
 		m_manager = new ConnectionManager(AbstractConnectionCreator.getInstance(), this);
 
@@ -298,8 +265,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 * Creates an instance of MessageHandler
 		 */
 		public MessageHandler() {
-			m_executor = new TaskExecutor("MessageHandler", Core.getConfiguration().getIntValue(
-					ConfigurationConstants.NETWORK_MESSAGEHANDLER_THREADCOUNT));
+			m_executor = new TaskExecutor("MessageHandler", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MESSAGE_HANDLER_THREAD_COUNT));
 			m_messages = new ArrayDeque<>();
 		}
 

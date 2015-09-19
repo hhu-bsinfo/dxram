@@ -1,39 +1,68 @@
+
 package de.uniduesseldorf.dxram.commands;
 
-import java.io.IOException;
 import java.util.Set;
 
-public class CmdHelp extends Cmd {
-	public static String STR_CMD = "help";
-	public static String STR_UM  = "help [command]";
-	public static String STR_HM  = "Shows help information.\n   help: list all commands\n   help command: show help information about given command";
+/**
+ * Help
+ * @author Michael Schoettner 15.09.2015
+ */
+public class CmdHelp extends AbstractCmd {
 
-	public CmdHelp() {
-		super(STR_CMD, STR_UM, STR_HM);
+	/**
+	 * Constructor
+	 */
+	public CmdHelp() {}
+
+	@Override
+	public String getName() {
+		return "help";
 	}
-	
-	// called by shell
-	public boolean areParametersSane (String arguments[]) {
-		if (arguments.length==1 || arguments.length==2) 
-			return true;
-		printUsgae();
-		return false;
+
+	@Override
+	public String getUsageMessage() {
+		return "help command|all";
 	}
+
+	@Override
+	public String getHelpMessage() {
+		final String line1 = "Shows help information.\nhelp: list all commands\n";
+		final String line2 = "help command: show help information about given 'command'";
+		return line1 + line2;
+	}
+
+	@Override
+	public String[] getMandParams() {
+        final String[] ret = {"STR"};
+        return ret;
+	}
+
+	@Override
+    public  String[] getOptParams() {
+        return null;
+    }
 
 	// called after parameter have been checked
-	public int execute(String command) {
+	@Override
+	public boolean execute(final String p_command) {
+		boolean ret = true;
 		String[] arguments;
 
-		arguments = command.split(" ");
-		
-		if (arguments.length==1) { 
-			Set<String> s = Shell.m_commandMap.keySet();
-			System.out.println("known commands: " + s.toString());
+		arguments = p_command.split(" ");
+
+		if (arguments.length == 2 && arguments[1].compareTo("all")==0) {
+			final Set<String> s = Shell.getAllCommands();
+			System.out.println("  All known commands: " + s.toString());
+		} else {
+			final AbstractCmd c = Shell.getCommand(arguments[1]);
+			if (c == null) {
+				System.out.println("  error: unknown command '" + arguments[1] + "'");
+				ret = false;
+			} else {
+				c.printHelpMsg();
+			}
 		}
-		else {
-			Cmd c = Shell.m_commandMap.get(arguments[1]);
-			c.printHelpMsg();
-		}
-		return 0;
+
+		return ret;
 	}
 }

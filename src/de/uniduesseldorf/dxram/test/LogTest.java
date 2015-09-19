@@ -3,7 +3,6 @@ package de.uniduesseldorf.dxram.test;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -12,6 +11,7 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
+import de.uniduesseldorf.dxram.utils.Tools;
 
 /**
  * Test case for the logging interface
@@ -24,6 +24,8 @@ public final class LogTest implements Runnable {
 	private static int m_numberOfThreads;
 	private static int m_minChunkSize;
 	private static int m_maxChunkSize;
+	private static int m_updates;
+	private static int m_deletes;
 	private static long m_numberOfChunks;
 	private static long m_chunksPerThread;
 
@@ -57,23 +59,31 @@ public final class LogTest implements Runnable {
 		Thread[] threads = null;
 		LogInterface log = null;
 
-		if (p_arguments.length == 4) {
+		if (p_arguments.length == 6) {
 			m_numberOfThreads = Integer.parseInt(p_arguments[0]);
 			m_numberOfChunks = Long.parseLong(p_arguments[1]);
 			m_chunksPerThread = m_numberOfChunks / m_numberOfThreads;
 			m_minChunkSize = Integer.parseInt(p_arguments[2]);
 			m_maxChunkSize = Integer.parseInt(p_arguments[3]);
-		} else if (p_arguments.length > 4) {
-			System.out.println("Too many program arguments");
+			m_updates = Integer.parseInt(p_arguments[4]);
+			m_deletes = Integer.parseInt(p_arguments[5]);
+
+			if (m_chunksPerThread > Integer.MAX_VALUE) {
+				System.out.println("Too many chunks per thread! Exiting.");
+				System.exit(-1);
+			}
+		} else if (p_arguments.length > 6) {
+			System.out.println("Too many program arguments! Exiting.");
+			System.exit(-1);
 		} else {
-			System.out.println("Missing program arguments (#threads, number of chunks, "
-					+ "minimal chunk size, maximal chunk size)");
+			System.out.println("Missing program arguments (#threads, number of chunks, " + "minimal chunk size, maximal chunk size)! Exiting.");
+			System.exit(-1);
 		}
 
 		threads = new Thread[m_numberOfThreads];
 		try {
 			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 			log = CoreComponentFactory.getLogInterface();
 		} catch (final DXRAMException e) {
 			System.out.println("Error during initialization of DXRAM");
@@ -82,7 +92,7 @@ public final class LogTest implements Runnable {
 		timeStart = System.currentTimeMillis();
 		nodes = new short[m_numberOfThreads];
 		for (int i = 0; i < m_numberOfThreads; i++) {
-			nodes[i] = (short) ((Math.random() * (65536 - 1 + 1)) + 1);
+			nodes[i] = (short) (Math.random() * (65536 - 1 + 1) + 1);
 
 			threads[i] = new Thread(new LogTest(nodes[i], log, i));
 			threads[i].start();
@@ -96,70 +106,84 @@ public final class LogTest implements Runnable {
 		}
 		System.out.println("All chunks logged in " + (System.currentTimeMillis() - timeStart) + "ms");
 
-		/*
-		 * timeStart = System.currentTimeMillis();
-		 * for (short i = 0; i < m_numberOfNodes; i++) {
-		 * try {
-		 * log.printMetadataOfAllEntries(nodes[i]);
-		 * //log.readAllEntries(nodes[i]);
-		 * } catch (final DXRAMException e) {
-		 * System.out.println("Error: Could not read entries of node " + nodes[i]);
-		 * }
-		 * }
-		 * System.out.println("All chunks read in " + (System.currentTimeMillis() - timeStart) + "ms");
-		 */
+		/*-timeStart = System.currentTimeMillis();
+		for (short i = 0; i < m_numberOfNodes; i++) {
+			try {
+				log.printMetadataOfAllEntries(nodes[i]);
+				// log.readAllEntries(nodes[i]);
+			} catch (final DXRAMException e) {
+				System.out.println("Error: Could not read entries of node " + nodes[i]);
+			}
+		}
+		System.out.println("All chunks read in " + (System.currentTimeMillis() - timeStart) + "ms");*/
 	}
 
 	@Override
 	public void run() {
 		int[] sizes;
+		long[] removes;
 		Chunk[] chunks;
-		ArrayList<Integer> list;
-		Random rand;
+		Chunk[] updates;
+		Chunk[] fillChunks;
+		ArrayList<Long> cidList;
+		ArrayList<Chunk> chunkList;
 
-		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize
-				+ " Bytes and " + m_maxChunkSize + " Bytes");
+		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize + " Bytes and " + m_maxChunkSize + " Bytes");
 
-		rand = new Random();
 		try {
-
 			/*
-			 * for (int i = 0; i < m_chunksPerThread; i++) {
-			 * chunk = Core.createNewChunk(rand.nextInt((m_maxChunkSize - m_minChunkSize) + 1) + m_minChunkSize);
-			 * chunk.getData().put(("This is a test! (" + m_nodeID + ")").getBytes());
-			 * Core.put(chunk);
-			 * }
+			 * Preparation
 			 */
-
-			// Create new chunks
+			// Create chunks
 			sizes = new int[(int) m_chunksPerThread];
 			for (int i = 0; i < m_chunksPerThread; i++) {
-				sizes[i] = rand.nextInt((m_maxChunkSize - m_minChunkSize) + 1) + m_minChunkSize;
+				sizes[i] = Tools.getRandomValue(m_minChunkSize, m_maxChunkSize);
 			}
-			chunks = Core.createNewChunk(sizes);
+			chunks = Core.createNewChunks(sizes);
 			for (int i = 0; i < m_chunksPerThread; i++) {
 				chunks[i].getData().put(("This is a test! (" + m_nodeID + ")").getBytes());
 			}
 
-			// Create list for deletion
-			list = new ArrayList<Integer>();
-			for (int i = 1; i < m_chunksPerThread; i++) {
-				list.add(new Integer(i));
+			// Create list for updates (chunks)
+			chunkList = new ArrayList<Chunk>();
+			for (int i = 0; i < m_chunksPerThread; i++) {
+				chunkList.add(chunks[i]);
 			}
-			Collections.shuffle(list);
+			Collections.shuffle(chunkList);
+			updates = chunkList.subList(0, m_updates).toArray(new Chunk[m_updates]);
 
+			// Create list for deletes (chunkIDs)
+			cidList = new ArrayList<Long>();
+			for (int i = 0; i < m_chunksPerThread; i++) {
+				cidList.add(chunks[i].getChunkID());
+			}
+			Collections.shuffle(cidList);
+			removes = cidList.subList(0, m_deletes).stream().mapToLong(l -> l).toArray();
+
+			// Create fill chunks (to clear secondary log buffer)
+			fillChunks = Core.createNewChunks(new int[] {1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576});
+
+			/*
+			 * Execution
+			 */
 			// Put
 			System.out.print("Starting replication...");
-			for (int i = 0; i < m_chunksPerThread; i++) {
-				Core.put(chunks[i]);
-			}
-			System.out.println("done");
+			Core.put(chunks);
+			System.out.println("done\n");
+
+			// Updates
+			System.out.print("Starting updates...");
+			Core.put(updates);
+			System.out.println("done\n");
 
 			// Delete
 			System.out.print("Starting deletion...");
-			for (int i = 0; i < 1000; i++) {
-				Core.remove(chunks[list.get(i)].getChunkID());
-			}
+			Core.remove(removes);
+			System.out.println("done\n");
+
+			// Put dummies
+			System.out.print("Starting fill replication...");
+			Core.put(fillChunks);
 			System.out.println("done");
 
 		} catch (final DXRAMException e) {

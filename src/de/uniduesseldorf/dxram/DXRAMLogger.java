@@ -37,8 +37,7 @@ public final class DXRAMLogger {
 	public static void traceEnterMethod(final Object... p_parameters) {
 		if (TRACE) {
 			if (p_parameters != null && p_parameters.length > 0) {
-				LOGGER.trace("Entering " + Thread.currentThread().getStackTrace()[2].toString() + " with: "
-						+ Arrays.toString(p_parameters));
+				LOGGER.trace("Entering " + Thread.currentThread().getStackTrace()[2].toString() + " with: " + Arrays.toString(p_parameters));
 			} else {
 				LOGGER.trace("Entering " + Thread.currentThread().getStackTrace()[2].toString());
 			}

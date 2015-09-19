@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.api.config;
 
 import java.io.BufferedReader;
@@ -49,7 +50,7 @@ public final class NodesConfigurationHandler {
 		NodesConfiguration ret;
 
 		ret = getEmptyConfiguration();
-		ret.addNode(new NodesConfigurationEntry("127.0.0.1", 22222, (short)0, (short)0, Role.SUPERPEER));
+		ret.addNode(new NodesConfigurationEntry("127.0.0.1", 22222, (short) 0, (short) 0, Role.SUPERPEER));
 
 		return ret;
 	}
@@ -114,9 +115,8 @@ public final class NodesConfigurationHandler {
 					values = line.split("\\s+");
 					if (values.length == 5) {
 						try {
-							p_configuration.addNode(new NodesConfigurationEntry(values[0], Integer.parseInt(values[1]),
-									Short.parseShort(values[3]), Short.parseShort(values[4]), Role
-											.getRoleByAcronym(values[2].charAt(0))));
+							p_configuration.addNode(new NodesConfigurationEntry(values[0], Integer.parseInt(values[1]), Short.parseShort(values[3]), Short
+									.parseShort(values[4]), Role.getRoleByAcronym(values[2].charAt(0))));
 						} catch (final RuntimeException e) {
 							in.close();
 							throw new IOException("Could not parse line: '" + line + "'", e);

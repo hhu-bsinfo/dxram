@@ -5,7 +5,7 @@
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
 <!--
-    Checkstyle-Configuration: DXRAM
+    Checkstyle-Configuration: DXRAM syleguide
     Description: none
 -->
 <module name="Checker">
@@ -67,7 +67,7 @@
     <module name="RedundantModifier"/>
     <module name="AvoidNestedBlocks"/>
     <module name="LeftCurly">
-      <property name="maxLineLength" value="120"/>
+      <property name="maxLineLength" value="160"/>
     </module>
     <module name="NeedBraces"/>
     <module name="RightCurly"/>
@@ -110,7 +110,7 @@
       <property name="separated" value="true"/>
     </module>
     <module name="LineLength">
-      <property name="max" value="120"/>
+      <property name="max" value="160"/>
       <property name="tabWidth" value="4"/>
     </module>
     <module name="OuterTypeNumber"/>
@@ -164,6 +164,10 @@
       <property name="allowLineBreaks" value="true"/>
       <property name="tokens" value="DOT"/>
     </module>
+    <module name="ReturnCount">
+      <property name="max" value="1"/>
+    </module>
+    <module name="ReturnCount"/>
   </module>
   <module name="JavadocPackage"/>
   <module name="NewlineAtEndOfFile"/>

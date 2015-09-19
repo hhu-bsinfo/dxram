@@ -79,8 +79,7 @@ public final class CachedLookup implements LookupInterface {
 	 * @param p_policy
 	 *            the eviction policy
 	 */
-	public CachedLookup(final LookupInterface p_lookup, final int p_maxSize,
-			final EvictionPolicy<Long, Long> p_policy) {
+	public CachedLookup(final LookupInterface p_lookup, final int p_maxSize, final EvictionPolicy<Long, Long> p_policy) {
 		this(p_lookup, new Cache<Long, Long>(p_maxSize, p_policy));
 	}
 
@@ -168,8 +167,7 @@ public final class CachedLookup implements LookupInterface {
 	}
 
 	@Override
-	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID)
-			throws LookupException {
+	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) throws LookupException {
 		ChunkID.check(p_startCID);
 		ChunkID.check(p_endCID);
 
@@ -238,6 +236,15 @@ public final class CachedLookup implements LookupInterface {
 		invalidate(p_chunkID);
 
 		m_lookup.remove(p_chunkID);
+	}
+
+	@Override
+	public void remove(final long[] p_chunkIDs) throws LookupException {
+		ChunkID.check(p_chunkIDs);
+
+		invalidate(p_chunkIDs);
+
+		m_lookup.remove(p_chunkIDs);
 	}
 
 	@Override

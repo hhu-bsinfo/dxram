@@ -16,7 +16,7 @@ import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
  * Encapsulates messages for the LookupHandler
- * @author Kevin Beineke
+ * @author Kevin Beinekechun
  *         03.06.2013
  */
 public final class LookupMessages {
@@ -58,6 +58,8 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_GET_CHUNKID_RESPONSE = 33;
 	public static final byte SUBTYPE_GET_MAPPING_COUNT_REQUEST = 34;
 	public static final byte SUBTYPE_GET_MAPPING_COUNT_RESPONSE = 35;
+	public static final byte SUBTYPE_LOOKUP_REFLECTION_REQUEST = 36;
+	public static final byte SUBTYPE_LOOKUP_REFLECTION_RESPONSE = 37;
 
 	// Constructors
 	/**
@@ -194,10 +196,8 @@ public final class LookupMessages {
 		 * @param p_trees
 		 *            the CIDTrees of the peers
 		 */
-		public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer,
-				final short p_predecessor, final short p_successor, final byte[] p_mappings,
-				final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers,
-				final ArrayList<CIDTreeOptimized> p_trees) {
+		public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor, final short p_successor,
+				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_request, SUBTYPE_JOIN_RESPONSE);
 
 			m_newContactSuperpeer = p_newContactSuperpeer;
@@ -549,8 +549,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID,
-				final boolean p_isBackup) {
+		public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_MIGRATE_REQUEST);
 
 			m_chunkID = p_chunkID;
@@ -600,8 +599,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -701,8 +699,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public MigrateMessage(final short p_destination, final long p_chunkID, final short p_nodeID,
-				final boolean p_isBackup) {
+		public MigrateMessage(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_MIGRATE_MESSAGE);
 
 			m_chunkID = p_chunkID;
@@ -752,8 +749,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -797,8 +793,8 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public MigrateRangeRequest(final short p_destination, final long p_startChunkID, final long p_endChunkID,
-				final short p_nodeID, final boolean p_isBackup) {
+		public MigrateRangeRequest(final short p_destination, final long p_startChunkID,
+				final long p_endChunkID, final short p_nodeID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_MIGRATE_RANGE_REQUEST);
 
 			m_startChunkID = p_startChunkID;
@@ -859,8 +855,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() * 2 + OutputHelper.getNodeIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() * 2 + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -960,8 +955,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_locations,
-				final boolean p_isBackup) {
+		public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_locations, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_INIT_RANGE_REQUEST);
 
 			m_startChunkIDOrRangeID = p_startChunkID;
@@ -1011,8 +1005,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getLongWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getLongWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -1085,7 +1078,7 @@ public final class LookupMessages {
 	public static class RemoveRequest extends AbstractRequest {
 
 		// Attributes
-		private long m_chunkID;
+		private long[] m_chunkIDs;
 		private boolean m_isBackup;
 
 		// Constructors
@@ -1095,7 +1088,7 @@ public final class LookupMessages {
 		public RemoveRequest() {
 			super();
 
-			m_chunkID = -1;
+			m_chunkIDs = null;
 			m_isBackup = false;
 		}
 
@@ -1103,17 +1096,17 @@ public final class LookupMessages {
 		 * Creates an instance of RemoveRequest
 		 * @param p_destination
 		 *            the destination
-		 * @param p_chunkID
-		 *            the ChunkID that has to be removed
+		 * @param p_chunkIDs
+		 *            the ChunkIDs that have to be removed
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public RemoveRequest(final short p_destination, final long p_chunkID, final boolean p_isBackup) {
+		public RemoveRequest(final short p_destination, final long[] p_chunkIDs, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_REMOVE_REQUEST);
 
-			Contract.checkNotNull(p_chunkID, "no ChunkID given");
+			Contract.checkNotNull(p_chunkIDs, "no ChunkIDs given");
 
-			m_chunkID = p_chunkID;
+			m_chunkIDs = p_chunkIDs;
 			m_isBackup = p_isBackup;
 		}
 
@@ -1122,8 +1115,8 @@ public final class LookupMessages {
 		 * Get the ChunkID
 		 * @return the ChunkID
 		 */
-		public final long getChunkID() {
-			return m_chunkID;
+		public final long[] getChunkIDs() {
+			return m_chunkIDs;
 		}
 
 		/**
@@ -1137,19 +1130,19 @@ public final class LookupMessages {
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeChunkID(p_buffer, m_chunkID);
+			OutputHelper.writeChunkIDs(p_buffer, m_chunkIDs);
 			OutputHelper.writeBoolean(p_buffer, m_isBackup);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunkID = InputHelper.readChunkID(p_buffer);
+			m_chunkIDs = InputHelper.readChunkIDs(p_buffer);
 			m_isBackup = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length) + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -1221,8 +1214,7 @@ public final class LookupMessages {
 			if (m_backupSuperpeers == null) {
 				ret = OutputHelper.getBooleanWriteLength();
 			} else {
-				ret = OutputHelper.getBooleanWriteLength()
-						+ OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
+				ret = OutputHelper.getBooleanWriteLength() + OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
 			}
 
 			return ret;
@@ -1341,9 +1333,7 @@ public final class LookupMessages {
 		 * @param p_mappings
 		 *            the missing id mappings
 		 */
-		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request,
-				final ArrayList<CIDTreeOptimized> p_trees,
-				final byte[] p_mappings) {
+		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request, final ArrayList<CIDTreeOptimized> p_trees, final byte[] p_mappings) {
 			super(p_request, SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE);
 
 			m_trees = p_trees;
@@ -1666,8 +1656,7 @@ public final class LookupMessages {
 		 * @param p_trees
 		 *            the CIDTrees
 		 */
-		public SendBackupsMessage(final short p_destination, final byte[] p_mappings,
-				final ArrayList<CIDTreeOptimized> p_trees) {
+		public SendBackupsMessage(final short p_destination, final byte[] p_mappings, final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_SEND_BACKUPS_MESSAGE);
 
 			m_mappings = p_mappings;
@@ -1906,9 +1895,8 @@ public final class LookupMessages {
 		 * @param p_trees
 		 *            the CIDTrees of the peers
 		 */
-		public PromotePeerRequest(final short p_destination, final short p_predecessor, final short p_successor,
-				final short p_replacement, final byte[] p_mappings, final ArrayList<Short> p_superpeers,
-				final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
+		public PromotePeerRequest(final short p_destination, final short p_predecessor, final short p_successor, final short p_replacement,
+				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_PROMOTE_PEER_REQUEST);
 
 			m_predecessor = p_predecessor;
@@ -2456,8 +2444,7 @@ public final class LookupMessages {
 		 * @param p_isBackup
 		 *            whether this is a backup message or not
 		 */
-		public InsertIDRequest(final short p_destination, final int p_id, final long p_chunkID,
-				final boolean p_isBackup) {
+		public InsertIDRequest(final short p_destination, final int p_id, final long p_chunkID, final boolean p_isBackup) {
 			super(p_destination, TYPE, SUBTYPE_INSERT_ID_REQUEST);
 
 			m_id = p_id;
@@ -2507,8 +2494,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getIntWriteLength() + OutputHelper.getChunkIDWriteLength()
-					+ OutputHelper.getBooleanWriteLength();
+			return OutputHelper.getIntWriteLength() + OutputHelper.getChunkIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}
@@ -2580,8 +2566,7 @@ public final class LookupMessages {
 			if (m_backupSuperpeers == null) {
 				ret = OutputHelper.getBooleanWriteLength();
 			} else {
-				ret = OutputHelper.getBooleanWriteLength()
-						+ OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
+				ret = OutputHelper.getBooleanWriteLength() + OutputHelper.getShortArrayWriteLength(m_backupSuperpeers.length);
 			}
 
 			return ret;
@@ -2789,6 +2774,122 @@ public final class LookupMessages {
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getLongWriteLength();
+		}
+
+	}
+
+	/**
+	 * Request for command
+	 * @author Michael Schoettner 20.8.2015
+	 */
+	public static class LookupReflectionRequest extends AbstractRequest {
+
+		// Attributes
+		private String m_cmd;
+
+		// Constructors
+		/**
+		 * Creates an instance of CommandRequest
+		 */
+		public LookupReflectionRequest() {
+			super();
+			m_cmd = null;
+		}
+
+		/**
+		 * Creates an instance of CommandRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_cmd
+		 *            the command
+		 */
+		public LookupReflectionRequest(final short p_destination, final String p_cmd) {
+			super(p_destination, TYPE, SUBTYPE_LOOKUP_REFLECTION_REQUEST);
+			Contract.checkNotNull(p_cmd, "error: no argument given");
+			m_cmd = p_cmd;
+		}
+
+		/**
+		 * Get the command
+		 * @return the command
+		 */
+		public final String getArgument() {
+			return m_cmd;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeString(p_buffer, m_cmd);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_cmd = InputHelper.readString(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getStringsWriteLength(m_cmd);
+		}
+
+	}
+
+	/**
+	 * Response to a CommandRequest
+	 * @author Florian Klein 05.07.2014
+	 */
+	public static class LookupReflectionResponse extends AbstractResponse {
+
+		// Attributes
+		private String m_answer;
+
+		// Constructors
+		/**
+		 * Creates an instance of CommpandResponse
+		 */
+		public LookupReflectionResponse() {
+			super();
+
+			m_answer = null;
+		}
+
+		/**
+		 * Creates an instance of CommandResponse
+		 * @param p_request
+		 *            the corresponding CommandRequest
+		 * @param p_answer
+		 *            the answer
+		 */
+		public LookupReflectionResponse(final LookupReflectionRequest p_request, final String p_answer) {
+			super(p_request, SUBTYPE_LOOKUP_REFLECTION_RESPONSE);
+
+			m_answer = p_answer;
+		}
+
+		// Getters
+		/**
+		 * Get the answer
+		 * @return the answer
+		 */
+		public final String getAnswer() {
+			return m_answer;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeString(p_buffer, m_answer);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_answer = InputHelper.readString(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getStringsWriteLength(m_answer);
 		}
 
 	}

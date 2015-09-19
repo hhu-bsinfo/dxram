@@ -63,8 +63,7 @@ public final class Stopwatch {
 
 		hours = time;
 
-		System.out.println("*\nTime:\t" + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms "
-				+ microseconds + "µs " + nanoseconds + "ns\n*");
+		System.out.println("*\nTime:\t" + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns\n*");
 	}
 
 	/**

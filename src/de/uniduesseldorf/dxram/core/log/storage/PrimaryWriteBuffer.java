@@ -34,8 +34,7 @@ import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
 public class PrimaryWriteBuffer {
 
 	// Constants
-	public static final boolean PARALLEL_BUFFERING = Core.getConfiguration()
-			.getBooleanValue(ConfigurationConstants.LOG_PARALLEL_BUFFERING);
+	public static final boolean PARALLEL_BUFFERING = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_PARALLEL_BUFFERING);
 
 	// Attributes
 	private LogInterface m_logHandler;
@@ -70,8 +69,7 @@ public class PrimaryWriteBuffer {
 	 *            size of the ring buffer in bytes (is rounded to a power of
 	 *            two)
 	 */
-	public PrimaryWriteBuffer(final PrimaryLog p_primaryLog,
-			final int p_bufferSize) {
+	public PrimaryWriteBuffer(final PrimaryLog p_primaryLog, final int p_bufferSize) {
 		m_bufferReadPointer = 0;
 		m_bufferWritePointer = 0;
 		m_bytesInWriteBuffer = 0;
@@ -85,13 +83,8 @@ public class PrimaryWriteBuffer {
 			System.out.println("Could not get log interface");
 		}
 
-		if (p_bufferSize < LogHandler.FLASHPAGE_SIZE
-				|| p_bufferSize > LogHandler.WRITE_BUFFER_MAX_SIZE
-				|| Integer.bitCount(p_bufferSize) != 1) {
-			throw new IllegalArgumentException(
-					"Illegal buffer size! Must be 2^x with "
-							+ Math.log(LogHandler.FLASHPAGE_SIZE) / Math
-									.log(2) + " <= x <= 31");
+		if (p_bufferSize < LogHandler.FLASHPAGE_SIZE || p_bufferSize > LogHandler.WRITE_BUFFER_MAX_SIZE || Integer.bitCount(p_bufferSize) != 1) {
+			throw new IllegalArgumentException("Illegal buffer size! Must be 2^x with " + Math.log(LogHandler.FLASHPAGE_SIZE) / Math.log(2) + " <= x <= 31");
 		} else {
 			m_buffer = new byte[p_bufferSize];
 			m_ringBufferSize = p_bufferSize;
@@ -112,8 +105,7 @@ public class PrimaryWriteBuffer {
 	 * @throws InterruptedException
 	 *             if caller is interrupted
 	 */
-	public final void closeWriteBuffer() throws InterruptedException,
-			IOException {
+	public final void closeWriteBuffer() throws InterruptedException, IOException {
 		// Shutdown primary log writer-thread
 		m_flushingComplete = false;
 		m_isShuttingDown = true;
@@ -148,8 +140,7 @@ public class PrimaryWriteBuffer {
 	 *             if caller is interrupted
 	 * @return the number of written bytes
 	 */
-	public final int putLogData(final byte[] p_header, final byte[] p_payload)
-			throws IOException, InterruptedException {
+	public final int putLogData(final byte[] p_header, final byte[] p_payload) throws IOException, InterruptedException {
 		LogEntryHeaderInterface logEntryHeader;
 		int payloadLength;
 		int bytesToWrite;
@@ -165,25 +156,22 @@ public class PrimaryWriteBuffer {
 		}
 
 		logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_header, 0);
-		if (logEntryHeader instanceof MigrationPrimLogEntryHeader
-				|| logEntryHeader instanceof MigrationPrimLogTombstone) {
-			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0, true);
-			bytesToWrite = logEntryHeader.getHeaderSize(true) + payloadLength;
+		if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
+			bytesToWrite = logEntryHeader.getHeaderSize() + payloadLength;
 		} else {
-			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0, false));
-			bytesToWrite = logEntryHeader.getHeaderSize(false) + payloadLength;
+			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0));
+			bytesToWrite = logEntryHeader.getHeaderSize() + payloadLength;
 		}
 
 		if (bytesToWrite > m_ringBufferSize) {
-			throw new IllegalArgumentException(
-					"Data to write exceeds buffer size!");
+			throw new IllegalArgumentException("Data to write exceeds buffer size!");
 		}
 		if (!m_isShuttingDown) {
 			if (PARALLEL_BUFFERING) {
 				while (true) {
 					m_metaDataLock.acquire();
-					if (!m_writerThreadWantsToFlush
-							&& m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT) {
+					if (!m_writerThreadWantsToFlush && m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT) {
 						m_writingNetworkThreads++;
 						break;
 					} else {
@@ -202,8 +190,7 @@ public class PrimaryWriteBuffer {
 			writePointer = m_bufferWritePointer;
 			m_bufferWritePointer = writePointer + bytesToWrite;
 			if (m_bufferWritePointer >= m_buffer.length) {
-				m_bufferWritePointer = bytesToWrite
-						- (m_buffer.length - writePointer);
+				m_bufferWritePointer = bytesToWrite - (m_buffer.length - writePointer);
 			}
 			// Update byte counters
 			m_bytesInWriteBuffer += bytesToWrite;
@@ -239,8 +226,7 @@ public class PrimaryWriteBuffer {
 					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
 					// Write payload
 					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer, p_header.length - bytesUntilEnd,
-								payloadLength);
+						System.arraycopy(p_payload, 0, m_buffer, p_header.length - bytesUntilEnd, payloadLength);
 					}
 				} else if (bytesUntilEnd > p_header.length) {
 					// Write header
@@ -281,8 +267,7 @@ public class PrimaryWriteBuffer {
 	 * @throws InterruptedException
 	 *             if caller is interrupted
 	 */
-	public final void signalWriterThreadAndFlushToPrimLog()
-			throws InterruptedException {
+	public final void signalWriterThreadAndFlushToPrimLog() throws InterruptedException {
 		m_flushingComplete = false;
 		m_dataAvailable = true;
 
@@ -318,8 +303,7 @@ public class PrimaryWriteBuffer {
 		 * Print the throughput statistic
 		 */
 		public void printThroughput() {
-			m_throughput = (double) m_amount / (System.currentTimeMillis() - m_time) / 1024 / 1024 * 1000 * 0.9
-					+ m_throughput * 0.1;
+			m_throughput = (double) m_amount / (System.currentTimeMillis() - m_time) / 1024 / 1024 * 1000 * 0.9 + m_throughput * 0.1;
 			m_amount = 0;
 			m_time = System.currentTimeMillis();
 
@@ -342,8 +326,7 @@ public class PrimaryWriteBuffer {
 					timeStart = System.currentTimeMillis();
 					while (!m_dataAvailable) {
 						m_logHandler.grantAccess();
-						if (System.currentTimeMillis() > timeStart
-								+ LogHandler.WRITERTHREAD_TIMEOUTTIME) {
+						if (System.currentTimeMillis() > timeStart + LogHandler.WRITERTHREAD_TIMEOUTTIME) {
 							// Time-out
 							break;
 						} else {
@@ -354,8 +337,7 @@ public class PrimaryWriteBuffer {
 					}
 					flushDataToPrimaryLog();
 				} catch (final InterruptedException e) {
-					System.out
-							.println("Error: Writer thread is interrupted. Directly shuting down!");
+					System.out.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;
 				}
 			}
@@ -411,9 +393,7 @@ public class PrimaryWriteBuffer {
 			if (bytesInWriteBuffer > 0) {
 				// Write data to primary log
 				try {
-					writtenBytes = m_logHandler.getPrimaryLog().appendData(
-							m_buffer, readPointer, bytesInWriteBuffer,
-							lengthByBackupRange);
+					writtenBytes = m_logHandler.getPrimaryLog().appendData(m_buffer, readPointer, bytesInWriteBuffer, lengthByBackupRange);
 				} catch (final IOException | InterruptedException e) {
 					System.out.println("Error: Could not write to log");
 					e.printStackTrace();

@@ -38,11 +38,11 @@ public final class BloomFilter {
 		double c;
 		int n;
 
-		c = p_sizeOfBitset / (double)p_expectedNumberOfElements;
+		c = p_sizeOfBitset / (double) p_expectedNumberOfElements;
 		n = p_expectedNumberOfElements;
 
-		m_k = (int)Math.round(p_sizeOfBitset / (double)p_expectedNumberOfElements * Math.log(2.0));
-		m_sizeOfBitset = (int)Math.ceil(c * n);
+		m_k = (int) Math.round(p_sizeOfBitset / (double) p_expectedNumberOfElements * Math.log(2.0));
+		m_sizeOfBitset = (int) Math.ceil(c * n);
 		m_bitset = new BitSet(p_sizeOfBitset);
 	}
 
@@ -73,9 +73,9 @@ public final class BloomFilter {
 			m_digestFunction.update(salt++);
 			digest = m_digestFunction.digest(p_data);
 
-			for (int i = 0;i < digest.length / 4 && k < p_hashes;i++) {
+			for (int i = 0; i < digest.length / 4 && k < p_hashes; i++) {
 				h = 0;
-				for (int j = i * 4;j < i * 4 + 4;j++) {
+				for (int j = i * 4; j < i * 4 + 4; j++) {
 					h <<= 8;
 					h |= digest[j] & 0xFF;
 				}
@@ -96,8 +96,8 @@ public final class BloomFilter {
 		int[] hashes;
 
 		bytes = new byte[2];
-		bytes[0] = (byte)(p_element & 0xff);
-		bytes[1] = (byte)(p_element >> 8 & 0xff);
+		bytes[0] = (byte) (p_element & 0xff);
+		bytes[1] = (byte) (p_element >> 8 & 0xff);
 
 		hashes = createHashes(bytes, m_k);
 		for (int hash : hashes) {
@@ -117,8 +117,8 @@ public final class BloomFilter {
 		int[] hashes;
 
 		bytes = new byte[2];
-		bytes[0] = (byte)(p_element & 0xff);
-		bytes[1] = (byte)(p_element >> 8 & 0xff);
+		bytes[0] = (byte) (p_element & 0xff);
+		bytes[1] = (byte) (p_element >> 8 & 0xff);
 
 		hashes = createHashes(bytes, m_k);
 		for (int hash : hashes) {

@@ -33,9 +33,9 @@ public final class ChunkMessages {
 	public static final byte SUBTYPE_DATA_MESSAGE = 12;
 	public static final byte SUBTYPE_MULTIGET_REQUEST = 13;
 	public static final byte SUBTYPE_MULTIGET_RESPONSE = 14;
-	public static final byte SUBTYPE_COMMAND_MESSAGE = 15;
-	public static final byte SUBTYPE_COMMAND_REQUEST = 16;
-	public static final byte SUBTYPE_COMMAND_RESPONSE = 17;
+	public static final byte SUBTYPE_CHUNK_COMMAND_MESSAGE = 15;
+	public static final byte SUBTYPE_CHUNK_COMMAND_REQUEST = 16;
+	public static final byte SUBTYPE_CHUNK_COMMAND_RESPONSE = 17;
 
 	// Constructors
 	/**
@@ -927,7 +927,7 @@ public final class ChunkMessages {
 	 * Message for command
 	 * @author Michael Schoettner 12.08.2015
 	 */
-	public static class CommandMessage extends AbstractMessage {
+	public static class ChunkCommandMessage extends AbstractMessage {
 
 		// Attributes
 		private String m_cmd;
@@ -936,7 +936,7 @@ public final class ChunkMessages {
 		/**
 		 * Creates an instance of CommandMessage
 		 */
-		public CommandMessage() {
+		public ChunkCommandMessage() {
 			super();
 
 			m_cmd = null;
@@ -949,8 +949,8 @@ public final class ChunkMessages {
 		 * @param p_cmd
 		 *            the command
 		 */
-		public CommandMessage(final short p_destination, final String p_cmd) {
-			super(p_destination, TYPE, SUBTYPE_COMMAND_MESSAGE);
+		public ChunkCommandMessage(final short p_destination, final String p_cmd) {
+			super(p_destination, TYPE, SUBTYPE_CHUNK_COMMAND_MESSAGE);
 			Contract.checkNotNull(p_cmd, "no command given");
 			m_cmd = p_cmd;
 		}
@@ -986,7 +986,7 @@ public final class ChunkMessages {
 	 * Request for command
 	 * @author Michael Schoettner 20.8.2015
 	 */
-	public static class CommandRequest extends AbstractRequest {
+	public static class ChunkCommandRequest extends AbstractRequest {
 
 		// Attributes
 		private String m_cmd;
@@ -995,7 +995,7 @@ public final class ChunkMessages {
 		/**
 		 * Creates an instance of CommandRequest
 		 */
-		public CommandRequest() {
+		public ChunkCommandRequest() {
 			super();
 			m_cmd = null;
 		}
@@ -1007,13 +1007,12 @@ public final class ChunkMessages {
 		 * @param p_cmd
 		 *            the command
 		 */
-		public CommandRequest(final short p_destination, final String p_cmd) {
-			super(p_destination, TYPE, SUBTYPE_COMMAND_REQUEST);
+		public ChunkCommandRequest(final short p_destination, final String p_cmd) {
+			super(p_destination, TYPE, SUBTYPE_CHUNK_COMMAND_REQUEST);
 			Contract.checkNotNull(p_cmd, "error: no argument given");
 			m_cmd = p_cmd;
 		}
 
-		
 		/**
 		 * Get the command
 		 * @return the command
@@ -1025,7 +1024,7 @@ public final class ChunkMessages {
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			OutputHelper.writeString(p_buffer, m_cmd); 
+			OutputHelper.writeString(p_buffer, m_cmd);
 		}
 
 		@Override
@@ -1044,7 +1043,7 @@ public final class ChunkMessages {
 	 * Response to a CommandRequest
 	 * @author Florian Klein 05.07.2014
 	 */
-	public static class CommandResponse extends AbstractResponse {
+	public static class ChunkCommandResponse extends AbstractResponse {
 
 		// Attributes
 		private String m_answer;
@@ -1053,7 +1052,7 @@ public final class ChunkMessages {
 		/**
 		 * Creates an instance of CommandResponse
 		 */
-		public CommandResponse() {
+		public ChunkCommandResponse() {
 			super();
 
 			m_answer = null;
@@ -1066,8 +1065,8 @@ public final class ChunkMessages {
 		 * @param p_answer
 		 *            the answer
 		 */
-		public CommandResponse(final CommandRequest p_request, final String p_answer) {
-			super(p_request, SUBTYPE_COMMAND_RESPONSE);
+		public ChunkCommandResponse(final ChunkCommandRequest p_request, final String p_answer) {
+			super(p_request, SUBTYPE_CHUNK_COMMAND_RESPONSE);
 
 			m_answer = p_answer;
 		}

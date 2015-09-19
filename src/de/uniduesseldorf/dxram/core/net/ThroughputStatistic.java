@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.net;
 
 import java.util.ArrayList;
@@ -144,44 +145,38 @@ public final class ThroughputStatistic implements Statistic {
 
 		if (time == 0) {
 			ret.add(new StatisticEntry(POSITION_INCOMING_BYTES, NAME_INCOMING_BYTES, Tools.readableSize(0)));
-			ret.add(new StatisticEntry(POSITION_INCOMING_BYTES_PER_SECOND, NAME_INCOMING_BYTES_PER_SECOND, Tools
-					.readableSize(0)));
+			ret.add(new StatisticEntry(POSITION_INCOMING_BYTES_PER_SECOND, NAME_INCOMING_BYTES_PER_SECOND, Tools.readableSize(0)));
 
 			ret.add(new StatisticEntry(POSITION_OUTGOING_BYTES, NAME_OUTGOING_BYTES, Tools.readableSize(0)));
-			ret.add(new StatisticEntry(POSITION_OUTGOING_BYTES_PER_SECOND, NAME_OUTGOING_BYTES_PER_SECOND, Tools
-					.readableSize(0)));
+			ret.add(new StatisticEntry(POSITION_OUTGOING_BYTES_PER_SECOND, NAME_OUTGOING_BYTES_PER_SECOND, Tools.readableSize(0)));
 		} else {
-			ret.add(new StatisticEntry(POSITION_INCOMING_BYTES, NAME_INCOMING_BYTES, Tools
-					.readableSize(m_incomingSumExtern)));
-			ret.add(new StatisticEntry(POSITION_INCOMING_BYTES_PER_SECOND, NAME_INCOMING_BYTES_PER_SECOND, Tools
-					.readableSize(m_incomingSumExtern / time)));
+			ret.add(new StatisticEntry(POSITION_INCOMING_BYTES, NAME_INCOMING_BYTES, Tools.readableSize(m_incomingSumExtern)));
+			ret.add(new StatisticEntry(POSITION_INCOMING_BYTES_PER_SECOND, NAME_INCOMING_BYTES_PER_SECOND, Tools.readableSize(m_incomingSumExtern / time)));
 
-			ret.add(new StatisticEntry(POSITION_OUTGOING_BYTES, NAME_OUTGOING_BYTES, Tools
-					.readableSize(m_outgoingSumExtern)));
-			ret.add(new StatisticEntry(POSITION_OUTGOING_BYTES_PER_SECOND, NAME_OUTGOING_BYTES_PER_SECOND, Tools
-					.readableSize(m_outgoingSumExtern / time)));
+			ret.add(new StatisticEntry(POSITION_OUTGOING_BYTES, NAME_OUTGOING_BYTES, Tools.readableSize(m_outgoingSumExtern)));
+			ret.add(new StatisticEntry(POSITION_OUTGOING_BYTES_PER_SECOND, NAME_OUTGOING_BYTES_PER_SECOND, Tools.readableSize(m_outgoingSumExtern / time)));
 
 			if (p_withDetails && m_endValue != -1) {
 				interval = 1;
 				incomingAvg = 0;
 				outgoingAvg = 0;
-				for (int i = m_startValue;i != m_endValue;i = (i + 1) % MAX_VALUES) {
+				for (int i = m_startValue; i != m_endValue; i = (i + 1) % MAX_VALUES) {
 					incomingAvg += m_incomingValuesExtern[i];
-					ret.add(new StatisticEntry(POSITION_INCOMING_INTERVAL + interval, NAME_INCOMING_INTERVAL
-							+ interval, Tools.readableSize(m_incomingValuesExtern[i]) + " / s"));
+					ret.add(new StatisticEntry(POSITION_INCOMING_INTERVAL + interval, NAME_INCOMING_INTERVAL + interval, Tools
+							.readableSize(m_incomingValuesExtern[i]) + " / s"));
 
 					outgoingAvg += m_outgoingValuesExtern[i];
-					ret.add(new StatisticEntry(POSITION_OUTGOING_INTERVAL + interval, NAME_OUTGOING_INTERVAL
-							+ interval, Tools.readableSize(m_outgoingValuesExtern[i]) + " / s"));
+					ret.add(new StatisticEntry(POSITION_OUTGOING_INTERVAL + interval, NAME_OUTGOING_INTERVAL + interval, Tools
+							.readableSize(m_outgoingValuesExtern[i]) + " / s"));
 
 					interval++;
 				}
 				if (interval > 1) {
-					ret.add(new StatisticEntry(POSITION_INCOMING_INTERVAL + interval + 1,
-							NAME_INCOMING_INTERVAL_AVG, Tools.readableSize((long)incomingAvg / (interval - 1))));
+					ret.add(new StatisticEntry(POSITION_INCOMING_INTERVAL + interval + 1, NAME_INCOMING_INTERVAL_AVG, Tools.readableSize((long) incomingAvg
+							/ (interval - 1))));
 
-					ret.add(new StatisticEntry(POSITION_OUTGOING_INTERVAL + interval + 1,
-							NAME_OUTGOING_INTERVAL_AVG, Tools.readableSize((long)outgoingAvg / (interval - 1))));
+					ret.add(new StatisticEntry(POSITION_OUTGOING_INTERVAL + interval + 1, NAME_OUTGOING_INTERVAL_AVG, Tools.readableSize((long) outgoingAvg
+							/ (interval - 1))));
 				}
 			}
 		}

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.test;
 
 import java.io.BufferedReader;
@@ -208,8 +209,7 @@ public final class LSFSimulator {
 	 * @param p_segmentsToClean
 	 *            ...
 	 */
-	public static void getSegmentsToClean(final ArrayList<Segment> p_activeList,
-			final ArrayList<Segment> p_segmentsToClean) {
+	public static void getSegmentsToClean(final ArrayList<Segment> p_activeList, final ArrayList<Segment> p_segmentsToClean) {
 		m_strategy.chooseSegments(p_activeList, p_segmentsToClean);
 		recordUtilisations(m_cleanedSegmentUtilisations, p_segmentsToClean);
 	}
@@ -353,8 +353,8 @@ public final class LSFSimulator {
 	 * @return ...
 	 */
 	public static double lsfWriteCost() {
-		return (double) (m_newObjectsWritten + m_cleanerObjectsWritten + (m_segmentsCleaned - m_emptySegmentsCleaned)
-				* OBJECTS_PER_SEGMENT) / (double) m_newObjectsWritten;
+		return (double) (m_newObjectsWritten + m_cleanerObjectsWritten + (m_segmentsCleaned - m_emptySegmentsCleaned) * OBJECTS_PER_SEGMENT)
+				/ (double) m_newObjectsWritten;
 	}
 
 	/**
@@ -410,8 +410,7 @@ public final class LSFSimulator {
 		try {
 			writer = new BufferedWriter(p_fileWriter);
 			for (int i = 0; i < idAndTimeOfDeath.size(); i++) {
-				writer.write(idAndTimeOfDeath.get(i).getFirstValue() + " "
-						+ idAndTimeOfDeath.get(i).getSecondValue() + "\n");
+				writer.write(idAndTimeOfDeath.get(i).getFirstValue() + " " + idAndTimeOfDeath.get(i).getSecondValue() + "\n");
 			}
 			writer.close();
 		} catch (final IOException e) {
@@ -446,10 +445,8 @@ public final class LSFSimulator {
 			sum += m_objectWriteCounts[i];
 			cumulativeSum += m_objectWriteCounts[i];
 			if (i != 0 && i % (TOTAL_LIVE_OBJECTS / 100) == 0) {
-				System.out.format("%.6f %.6f %.6f\n",
-						(double) i / (TOTAL_LIVE_OBJECTS / 100) / 100,
-						(double) sum / m_newObjectsWritten,
-						(double) cumulativeSum / m_newObjectsWritten);
+				System.out.format("%.6f %.6f %.6f\n", (double) i / (TOTAL_LIVE_OBJECTS / 100) / 100, (double) sum / m_newObjectsWritten, (double) cumulativeSum
+						/ m_newObjectsWritten);
 				sum = 0;
 			}
 		}
@@ -460,34 +457,20 @@ public final class LSFSimulator {
 	 */
 	public static void usage() {
 		System.out.println("valid parameters include:");
-		System.out.println("  -a                                   		"
-				+ "(make cost-benefit use average age, not min)");
-		System.out.println("  -A                                   		"
-				+ "(make cost-benefit use segment, not object, age)");
-		System.out.println("  -d hotAndCold|uniform|exponential|zipfian "
-				+ "(the access distribution)");
-		System.out.println("  -D                                   		"
-				+ "(use segment decay rate in cost-benefit strategy)");
-		System.out.println("  -o scriptFile                        		"
-				+ "(dump the full list of object ids written here)");
-		System.out.println("  -i scriptFile                        		"
-				+ "(replay the given script of object writes)");
-		System.out.println("  -l                                   		"
-				+ "(if replaying from script, use actual object lifetimes in cleaning)");
-		System.out.println("  -L base                              		"
-				+ "(if using cost-benefit, take the log of age with given base)");
-		System.out.println("  -r                                   		"
-				+ "(do not reorder live objects by age when cleaning)");
-		System.out.println("  -f rc|dx                             		"
-				+ "(use RAMCloud or DxRAM equation for the costBenefit strategy)");
-		System.out.println("  -s greedy|costBenefit                		"
-				+ "(the segment selection strategy)");
-		System.out.println("  -S exponent                          		"
-				+ "(if using cost-benefit, take the root of age with given exponent)");
-		System.out.println("  -t                                   		"
-				+ "(reset object timestamps when moved during cleaning)");
-		System.out.println("  -u utilisation                       		"
-				+ "(%% of memory utilisation; 1-99%%)");
+		System.out.println("  -a                                   		" + "(make cost-benefit use average age, not min)");
+		System.out.println("  -A                                   		" + "(make cost-benefit use segment, not object, age)");
+		System.out.println("  -d hotAndCold|uniform|exponential|zipfian " + "(the access distribution)");
+		System.out.println("  -D                                   		" + "(use segment decay rate in cost-benefit strategy)");
+		System.out.println("  -o scriptFile                        		" + "(dump the full list of object ids written here)");
+		System.out.println("  -i scriptFile                        		" + "(replay the given script of object writes)");
+		System.out.println("  -l                                   		" + "(if replaying from script, use actual object lifetimes in cleaning)");
+		System.out.println("  -L base                              		" + "(if using cost-benefit, take the log of age with given base)");
+		System.out.println("  -r                                   		" + "(do not reorder live objects by age when cleaning)");
+		System.out.println("  -f rc|dx                             		" + "(use RAMCloud or DxRAM equation for the costBenefit strategy)");
+		System.out.println("  -s greedy|costBenefit                		" + "(the segment selection strategy)");
+		System.out.println("  -S exponent                          		" + "(if using cost-benefit, take the root of age with given exponent)");
+		System.out.println("  -t                                   		" + "(reset object timestamps when moved during cleaning)");
+		System.out.println("  -u utilisation                       		" + "(%% of memory utilisation; 1-99%%)");
 		System.exit(1);
 	}
 
@@ -724,11 +707,8 @@ public final class LSFSimulator {
 		liveDataSegments = TOTAL_LIVE_OBJECTS / OBJECTS_PER_SEGMENT;
 		totalSegments = (int) (100.0 / m_utilisation * liveDataSegments);
 
-		System.out.format("# Total Segments: %d, Live Data Segments: %d\n",
-				totalSegments, liveDataSegments);
-		System.out.format("# Desired u = %.2f, actual u = %.2f\n",
-				m_utilisation / 100.0,
-				(double) liveDataSegments / totalSegments);
+		System.out.format("# Total Segments: %d, Live Data Segments: %d\n", totalSegments, liveDataSegments);
+		System.out.format("# Desired u = %.2f, actual u = %.2f\n", m_utilisation / 100.0, (double) liveDataSegments / totalSegments);
 
 		for (i = 0; i < totalSegments; i++) {
 			freeList.add(new Segment());
@@ -793,10 +773,10 @@ public final class LSFSimulator {
 			if (m_newObjectsWritten % 99991 == 0) {
 				runTime = Math.max(1, (System.currentTimeMillis() - startTime) / 1000);
 				if (runTime > lastPrintTime) {
-					System.out.format("\r Wrote %d new objects (%d / sec), Cleaned %d segments (%d empty),"
-							+ "%d survivor objects, LSFwc = %.3f, RCwc = %.3f",
-							m_newObjectsWritten, m_newObjectsWritten / runTime, m_segmentsCleaned,
-							m_emptySegmentsCleaned, m_cleanerObjectsWritten, wcLSF, wcRC);
+					System.out
+					.format("\r Wrote %d new objects (%d / sec), Cleaned %d segments (%d empty)," + "%d survivor objects, LSFwc = %.3f, RCwc = %.3f",
+							m_newObjectsWritten, m_newObjectsWritten / runTime, m_segmentsCleaned, m_emptySegmentsCleaned, m_cleanerObjectsWritten,
+							wcLSF, wcRC);
 					System.out.flush();
 					lastPrintTime = runTime;
 				}
@@ -807,17 +787,14 @@ public final class LSFSimulator {
 
 		System.out.println("\nDone!");
 
-		System.out.format("# Total simulation time = %d seconds\n",
-				(int) ((System.currentTimeMillis() - startTime) / 1000));
+		System.out.format("# Total simulation time = %d seconds\n", (int) ((System.currentTimeMillis() - startTime) / 1000));
 		System.out.format("# New object writes = %d\n", m_newObjectsWritten);
 		System.out.format("# Survivor objects written by cleaner = %d\n", m_cleanerObjectsWritten);
 		System.out.format("# LSF write cost = %.3f\n", lsfWriteCost());
 		System.out.format("# Cleaning passes = %d\n", m_cleaningPasses);
 		System.out.format("# Segments cleaned = %d\n", m_segmentsCleaned);
-		System.out
-		.format("# Average segments cleaned per pass = %.2f\n", (double) m_segmentsCleaned / m_cleaningPasses);
-		System.out.format("# Average segments free after cleaning = %.2f\n",
-				(double) m_segmentsFreeAfterCleaning / m_cleaningPasses);
+		System.out.format("# Average segments cleaned per pass = %.2f\n", (double) m_segmentsCleaned / m_cleaningPasses);
+		System.out.format("# Average segments free after cleaning = %.2f\n", (double) m_segmentsFreeAfterCleaning / m_cleaningPasses);
 		System.out.format("# Objects read from cleaned segments = %d\n", m_segmentsCleaned * OBJECTS_PER_SEGMENT);
 
 		m_preCleaningUtilisations.dump("Live Segment Utilisations Prior to Cleaning");
@@ -1369,8 +1346,7 @@ public final class LSFSimulator {
 
 			if (!hit) {
 				// Bummer. We didn't find a good value. Just bail.
-				System.out.format("calculateSkew: Failed to calculate reasonable skew for"
-						+ " N = %d, %d%% -> %d%%\n", p_n, p_hotAccessPct, p_hotDataPct);
+				System.out.format("calculateSkew: Failed to calculate reasonable skew for" + " N = %d, %d%% -> %d%%\n", p_n, p_hotAccessPct, p_hotDataPct);
 				System.exit(1);
 			}
 			return ret;
@@ -1478,8 +1454,7 @@ public final class LSFSimulator {
 			if (m_name.equals("costBenefit")) {
 				m_chooseSegmentMethod = new ChooseSegmentMethod() {
 					@Override
-					public void chooseSegment(final ArrayList<Segment> p_activeList,
-							final ArrayList<Segment> p_segmentsToClean) {
+					public void chooseSegment(final ArrayList<Segment> p_activeList, final ArrayList<Segment> p_segmentsToClean) {
 
 						Collections.sort(p_activeList, new CostBenefitComparator());
 
@@ -1497,8 +1472,7 @@ public final class LSFSimulator {
 			} else if (m_name.equals("greedy")) {
 				m_chooseSegmentMethod = new ChooseSegmentMethod() {
 					@Override
-					public void chooseSegment(final ArrayList<Segment> p_activeList,
-							final ArrayList<Segment> p_segmentsToClean) {
+					public void chooseSegment(final ArrayList<Segment> p_activeList, final ArrayList<Segment> p_segmentsToClean) {
 						int leastIdx;
 						int objectCount = 0;
 
@@ -1547,8 +1521,7 @@ public final class LSFSimulator {
 		 * @param p_segmentsToClean
 		 *            ...
 		 */
-		public void chooseSegments(final ArrayList<Segment> p_activeList,
-				final ArrayList<Segment> p_segmentsToClean) {
+		public void chooseSegments(final ArrayList<Segment> p_activeList, final ArrayList<Segment> p_segmentsToClean) {
 			m_chooseSegmentMethod.chooseSegment(p_activeList, p_segmentsToClean);
 		}
 
@@ -1682,8 +1655,7 @@ public final class LSFSimulator {
 					continue;
 				}
 				sum += m_counts[i];
-				System.out.format("%f %f %f\n", (double) i / m_buckets, (double) m_counts[i] / m_totalSamples,
-						(double) sum / m_totalSamples);
+				System.out.format("%f %f %f\n", (double) i / m_buckets, (double) m_counts[i] / m_totalSamples, (double) sum / m_totalSamples);
 			}
 		}
 	}
@@ -1874,8 +1846,7 @@ public final class LSFSimulator {
 		 * @param p_segmentsToClean
 		 *            ...
 		 */
-		void chooseSegment(final ArrayList<Segment> p_activeList,
-				final ArrayList<Segment> p_segmentsToClean);
+		void chooseSegment(final ArrayList<Segment> p_activeList, final ArrayList<Segment> p_segmentsToClean);
 	}
 
 }

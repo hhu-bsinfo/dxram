@@ -51,7 +51,7 @@ public final class NodeParserTest {
 
 		configuration = NodesConfigurationHandler.getEmptyConfiguration();
 
-		addNodes(configuration, 65535, (byte)64, (byte)64);
+		addNodes(configuration, 65535, (byte) 64, (byte) 64);
 
 		if (0 == p_testMode) {
 			parsedNodes = new SimpleNodesConfigurationParser().parseNodes(configuration);
@@ -76,7 +76,7 @@ public final class NodeParserTest {
 		} else {
 			try {
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.dxram"));
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 				parsedNodes = new DefaultNodesConfigurationParser().parseNodes(configuration);
 			} catch (final DXRAMException e) {
 				e.printStackTrace();
@@ -101,21 +101,20 @@ public final class NodeParserTest {
 	 * @param p_racksPerSwitch
 	 *            the number of racks per switch
 	 */
-	private static void addNodes(final NodesConfiguration p_configuration, final int p_count,
-			final byte p_nodesPerRack, final byte p_racksPerSwitch) {
+	private static void addNodes(final NodesConfiguration p_configuration, final int p_count, final byte p_nodesPerRack, final byte p_racksPerSwitch) {
 		String ip;
 		int port;
 		short s;
 		short r;
 		short n;
 
-		for (int i = 0;i < p_count;i++) {
-			s = (short)(i / (p_nodesPerRack * p_racksPerSwitch));
-			r = (short)(i % p_racksPerSwitch / p_nodesPerRack);
-			n = (short)(i % p_nodesPerRack + 1);
+		for (int i = 0; i < p_count; i++) {
+			s = (short) (i / (p_nodesPerRack * p_racksPerSwitch));
+			r = (short) (i % p_racksPerSwitch / p_nodesPerRack);
+			n = (short) (i % p_nodesPerRack + 1);
 
 			ip = "10." + (s + 1) + "." + (r + 1) + "." + (n + 1);
-			port = (int)(Math.random() * 65534) + 1;
+			port = (int) (Math.random() * 65534) + 1;
 
 			p_configuration.addNode(new NodesConfigurationEntry(ip, port, r, s, Role.PEER));
 		}

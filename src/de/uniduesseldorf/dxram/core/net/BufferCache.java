@@ -14,8 +14,7 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
 final class BufferCache {
 
 	// Constants
-	public static final int MAX_MEMORY_CACHED = Core.getConfiguration().getIntValue(
-			ConfigurationConstants.NETWORK_MAX_CACHESIZE);
+	public static final int MAX_MEMORY_CACHED = Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MAX_CACHE_SIZE);
 
 	// Attributes
 	private static FixBufferCache m_cache = new FixBufferCache();

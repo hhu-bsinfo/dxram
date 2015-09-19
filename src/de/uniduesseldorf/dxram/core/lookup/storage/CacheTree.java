@@ -41,7 +41,7 @@ public final class CacheTree {
 		Thread thread;
 		long ttl;
 
-		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHETTL), 1000);
+		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHE_TTL), 1000);
 
 		Contract.checkNotNull(p_order);
 		Contract.check(1 < p_order, "too small order for BTree");
@@ -973,8 +973,7 @@ public final class CacheTree {
 				p_node.addEntry(parentCID, parentNodeID);
 
 				p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
-				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(),
-						p_node.getNumberOfChildren());
+				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
 
 				if (null != parent.getParent() && parent.getNumberOfEntries() < m_minEntries) {
 					// Removing key made parent too small, combined up tree
@@ -1331,16 +1330,16 @@ public final class CacheTree {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_chunkID) {
-					low = mid + 1;
-				} else if (midVal > p_chunkID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_chunkID) {
+				low = mid + 1;
+			} else if (midVal > p_chunkID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1529,16 +1528,16 @@ public final class CacheTree {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getCID(0);
+			midVal = m_children[mid].getCID(0);
 
-				if (midVal < chunkID) {
-					low = mid + 1;
-				} else if (midVal > chunkID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < chunkID) {
+				low = mid + 1;
+			} else if (midVal > chunkID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

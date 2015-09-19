@@ -52,8 +52,7 @@ public final class ZooKeeperHandler {
 
 		if (m_zookeeper == null) {
 			try {
-				connection = Core.getConfiguration().getStringValue(
-						ConfigurationConstants.ZOOKEEPER_CONNECTION_STRING);
+				connection = Core.getConfiguration().getStringValue(ConfigurationConstants.ZOOKEEPER_CONNECTION_STRING);
 				timeout = Core.getConfiguration().getIntValue(ConfigurationConstants.ZOOKEEPER_TIMEOUT);
 
 				m_zookeeper = new ZooKeeper(connection, timeout, new ZooKeeperWatcher());
@@ -225,8 +224,7 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	public static void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException,
-	InterruptedException {
+	public static void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException, InterruptedException {
 		create(p_path, p_data, CreateMode.PERSISTENT);
 	}
 
@@ -245,8 +243,8 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	private static void create(final String p_path, final byte[] p_data, final CreateMode p_mode)
-			throws ZooKeeperException, KeeperException, InterruptedException {
+	private static void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException,
+			InterruptedException {
 		Contract.checkNotNull(p_path, "no path given");
 		Contract.checkNotNull(p_data, "no data given");
 		Contract.checkNotNull(p_mode, "no mode given");
@@ -305,8 +303,7 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	public static void createBarrier(final String p_path) throws ZooKeeperException, KeeperException,
-	InterruptedException {
+	public static void createBarrier(final String p_path) throws ZooKeeperException, KeeperException, InterruptedException {
 		create(p_path);
 	}
 
@@ -430,8 +427,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static byte[] getData(final String p_path, final Watcher p_watcher, final Stat p_status)
-			throws ZooKeeperException {
+	public static byte[] getData(final String p_path, final Watcher p_watcher, final Stat p_status) throws ZooKeeperException {
 		byte[] ret;
 
 		try {
@@ -473,8 +469,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void setData(final String p_path, final byte[] p_data, final int p_version)
-			throws ZooKeeperException {
+	public static void setData(final String p_path, final byte[] p_data, final int p_version) throws ZooKeeperException {
 		Contract.checkNotNull(p_path, "no path given");
 		Contract.checkNotNull(p_data, "no data given");
 

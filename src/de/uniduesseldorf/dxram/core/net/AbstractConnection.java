@@ -531,10 +531,7 @@ abstract class AbstractConnection {
 		private enum Step {
 
 			// Constants
-			READ_HEADER,
-			READ_PAYLOAD_SIZE,
-			READ_PAYLOAD,
-			DONE
+			READ_HEADER, READ_PAYLOAD_SIZE, READ_PAYLOAD, DONE
 
 		}
 	}

@@ -44,23 +44,17 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_conversionOffset
 	 *            the number of bytes to cut off at the beginning
 	 */
-	public static void convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output,
-			final int p_outputOffset, final int p_logEntrySize, final int p_bytesUntilEnd,
-			final short p_conversionOffset) {
+	public static void convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output, final int p_outputOffset, final int p_logEntrySize,
+			final int p_bytesUntilEnd, final short p_conversionOffset) {
 
 		if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
-			System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output,
-					p_outputOffset, p_logEntrySize - p_conversionOffset);
+			System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset, p_logEntrySize - p_conversionOffset);
 		} else {
 			if (p_bytesUntilEnd > p_conversionOffset) {
-				System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output,
-						p_outputOffset, p_bytesUntilEnd - p_conversionOffset);
-				System.arraycopy(p_input, 0, p_output, p_outputOffset
-						+ p_bytesUntilEnd - p_conversionOffset, p_logEntrySize
-						- p_bytesUntilEnd);
+				System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset, p_bytesUntilEnd - p_conversionOffset);
+				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - p_conversionOffset, p_logEntrySize - p_bytesUntilEnd);
 			} else {
-				System.arraycopy(p_input, 0, p_output, p_outputOffset
-						+ p_conversionOffset - p_bytesUntilEnd, p_logEntrySize
+				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_conversionOffset - p_bytesUntilEnd, p_logEntrySize
 						- (p_conversionOffset - p_bytesUntilEnd));
 			}
 		}
@@ -244,14 +238,13 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 *            whether the entry is in a secondary log for migrations or not
 	 * @return the LogEntryHeaderInterface
 	 */
-	public static LogEntryHeaderInterface getSecondaryHeader(final byte[] p_buffer, final int p_offset,
-			final boolean p_logStoresMigrations) {
+	public static LogEntryHeaderInterface getSecondaryHeader(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		LogEntryHeaderInterface ret = null;
 
-		if (DEFAULT_SEC_LOG_ENTRY_HEADER.getVersion(p_buffer, p_offset, p_logStoresMigrations) >= 0) {
-			ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
-		} else {
+		if (DEFAULT_SEC_LOG_TOMBSTONE.getVersion(p_buffer, p_offset, p_logStoresMigrations) == -1) {
 			ret = DEFAULT_SEC_LOG_TOMBSTONE;
+		} else {
+			ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
 		}
 
 		return ret;

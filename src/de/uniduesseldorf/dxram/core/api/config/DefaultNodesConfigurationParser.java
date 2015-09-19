@@ -60,8 +60,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 		boolean parsed = false;
 
 		m_hashGenerator = new CRC16();
-		m_bloomFilter = new BloomFilter(Core.getConfiguration().getIntValue(
-				ConfigurationConstants.ZOOKEEPER_BITFIELDSIZE), 65536);
+		m_bloomFilter = new BloomFilter(Core.getConfiguration().getIntValue(ConfigurationConstants.ZOOKEEPER_BITFIELD_SIZE), 65536);
 
 		barrier = "barrier";
 
@@ -100,7 +99,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 	}
 
 	/**
-	 * Parses nodes.dxram and stores routing information in net
+	 * Parses nodes.config and stores routing information in net
 	 * @param p_nodes
 	 *            the nodes to parse
 	 * @return the parsed nodes
@@ -160,7 +159,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 			ZooKeeperHandler.setChildrenWatch("nodes/free", this);
 
 			if (0 == NodeID.getLocalNodeID()) {
-				LOGGER.error("Bootstrap is not in nodes.dxram! Exit now!");
+				LOGGER.error("Bootstrap is not in nodes.config! Exit now!");
 				CoreComponentFactory.closeAll();
 				System.exit(-1);
 			}
@@ -182,7 +181,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 	}
 
 	/**
-	 * Parses nodes.dxram and stores routing information in net for nodes
+	 * Parses nodes.config and stores routing information in net for nodes
 	 * @param p_nodes
 	 *            the nodes to parse
 	 * @return the parsed nodes
@@ -254,7 +253,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 
 			// Add this node if it was not in start configuration
 			if (NodeID.getLocalNodeID() == 0) {
-				LOGGER.warn("node not in nodes.dxram");
+				LOGGER.warn("node not in nodes.config");
 
 				node = ownIP + "/" + ownPort + "/" + "P" + "/" + 0 + "/" + 0;
 
@@ -266,8 +265,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 					ZooKeeperHandler.delete("nodes/free/" + nodeID);
 				} else {
 					splits = ownIP.split("\\.");
-					seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer
-							.parseInt(splits[3])) * -1;
+					seed = ((Integer.parseInt(splits[1]) << 16) + (Integer.parseInt(splits[2]) << 8) + Integer.parseInt(splits[3])) * -1;
 					nodeID = m_hashGenerator.hash(seed);
 					while (m_bloomFilter.contains(nodeID) || -1 == nodeID) {
 						nodeID = m_hashGenerator.hash(--seed);
@@ -330,8 +328,7 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 							node = new String(ZooKeeperHandler.getData("nodes/new/" + nodeID));
 							splits = node.split("/");
 
-							Core.getNodesConfiguration().addNewNode(nodeID,
-									parseNode(splits[0], Integer.parseInt(splits[1]), nodeID));
+							Core.getNodesConfiguration().addNewNode(nodeID, parseNode(splits[0], Integer.parseInt(splits[1]), nodeID));
 						}
 					}
 				}

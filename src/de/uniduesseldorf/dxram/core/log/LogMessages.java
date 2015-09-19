@@ -25,6 +25,8 @@ public final class LogMessages {
 	public static final byte SUBTYPE_REMOVE_MESSAGE = 4;
 	public static final byte SUBTYPE_INIT_REQUEST = 5;
 	public static final byte SUBTYPE_INIT_RESPONSE = 6;
+	public static final byte SUBTYPE_LOG_COMMAND_REQUEST = 7;
+	public static final byte SUBTYPE_LOG_COMMAND_RESPONSE = 8;
 
 	// Constructors
 	/**
@@ -86,7 +88,7 @@ public final class LogMessages {
 			if (m_chunk != null) {
 				OutputHelper.writeChunk(p_buffer, m_chunk);
 			} else {
-				OutputHelper.writeChunk(p_buffer, new Chunk(0, new byte[0]));
+				OutputHelper.writeChunk(p_buffer, new Chunk(-1, 0));
 			}
 		}
 
@@ -248,8 +250,7 @@ public final class LogMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunksWriteLength(m_chunks)
-					+ OutputHelper.getByteWriteLength();
+			return OutputHelper.getChunksWriteLength(m_chunks) + OutputHelper.getByteWriteLength();
 		}
 	}
 
@@ -336,8 +337,7 @@ public final class LogMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length)
-					+ OutputHelper.getByteWriteLength();
+			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length) + OutputHelper.getByteWriteLength();
 		}
 	}
 
@@ -473,4 +473,119 @@ public final class LogMessages {
 
 	}
 
+	/**
+	 * Request for command
+	 * @author Kevin Beineke 10.09.2015
+	 */
+	public static class LogCommandRequest extends AbstractRequest {
+
+		// Attributes
+		private String m_cmd;
+
+		// Constructors
+		/**
+		 * Creates an instance of LogCommandRequest
+		 */
+		public LogCommandRequest() {
+			super();
+			m_cmd = null;
+		}
+
+		/**
+		 * Creates an instance of LogCommandRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_cmd
+		 *            the command
+		 */
+		public LogCommandRequest(final short p_destination, final String p_cmd) {
+			super(p_destination, TYPE, SUBTYPE_LOG_COMMAND_REQUEST);
+			Contract.checkNotNull(p_cmd, "error: no argument given");
+			m_cmd = p_cmd;
+		}
+
+		/**
+		 * Get the command
+		 * @return the command
+		 */
+		public final String getArgument() {
+			return m_cmd;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeString(p_buffer, m_cmd);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_cmd = InputHelper.readString(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getStringsWriteLength(m_cmd);
+		}
+
+	}
+
+	/**
+	 * Response to a LogCommandRequest
+	 * @author Florian Klein 05.07.2014
+	 */
+	public static class LogCommandResponse extends AbstractResponse {
+
+		// Attributes
+		private String m_answer;
+
+		// Constructors
+		/**
+		 * Creates an instance of LogCommandResponse
+		 */
+		public LogCommandResponse() {
+			super();
+
+			m_answer = null;
+		}
+
+		/**
+		 * Creates an instance of LogCommandResponse
+		 * @param p_request
+		 *            the corresponding LogCommandRequest
+		 * @param p_answer
+		 *            the answer
+		 */
+		public LogCommandResponse(final LogCommandRequest p_request, final String p_answer) {
+			super(p_request, SUBTYPE_LOG_COMMAND_RESPONSE);
+
+			m_answer = p_answer;
+		}
+
+		// Getters
+		/**
+		 * Get the answer
+		 * @return the answer
+		 */
+		public final String getAnswer() {
+			return m_answer;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeString(p_buffer, m_answer);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_answer = InputHelper.readString(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getStringsWriteLength(m_answer);
+		}
+
+	}
 }

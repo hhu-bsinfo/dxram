@@ -28,8 +28,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	private static final Logger LOGGER = Logger.getLogger(CachedTreeLookup.class);
 
 	private static final short ORDER = 10;
-	private static final int NS_CACHE_SIZE = Core.getConfiguration().getIntValue(
-			ConfigurationConstants.LOOKUP_NS_CACHE_SIZE);
+	private static final int NS_CACHE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.NAMESERVICE_CACHE_ENTRIES);
 
 	// Attributes
 	private LookupInterface m_lookup;
@@ -101,8 +100,7 @@ public final class CachedTreeLookup implements LookupInterface {
 			if (ret != null) {
 				nodeID = ret.getPrimaryPeer();
 
-				m_cidCacheTree.cacheRange(((long) nodeID << 48) + ret.getRange()[0],
-						((long) nodeID << 48) + ret.getRange()[1], nodeID);
+				m_cidCacheTree.cacheRange(((long) nodeID << 48) + ret.getRange()[0], ((long) nodeID << 48) + ret.getRange()[1], nodeID);
 			}
 		}
 		return ret;
@@ -118,8 +116,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	}
 
 	@Override
-	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID)
-			throws LookupException {
+	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) throws LookupException {
 		ChunkID.check(p_startCID);
 		ChunkID.check(p_endCID);
 
@@ -190,6 +187,15 @@ public final class CachedTreeLookup implements LookupInterface {
 		invalidate(p_chunkID);
 
 		m_lookup.remove(p_chunkID);
+	}
+
+	@Override
+	public void remove(final long[] p_chunkIDs) throws LookupException {
+		ChunkID.check(p_chunkIDs);
+
+		invalidate(p_chunkIDs);
+
+		m_lookup.remove(p_chunkIDs);
 	}
 
 	@Override

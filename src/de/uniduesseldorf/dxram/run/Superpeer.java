@@ -1,15 +1,14 @@
-package de.uniduesseldorf.dxram.run;
 
+package de.uniduesseldorf.dxram.run;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
-
 /**
  * Superpeer
- * @author Kevin Beineke 27.04.2015
+ * @author Kevin Beineke 21.08.2015
  */
 public final class Superpeer {
 
@@ -18,7 +17,6 @@ public final class Superpeer {
 	 * Creates an instance of Superpeer
 	 */
 	private Superpeer() {}
-
 
 	// Methods
 	/**
@@ -29,10 +27,8 @@ public final class Superpeer {
 	public static void main(final String[] p_arguments) {
 		// Initialize DXRAM
 		try {
-			Core.initialize(ConfigurationHandler
-					.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler
-							.getConfigurationFromFile("config/nodes.dxram"));
+			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 		} catch (final DXRAMException e1) {
 			e1.printStackTrace();
 		}

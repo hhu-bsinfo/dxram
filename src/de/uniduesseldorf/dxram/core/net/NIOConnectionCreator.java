@@ -34,11 +34,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	private static final int INCOMING_BUFFER_SIZE = 65536 * 2;
 	private static final int OUTGOING_BUFFER_SIZE = 65536;
 	private static final int SEND_BYTES = 1024;
+	private static final int CONNECTION_TIMEOUT = 1000;
 
 	private static final int MAX_OUTSTANDING_BYTES = BufferCache.MAX_MEMORY_CACHED;
 
-	private static final boolean HIGH_PERFORMANCE = Core.getConfiguration().getBooleanValue(
-			ConfigurationConstants.NETWORK_HIGH_PERFORMANCE);
+	private static final boolean HIGH_PERFORMANCE = Core.getConfiguration().getBooleanValue(ConfigurationConstants.NETWORK_HIGH_PERFORMANCE);
 
 	// Attributes
 	private Worker m_worker;
@@ -95,8 +95,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 *             if the connection could not be created
 	 */
 	@Override
-	public NIOConnection createConnection(final short p_destination, final DataReceiver p_listener)
-			throws IOException {
+	public NIOConnection createConnection(final short p_destination, final DataReceiver p_listener) throws IOException {
 		NIOConnection ret;
 		long timeStart;
 		long timeNow;
@@ -107,7 +106,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		synchronized (ret) {
 			while (!ret.isConnected()) {
 				timeNow = System.currentTimeMillis();
-				if (timeNow - timeStart > 500) {
+				if (timeNow - timeStart > CONNECTION_TIMEOUT) {
 					LOGGER.warn("connection time-out");
 
 					throw new IOException("Timeout occurred");
@@ -157,8 +156,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
-			m_channel
-			.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
+			m_channel.connect(new InetSocketAddress(m_helper.getHost(p_destination), m_helper.getPort(p_destination)));
 
 			m_incoming = new ArrayDeque<>();
 			m_outgoing = new ArrayDeque<>();
@@ -239,8 +237,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			synchronized (this) {
 				while (m_unconfirmedBytes > MAX_OUTSTANDING_BYTES) {
 					try {
-						LOGGER.info(super.getDestination() + ": waiting " + m_unconfirmedBytes + " of "
-								+ MAX_OUTSTANDING_BYTES);
+						LOGGER.info(super.getDestination() + ": waiting " + m_unconfirmedBytes + " of " + MAX_OUTSTANDING_BYTES);
 						super.wait();
 					} catch (final InterruptedException e) { /* ignore */}
 				}
@@ -259,8 +256,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		private void writeToChannel(final ByteBuffer p_buffer) {
 			synchronized (m_outgoing) {
 				if (m_outgoing.isEmpty()) {
-					m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ
-							| SelectionKey.OP_WRITE));
+					m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
 				}
 
 				m_outgoing.offer(p_buffer);
@@ -421,8 +417,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_channel = null;
 			m_selector = null;
 
-			m_executor = new TaskExecutor("NIO", Core.getConfiguration().getIntValue(
-					ConfigurationConstants.NETWORK_NIO_THREADCOUNT));
+			m_executor = new TaskExecutor("NIO", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_NIO_THREAD_COUNT));
 
 			m_changeRequests = new ArrayDeque<>();
 			m_closeRequests = new ArrayDeque<>();
@@ -442,9 +437,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					m_selector = Selector.open();
 					m_channel = ServerSocketChannel.open();
 					m_channel.configureBlocking(false);
-					m_channel.socket().bind(
-							new InetSocketAddress(Core.getConfiguration().getIntValue(
-									ConfigurationConstants.NETWORK_PORT)));
+					m_channel.socket().bind(new InetSocketAddress(Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_PORT)));
 					m_channel.register(m_selector, SelectionKey.OP_ACCEPT);
 
 					m_running = true;
@@ -476,7 +469,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			Iterator<SelectionKey> iterator;
 			Set<SelectionKey> selected;
 			SelectionKey key;
-			final Selector selector = this.m_selector;
+			final Selector selector = m_selector;
 
 			try {
 				// Handle pending ChangeOperationsRequests

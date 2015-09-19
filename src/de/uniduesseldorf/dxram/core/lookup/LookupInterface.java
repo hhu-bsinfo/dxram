@@ -102,6 +102,15 @@ public interface LookupInterface extends CoreComponent {
 	void remove(long p_chunkID) throws LookupException;
 
 	/**
+	 * Remove the corresponding NodeIDs for the given IDs
+	 * @param p_chunkIDs
+	 *            the IDs
+	 * @throws LookupException
+	 *             if the NodeIDs could not be removed
+	 */
+	void remove(long[] p_chunkIDs) throws LookupException;
+
+	/**
 	 * Insert identifier to ChunkID mapping
 	 * @param p_id
 	 *            the identifier
