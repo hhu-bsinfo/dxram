@@ -27,14 +27,14 @@ public class CmdGet extends AbstractCmd {
 	@Override
 	public String[] getMandParams() {
 		final String[] ret = {"PNID,PNR"};
-	    return ret;
+		return ret;
 	}
 
 	@Override
-    public  String[] getOptParams() {
-        final String[] ret = {"-dest=PNID"};
-        return ret;
-    }
+	public String[] getOptParams() {
+		final String[] ret = {"-dest=PNID"};
+		return ret;
+	}
 
 	@Override
 	public String getUsageMessage() {
@@ -68,8 +68,6 @@ public class CmdGet extends AbstractCmd {
 				final String[] v = arguments[2].split("=");
 				nodeID = CmdUtils.getNIDfromString(v[1]);
 			}
-			
-			
 
 			// nodeID = Short.parseShort(arguments[2]);
 

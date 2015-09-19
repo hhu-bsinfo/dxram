@@ -20,7 +20,6 @@ import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
-import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
@@ -1736,41 +1735,39 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 * @return the result string
 	 */
 	private String cmdReqBackups(final String p_command) {
-		String ret="";
+		final String ret = "";
 
 		System.out.println("LookupHandler.cmdReqBackups");
 
-/*		if (m_ownBackupRanges!=null) {
-			for (int i=0; i<m_ownBackupRanges.size(); i++) {
+		/*-if (m_ownBackupRanges != null) {
+			for (int i = 0; i < m_ownBackupRanges.size(); i++) {
 				final BackupRange br = m_ownBackupRanges.get(i);
 				ret = ret + "  BR" + Integer.toString(i) + ":";
 
-				if (br!=null) {
-					//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
-					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+"(";
+				if (br != null) {
+					// System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
+					ret = ret + Long.toString(br.m_firstChunkIDORRangeID) + "(";
 
-					for (int j=0; j<br.m_backupPeers.length; j++) {
-						//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
+					for (int j = 0; j < br.m_backupPeers.length; j++) {
+						// System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
 						ret = ret + Short.toString(br.m_backupPeers[j]);
-						if (j<(br.m_backupPeers.length-1)) {
-								ret = ret+ ",";
+						if (j < br.m_backupPeers.length - 1) {
+							ret = ret + ",";
 						}
 					}
 					ret = ret + ")";
-					if (i < (m_ownBackupRanges.size()-1)) {
+					if (i < m_ownBackupRanges.size() - 1) {
 						ret = ret + "\n";
 					}
 				}
 			}
 		} else {
 			ret = "  No backups.";
-		}
-		*/
+		}*/
+
 		return ret;
 	}
 
-	
-	
 	/**
 	 * Handles an incoming ReflectionRequest
 	 * @param p_lookupRequest
@@ -1792,7 +1789,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				res = cmdReqBackups(cmd);
 			}
 		} else {
-				res = "error: reflection command can be processed by superpeers only";
+			res = "error: reflection command can be processed by superpeers only";
 		}
 
 		// send response

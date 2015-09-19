@@ -30,8 +30,8 @@ public final class CIDTreeOptimized implements Serializable {
 	private short m_creator;
 	private boolean m_status;
 
-	private ArrayList<long[]> m_backupRanges; // backup nodes (erste ChunkID + backup nodes)
-	private ArrayList<Long> m_migrationBackupRanges; // in einem Long sind 3 NIDs
+	private ArrayList<long[]> m_backupRanges;
+	private ArrayList<Long> m_migrationBackupRanges;
 
 	private Entry m_changedEntry;
 
@@ -1379,16 +1379,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_lid) {
-				low = mid + 1;
-			} else if (midVal > p_lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_lid) {
+					low = mid + 1;
+				} else if (midVal > p_lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1578,16 +1578,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLid(0);
+				midVal = m_children[mid].getLid(0);
 
-			if (midVal < lid) {
-				low = mid + 1;
-			} else if (midVal > lid) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < lid) {
+					low = mid + 1;
+				} else if (midVal > lid) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
