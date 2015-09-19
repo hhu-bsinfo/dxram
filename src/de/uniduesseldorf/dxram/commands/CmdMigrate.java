@@ -31,9 +31,15 @@ public class CmdMigrate extends AbstractCmd {
 	}
 
 	@Override
-	public String getSyntax() {
-		return "migrate PNID,PNR PNID";
+	public String[] getMandParams() {
+		final String[] ret = {"PNID,PNR", "PNID"};
+	    return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        return null;
+    }
 
 	// called after parameter have been checked
 	@Override

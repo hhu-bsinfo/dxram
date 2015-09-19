@@ -1896,6 +1896,79 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	}
 
 	/**
+	 * Handles 'backups' command. Called by incomingCommandRequest
+	 * @param p_command
+	 *            the CommandMessage
+	 * @return the result string
+	 */
+	private String cmdReqBackups(final String p_command) {
+		String ret="";
+
+		//System.out.println("ChunkHandler.cmdReqBackups");
+		if (m_ownBackupRanges!=null) {
+			//System.out.println("   m_ownBackupRanges");
+			ret = ret + "  Backup ranges for locally created chunks/n";
+			for (int i=0; i<m_ownBackupRanges.size(); i++) {
+				final BackupRange br = m_ownBackupRanges.get(i);
+				ret = ret + "    BR" + Integer.toString(i) + ":";
+
+				if (br!=null) {
+					//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
+					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+"(";
+
+					for (int j=0; j<br.m_backupPeers.length; j++) {
+						//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
+						ret = ret + Short.toString(br.m_backupPeers[j]);
+						if (j<(br.m_backupPeers.length-1)) {
+								ret = ret+ ",";
+						}
+					}
+					ret = ret + ")";
+					if (i < (m_ownBackupRanges.size()-1)) {
+						ret = ret + "\n";
+					}
+				}
+			}
+		} else {
+			ret = "  No backups for locally created chunks.\n";
+		}
+
+		if (m_migrationBackupRanges!=null) {
+			//System.out.println("   m_migrationBackupRanges");
+			ret = ret + "  Backup ranges for migrated chunks/n";
+			for (int i=0; i<m_migrationBackupRanges.size(); i++) {
+				final BackupRange br = m_migrationBackupRanges.get(i);
+				ret = ret + "    BR" + Integer.toString(i) + ":";
+
+				if (br!=null) {
+					//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
+					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+"(";
+
+					for (int j=0; j<br.m_backupPeers.length; j++) {
+						//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
+						ret = ret + Short.toString(br.m_backupPeers[j]);
+						if (j<(br.m_backupPeers.length-1)) {
+								ret = ret+ ",";
+						}
+					}
+					ret = ret + ")";
+					if (i < (m_migrationBackupRanges.size()-1)) {
+						ret = ret + "\n";
+					}
+				}
+			}
+		} else {
+			ret = ret + "  No backups for migrated chunks.";
+		}
+
+//		m_migrationsTree (CID + backup range) -> "migrated befehl" (evt. bildschirmweise ausgeben)
+//
+//	Parameter einführen
+
+		return ret;
+	}
+
+	/**
 	 * Handles an incoming CommandRequest
 	 * @param p_request
 	 *            the CommandRequest
@@ -1909,10 +1982,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		cmd = p_request.getArgument();
 
 		if (cmd.indexOf("chunkinfo") >= 0) {
-			// chunkinfo command?
 			res = cmdReqChunkinfo(cmd);
+		} else if (cmd.indexOf("backups") >= 0) {
+			res = cmdReqBackups(cmd);
 		} else if (cmd.indexOf("cidt") >= 0) {
-			// CIDTable command?
 			res = cmdReqCIDT(cmd);
 		} else if (cmd.indexOf("stats") >= 0) {
 			// stats command?

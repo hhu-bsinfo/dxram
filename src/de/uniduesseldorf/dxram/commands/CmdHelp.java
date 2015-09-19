@@ -5,7 +5,7 @@ import java.util.Set;
 
 /**
  * Help
- * @author Michael Schoettner 03.09.2015
+ * @author Michael Schoettner 15.09.2015
  */
 public class CmdHelp extends AbstractCmd {
 
@@ -21,7 +21,7 @@ public class CmdHelp extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "help [command]";
+		return "help command|all";
 	}
 
 	@Override
@@ -32,9 +32,15 @@ public class CmdHelp extends AbstractCmd {
 	}
 
 	@Override
-	public String getSyntax() {
-		return "help [STR]";
+	public String[] getMandParams() {
+        final String[] ret = {"STR"};
+        return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        return null;
+    }
 
 	// called after parameter have been checked
 	@Override
@@ -44,17 +50,17 @@ public class CmdHelp extends AbstractCmd {
 
 		arguments = p_command.split(" ");
 
-		if (arguments.length == 1) {
+		if (arguments.length == 2 && arguments[1].compareTo("all")==0) {
 			final Set<String> s = Shell.getAllCommands();
-			System.out.println("known commands: " + s.toString());
+			System.out.println("  All known commands: " + s.toString());
 		} else {
 			final AbstractCmd c = Shell.getCommand(arguments[1]);
 			if (c == null) {
 				System.out.println("  error: unknown command '" + arguments[1] + "'");
 				ret = false;
+			} else {
+				c.printHelpMsg();
 			}
-
-			c.printHelpMsg();
 		}
 
 		return ret;

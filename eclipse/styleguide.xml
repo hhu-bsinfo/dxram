@@ -5,7 +5,7 @@
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
 <!--
-    Checkstyle-Configuration: DXRAM
+    Checkstyle-Configuration: DXRAM syleguide
     Description: none
 -->
 <module name="Checker">
@@ -67,7 +67,7 @@
     <module name="RedundantModifier"/>
     <module name="AvoidNestedBlocks"/>
     <module name="LeftCurly">
-      <property name="maxLineLength" value="120"/>
+      <property name="maxLineLength" value="160"/>
     </module>
     <module name="NeedBraces"/>
     <module name="RightCurly"/>
@@ -143,7 +143,7 @@
     </module>
     <module name="ParameterAssignment"/>
     <module name="ReturnCount">
-      <property name="max" value="30"/>
+      <property name="max" value="1"/>
     </module>
     <module name="StringLiteralEquality"/>
     <module name="UnnecessaryParentheses"/>

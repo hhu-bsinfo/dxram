@@ -4,7 +4,16 @@ package de.uniduesseldorf.dxram.utils;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
-public class JNIconsole {
+/**
+ * Wrapper for accessing GNU readline lib
+ * @author Michael Schoettner 07.09.2015
+ */
+public final class JNIconsole {
+
+	/**
+	 * Constructor
+	 */
+	private JNIconsole() {}
 
 	// Statics
 	static {
@@ -12,8 +21,10 @@ public class JNIconsole {
 	}
 
 	// Methods
+
 	/**
-	 * Read one char from console
+	 * Read one line from console.
+	 * @return the read line
 	 */
 	public static native byte[] readline();
 

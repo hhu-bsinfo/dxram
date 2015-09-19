@@ -20,6 +20,7 @@ import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
@@ -1690,7 +1691,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 *            the command string
 	 * @return the result String
 	 */
-	private String chunkinfo(final String p_cmd) {
+	private String cmdReqChunkinfo(final String p_cmd) {
 		String ret = null;
 		short nodeID;
 		long localID;
@@ -1729,6 +1730,48 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	/**
+	 * Handles 'backups' command. Called by incomingReflectionRequest
+	 * @param p_command
+	 *            the CommandMessage
+	 * @return the result string
+	 */
+	private String cmdReqBackups(final String p_command) {
+		String ret="";
+
+		System.out.println("LookupHandler.cmdReqBackups");
+
+/*		if (m_ownBackupRanges!=null) {
+			for (int i=0; i<m_ownBackupRanges.size(); i++) {
+				final BackupRange br = m_ownBackupRanges.get(i);
+				ret = ret + "  BR" + Integer.toString(i) + ":";
+
+				if (br!=null) {
+					//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
+					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+"(";
+
+					for (int j=0; j<br.m_backupPeers.length; j++) {
+						//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
+						ret = ret + Short.toString(br.m_backupPeers[j]);
+						if (j<(br.m_backupPeers.length-1)) {
+								ret = ret+ ",";
+						}
+					}
+					ret = ret + ")";
+					if (i < (m_ownBackupRanges.size()-1)) {
+						ret = ret + "\n";
+					}
+				}
+			}
+		} else {
+			ret = "  No backups.";
+		}
+		*/
+		return ret;
+	}
+
+	
+	
+	/**
 	 * Handles an incoming ReflectionRequest
 	 * @param p_lookupRequest
 	 *            the ReflectionRequest
@@ -1744,10 +1787,12 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 
 			if (cmd.indexOf("chunkinfo") >= 0) {
-				res = chunkinfo(cmd);
+				res = cmdReqChunkinfo(cmd);
+			} else if (cmd.indexOf("backups") >= 0) {
+				res = cmdReqBackups(cmd);
 			}
 		} else {
-			res = "error: lookup command can be processed by superpeers only";
+				res = "error: reflection command can be processed by superpeers only";
 		}
 
 		// send response

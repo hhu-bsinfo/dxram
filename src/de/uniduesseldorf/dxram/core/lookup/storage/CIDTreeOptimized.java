@@ -30,8 +30,8 @@ public final class CIDTreeOptimized implements Serializable {
 	private short m_creator;
 	private boolean m_status;
 
-	private ArrayList<long[]> m_backupRanges;
-	private ArrayList<Long> m_migrationBackupRanges;
+	private ArrayList<long[]> m_backupRanges; // backup nodes (erste ChunkID + backup nodes)
+	private ArrayList<Long> m_migrationBackupRanges; // in einem Long sind 3 NIDs
 
 	private Entry m_changedEntry;
 

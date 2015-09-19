@@ -39,6 +39,27 @@ public final class Peer {
 			Thread.sleep(10000);
 		} catch (final InterruptedException e) {}
 
+
+/*		// create some data
+		System.out.println("Generating test data");
+		try {
+			for (int i=0; i<1; i++) {
+				final String str = Integer.toString(i);
+				final Chunk c = Core.createNewChunk(str.length());
+				if (c == null) {
+					System.out.println("error: createNewChunk failed while generating test data");
+					return ;
+				}
+				final ByteBuffer b = c.getData();
+				b.put(str.getBytes());
+
+				Core.put(c);
+			}
+		} catch (final DXRAMException de) {
+			System.out.println("DXRAMException while generating test data");
+		}
+		System.out.println("Done.");
+*/
 		/*
 		 * Test:
 		 * try {

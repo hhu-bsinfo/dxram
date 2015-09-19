@@ -33,9 +33,15 @@ public class CmdStats extends AbstractCmd {
 	}
 
 	@Override
-	public String getSyntax() {
-		return "stats ANID";
+	public String[] getMandParams() {
+		final String[] ret = {"ANID"};
+	    return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        return null;
+    }
 
 	// called after parameter have been checked
 	@Override

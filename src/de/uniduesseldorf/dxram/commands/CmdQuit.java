@@ -30,9 +30,14 @@ public class CmdQuit extends AbstractCmd {
 	}
 
 	@Override
-	public String getSyntax() {
-		return "quit";
+	public String[] getMandParams() {
+	    return null;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        return null;
+    }
 
 	// called after parameter have been checked
 	@Override

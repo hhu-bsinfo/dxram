@@ -32,9 +32,15 @@ public class CmdCIDT extends AbstractCmd {
 	}
 
 	@Override
-	public String getSyntax() {
-		return "cidt PNID";
+	public String[] getMandParams() {
+		final String[] ret = {"PNID"};
+	    return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        return null;
+    }
 
 	// called after parameter have been checked
 	@Override

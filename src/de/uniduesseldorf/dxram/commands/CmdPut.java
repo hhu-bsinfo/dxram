@@ -9,7 +9,7 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 /**
  * Save a new chunk
- * @author Michael Schoettner 03.09.2015
+ * @author Michael Schoettner 15.09.2015
  */
 public class CmdPut extends AbstractCmd {
 
@@ -25,21 +25,29 @@ public class CmdPut extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "put NID text [strID] ";
+		return "put NID text [-size=nbytes] [-name=string]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Save data 'text' on node NID.\n";
-		final String line2 = "Optionally, you can provide a name 'strID' to retrieve a chunk by name.\n";
-		final String line3 = "Returns CID of created chunk in tuple format (NID,LID)";
-		return line1 + line2 + line3;
+		final String line1 = "Save a chunk with data 'text' on node NID.\n";
+		final String line2 = "-size=bytes define size of the chunk in bytes.\n";
+		final String line3 = "(The 'text' will be stored at the beginning)\n\n";
+		final String line4 = "Returns CID of created chunk in tuple format (NID,LID)";
+		return line1 + line2 + line3+line4;
 	}
 
 	@Override
-	public String getSyntax() {
-		return "put PNID STR [STR]";
+	public String[] getMandParams() {
+		final String[] ret = {"PNID", "STR"};
+	    return ret;
 	}
+
+	@Override
+    public  String[] getOptParams() {
+        final String[] ret = {"-size=PNR", "-name=STR"};
+        return ret;
+    }
 
 	// called after parameter have been checked
 	@Override
@@ -80,56 +88,44 @@ public class CmdPut extends AbstractCmd {
 		String ret = null;
 		Chunk c = null;
 		String[] arguments;
+		String name=null;
+		int size = -1;
 
 		if (p_command == null) {
 			ret = "  error: internal error";
 		} else {
 			try {
-				// copy data from command to ByteBuffer of chunk
 				arguments = p_command.split(" ");
 
-				if (arguments[2].toLowerCase().startsWith("size:")) {
-					// create chunk with name?
-					if (arguments.length > 3) {
-						c = Core.createNewChunk(Integer.parseInt(arguments[2].split(":")[1]), arguments[3]);
-						if (c == null) {
-							ret = "  error: createNewChunk failed";
-						}
-					} else {
-						c = Core.createNewChunk(Integer.parseInt(arguments[2].split(":")[1]));
-						if (c == null) {
-							ret = "  error: createNewChunk failed";
+				// get size of data
+				size = arguments[2].length();
+
+				// get any optional params
+				if (arguments.length>2) {
+					for (int i=3; i<arguments.length; i++) {
+						if (arguments[i].indexOf("-size")>=0) {
+							final String[] sizeArg = arguments[i].split("=");
+							size = Integer.parseInt(sizeArg[1]);
+						} else if (arguments[i].indexOf("-name")>=0) {
+							final String[] nameArg = arguments[i].split("=");
+							name = nameArg[1];
 						}
 					}
-
-					if (ret == null) {
-						// now save the chunk
-						Core.put(c);
-
-						ret = "success: " + Long.toString(c.getChunkID());
-					}
+				}
+				System.out.println("  Create chunk with size="+size+", name="+name);
+				if (name!=null) {
+					c = Core.createNewChunk(size, name);
 				} else {
-					// create chunk with name?
-					if (arguments.length > 3) {
-						c = Core.createNewChunk(arguments[2].length(), arguments[3]);
-						if (c == null) {
-							ret = "  error: createNewChunk failed";
-						}
-					} else {
-						c = Core.createNewChunk(arguments[2].length());
-						if (c == null) {
-							ret = "  error: createNewChunk failed";
-						}
-					}
+					c = Core.createNewChunk(size);
+				}
+				if (c == null) {
+					ret = "  error: createNewChunk failed";
+				} else {
+					final ByteBuffer b = c.getData();
+					b.put(arguments[2].getBytes());
 
-					if (ret == null) {
-						final ByteBuffer b = c.getData();
-						b.put(arguments[2].getBytes());
-
-						// now save the chunk
-						Core.put(c);
-						ret = "success: " + Long.toString(c.getChunkID());
-					}
+					Core.put(c);
+					ret = "success: " + Long.toString(c.getChunkID());
 				}
 			} catch (final DXRAMException e) {
 				System.out.println("  error: Core.createNewChunk failed");

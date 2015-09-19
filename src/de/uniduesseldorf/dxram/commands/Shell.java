@@ -44,6 +44,8 @@ public final class Shell {
 		m_commandMap.put(c.getName(), c);
 		c = new CmdCIDT();
 		m_commandMap.put(c.getName(), c);
+		c = new CmdBackups();
+		m_commandMap.put(c.getName(), c);
 		c = new CmdStats();
 		m_commandMap.put(c.getName(), c);
 	}
@@ -95,6 +97,8 @@ public final class Shell {
 				} else {
 					if (c.areParametersSane(arguments)) {
 						c.execute(command);
+					} else {
+						c.printUsage();
 					}
 				}
 			}
