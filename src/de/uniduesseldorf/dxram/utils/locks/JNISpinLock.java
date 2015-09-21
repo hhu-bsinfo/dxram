@@ -13,7 +13,6 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Represents a spinlock
  * @author Florian Klein 05.04.2014
  */
-@SuppressWarnings("restriction")
 public final class JNISpinLock implements Lock {
 
 	// Constants

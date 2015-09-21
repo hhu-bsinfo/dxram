@@ -8,7 +8,6 @@ import java.util.List;
  * @author Florian Klein
  *         05.07.2014
  */
-@SuppressWarnings("restriction")
 public final class IntegerLongList extends AbstractKeyValueList<Integer, Long> {
 
 	// Constants

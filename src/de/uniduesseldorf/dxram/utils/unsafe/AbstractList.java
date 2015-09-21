@@ -20,7 +20,6 @@ import de.uniduesseldorf.dxram.utils.unsafe.AbstractUnsafeList.UnsafeListIterato
  * @author Florian Klein
  *         04.07.2014
  */
-@SuppressWarnings("restriction")
 public abstract class AbstractList<Type> implements List<Type> {
 
 	// Constants

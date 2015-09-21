@@ -10,7 +10,6 @@ import sun.misc.Unsafe;
  * @author Florian Klein
  *         22.07.2013
  */
-@SuppressWarnings("restriction")
 public final class UnsafeHandler {
 
 	// Attributes

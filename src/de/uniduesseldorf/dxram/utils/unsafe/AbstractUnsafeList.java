@@ -8,7 +8,6 @@ import sun.misc.Unsafe;
  * @author Florian Klein
  *         04.07.2014
  */
-@SuppressWarnings("restriction")
 public abstract class AbstractUnsafeList {
 
 	// Constants

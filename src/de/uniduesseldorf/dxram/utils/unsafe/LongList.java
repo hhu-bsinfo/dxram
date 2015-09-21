@@ -10,7 +10,6 @@ import de.uniduesseldorf.dxram.utils.unsafe.AbstractUnsafeList.ElementChecker;
  * @author Florian Klein
  *         04.07.2014
  */
-@SuppressWarnings("restriction")
 public final class LongList extends AbstractList<Long> {
 
 	// Constants

@@ -12,7 +12,6 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Test case for the use of the Unsafe class
  * @author Florian Klein 10.07.2013
  */
-@SuppressWarnings("restriction")
 public final class UnsafeTest {
 
 	// Constants

@@ -10,7 +10,6 @@ import de.uniduesseldorf.dxram.utils.Contract;
  * @author Florian Klein
  *         04.07.2014
  */
-@SuppressWarnings("restriction")
 public final class UnsafeArray {
 
 	// Constants
