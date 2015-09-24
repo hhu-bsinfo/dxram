@@ -26,7 +26,6 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Manages a large memory block
  * @author Florian Klein 13.02.2014
  */
-@SuppressWarnings("restriction")
 public final class RawMemoryOld {
 
 	// Constants
@@ -1072,31 +1071,31 @@ public final class RawMemoryOld {
 
 				// Calculate the number of bytes for the length field
 				size = p_size >> 8;
-				while (size > 0) {
-					lengthFieldSize++;
+			while (size > 0) {
+				lengthFieldSize++;
 
-					size = size >> 8;
-				}
+				size = size >> 8;
+			}
 
-				// Get the corresponding list
-				listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
+			// Get the corresponding list
+			listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
 
-				// Hook block in list
-				anchor = readPointer(listOffset);
+			// Hook block in list
+			anchor = readPointer(listOffset);
 
-				// Write pointer to list and successor
-				writePointer(p_address + lengthFieldSize, listOffset);
-				writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-				if (anchor != 0) {
-					// Write pointer of successor
-					writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
-				}
-				// Write pointer of list
-				writePointer(listOffset, p_address);
+			// Write pointer to list and successor
+			writePointer(p_address + lengthFieldSize, listOffset);
+			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+			if (anchor != 0) {
+				// Write pointer of successor
+				writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
+			}
+			// Write pointer of list
+			writePointer(listOffset, p_address);
 
-				// Write length
-				write(p_address, p_size, lengthFieldSize);
-				write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+			// Write length
+			write(p_address, p_size, lengthFieldSize);
+			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
 			}
 
 			// Write right and left marker

@@ -196,7 +196,7 @@ public final class LogCatalog {
 			m_creatorLogs.add(rangeID, p_log);
 
 			// Create new secondary log buffer
-			buffer = new SecondaryLogBuffer(p_log, false);
+			buffer = new SecondaryLogBuffer(p_log);
 			m_creatorBuffers.add(rangeID, buffer);
 
 			// Insert range
@@ -205,7 +205,7 @@ public final class LogCatalog {
 			m_migrationLogs.add(m_currentRangeID, p_log);
 
 			// Create new secondary log buffer
-			buffer = new SecondaryLogBuffer(p_log, true);
+			buffer = new SecondaryLogBuffer(p_log);
 			m_migrationBuffers.add(m_currentRangeID, buffer);
 
 			m_currentRangeID++;

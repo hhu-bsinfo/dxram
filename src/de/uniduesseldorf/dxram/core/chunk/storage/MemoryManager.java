@@ -9,6 +9,7 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
@@ -69,19 +70,17 @@ public final class MemoryManager {
 	 * Gets the next free local ID
 	 * @return the next free local ID
 	 */
-	public static long getNextLocalID() {
-		long ret = -1;
+	public static LIDElement getNextLocalID() {
+		LIDElement ret = null;
 
 		// Try to get free ID from the CIDTable
 		try {
-			ret = CIDTable.getFreeCID();
+			ret = CIDTable.getFreeLID();
 		} catch (final DXRAMException e) {}
 
 		// If no free ID exist, get next local ID
-		if (ret == -1) {
-			ret = m_nextLocalID.getAndIncrement();
-		} else {
-			ret = ChunkID.getLocalID(ret);
+		if (ret == null) {
+			ret = new LIDElement(m_nextLocalID.getAndIncrement(), 0);
 		}
 
 		return ret;
@@ -93,15 +92,26 @@ public final class MemoryManager {
 	 *            the number of free local IDs
 	 * @return the next free local IDs
 	 */
-	public static long[] getNextLocalIDs(final int p_count) {
-		long[] ret = null;
+	public static LIDElement[] getNextLocalIDs(final int p_count) {
+		LIDElement[] ret = null;
+		int count = 0;
 		long lid;
 
-		lid = m_nextLocalID.getAndAdd(p_count);
-		if (lid != -1) {
-			ret = new long[p_count];
-			for (int i = 0; i < p_count; i++) {
-				ret[i] = lid + i;
+		ret = new LIDElement[p_count];
+		for (int i = 0; i < p_count; i++) {
+			try {
+				ret[i] = CIDTable.getFreeLID();
+			} catch (final DXRAMException e) {}
+			if (ret[i] == null) {
+				count++;
+			}
+		}
+
+		lid = m_nextLocalID.getAndAdd(count);
+		count = 0;
+		for (int i = 0; i < p_count; i++) {
+			if (ret[i] == null) {
+				ret[i] = new LIDElement(lid + count++, 0);
 			}
 		}
 
@@ -220,6 +230,19 @@ public final class MemoryManager {
 		} else {
 			throw new MemoryException("MemoryManager.remove failed");
 		}
+	}
+
+	/**
+	 * Removes the ChunkID of a deleted Chunk that was migrated
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_version
+	 *            the version
+	 * @throws MemoryException
+	 *             if the Chunk could not be get
+	 */
+	public static void prepareChunkIDForReuse(final long p_chunkID, final int p_version) throws MemoryException {
+		CIDTable.putChunkIDForReuse(p_chunkID, p_version);
 	}
 
 	/**

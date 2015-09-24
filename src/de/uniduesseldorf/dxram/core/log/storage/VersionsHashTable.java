@@ -226,7 +226,7 @@ public class VersionsHashTable {
 	 * @return the old value
 	 */
 	public final long putMax(final long p_key, final int p_value) {
-		long ret = -2;
+		long ret = 0;
 		int index;
 		long iter;
 		final long key = p_key + 1;
@@ -238,8 +238,8 @@ public class VersionsHashTable {
 			while (iter != 0) {
 				if (iter == key) {
 					ret = getValue(index);
-					if (p_value > ret && ret != -1 || p_value == -1) {
-						// -1 marks deleted objects
+					if (p_value > ret && ret > 0 || p_value < 0) {
+						// -x marks deleted objects
 						set(index, key, p_value);
 					}
 					break;
@@ -248,7 +248,7 @@ public class VersionsHashTable {
 				}
 				iter = getKey(++index);
 			}
-			if (ret == -2) {
+			if (ret == 0) {
 				set(index, key, p_value);
 				m_count++;
 			}

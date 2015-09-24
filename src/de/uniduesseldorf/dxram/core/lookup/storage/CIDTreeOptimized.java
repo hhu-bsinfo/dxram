@@ -296,33 +296,35 @@ public final class CIDTreeOptimized implements Serializable {
 	public void removeObject(final long p_chunkID) {
 		int index;
 		Node node;
+		long lid;
 		long currentLid;
 		Entry currentEntry;
 		Entry predecessor;
 		Entry successor;
 
+		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
 		if (null != m_root) {
-			node = getNodeOrSuccessorsNode(p_chunkID);
+			node = getNodeOrSuccessorsNode(lid);
 			if (null != node) {
 				currentLid = -1;
 
-				index = node.indexOf(p_chunkID);
+				index = node.indexOf(lid);
 				if (0 <= index) {
 					// Entry was found
 					currentLid = node.getLid(index);
-					predecessor = getPredecessorsEntry(p_chunkID, node);
+					predecessor = getPredecessorsEntry(lid, node);
 					currentEntry = new Entry(currentLid, node.getNodeID(index));
-					successor = getSuccessorsEntry(p_chunkID, node);
+					successor = getSuccessorsEntry(lid, node);
 					if (m_creator != currentEntry.getNodeID() && null != predecessor) {
-						if (p_chunkID - 1 == predecessor.getLid()) {
+						if (lid - 1 == predecessor.getLid()) {
 							// Predecessor is direct neighbor: AB
 							// Successor might be direct neighbor or not: ABC or AB___C
 							if (m_creator == successor.getNodeID()) {
 								// Successor is barrier: ABC -> A_C or AB___C -> A___C
-								remove(p_chunkID);
+								remove(lid);
 							} else {
 								// Successor is no barrier: ABC -> AXC or AB___C -> AX___C
-								node.changeEntry(p_chunkID, m_creator, index);
+								node.changeEntry(lid, m_creator, index);
 							}
 							if (m_creator == predecessor.getNodeID()) {
 								// Predecessor is barrier: A_C -> ___C or AXC -> ___XC
@@ -333,14 +335,14 @@ public final class CIDTreeOptimized implements Serializable {
 							// Predecessor is no direct neighbor: A___B
 							if (m_creator == successor.getNodeID()) {
 								// Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
-								remove(p_chunkID);
+								remove(lid);
 							} else {
 								// Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
-								node.changeEntry(p_chunkID, m_creator, index);
+								node.changeEntry(lid, m_creator, index);
 							}
 							// Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
 							// or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
-							createOrReplaceEntry(p_chunkID - 1, currentEntry.getNodeID());
+							createOrReplaceEntry(lid - 1, currentEntry.getNodeID());
 						}
 					}
 				} else {
@@ -350,20 +352,20 @@ public final class CIDTreeOptimized implements Serializable {
 					predecessor = getPredecessorsEntry(successor.getLid(), node);
 					if (m_creator != successor.getNodeID() && null != predecessor) {
 						// Entry is in range
-						if (p_chunkID - 1 == predecessor.getLid()) {
+						if (lid - 1 == predecessor.getLid()) {
 							// Predecessor is direct neighbor: A'B'
 							// Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
-							createOrReplaceEntry(p_chunkID, m_creator);
+							createOrReplaceEntry(lid, m_creator);
 							if (m_creator == predecessor.getNodeID()) {
 								// Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
-								remove(p_chunkID - 1);
+								remove(lid - 1);
 							}
 						} else {
 							// Predecessor is no direct neighbor: A___'B'
 							// Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
 							// or A___'B'___C -> A___(B-1)X___C
-							createOrReplaceEntry(p_chunkID, m_creator);
-							createOrReplaceEntry(p_chunkID - 1, successor.getNodeID());
+							createOrReplaceEntry(lid, m_creator);
+							createOrReplaceEntry(lid - 1, successor.getNodeID());
 						}
 					}
 				}
@@ -1379,16 +1381,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_lid) {
-					low = mid + 1;
-				} else if (midVal > p_lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_lid) {
+				low = mid + 1;
+			} else if (midVal > p_lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1578,16 +1580,16 @@ public final class CIDTreeOptimized implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLid(0);
+			midVal = m_children[mid].getLid(0);
 
-				if (midVal < lid) {
-					low = mid + 1;
-				} else if (midVal > lid) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < lid) {
+				low = mid + 1;
+			} else if (midVal > lid) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
