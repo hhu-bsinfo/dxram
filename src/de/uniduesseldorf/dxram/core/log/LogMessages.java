@@ -42,7 +42,8 @@ public final class LogMessages {
 	public static class LogRequest extends AbstractRequest {
 
 		// Attributes
-		private Chunk m_chunk;
+		private Chunk[] m_chunks;
+		private byte m_rangeID;
 
 		// Constructors
 		/**
@@ -51,55 +52,77 @@ public final class LogMessages {
 		public LogRequest() {
 			super();
 
-			m_chunk = null;
+			m_chunks = null;
+			m_rangeID = -1;
 		}
 
 		/**
 		 * Creates an instance of LogRequest
 		 * @param p_destination
 		 *            the destination
-		 * @param p_chunk
-		 *            the chunk to log
+		 * @param p_chunks
+		 *            the Chunks to store
 		 */
-		public LogRequest(final short p_destination, final Chunk p_chunk) {
+		public LogRequest(final short p_destination, final Chunk[] p_chunks) {
 			super(p_destination, TYPE, SUBTYPE_LOG_REQUEST);
 
-			m_chunk = p_chunk;
+			Contract.checkNotNull(p_chunks, "no chunks given");
+
+			m_chunks = p_chunks;
+			m_rangeID = -1;
+		}
+
+		/**
+		 * Creates an instance of LogRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunks
+		 *            the Chunks to store
+		 * @param p_rangeID
+		 *            the RangeID
+		 */
+		public LogRequest(final short p_destination, final Chunk[] p_chunks, final byte p_rangeID) {
+			super(p_destination, TYPE, SUBTYPE_LOG_REQUEST);
+
+			Contract.checkNotNull(p_chunks, "no chunks given");
+
+			m_chunks = p_chunks;
+			m_rangeID = p_rangeID;
 		}
 
 		// Getters
 		/**
-		 * Get the Chunk to log
-		 * @return the Chunk to log
+		 * Get the Chunk to store
+		 * @return the Chunk to store
 		 */
-		public final Chunk getChunk() {
-			Chunk ret = null;
+		public final Chunk[] getChunks() {
+			return m_chunks;
+		}
 
-			if (m_chunk.getSize() != 0) {
-				ret = m_chunk;
-			}
-
-			return ret;
+		/**
+		 * Get the RangeID
+		 * @return the RangeID
+		 */
+		public final byte getRangeID() {
+			return m_rangeID;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			if (m_chunk != null) {
-				OutputHelper.writeChunk(p_buffer, m_chunk);
-			} else {
-				OutputHelper.writeChunk(p_buffer, new Chunk(-1, 0));
-			}
+			OutputHelper.writeChunks(p_buffer, m_chunks);
+			OutputHelper.writeByte(p_buffer, m_rangeID);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
-			m_chunk = InputHelper.readChunk(p_buffer);
+			m_chunks = InputHelper.readChunks(p_buffer);
+			m_rangeID = InputHelper.readByte(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkWriteLength(m_chunk);
+			return OutputHelper.getChunksWriteLength(m_chunks) + OutputHelper.getByteWriteLength();
 		}
 
 	}
@@ -262,6 +285,7 @@ public final class LogMessages {
 
 		// Attributes
 		private long[] m_chunkIDs;
+		private int[] m_versions;
 		private byte m_rangeID;
 
 		// Constructors
@@ -272,6 +296,7 @@ public final class LogMessages {
 			super();
 
 			m_chunkIDs = null;
+			m_versions = null;
 			m_rangeID = -1;
 		}
 
@@ -281,11 +306,14 @@ public final class LogMessages {
 		 *            the destination
 		 * @param p_chunkIDs
 		 *            the ChunkIDs of the Chunks to remove
+		 * @param p_versions
+		 *            the versions of the Chunks to remove
 		 */
-		public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
+		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final int[] p_versions) {
 			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
 
 			m_chunkIDs = p_chunkIDs;
+			m_versions = p_versions;
 			m_rangeID = -1;
 		}
 
@@ -295,13 +323,16 @@ public final class LogMessages {
 		 *            the destination
 		 * @param p_chunkIDs
 		 *            the ChunkIDs of the Chunks to remove
+		 * @param p_versions
+		 *            the versions of the Chunks to remove
 		 * @param p_rangeID
 		 *            the RangeID
 		 */
-		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final byte p_rangeID) {
+		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final int[] p_versions, final byte p_rangeID) {
 			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
 
 			m_chunkIDs = p_chunkIDs;
+			m_versions = p_versions;
 			m_rangeID = p_rangeID;
 		}
 
@@ -312,6 +343,14 @@ public final class LogMessages {
 		 */
 		public final long[] getChunkIDs() {
 			return m_chunkIDs;
+		}
+
+		/**
+		 * Get the versions
+		 * @return the versions
+		 */
+		public final int[] getVersions() {
+			return m_versions;
 		}
 
 		/**
@@ -326,18 +365,21 @@ public final class LogMessages {
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunkIDs(p_buffer, m_chunkIDs);
+			OutputHelper.writeIntArray(p_buffer, m_versions);
 			OutputHelper.writeByte(p_buffer, m_rangeID);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunkIDs = InputHelper.readChunkIDs(p_buffer);
+			m_versions = InputHelper.readIntArray(p_buffer);
 			m_rangeID = InputHelper.readByte(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length) + OutputHelper.getByteWriteLength();
+			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length)
+					+ OutputHelper.getByteWriteLength() + OutputHelper.getIntArrayWriteLength(m_versions.length);
 		}
 	}
 

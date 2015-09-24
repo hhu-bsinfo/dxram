@@ -16,7 +16,6 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.DefaultSecLogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
@@ -27,9 +26,6 @@ import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
  * @author Kevin Beineke 13.06.2014
  */
 public final class PrimaryLog extends AbstractLog implements LogStorageInterface {
-
-	// Constants
-	private static final LogEntryHeaderInterface DEFAULT_SEC_LOG_ENTRY_HEADER = new DefaultSecLogEntryHeader();
 
 	// Attributes
 	private LogInterface m_logHandler;
@@ -75,7 +71,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@SuppressWarnings("unchecked")
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_lengthByBackupRange) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -698,7 +694,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				if (LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i] >= p_logEntrySize) {
 					index = i;
 					break;
-				} else if (LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i] <= DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize(true)) {
+				} else if (p_logEntrySize - logEntryHeader.getConversionOffset() > LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i]) {
 					m_filledSegments[i] = true;
 					for (int j = m_startIndex; j <= m_currentSegment; j++) {
 						if (m_filledSegments[j]) {
@@ -724,8 +720,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				// More than one page for this node: Convert primary log entry header to secondary log header and append
 				// entry to node buffer
 				if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
-					// Secondary log entry header for migration contains the creator's NodeID, the normal header does
-					// not
+					// Secondary log entry header for migration contains the creator's NodeID, the normal header does not
 					AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize,
 							p_bytesUntilEnd, logEntryHeader.getConversionOffset());
 					m_writtenBytesPerSegment[index] += p_logEntrySize - logEntryHeader.getConversionOffset();
@@ -735,8 +730,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					m_writtenBytesPerSegment[index] += p_logEntrySize - logEntryHeader.getConversionOffset();
 				}
 			} else {
-				// Less than one page for this node: Just append entry to node buffer without converting the log entry
-				// header
+				// Less than one page for this node: Just append entry to node buffer without converting the log entry header
 				if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
 				} else {

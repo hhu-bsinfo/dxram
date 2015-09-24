@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 
 import de.uniduesseldorf.dxram.commands.CmdUtils;
+import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
@@ -43,7 +44,7 @@ public final class CIDTable {
 	private static long m_nodeIDTableDirectory;
 	private static long m_memoryBase;
 
-	private static CIDStore m_store;
+	private static LIDStore m_store;
 
 	private static Defragmenter m_defragmenter;
 
@@ -63,7 +64,7 @@ public final class CIDTable {
 		m_memoryBase = RawMemory.getMemoryBase();
 		m_nodeIDTableDirectory = createNIDTable();
 
-		m_store = new CIDStore();
+		m_store = new LIDStore();
 
 		m_defragmenter = new Defragmenter();
 		// TODO: new Thread(m_defragmenter).start();
@@ -334,9 +335,20 @@ public final class CIDTable {
 
 		ret = deleteEntry(p_cid, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 
-		m_store.put(p_cid);
+		m_store.put(ChunkID.getLocalID(p_cid), RawMemory.readVersion(ret));
 
 		return ret;
+	}
+
+	/**
+	 * Puts the LocalID of a deleted migrated Chunk to LIDStore
+	 * @param p_cid
+	 *            the ChunkID of the entry
+	 * @param p_version
+	 *            the version of the entry
+	 */
+	protected static void putChunkIDForReuse(final long p_cid, final int p_version) {
+		m_store.put(ChunkID.getLocalID(p_cid), p_version);
 	}
 
 	/**
@@ -564,13 +576,13 @@ public final class CIDTable {
 	}
 
 	/**
-	 * Get a free CID from the CIDTable
-	 * @return a free CID, or -1 if there is none
+	 * Get a free LID from the CIDTable
+	 * @return a free LID and version, or null if there is none
 	 * @throws MemoryException
 	 *             if the CIDTable could not be accessed
 	 */
-	protected static long getFreeCID() throws MemoryException {
-		long ret = -1;
+	protected static LIDElement getFreeLID() throws MemoryException {
+		LIDElement ret = null;
 
 		if (m_store != null) {
 			ret = m_store.get();
@@ -708,17 +720,17 @@ public final class CIDTable {
 
 	// Classes
 	/**
-	 * Stores free CIDs
+	 * Stores free LocalIDs
 	 * @author Florian Klein
 	 *         30.04.2014
 	 */
-	private static final class CIDStore {
+	private static final class LIDStore {
 
 		// Constants
-		private static final int STORE_CAPACITY = 100;
+		private static final int STORE_CAPACITY = 100000;
 
 		// Attributes
-		private final long[] m_cids;
+		private final LIDElement[] m_localIDs;
 		private int m_position;
 		private int m_count;
 		private volatile long m_overallCount;
@@ -727,10 +739,10 @@ public final class CIDTable {
 
 		// Constructors
 		/**
-		 * Creates an instance of CIDStore
+		 * Creates an instance of LIDStore
 		 */
-		private CIDStore() {
-			m_cids = new long[STORE_CAPACITY];
+		private LIDStore() {
+			m_localIDs = new LIDElement[STORE_CAPACITY];
 			m_position = 0;
 			m_count = 0;
 
@@ -741,23 +753,24 @@ public final class CIDTable {
 
 		// Methods
 		/**
-		 * Gets a free CID
-		 * @return a free CID
+		 * Gets a free LocalID
+		 * @return a free LocalID
 		 */
-		public long get() {
-			long ret = -1;
+		public LIDElement get() {
+			LIDElement ret = null;
 
 			if (m_overallCount > 0) {
 				m_lock.lock();
 
-				if (m_count == 0) {
+				// TODO: Removed until version is stored in CIDTable
+				/*-if (m_count == 0) {
 					fill();
-				}
+				}*/
 
 				if (m_count > 0) {
-					ret = m_cids[m_position];
+					ret = m_localIDs[m_position];
 
-					m_position = (m_position + 1) % m_cids.length;
+					m_position = (m_position + 1) % m_localIDs.length;
 					m_count--;
 					m_overallCount--;
 				}
@@ -769,15 +782,17 @@ public final class CIDTable {
 		}
 
 		/**
-		 * Puts a free CID
-		 * @param p_cid
-		 *            a CID
+		 * Puts a free LocalID
+		 * @param p_localID
+		 *            a LocalID
+		 * @param p_version
+		 *            a version
 		 */
-		public void put(final long p_cid) {
+		public void put(final long p_localID, final int p_version) {
 			m_lock.lock();
 
-			if (m_count < m_cids.length) {
-				m_cids[m_position + m_count] = p_cid;
+			if (m_count < m_localIDs.length) {
+				m_localIDs[m_position + m_count] = new LIDElement(p_localID, p_version);
 
 				m_count++;
 			}
@@ -789,34 +804,35 @@ public final class CIDTable {
 		/**
 		 * Fills the store
 		 */
+		@SuppressWarnings("unused")
 		private void fill() {
 			try {
-				findFreeCIDs();
+				findFreeLIDs();
 			} catch (final MemoryException e) {}
 		}
 
 		/**
-		 * Finds free CIDs in the CIDTable
+		 * Finds free LIDs in the CIDTable
 		 * @throws MemoryException
 		 *             if the CIDTable could not be accessed
 		 */
-		private void findFreeCIDs() throws MemoryException {
-			findFreeCIDs(m_nodeIDTableDirectory, LID_TABLE_LEVELS - 1, 0);
+		private void findFreeLIDs() throws MemoryException {
+			findFreeLIDs(readEntry(m_nodeIDTableDirectory, NodeID.getLocalNodeID() & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1, 0);
 		}
 
 		/**
-		 * Finds free CIDs in the CIDTable
+		 * Finds free LIDs in the CIDTable
 		 * @param p_table
 		 *            the table
 		 * @param p_level
 		 *            the table level
 		 * @param p_offset
-		 *            the offset of the CID
-		 * @return true if free CIDs were found, false otherwise
+		 *            the offset of the LID
+		 * @return true if free LIDs were found, false otherwise
 		 * @throws MemoryException
 		 *             if the CIDTable could not be accessed
 		 */
-		private boolean findFreeCIDs(final long p_table, final int p_level, final long p_offset) throws MemoryException {
+		private boolean findFreeLIDs(final long p_table, final int p_level, final long p_offset) throws MemoryException {
 			boolean ret = false;
 			long entry;
 
@@ -828,8 +844,8 @@ public final class CIDTable {
 
 				if (p_level > 0) {
 					if (entry > 0) {
-						// Get free CID in the next table
-						if (!findFreeCIDs(entry & BITMASK_ADDRESS, p_level - 1, i << BITS_PER_LID_LEVEL * p_level)) {
+						// Get free LocalID in the next table
+						if (!findFreeLIDs(entry & BITMASK_ADDRESS, p_level - 1, i << BITS_PER_LID_LEVEL * p_level)) {
 							// Mark the table as full
 							entry |= FULL_FLAG;
 							writeEntry(p_table, i, entry);
@@ -841,14 +857,15 @@ public final class CIDTable {
 					if ((entry & DELETED_FLAG) > 0) {
 						writeEntry(p_table, i, 0);
 
-						m_cids[m_position + m_count] = p_offset + i;
+						// TODO: Version is unknown, because it is not stored in CIDTable and removed from RAWMemory
+						m_localIDs[m_position + m_count] = new LIDElement(ChunkID.getLocalID(p_offset + i), -1);
 						m_count++;
 
 						ret = true;
 					}
 				}
 
-				if (m_count == m_cids.length || m_count == m_overallCount) {
+				if (m_count == m_localIDs.length || m_count == m_overallCount) {
 					break;
 				}
 			}
@@ -858,6 +875,48 @@ public final class CIDTable {
 			return ret;
 		}
 
+	}
+
+	/**
+	 * Stores free LocalIDs
+	 * @author Florian Klein
+	 *         30.04.2014
+	 */
+	public static final class LIDElement {
+
+		// Attributes
+		private long m_localID;
+		private int m_version;
+
+		// Constructors
+		/**
+		 * Creates an instance of LIDElement
+		 * @param p_localID
+		 *            the LocalID
+		 * @param p_version
+		 *            the version
+		 */
+		public LIDElement(final long p_localID, final int p_version) {
+			m_localID = p_localID;
+			m_version = p_version;
+		}
+
+		// Getter
+		/**
+		 * Gets the LocalID
+		 * @return the LocalID
+		 */
+		public long getLocalID() {
+			return m_localID;
+		}
+
+		/**
+		 * Gets the version
+		 * @return the version
+		 */
+		public int getVersion() {
+			return m_version;
+		}
 	}
 
 	/**

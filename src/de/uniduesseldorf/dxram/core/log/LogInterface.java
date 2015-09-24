@@ -99,6 +99,8 @@ public interface LogInterface extends CoreComponent {
 	 * Creates a new Chunk
 	 * @param p_chunkID
 	 *            the ChunkID
+	 * @param p_version
+	 *            the version
 	 * @param p_rangeID
 	 *            the RangeID
 	 * @param p_source
@@ -106,7 +108,7 @@ public interface LogInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be logged
 	 */
-	void removeChunk(long p_chunkID, byte p_rangeID, short p_source) throws DXRAMException;
+	void removeChunk(long p_chunkID, int p_version, byte p_rangeID, short p_source) throws DXRAMException;
 
 	/**
 	 * Recovers the local data of one backup range

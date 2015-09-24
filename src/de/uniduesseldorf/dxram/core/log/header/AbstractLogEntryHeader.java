@@ -23,7 +23,9 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	private static final LogEntryHeaderInterface MIGRATION_PRIM_LOG_TOMBSTONE = new MigrationPrimLogTombstone();
 
 	private static final LogEntryHeaderInterface DEFAULT_SEC_LOG_ENTRY_HEADER = new DefaultSecLogEntryHeader();
+	private static final LogEntryHeaderInterface MIGRATION_SEC_LOG_ENTRY_HEADER = new MigrationSecLogEntryHeader();
 	private static final LogEntryHeaderInterface DEFAULT_SEC_LOG_TOMBSTONE = new DefaultSecLogTombstone();
+	private static final LogEntryHeaderInterface MIGRATION_SEC_LOG_TOMBSTONE = new MigrationSecLogTombstone();
 
 	// Methods
 	/**
@@ -205,6 +207,24 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	}
 
 	/**
+	 * Returns the maximum log entry header size for secondary log
+	 * @param p_logStoresMigrations
+	 *            whether the entry is in a secondary log for migrations or not
+	 * @return the maximum log entry header size for secondary log
+	 */
+	public static int getMaxSecLogHeaderSize(final boolean p_logStoresMigrations) {
+		int ret = -1;
+
+		if (p_logStoresMigrations) {
+			ret = MIGRATION_SEC_LOG_ENTRY_HEADER.getHeaderSize();
+		} else {
+			ret = DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize();
+		}
+
+		return ret;
+	}
+
+	/**
 	 * Returns the corresponding LogEntryHeaderInterface of a primary log entry
 	 * @param p_buffer
 	 *            buffer with log entries
@@ -241,10 +261,19 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	public static LogEntryHeaderInterface getSecondaryHeader(final byte[] p_buffer, final int p_offset, final boolean p_logStoresMigrations) {
 		LogEntryHeaderInterface ret = null;
 
-		if (DEFAULT_SEC_LOG_TOMBSTONE.getVersion(p_buffer, p_offset, p_logStoresMigrations) == -1) {
-			ret = DEFAULT_SEC_LOG_TOMBSTONE;
+		if (p_logStoresMigrations) {
+			if (MIGRATION_SEC_LOG_TOMBSTONE.getVersion(p_buffer, p_offset) < 0) {
+				ret = MIGRATION_SEC_LOG_TOMBSTONE;
+			} else {
+				ret = MIGRATION_SEC_LOG_ENTRY_HEADER;
+			}
+
 		} else {
-			ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
+			if (DEFAULT_SEC_LOG_TOMBSTONE.getVersion(p_buffer, p_offset) < 0) {
+				ret = DEFAULT_SEC_LOG_TOMBSTONE;
+			} else {
+				ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
+			}
 		}
 
 		return ret;

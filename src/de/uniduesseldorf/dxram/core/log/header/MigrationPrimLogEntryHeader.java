@@ -58,14 +58,14 @@ public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getNodeID(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public short getNodeID(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + NID_OFFSET;
 
 		return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 	}
 
 	@Override
-	public long getLID(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public long getLID(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + LID_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
@@ -73,26 +73,26 @@ public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public long getChunkID(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
-		return ((long) getNodeID(p_buffer, p_offset, p_logStoresMigrations) << 48) + getLID(p_buffer, p_offset, p_logStoresMigrations);
+	public long getChunkID(final byte[] p_buffer, final int p_offset) {
+		return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
 	}
 
 	@Override
-	public int getLength(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public int getLength(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + LEN_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 	}
 
 	@Override
-	public int getVersion(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public int getVersion(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + VER_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 	}
 
 	@Override
-	public long getChecksum(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public long getChecksum(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + CRC_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24)
@@ -101,7 +101,7 @@ public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getHeaderSize(final boolean... p_logStoresMigrations) {
+	public short getHeaderSize() {
 		return SIZE;
 	}
 
@@ -121,38 +121,38 @@ public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getNIDOffset(final boolean... p_logStoresMigrations) {
+	public short getNIDOffset() {
 		return NID_OFFSET;
 	}
 
 	@Override
-	public short getLIDOffset(final boolean... p_logStoresMigrations) {
+	public short getLIDOffset() {
 		return LID_OFFSET;
 	}
 
 	@Override
-	public short getLENOffset(final boolean... p_logStoresMigrations) {
+	public short getLENOffset() {
 		return LEN_OFFSET;
 	}
 
 	@Override
-	public short getVEROffset(final boolean... p_logStoresMigrations) {
+	public short getVEROffset() {
 		return VER_OFFSET;
 	}
 
 	@Override
-	public short getCRCOffset(final boolean... p_logStoresMigrations) {
+	public short getCRCOffset() {
 		return CRC_OFFSET;
 	}
 
 	@Override
-	public void print(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public void print(final byte[] p_buffer, final int p_offset) {
 		System.out.println("********************Primary Log Entry Header (Migration)********************");
-		System.out.println("* NodeID: " + getNodeID(p_buffer, p_offset, p_logStoresMigrations));
-		System.out.println("* LocalID: " + getLID(p_buffer, p_offset, p_logStoresMigrations));
-		System.out.println("* Length: " + getLength(p_buffer, p_offset, p_logStoresMigrations));
-		System.out.println("* Version: " + getVersion(p_buffer, p_offset, p_logStoresMigrations));
-		System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset, p_logStoresMigrations));
+		System.out.println("* NodeID: " + getNodeID(p_buffer, p_offset));
+		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
+		System.out.println("* Length: " + getLength(p_buffer, p_offset));
+		System.out.println("* Version: " + getVersion(p_buffer, p_offset));
+		System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
 		System.out.println("****************************************************************************");
 	}
 }

@@ -318,6 +318,7 @@ public final class ChunkMessages {
 
 		// Attributes
 		private long m_chunkID;
+		private int m_version;
 
 		// Constructors
 		/**
@@ -327,6 +328,7 @@ public final class ChunkMessages {
 			super();
 
 			m_chunkID = ChunkID.INVALID_ID;
+			m_version = -1;
 		}
 
 		/**
@@ -342,6 +344,25 @@ public final class ChunkMessages {
 			ChunkID.check(p_chunkID);
 
 			m_chunkID = p_chunkID;
+			m_version = -1;
+		}
+
+		/**
+		 * Creates an instance of RemoveRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunkID
+		 *            the ChunkID for the Chunk
+		 * @param p_version
+		 *            the version of the migrated Chunk
+		 */
+		public RemoveRequest(final short p_destination, final long p_chunkID, final int p_version) {
+			super(p_destination, TYPE, SUBTYPE_REMOVE_REQUEST);
+
+			ChunkID.check(p_chunkID);
+
+			m_chunkID = p_chunkID;
+			m_version = p_version;
 		}
 
 		// Getters
@@ -353,20 +374,30 @@ public final class ChunkMessages {
 			return m_chunkID;
 		}
 
+		/**
+		 * Get the version for the Chunk
+		 * @return the version for the Chunk
+		 */
+		public final int getVersion() {
+			return m_version;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunkID(p_buffer, m_chunkID);
+			OutputHelper.writeInt(p_buffer, m_version);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunkID = InputHelper.readChunkID(p_buffer);
+			m_version = InputHelper.readInt(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength();
+			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getIntWriteLength();
 		}
 
 	}

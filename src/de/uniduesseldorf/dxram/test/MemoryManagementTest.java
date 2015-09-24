@@ -145,7 +145,7 @@ public final class MemoryManagementTest {
 					random = new Random();
 					for (int i = 1; i <= count; i++) {
 						try {
-							chunkID = MemoryManager.getNextLocalID();
+							chunkID = MemoryManager.getNextLocalID().getLocalID();
 							data = new byte[random.nextInt(49) + 16];
 							chunk = new Chunk(chunkID, data, 0);
 

@@ -43,73 +43,45 @@ public class DefaultSecLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getNodeID(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
-		short ret = -1;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			ret = (short) ((p_buffer[p_offset] & 0xff) + ((p_buffer[p_offset + 1] & 0xff) << 8));
-		} else {
-			System.out.println("No NodeID available!");
-		}
-		return ret;
+	public short getNodeID(final byte[] p_buffer, final int p_offset) {
+		System.out.println("No NodeID available!");
+		return -1;
 	}
 
 	@Override
-	public long getLID(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
-		int offset = p_offset;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			offset += LogHandler.LOG_ENTRY_NID_SIZE;
-		}
-
-		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
-				+ (((long) p_buffer[offset + 3] & 0xff) << 24) + (((long) p_buffer[offset + 4] & 0xff) << 32) + (((long) p_buffer[offset + 5] & 0xff) << 40);
+	public long getLID(final byte[] p_buffer, final int p_offset) {
+		return (p_buffer[p_offset] & 0xff) + ((p_buffer[p_offset + 1] & 0xff) << 8) + ((p_buffer[p_offset + 2] & 0xff) << 16)
+				+ (((long) p_buffer[p_offset + 3] & 0xff) << 24) + (((long) p_buffer[p_offset + 4] & 0xff) << 32)
+				+ (((long) p_buffer[p_offset + 5] & 0xff) << 40);
 	}
 
 	@Override
-	public long getChunkID(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
-		long ret = -1;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			ret = ((long) getNodeID(p_buffer, p_offset, p_logStoresMigrations) << 48) + getLID(p_buffer, p_offset, p_logStoresMigrations);
-		} else {
-			System.out.println("No ChunkID available!");
-		}
-
-		return ret;
+	public long getChunkID(final byte[] p_buffer, final int p_offset) {
+		System.out.println("No ChunkID available!");
+		return -1;
 	}
 
 	@Override
-	public int getLength(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public int getLength(final byte[] p_buffer, final int p_offset) {
 		return 0;
 	}
 
 	@Override
-	public int getVersion(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
-		int offset = p_offset + VER_OFFSET;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			offset += LogHandler.LOG_ENTRY_NID_SIZE;
-		}
+	public int getVersion(final byte[] p_buffer, final int p_offset) {
+		final int offset = p_offset + VER_OFFSET;
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 	}
 
 	@Override
-	public long getChecksum(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public long getChecksum(final byte[] p_buffer, final int p_offset) {
 		System.out.println("No checksum available!");
 		return -1;
 	}
 
 	@Override
-	public short getHeaderSize(final boolean... p_logStoresMigrations) {
-		short ret = SIZE;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			ret += LogHandler.LOG_ENTRY_NID_SIZE;
-		}
-
-		return ret;
+	public short getHeaderSize() {
+		return SIZE;
 	}
 
 	@Override
@@ -131,58 +103,39 @@ public class DefaultSecLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getNIDOffset(final boolean... p_logStoresMigrations) {
-		short ret = -1;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			ret = 0;
-		} else {
-			System.out.println("No NodeID available!");
-		}
-
-		return ret;
+	public short getNIDOffset() {
+		System.out.println("No NodeID available!");
+		return -1;
 	}
 
 	@Override
-	public short getLIDOffset(final boolean... p_logStoresMigrations) {
-		short ret = 0;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			ret += LogHandler.LOG_ENTRY_NID_SIZE;
-		}
-
-		return ret;
+	public short getLIDOffset() {
+		return LID_OFFSET;
 	}
 
 	@Override
-	public short getLENOffset(final boolean... p_logStoresMigrations) {
+	public short getLENOffset() {
 		System.out.println("No length available!");
 		return -1;
 	}
 
 	@Override
-	public short getVEROffset(final boolean... p_logStoresMigrations) {
-		short ret = VER_OFFSET;
-
-		if (p_logStoresMigrations != null && p_logStoresMigrations[0]) {
-			ret += LogHandler.LOG_ENTRY_NID_SIZE;
-		}
-
-		return ret;
+	public short getVEROffset() {
+		return VER_OFFSET;
 	}
 
 	@Override
-	public short getCRCOffset(final boolean... p_logStoresMigrations) {
+	public short getCRCOffset() {
 		System.out.println("No checksum available!");
 		return -1;
 	}
 
 	@Override
-	public void print(final byte[] p_buffer, final int p_offset, final boolean... p_logStoresMigrations) {
+	public void print(final byte[] p_buffer, final int p_offset) {
 		System.out.println("********************Tombstone for Secondary Log********************");
-		System.out.println("* LocalID: " + getLID(p_buffer, p_offset, p_logStoresMigrations));
-		System.out.println("* Length: " + getLength(p_buffer, p_offset, p_logStoresMigrations));
-		System.out.println("* Version: " + getVersion(p_buffer, p_offset, p_logStoresMigrations));
+		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
+		System.out.println("* Length: " + getLength(p_buffer, p_offset));
+		System.out.println("* Version: " + getVersion(p_buffer, p_offset));
 		System.out.println("*******************************************************************");
 	}
 }

@@ -19,8 +19,6 @@ public final class SecondaryLogBuffer {
 	private byte[] m_buffer;
 	private int m_bytesInBuffer;
 
-	private boolean m_storesMigrations;
-
 	private SecondaryLogWithSegments m_secondaryLog;
 
 	// Constructors
@@ -28,10 +26,8 @@ public final class SecondaryLogBuffer {
 	 * Creates an instance of SecondaryLogBuffer
 	 * @param p_secondaryLog
 	 *            Instance of the corresponding secondary log. Used to write directly to secondary
-	 * @param p_storesMigrations
-	 *            whether this secondary log buffer stores migrations or not
 	 */
-	public SecondaryLogBuffer(final SecondaryLogWithSegments p_secondaryLog, final boolean p_storesMigrations) {
+	public SecondaryLogBuffer(final SecondaryLogWithSegments p_secondaryLog) {
 
 		m_secondaryLog = p_secondaryLog;
 
@@ -114,14 +110,15 @@ public final class SecondaryLogBuffer {
 		int oldBufferOffset = p_bufferOffset;
 		int newBufferOffset = 0;
 		int logEntrySize;
-		final int secLogOffset = LogHandler.LOG_ENTRY_RID_SIZE + LogHandler.LOG_ENTRY_NID_SIZE;
+		short secLogOffset;
 		LogEntryHeaderInterface logEntryHeader;
 
 		buffer = new byte[p_entryOrRangeSize];
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry
 			logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, oldBufferOffset);
-			logEntrySize = logEntryHeader.getHeaderSize(m_storesMigrations) + logEntryHeader.getLength(p_buffer, oldBufferOffset, m_storesMigrations);
+			logEntrySize = logEntryHeader.getHeaderSize() + logEntryHeader.getLength(p_buffer, oldBufferOffset);
+			secLogOffset = logEntryHeader.getConversionOffset();
 
 			// Copy primary log header, but skip NodeID and RangeID
 			System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize - secLogOffset);

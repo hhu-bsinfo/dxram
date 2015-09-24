@@ -360,8 +360,7 @@ public class PrimaryWriteBuffer {
 			// 3. Set read pointer and reset counter
 			// 4. Release lock
 			// 5. Write buffer to hard drive
-			// -> During writing to hard drive the next slot in Write Buffer can
-			// be filled
+			// -> During writing to hard drive the next slot in Write Buffer can be filled
 			if (PARALLEL_BUFFERING) {
 				while (true) {
 					m_metaDataLock.acquire();

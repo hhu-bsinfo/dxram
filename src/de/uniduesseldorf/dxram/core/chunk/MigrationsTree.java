@@ -145,9 +145,9 @@ public final class MigrationsTree implements Serializable {
 	 *            ChunkID of requested object
 	 * @return the backup range ID
 	 */
-	public int getBackupRange(final long p_chunkID) {
+	public byte getBackupRange(final long p_chunkID) {
 		Contract.checkNotNull(m_root);
-		return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
+		return getRangeIDOrSuccessorsRangeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
 	}
 
 	/**
@@ -457,11 +457,11 @@ public final class MigrationsTree implements Serializable {
 	/**
 	 * Returns the backup range ID of next lid to given lid (could be the lid itself)
 	 * @param p_lid
-	 *            the lid whose corresponding NodeID is searched
+	 *            the lid whose corresponding RangeID is searched
 	 * @return RangeID for p_lid if p_lid is in btree or successors NodeID
 	 */
-	private int getNodeIDOrSuccessorsNodeID(final long p_lid) {
-		int ret = -1;
+	private byte getRangeIDOrSuccessorsRangeID(final long p_lid) {
+		byte ret = -1;
 		int index;
 		Node node;
 
