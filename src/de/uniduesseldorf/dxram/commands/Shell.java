@@ -48,6 +48,8 @@ public final class Shell {
 		m_commandMap.put(c.getName(), c);
 		c = new CmdStats();
 		m_commandMap.put(c.getName(), c);
+		c = new CmdCreate();
+		m_commandMap.put(c.getName(), c);
 	}
 
 	/**

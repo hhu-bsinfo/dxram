@@ -79,7 +79,7 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 			offset += LogHandler.LOG_ENTRY_NID_SIZE;
 		}
 
-		// LID
+		// LocalID
 		for (int i = 0; i < LogHandler.LOG_ENTRY_LID_SIZE; i++) {
 			p_buffer[offset + i] = invalid;
 		}

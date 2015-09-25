@@ -83,18 +83,13 @@ public final class MigrationsTree implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean putObject(final long p_chunkID, final byte p_rangeID, final long p_size) {
-		long lid;
 		Node node;
 
-		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
+		node = createOrReplaceEntry(p_chunkID, p_rangeID);
 
-		Contract.check(0 < lid, "lid smaller than 1");
+		mergeWithPredecessorOrBound(p_chunkID, p_rangeID, node);
 
-		node = createOrReplaceEntry(lid, p_rangeID);
-
-		mergeWithPredecessorOrBound(lid, p_rangeID, node);
-
-		mergeWithSuccessor(lid, p_rangeID);
+		mergeWithSuccessor(p_chunkID, p_rangeID);
 
 		m_currentSecLogSize += p_size;
 
@@ -114,25 +109,21 @@ public final class MigrationsTree implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
-		long startLid;
-		long endLid;
 		Node startNode;
 
-		startLid = p_startID & 0x0000FFFFFFFFFFFFL;
-		endLid = p_endID & 0x0000FFFFFFFFFFFFL;
-		Contract.check(startLid <= endLid && 0 < startLid, "end larger than start or start smaller than 1");
-		if (startLid == endLid) {
+		Contract.check(p_startID <= p_endID, "end larger than start");
+		if (p_startID == p_endID) {
 			putObject(p_startID, p_rangeID, p_rangeSize);
 		} else {
-			startNode = createOrReplaceEntry(startLid, p_rangeID);
+			startNode = createOrReplaceEntry(p_startID, p_rangeID);
 
-			mergeWithPredecessorOrBound(startLid, p_rangeID, startNode);
+			mergeWithPredecessorOrBound(p_startID, p_rangeID, startNode);
 
-			createOrReplaceEntry(endLid, p_rangeID);
+			createOrReplaceEntry(p_endID, p_rangeID);
 
-			removeEntriesWithinRange(startLid, endLid);
+			removeEntriesWithinRange(p_startID, p_endID);
 
-			mergeWithSuccessor(endLid, p_rangeID);
+			mergeWithSuccessor(p_endID, p_rangeID);
 
 			m_currentSecLogSize += p_rangeSize;
 		}
@@ -147,7 +138,7 @@ public final class MigrationsTree implements Serializable {
 	 */
 	public byte getBackupRange(final long p_chunkID) {
 		Contract.checkNotNull(m_root);
-		return getRangeIDOrSuccessorsRangeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
+		return getRangeIDOrSuccessorsRangeID(p_chunkID);
 	}
 
 	/**
@@ -159,7 +150,7 @@ public final class MigrationsTree implements Serializable {
 	public void removeObject(final long p_chunkID) {
 		int index;
 		Node node;
-		long currentLid;
+		long currentCID;
 		Entry currentEntry;
 		Entry predecessor;
 		Entry successor;
@@ -167,17 +158,17 @@ public final class MigrationsTree implements Serializable {
 		if (null != m_root) {
 			node = getNodeOrSuccessorsNode(p_chunkID);
 			if (null != node) {
-				currentLid = -1;
+				currentCID = -1;
 
 				index = node.indexOf(p_chunkID);
 				if (0 <= index) {
 					// Entry was found
-					currentLid = node.getLid(index);
+					currentCID = node.getChunkID(index);
 					predecessor = getPredecessorsEntry(p_chunkID, node);
-					currentEntry = new Entry(currentLid, node.getRangeID(index));
+					currentEntry = new Entry(currentCID, node.getRangeID(index));
 					successor = getSuccessorsEntry(p_chunkID, node);
 					if (INVALID != currentEntry.getRangeID() && null != predecessor) {
-						if (p_chunkID - 1 == predecessor.getLid()) {
+						if (p_chunkID - 1 == predecessor.getChunkID()) {
 							// Predecessor is direct neighbor: AB
 							// Successor might be direct neighbor or not: ABC or AB___C
 							if (INVALID == successor.getRangeID()) {
@@ -190,7 +181,7 @@ public final class MigrationsTree implements Serializable {
 							if (INVALID == predecessor.getRangeID()) {
 								// Predecessor is barrier: A_C -> ___C or AXC -> ___XC
 								// or A___C -> ___C or AX___C -> ___X___C
-								remove(predecessor.getLid());
+								remove(predecessor.getChunkID());
 							}
 						} else {
 							// Predecessor is no direct neighbor: A___B
@@ -209,11 +200,11 @@ public final class MigrationsTree implements Serializable {
 				} else {
 					// Entry was not found
 					index = index * -1 - 1;
-					successor = new Entry(node.getLid(index), node.getRangeID(index));
-					predecessor = getPredecessorsEntry(successor.getLid(), node);
+					successor = new Entry(node.getChunkID(index), node.getRangeID(index));
+					predecessor = getPredecessorsEntry(successor.getChunkID(), node);
 					if (INVALID != successor.getRangeID() && null != predecessor) {
 						// Entry is in range
-						if (p_chunkID - 1 == predecessor.getLid()) {
+						if (p_chunkID - 1 == predecessor.getChunkID()) {
 							// Predecessor is direct neighbor: A'B'
 							// Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
 							createOrReplaceEntry(p_chunkID, INVALID);
@@ -236,13 +227,13 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Creates a new entry or replaces the old one
-	 * @param p_lid
-	 *            the lid
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the backup range ID
 	 * @return the node in which the entry is stored
 	 */
-	private Node createOrReplaceEntry(final long p_lid, final byte p_rangeID) {
+	private Node createOrReplaceEntry(final long p_chunkID, final byte p_rangeID) {
 		Node ret = null;
 		Node node;
 		int index;
@@ -250,41 +241,41 @@ public final class MigrationsTree implements Serializable {
 
 		if (null == m_root) {
 			m_root = new Node(null, m_maxEntries, m_maxChildren);
-			m_root.addEntry(p_lid, p_rangeID);
+			m_root.addEntry(p_chunkID, p_rangeID);
 			ret = m_root;
 		} else {
 			node = m_root;
 			while (true) {
 				if (0 == node.getNumberOfChildren()) {
-					index = node.indexOf(p_lid);
+					index = node.indexOf(p_chunkID);
 					if (0 <= index) {
-						m_changedEntry = new Entry(node.getLid(index), node.getRangeID(index));
-						node.changeEntry(p_lid, p_rangeID, index);
+						m_changedEntry = new Entry(node.getChunkID(index), node.getRangeID(index));
+						node.changeEntry(p_chunkID, p_rangeID, index);
 					} else {
 						m_changedEntry = null;
-						node.addEntry(p_lid, p_rangeID, index * -1 - 1);
+						node.addEntry(p_chunkID, p_rangeID, index * -1 - 1);
 						if (m_maxEntries < node.getNumberOfEntries()) {
 							// Need to split up
-							node = split(p_lid, node);
+							node = split(p_chunkID, node);
 						}
 					}
 					break;
 				} else {
-					if (p_lid < node.getLid(0)) {
+					if (p_chunkID < node.getChunkID(0)) {
 						node = node.getChild(0);
 						continue;
 					}
 
 					size = node.getNumberOfEntries();
-					if (p_lid > node.getLid(size - 1)) {
+					if (p_chunkID > node.getChunkID(size - 1)) {
 						node = node.getChild(size);
 						continue;
 					}
 
-					index = node.indexOf(p_lid);
+					index = node.indexOf(p_chunkID);
 					if (0 <= index) {
-						m_changedEntry = new Entry(node.getLid(index), node.getRangeID(index));
-						node.changeEntry(p_lid, p_rangeID, index);
+						m_changedEntry = new Entry(node.getChunkID(index), node.getRangeID(index));
+						node.changeEntry(p_chunkID, p_rangeID, index);
 						break;
 					} else {
 						node = node.getChild(index * -1 - 1);
@@ -303,38 +294,38 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Merges the object or range with predecessor
-	 * @param p_lid
-	 *            the lid
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the backup range ID
 	 * @param p_node
 	 *            anchor node
 	 */
-	private void mergeWithPredecessorOrBound(final long p_lid, final byte p_rangeID, final Node p_node) {
+	private void mergeWithPredecessorOrBound(final long p_chunkID, final byte p_rangeID, final Node p_node) {
 		Entry predecessor;
 		Entry successor;
 
-		predecessor = getPredecessorsEntry(p_lid, p_node);
+		predecessor = getPredecessorsEntry(p_chunkID, p_node);
 		if (null == predecessor) {
-			createOrReplaceEntry(p_lid - 1, INVALID);
+			createOrReplaceEntry(p_chunkID - 1, INVALID);
 		} else {
-			if (p_lid - 1 == predecessor.getLid()) {
+			if (p_chunkID - 1 == predecessor.getChunkID()) {
 				if (p_rangeID == predecessor.getRangeID()) {
-					remove(predecessor.getLid(), getPredecessorsNode(p_lid, p_node));
+					remove(predecessor.getChunkID(), getPredecessorsNode(p_chunkID, p_node));
 				}
 			} else {
-				successor = getSuccessorsEntry(p_lid, p_node);
+				successor = getSuccessorsEntry(p_chunkID, p_node);
 				if (null == m_changedEntry) {
 					// Successor is end of range
 					if (p_rangeID != successor.getRangeID()) {
-						createOrReplaceEntry(p_lid - 1, successor.getRangeID());
+						createOrReplaceEntry(p_chunkID - 1, successor.getRangeID());
 					} else {
 						// New Object is in range that already was migrated to the same destination
-						remove(p_lid, p_node);
+						remove(p_chunkID, p_node);
 					}
 				} else {
 					if (p_rangeID != m_changedEntry.getRangeID()) {
-						createOrReplaceEntry(p_lid - 1, m_changedEntry.getRangeID());
+						createOrReplaceEntry(p_chunkID - 1, m_changedEntry.getRangeID());
 					}
 				}
 			}
@@ -343,19 +334,19 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Merges the object or range with successor
-	 * @param p_lid
-	 *            the lid
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the backup range ID
 	 */
-	private void mergeWithSuccessor(final long p_lid, final byte p_rangeID) {
+	private void mergeWithSuccessor(final long p_chunkID, final byte p_rangeID) {
 		Node node;
 		Entry successor;
 
-		node = getNodeOrSuccessorsNode(p_lid);
-		successor = getSuccessorsEntry(p_lid, node);
+		node = getNodeOrSuccessorsNode(p_chunkID);
+		successor = getSuccessorsEntry(p_chunkID, node);
 		if (null != successor && p_rangeID == successor.getRangeID()) {
-			remove(p_lid, node);
+			remove(p_chunkID, node);
 		}
 	}
 
@@ -371,20 +362,20 @@ public final class MigrationsTree implements Serializable {
 
 		remove(p_start, getNodeOrSuccessorsNode(p_start));
 
-		successor = getLidOrSuccessorsLid(p_start);
+		successor = getCIDOrSuccessorsCID(p_start);
 		while (-1 != successor && successor < p_end) {
 			remove(successor);
-			successor = getLidOrSuccessorsLid(p_start);
+			successor = getCIDOrSuccessorsCID(p_start);
 		}
 	}
 
 	/**
-	 * Returns the node in which the next entry to given lid (could be the lid itself) is stored
-	 * @param p_lid
-	 *            lid whose node is searched
-	 * @return node in which lid is stored if lid is in tree or successors node, null if there is no successor
+	 * Returns the node in which the next entry to given ChunkID (could be the ChunkID itself) is stored
+	 * @param p_chunkID
+	 *            ChunkID whose node is searched
+	 * @return node in which ChunkID is stored if ChunkID is in tree or successors node, null if there is no successor
 	 */
-	private Node getNodeOrSuccessorsNode(final long p_lid) {
+	private Node getNodeOrSuccessorsNode(final long p_chunkID) {
 		Node ret;
 		int size;
 		int index;
@@ -393,7 +384,7 @@ public final class MigrationsTree implements Serializable {
 		ret = m_root;
 
 		while (true) {
-			if (p_lid < ret.getLid(0)) {
+			if (p_chunkID < ret.getChunkID(0)) {
 				if (0 < ret.getNumberOfChildren()) {
 					ret = ret.getChild(0);
 					continue;
@@ -403,8 +394,8 @@ public final class MigrationsTree implements Serializable {
 			}
 
 			size = ret.getNumberOfEntries();
-			greater = ret.getLid(size - 1);
-			if (p_lid > greater) {
+			greater = ret.getChunkID(size - 1);
+			if (p_chunkID > greater) {
 				if (size < ret.getNumberOfChildren()) {
 					ret = ret.getChild(size);
 					continue;
@@ -414,7 +405,7 @@ public final class MigrationsTree implements Serializable {
 				}
 			}
 
-			index = ret.indexOf(p_lid);
+			index = ret.indexOf(p_chunkID);
 			if (0 <= index) {
 				break;
 			} else {
@@ -431,23 +422,23 @@ public final class MigrationsTree implements Serializable {
 	}
 
 	/**
-	 * Returns next lid to given lid (could be the lid itself)
-	 * @param p_lid
-	 *            the lid
-	 * @return p_lid if p_lid is in btree or successor of p_lid, (-1) if there is no successor
+	 * Returns next ChunkID to given ChunkID (could be the ChunkID itself)
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return p_chunkID if p_chunkID is in btree or successor of p_chunkID, (-1) if there is no successor
 	 */
-	private long getLidOrSuccessorsLid(final long p_lid) {
+	private long getCIDOrSuccessorsCID(final long p_chunkID) {
 		long ret = -1;
 		int index;
 		Node node;
 
-		node = getNodeOrSuccessorsNode(p_lid);
+		node = getNodeOrSuccessorsNode(p_chunkID);
 		if (node != null) {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_chunkID);
 			if (0 <= index) {
-				ret = node.getLid(index);
+				ret = node.getChunkID(index);
 			} else {
-				ret = node.getLid(index * -1 - 1);
+				ret = node.getChunkID(index * -1 - 1);
 			}
 		}
 
@@ -455,19 +446,19 @@ public final class MigrationsTree implements Serializable {
 	}
 
 	/**
-	 * Returns the backup range ID of next lid to given lid (could be the lid itself)
-	 * @param p_lid
-	 *            the lid whose corresponding RangeID is searched
-	 * @return RangeID for p_lid if p_lid is in btree or successors NodeID
+	 * Returns the backup range ID of next ChunkID to given ChunkID (could be the ChunkID itself)
+	 * @param p_chunkID
+	 *            the ChunkID whose corresponding RangeID is searched
+	 * @return RangeID for p_chunkID if p_chunkID is in btree or successors NodeID
 	 */
-	private byte getRangeIDOrSuccessorsRangeID(final long p_lid) {
+	private byte getRangeIDOrSuccessorsRangeID(final long p_chunkID) {
 		byte ret = -1;
 		int index;
 		Node node;
 
-		node = getNodeOrSuccessorsNode(p_lid);
+		node = getNodeOrSuccessorsNode(p_chunkID);
 		if (node != null) {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_chunkID);
 			if (0 <= index) {
 				ret = node.getRangeID(index);
 			} else {
@@ -480,13 +471,13 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Returns the node in which the predecessor is
-	 * @param p_lid
-	 *            lid whose predecessor's node is searched
+	 * @param p_chunkID
+	 *            ChunkID whose predecessor's node is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the node in which the predecessor of p_lid is or null if there is no predecessor
+	 * @return the node in which the predecessor of p_chunkID is or null if there is no predecessor
 	 */
-	private Node getPredecessorsNode(final long p_lid, final Node p_node) {
+	private Node getPredecessorsNode(final long p_chunkID, final Node p_node) {
 		int index;
 		Node ret = null;
 		Node node;
@@ -496,7 +487,7 @@ public final class MigrationsTree implements Serializable {
 
 		node = p_node;
 
-		if (p_lid == node.getLid(0)) {
+		if (p_chunkID == node.getChunkID(0)) {
 			if (0 < node.getNumberOfChildren()) {
 				// Get maximum in child tree
 				node = node.getChild(0);
@@ -507,14 +498,14 @@ public final class MigrationsTree implements Serializable {
 			} else {
 				parent = node.getParent();
 				if (parent != null) {
-					while (parent != null && p_lid < parent.getLid(0)) {
+					while (parent != null && p_chunkID < parent.getChunkID(0)) {
 						parent = parent.getParent();
 					}
 					ret = parent;
 				}
 			}
 		} else {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_chunkID);
 			if (0 <= index) {
 				if (index <= node.getNumberOfChildren()) {
 					// Get maximum in child tree
@@ -532,23 +523,23 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Returns the entry of the predecessor
-	 * @param p_lid
-	 *            the lid whose predecessor is searched
+	 * @param p_chunkID
+	 *            the ChunkID whose predecessor is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the entry of p_lid's predecessor or null if there is no predecessor
+	 * @return the entry of p_chunkID's predecessor or null if there is no predecessor
 	 */
-	private Entry getPredecessorsEntry(final long p_lid, final Node p_node) {
+	private Entry getPredecessorsEntry(final long p_chunkID, final Node p_node) {
 		Entry ret = null;
 		Node predecessorsNode;
-		long predecessorsLid;
+		long predecessorsCID;
 
-		predecessorsNode = getPredecessorsNode(p_lid, p_node);
+		predecessorsNode = getPredecessorsNode(p_chunkID, p_node);
 		if (predecessorsNode != null) {
 			for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
-				predecessorsLid = predecessorsNode.getLid(i);
-				if (p_lid > predecessorsLid) {
-					ret = new Entry(predecessorsLid, predecessorsNode.getRangeID(i));
+				predecessorsCID = predecessorsNode.getChunkID(i);
+				if (p_chunkID > predecessorsCID) {
+					ret = new Entry(predecessorsCID, predecessorsNode.getRangeID(i));
 					break;
 				}
 			}
@@ -559,13 +550,13 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Returns the node in which the successor is
-	 * @param p_lid
-	 *            lid whose successor's node is searched
+	 * @param p_chunkID
+	 *            ChunkID whose successor's node is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the node in which the successor of p_lid is or null if there is no successor
+	 * @return the node in which the successor of p_chunkID is or null if there is no successor
 	 */
-	private Node getSuccessorsNode(final long p_lid, final Node p_node) {
+	private Node getSuccessorsNode(final long p_chunkID, final Node p_node) {
 		int index;
 		Node ret = null;
 		Node node;
@@ -575,7 +566,7 @@ public final class MigrationsTree implements Serializable {
 
 		node = p_node;
 
-		if (p_lid == node.getLid(node.getNumberOfEntries() - 1)) {
+		if (p_chunkID == node.getChunkID(node.getNumberOfEntries() - 1)) {
 			if (node.getNumberOfEntries() < node.getNumberOfChildren()) {
 				// Get minimum in child tree
 				node = node.getChild(node.getNumberOfEntries());
@@ -586,14 +577,14 @@ public final class MigrationsTree implements Serializable {
 			} else {
 				parent = node.getParent();
 				if (parent != null) {
-					while (parent != null && p_lid > parent.getLid(parent.getNumberOfEntries() - 1)) {
+					while (parent != null && p_chunkID > parent.getChunkID(parent.getNumberOfEntries() - 1)) {
 						parent = parent.getParent();
 					}
 					ret = parent;
 				}
 			}
 		} else {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_chunkID);
 			if (0 <= index) {
 				if (index < node.getNumberOfChildren()) {
 					// Get minimum in child tree
@@ -611,23 +602,23 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Returns the entry of the successor
-	 * @param p_lid
-	 *            the lid whose successor is searched
+	 * @param p_chunkID
+	 *            the ChunkID whose successor is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the entry of p_lid's successor or null if there is no successor
+	 * @return the entry of p_chunkID's successor or null if there is no successor
 	 */
-	private Entry getSuccessorsEntry(final long p_lid, final Node p_node) {
+	private Entry getSuccessorsEntry(final long p_chunkID, final Node p_node) {
 		Entry ret = null;
 		Node successorsNode;
-		long successorsLid;
+		long successorsCID;
 
-		successorsNode = getSuccessorsNode(p_lid, p_node);
+		successorsNode = getSuccessorsNode(p_chunkID, p_node);
 		if (successorsNode != null) {
 			for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
-				successorsLid = successorsNode.getLid(i);
-				if (p_lid < successorsLid) {
-					ret = new Entry(successorsLid, successorsNode.getRangeID(i));
+				successorsCID = successorsNode.getChunkID(i);
+				if (p_chunkID < successorsCID) {
+					ret = new Entry(successorsCID, successorsNode.getRangeID(i));
 					break;
 				}
 			}
@@ -638,19 +629,19 @@ public final class MigrationsTree implements Serializable {
 
 	/**
 	 * Splits down the middle if node is greater than maxEntries
-	 * @param p_lid
-	 *            the new lid that causes the splitting
+	 * @param p_chunkID
+	 *            the new ChunkID that causes the splitting
 	 * @param p_node
 	 *            the node that has to be split
-	 * @return the node in which p_lid must be inserted
+	 * @return the node in which p_chunkID must be inserted
 	 */
-	private Node split(final long p_lid, final Node p_node) {
+	private Node split(final long p_chunkID, final Node p_node) {
 		Node ret;
 		Node node;
 
 		int size;
 		int medianIndex;
-		long medianLid;
+		long medianCID;
 		byte medianRangeID;
 
 		Node left;
@@ -662,7 +653,7 @@ public final class MigrationsTree implements Serializable {
 
 		size = node.getNumberOfEntries();
 		medianIndex = size / 2;
-		medianLid = node.getLid(medianIndex);
+		medianCID = node.getChunkID(medianIndex);
 		medianRangeID = node.getRangeID(medianIndex);
 
 		left = new Node(null, m_maxEntries, m_maxChildren);
@@ -679,7 +670,7 @@ public final class MigrationsTree implements Serializable {
 		if (null == node.getParent()) {
 			// New root, height of tree is increased
 			newRoot = new Node(null, m_maxEntries, m_maxChildren);
-			newRoot.addEntry(medianLid, medianRangeID, 0);
+			newRoot.addEntry(medianCID, medianRangeID, 0);
 			node.setParent(newRoot);
 			m_root = newRoot;
 			node = m_root;
@@ -687,21 +678,21 @@ public final class MigrationsTree implements Serializable {
 			node.addChild(right);
 			parent = newRoot;
 		} else {
-			// Move the median lid up to the parent
+			// Move the median ChunkID up to the parent
 			parent = node.getParent();
-			parent.addEntry(medianLid, medianRangeID);
+			parent.addEntry(medianCID, medianRangeID);
 			parent.removeChild(node);
 			parent.addChild(left);
 			parent.addChild(right);
 
 			if (parent.getNumberOfEntries() > m_maxEntries) {
-				split(p_lid, parent);
+				split(p_chunkID, parent);
 			}
 		}
 
-		if (p_lid < medianLid) {
+		if (p_chunkID < medianCID) {
 			ret = left;
-		} else if (p_lid > medianLid) {
+		} else if (p_chunkID > medianCID) {
 			ret = right;
 		} else {
 			ret = parent;
@@ -711,41 +702,41 @@ public final class MigrationsTree implements Serializable {
 	}
 
 	/**
-	 * Removes given p_lid
-	 * @param p_lid
-	 *            the lid
-	 * @return p_lid or (-1) if there is no entry for p_lid
+	 * Removes given p_chunkID
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return p_chunkID or (-1) if there is no entry for p_chunkID
 	 */
-	private long remove(final long p_lid) {
+	private long remove(final long p_chunkID) {
 		long ret;
 		Node node;
 
-		node = getNodeOrSuccessorsNode(p_lid);
-		ret = remove(p_lid, node);
+		node = getNodeOrSuccessorsNode(p_chunkID);
+		ret = remove(p_chunkID, node);
 
 		return ret;
 	}
 
 	/**
-	 * Removes the p_lid from given node and checks invariants
-	 * @param p_lid
-	 *            the lid
+	 * Removes the p_chunkID from given node and checks invariants
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @param p_node
-	 *            the node in which p_lid should be stored
-	 * @return p_lid or (-1) if there is no entry for p_lid
+	 *            the node in which p_chunkID should be stored
+	 * @return p_chunkID or (-1) if there is no entry for p_chunkID
 	 */
-	private long remove(final long p_lid, final Node p_node) {
+	private long remove(final long p_chunkID, final Node p_node) {
 		long ret = -1;
 		int index;
 		Node greatest;
-		long replaceLid;
+		long replaceCID;
 		byte replaceRangeID;
 
 		Contract.checkNotNull(p_node, "Node null");
 
-		index = p_node.indexOf(p_lid);
+		index = p_node.indexOf(p_chunkID);
 		if (0 <= index) {
-			ret = p_node.removeEntry(p_lid);
+			ret = p_node.removeEntry(p_chunkID);
 			if (0 == p_node.getNumberOfChildren()) {
 				// Leaf node
 				if (null != p_node.getParent() && p_node.getNumberOfEntries() < m_minEntries) {
@@ -760,18 +751,18 @@ public final class MigrationsTree implements Serializable {
 				while (0 < greatest.getNumberOfChildren()) {
 					greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
 				}
-				replaceLid = -1;
+				replaceCID = -1;
 				replaceRangeID = -1;
 				if (0 < greatest.getNumberOfEntries()) {
 					replaceRangeID = greatest.getRangeID(greatest.getNumberOfEntries() - 1);
-					replaceLid = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
+					replaceCID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
 				}
-				p_node.addEntry(replaceLid, replaceRangeID);
+				p_node.addEntry(replaceCID, replaceRangeID);
 				if (null != greatest.getParent() && greatest.getNumberOfEntries() < m_minEntries) {
 					combined(greatest);
 				}
 				if (greatest.getNumberOfChildren() > m_maxChildren) {
-					split(p_lid, greatest);
+					split(p_chunkID, greatest);
 				}
 			}
 			m_entrySize--;
@@ -795,13 +786,13 @@ public final class MigrationsTree implements Serializable {
 		Node leftNeighbor;
 		int leftNeighborSize;
 
-		long removeLid;
+		long removeCID;
 		int prev;
 		byte parentRangeID;
-		long parentLid;
+		long parentCID;
 
 		byte neighborRangeID;
-		long neighborLid;
+		long neighborCID;
 
 		parent = p_node.getParent();
 		index = parent.indexOf(p_node);
@@ -818,16 +809,16 @@ public final class MigrationsTree implements Serializable {
 		// Try to borrow neighbor
 		if (null != rightNeighbor && rightNeighborSize > m_minEntries) {
 			// Try to borrow from right neighbor
-			removeLid = rightNeighbor.getLid(0);
-			prev = parent.indexOf(removeLid) * -1 - 2;
+			removeCID = rightNeighbor.getChunkID(0);
+			prev = parent.indexOf(removeCID) * -1 - 2;
 			parentRangeID = parent.getRangeID(prev);
-			parentLid = parent.removeEntry(prev);
+			parentCID = parent.removeEntry(prev);
 
 			neighborRangeID = rightNeighbor.getRangeID(0);
-			neighborLid = rightNeighbor.removeEntry(0);
+			neighborCID = rightNeighbor.removeEntry(0);
 
-			p_node.addEntry(parentLid, parentRangeID);
-			parent.addEntry(neighborLid, neighborRangeID);
+			p_node.addEntry(parentCID, parentRangeID);
+			parent.addEntry(neighborCID, neighborRangeID);
 			if (0 < rightNeighbor.getNumberOfChildren()) {
 				p_node.addChild(rightNeighbor.removeChild(0));
 			}
@@ -841,27 +832,27 @@ public final class MigrationsTree implements Serializable {
 
 			if (null != leftNeighbor && leftNeighborSize > m_minEntries) {
 				// Try to borrow from left neighbor
-				removeLid = leftNeighbor.getLid(leftNeighbor.getNumberOfEntries() - 1);
-				prev = parent.indexOf(removeLid) * -1 - 1;
+				removeCID = leftNeighbor.getChunkID(leftNeighbor.getNumberOfEntries() - 1);
+				prev = parent.indexOf(removeCID) * -1 - 1;
 				parentRangeID = parent.getRangeID(prev);
-				parentLid = parent.removeEntry(prev);
+				parentCID = parent.removeEntry(prev);
 
 				neighborRangeID = leftNeighbor.getRangeID(leftNeighbor.getNumberOfEntries() - 1);
-				neighborLid = leftNeighbor.removeEntry(leftNeighbor.getNumberOfEntries() - 1);
+				neighborCID = leftNeighbor.removeEntry(leftNeighbor.getNumberOfEntries() - 1);
 
-				p_node.addEntry(parentLid, parentRangeID);
-				parent.addEntry(neighborLid, neighborRangeID);
+				p_node.addEntry(parentCID, parentRangeID);
+				parent.addEntry(neighborCID, neighborRangeID);
 				if (0 < leftNeighbor.getNumberOfChildren()) {
 					p_node.addChild(leftNeighbor.removeChild(leftNeighbor.getNumberOfChildren() - 1));
 				}
 			} else if (null != rightNeighbor && 0 < parent.getNumberOfEntries()) {
 				// Cannot borrow from neighbors, try to combined with right neighbor
-				removeLid = rightNeighbor.getLid(0);
-				prev = parent.indexOf(removeLid) * -1 - 2;
+				removeCID = rightNeighbor.getChunkID(0);
+				prev = parent.indexOf(removeCID) * -1 - 2;
 				parentRangeID = parent.getRangeID(prev);
-				parentLid = parent.removeEntry(prev);
+				parentCID = parent.removeEntry(prev);
 				parent.removeChild(rightNeighbor);
-				p_node.addEntry(parentLid, parentRangeID);
+				p_node.addEntry(parentCID, parentRangeID);
 
 				p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
 				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
@@ -876,12 +867,12 @@ public final class MigrationsTree implements Serializable {
 				}
 			} else if (null != leftNeighbor && 0 < parent.getNumberOfEntries()) {
 				// Cannot borrow from neighbors, try to combined with left neighbor
-				removeLid = leftNeighbor.getLid(leftNeighbor.getNumberOfEntries() - 1);
-				prev = parent.indexOf(removeLid) * -1 - 1;
+				removeCID = leftNeighbor.getChunkID(leftNeighbor.getNumberOfEntries() - 1);
+				prev = parent.indexOf(removeCID) * -1 - 1;
 				parentRangeID = parent.getRangeID(prev);
-				parentLid = parent.removeEntry(prev);
+				parentCID = parent.removeEntry(prev);
 				parent.removeChild(leftNeighbor);
-				p_node.addEntry(parentLid, parentRangeID);
+				p_node.addEntry(parentCID, parentRangeID);
 				p_node.addEntries(leftNeighbor, 0, leftNeighbor.getNumberOfEntries(), -1);
 				p_node.addChildren(leftNeighbor, 0, leftNeighbor.getNumberOfChildren(), -1);
 
@@ -940,8 +931,8 @@ public final class MigrationsTree implements Serializable {
 		if (1 < numberOfEntries) {
 			// Make sure the keys are sorted
 			for (int i = 1; i < numberOfEntries; i++) {
-				prev = p_node.getLid(i - 1);
-				next = p_node.getLid(i);
+				prev = p_node.getChunkID(i - 1);
+				next = p_node.getChunkID(i);
 				if (prev > next) {
 					ret = false;
 					break;
@@ -983,26 +974,26 @@ public final class MigrationsTree implements Serializable {
 
 			first = p_node.getChild(0);
 			// The first child's last key should be less than the node's first key
-			if (first.getLid(first.getNumberOfEntries() - 1) > p_node.getLid(0)) {
+			if (first.getChunkID(first.getNumberOfEntries() - 1) > p_node.getChunkID(0)) {
 				ret = false;
 			}
 
 			last = p_node.getChild(p_node.getNumberOfChildren() - 1);
 			// The last child's first key should be greater than the node's last key
-			if (last.getLid(0) < p_node.getLid(p_node.getNumberOfEntries() - 1)) {
+			if (last.getChunkID(0) < p_node.getChunkID(p_node.getNumberOfEntries() - 1)) {
 				ret = false;
 			}
 
 			// Check that each node's first and last key holds it's invariance
 			for (int i = 1; i < p_node.getNumberOfEntries(); i++) {
-				prev = p_node.getLid(i - 1);
-				next = p_node.getLid(i);
+				prev = p_node.getChunkID(i - 1);
+				next = p_node.getChunkID(i);
 				child = p_node.getChild(i);
-				if (prev > child.getLid(0)) {
+				if (prev > child.getChunkID(0)) {
 					ret = false;
 					break;
 				}
-				if (next < child.getLid(child.getNumberOfEntries() - 1)) {
+				if (next < child.getChunkID(child.getNumberOfEntries() - 1)) {
 					ret = false;
 					break;
 				}
@@ -1061,7 +1052,7 @@ public final class MigrationsTree implements Serializable {
 		}
 		ret.append("[" + p_node.getNumberOfEntries() + ", " + p_node.getNumberOfChildren() + "] ");
 		for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-			ret.append("(lid: " + p_node.getLid(i) + " nid: " + p_node.getRangeID(i) + ")");
+			ret.append("(ChunkID: " + p_node.getChunkID(i) + " NodeID: " + p_node.getRangeID(i) + ")");
 			if (i < p_node.getNumberOfEntries() - 1) {
 				ret.append(", ");
 			}
@@ -1137,9 +1128,9 @@ public final class MigrationsTree implements Serializable {
 		public int compareTo(final Node p_cmp) {
 			int ret;
 
-			if (getLid(0) < p_cmp.getLid(0)) {
+			if (getChunkID(0) < p_cmp.getChunkID(0)) {
 				ret = -1;
-			} else if (getLid(0) > p_cmp.getLid(0)) {
+			} else if (getChunkID(0) > p_cmp.getChunkID(0)) {
 				ret = 1;
 			} else {
 				ret = 0;
@@ -1166,12 +1157,12 @@ public final class MigrationsTree implements Serializable {
 		}
 
 		/**
-		 * Returns the lid to given index
+		 * Returns the ChunkID to given index
 		 * @param p_index
 		 *            the index
-		 * @return the lid to given index
+		 * @return the ChunkID to given index
 		 */
-		private long getLid(final int p_index) {
+		private long getChunkID(final int p_index) {
 			return m_keys[p_index];
 		}
 
@@ -1186,13 +1177,13 @@ public final class MigrationsTree implements Serializable {
 		}
 
 		/**
-		 * Returns the index for given lid. Uses the binary search algorithm from
+		 * Returns the index for given ChunkID. Uses the binary search algorithm from
 		 * java.util.Arrays adapted to our needs
-		 * @param p_lid
-		 *            the lid
-		 * @return the index for given lid, if it is contained in the array, (-(insertion point) - 1) otherwise
+		 * @param p_chunkID
+		 *            the ChunkID
+		 * @return the index for given ChunkID, if it is contained in the array, (-(insertion point) - 1) otherwise
 		 */
-		private int indexOf(final long p_lid) {
+		private int indexOf(final long p_chunkID) {
 			int ret = -1;
 			int low;
 			int high;
@@ -1206,9 +1197,9 @@ public final class MigrationsTree implements Serializable {
 				mid = low + high >>> 1;
 				midVal = m_keys[mid];
 
-				if (midVal < p_lid) {
+				if (midVal < p_chunkID) {
 					low = mid + 1;
-				} else if (midVal > p_lid) {
+				} else if (midVal > p_chunkID) {
 					high = mid - 1;
 				} else {
 					ret = mid;
@@ -1224,20 +1215,20 @@ public final class MigrationsTree implements Serializable {
 
 		/**
 		 * Adds an entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_chunkID
+		 *            the ChunkID
 		 * @param p_rangeID
 		 *            the backup range ID
 		 */
-		private void addEntry(final long p_lid, final byte p_rangeID) {
+		private void addEntry(final long p_chunkID, final byte p_rangeID) {
 			int index;
 
-			index = this.indexOf(p_lid) * -1 - 1;
+			index = this.indexOf(p_chunkID) * -1 - 1;
 
 			System.arraycopy(m_keys, index, m_keys, index + 1, m_numberOfEntries - index);
 			System.arraycopy(m_dataLeafs, index, m_dataLeafs, index + 1, m_numberOfEntries - index);
 
-			m_keys[index] = p_lid;
+			m_keys[index] = p_chunkID;
 			m_dataLeafs[index] = p_rangeID;
 
 			m_numberOfEntries++;
@@ -1245,18 +1236,18 @@ public final class MigrationsTree implements Serializable {
 
 		/**
 		 * Adds an entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_chunkID
+		 *            the ChunkID
 		 * @param p_rangeID
 		 *            the backup range ID
 		 * @param p_index
 		 *            the index to store the element at
 		 */
-		private void addEntry(final long p_lid, final byte p_rangeID, final int p_index) {
+		private void addEntry(final long p_chunkID, final byte p_rangeID, final int p_index) {
 			System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
 			System.arraycopy(m_dataLeafs, p_index, m_dataLeafs, p_index + 1, m_numberOfEntries - p_index);
 
-			m_keys[p_index] = p_lid;
+			m_keys[p_index] = p_chunkID;
 			m_dataLeafs[p_index] = p_rangeID;
 
 			m_numberOfEntries++;
@@ -1298,34 +1289,34 @@ public final class MigrationsTree implements Serializable {
 
 		/**
 		 * Changes an entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_chunkID
+		 *            the ChunkID
 		 * @param p_rangeID
 		 *            the backup range ID
 		 * @param p_index
 		 *            the index of given entry in this node
 		 */
-		private void changeEntry(final long p_lid, final byte p_rangeID, final int p_index) {
+		private void changeEntry(final long p_chunkID, final byte p_rangeID, final int p_index) {
 
-			if (p_lid == getLid(p_index)) {
-				m_keys[p_index] = p_lid;
+			if (p_chunkID == getChunkID(p_index)) {
+				m_keys[p_index] = p_chunkID;
 				m_dataLeafs[p_index] = p_rangeID;
 			}
 		}
 
 		/**
-		 * Removes the entry with given lid
-		 * @param p_lid
-		 *            lid of the entry that has to be deleted
-		 * @return p_lid or (-1) if there is no entry for p_lid in this node
+		 * Removes the entry with given ChunkID
+		 * @param p_chunkID
+		 *            ChunkID of the entry that has to be deleted
+		 * @return p_chunkID or (-1) if there is no entry for p_chunkID in this node
 		 */
-		private long removeEntry(final long p_lid) {
+		private long removeEntry(final long p_chunkID) {
 			long ret = -1;
 			int index;
 
-			index = this.indexOf(p_lid);
+			index = this.indexOf(p_chunkID);
 			if (0 <= index) {
-				ret = getLid(index);
+				ret = getChunkID(index);
 
 				System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index - 1);
 				System.arraycopy(m_dataLeafs, index + 1, m_dataLeafs, index, m_numberOfEntries - index - 1);
@@ -1340,13 +1331,13 @@ public final class MigrationsTree implements Serializable {
 		 * Removes the entry with given index
 		 * @param p_index
 		 *            the index of the entry that has to be deleted
-		 * @return p_lid or (-1) if p_index is to large
+		 * @return ChunkID or (-1) if p_index is to large
 		 */
 		private long removeEntry(final int p_index) {
 			long ret = -1;
 
 			if (p_index < m_numberOfEntries) {
-				ret = getLid(p_index);
+				ret = getChunkID(p_index);
 
 				System.arraycopy(m_keys, p_index + 1, m_keys, p_index, m_numberOfEntries - p_index);
 				System.arraycopy(m_dataLeafs, p_index + 1, m_dataLeafs, p_index, m_numberOfEntries - p_index);
@@ -1394,20 +1385,20 @@ public final class MigrationsTree implements Serializable {
 			int low;
 			int high;
 			int mid;
-			long lid;
+			long chunkID;
 			long midVal;
 
-			lid = p_child.getLid(0);
+			chunkID = p_child.getChunkID(0);
 			low = 0;
 			high = m_numberOfChildren - 1;
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLid(0);
+				midVal = m_children[mid].getChunkID(0);
 
-				if (midVal < lid) {
+				if (midVal < chunkID) {
 					low = mid + 1;
-				} else if (midVal > lid) {
+				} else if (midVal > chunkID) {
 					high = mid - 1;
 				} else {
 					ret = mid;
@@ -1540,7 +1531,7 @@ public final class MigrationsTree implements Serializable {
 
 			ret.append("entries=[");
 			for (int i = 0; i < getNumberOfEntries(); i++) {
-				ret.append("(lid: " + getLid(i) + " location: " + getRangeID(i) + ")");
+				ret.append("(ChunkID: " + getChunkID(i) + " location: " + getRangeID(i) + ")");
 				if (i < getNumberOfEntries() - 1) {
 					ret.append(", ");
 				}
@@ -1550,7 +1541,7 @@ public final class MigrationsTree implements Serializable {
 			if (null != m_parent) {
 				ret.append("parent=[");
 				for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
-					ret.append("(lid: " + getLid(i) + " location: " + getRangeID(i) + ")");
+					ret.append("(ChunkID: " + getChunkID(i) + " location: " + getRangeID(i) + ")");
 					if (i < m_parent.getNumberOfEntries() - 1) {
 						ret.append(", ");
 					}
@@ -1571,7 +1562,7 @@ public final class MigrationsTree implements Serializable {
 	}
 
 	/**
-	 * Auxiliary object to return lid and backup range ID at once
+	 * Auxiliary object to return ChunkID and backup range ID at once
 	 * @author Kevin Beineke
 	 *         13.06.2013
 	 */
@@ -1581,28 +1572,28 @@ public final class MigrationsTree implements Serializable {
 		private static final long serialVersionUID = -7000053901808777917L;
 
 		// Attributes
-		private long m_lid;
+		private long m_chunkID;
 		private byte m_rangeID;
 
 		// Constructors
 		/**
 		 * Creates an instance of Entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_chunkID
+		 *            the ChunkID
 		 * @param p_rangeID
 		 *            the backup range ID
 		 */
-		public Entry(final long p_lid, final byte p_rangeID) {
-			m_lid = p_lid;
+		public Entry(final long p_chunkID, final byte p_rangeID) {
+			m_chunkID = p_chunkID;
 			m_rangeID = p_rangeID;
 		}
 
 		/**
-		 * Returns the lid
-		 * @return the lid
+		 * Returns the ChunkID
+		 * @return the ChunkID
 		 */
-		public long getLid() {
-			return m_lid;
+		public long getChunkID() {
+			return m_chunkID;
 		}
 
 		/**
@@ -1619,7 +1610,7 @@ public final class MigrationsTree implements Serializable {
 		 */
 		@Override
 		public String toString() {
-			return "(lid: " + m_lid + ", location: " + m_rangeID + ")";
+			return "(ChunkID: " + m_chunkID + ", location: " + m_rangeID + ")";
 		}
 	}
 }

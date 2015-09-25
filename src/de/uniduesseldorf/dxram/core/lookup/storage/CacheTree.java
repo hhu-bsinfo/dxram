@@ -332,7 +332,7 @@ public final class CacheTree {
 	 * @param p_chunkID
 	 *            the ChunkID
 	 * @param p_nodeID
-	 *            the nodeID
+	 *            the NodeID
 	 * @return the node in which the entry is stored
 	 */
 	private Node createOrReplaceEntry(final long p_chunkID, final short p_nodeID) {
@@ -1330,16 +1330,16 @@ public final class CacheTree {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_chunkID) {
-				low = mid + 1;
-			} else if (midVal > p_chunkID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_chunkID) {
+					low = mid + 1;
+				} else if (midVal > p_chunkID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1528,16 +1528,16 @@ public final class CacheTree {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getCID(0);
+				midVal = m_children[mid].getCID(0);
 
-			if (midVal < chunkID) {
-				low = mid + 1;
-			} else if (midVal > chunkID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < chunkID) {
+					low = mid + 1;
+				} else if (midVal > chunkID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

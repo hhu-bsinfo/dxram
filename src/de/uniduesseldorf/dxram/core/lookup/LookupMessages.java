@@ -8,7 +8,7 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.AbstractRequest;
 import de.uniduesseldorf.dxram.core.net.AbstractResponse;
@@ -159,7 +159,7 @@ public final class LookupMessages {
 		private byte[] m_mappings;
 		private ArrayList<Short> m_superpeers;
 		private ArrayList<Short> m_peers;
-		private ArrayList<CIDTreeOptimized> m_trees;
+		private ArrayList<LookupTree> m_trees;
 
 		// Constructors
 		/**
@@ -197,7 +197,7 @@ public final class LookupMessages {
 		 *            the CIDTrees of the peers
 		 */
 		public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor, final short p_successor,
-				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
+				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<LookupTree> p_trees) {
 			super(p_request, SUBTYPE_JOIN_RESPONSE);
 
 			m_newContactSuperpeer = p_newContactSuperpeer;
@@ -262,7 +262,7 @@ public final class LookupMessages {
 		 * Get CIDTrees
 		 * @return the CIDTrees
 		 */
-		public final ArrayList<CIDTreeOptimized> getCIDTrees() {
+		public final ArrayList<LookupTree> getCIDTrees() {
 			return m_trees;
 		}
 
@@ -299,7 +299,7 @@ public final class LookupMessages {
 					OutputHelper.writeInt(p_buffer, 0);
 				} else {
 					OutputHelper.writeInt(p_buffer, m_trees.size());
-					for (CIDTreeOptimized tree : m_trees) {
+					for (LookupTree tree : m_trees) {
 						OutputHelper.writeCIDTree(p_buffer, tree);
 					}
 				}
@@ -333,7 +333,7 @@ public final class LookupMessages {
 					m_peers.add(InputHelper.readNodeID(p_buffer));
 				}
 
-				m_trees = new ArrayList<CIDTreeOptimized>();
+				m_trees = new ArrayList<LookupTree>();
 				length = InputHelper.readInt(p_buffer);
 				for (int i = 0; i < length; i++) {
 					m_trees.add(InputHelper.readCIDTree(p_buffer));
@@ -364,7 +364,7 @@ public final class LookupMessages {
 
 				ret += OutputHelper.getIntWriteLength();
 				if (m_trees != null) {
-					for (CIDTreeOptimized tree : m_trees) {
+					for (LookupTree tree : m_trees) {
 						ret += OutputHelper.getCIDTreeWriteLength(tree);
 					}
 				}
@@ -1310,7 +1310,7 @@ public final class LookupMessages {
 	public static class AskAboutBackupsResponse extends AbstractResponse {
 
 		// Attributes
-		private ArrayList<CIDTreeOptimized> m_trees;
+		private ArrayList<LookupTree> m_trees;
 		private byte[] m_mappings;
 
 		// Constructors
@@ -1333,7 +1333,7 @@ public final class LookupMessages {
 		 * @param p_mappings
 		 *            the missing id mappings
 		 */
-		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request, final ArrayList<CIDTreeOptimized> p_trees, final byte[] p_mappings) {
+		public AskAboutBackupsResponse(final AskAboutBackupsRequest p_request, final ArrayList<LookupTree> p_trees, final byte[] p_mappings) {
 			super(p_request, SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE);
 
 			m_trees = p_trees;
@@ -1345,7 +1345,7 @@ public final class LookupMessages {
 		 * Get the missing backups
 		 * @return the CIDTrees
 		 */
-		public final ArrayList<CIDTreeOptimized> getBackups() {
+		public final ArrayList<LookupTree> getBackups() {
 			return m_trees;
 		}
 
@@ -1371,7 +1371,7 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (CIDTreeOptimized tree : m_trees) {
+				for (LookupTree tree : m_trees) {
 					OutputHelper.writeCIDTree(p_buffer, tree);
 				}
 			}
@@ -1385,7 +1385,7 @@ public final class LookupMessages {
 				m_mappings = InputHelper.readByteArray(p_buffer);
 			}
 
-			m_trees = new ArrayList<CIDTreeOptimized>();
+			m_trees = new ArrayList<LookupTree>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readCIDTree(p_buffer));
@@ -1403,7 +1403,7 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (CIDTreeOptimized tree : m_trees) {
+				for (LookupTree tree : m_trees) {
 					ret += OutputHelper.getCIDTreeWriteLength(tree);
 				}
 			}
@@ -1633,7 +1633,7 @@ public final class LookupMessages {
 	public static class SendBackupsMessage extends AbstractMessage {
 
 		// Attributes
-		private ArrayList<CIDTreeOptimized> m_trees;
+		private ArrayList<LookupTree> m_trees;
 		private byte[] m_mappings;
 
 		// Constructors
@@ -1656,7 +1656,7 @@ public final class LookupMessages {
 		 * @param p_trees
 		 *            the CIDTrees
 		 */
-		public SendBackupsMessage(final short p_destination, final byte[] p_mappings, final ArrayList<CIDTreeOptimized> p_trees) {
+		public SendBackupsMessage(final short p_destination, final byte[] p_mappings, final ArrayList<LookupTree> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_SEND_BACKUPS_MESSAGE);
 
 			m_mappings = p_mappings;
@@ -1668,7 +1668,7 @@ public final class LookupMessages {
 		 * Get CIDTrees
 		 * @return the CIDTrees
 		 */
-		public final ArrayList<CIDTreeOptimized> getCIDTrees() {
+		public final ArrayList<LookupTree> getCIDTrees() {
 			return m_trees;
 		}
 
@@ -1694,7 +1694,7 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (CIDTreeOptimized tree : m_trees) {
+				for (LookupTree tree : m_trees) {
 					OutputHelper.writeCIDTree(p_buffer, tree);
 				}
 			}
@@ -1708,7 +1708,7 @@ public final class LookupMessages {
 				m_mappings = InputHelper.readByteArray(p_buffer);
 			}
 
-			m_trees = new ArrayList<CIDTreeOptimized>();
+			m_trees = new ArrayList<LookupTree>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readCIDTree(p_buffer));
@@ -1726,7 +1726,7 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (CIDTreeOptimized tree : m_trees) {
+				for (LookupTree tree : m_trees) {
 					ret += OutputHelper.getCIDTreeWriteLength(tree);
 				}
 			}
@@ -1858,7 +1858,7 @@ public final class LookupMessages {
 		private byte[] m_mappings;
 		private ArrayList<Short> m_superpeers;
 		private ArrayList<Short> m_peers;
-		private ArrayList<CIDTreeOptimized> m_trees;
+		private ArrayList<LookupTree> m_trees;
 
 		// Constructors
 		/**
@@ -1896,7 +1896,7 @@ public final class LookupMessages {
 		 *            the CIDTrees of the peers
 		 */
 		public PromotePeerRequest(final short p_destination, final short p_predecessor, final short p_successor, final short p_replacement,
-				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<CIDTreeOptimized> p_trees) {
+				final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<LookupTree> p_trees) {
 			super(p_destination, TYPE, SUBTYPE_PROMOTE_PEER_REQUEST);
 
 			m_predecessor = p_predecessor;
@@ -1961,7 +1961,7 @@ public final class LookupMessages {
 		 * Get CIDTrees
 		 * @return the CIDTrees
 		 */
-		public final ArrayList<CIDTreeOptimized> getCIDTrees() {
+		public final ArrayList<LookupTree> getCIDTrees() {
 			return m_trees;
 		}
 
@@ -1997,7 +1997,7 @@ public final class LookupMessages {
 				OutputHelper.writeInt(p_buffer, 0);
 			} else {
 				OutputHelper.writeInt(p_buffer, m_trees.size());
-				for (CIDTreeOptimized tree : m_trees) {
+				for (LookupTree tree : m_trees) {
 					OutputHelper.writeCIDTree(p_buffer, tree);
 				}
 			}
@@ -2027,7 +2027,7 @@ public final class LookupMessages {
 				m_peers.add(InputHelper.readNodeID(p_buffer));
 			}
 
-			m_trees = new ArrayList<CIDTreeOptimized>();
+			m_trees = new ArrayList<LookupTree>();
 			length = InputHelper.readInt(p_buffer);
 			for (int i = 0; i < length; i++) {
 				m_trees.add(InputHelper.readCIDTree(p_buffer));
@@ -2054,7 +2054,7 @@ public final class LookupMessages {
 
 			ret += OutputHelper.getIntWriteLength();
 			if (m_trees != null) {
-				for (CIDTreeOptimized tree : m_trees) {
+				for (LookupTree tree : m_trees) {
 					ret += OutputHelper.getCIDTreeWriteLength(tree);
 				}
 			}

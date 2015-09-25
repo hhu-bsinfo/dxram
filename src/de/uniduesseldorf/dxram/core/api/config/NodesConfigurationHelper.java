@@ -38,10 +38,10 @@ public final class NodesConfigurationHelper {
 
 	// Methods
 	/**
-	 * Gets the address for the node of the given nodeID
+	 * Gets the address for the node of the given NodeID
 	 * @param p_nodeID
-	 *            the nodeID
-	 * @return the address for the node of the given nodeID
+	 *            the NodeID
+	 * @return the address for the node of the given NodeID
 	 */
 	public InetSocketAddress getAddress(final short p_nodeID) {
 		InetSocketAddress ret;
@@ -52,10 +52,10 @@ public final class NodesConfigurationHelper {
 	}
 
 	/**
-	 * Gets the host for the node of the given nodeID
+	 * Gets the host for the node of the given NodeID
 	 * @param p_nodeID
-	 *            the nodeID
-	 * @return the host for the node of the given nodeID
+	 *            the NodeID
+	 * @return the host for the node of the given NodeID
 	 */
 	public String getHost(final short p_nodeID) {
 		String ret;
@@ -70,10 +70,10 @@ public final class NodesConfigurationHelper {
 	}
 
 	/**
-	 * Gets the port for the node of the given nodeID
+	 * Gets the port for the node of the given NodeID
 	 * @param p_nodeID
-	 *            the nodeID
-	 * @return the port for the node of the given nodeID
+	 *            the NodeID
+	 * @return the port for the node of the given NodeID
 	 */
 	public int getPort(final short p_nodeID) {
 		int ret;
@@ -105,7 +105,7 @@ public final class NodesConfigurationHelper {
 	/**
 	 * Adds a new node
 	 * @param p_nodeID
-	 *            the nodeID
+	 *            the NodeID
 	 * @param p_value
 	 *            the parsed value
 	 */
@@ -122,8 +122,8 @@ public final class NodesConfigurationHelper {
 	}
 
 	/**
-	 * Gets a list of all nodeIDs
-	 * @return a list of all nodeIDs
+	 * Gets a list of all NodeIDs
+	 * @return a list of all NodeIDs
 	 */
 	public List<Short> getAlleNodeIDs() {
 		List<Short> nodes;

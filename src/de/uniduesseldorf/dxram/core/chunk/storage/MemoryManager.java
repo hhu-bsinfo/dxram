@@ -95,7 +95,7 @@ public final class MemoryManager {
 	public static LIDElement[] getNextLocalIDs(final int p_count) {
 		LIDElement[] ret = null;
 		int count = 0;
-		long lid;
+		long localID;
 
 		ret = new LIDElement[p_count];
 		for (int i = 0; i < p_count; i++) {
@@ -107,11 +107,11 @@ public final class MemoryManager {
 			}
 		}
 
-		lid = m_nextLocalID.getAndAdd(count);
+		localID = m_nextLocalID.getAndAdd(count);
 		count = 0;
 		for (int i = 0; i < p_count; i++) {
 			if (ret[i] == null) {
-				ret[i] = new LIDElement(lid + count++, 0);
+				ret[i] = new LIDElement(localID + count++, 0);
 			}
 		}
 

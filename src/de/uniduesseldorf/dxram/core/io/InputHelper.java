@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -238,8 +238,8 @@ public final class InputHelper {
 	 * @throws IOException
 	 *             if the CIDTree could not be read
 	 */
-	public static CIDTreeOptimized readCIDTree(final DataInput p_input) throws IOException {
-		CIDTreeOptimized ret = null;
+	public static LookupTree readCIDTree(final DataInput p_input) throws IOException {
+		LookupTree ret = null;
 		byte[] data;
 
 		if (readBoolean(p_input)) {
@@ -256,8 +256,8 @@ public final class InputHelper {
 	 *            the ByteBuffer
 	 * @return the CIDTree
 	 */
-	public static CIDTreeOptimized readCIDTree(final ByteBuffer p_buffer) {
-		CIDTreeOptimized ret = null;
+	public static LookupTree readCIDTree(final ByteBuffer p_buffer) {
+		LookupTree ret = null;
 		byte[] data;
 
 		if (readBoolean(p_buffer)) {
@@ -274,8 +274,8 @@ public final class InputHelper {
 	 *            the binary data
 	 * @return the CIDTree
 	 */
-	public static CIDTreeOptimized parseCIDTree(final byte[] p_data) {
-		CIDTreeOptimized ret = null;
+	public static LookupTree parseCIDTree(final byte[] p_data) {
+		LookupTree ret = null;
 		ByteArrayInputStream byteArrayInputStream;
 		ObjectInput objectInput = null;
 
@@ -283,7 +283,7 @@ public final class InputHelper {
 			byteArrayInputStream = new ByteArrayInputStream(p_data);
 			try {
 				objectInput = new ObjectInputStream(byteArrayInputStream);
-				ret = (CIDTreeOptimized) objectInput.readObject();
+				ret = (LookupTree) objectInput.readObject();
 			} catch (final Exception e) {} finally {
 				try {
 					if (objectInput != null) {

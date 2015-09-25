@@ -13,7 +13,7 @@ import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
 /**
- * Paging-like Tables for the CID-VA mapping
+ * Paging-like Tables for the ChunkID-VA mapping
  * @author Florian Klein
  *         13.02.2014
  */
@@ -205,18 +205,18 @@ public final class CIDTable {
 
 	/**
 	 * Gets an entry of the level 0 table
-	 * @param p_cid
-	 *            the cid of the entry
+	 * @param p_chunkID
+	 *            the ChunkID of the entry
 	 * @return the entry
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	protected static long get(final long p_cid) throws MemoryException {
+	protected static long get(final long p_chunkID) throws MemoryException {
 		long ret;
 
 		readLock(m_nodeIDTableDirectory);
 
-		ret = getEntry(p_cid, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
+		ret = getEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 
 		readUnlock(m_nodeIDTableDirectory);
 
@@ -225,8 +225,8 @@ public final class CIDTable {
 
 	/**
 	 * Gets an entry of the level 0 table
-	 * @param p_cid
-	 *            the cid of the entry
+	 * @param p_chunkID
+	 *            the ChunkID of the entry
 	 * @param p_table
 	 *            the current table
 	 * @param p_level
@@ -235,7 +235,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private static long getEntry(final long p_cid, final long p_table, final int p_level) throws MemoryException {
+	private static long getEntry(final long p_chunkID, final long p_table, final int p_level) throws MemoryException {
 		long ret = 0;
 		long index;
 		long entry;
@@ -243,14 +243,14 @@ public final class CIDTable {
 		// readLock(p_table);
 
 		if (p_level == LID_TABLE_LEVELS) {
-			index = p_cid >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
+			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
 		} else {
-			index = p_cid >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
+			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
 		entry = readEntry(p_table, index) & BITMASK_ADDRESS;
 		if (p_level > 0) {
 			if (entry > 0) {
-				ret = getEntry(p_cid, entry & BITMASK_ADDRESS, p_level - 1);
+				ret = getEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
 			ret = entry;
@@ -263,21 +263,21 @@ public final class CIDTable {
 
 	/**
 	 * Sets an entry of the level 0 table
-	 * @param p_cid
-	 *            the cid of the entry
+	 * @param p_chunkID
+	 *            the ChunkID of the entry
 	 * @param p_address
 	 *            the address
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	public static void set(final long p_cid, final long p_address) throws MemoryException {
-		setEntry(p_cid, p_address, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
+	public static void set(final long p_chunkID, final long p_address) throws MemoryException {
+		setEntry(p_chunkID, p_address, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 	}
 
 	/**
 	 * Sets an entry of the level 0 table
-	 * @param p_cid
-	 *            the cid of the entry
+	 * @param p_chunkID
+	 *            the ChunkID of the entry
 	 * @param p_address
 	 *            the address
 	 * @param p_table
@@ -287,14 +287,14 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private static void setEntry(final long p_cid, final long p_address, final long p_table, final int p_level) throws MemoryException {
+	private static void setEntry(final long p_chunkID, final long p_address, final long p_table, final int p_level) throws MemoryException {
 		long index;
 		long entry;
 
 		if (p_level == LID_TABLE_LEVELS) {
-			index = p_cid >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
+			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
 		} else {
-			index = p_cid >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
+			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
 		if (p_level > 0) {
 			writeLock(p_table);
@@ -310,7 +310,7 @@ public final class CIDTable {
 
 			if (entry > 0) {
 				// Set entry in the following table
-				setEntry(p_cid, p_address, entry & BITMASK_ADDRESS, p_level - 1);
+				setEntry(p_chunkID, p_address, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
 			writeLock(p_table);
@@ -324,37 +324,37 @@ public final class CIDTable {
 
 	/**
 	 * Gets and deletes an entry of the level 0 table
-	 * @param p_cid
-	 *            the cid of the entry
+	 * @param p_chunkID
+	 *            the ChunkID of the entry
 	 * @return the entry
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	protected static long delete(final long p_cid) throws MemoryException {
+	protected static long delete(final long p_chunkID) throws MemoryException {
 		long ret;
 
-		ret = deleteEntry(p_cid, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
+		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 
-		m_store.put(ChunkID.getLocalID(p_cid), RawMemory.readVersion(ret));
+		m_store.put(ChunkID.getLocalID(p_chunkID), RawMemory.readVersion(ret));
 
 		return ret;
 	}
 
 	/**
 	 * Puts the LocalID of a deleted migrated Chunk to LIDStore
-	 * @param p_cid
+	 * @param p_chunkID
 	 *            the ChunkID of the entry
 	 * @param p_version
 	 *            the version of the entry
 	 */
-	protected static void putChunkIDForReuse(final long p_cid, final int p_version) {
-		m_store.put(ChunkID.getLocalID(p_cid), p_version);
+	protected static void putChunkIDForReuse(final long p_chunkID, final int p_version) {
+		m_store.put(ChunkID.getLocalID(p_chunkID), p_version);
 	}
 
 	/**
 	 * Gets and deletes an entry of the level 0 table
-	 * @param p_cid
-	 *            the cid of the entry
+	 * @param p_chunkID
+	 *            the ChunkID of the entry
 	 * @param p_table
 	 *            the current table
 	 * @param p_level
@@ -363,7 +363,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be deleted
 	 */
-	private static long deleteEntry(final long p_cid, final long p_table, final int p_level) throws MemoryException {
+	private static long deleteEntry(final long p_chunkID, final long p_table, final int p_level) throws MemoryException {
 		long ret = -1;
 		long index;
 		long entry;
@@ -371,9 +371,9 @@ public final class CIDTable {
 		writeLock(p_table);
 
 		if (p_level == LID_TABLE_LEVELS) {
-			index = p_cid >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
+			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
 		} else {
-			index = p_cid >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
+			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
 		if (p_level > 0) {
 			// Read table entry
@@ -386,7 +386,7 @@ public final class CIDTable {
 
 			if ((entry & BITMASK_ADDRESS) > 0) {
 				// Delete entry in the following table
-				ret = deleteEntry(p_cid, entry & BITMASK_ADDRESS, p_level - 1);
+				ret = deleteEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
 			// Read the level 0 entry
@@ -459,8 +459,8 @@ public final class CIDTable {
 		}
 
 		/*
-		 * // dump CID ranges
-		 * System.out.println("getCIDrangesOfAllChunks: DUMP CIDranges");
+		 * // dump ChunkID ranges
+		 * System.out.println("getCIDrangesOfAllChunks: DUMP ChunkIDRanges");
 		 * for (int i=0; i<ret.size(); i++) {
 		 * System.out.println("   i="+i+", el: "+CmdUtils.getLIDfromCID(ret.get(i)));
 		 * }
@@ -469,8 +469,8 @@ public final class CIDTable {
 
 		if (ret.size() >= 2) {
 			if (ret.size() % 2 != 0) {
-				throw new MemoryException("internal error in getCIDrangesOfAllChunks");
-				// System.out.println("error: in CIDrange list");
+				throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
+				// System.out.println("error: in ChunkIDRange list");
 			} else {
 				for (int i = 0; i < ret.size() - 2; i += 2) {
 					intervalEnd = CmdUtils.getLIDfromCID(ret.get(i + 1));
@@ -487,8 +487,8 @@ public final class CIDTable {
 			}
 		}
 		/*
-		 * // dump CID ranges
-		 * System.out.println("getCIDrangesOfAllChunks: DUMP CIDranges after compression");
+		 * // dump ChunkID ranges
+		 * System.out.println("getCIDrangesOfAllChunks: DUMP ChunkIDRanges after compression");
 		 * Iterator<Long> il = ret.iterator();
 		 * while (il.hasNext()) {
 		 * System.out.println("   el: "+CmdUtils.getLIDfromCID(il.next()));

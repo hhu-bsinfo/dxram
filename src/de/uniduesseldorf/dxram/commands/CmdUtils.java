@@ -19,12 +19,12 @@ public final class CmdUtils {
 	private CmdUtils() {}
 
 	/**
-	 * Parse NID from String
+	 * Parse NodeID from String
 	 * @param p_str
 	 *            the String
-	 * @return NID
+	 * @return NodeID
 	 * @throws NumberFormatException
-	 *             if an error occured
+	 *             if an error occurred
 	 */
 	public static short getNIDfromString(final String p_str) throws NumberFormatException {
 		short nodeID;
@@ -34,12 +34,12 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Parse NID,LID tuple in a String and return NID
+	 * Parse NodeID,LocalID tuple in a String and return NodeID
 	 * @param p_str
 	 *            the String
-	 * @return NID
+	 * @return NodeID
 	 * @throws NumberFormatException
-	 *             if an error occured
+	 *             if an error occurred
 	 */
 	public static short getNIDfromTuple(final String p_str) throws NumberFormatException {
 		short nodeID;
@@ -53,12 +53,12 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Parse NID,LID tuple in a String and return LID
+	 * Parse NodeID,LocalID tuple in a String and return LocalID
 	 * @param p_str
 	 *            the String
-	 * @return NID
+	 * @return NodeID
 	 * @throws NumberFormatException
-	 *             if an error occured
+	 *             if an error occurred
 	 */
 	public static long getLIDfromTuple(final String p_str) throws NumberFormatException {
 		long localID;
@@ -75,23 +75,23 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Get LID from given p_cunkID
+	 * Get LocalID from given p_cunkID
 	 * @param p_chunkID
 	 *            the p_cunkID
-	 * @return NID
+	 * @return NodeID
 	 * @throws NumberFormatException
-	 *             if an error occured
+	 *             if an error occurred
 	 */
 	public static long getLIDfromCID(final long p_chunkID) throws NumberFormatException {
 		return p_chunkID & 0xFFFFFFFFFFFFL;
 	}
 
 	/**
-	 * calc CID from given NID and LID
+	 * Calculate ChunkID from given NodeID and LocalID
 	 * @param p_nodeID
-	 *            the NID
+	 *            the NodeID
 	 * @param p_localID
-	 *            the LID
+	 *            the LocalID
 	 * @return chunkID
 	 */
 	public static long calcCID(final short p_nodeID, final long p_localID) {
@@ -105,12 +105,12 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Parse NID,LID tuple in a String and return CID
+	 * Parse NodeID,LocalID tuple in a String and return ChunkID
 	 * @param p_str
 	 *            the String
-	 * @return CID
+	 * @return ChunkID
 	 * @throws NumberFormatException
-	 *             if an error occured
+	 *             if an error occurred
 	 */
 	public static long getCIDfromTuple(final String p_str) throws NumberFormatException {
 		final short nodeID = getNIDfromTuple(p_str);
@@ -119,12 +119,12 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Parse CID string and return tuple string NID,LID
+	 * Parse ChunkID string and return tuple string NodeID,LocalID
 	 * @param p_str
 	 *            the String
-	 * @return NID,LID tuple
+	 * @return NodeID,LocalID tuple
 	 * @throws NumberFormatException
-	 *             if an error occured
+	 *             if an error occurred
 	 */
 	public static String getTupleFromCIDstring(final String p_str) throws NumberFormatException {
 		final long chunkID = Long.parseLong(p_str);
@@ -138,12 +138,12 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Convert CID to tuple string NID,LID
+	 * Convert ChunkID to tuple string NodeID,LocalID
 	 * @param p_chunkID
-	 *            the cid
-	 * @return NID,LID tuple
+	 *            the ChunkID
+	 * @return NodeID,LocalID tuple
 	 * @throws NumberFormatException
-	 *             if an error occured
+	 *             if an error occurred
 	 */
 	public static String getTupleFromCID(final long p_chunkID) throws NumberFormatException {
 
@@ -156,10 +156,10 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Check if given NID is known and whether it is a superpeer or peer
+	 * Check if given NodeID is known and whether it is a superpeer or peer
 	 * @param p_nodeID
-	 *            the NID
-	 * @return superpeer, peer, unknwon
+	 *            the NodeID
+	 * @return superpeer, peer, unknown
 	 */
 	public static String checkNID(final String p_nodeID) {
 		String ret = null;
@@ -213,12 +213,12 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Check if given NID is a peer and otherwise print an error message for the command 'p_command'
+	 * Check if given NodeID is a peer and otherwise print an error message for the command 'p_command'
 	 * @param p_nodeID
-	 *            the NID
+	 *            the NodeID
 	 * @param p_errorString
 	 *            the error string
-	 * @return true: NID is a known peer, false: unknown NID, or superpeer
+	 * @return true: NodeID is a known peer, false: unknown NodeID, or superpeer
 	 */
 	public static boolean mustBePeer(final short p_nodeID, final String p_errorString) {
 		boolean ret = false;
@@ -227,7 +227,7 @@ public final class CmdUtils {
 		if (nodeIDok.compareTo("peer") == 0) {
 			ret = true;
 		} else if (nodeIDok.compareTo("unknown") == 0) {
-			System.out.println("error: unknown NID");
+			System.out.println("error: unknown NodeID");
 		} else {
 			System.out.println("error: superpeer not allowed " + p_errorString);
 		}
@@ -236,12 +236,12 @@ public final class CmdUtils {
 	}
 
 	/**
-	 * Check if given NID is a superpeer and otherwise print an error message for the command 'p_command'
+	 * Check if given NodeID is a superpeer and otherwise print an error message for the command 'p_command'
 	 * @param p_nodeID
-	 *            the NID
+	 *            the NodeID
 	 * @param p_errorString
 	 *            the error string
-	 * @return true: NID is a known superpeer, false: unknown NID, or peer
+	 * @return true: NodeID is a known superpeer, false: unknown NodeID, or peer
 	 */
 	public static boolean mustBeSuperpeer(final short p_nodeID, final String p_errorString) {
 		boolean ret = false;
@@ -250,7 +250,7 @@ public final class CmdUtils {
 		if (nodeIDok.compareTo("superpeer") == 0) {
 			ret = true;
 		} else if (nodeIDok.compareTo("unknown") == 0) {
-			System.out.println("error: unknown NID");
+			System.out.println("error: unknown NodeID");
 		} else {
 			System.out.println("error: peer not allowed " + p_errorString);
 		}

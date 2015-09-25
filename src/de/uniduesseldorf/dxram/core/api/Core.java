@@ -538,7 +538,7 @@ public final class Core {
 	/**
 	 * Executes given command, send to chunk handler
 	 * @param p_dest
-	 *            NID of destination node for this request
+	 *            NodeID of destination node for this request
 	 * @param p_command
 	 *            the command
 	 * @param p_reply
@@ -563,7 +563,7 @@ public final class Core {
 				ret = response.getAnswer();
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_chunk_command:" + e.toString());
-				ret = "error ChunkCommandRequest failed, invalid NID?";
+				ret = "error ChunkCommandRequest failed, invalid NodeID?";
 			}
 			// System.out.println("received response: "+result);
 		} else {
@@ -576,7 +576,7 @@ public final class Core {
 	/**
 	 * Executes given command, sent to lookup handler
 	 * @param p_dest
-	 *            NID of destination node for this request
+	 *            NodeID of destination node for this request
 	 * @param p_command
 	 *            the command
 	 * @param p_reply
@@ -603,7 +603,7 @@ public final class Core {
 				ret = response.getAnswer();
 			} catch (final NetworkException e) {
 				System.out.println("error: sendSync failed in Core.execute_lookup_command:" + e.toString());
-				ret = "error LookupReflectionRequest failed, invalid NID?";
+				ret = "error LookupReflectionRequest failed, invalid NodeID?";
 			}
 			// System.out.println("received response: "+result);
 		}
@@ -613,7 +613,7 @@ public final class Core {
 	/**
 	 * Executes given command, send to log handler
 	 * @param p_dest
-	 *            NID of destination node for this request
+	 *            NodeID of destination node for this request
 	 * @param p_command
 	 *            the command
 	 * @return result string
@@ -634,7 +634,7 @@ public final class Core {
 			ret = response.getAnswer();
 		} catch (final NetworkException e) {
 			System.out.println("error: sendSync failed in Core.execute_log_command:" + e.toString());
-			ret = "error LogCommandRequest failed, invalid NID?";
+			ret = "error LogCommandRequest failed, invalid NodeID?";
 		}
 
 		return ret;

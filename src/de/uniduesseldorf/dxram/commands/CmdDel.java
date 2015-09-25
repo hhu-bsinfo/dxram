@@ -22,27 +22,27 @@ public class CmdDel extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "del NID,LID [-dest=NID]";
+		return "del NodeID,LocalID [-dest=NodeID]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Delete chunk NID,LID.\n";
-		final String line2 = "-dest=NID sent request to node NID (must not be a superpeer).\n";
+		final String line1 = "Delete chunk NodeID,LocalID.\n";
+		final String line2 = "-dest=NodeID sent request to node NodeID (must not be a superpeer).\n";
 		return line1 + line2;
 	}
 
 	@Override
 	public String[] getMandParams() {
 		final String[] ret = {"PNID,PNR"};
-	    return ret;
+		return ret;
 	}
 
 	@Override
-    public  String[] getOptParams() {
-        final String[] ret = {"-dest=PNID"};
-        return ret;
-    }
+	public String[] getOptParams() {
+		final String[] ret = {"-dest=PNID"};
+		return ret;
+	}
 
 	// called after parameter have been checked
 	@Override

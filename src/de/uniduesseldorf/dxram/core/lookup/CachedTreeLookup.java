@@ -33,8 +33,8 @@ public final class CachedTreeLookup implements LookupInterface {
 	// Attributes
 	private LookupInterface m_lookup;
 
-	private CacheTree m_cidCacheTree;
-	private Cache<Integer, Long> m_aidCache;
+	private CacheTree m_chunkIDCacheTree;
+	private Cache<Integer, Long> m_applicationIDCache;
 
 	// Constructors
 	/**
@@ -54,8 +54,8 @@ public final class CachedTreeLookup implements LookupInterface {
 
 		m_lookup = p_lookup;
 
-		m_cidCacheTree = null;
-		m_aidCache = null;
+		m_chunkIDCacheTree = null;
+		m_applicationIDCache = null;
 	}
 
 	// Methods
@@ -64,8 +64,8 @@ public final class CachedTreeLookup implements LookupInterface {
 		m_lookup.initialize();
 
 		if (!NodeID.getRole().equals(Role.SUPERPEER)) {
-			m_cidCacheTree = new CacheTree(ORDER);
-			m_aidCache = new Cache<Integer, Long>(NS_CACHE_SIZE);
+			m_chunkIDCacheTree = new CacheTree(ORDER);
+			m_applicationIDCache = new Cache<Integer, Long>(NS_CACHE_SIZE);
 			// m_aidCache.enableTTL();
 		}
 	}
@@ -79,13 +79,13 @@ public final class CachedTreeLookup implements LookupInterface {
 	public void close() {
 		m_lookup.close();
 
-		if (m_cidCacheTree != null) {
-			m_cidCacheTree.close();
-			m_cidCacheTree = null;
+		if (m_chunkIDCacheTree != null) {
+			m_chunkIDCacheTree.close();
+			m_chunkIDCacheTree = null;
 		}
-		if (m_aidCache != null) {
-			m_aidCache.clear();
-			m_aidCache = null;
+		if (m_applicationIDCache != null) {
+			m_applicationIDCache.clear();
+			m_applicationIDCache = null;
 		}
 	}
 
@@ -94,13 +94,13 @@ public final class CachedTreeLookup implements LookupInterface {
 		Locations ret;
 		short nodeID;
 
-		ret = m_cidCacheTree.getMetadata(p_chunkID);
+		ret = m_chunkIDCacheTree.getMetadata(p_chunkID);
 		if (ret == null) {
 			ret = m_lookup.get(p_chunkID);
 			if (ret != null) {
 				nodeID = ret.getPrimaryPeer();
 
-				m_cidCacheTree.cacheRange(((long) nodeID << 48) + ret.getRange()[0], ((long) nodeID << 48) + ret.getRange()[1], nodeID);
+				m_chunkIDCacheTree.cacheRange(((long) nodeID << 48) + ret.getRange()[0], ((long) nodeID << 48) + ret.getRange()[1], nodeID);
 			}
 		}
 		return ret;
@@ -152,7 +152,7 @@ public final class CachedTreeLookup implements LookupInterface {
 
 	@Override
 	public void insertID(final int p_id, final long p_chunkID) throws LookupException {
-		m_aidCache.put(p_id, p_chunkID);
+		m_applicationIDCache.put(p_id, p_chunkID);
 		m_lookup.insertID(p_id, p_chunkID);
 	}
 
@@ -161,13 +161,13 @@ public final class CachedTreeLookup implements LookupInterface {
 		long ret;
 		Long chunkID;
 
-		chunkID = m_aidCache.get(p_id);
+		chunkID = m_applicationIDCache.get(p_id);
 		if (null == chunkID) {
 			LOGGER.trace("value not cached: " + p_id);
 
 			ret = m_lookup.getChunkID(p_id);
 
-			m_aidCache.put(p_id, ret);
+			m_applicationIDCache.put(p_id, ret);
 		} else {
 			ret = chunkID.longValue();
 		}
@@ -201,7 +201,7 @@ public final class CachedTreeLookup implements LookupInterface {
 	@Override
 	public void invalidate(final long... p_chunkIDs) {
 		for (long chunkID : p_chunkIDs) {
-			m_cidCacheTree.invalidateChunkID(chunkID);
+			m_chunkIDCacheTree.invalidateChunkID(chunkID);
 		}
 	}
 
@@ -237,8 +237,8 @@ public final class CachedTreeLookup implements LookupInterface {
 	 * Clear the cache
 	 */
 	public void clear() {
-		m_cidCacheTree = new CacheTree(ORDER);
-		m_aidCache.clear();
+		m_chunkIDCacheTree = new CacheTree(ORDER);
+		m_applicationIDCache.clear();
 	}
 
 }

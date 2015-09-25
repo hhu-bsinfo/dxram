@@ -426,7 +426,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @param p_localID
-	 *            the LID
+	 *            the LocalID
 	 * @param p_payload
 	 *            buffer with payload
 	 * @param p_offset

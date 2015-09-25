@@ -71,7 +71,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@SuppressWarnings("unchecked")
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_lengthByBackupRange) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -302,7 +302,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 * short nodeID;
 	 * int offset = 0;
 	 * int bufferOffset = p_offset;
-	 * int nidOffset;
+	 * int nodeIDOffset;
 	 * int primaryLogBufferOffset = 0;
 	 * int primaryLogBufferSize = 0;
 	 * int bytesRead = 0;
@@ -348,11 +348,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 * // There is less than 4096KB data from this node ->
 	 * // store buffer in primary log (later)
 	 * primaryLogBufferSize += length;
-	 * nidOffset = 0;
+	 * nodeIDOffset = 0;
 	 * } else {
-	 * nidOffset = LogHandler.LOG_HEADER_NID_SIZE;
+	 * nodeIDOffset = LogHandler.LOG_HEADER_NID_SIZE;
 	 * }
-	 * bufferNode = new BufferNode(nidOffset, new byte[length]);
+	 * bufferNode = new BufferNode(nodeIDOffset, new byte[length]);
 	 * map.put(nodeID, bufferNode);
 	 * }
 	 * bufferNode.appendToBuffer(p_buffer, bufferOffset + offset,
@@ -369,11 +369,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 * length = p_lengthByNode[nodeID & 0xFFFF];
 	 * if (length < LogHandler.FLASHPAGE_SIZE) {
 	 * primaryLogBufferSize += length;
-	 * nidOffset = 0;
+	 * nodeIDOffset = 0;
 	 * } else {
-	 * nidOffset = LogHandler.LOG_HEADER_NID_SIZE;
+	 * nodeIDOffset = LogHandler.LOG_HEADER_NID_SIZE;
 	 * }
-	 * bufferNode = new BufferNode(nidOffset, new byte[length]);
+	 * bufferNode = new BufferNode(nodeIDOffset, new byte[length]);
 	 * map.put(nodeID, bufferNode);
 	 * }
 	 * bufferNode.appendToBuffer(p_buffer, -bytesUntilEnd,
@@ -395,11 +395,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	 * length = p_lengthByNode[nodeID & 0xFFFF];
 	 * if (length < LogHandler.FLASHPAGE_SIZE) {
 	 * primaryLogBufferSize += length;
-	 * nidOffset = 0;
+	 * nodeIDOffset = 0;
 	 * } else {
-	 * nidOffset = LogHandler.LOG_HEADER_NID_SIZE;
+	 * nodeIDOffset = LogHandler.LOG_HEADER_NID_SIZE;
 	 * }
-	 * bufferNode = new BufferNode(nidOffset, new byte[length]);
+	 * bufferNode = new BufferNode(nodeIDOffset, new byte[length]);
 	 * map.put(nodeID, bufferNode);
 	 * }
 	 * bufferNode.appendToBuffer(p_buffer, bufferOffset + offset,
@@ -518,20 +518,20 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 
 		// Attributes
 		private int m_length;
-		private int m_nidOffset;
+		private int m_nodeIDOffset;
 		private byte[] m_data;
 
 		// Constructors
 		/**
 		 * Creates an instance of BufferNode
-		 * @param p_nidOffset
+		 * @param p_nodeIDOffset
 		 *            the header offset (with or without NodeID)
 		 * @param p_data
 		 *            the buffer
 		 */
-		public BufferNode(final int p_nidOffset, final byte[] p_data) {
+		public BufferNode(final int p_nodeIDOffset, final byte[] p_data) {
 			m_length = 0;
-			m_nidOffset = p_nidOffset;
+			m_nodeIDOffset = p_nodeIDOffset;
 			m_data = p_data;
 		}
 
@@ -566,16 +566,16 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		 */
 		public final void appendToBuffer(final byte[] p_buffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd) {
 			if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
-				System.arraycopy(p_buffer, p_offset + m_nidOffset, m_data, m_length, p_logEntrySize - m_nidOffset);
+				System.arraycopy(p_buffer, p_offset + m_nodeIDOffset, m_data, m_length, p_logEntrySize - m_nodeIDOffset);
 			} else {
-				if (p_bytesUntilEnd > m_nidOffset) {
-					System.arraycopy(p_buffer, p_offset + m_nidOffset, m_data, m_length, p_bytesUntilEnd - m_nidOffset);
-					System.arraycopy(p_buffer, 0, m_data, m_length + p_bytesUntilEnd - m_nidOffset, p_logEntrySize - p_bytesUntilEnd);
+				if (p_bytesUntilEnd > m_nodeIDOffset) {
+					System.arraycopy(p_buffer, p_offset + m_nodeIDOffset, m_data, m_length, p_bytesUntilEnd - m_nodeIDOffset);
+					System.arraycopy(p_buffer, 0, m_data, m_length + p_bytesUntilEnd - m_nodeIDOffset, p_logEntrySize - p_bytesUntilEnd);
 				} else {
-					System.arraycopy(p_buffer, 0, m_data, m_length + m_nidOffset - p_bytesUntilEnd, p_logEntrySize - (m_nidOffset - p_bytesUntilEnd));
+					System.arraycopy(p_buffer, 0, m_data, m_length + m_nodeIDOffset - p_bytesUntilEnd, p_logEntrySize - (m_nodeIDOffset - p_bytesUntilEnd));
 				}
 			}
-			m_length += p_logEntrySize - m_nidOffset;
+			m_length += p_logEntrySize - m_nodeIDOffset;
 		}
 	}
 

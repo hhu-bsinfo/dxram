@@ -242,7 +242,7 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 		 * int payloadSize;
 		 * long checksum;
 		 * long chunkID;
-		 * long lid;
+		 * long localID;
 		 * byte[][] logData;
 		 * byte[] payload;
 		 * HashMap<Long, Chunk> chunkMap = null;
@@ -256,8 +256,8 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 		 * payloadSize = getLengthOfLogEntry(logData[i], offset, false);
 		 * logEntrySize = LogHandler.PRIMLOG_ENTRY_HEADER_SIZE + payloadSize;
 		 * chunkID = getChunkIDOfLogEntry(logData[i], offset);
-		 * lid = ChunkID.getLocalID(chunkID);
-		 * if (lid >= p_low || lid <= p_high) {
+		 * localID = ChunkID.getLocalID(chunkID);
+		 * if (localID >= p_low || localID <= p_high) {
 		 * checksum = getChecksumOfPayload(logData[i], offset, false);
 		 * if (logEntrySize > LogHandler.SECLOG_ENTRY_HEADER_SIZE) {
 		 * // Read payload and create chunk

@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -254,7 +254,7 @@ public final class OutputHelper {
 	 *            the CIDTree
 	 * @return the lenght of the CIDTree
 	 */
-	public static int getCIDTreeWriteLength(final CIDTreeOptimized p_tree) {
+	public static int getCIDTreeWriteLength(final LookupTree p_tree) {
 		int ret;
 		byte[] data;
 
@@ -280,7 +280,7 @@ public final class OutputHelper {
 	 * @throws IOException
 	 *             if the CIDTree could not be written
 	 */
-	public static void writeCIDTree(final DataOutput p_output, final CIDTreeOptimized p_tree) throws IOException {
+	public static void writeCIDTree(final DataOutput p_output, final LookupTree p_tree) throws IOException {
 		byte[] data;
 
 		Contract.checkNotNull(p_output, "no output given");
@@ -303,7 +303,7 @@ public final class OutputHelper {
 	 * @param p_tree
 	 *            the CIDTree
 	 */
-	public static void writeCIDTree(final ByteBuffer p_buffer, final CIDTreeOptimized p_tree) {
+	public static void writeCIDTree(final ByteBuffer p_buffer, final LookupTree p_tree) {
 		byte[] data;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
@@ -325,7 +325,7 @@ public final class OutputHelper {
 	 *            the CIDTree
 	 * @return the byte array
 	 */
-	private static byte[] parseCIDTree(final CIDTreeOptimized p_tree) {
+	private static byte[] parseCIDTree(final LookupTree p_tree) {
 		byte[] ret = null;
 		ByteArrayOutputStream byteArrayOutputStream;
 		ObjectOutput objectOutput = null;

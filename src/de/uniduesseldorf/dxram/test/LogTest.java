@@ -125,7 +125,7 @@ public final class LogTest implements Runnable {
 		Chunk[] chunks;
 		Chunk[] updates;
 		Chunk[] fillChunks;
-		ArrayList<Long> cidList;
+		ArrayList<Long> chunkIDList;
 		ArrayList<Chunk> chunkList;
 
 		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize + " Bytes and " + m_maxChunkSize + " Bytes");
@@ -153,12 +153,12 @@ public final class LogTest implements Runnable {
 			updates = chunkList.subList(0, m_updates).toArray(new Chunk[m_updates]);
 
 			// Create list for deletes (chunkIDs)
-			cidList = new ArrayList<Long>();
+			chunkIDList = new ArrayList<Long>();
 			for (int i = 0; i < m_chunksPerThread; i++) {
-				cidList.add(chunks[i].getChunkID());
+				chunkIDList.add(chunks[i].getChunkID());
 			}
-			Collections.shuffle(cidList);
-			removes = cidList.subList(0, m_deletes).stream().mapToLong(l -> l).toArray();
+			Collections.shuffle(chunkIDList);
+			removes = chunkIDList.subList(0, m_deletes).stream().mapToLong(l -> l).toArray();
 
 			// Create fill chunks (to clear secondary log buffer)
 			fillChunks = Core.createNewChunks(new int[] {1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576});

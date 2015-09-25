@@ -53,12 +53,12 @@ public interface LogEntryHeaderInterface {
 	short getNodeID(final byte[] p_buffer, final int p_offset);
 
 	/**
-	 * Returns the LID of a log entry
+	 * Returns the LocalID of a log entry
 	 * @param p_buffer
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
-	 * @return the LID
+	 * @return the LocalID
 	 */
 	long getLID(final byte[] p_buffer, final int p_offset);
 

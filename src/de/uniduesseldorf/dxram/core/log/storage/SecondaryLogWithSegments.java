@@ -588,7 +588,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		int version;
 		long checksum;
 		long chunkID;
-		long lid;
+		long localID;
 		byte[][] logData;
 		byte[] payload;
 		HashMap<Long, Chunk> chunkMap = null;
@@ -607,8 +607,8 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					version = logEntryHeader.getVersion(logData[i], offset);
 					logEntrySize = logEntryHeader.getHeaderSize() + payloadSize;
 					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(logData[i], offset);
-					lid = ChunkID.getLocalID(chunkID);
-					if (lid >= p_low || lid <= p_high) {
+					localID = ChunkID.getLocalID(chunkID);
+					if (localID >= p_low || localID <= p_high) {
 						checksum = logEntryHeader.getChecksum(logData[i], offset);
 						if (logEntrySize > logEntryHeader.getHeaderSize()) {
 							// Read payload and create chunk
@@ -772,7 +772,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					length = logEntryHeader.getHeaderSize() + logEntryHeader.getLength(segmentData, readBytes);
 					localID = logEntryHeader.getLID(segmentData, readBytes);
 
-					// Note: Out-dated and deleted objects' and tombstones' LIDs
+					// Note: Out-dated and deleted objects' and tombstones' LocalIDs
 					// are marked with -1 by remove task
 					if (localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
 						System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
@@ -896,7 +896,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						if (((hashVersion < 0 && !(-hashVersion < logVersion))
 								|| hashVersion > logVersion) && localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
 							// if ((hashVersion == -1 || hashVersion > logVersion) && localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
-							// Set LID of out-dated and deleted objects and tombstones to -1
+							// Set LocalID of out-dated and deleted objects and tombstones to -1
 							invalidateLogEntry(segment, readBytes, i * LogHandler.SECLOG_SEGMENT_SIZE + readBytes, logEntryHeader, i);
 							wasUpdated = true;
 							deleteCounter++;

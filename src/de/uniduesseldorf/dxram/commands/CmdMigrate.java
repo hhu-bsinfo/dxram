@@ -22,24 +22,24 @@ public class CmdMigrate extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "migrate NID,LID destNID";
+		return "migrate NodeID,LocalID destNodeID";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		return "Migrate chunk NID,LID to destination node destNID";
+		return "Migrate chunk NodeID,LocalID to destination node destNodeID";
 	}
 
 	@Override
 	public String[] getMandParams() {
 		final String[] ret = {"PNID,PNR", "PNID"};
-	    return ret;
+		return ret;
 	}
 
 	@Override
-    public  String[] getOptParams() {
-        return null;
-    }
+	public String[] getOptParams() {
+		return null;
+	}
 
 	// called after parameter have been checked
 	@Override

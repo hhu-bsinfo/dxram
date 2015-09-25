@@ -28,8 +28,8 @@ public final class CachedLookup implements LookupInterface {
 
 	// Attributes
 	private LookupInterface m_lookup;
-	private Cache<Long, Long> m_cidCache;
-	private Cache<Long, Long> m_aidCache;
+	private Cache<Long, Long> m_chunkIDCache;
+	private Cache<Long, Long> m_applicationIDCache;
 
 	// Constructors
 	/**
@@ -95,8 +95,8 @@ public final class CachedLookup implements LookupInterface {
 		Contract.checkNotNull(p_cache, "no cache given");
 
 		m_lookup = p_lookup;
-		m_cidCache = p_cache;
-		m_aidCache = new Cache<Long, Long>(10000);
+		m_chunkIDCache = p_cache;
+		m_applicationIDCache = new Cache<Long, Long>(10000);
 	}
 
 	// Methods
@@ -104,11 +104,11 @@ public final class CachedLookup implements LookupInterface {
 	public void initialize() throws DXRAMException {
 		m_lookup.initialize();
 		if (!NodeID.getRole().equals(Role.SUPERPEER)) {
-			m_cidCache.enableTTL();
-			m_aidCache.enableTTL();
+			m_chunkIDCache.enableTTL();
+			m_applicationIDCache.enableTTL();
 		} else {
-			m_cidCache = null;
-			m_aidCache = null;
+			m_chunkIDCache = null;
+			m_applicationIDCache = null;
 		}
 	}
 
@@ -143,13 +143,13 @@ public final class CachedLookup implements LookupInterface {
 
 		ChunkID.check(p_chunkID);
 
-		locations = m_cidCache.get(p_chunkID);
+		locations = m_chunkIDCache.get(p_chunkID);
 		if (p_force || null == locations) {
 			LOGGER.trace("value not cached: " + p_chunkID);
 
 			ret = m_lookup.get(p_chunkID);
 
-			m_cidCache.put(p_chunkID, ret.convertToLong());
+			m_chunkIDCache.put(p_chunkID, ret.convertToLong());
 		} else {
 			ret = new Locations(locations.longValue());
 		}
@@ -211,13 +211,13 @@ public final class CachedLookup implements LookupInterface {
 		long ret;
 		Long chunkID;
 
-		chunkID = m_aidCache.get((long) p_id);
+		chunkID = m_applicationIDCache.get((long) p_id);
 		if (null == chunkID) {
 			LOGGER.trace("value not cached: " + p_id);
 
 			ret = m_lookup.getChunkID(p_id);
 
-			m_aidCache.put((long) p_id, ret);
+			m_applicationIDCache.put((long) p_id, ret);
 		} else {
 			ret = chunkID.longValue();
 		}
@@ -250,7 +250,7 @@ public final class CachedLookup implements LookupInterface {
 	@Override
 	public void invalidate(final long... p_chunkIDs) {
 		for (long chunkID : p_chunkIDs) {
-			m_cidCache.remove(chunkID);
+			m_chunkIDCache.remove(chunkID);
 		}
 	}
 
@@ -286,7 +286,7 @@ public final class CachedLookup implements LookupInterface {
 	 * Clear the cache
 	 */
 	public void clear() {
-		m_cidCache.clear();
+		m_chunkIDCache.clear();
 	}
 
 }
