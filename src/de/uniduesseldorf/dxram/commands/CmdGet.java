@@ -68,8 +68,6 @@ public class CmdGet extends AbstractCmd {
 				final String[] v = arguments[2].split("=");
 				nodeID = CmdUtils.getNIDfromString(v[1]);
 			}
-			
-			
 
 			// nodeID = Short.parseShort(arguments[2]);
 

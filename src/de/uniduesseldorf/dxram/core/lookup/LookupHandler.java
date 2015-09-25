@@ -1714,7 +1714,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			// System.out.println("   getCIDTree:"+nodeID);
 			tree = getCIDTree(nodeID);
 			if (tree == null) {
-				ret = "  error: no CIDtree for given NID=" + nodeID;
+				ret = "  error: no CIDtree found for given NID=" + nodeID;
 			} else {
 				// get meta-data from tree
 				locations = tree.getMetadata(chunkID);
@@ -1737,40 +1737,71 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 */
 	private String cmdReqBackups(final String p_command) {
 		String ret="";
+		String[] arguments;
+		CIDTreeOptimized tree;
+		short nodeID;
 
-		System.out.println("LookupHandler.cmdReqBackups");
 
-/*		if (m_ownBackupRanges!=null) {
-			for (int i=0; i<m_ownBackupRanges.size(); i++) {
-				final BackupRange br = m_ownBackupRanges.get(i);
-				ret = ret + "  BR" + Integer.toString(i) + ":";
+		//System.out.println("LookupHandler.cmdReqBackups");
 
-				if (br!=null) {
-					//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
-					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+"(";
-
-					for (int j=0; j<br.m_backupPeers.length; j++) {
-						//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
-						ret = ret + Short.toString(br.m_backupPeers[j]);
-						if (j<(br.m_backupPeers.length-1)) {
-								ret = ret+ ",";
-						}
-					}
-					ret = ret + ")";
-					if (i < (m_ownBackupRanges.size()-1)) {
-						ret = ret + "\n";
-					}
-				}
-			}
+		arguments = p_command.split(" ");
+		if (arguments == null) {
+			ret = "  error: problem in command";
 		} else {
-			ret = "  No backups.";
+			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+
+			tree = getCIDTree(nodeID);
+			if (tree != null) {
+
+				ret = ret + "  Backup ranges for chunks created on peer "+nodeID+"\n";
+				if (tree.getAllBackupRanges()!=null) {
+					//System.out.println("   dumping backup ranges for peer="+nodeID);
+					for (int i=0; i<tree.getAllBackupRanges().size(); i++) {
+						final long[] br = tree.getAllBackupRanges().get(i);
+						//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br[0]);
+						ret = ret + "    BR" + Integer.toString(i) + ": " + Long.toString(br[0]) + " (";
+						ret = ret + Short.toString((short)((br[1]>>32) & 0xFFFF));
+						ret = ret+ ",";
+						ret = ret + Short.toString((short)((br[1]>>16) & 0xFFFF));
+						ret = ret+ ",";
+						ret = ret + Short.toString((short)(br[1] & 0xFFFF));
+						ret = ret + ")\n";
+					}
+					if (tree.getAllBackupRanges().size()==0) {
+						ret = ret + "    None.\n";
+					}
+				} else {
+					ret = "  None.\n";
+				}
+
+				ret = ret + "  Backup peers for chunks migrated to peer "+nodeID+" \n";
+				if (tree.getAllMigratedBackupRanges()!=null) {
+					if (tree.getAllMigratedBackupRanges().size()==0) {
+						ret = ret + "    None.\n";
+					} else {
+						for (int i=0; i<tree.getAllMigratedBackupRanges().size(); i++) {
+							final ArrayList<Long> backupPeers = tree.getAllMigratedBackupRanges();
+							ret = ret + "    BR" + Integer.toString(i) + ": (";
+							ret = ret + Short.toString((short)((backupPeers.get(i)>>32) & 0xFFFF));
+							ret = ret+ ",";
+							ret = ret + Short.toString((short)((backupPeers.get(i)>>16) & 0xFFFF));
+							ret = ret+ ",";
+							ret = ret + Short.toString((short)(backupPeers.get(i) & 0xFFFF));
+							ret = ret + ")\n";
+						}
+						ret = ret + "  (CID ranges for migrated chunks are known by peers, only)\n";
+					}
+				} else {
+					ret = ret + "    None.\n";
+				}
+			} else {
+				ret = ret + "    None.\n";
+			}
 		}
-		*/
+
 		return ret;
 	}
 
-	
-	
 	/**
 	 * Handles an incoming ReflectionRequest
 	 * @param p_lookupRequest

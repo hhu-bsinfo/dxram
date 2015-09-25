@@ -380,6 +380,14 @@ public final class CIDTreeOptimized implements Serializable {
 	}
 
 	/**
+	 * Returns the backup peers for migrated chunks
+	 * @return an ArrayList with all backup peers for migrated
+	 */
+	public ArrayList<Long> getAllMigratedBackupRanges() {
+		return m_migrationBackupRanges;
+	}
+
+	/**
 	 * Removes given peer from all backups
 	 * @param p_failedPeer
 	 *            NodeID of failed peer

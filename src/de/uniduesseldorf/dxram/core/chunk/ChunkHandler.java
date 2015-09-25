@@ -1847,9 +1847,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		try {
 			// de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.printDebugInfos();
-			System.out.println("cmdReqCIDT 0");
+			//System.out.println("cmdReqCIDT 0");
 			cidLocalArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDrangesOfAllLocalChunks();
-			System.out.println("cmdReqCIDT 1");
+			//System.out.println("cmdReqCIDT 1");
 			ret = "  Local (ranges): ";
 			if (cidLocalArray == null) {
 				ret = ret + "empty.\n";
@@ -1867,10 +1867,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				}
 				ret = ret + "\n";
 			}
-			System.out.println("cmdReqCIDT 2");
+			//System.out.println("cmdReqCIDT 2");
 
 			cidMigratedArray = de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.getCIDOfAllMigratedChunks();
-			System.out.println("cmdReqCIDT 3");
+			//System.out.println("cmdReqCIDT 3");
 
 			ret = ret + "  Migrated (NID,LID): ";
 			if (cidMigratedArray == null) {
@@ -1905,44 +1905,48 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		String ret="";
 
 		//System.out.println("ChunkHandler.cmdReqBackups");
+		ret = ret + "  Backup ranges for locally created chunks\n";
 		if (m_ownBackupRanges!=null) {
 			//System.out.println("   m_ownBackupRanges");
-			ret = ret + "  Backup ranges for locally created chunks/n";
 			for (int i=0; i<m_ownBackupRanges.size(); i++) {
 				final BackupRange br = m_ownBackupRanges.get(i);
-				ret = ret + "    BR" + Integer.toString(i) + ":";
+				ret = ret + "    BR" + Integer.toString(i) + ": ";
 
 				if (br!=null) {
 					//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
-					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+"(";
+					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+" (";
 
-					for (int j=0; j<br.m_backupPeers.length; j++) {
-						//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
-						ret = ret + Short.toString(br.m_backupPeers[j]);
-						if (j<(br.m_backupPeers.length-1)) {
-								ret = ret+ ",";
+					if (m_ownBackupRanges.size()==0) {
+						ret = ret + "    None.";
+					} else {
+						for (int j=0; j<br.m_backupPeers.length; j++) {
+							//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
+							ret = ret + Short.toString(br.m_backupPeers[j]);
+							if (j<(br.m_backupPeers.length-1)) {
+									ret = ret+ ",";
+							}
 						}
 					}
-					ret = ret + ")";
-					if (i < (m_ownBackupRanges.size()-1)) {
-						ret = ret + "\n";
-					}
+					ret = ret + ")\n";
 				}
 			}
+			if (m_ownBackupRanges.size()==0) {
+				ret = ret + "    None.\n";
+			}
 		} else {
-			ret = "  No backups for locally created chunks.\n";
+			ret = ret + "    None.\n";
 		}
 
+		ret = ret + "  Backup ranges for migrated chunks\n";
 		if (m_migrationBackupRanges!=null) {
 			//System.out.println("   m_migrationBackupRanges");
-			ret = ret + "  Backup ranges for migrated chunks/n";
 			for (int i=0; i<m_migrationBackupRanges.size(); i++) {
 				final BackupRange br = m_migrationBackupRanges.get(i);
-				ret = ret + "    BR" + Integer.toString(i) + ":";
+				ret = ret + "    BR" + Integer.toString(i) + ": ";
 
 				if (br!=null) {
 					//System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br.m_firstChunkIDORRangeID);
-					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+"(";
+					ret = ret + Long.toString(br.m_firstChunkIDORRangeID)+" (";
 
 					for (int j=0; j<br.m_backupPeers.length; j++) {
 						//System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
@@ -1951,19 +1955,18 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 								ret = ret+ ",";
 						}
 					}
-					ret = ret + ")";
-					if (i < (m_migrationBackupRanges.size()-1)) {
-						ret = ret + "\n";
-					}
+					ret = ret + ")\n";
+				}
+				if (m_migrationBackupRanges.size()==0) {
+					ret = ret + "    None.\n";
 				}
 			}
+			if (m_migrationBackupRanges.size()==0) {
+				ret = ret + "    None.\n";
+			}
 		} else {
-			ret = ret + "  No backups for migrated chunks.";
+			ret = ret + "    None.\n";
 		}
-
-//		m_migrationsTree (CID + backup range) -> "migrated befehl" (evt. bildschirmweise ausgeben)
-//
-//	Parameter einführen
 
 		return ret;
 	}

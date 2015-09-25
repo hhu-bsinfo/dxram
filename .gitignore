@@ -6,3 +6,4 @@
 /monitor.command
 /.settings
 /hs_err*
+/cmd_*
