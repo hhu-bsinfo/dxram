@@ -380,6 +380,14 @@ public final class LookupTree implements Serializable {
 	}
 
 	/**
+	 * Returns the backup peers for migrated chunks
+	 * @return an ArrayList with all backup peers for migrated
+	 */
+	public ArrayList<Long> getAllMigratedBackupRanges() {
+		return m_migrationBackupRanges;
+	}
+
+	/**
 	 * Removes given peer from all backups
 	 * @param p_failedPeer
 	 *            NodeID of failed peer
@@ -1379,16 +1387,16 @@ public final class LookupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_localID) {
-				low = mid + 1;
-			} else if (midVal > p_localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_localID) {
+					low = mid + 1;
+				} else if (midVal > p_localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1578,16 +1586,16 @@ public final class LookupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLocalID(0);
+				midVal = m_children[mid].getLocalID(0);
 
-			if (midVal < localID) {
-				low = mid + 1;
-			} else if (midVal > localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < localID) {
+					low = mid + 1;
+				} else if (midVal > localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

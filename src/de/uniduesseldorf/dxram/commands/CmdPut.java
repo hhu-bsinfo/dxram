@@ -8,8 +8,8 @@ import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 /**
- * Save a new chunk
- * @author Michael Schoettner 15.09.2015
+ * Update an existing chunk
+ * @author Michael Schoettner 18.09.2015
  */
 public class CmdPut extends AbstractCmd {
 
@@ -25,28 +25,26 @@ public class CmdPut extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "put NodeID text [-size=nbytes] [-name=string]";
+		return "put NodeID,LocalID text";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Save a chunk with data 'text' on node NodeID.\n";
-		final String line2 = "-size=bytes define size of the chunk in bytes.\n";
-		final String line3 = "(The 'text' will be stored at the beginning)\n\n";
-		final String line4 = "Returns ChunkID of created chunk in tuple format (NodeID,LocalID)";
-		return line1 + line2 + line3 + line4;
+		final String line1 = "Update existing chunk NodeID,LocalID with data 'text'.\n";
+		final String line2 = "(Data size of the chunk remains unchanged. Data may be cut)\n\n";
+		final String line3 = "Returns success or error";
+		return line1 + line2 + line2 + line3;
 	}
 
 	@Override
 	public String[] getMandParams() {
-		final String[] ret = {"PNID", "STR"};
+		final String[] ret = {"PNID,LocalID", "STR"};
 		return ret;
 	}
 
 	@Override
 	public String[] getOptParams() {
-		final String[] ret = {"-size=PNR", "-name=STR"};
-		return ret;
+		return null;
 	}
 
 	// called after parameter have been checked
@@ -55,12 +53,11 @@ public class CmdPut extends AbstractCmd {
 		boolean ret = true;
 		short nodeID;
 		String res;
-		String newCID;
 		String[] arguments;
 
 		try {
 			arguments = p_command.split(" ");
-			nodeID = CmdUtils.getNIDfromString(arguments[1]);
+			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 
 			res = Core.executeChunkCommand(nodeID, p_command, true);
 
@@ -69,11 +66,7 @@ public class CmdPut extends AbstractCmd {
 				System.out.println(res);
 				ret = false;
 			} else {
-				// the call succeed, try to get the CID of the created chunk
-				arguments = res.split(" ");
-				newCID = CmdUtils.getTupleFromCIDstring(arguments[1]);
-
-				System.out.println("  Created new chunk with ChunkID=(" + newCID + ")");
+				System.out.println(res);
 			}
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
@@ -88,7 +81,6 @@ public class CmdPut extends AbstractCmd {
 		String ret = null;
 		Chunk c = null;
 		String[] arguments;
-		String name = null;
 		int size = -1;
 
 		if (p_command == null) {
@@ -97,38 +89,32 @@ public class CmdPut extends AbstractCmd {
 			try {
 				arguments = p_command.split(" ");
 
-				// get size of data
-				size = arguments[2].length();
+				// System.out.println("  Update chunk "+arguments[1]+", with data="+arguments[2]);
 
-				// get any optional params
-				if (arguments.length > 2) {
-					for (int i = 3; i < arguments.length; i++) {
-						if (arguments[i].indexOf("-size") >= 0) {
-							final String[] sizeArg = arguments[i].split("=");
-							size = Integer.parseInt(sizeArg[1]);
-						} else if (arguments[i].indexOf("-name") >= 0) {
-							final String[] nameArg = arguments[i].split("=");
-							name = nameArg[1];
-						}
-					}
-				}
-				System.out.println("  Create chunk with size=" + size + ", name=" + name);
-				if (name != null) {
-					c = Core.createNewChunk(size, name);
-				} else {
-					c = Core.createNewChunk(size);
-				}
+				// get local chunk from tuple NodeID,LocalID
+				c = Core.get(CmdUtils.getCIDfromTuple(arguments[1]));
 				if (c == null) {
-					ret = "  error: createNewChunk failed";
+					// System.out.println("  error: chunk not found, may be it has been migrated");
+					ret = "  error: chunk not found, may be it has been migrated";
 				} else {
+
+					// get byte buffer of chunk
+					final byte[] newData = arguments[2].getBytes();
+					size = arguments[2].length();
+					if (size > c.getSize()) {
+						size = c.getSize();
+					}
 					final ByteBuffer b = c.getData();
-					b.put(arguments[2].getBytes());
+					b.clear();
+					for (int i = 0; i < size; i++) {
+						b.put(newData[i]);
+					}
 
 					Core.put(c);
-					ret = "success: " + Long.toString(c.getChunkID());
+					ret = "  success: chunk updated.";
 				}
 			} catch (final DXRAMException e) {
-				System.out.println("  error: Core.createNewChunk failed");
+				// System.out.println("  error: unknown error");
 				ret = "  error: 'put' failed";
 			}
 		}
