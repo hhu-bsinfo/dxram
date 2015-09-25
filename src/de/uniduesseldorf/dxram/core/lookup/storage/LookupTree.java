@@ -9,12 +9,10 @@ import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
  * Btree to store ranges. Backup nodes are stored in an ArrayList<Long> to improve access times.
- * @author Justin Wetherell <phishman3579@gmail.com> (classic btree implementation)
- * @author Kevin Beineke (rewritten to handle ranges instead of single entries + reduction and optimization for this
- *         application)
+ * @author Kevin Beineke
  *         13.06.2013
  */
-public final class CIDTreeOptimized implements Serializable {
+public final class LookupTree implements Serializable {
 
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
@@ -37,11 +35,11 @@ public final class CIDTreeOptimized implements Serializable {
 
 	// Constructors
 	/**
-	 * Creates an instance of CIDTreeOptimized
+	 * Creates an instance of LookupTree
 	 * @param p_order
 	 *            order of the btree
 	 */
-	public CIDTreeOptimized(final short p_order) {
+	public LookupTree(final short p_order) {
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
@@ -97,52 +95,52 @@ public final class CIDTreeOptimized implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean migrateObject(final long p_chunkID, final short p_nodeID) {
-		long lid;
+		long localID;
 		Node node;
 
-		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
+		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
 
-		Contract.check(0 < lid, "lid smaller than 1");
+		Contract.check(0 < localID, "LocalID smaller than 1");
 
-		node = createOrReplaceEntry(lid, p_nodeID);
+		node = createOrReplaceEntry(localID, p_nodeID);
 
-		mergeWithPredecessorOrBound(lid, p_nodeID, node);
+		mergeWithPredecessorOrBound(localID, p_nodeID, node);
 
-		mergeWithSuccessor(lid, p_nodeID);
+		mergeWithSuccessor(localID, p_nodeID);
 
 		return true;
 	}
 
 	/**
 	 * Stores the migration for a range
-	 * @param p_startID
+	 * @param p_startCID
 	 *            ChunkID of first migrated object
-	 * @param p_endID
+	 * @param p_endCID
 	 *            ChunkID of last migrated object
 	 * @param p_nodeID
 	 *            new primary peer
 	 * @return true if insertion was successful
 	 */
-	public boolean migrateRange(final long p_startID, final long p_endID, final short p_nodeID) {
-		long startLid;
-		long endLid;
+	public boolean migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
+		long startLID;
+		long endLID;
 		Node startNode;
 
-		startLid = p_startID & 0x0000FFFFFFFFFFFFL;
-		endLid = p_endID & 0x0000FFFFFFFFFFFFL;
-		Contract.check(startLid <= endLid && 0 < startLid, "end larger than start or start smaller than 1");
-		if (startLid == endLid) {
-			migrateObject(p_startID, p_nodeID);
+		startLID = p_startCID & 0x0000FFFFFFFFFFFFL;
+		endLID = p_endCID & 0x0000FFFFFFFFFFFFL;
+		Contract.check(startLID <= endLID && 0 < startLID, "end larger than start or start smaller than 1");
+		if (startLID == endLID) {
+			migrateObject(p_startCID, p_nodeID);
 		} else {
-			startNode = createOrReplaceEntry(startLid, p_nodeID);
+			startNode = createOrReplaceEntry(startLID, p_nodeID);
 
-			mergeWithPredecessorOrBound(startLid, p_nodeID, startNode);
+			mergeWithPredecessorOrBound(startLID, p_nodeID, startNode);
 
-			createOrReplaceEntry(endLid, p_nodeID);
+			createOrReplaceEntry(endLID, p_nodeID);
 
-			removeEntriesWithinRange(startLid, endLid);
+			removeEntriesWithinRange(startLID, endLID);
 
-			mergeWithSuccessor(endLid, p_nodeID);
+			mergeWithSuccessor(endLID, p_nodeID);
 		}
 		return true;
 	}
@@ -212,32 +210,32 @@ public final class CIDTreeOptimized implements Serializable {
 		long[] range;
 		short nodeID;
 		int index;
-		long lid;
+		long localID;
 		Node node;
 		Entry predecessorEntry;
 
 		Contract.checkNotNull(m_root);
 
-		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
-		node = getNodeOrSuccessorsNode(lid);
+		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
+		node = getNodeOrSuccessorsNode(localID);
 		if (node != null) {
-			index = node.indexOf(lid);
+			index = node.indexOf(localID);
 			if (0 <= index) {
-				// LID was found: Store NodeID and determine successor
+				// LocalID was found: Store NodeID and determine successor
 				range = new long[2];
 				nodeID = node.getNodeID(index);
-				range[1] = lid;
-				// range[1] = getSuccessorsEntry(lid, node).getLid();
+				range[1] = localID;
+				// range[1] = getSuccessorsEntry(localID, node).getLocalID();
 			} else {
-				// LID was not found, but successor: Store NodeID and LID of successor
+				// LocalID was not found, but successor: Store NodeID and LocalID of successor
 				range = new long[2];
 				nodeID = node.getNodeID(index * -1 - 1);
-				range[1] = node.getLid(index * -1 - 1);
+				range[1] = node.getLocalID(index * -1 - 1);
 			}
-			// Determine LID of predecessor
+			// Determine LocalID of predecessor
 			predecessorEntry = getPredecessorsEntry(range[1], node);
 			if (predecessorEntry != null) {
-				range[0] = predecessorEntry.getLid() + 1;
+				range[0] = predecessorEntry.getLocalID() + 1;
 			} else {
 				range[0] = 0;
 			}
@@ -296,76 +294,76 @@ public final class CIDTreeOptimized implements Serializable {
 	public void removeObject(final long p_chunkID) {
 		int index;
 		Node node;
-		long lid;
-		long currentLid;
+		long localID;
+		long currentLID;
 		Entry currentEntry;
 		Entry predecessor;
 		Entry successor;
 
-		lid = p_chunkID & 0x0000FFFFFFFFFFFFL;
+		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
 		if (null != m_root) {
-			node = getNodeOrSuccessorsNode(lid);
+			node = getNodeOrSuccessorsNode(localID);
 			if (null != node) {
-				currentLid = -1;
+				currentLID = -1;
 
-				index = node.indexOf(lid);
+				index = node.indexOf(localID);
 				if (0 <= index) {
 					// Entry was found
-					currentLid = node.getLid(index);
-					predecessor = getPredecessorsEntry(lid, node);
-					currentEntry = new Entry(currentLid, node.getNodeID(index));
-					successor = getSuccessorsEntry(lid, node);
+					currentLID = node.getLocalID(index);
+					predecessor = getPredecessorsEntry(localID, node);
+					currentEntry = new Entry(currentLID, node.getNodeID(index));
+					successor = getSuccessorsEntry(localID, node);
 					if (m_creator != currentEntry.getNodeID() && null != predecessor) {
-						if (lid - 1 == predecessor.getLid()) {
+						if (localID - 1 == predecessor.getLocalID()) {
 							// Predecessor is direct neighbor: AB
 							// Successor might be direct neighbor or not: ABC or AB___C
 							if (m_creator == successor.getNodeID()) {
 								// Successor is barrier: ABC -> A_C or AB___C -> A___C
-								remove(lid);
+								remove(localID);
 							} else {
 								// Successor is no barrier: ABC -> AXC or AB___C -> AX___C
-								node.changeEntry(lid, m_creator, index);
+								node.changeEntry(localID, m_creator, index);
 							}
 							if (m_creator == predecessor.getNodeID()) {
 								// Predecessor is barrier: A_C -> ___C or AXC -> ___XC
 								// or A___C -> ___C or AX___C -> ___X___C
-								remove(predecessor.getLid());
+								remove(predecessor.getLocalID());
 							}
 						} else {
 							// Predecessor is no direct neighbor: A___B
 							if (m_creator == successor.getNodeID()) {
 								// Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
-								remove(lid);
+								remove(localID);
 							} else {
 								// Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
-								node.changeEntry(lid, m_creator, index);
+								node.changeEntry(localID, m_creator, index);
 							}
 							// Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
 							// or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
-							createOrReplaceEntry(lid - 1, currentEntry.getNodeID());
+							createOrReplaceEntry(localID - 1, currentEntry.getNodeID());
 						}
 					}
 				} else {
 					// Entry was not found
 					index = index * -1 - 1;
-					successor = new Entry(node.getLid(index), node.getNodeID(index));
-					predecessor = getPredecessorsEntry(successor.getLid(), node);
+					successor = new Entry(node.getLocalID(index), node.getNodeID(index));
+					predecessor = getPredecessorsEntry(successor.getLocalID(), node);
 					if (m_creator != successor.getNodeID() && null != predecessor) {
 						// Entry is in range
-						if (lid - 1 == predecessor.getLid()) {
+						if (localID - 1 == predecessor.getLocalID()) {
 							// Predecessor is direct neighbor: A'B'
 							// Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
-							createOrReplaceEntry(lid, m_creator);
+							createOrReplaceEntry(localID, m_creator);
 							if (m_creator == predecessor.getNodeID()) {
 								// Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
-								remove(lid - 1);
+								remove(localID - 1);
 							}
 						} else {
 							// Predecessor is no direct neighbor: A___'B'
 							// Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
 							// or A___'B'___C -> A___(B-1)X___C
-							createOrReplaceEntry(lid, m_creator);
-							createOrReplaceEntry(lid - 1, successor.getNodeID());
+							createOrReplaceEntry(localID, m_creator);
+							createOrReplaceEntry(localID - 1, successor.getNodeID());
 						}
 					}
 				}
@@ -413,13 +411,13 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Creates a new entry or replaces the old one
-	 * @param p_lid
-	 *            the lid
+	 * @param p_localID
+	 *            the LocalID
 	 * @param p_nodeID
-	 *            the nodeID
+	 *            the NodeID
 	 * @return the node in which the entry is stored
 	 */
-	private Node createOrReplaceEntry(final long p_lid, final short p_nodeID) {
+	private Node createOrReplaceEntry(final long p_localID, final short p_nodeID) {
 		Node ret = null;
 		Node node;
 		int index;
@@ -427,41 +425,41 @@ public final class CIDTreeOptimized implements Serializable {
 
 		if (null == m_root) {
 			m_root = new Node(null, m_maxEntries, m_maxChildren);
-			m_root.addEntry(p_lid, p_nodeID);
+			m_root.addEntry(p_localID, p_nodeID);
 			ret = m_root;
 		} else {
 			node = m_root;
 			while (true) {
 				if (0 == node.getNumberOfChildren()) {
-					index = node.indexOf(p_lid);
+					index = node.indexOf(p_localID);
 					if (0 <= index) {
-						m_changedEntry = new Entry(node.getLid(index), node.getNodeID(index));
-						node.changeEntry(p_lid, p_nodeID, index);
+						m_changedEntry = new Entry(node.getLocalID(index), node.getNodeID(index));
+						node.changeEntry(p_localID, p_nodeID, index);
 					} else {
 						m_changedEntry = null;
-						node.addEntry(p_lid, p_nodeID, index * -1 - 1);
+						node.addEntry(p_localID, p_nodeID, index * -1 - 1);
 						if (m_maxEntries < node.getNumberOfEntries()) {
 							// Need to split up
-							node = split(p_lid, node);
+							node = split(p_localID, node);
 						}
 					}
 					break;
 				} else {
-					if (p_lid < node.getLid(0)) {
+					if (p_localID < node.getLocalID(0)) {
 						node = node.getChild(0);
 						continue;
 					}
 
 					size = node.getNumberOfEntries();
-					if (p_lid > node.getLid(size - 1)) {
+					if (p_localID > node.getLocalID(size - 1)) {
 						node = node.getChild(size);
 						continue;
 					}
 
-					index = node.indexOf(p_lid);
+					index = node.indexOf(p_localID);
 					if (0 <= index) {
-						m_changedEntry = new Entry(node.getLid(index), node.getNodeID(index));
-						node.changeEntry(p_lid, p_nodeID, index);
+						m_changedEntry = new Entry(node.getLocalID(index), node.getNodeID(index));
+						node.changeEntry(p_localID, p_nodeID, index);
 						break;
 					} else {
 						node = node.getChild(index * -1 - 1);
@@ -480,38 +478,38 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Merges the object or range with predecessor
-	 * @param p_lid
-	 *            the lid
+	 * @param p_localID
+	 *            the LocalID
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @param p_node
 	 *            anchor node
 	 */
-	private void mergeWithPredecessorOrBound(final long p_lid, final short p_nodeID, final Node p_node) {
+	private void mergeWithPredecessorOrBound(final long p_localID, final short p_nodeID, final Node p_node) {
 		Entry predecessor;
 		Entry successor;
 
-		predecessor = getPredecessorsEntry(p_lid, p_node);
+		predecessor = getPredecessorsEntry(p_localID, p_node);
 		if (null == predecessor) {
-			createOrReplaceEntry(p_lid - 1, m_creator);
+			createOrReplaceEntry(p_localID - 1, m_creator);
 		} else {
-			if (p_lid - 1 == predecessor.getLid()) {
+			if (p_localID - 1 == predecessor.getLocalID()) {
 				if (p_nodeID == predecessor.getNodeID()) {
-					remove(predecessor.getLid(), getPredecessorsNode(p_lid, p_node));
+					remove(predecessor.getLocalID(), getPredecessorsNode(p_localID, p_node));
 				}
 			} else {
-				successor = getSuccessorsEntry(p_lid, p_node);
+				successor = getSuccessorsEntry(p_localID, p_node);
 				if (null == m_changedEntry) {
 					// Successor is end of range
 					if (p_nodeID != successor.getNodeID()) {
-						createOrReplaceEntry(p_lid - 1, successor.getNodeID());
+						createOrReplaceEntry(p_localID - 1, successor.getNodeID());
 					} else {
 						// New Object is in range that already was migrated to the same destination
-						remove(p_lid, p_node);
+						remove(p_localID, p_node);
 					}
 				} else {
 					if (p_nodeID != m_changedEntry.getNodeID()) {
-						createOrReplaceEntry(p_lid - 1, m_changedEntry.getNodeID());
+						createOrReplaceEntry(p_localID - 1, m_changedEntry.getNodeID());
 					}
 				}
 			}
@@ -520,19 +518,19 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Merges the object or range with successor
-	 * @param p_lid
-	 *            the lid
+	 * @param p_localID
+	 *            the LocalID
 	 * @param p_nodeID
 	 *            the NodeID
 	 */
-	private void mergeWithSuccessor(final long p_lid, final short p_nodeID) {
+	private void mergeWithSuccessor(final long p_localID, final short p_nodeID) {
 		Node node;
 		Entry successor;
 
-		node = getNodeOrSuccessorsNode(p_lid);
-		successor = getSuccessorsEntry(p_lid, node);
+		node = getNodeOrSuccessorsNode(p_localID);
+		successor = getSuccessorsEntry(p_localID, node);
 		if (null != successor && p_nodeID == successor.getNodeID()) {
-			remove(p_lid, node);
+			remove(p_localID, node);
 		}
 	}
 
@@ -548,20 +546,20 @@ public final class CIDTreeOptimized implements Serializable {
 
 		remove(p_start, getNodeOrSuccessorsNode(p_start));
 
-		successor = getLidOrSuccessorsLid(p_start);
+		successor = getLIDOrSuccessorsLID(p_start);
 		while (-1 != successor && successor < p_end) {
 			remove(successor);
-			successor = getLidOrSuccessorsLid(p_start);
+			successor = getLIDOrSuccessorsLID(p_start);
 		}
 	}
 
 	/**
-	 * Returns the node in which the next entry to given lid (could be the lid itself) is stored
-	 * @param p_lid
-	 *            lid whose node is searched
-	 * @return node in which lid is stored if lid is in tree or successors node, null if there is no successor
+	 * Returns the node in which the next entry to given LocalID (could be the LocalID itself) is stored
+	 * @param p_localID
+	 *            LocalID whose node is searched
+	 * @return node in which LocalID is stored if LocalID is in tree or successors node, null if there is no successor
 	 */
-	private Node getNodeOrSuccessorsNode(final long p_lid) {
+	private Node getNodeOrSuccessorsNode(final long p_localID) {
 		Node ret;
 		int size;
 		int index;
@@ -570,7 +568,7 @@ public final class CIDTreeOptimized implements Serializable {
 		ret = m_root;
 
 		while (true) {
-			if (p_lid < ret.getLid(0)) {
+			if (p_localID < ret.getLocalID(0)) {
 				if (0 < ret.getNumberOfChildren()) {
 					ret = ret.getChild(0);
 					continue;
@@ -580,8 +578,8 @@ public final class CIDTreeOptimized implements Serializable {
 			}
 
 			size = ret.getNumberOfEntries();
-			greater = ret.getLid(size - 1);
-			if (p_lid > greater) {
+			greater = ret.getLocalID(size - 1);
+			if (p_localID > greater) {
 				if (size < ret.getNumberOfChildren()) {
 					ret = ret.getChild(size);
 					continue;
@@ -591,7 +589,7 @@ public final class CIDTreeOptimized implements Serializable {
 				}
 			}
 
-			index = ret.indexOf(p_lid);
+			index = ret.indexOf(p_localID);
 			if (0 <= index) {
 				break;
 			} else {
@@ -608,23 +606,23 @@ public final class CIDTreeOptimized implements Serializable {
 	}
 
 	/**
-	 * Returns next lid to given lid (could be the lid itself)
-	 * @param p_lid
-	 *            the lid
-	 * @return p_lid if p_lid is in btree or successor of p_lid, (-1) if there is no successor
+	 * Returns next LocalID to given LocalID (could be the LocalID itself)
+	 * @param p_localID
+	 *            the LocalID
+	 * @return p_localID if p_localID is in btree or successor of p_localID, (-1) if there is no successor
 	 */
-	private long getLidOrSuccessorsLid(final long p_lid) {
+	private long getLIDOrSuccessorsLID(final long p_localID) {
 		long ret = -1;
 		int index;
 		Node node;
 
-		node = getNodeOrSuccessorsNode(p_lid);
+		node = getNodeOrSuccessorsNode(p_localID);
 		if (node != null) {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_localID);
 			if (0 <= index) {
-				ret = node.getLid(index);
+				ret = node.getLocalID(index);
 			} else {
-				ret = node.getLid(index * -1 - 1);
+				ret = node.getLocalID(index * -1 - 1);
 			}
 		}
 
@@ -632,19 +630,19 @@ public final class CIDTreeOptimized implements Serializable {
 	}
 
 	/**
-	 * Returns the location and backup nodes of next lid to given lid (could be the lid itself)
-	 * @param p_lid
-	 *            the lid whose corresponding NodeID is searched
-	 * @return NodeID for p_lid if p_lid is in btree or successors NodeID
+	 * Returns the location and backup nodes of next LocalID to given LocalID (could be the LocalID itself)
+	 * @param p_localID
+	 *            the LocalID whose corresponding NodeID is searched
+	 * @return NodeID for p_localID if p_localID is in btree or successors NodeID
 	 */
-	private short getNodeIDOrSuccessorsNodeID(final long p_lid) {
+	private short getNodeIDOrSuccessorsNodeID(final long p_localID) {
 		short ret = -1;
 		int index;
 		Node node;
 
-		node = getNodeOrSuccessorsNode(p_lid);
+		node = getNodeOrSuccessorsNode(p_localID);
 		if (node != null) {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_localID);
 			if (0 <= index) {
 				ret = node.getNodeID(index);
 			} else {
@@ -657,13 +655,13 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Returns the node in which the predecessor is
-	 * @param p_lid
-	 *            lid whose predecessor's node is searched
+	 * @param p_localID
+	 *            LocalID whose predecessor's node is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the node in which the predecessor of p_lid is or null if there is no predecessor
+	 * @return the node in which the predecessor of p_localID is or null if there is no predecessor
 	 */
-	private Node getPredecessorsNode(final long p_lid, final Node p_node) {
+	private Node getPredecessorsNode(final long p_localID, final Node p_node) {
 		int index;
 		Node ret = null;
 		Node node;
@@ -673,7 +671,7 @@ public final class CIDTreeOptimized implements Serializable {
 
 		node = p_node;
 
-		if (p_lid == node.getLid(0)) {
+		if (p_localID == node.getLocalID(0)) {
 			if (0 < node.getNumberOfChildren()) {
 				// Get maximum in child tree
 				node = node.getChild(0);
@@ -684,14 +682,14 @@ public final class CIDTreeOptimized implements Serializable {
 			} else {
 				parent = node.getParent();
 				if (parent != null) {
-					while (parent != null && p_lid < parent.getLid(0)) {
+					while (parent != null && p_localID < parent.getLocalID(0)) {
 						parent = parent.getParent();
 					}
 					ret = parent;
 				}
 			}
 		} else {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_localID);
 			if (0 <= index) {
 				if (index <= node.getNumberOfChildren()) {
 					// Get maximum in child tree
@@ -709,23 +707,23 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Returns the entry of the predecessor
-	 * @param p_lid
-	 *            the lid whose predecessor is searched
+	 * @param p_localID
+	 *            the LocalID whose predecessor is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the entry of p_lid's predecessor or null if there is no predecessor
+	 * @return the entry of p_localID's predecessor or null if there is no predecessor
 	 */
-	private Entry getPredecessorsEntry(final long p_lid, final Node p_node) {
+	private Entry getPredecessorsEntry(final long p_localID, final Node p_node) {
 		Entry ret = null;
 		Node predecessorsNode;
-		long predecessorsLid;
+		long predecessorsLID;
 
-		predecessorsNode = getPredecessorsNode(p_lid, p_node);
+		predecessorsNode = getPredecessorsNode(p_localID, p_node);
 		if (predecessorsNode != null) {
 			for (int i = predecessorsNode.getNumberOfEntries() - 1; i >= 0; i--) {
-				predecessorsLid = predecessorsNode.getLid(i);
-				if (p_lid > predecessorsLid) {
-					ret = new Entry(predecessorsLid, predecessorsNode.getNodeID(i));
+				predecessorsLID = predecessorsNode.getLocalID(i);
+				if (p_localID > predecessorsLID) {
+					ret = new Entry(predecessorsLID, predecessorsNode.getNodeID(i));
 					break;
 				}
 			}
@@ -736,13 +734,13 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Returns the node in which the successor is
-	 * @param p_lid
-	 *            lid whose successor's node is searched
+	 * @param p_localID
+	 *            LocalID whose successor's node is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the node in which the successor of p_lid is or null if there is no successor
+	 * @return the node in which the successor of p_localID is or null if there is no successor
 	 */
-	private Node getSuccessorsNode(final long p_lid, final Node p_node) {
+	private Node getSuccessorsNode(final long p_localID, final Node p_node) {
 		int index;
 		Node ret = null;
 		Node node;
@@ -752,7 +750,7 @@ public final class CIDTreeOptimized implements Serializable {
 
 		node = p_node;
 
-		if (p_lid == node.getLid(node.getNumberOfEntries() - 1)) {
+		if (p_localID == node.getLocalID(node.getNumberOfEntries() - 1)) {
 			if (node.getNumberOfEntries() < node.getNumberOfChildren()) {
 				// Get minimum in child tree
 				node = node.getChild(node.getNumberOfEntries());
@@ -763,14 +761,14 @@ public final class CIDTreeOptimized implements Serializable {
 			} else {
 				parent = node.getParent();
 				if (parent != null) {
-					while (parent != null && p_lid > parent.getLid(parent.getNumberOfEntries() - 1)) {
+					while (parent != null && p_localID > parent.getLocalID(parent.getNumberOfEntries() - 1)) {
 						parent = parent.getParent();
 					}
 					ret = parent;
 				}
 			}
 		} else {
-			index = node.indexOf(p_lid);
+			index = node.indexOf(p_localID);
 			if (0 <= index) {
 				if (index < node.getNumberOfChildren()) {
 					// Get minimum in child tree
@@ -788,23 +786,23 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Returns the entry of the successor
-	 * @param p_lid
-	 *            the lid whose successor is searched
+	 * @param p_localID
+	 *            the LocalID whose successor is searched
 	 * @param p_node
 	 *            anchor node
-	 * @return the entry of p_lid's successor or null if there is no successor
+	 * @return the entry of p_localID's successor or null if there is no successor
 	 */
-	private Entry getSuccessorsEntry(final long p_lid, final Node p_node) {
+	private Entry getSuccessorsEntry(final long p_localID, final Node p_node) {
 		Entry ret = null;
 		Node successorsNode;
-		long successorsLid;
+		long successorsLID;
 
-		successorsNode = getSuccessorsNode(p_lid, p_node);
+		successorsNode = getSuccessorsNode(p_localID, p_node);
 		if (successorsNode != null) {
 			for (int i = 0; i < successorsNode.getNumberOfEntries(); i++) {
-				successorsLid = successorsNode.getLid(i);
-				if (p_lid < successorsLid) {
-					ret = new Entry(successorsLid, successorsNode.getNodeID(i));
+				successorsLID = successorsNode.getLocalID(i);
+				if (p_localID < successorsLID) {
+					ret = new Entry(successorsLID, successorsNode.getNodeID(i));
 					break;
 				}
 			}
@@ -815,19 +813,19 @@ public final class CIDTreeOptimized implements Serializable {
 
 	/**
 	 * Splits down the middle if node is greater than maxEntries
-	 * @param p_lid
-	 *            the new lid that causes the splitting
+	 * @param p_localID
+	 *            the new LocalID that causes the splitting
 	 * @param p_node
 	 *            the node that has to be split
-	 * @return the node in which p_lid must be inserted
+	 * @return the node in which p_localID must be inserted
 	 */
-	private Node split(final long p_lid, final Node p_node) {
+	private Node split(final long p_localID, final Node p_node) {
 		Node ret;
 		Node node;
 
 		int size;
 		int medianIndex;
-		long medianLid;
+		long medianLID;
 		short medianNodeID;
 
 		Node left;
@@ -839,7 +837,7 @@ public final class CIDTreeOptimized implements Serializable {
 
 		size = node.getNumberOfEntries();
 		medianIndex = size / 2;
-		medianLid = node.getLid(medianIndex);
+		medianLID = node.getLocalID(medianIndex);
 		medianNodeID = node.getNodeID(medianIndex);
 
 		left = new Node(null, m_maxEntries, m_maxChildren);
@@ -856,7 +854,7 @@ public final class CIDTreeOptimized implements Serializable {
 		if (null == node.getParent()) {
 			// New root, height of tree is increased
 			newRoot = new Node(null, m_maxEntries, m_maxChildren);
-			newRoot.addEntry(medianLid, medianNodeID, 0);
+			newRoot.addEntry(medianLID, medianNodeID, 0);
 			node.setParent(newRoot);
 			m_root = newRoot;
 			node = m_root;
@@ -864,21 +862,21 @@ public final class CIDTreeOptimized implements Serializable {
 			node.addChild(right);
 			parent = newRoot;
 		} else {
-			// Move the median lid up to the parent
+			// Move the median LocalID up to the parent
 			parent = node.getParent();
-			parent.addEntry(medianLid, medianNodeID);
+			parent.addEntry(medianLID, medianNodeID);
 			parent.removeChild(node);
 			parent.addChild(left);
 			parent.addChild(right);
 
 			if (parent.getNumberOfEntries() > m_maxEntries) {
-				split(p_lid, parent);
+				split(p_localID, parent);
 			}
 		}
 
-		if (p_lid < medianLid) {
+		if (p_localID < medianLID) {
 			ret = left;
-		} else if (p_lid > medianLid) {
+		} else if (p_localID > medianLID) {
 			ret = right;
 		} else {
 			ret = parent;
@@ -888,41 +886,41 @@ public final class CIDTreeOptimized implements Serializable {
 	}
 
 	/**
-	 * Removes given p_lid
-	 * @param p_lid
-	 *            the lid
-	 * @return p_lid or (-1) if there is no entry for p_lid
+	 * Removes given p_localID
+	 * @param p_localID
+	 *            the LocalID
+	 * @return p_localID or (-1) if there is no entry for p_localID
 	 */
-	private long remove(final long p_lid) {
+	private long remove(final long p_localID) {
 		long ret;
 		Node node;
 
-		node = getNodeOrSuccessorsNode(p_lid);
-		ret = remove(p_lid, node);
+		node = getNodeOrSuccessorsNode(p_localID);
+		ret = remove(p_localID, node);
 
 		return ret;
 	}
 
 	/**
-	 * Removes the p_lid from given node and checks invariants
-	 * @param p_lid
-	 *            the lid
+	 * Removes the p_localID from given node and checks invariants
+	 * @param p_localID
+	 *            the LocalID
 	 * @param p_node
-	 *            the node in which p_lid should be stored
-	 * @return p_lid or (-1) if there is no entry for p_lid
+	 *            the node in which p_localID should be stored
+	 * @return p_localID or (-1) if there is no entry for p_localID
 	 */
-	private long remove(final long p_lid, final Node p_node) {
+	private long remove(final long p_localID, final Node p_node) {
 		long ret = -1;
 		int index;
 		Node greatest;
-		long replaceLid;
+		long replaceLID;
 		short replaceNodeID;
 
 		Contract.checkNotNull(p_node, "Node null");
 
-		index = p_node.indexOf(p_lid);
+		index = p_node.indexOf(p_localID);
 		if (0 <= index) {
-			ret = p_node.removeEntry(p_lid);
+			ret = p_node.removeEntry(p_localID);
 			if (0 == p_node.getNumberOfChildren()) {
 				// Leaf node
 				if (null != p_node.getParent() && p_node.getNumberOfEntries() < m_minEntries) {
@@ -937,18 +935,18 @@ public final class CIDTreeOptimized implements Serializable {
 				while (0 < greatest.getNumberOfChildren()) {
 					greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
 				}
-				replaceLid = -1;
+				replaceLID = -1;
 				replaceNodeID = -1;
 				if (0 < greatest.getNumberOfEntries()) {
 					replaceNodeID = greatest.getNodeID(greatest.getNumberOfEntries() - 1);
-					replaceLid = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
+					replaceLID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);
 				}
-				p_node.addEntry(replaceLid, replaceNodeID);
+				p_node.addEntry(replaceLID, replaceNodeID);
 				if (null != greatest.getParent() && greatest.getNumberOfEntries() < m_minEntries) {
 					combined(greatest);
 				}
 				if (greatest.getNumberOfChildren() > m_maxChildren) {
-					split(p_lid, greatest);
+					split(p_localID, greatest);
 				}
 			}
 			m_size--;
@@ -972,13 +970,13 @@ public final class CIDTreeOptimized implements Serializable {
 		Node leftNeighbor;
 		int leftNeighborSize;
 
-		long removeLid;
+		long removeLID;
 		int prev;
 		short parentNodeID;
-		long parentLid;
+		long parentLID;
 
 		short neighborNodeID;
-		long neighborLid;
+		long neighborLID;
 
 		parent = p_node.getParent();
 		index = parent.indexOf(p_node);
@@ -995,16 +993,16 @@ public final class CIDTreeOptimized implements Serializable {
 		// Try to borrow neighbor
 		if (null != rightNeighbor && rightNeighborSize > m_minEntries) {
 			// Try to borrow from right neighbor
-			removeLid = rightNeighbor.getLid(0);
-			prev = parent.indexOf(removeLid) * -1 - 2;
+			removeLID = rightNeighbor.getLocalID(0);
+			prev = parent.indexOf(removeLID) * -1 - 2;
 			parentNodeID = parent.getNodeID(prev);
-			parentLid = parent.removeEntry(prev);
+			parentLID = parent.removeEntry(prev);
 
 			neighborNodeID = rightNeighbor.getNodeID(0);
-			neighborLid = rightNeighbor.removeEntry(0);
+			neighborLID = rightNeighbor.removeEntry(0);
 
-			p_node.addEntry(parentLid, parentNodeID);
-			parent.addEntry(neighborLid, neighborNodeID);
+			p_node.addEntry(parentLID, parentNodeID);
+			parent.addEntry(neighborLID, neighborNodeID);
 			if (0 < rightNeighbor.getNumberOfChildren()) {
 				p_node.addChild(rightNeighbor.removeChild(0));
 			}
@@ -1018,27 +1016,27 @@ public final class CIDTreeOptimized implements Serializable {
 
 			if (null != leftNeighbor && leftNeighborSize > m_minEntries) {
 				// Try to borrow from left neighbor
-				removeLid = leftNeighbor.getLid(leftNeighbor.getNumberOfEntries() - 1);
-				prev = parent.indexOf(removeLid) * -1 - 1;
+				removeLID = leftNeighbor.getLocalID(leftNeighbor.getNumberOfEntries() - 1);
+				prev = parent.indexOf(removeLID) * -1 - 1;
 				parentNodeID = parent.getNodeID(prev);
-				parentLid = parent.removeEntry(prev);
+				parentLID = parent.removeEntry(prev);
 
 				neighborNodeID = leftNeighbor.getNodeID(leftNeighbor.getNumberOfEntries() - 1);
-				neighborLid = leftNeighbor.removeEntry(leftNeighbor.getNumberOfEntries() - 1);
+				neighborLID = leftNeighbor.removeEntry(leftNeighbor.getNumberOfEntries() - 1);
 
-				p_node.addEntry(parentLid, parentNodeID);
-				parent.addEntry(neighborLid, neighborNodeID);
+				p_node.addEntry(parentLID, parentNodeID);
+				parent.addEntry(neighborLID, neighborNodeID);
 				if (0 < leftNeighbor.getNumberOfChildren()) {
 					p_node.addChild(leftNeighbor.removeChild(leftNeighbor.getNumberOfChildren() - 1));
 				}
 			} else if (null != rightNeighbor && 0 < parent.getNumberOfEntries()) {
 				// Cannot borrow from neighbors, try to combined with right neighbor
-				removeLid = rightNeighbor.getLid(0);
-				prev = parent.indexOf(removeLid) * -1 - 2;
+				removeLID = rightNeighbor.getLocalID(0);
+				prev = parent.indexOf(removeLID) * -1 - 2;
 				parentNodeID = parent.getNodeID(prev);
-				parentLid = parent.removeEntry(prev);
+				parentLID = parent.removeEntry(prev);
 				parent.removeChild(rightNeighbor);
-				p_node.addEntry(parentLid, parentNodeID);
+				p_node.addEntry(parentLID, parentNodeID);
 
 				p_node.addEntries(rightNeighbor, 0, rightNeighbor.getNumberOfEntries(), p_node.getNumberOfEntries());
 				p_node.addChildren(rightNeighbor, 0, rightNeighbor.getNumberOfChildren(), p_node.getNumberOfChildren());
@@ -1053,12 +1051,12 @@ public final class CIDTreeOptimized implements Serializable {
 				}
 			} else if (null != leftNeighbor && 0 < parent.getNumberOfEntries()) {
 				// Cannot borrow from neighbors, try to combined with left neighbor
-				removeLid = leftNeighbor.getLid(leftNeighbor.getNumberOfEntries() - 1);
-				prev = parent.indexOf(removeLid) * -1 - 1;
+				removeLID = leftNeighbor.getLocalID(leftNeighbor.getNumberOfEntries() - 1);
+				prev = parent.indexOf(removeLID) * -1 - 1;
 				parentNodeID = parent.getNodeID(prev);
-				parentLid = parent.removeEntry(prev);
+				parentLID = parent.removeEntry(prev);
 				parent.removeChild(leftNeighbor);
-				p_node.addEntry(parentLid, parentNodeID);
+				p_node.addEntry(parentLID, parentNodeID);
 				p_node.addEntries(leftNeighbor, 0, leftNeighbor.getNumberOfEntries(), -1);
 				p_node.addChildren(leftNeighbor, 0, leftNeighbor.getNumberOfChildren(), -1);
 
@@ -1117,8 +1115,8 @@ public final class CIDTreeOptimized implements Serializable {
 		if (1 < numberOfEntries) {
 			// Make sure the keys are sorted
 			for (int i = 1; i < numberOfEntries; i++) {
-				prev = p_node.getLid(i - 1);
-				next = p_node.getLid(i);
+				prev = p_node.getLocalID(i - 1);
+				next = p_node.getLocalID(i);
 				if (prev > next) {
 					ret = false;
 					break;
@@ -1160,26 +1158,26 @@ public final class CIDTreeOptimized implements Serializable {
 
 			first = p_node.getChild(0);
 			// The first child's last key should be less than the node's first key
-			if (first.getLid(first.getNumberOfEntries() - 1) > p_node.getLid(0)) {
+			if (first.getLocalID(first.getNumberOfEntries() - 1) > p_node.getLocalID(0)) {
 				ret = false;
 			}
 
 			last = p_node.getChild(p_node.getNumberOfChildren() - 1);
 			// The last child's first key should be greater than the node's last key
-			if (last.getLid(0) < p_node.getLid(p_node.getNumberOfEntries() - 1)) {
+			if (last.getLocalID(0) < p_node.getLocalID(p_node.getNumberOfEntries() - 1)) {
 				ret = false;
 			}
 
 			// Check that each node's first and last key holds it's invariance
 			for (int i = 1; i < p_node.getNumberOfEntries(); i++) {
-				prev = p_node.getLid(i - 1);
-				next = p_node.getLid(i);
+				prev = p_node.getLocalID(i - 1);
+				next = p_node.getLocalID(i);
 				child = p_node.getChild(i);
-				if (prev > child.getLid(0)) {
+				if (prev > child.getLocalID(0)) {
 					ret = false;
 					break;
 				}
-				if (next < child.getLid(child.getNumberOfEntries() - 1)) {
+				if (next < child.getLocalID(child.getNumberOfEntries() - 1)) {
 					ret = false;
 					break;
 				}
@@ -1238,7 +1236,7 @@ public final class CIDTreeOptimized implements Serializable {
 		}
 		ret.append("[" + p_node.getNumberOfEntries() + ", " + p_node.getNumberOfChildren() + "] ");
 		for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-			ret.append("(lid: " + p_node.getLid(i) + " nid: " + p_node.getNodeID(i) + ")");
+			ret.append("(LocalID: " + p_node.getLocalID(i) + " NodeID: " + p_node.getNodeID(i) + ")");
 			if (i < p_node.getNumberOfEntries() - 1) {
 				ret.append(", ");
 			}
@@ -1314,9 +1312,9 @@ public final class CIDTreeOptimized implements Serializable {
 		public int compareTo(final Node p_cmp) {
 			int ret;
 
-			if (getLid(0) < p_cmp.getLid(0)) {
+			if (getLocalID(0) < p_cmp.getLocalID(0)) {
 				ret = -1;
-			} else if (getLid(0) > p_cmp.getLid(0)) {
+			} else if (getLocalID(0) > p_cmp.getLocalID(0)) {
 				ret = 1;
 			} else {
 				ret = 0;
@@ -1343,12 +1341,12 @@ public final class CIDTreeOptimized implements Serializable {
 		}
 
 		/**
-		 * Returns the lid to given index
+		 * Returns the LocalID to given index
 		 * @param p_index
 		 *            the index
-		 * @return the lid to given index
+		 * @return the LocalID to given index
 		 */
-		private long getLid(final int p_index) {
+		private long getLocalID(final int p_index) {
 			return m_keys[p_index];
 		}
 
@@ -1363,13 +1361,13 @@ public final class CIDTreeOptimized implements Serializable {
 		}
 
 		/**
-		 * Returns the index for given lid. Uses the binary search algorithm from
+		 * Returns the index for given LocalID. Uses the binary search algorithm from
 		 * java.util.Arrays adapted to our needs
-		 * @param p_lid
-		 *            the lid
-		 * @return the index for given lid, if it is contained in the array, (-(insertion point) - 1) otherwise
+		 * @param p_localID
+		 *            the LocalID
+		 * @return the index for given LocalID, if it is contained in the array, (-(insertion point) - 1) otherwise
 		 */
-		private int indexOf(final long p_lid) {
+		private int indexOf(final long p_localID) {
 			int ret = -1;
 			int low;
 			int high;
@@ -1383,9 +1381,9 @@ public final class CIDTreeOptimized implements Serializable {
 				mid = low + high >>> 1;
 			midVal = m_keys[mid];
 
-			if (midVal < p_lid) {
+			if (midVal < p_localID) {
 				low = mid + 1;
-			} else if (midVal > p_lid) {
+			} else if (midVal > p_localID) {
 				high = mid - 1;
 			} else {
 				ret = mid;
@@ -1401,20 +1399,20 @@ public final class CIDTreeOptimized implements Serializable {
 
 		/**
 		 * Adds an entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_localID
+		 *            the LocalID
 		 * @param p_nodeID
 		 *            the NodeID
 		 */
-		private void addEntry(final long p_lid, final short p_nodeID) {
+		private void addEntry(final long p_localID, final short p_nodeID) {
 			int index;
 
-			index = this.indexOf(p_lid) * -1 - 1;
+			index = this.indexOf(p_localID) * -1 - 1;
 
 			System.arraycopy(m_keys, index, m_keys, index + 1, m_numberOfEntries - index);
 			System.arraycopy(m_dataLeafs, index, m_dataLeafs, index + 1, m_numberOfEntries - index);
 
-			m_keys[index] = p_lid;
+			m_keys[index] = p_localID;
 			m_dataLeafs[index] = p_nodeID;
 
 			m_numberOfEntries++;
@@ -1422,18 +1420,18 @@ public final class CIDTreeOptimized implements Serializable {
 
 		/**
 		 * Adds an entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_localID
+		 *            the LocalID
 		 * @param p_nodeID
 		 *            the NodeID
 		 * @param p_index
 		 *            the index to store the element at
 		 */
-		private void addEntry(final long p_lid, final short p_nodeID, final int p_index) {
+		private void addEntry(final long p_localID, final short p_nodeID, final int p_index) {
 			System.arraycopy(m_keys, p_index, m_keys, p_index + 1, m_numberOfEntries - p_index);
 			System.arraycopy(m_dataLeafs, p_index, m_dataLeafs, p_index + 1, m_numberOfEntries - p_index);
 
-			m_keys[p_index] = p_lid;
+			m_keys[p_index] = p_localID;
 			m_dataLeafs[p_index] = p_nodeID;
 
 			m_numberOfEntries++;
@@ -1475,34 +1473,34 @@ public final class CIDTreeOptimized implements Serializable {
 
 		/**
 		 * Changes an entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_localID
+		 *            the LocalID
 		 * @param p_nodeID
 		 *            the NodeID
 		 * @param p_index
 		 *            the index of given entry in this node
 		 */
-		private void changeEntry(final long p_lid, final short p_nodeID, final int p_index) {
+		private void changeEntry(final long p_localID, final short p_nodeID, final int p_index) {
 
-			if (p_lid == getLid(p_index)) {
-				m_keys[p_index] = p_lid;
+			if (p_localID == getLocalID(p_index)) {
+				m_keys[p_index] = p_localID;
 				m_dataLeafs[p_index] = p_nodeID;
 			}
 		}
 
 		/**
-		 * Removes the entry with given lid
-		 * @param p_lid
-		 *            lid of the entry that has to be deleted
-		 * @return p_lid or (-1) if there is no entry for p_lid in this node
+		 * Removes the entry with given LocalID
+		 * @param p_localID
+		 *            LocalID of the entry that has to be deleted
+		 * @return p_localID or (-1) if there is no entry for p_localID in this node
 		 */
-		private long removeEntry(final long p_lid) {
+		private long removeEntry(final long p_localID) {
 			long ret = -1;
 			int index;
 
-			index = this.indexOf(p_lid);
+			index = this.indexOf(p_localID);
 			if (0 <= index) {
-				ret = getLid(index);
+				ret = getLocalID(index);
 
 				System.arraycopy(m_keys, index + 1, m_keys, index, m_numberOfEntries - index - 1);
 				System.arraycopy(m_dataLeafs, index + 1, m_dataLeafs, index, m_numberOfEntries - index - 1);
@@ -1517,13 +1515,13 @@ public final class CIDTreeOptimized implements Serializable {
 		 * Removes the entry with given index
 		 * @param p_index
 		 *            the index of the entry that has to be deleted
-		 * @return p_lid or (-1) if p_index is to large
+		 * @return p_localID or (-1) if p_index is to large
 		 */
 		private long removeEntry(final int p_index) {
 			long ret = -1;
 
 			if (p_index < m_numberOfEntries) {
-				ret = getLid(p_index);
+				ret = getLocalID(p_index);
 
 				System.arraycopy(m_keys, p_index + 1, m_keys, p_index, m_numberOfEntries - p_index);
 				System.arraycopy(m_dataLeafs, p_index + 1, m_dataLeafs, p_index, m_numberOfEntries - p_index);
@@ -1571,20 +1569,20 @@ public final class CIDTreeOptimized implements Serializable {
 			int low;
 			int high;
 			int mid;
-			long lid;
+			long localID;
 			long midVal;
 
-			lid = p_child.getLid(0);
+			localID = p_child.getLocalID(0);
 			low = 0;
 			high = m_numberOfChildren - 1;
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLid(0);
+			midVal = m_children[mid].getLocalID(0);
 
-			if (midVal < lid) {
+			if (midVal < localID) {
 				low = mid + 1;
-			} else if (midVal > lid) {
+			} else if (midVal > localID) {
 				high = mid - 1;
 			} else {
 				ret = mid;
@@ -1717,7 +1715,7 @@ public final class CIDTreeOptimized implements Serializable {
 
 			ret.append("entries=[");
 			for (int i = 0; i < getNumberOfEntries(); i++) {
-				ret.append("(lid: " + getLid(i) + " location: " + getNodeID(i) + ")");
+				ret.append("(LocalID: " + getLocalID(i) + " location: " + getNodeID(i) + ")");
 				if (i < getNumberOfEntries() - 1) {
 					ret.append(", ");
 				}
@@ -1727,7 +1725,7 @@ public final class CIDTreeOptimized implements Serializable {
 			if (null != m_parent) {
 				ret.append("parent=[");
 				for (int i = 0; i < m_parent.getNumberOfEntries(); i++) {
-					ret.append("(lid: " + getLid(i) + " location: " + getNodeID(i) + ")");
+					ret.append("(LocalID: " + getLocalID(i) + " location: " + getNodeID(i) + ")");
 					if (i < m_parent.getNumberOfEntries() - 1) {
 						ret.append(", ");
 					}
@@ -1748,7 +1746,7 @@ public final class CIDTreeOptimized implements Serializable {
 	}
 
 	/**
-	 * Auxiliary object to return lid and NodeID at once
+	 * Auxiliary object to return LocalID and NodeID at once
 	 * @author Kevin Beineke
 	 *         13.06.2013
 	 */
@@ -1758,28 +1756,28 @@ public final class CIDTreeOptimized implements Serializable {
 		private static final long serialVersionUID = -7000053901808777917L;
 
 		// Attributes
-		private long m_lid;
+		private long m_localID;
 		private short m_nodeID;
 
 		// Constructors
 		/**
 		 * Creates an instance of Entry
-		 * @param p_lid
-		 *            the lid
+		 * @param p_localID
+		 *            the LocalID
 		 * @param p_nodeID
 		 *            the NodeID
 		 */
-		public Entry(final long p_lid, final short p_nodeID) {
-			m_lid = p_lid;
+		public Entry(final long p_localID, final short p_nodeID) {
+			m_localID = p_localID;
 			m_nodeID = p_nodeID;
 		}
 
 		/**
-		 * Returns the lid
-		 * @return the lid
+		 * Returns the LocalID
+		 * @return the LocalID
 		 */
-		public long getLid() {
-			return m_lid;
+		public long getLocalID() {
+			return m_localID;
 		}
 
 		/**
@@ -1796,7 +1794,7 @@ public final class CIDTreeOptimized implements Serializable {
 		 */
 		@Override
 		public String toString() {
-			return "(lid: " + m_lid + ", location: " + m_nodeID + ")";
+			return "(LocalID: " + m_localID + ", location: " + m_nodeID + ")";
 		}
 	}
 }

@@ -52,7 +52,7 @@ abstract class AbstractNodesConfigurationParser {
 	 * @param p_port
 	 *            the port
 	 * @param p_nodeID
-	 *            the nodeID
+	 *            the NodeID
 	 * @return the parsed node
 	 */
 	protected final long parseNode(final String p_ip, final int p_port, final long p_nodeID) {

@@ -22,25 +22,25 @@ public class CmdCIDT extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "cidt NID";
+		return "cidt NodeID";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Get information about CIDTable of peer NID\n";
+		final String line1 = "Get information about CIDTable of peer NodeID\n";
 		return line1;
 	}
 
 	@Override
 	public String[] getMandParams() {
 		final String[] ret = {"PNID"};
-	    return ret;
+		return ret;
 	}
 
 	@Override
-    public  String[] getOptParams() {
-        return null;
-    }
+	public String[] getOptParams() {
+		return null;
+	}
 
 	// called after parameter have been checked
 	@Override
@@ -53,7 +53,7 @@ public class CmdCIDT extends AbstractCmd {
 		try {
 			arguments = p_command.split(" ");
 
-			// get NID to send command to
+			// get NodeID to send command to
 			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 
 			res = Core.executeChunkCommand(nodeID, p_command, true);

@@ -5,14 +5,14 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.lookup.storage.CIDTreeOptimized;
+import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 
 /**
- * Test case for the CID data structures
+ * Test case for the ChunkID data structures
  * @author Kevin Beineke
  *         03.01.2014
  */
-public final class CIDTreeTest {
+public final class LookupTreeTest {
 
 	// Constants
 	private static final short ME = 12345;
@@ -20,9 +20,9 @@ public final class CIDTreeTest {
 
 	// Constructors
 	/**
-	 * Creates an instance of CIDTreeTest
+	 * Creates an instance of LookupTreeTest
 	 */
-	private CIDTreeTest() {}
+	private LookupTreeTest() {}
 
 	// Methods
 	/**
@@ -55,7 +55,7 @@ public final class CIDTreeTest {
 
 		long rndm;
 
-		CIDTreeOptimized cidTree;
+		LookupTree chunkIDTree;
 
 		addMe = (long) ME << 48;
 
@@ -67,12 +67,12 @@ public final class CIDTreeTest {
 			e1.printStackTrace();
 		}
 
-		cidTree = new CIDTreeOptimized(ORDER);
-		cidTree.initRange(0, ME, null);
+		chunkIDTree = new LookupTree(ORDER);
+		chunkIDTree.initRange(0, ME, null);
 
 		// Initialize ranges up to 2^22
 		for (int i = 1; i <= Math.pow(2, 22); i++) {
-			cidTree.initRange(i * 1000 - 1 + addMe, ME, new short[] {(short) (5 + i), -1, -1});
+			chunkIDTree.initRange(i * 1000 - 1 + addMe, ME, new short[] {(short) (5 + i), -1, -1});
 		}
 		creator = 0;
 		lower = 1;
@@ -81,15 +81,15 @@ public final class CIDTreeTest {
 		timeStart = System.currentTimeMillis();
 
 		for (int i = 1; i <= p_numberOfEntries; i++) {
-			cidTree.migrateRange(i * 1000 + addMe, i * 1000 + 100 + addMe, (short) 2);
+			chunkIDTree.migrateRange(i * 1000 + addMe, i * 1000 + 100 + addMe, (short) 2);
 		}
 		System.out.println("Appends finished");
 		append = System.currentTimeMillis();
 		for (int i = 1; i <= p_numberOfEntries; i++) {
 			rndm = (long) ((upper - lower) * Math.random() + lower) + addMe;
 			creator = (short) (1000 * Math.random());
-			cidTree.migrateRange(rndm, rndm + 100, creator);
-			if (creator != cidTree.getPrimaryPeer(rndm + 50)) {
+			chunkIDTree.migrateRange(rndm, rndm + 100, creator);
+			if (creator != chunkIDTree.getPrimaryPeer(rndm + 50)) {
 				System.out.println("Wrong insertion, " + (rndm + 50 & 0x0000FFFFFFFFFFFFL) + ", " + creator);
 			}
 		}
@@ -97,38 +97,38 @@ public final class CIDTreeTest {
 		insert = System.currentTimeMillis();
 		for (int i = 1; i <= p_numberOfEntries; i++) {
 			rndm = (long) (Math.pow(2, 22) * Math.random() + addMe);
-			cidTree.getPrimaryPeer(rndm);
+			chunkIDTree.getPrimaryPeer(rndm);
 		}
 		System.out.println("BTree: Append: " + (append - timeStart) + " ms, insert: " + (insert - append) + "ms, get: " + (System.currentTimeMillis() - insert)
 				+ "ms");
-		if (cidTree.validate()) {
-			System.out.println("Number of entries in btree: " + cidTree.size() + ", btree is valid");
+		if (chunkIDTree.validate()) {
+			System.out.println("Number of entries in btree: " + chunkIDTree.size() + ", btree is valid");
 		} else {
-			System.out.println("Number of entries in btree: " + cidTree.size() + ", btree is not valid");
+			System.out.println("Number of entries in btree: " + chunkIDTree.size() + ", btree is not valid");
 		}
 
 		/*
 		 * Example to examine data structure manually
-		 * cidTree.migrateObject(1111 + addMe, (short)1);
+		 * chunkIDTree.migrateObject(1111 + addMe, (short)1);
 		 * for (int i = 1; i <= 10; i++) {
-		 * cidTree.migrateObject((i * 1000) + addMe, (short)2);
+		 * chunkIDTree.migrateObject((i * 1000) + addMe, (short)2);
 		 * }
-		 * System.out.println(cidTree.toString());
-		 * cidTree.migrateObject(1001 + addMe, (short)2);
-		 * cidTree.migrateObject(1003 + addMe, (short)5);
-		 * cidTree.migrateObject(1002 + addMe, (short)2);
-		 * cidTree.migrateObject(8000 + addMe, (short)5);
-		 * System.out.println(cidTree.toString());
-		 * cidTree.migrateObject(999 + addMe, (short)2);
-		 * cidTree.migrateObject(995 + addMe, (short)2);
-		 * cidTree.migrateObject(997 + addMe, (short)5);
-		 * System.out.println(cidTree.toString());
-		 * cidTree.migrateRange(500 + addMe, 1500 + addMe, (short)3);
-		 * cidTree.migrateObject(800 + addMe, (short)10);
-		 * cidTree.removeObject(500 + addMe);
-		 * System.out.println(cidTree.toString());
+		 * System.out.println(chunkIDTree.toString());
+		 * chunkIDTree.migrateObject(1001 + addMe, (short)2);
+		 * chunkIDTree.migrateObject(1003 + addMe, (short)5);
+		 * chunkIDTree.migrateObject(1002 + addMe, (short)2);
+		 * chunkIDTree.migrateObject(8000 + addMe, (short)5);
+		 * System.out.println(chunkIDTree.toString());
+		 * chunkIDTree.migrateObject(999 + addMe, (short)2);
+		 * chunkIDTree.migrateObject(995 + addMe, (short)2);
+		 * chunkIDTree.migrateObject(997 + addMe, (short)5);
+		 * System.out.println(chunkIDTree.toString());
+		 * chunkIDTree.migrateRange(500 + addMe, 1500 + addMe, (short)3);
+		 * chunkIDTree.migrateObject(800 + addMe, (short)10);
+		 * chunkIDTree.removeObject(500 + addMe);
+		 * System.out.println(chunkIDTree.toString());
 		 * for (int i = 0; i < 11000; i += 10) {
-		 * System.out.println(i + ": " + cidTree.getPrimaryPeer(i) + ", " + cidTree.getBackupPeers(i)[0]);
+		 * System.out.println(i + ": " + chunkIDTree.getPrimaryPeer(i) + ", " + chunkIDTree.getBackupPeers(i)[0]);
 		 * }
 		 */
 

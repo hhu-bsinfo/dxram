@@ -25,29 +25,29 @@ public class CmdPut extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "put NID text [-size=nbytes] [-name=string]";
+		return "put NodeID text [-size=nbytes] [-name=string]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Save a chunk with data 'text' on node NID.\n";
+		final String line1 = "Save a chunk with data 'text' on node NodeID.\n";
 		final String line2 = "-size=bytes define size of the chunk in bytes.\n";
 		final String line3 = "(The 'text' will be stored at the beginning)\n\n";
-		final String line4 = "Returns CID of created chunk in tuple format (NID,LID)";
-		return line1 + line2 + line3+line4;
+		final String line4 = "Returns ChunkID of created chunk in tuple format (NodeID,LocalID)";
+		return line1 + line2 + line3 + line4;
 	}
 
 	@Override
 	public String[] getMandParams() {
 		final String[] ret = {"PNID", "STR"};
-	    return ret;
+		return ret;
 	}
 
 	@Override
-    public  String[] getOptParams() {
-        final String[] ret = {"-size=PNR", "-name=STR"};
-        return ret;
-    }
+	public String[] getOptParams() {
+		final String[] ret = {"-size=PNR", "-name=STR"};
+		return ret;
+	}
 
 	// called after parameter have been checked
 	@Override
@@ -73,7 +73,7 @@ public class CmdPut extends AbstractCmd {
 				arguments = res.split(" ");
 				newCID = CmdUtils.getTupleFromCIDstring(arguments[1]);
 
-				System.out.println("  Created new chunk with CID=(" + newCID + ")");
+				System.out.println("  Created new chunk with ChunkID=(" + newCID + ")");
 			}
 		} catch (final DXRAMException e) {
 			System.out.println("  error: Core.execute failed");
@@ -88,7 +88,7 @@ public class CmdPut extends AbstractCmd {
 		String ret = null;
 		Chunk c = null;
 		String[] arguments;
-		String name=null;
+		String name = null;
 		int size = -1;
 
 		if (p_command == null) {
@@ -101,19 +101,19 @@ public class CmdPut extends AbstractCmd {
 				size = arguments[2].length();
 
 				// get any optional params
-				if (arguments.length>2) {
-					for (int i=3; i<arguments.length; i++) {
-						if (arguments[i].indexOf("-size")>=0) {
+				if (arguments.length > 2) {
+					for (int i = 3; i < arguments.length; i++) {
+						if (arguments[i].indexOf("-size") >= 0) {
 							final String[] sizeArg = arguments[i].split("=");
 							size = Integer.parseInt(sizeArg[1]);
-						} else if (arguments[i].indexOf("-name")>=0) {
+						} else if (arguments[i].indexOf("-name") >= 0) {
 							final String[] nameArg = arguments[i].split("=");
 							name = nameArg[1];
 						}
 					}
 				}
-				System.out.println("  Create chunk with size="+size+", name="+name);
-				if (name!=null) {
+				System.out.println("  Create chunk with size=" + size + ", name=" + name);
+				if (name != null) {
 					c = Core.createNewChunk(size, name);
 				} else {
 					c = Core.createNewChunk(size);

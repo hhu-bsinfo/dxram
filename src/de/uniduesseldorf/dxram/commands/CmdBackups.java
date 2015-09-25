@@ -21,12 +21,12 @@ public class CmdBackups extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "backups NID [-mTree]";
+		return "backups NodeID [-mTree]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Get information about all backups for the given NID\n";
+		final String line1 = "Get information about all backups for the given NodeID\n";
 		final String line2 = "The command can be send to a peer or superpeer/n";
 		final String line3 = "-mTree: Optional parameter. Include migrateTree; only available when requesting peer.";
 		return line1 + line2 + line3;
@@ -55,7 +55,7 @@ public class CmdBackups extends AbstractCmd {
 		try {
 			arguments = p_command.split(" ");
 
-			// get NID to send command to
+			// get NodeID to send command to
 			nodeID = CmdUtils.getNIDfromString(arguments[1]);
 
 			if (CmdUtils.checkNID(Short.toString(nodeID)).compareTo("peer") == 0) {

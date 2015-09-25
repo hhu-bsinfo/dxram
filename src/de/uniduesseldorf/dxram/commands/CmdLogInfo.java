@@ -24,7 +24,7 @@ public class CmdLogInfo extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "loginfo NID";
+		return "loginfo NodeID";
 	}
 
 	@Override
@@ -35,13 +35,13 @@ public class CmdLogInfo extends AbstractCmd {
 	@Override
 	public String[] getMandParams() {
 		final String[] ret = {"PNID"};
-	    return ret;
+		return ret;
 	}
 
 	@Override
-    public  String[] getOptParams() {
-        return null;
-    }
+	public String[] getOptParams() {
+		return null;
+	}
 
 	// called after parameter have been checked
 	@Override
@@ -54,7 +54,7 @@ public class CmdLogInfo extends AbstractCmd {
 		try {
 			arguments = p_command.split(" ");
 
-			// get NID to send command to
+			// get NodeID to send command to
 			if (arguments.length == 2) {
 				nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
 

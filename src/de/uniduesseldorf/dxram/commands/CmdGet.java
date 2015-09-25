@@ -38,13 +38,13 @@ public class CmdGet extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "get NID,LID [-dest=NID]";
+		return "get NodeID,LocalID [-dest=NodeID]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Get data of chunk NID,LID.\n";
-		final String line2 = "-dest=NID sent request to node NID (must not be a superpeer).\n";
+		final String line1 = "Get data of chunk NodeID,LocalID.\n";
+		final String line2 = "-dest=NodeID sent request to node NodeID (must not be a superpeer).\n";
 		final String line3 = "(Only a maximum of 100 byte of data is transfered.)";
 		return line1 + line2 + line3;
 	}
@@ -105,7 +105,7 @@ public class CmdGet extends AbstractCmd {
 
 				c = Core.get(CmdUtils.getCIDfromTuple(arguments[1]));
 				if (c == null) {
-					ret = "  error: CID(" + arguments[1] + ") not found";
+					ret = "  error: ChunkID(" + arguments[1] + ") not found";
 				} else {
 					b = c.getData();
 

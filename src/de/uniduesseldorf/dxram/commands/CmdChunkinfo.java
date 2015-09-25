@@ -23,27 +23,27 @@ public class CmdChunkinfo extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "chunkinfo NID,LID [-dest=NID]";
+		return "chunkinfo NodeID,LocalID [-dest=NodeID]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line1 = "Get information about one chunk defined by NID,LID. Request is send to NID.\n";
-		final String line2 = "-dest=NID:  destination of request (peer or superpeer)";
-		return line1+line2;
+		final String line1 = "Get information about one chunk defined by NodeID,LocalID. Request is send to NodeID.\n";
+		final String line2 = "-dest=NodeID:  destination of request (peer or superpeer)";
+		return line1 + line2;
 	}
 
 	@Override
 	public String[] getMandParams() {
 		final String[] ret = {"PNID,PNR"};
-	    return ret;
+		return ret;
 	}
 
 	@Override
-    public  String[] getOptParams() {
-        final String[] ret = {"-dest=ANID"};
-        return ret;
-    }
+	public String[] getOptParams() {
+		final String[] ret = {"-dest=ANID"};
+		return ret;
+	}
 
 	// called after parameter have been checked
 	@Override
@@ -56,7 +56,7 @@ public class CmdChunkinfo extends AbstractCmd {
 		try {
 			arguments = p_command.split(" ");
 
-			// get NID to send command to
+			// get NodeID to send command to
 			if (arguments.length > 2) {
 				final String[] v = arguments[2].split("=");
 				nodeID = CmdUtils.getNIDfromString(v[1]);
