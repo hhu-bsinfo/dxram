@@ -336,6 +336,7 @@ public class PrimaryWriteBuffer {
 						}
 					}
 					flushDataToPrimaryLog();
+					m_logHandler.grantAccess();
 				} catch (final InterruptedException e) {
 					System.out.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;

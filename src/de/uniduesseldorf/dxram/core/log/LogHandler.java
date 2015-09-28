@@ -952,15 +952,16 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					secondaryLog = chooseLog();
 					if (null != secondaryLog) {
 						getAccessToSecLog(secondaryLog);
-						secondaryLog.markInvalidObjects(m_versionsHT);
+						if (secondaryLog.getLogInvalidCounter() != 0) {
+							secondaryLog.markInvalidObjects(m_versionsHT);
+						}
 						for (int i = 0; i < 10; i++) {
 							// m_writeBuffer.printThroughput();
 							if (m_thresholdReachedCondition.await(LogHandler.REORGTHREAD_TIMEOUT, TimeUnit.MILLISECONDS) || m_secLog != null) {
 								if (m_isShuttingDown) {
 									break;
 								}
-								// Reorganization thread was signaled ->
-								// process given log completely
+								// Reorganization thread was signaled -> process given log completely
 								getAccessToSecLog(m_secLog);
 								m_secLog.markInvalidObjects(new VersionsHashTable(6400000, 0.9f));
 								m_secLog.reorganizeAll();
