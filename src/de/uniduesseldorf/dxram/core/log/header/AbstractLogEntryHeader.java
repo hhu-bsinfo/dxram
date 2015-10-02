@@ -43,23 +43,43 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 *            the length of the log entry
 	 * @param p_bytesUntilEnd
 	 *            the number of bytes to the end of the input buffer
-	 * @param p_conversionOffset
-	 *            the number of bytes to cut off at the beginning
+	 * @param p_logEntryHeader
+	 *            the log entry header
+	 * @return the number of written bytes
 	 */
-	public static void convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output, final int p_outputOffset, final int p_logEntrySize,
-			final int p_bytesUntilEnd, final short p_conversionOffset) {
+	public static int convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output, final int p_outputOffset, final int p_logEntrySize,
+			final int p_bytesUntilEnd, final LogEntryHeaderInterface p_logEntryHeader) {
+		int ret = 0;
+		short conversionOffset;
 
+		conversionOffset = p_logEntryHeader.getConversionOffset();
 		if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
-			System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset, p_logEntrySize - p_conversionOffset);
+			// Set type field
+			p_output[p_outputOffset] = p_input[p_inputOffset];
+			// Copy shortened header and payload
+			System.arraycopy(p_input, p_inputOffset + conversionOffset, p_output, p_outputOffset + 1, p_logEntrySize - conversionOffset);
+			ret = p_logEntrySize - conversionOffset + 1;
 		} else {
-			if (p_bytesUntilEnd > p_conversionOffset) {
-				System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset, p_bytesUntilEnd - p_conversionOffset);
-				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - p_conversionOffset, p_logEntrySize - p_bytesUntilEnd);
+			// Entry is bisected
+			if (p_bytesUntilEnd > conversionOffset) {
+				// Set type field
+				p_output[p_outputOffset] = p_input[p_inputOffset];
+				// Copy shortened header and payload in two steps
+				System.arraycopy(p_input, p_inputOffset + conversionOffset, p_output, p_outputOffset + 1, p_bytesUntilEnd - conversionOffset);
+				ret += p_bytesUntilEnd - conversionOffset + 1;
+				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - conversionOffset, p_logEntrySize - p_bytesUntilEnd);
+				ret += p_logEntrySize - p_bytesUntilEnd;
 			} else {
-				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_conversionOffset - p_bytesUntilEnd, p_logEntrySize
-						- (p_conversionOffset - p_bytesUntilEnd));
+				// Set type field
+				p_output[p_outputOffset + conversionOffset - p_bytesUntilEnd] = p_input[0];
+				// Copy shortened header and payload
+				System.arraycopy(p_input, 0, p_output, p_outputOffset + conversionOffset - p_bytesUntilEnd + 1, p_logEntrySize
+						- (conversionOffset - p_bytesUntilEnd));
+				ret = p_logEntrySize - (conversionOffset - p_bytesUntilEnd) + 1;
 			}
 		}
+
+		return ret;
 	}
 
 	/**
@@ -156,8 +176,36 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_offset
 	 *            the type-specific offset
 	 */
+	public static void putLength(final byte[] p_logEntry, final byte p_length, final short p_offset) {
+		p_logEntry[p_offset] = (byte) (p_length & 0xff);
+	}
+
+	/**
+	 * Puts length of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_length
+	 *            the length
+	 * @param p_offset
+	 *            the type-specific offset
+	 */
+	public static void putLength(final byte[] p_logEntry, final short p_length, final short p_offset) {
+		for (int i = 0; i < Short.BYTES; i++) {
+			p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
+		}
+	}
+
+	/**
+	 * Puts length of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_length
+	 *            the length
+	 * @param p_offset
+	 *            the type-specific offset
+	 */
 	public static void putLength(final byte[] p_logEntry, final int p_length, final short p_offset) {
-		for (int i = 0; i < LogHandler.LOG_ENTRY_LEN_SIZE; i++) {
+		for (int i = 0; i < LogHandler.DEF_LOG_ENTRY_LEN_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
 		}
 	}
@@ -171,8 +219,36 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 	 * @param p_offset
 	 *            the type-specific offset
 	 */
+	public static void putVersion(final byte[] p_logEntry, final byte p_version, final short p_offset) {
+		p_logEntry[p_offset] = (byte) (p_version & 0xff);
+	}
+
+	/**
+	 * Puts version of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_version
+	 *            the version
+	 * @param p_offset
+	 *            the type-specific offset
+	 */
+	public static void putVersion(final byte[] p_logEntry, final short p_version, final short p_offset) {
+		for (int i = 0; i < Short.BYTES; i++) {
+			p_logEntry[p_offset + i] = (byte) (p_version >> i * 8 & 0xff);
+		}
+	}
+
+	/**
+	 * Puts version of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_version
+	 *            the version
+	 * @param p_offset
+	 *            the type-specific offset
+	 */
 	public static void putVersion(final byte[] p_logEntry, final int p_version, final short p_offset) {
-		for (int i = 0; i < LogHandler.LOG_ENTRY_VER_SIZE; i++) {
+		for (int i = 0; i < LogHandler.DEF_LOG_ENTRY_VER_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (p_version >> i * 8 & 0xff);
 		}
 	}
@@ -216,9 +292,9 @@ public abstract class AbstractLogEntryHeader implements LogEntryHeaderInterface 
 		int ret = -1;
 
 		if (p_logStoresMigrations) {
-			ret = MIGRATION_SEC_LOG_ENTRY_HEADER.getHeaderSize();
+			ret = MIGRATION_SEC_LOG_ENTRY_HEADER.getMaxHeaderSize();
 		} else {
-			ret = DEFAULT_SEC_LOG_ENTRY_HEADER.getHeaderSize();
+			ret = DEFAULT_SEC_LOG_ENTRY_HEADER.getMaxHeaderSize();
 		}
 
 		return ret;

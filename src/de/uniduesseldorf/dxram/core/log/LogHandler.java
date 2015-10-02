@@ -87,8 +87,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public static final byte LOG_ENTRY_TYP_SIZE = 1;
 	public static final byte LOG_ENTRY_NID_SIZE = 2;
 	public static final byte LOG_ENTRY_LID_SIZE = 6;
-	public static final byte LOG_ENTRY_LEN_SIZE = 4;
-	public static final byte LOG_ENTRY_VER_SIZE = 4;
+	public static final byte DEF_LOG_ENTRY_LEN_SIZE = 4;
+	public static final byte DEF_LOG_ENTRY_VER_SIZE = 4;
 	public static final byte LOG_ENTRY_RID_SIZE = 1;
 	public static final byte LOG_ENTRY_SRC_SIZE = 2;
 	public static final byte LOG_ENTRY_CRC_SIZE = 8;
@@ -271,11 +271,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		byte[] logHeader;
 
 		if (p_rangeID == -1) {
-			logHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createHeader(p_chunk, (byte) -1, (short) -1);
+			logHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(p_chunk, (byte) -1, (short) -1);
 			// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
 			// + (p_chunk.getSize() + DEFAULT_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; default");
 		} else {
-			logHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createHeader(p_chunk, p_rangeID, p_source);
+			logHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(p_chunk, p_rangeID, p_source);
 			// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
 			// + (p_chunk.getSize() + MIGRATION_PRIM_LOG_ENTRY_HEADER.getHeaderSize()) + ", " + p_chunk.getVersion() + "; migrated");
 		}
@@ -297,15 +297,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		byte[] tombstone;
 
 		if (p_rangeID == -1) {
-			tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createHeader(null, (byte) -1, (short) -1);
-			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, DEFAULT_PRIM_LOG_TOMBSTONE.getNIDOffset());
-			AbstractLogEntryHeader.putVersion(tombstone, -p_version, DEFAULT_PRIM_LOG_TOMBSTONE.getVEROffset());
+			tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createTombstone(p_chunkID, p_version, (byte) -1, (short) -1);
 			/*-System.out.println("Logging Tombstone: " + p_chunkID + ", "
 					+ DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + ", " + -p_version + "; default");*/
 		} else {
-			tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createHeader(null, p_rangeID, p_source);
-			AbstractLogEntryHeader.putChunkID(tombstone, p_chunkID, MIGRATION_PRIM_LOG_TOMBSTONE.getNIDOffset());
-			AbstractLogEntryHeader.putVersion(tombstone, -p_version, MIGRATION_PRIM_LOG_TOMBSTONE.getVEROffset());
+			tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createTombstone(p_chunkID, p_version, p_rangeID, p_source);
 			/*-System.out.println("Logging Tombstone: " + p_chunkID + ", "
 					+ MIGRATION_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + ", " + -p_version + "; migrated");*/
 		}
@@ -414,7 +410,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					length = logEntryHeader.getLength(segments[i], readBytes);
 					version = logEntryHeader.getVersion(segments[i], readBytes);
 					printMetadata(ChunkID.getCreatorID(p_chunkID), localID, segments[i], readBytes, length, version, j++, logEntryHeader);
-					readBytes += length + logEntryHeader.getHeaderSize();
+					readBytes += length + logEntryHeader.getHeaderSize(segments[i], readBytes);
 				}
 				i++;
 			}
@@ -448,8 +444,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		try {
 			if (p_version != -1) {
 				array =
-						new String(Arrays.copyOfRange(p_payload, p_offset + p_logEntryHeader.getHeaderSize(), p_offset
-								+ p_logEntryHeader.getHeaderSize() + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
+						new String(Arrays.copyOfRange(p_payload, p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset), p_offset
+								+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
 
 				if (Tools.looksLikeUTF8(array)) {
 					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - "

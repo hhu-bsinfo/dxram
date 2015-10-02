@@ -12,13 +12,15 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
 public class MigrationPrimLogTombstone implements LogEntryHeaderInterface {
 
 	// Attributes
-	public static final short SIZE = 16;
+	public static final short MAX_SIZE = 16;
 	public static final byte TYP_OFFSET = 0;
 	public static final byte RID_OFFSET = LogHandler.LOG_ENTRY_TYP_SIZE;
 	public static final byte SRC_OFFSET = RID_OFFSET + LogHandler.LOG_ENTRY_RID_SIZE;
 	public static final byte NID_OFFSET = SRC_OFFSET + LogHandler.LOG_ENTRY_SRC_SIZE;
 	public static final byte LID_OFFSET = NID_OFFSET + LogHandler.LOG_ENTRY_NID_SIZE;
 	public static final byte VER_OFFSET = LID_OFFSET + LogHandler.LOG_ENTRY_LID_SIZE;
+
+	public static final byte VER_LENGTH_MASK = (byte) 0x00FF0000;
 
 	// Constructors
 	/**
@@ -28,14 +30,33 @@ public class MigrationPrimLogTombstone implements LogEntryHeaderInterface {
 
 	// Methods
 	@Override
-	public byte[] createHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
-		byte[] result;
+	public byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
+		System.out.println("This is not a log entry header!");
+		return null;
+	}
 
-		result = new byte[SIZE];
-		AbstractLogEntryHeader.putType(result, (byte) 3, (byte) 0);
+	@Override
+	public byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source) {
+		byte[] result;
+		byte versionSize;
+		byte type = 3;
+
+		versionSize = (byte) (Math.ceil(Math.log10(p_version) / Math.log10(2)) / 16);
+		type |= versionSize << 4;
+
+		result = new byte[VER_OFFSET + versionSize];
+		AbstractLogEntryHeader.putType(result, type, (byte) 0);
 		AbstractLogEntryHeader.putRangeID(result, p_rangeID, RID_OFFSET);
 		AbstractLogEntryHeader.putSource(result, p_source, SRC_OFFSET);
-		AbstractLogEntryHeader.putVersion(result, -1, VER_OFFSET);
+		AbstractLogEntryHeader.putChunkID(result, p_chunkID, NID_OFFSET);
+
+		if (versionSize == 1) {
+			AbstractLogEntryHeader.putVersion(result, (byte) (-((byte) p_version)), VER_OFFSET);
+		} else if (versionSize == 2) {
+			AbstractLogEntryHeader.putVersion(result, (short) (-((short) p_version)), VER_OFFSET);
+		} else {
+			AbstractLogEntryHeader.putVersion(result, -p_version, VER_OFFSET);
+		}
 
 		return result;
 	}
@@ -91,8 +112,20 @@ public class MigrationPrimLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getHeaderSize() {
-		return SIZE;
+	public short getHeaderSize(final byte[] p_buffer, final int p_offset) {
+		short ret = VER_OFFSET;
+		short type;
+
+		type = (short) ((short) p_buffer[p_offset] & 0xff);
+
+		ret += type & VER_LENGTH_MASK;
+
+		return ret;
+	}
+
+	@Override
+	public short getMaxHeaderSize() {
+		return MAX_SIZE;
 	}
 
 	@Override
@@ -127,12 +160,12 @@ public class MigrationPrimLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getVEROffset() {
+	public short getVEROffset(final byte[] p_buffer, final int p_offset) {
 		return VER_OFFSET;
 	}
 
 	@Override
-	public short getCRCOffset() {
+	public short getCRCOffset(final byte[] p_buffer, final int p_offset) {
 		System.out.println("No checksum available!");
 		return -1;
 	}

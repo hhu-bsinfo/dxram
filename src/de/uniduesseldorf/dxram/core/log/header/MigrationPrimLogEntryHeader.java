@@ -12,15 +12,19 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
 public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 
 	// Attributes
-	public static final short SIZE = 28;
+	public static final short MAX_SIZE = 28;
 	public static final byte TYP_OFFSET = 0;
 	public static final byte RID_OFFSET = LogHandler.LOG_ENTRY_TYP_SIZE;
 	public static final byte SRC_OFFSET = RID_OFFSET + LogHandler.LOG_ENTRY_RID_SIZE;
 	public static final byte NID_OFFSET = SRC_OFFSET + LogHandler.LOG_ENTRY_SRC_SIZE;
 	public static final byte LID_OFFSET = NID_OFFSET + LogHandler.LOG_ENTRY_NID_SIZE;
 	public static final byte LEN_OFFSET = LID_OFFSET + LogHandler.LOG_ENTRY_LID_SIZE;
-	public static final byte VER_OFFSET = LEN_OFFSET + LogHandler.LOG_ENTRY_LEN_SIZE;
-	public static final byte CRC_OFFSET = VER_OFFSET + LogHandler.LOG_ENTRY_VER_SIZE;
+	public static final byte DEF_VER_OFFSET = LEN_OFFSET + LogHandler.DEF_LOG_ENTRY_LEN_SIZE;
+	public static final byte DEF_CRC_OFFSET = DEF_VER_OFFSET + LogHandler.DEF_LOG_ENTRY_VER_SIZE;
+
+	public static final byte LEN_LENGTH_MASK = (byte) 0x0000FF00;
+	public static final byte VER_LENGTH_MASK = (byte) 0x00FF0000;
+	public static final byte CRC_LENGTH_MASK = (byte) 0xFF000000;
 
 	// Constructors
 	/**
@@ -30,19 +34,56 @@ public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 
 	// Methods
 	@Override
-	public byte[] createHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
+	public byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
 		byte[] result;
+		byte lengthSize;
+		byte versionSize;
+		byte checksumSize;
+		byte type = 1;
 
-		result = new byte[SIZE];
-		AbstractLogEntryHeader.putType(result, (byte) 1, (byte) 0);
+		lengthSize = (byte) (Math.ceil(Math.log10(p_chunk.getSize()) / Math.log10(2)) / 16);
+		versionSize = (byte) (Math.ceil(Math.log10(p_chunk.getVersion()) / Math.log10(2)) / 16);
+		checksumSize = (byte) 0;
+
+		type |= lengthSize << 2;
+		type |= versionSize << 4;
+		type |= checksumSize << 6;
+
+		result = new byte[LEN_OFFSET + lengthSize + versionSize + checksumSize];
+
+		AbstractLogEntryHeader.putType(result, type, TYP_OFFSET);
 		AbstractLogEntryHeader.putRangeID(result, p_rangeID, RID_OFFSET);
 		AbstractLogEntryHeader.putSource(result, p_source, SRC_OFFSET);
+
 		AbstractLogEntryHeader.putChunkID(result, p_chunk.getChunkID(), NID_OFFSET);
-		AbstractLogEntryHeader.putLength(result, p_chunk.getSize(), LEN_OFFSET);
-		AbstractLogEntryHeader.putVersion(result, p_chunk.getVersion(), VER_OFFSET);
-		// putChecksumInLogEntryHeader(result, calculateChecksumOfPayload(p_chunk.getData().array()), CRC_OFFSET);
+
+		if (lengthSize == 1) {
+			AbstractLogEntryHeader.putLength(result, (byte) p_chunk.getSize(), LEN_OFFSET);
+		} else if (lengthSize == 2) {
+			AbstractLogEntryHeader.putLength(result, (short) p_chunk.getSize(), LEN_OFFSET);
+		} else {
+			AbstractLogEntryHeader.putLength(result, p_chunk.getSize(), LEN_OFFSET);
+		}
+
+		if (versionSize == 1) {
+			AbstractLogEntryHeader.putVersion(result, (byte) p_chunk.getVersion(), getVEROffset(result, 0));
+		} else if (versionSize == 2) {
+			AbstractLogEntryHeader.putVersion(result, (short) p_chunk.getVersion(), getVEROffset(result, 0));
+		} else {
+			AbstractLogEntryHeader.putVersion(result, p_chunk.getVersion(), getVEROffset(result, 0));
+		}
+
+		if (checksumSize > 0) {
+			AbstractLogEntryHeader.putChecksum(result, AbstractLogEntryHeader.calculateChecksumOfPayload(p_chunk.getData().array()), getCRCOffset(result, 0));
+		}
 
 		return result;
+	}
+
+	@Override
+	public byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source) {
+		System.out.println("This is not a tombstone!");
+		return null;
 	}
 
 	@Override
@@ -86,23 +127,51 @@ public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 
 	@Override
 	public int getVersion(final byte[] p_buffer, final int p_offset) {
-		final int offset = p_offset + VER_OFFSET;
+		final int offset = p_offset + getVEROffset(p_buffer, p_offset);
 
 		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24);
 	}
 
 	@Override
 	public long getChecksum(final byte[] p_buffer, final int p_offset) {
-		final int offset = p_offset + CRC_OFFSET;
+		long ret;
+		short type;
+		int offset;
 
-		return (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16) + ((p_buffer[offset + 3] & 0xff) << 24)
-				+ ((p_buffer[offset + 4] & 0xff) << 32) + ((p_buffer[offset + 5] & 0xff) << 40) + ((p_buffer[offset + 6] & 0xff) << 48)
-				+ ((p_buffer[offset + 7] & 0xff) << 54);
+		type = (short) ((short) p_buffer[p_offset] & 0xff);
+		if ((type & CRC_LENGTH_MASK) != 0) {
+			offset = p_offset + getCRCOffset(p_buffer, p_offset);
+			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
+					+ ((p_buffer[offset + 3] & 0xff) << 24) + ((p_buffer[offset + 4] & 0xff) << 32)
+					+ ((p_buffer[offset + 5] & 0xff) << 40) + ((p_buffer[offset + 6] & 0xff) << 48)
+					+ ((p_buffer[offset + 7] & 0xff) << 54);
+		} else {
+			System.out.println("No checksum available!");
+			ret = -1;
+		}
+
+		return ret;
 	}
 
 	@Override
-	public short getHeaderSize() {
-		return SIZE;
+	public short getHeaderSize(final byte[] p_buffer, final int p_offset) {
+		short ret = LEN_OFFSET;
+		short type;
+
+		type = (short) ((short) p_buffer[p_offset] & 0xff);
+
+		ret += type & LEN_LENGTH_MASK;
+		ret += type & LEN_LENGTH_MASK;
+		if ((type & CRC_LENGTH_MASK) != 0) {
+			ret += LogHandler.DEF_LOG_ENTRY_VER_SIZE;
+		}
+
+		return ret;
+	}
+
+	@Override
+	public short getMaxHeaderSize() {
+		return MAX_SIZE;
 	}
 
 	@Override
@@ -136,13 +205,32 @@ public class MigrationPrimLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getVEROffset() {
-		return VER_OFFSET;
+	public short getVEROffset(final byte[] p_buffer, final int p_offset) {
+		short ret = DEF_VER_OFFSET;
+		short type;
+
+		type = (short) ((short) p_buffer[p_offset] & 0xff);
+
+		ret += type & LEN_LENGTH_MASK;
+
+		return ret;
 	}
 
 	@Override
-	public short getCRCOffset() {
-		return CRC_OFFSET;
+	public short getCRCOffset(final byte[] p_buffer, final int p_offset) {
+		short ret = DEF_VER_OFFSET;
+		short type;
+
+		type = (short) ((short) p_buffer[p_offset] & 0xff);
+		if ((type & CRC_LENGTH_MASK) != 0) {
+			ret += type & LEN_LENGTH_MASK;
+			ret += type & VER_LENGTH_MASK;
+		} else {
+			System.out.println("No checksum available!");
+			ret = -1;
+		}
+
+		return ret;
 	}
 
 	@Override

@@ -12,10 +12,13 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
 public class MigrationSecLogTombstone implements LogEntryHeaderInterface {
 
 	// Attributes
-	public static final short SIZE = 12;
-	public static final byte NID_OFFSET = 0;
-	public static final byte LID_OFFSET = LogHandler.LOG_ENTRY_NID_SIZE;
+	public static final short MAX_SIZE = 13;
+	public static final byte TYP_OFFSET = 0;
+	public static final byte NID_OFFSET = LogHandler.LOG_ENTRY_TYP_SIZE;
+	public static final byte LID_OFFSET = NID_OFFSET + LogHandler.LOG_ENTRY_NID_SIZE;
 	public static final byte VER_OFFSET = LID_OFFSET + LogHandler.LOG_ENTRY_LID_SIZE;
+
+	public static final byte VER_LENGTH_MASK = (byte) 0x00FF0000;
 
 	// Constructors
 	/**
@@ -25,9 +28,14 @@ public class MigrationSecLogTombstone implements LogEntryHeaderInterface {
 
 	// Methods
 	@Override
-	public byte[] createHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
-		System.out.println("Do not call createHeader() for secondary log entries. Convert instead.");
+	public byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
+		System.out.println("Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
+		return null;
+	}
 
+	@Override
+	public byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source) {
+		System.out.println("Do not call createTombstone() for secondary log entries. Convert instead.");
 		return null;
 	}
 
@@ -80,8 +88,20 @@ public class MigrationSecLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getHeaderSize() {
-		return SIZE;
+	public short getHeaderSize(final byte[] p_buffer, final int p_offset) {
+		short ret = VER_OFFSET;
+		short type;
+
+		type = (short) ((short) p_buffer[p_offset] & 0xff);
+
+		ret += type & VER_LENGTH_MASK;
+
+		return ret;
+	}
+
+	@Override
+	public short getMaxHeaderSize() {
+		return MAX_SIZE;
 	}
 
 	@Override
@@ -119,12 +139,12 @@ public class MigrationSecLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getVEROffset() {
+	public short getVEROffset(final byte[] p_buffer, final int p_offset) {
 		return VER_OFFSET;
 	}
 
 	@Override
-	public short getCRCOffset() {
+	public short getCRCOffset(final byte[] p_buffer, final int p_offset) {
 		System.out.println("No checksum available!");
 		return -1;
 	}

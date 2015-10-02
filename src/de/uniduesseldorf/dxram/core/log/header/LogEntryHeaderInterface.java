@@ -20,7 +20,21 @@ public interface LogEntryHeaderInterface {
 	 *            the source NodeID
 	 * @return the log entry
 	 */
-	byte[] createHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source);
+	byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source);
+
+	/**
+	 * Generates a tombstone
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_version
+	 *            the version
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @param p_source
+	 *            the source NodeID
+	 * @return the log entry
+	 */
+	byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source);
 
 	/**
 	 * Returns RangeID of a log entry
@@ -104,9 +118,19 @@ public interface LogEntryHeaderInterface {
 
 	/**
 	 * Returns the log entry header size
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
 	 * @return the size
 	 */
-	short getHeaderSize();
+	short getHeaderSize(final byte[] p_buffer, final int p_offset);
+
+	/**
+	 * Returns the maximum log entry header size
+	 * @return the size
+	 */
+	short getMaxHeaderSize();
 
 	/**
 	 * Returns the offset for conversion
@@ -146,15 +170,23 @@ public interface LogEntryHeaderInterface {
 
 	/**
 	 * Returns the version offset
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
 	 * @return the offset
 	 */
-	short getVEROffset();
+	short getVEROffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the checksum offset
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
 	 * @return the offset
 	 */
-	short getCRCOffset();
+	short getCRCOffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Prints the log header

@@ -71,7 +71,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@SuppressWarnings("unchecked")
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_lengthByBackupRange) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -105,12 +105,14 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		int i = 0;
 		int offset = 0;
 		int bufferOffset = p_offset;
+		int completeOffset;
 		int primaryLogBufferOffset = 0;
 		int primaryLogBufferSize = 0;
 		int bytesRead = 0;
 		int logEntrySize;
 		int bytesUntilEnd;
 		int length;
+		short headerSize;
 		short source;
 		long rangeID;
 		byte[] primaryLogBuffer;
@@ -158,10 +160,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			while (bytesRead < p_length) {
 				bytesUntilEnd = p_buffer.length - (bufferOffset + offset);
 				if (bytesUntilEnd > 0) {
-					logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, bufferOffset + offset);
+					completeOffset = bufferOffset + offset;
 				} else {
-					logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, -bytesUntilEnd);
+					completeOffset = -bytesUntilEnd;
 				}
+				logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, completeOffset);
 
 				/*
 				 * Because of the log's wrap around three cases must be
@@ -169,45 +172,46 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				 * Offset pointer is already in next iteration 3. Log entry must
 				 * be split over two iterations
 				 */
-				if (bytesUntilEnd > logEntryHeader.getVEROffset()) {
-					logEntrySize = logEntryHeader.getHeaderSize() + logEntryHeader.getLength(p_buffer, bufferOffset + offset);
+				if (bytesUntilEnd > logEntryHeader.getVEROffset(p_buffer, completeOffset)) {
+					logEntrySize = logEntryHeader.getHeaderSize(p_buffer, completeOffset) + logEntryHeader.getLength(p_buffer, completeOffset);
 					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
-						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, bufferOffset + offset);
+						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, completeOffset);
 					} else {
-						rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, bufferOffset + offset));
+						rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, completeOffset));
 					}
 
 					bufferNode = map.get(rangeID);
 					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
-						bufferNode.putSource(logEntryHeader.getSource(p_buffer, bufferOffset + offset));
+						bufferNode.putSource(logEntryHeader.getSource(p_buffer, completeOffset));
 					}
-					bufferNode.appendToBuffer(p_buffer, bufferOffset + offset, logEntrySize, bytesUntilEnd);
+					bufferNode.appendToBuffer(p_buffer, completeOffset, logEntrySize, bytesUntilEnd);
 
 					offset += logEntrySize;
 				} else if (bytesUntilEnd <= 0) {
 					// Buffer overflow -> header is near the beginning
-					logEntrySize = logEntryHeader.getHeaderSize() + logEntryHeader.getLength(p_buffer, -bytesUntilEnd);
+					logEntrySize = logEntryHeader.getHeaderSize(p_buffer, completeOffset) + logEntryHeader.getLength(p_buffer, completeOffset);
 					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
-						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, -bytesUntilEnd);
+						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, completeOffset);
 					} else {
-						rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, -bytesUntilEnd));
+						rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, completeOffset));
 					}
 
 					bufferNode = map.get(rangeID);
 					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
-						bufferNode.putSource(logEntryHeader.getSource(p_buffer, -bytesUntilEnd));
+						bufferNode.putSource(logEntryHeader.getSource(p_buffer, completeOffset));
 					}
-					bufferNode.appendToBuffer(p_buffer, -bytesUntilEnd, logEntrySize, bytesUntilEnd);
+					bufferNode.appendToBuffer(p_buffer, completeOffset, logEntrySize, bytesUntilEnd);
 
 					bufferOffset = 0;
 					offset = logEntrySize - bytesUntilEnd;
 				} else {
 					// Buffer overflow -> header is split
-					header = new byte[logEntryHeader.getHeaderSize()];
+					headerSize = logEntryHeader.getHeaderSize(p_buffer, completeOffset);
+					header = new byte[headerSize];
 					System.arraycopy(p_buffer, bufferOffset + offset, header, 0, bytesUntilEnd);
-					System.arraycopy(p_buffer, 0, header, bytesUntilEnd, logEntryHeader.getHeaderSize() - bytesUntilEnd);
+					System.arraycopy(p_buffer, 0, header, bytesUntilEnd, headerSize - bytesUntilEnd);
 
-					logEntrySize = logEntryHeader.getHeaderSize() + logEntryHeader.getLength(header, 0);
+					logEntrySize = headerSize + logEntryHeader.getLength(header, 0);
 					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
 						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(header, 0);
 					} else {
@@ -694,7 +698,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				if (LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i] >= p_logEntrySize) {
 					index = i;
 					break;
-				} else if (p_logEntrySize - logEntryHeader.getConversionOffset() > LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i]) {
+				} else if (p_logEntrySize - logEntryHeader.getConversionOffset() + 1 > LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i]) {
 					m_filledSegments[i] = true;
 					for (int j = m_startIndex; j <= m_currentSegment; j++) {
 						if (m_filledSegments[j]) {
@@ -719,16 +723,8 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			if (m_convert) {
 				// More than one page for this node: Convert primary log entry header to secondary log header and append
 				// entry to node buffer
-				if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
-					// Secondary log entry header for migration contains the creator's NodeID, the normal header does not
-					AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize,
-							p_bytesUntilEnd, logEntryHeader.getConversionOffset());
-					m_writtenBytesPerSegment[index] += p_logEntrySize - logEntryHeader.getConversionOffset();
-				} else {
-					AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize,
-							p_bytesUntilEnd, logEntryHeader.getConversionOffset());
-					m_writtenBytesPerSegment[index] += p_logEntrySize - logEntryHeader.getConversionOffset();
-				}
+				m_writtenBytesPerSegment[index] += AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
+						m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, logEntryHeader);
 			} else {
 				// Less than one page for this node: Just append entry to node buffer without converting the log entry header
 				if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
