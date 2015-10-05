@@ -197,7 +197,7 @@ public final class CIDTable {
 			offset = LID_TABLE_OFFSET;
 		}
 
-		value = RawMemory.readLong(p_table + ENTRY_SIZE * p_index + offset) & 0xFFFFFF0000000000L;
+		value = RawMemory.readLong(p_table, ENTRY_SIZE * p_index + offset) & 0xFFFFFF0000000000L;
 		value += p_entry & 0xFFFFFFFFFFL;
 
 		RawMemory.writeLong(p_table + ENTRY_SIZE * p_index + offset, value);
@@ -332,10 +332,16 @@ public final class CIDTable {
 	 */
 	protected static long delete(final long p_chunkID) throws MemoryException {
 		long ret;
-
+		int version;
+		int sizeVersion;
+		
 		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 
-		m_store.put(ChunkID.getLocalID(p_chunkID), RawMemory.readVersion(ret));
+		// read version
+		sizeVersion = RawMemory.getCustomState(ret) + 1;
+		version = MemoryManager.readVersion(ret, sizeVersion);
+		
+		m_store.put(ChunkID.getLocalID(p_chunkID), version);
 
 		return ret;
 	}

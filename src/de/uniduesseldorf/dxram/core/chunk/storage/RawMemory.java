@@ -24,8 +24,9 @@ public final class RawMemory {
 	// Constants
 	private static final byte POINTER_SIZE = 5;
 	private static final byte SMALL_BLOCK_SIZE = 64;
-	private static final byte BITMASK_LENGTH_FIELD_SIZE = 0x7;
-	private static final byte OCCUPIED_FLAG = 0x8;
+	private static final byte OCCUPIED_FLAGS_OFFSET = 0x6;
+	private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
+	private static final byte OCCUPIED_FLAGS_CSTATE_OFFSET = 0x02;
 	private static final byte SINGLE_BYTE_MARKER = 0xF;
 
 	private static final byte LIST_COUNT = 29;
@@ -249,7 +250,7 @@ public final class RawMemory {
 					} else {
 						lengthfieldSize = 1;
 					}
-					marker = (byte) (OCCUPIED_FLAG + lengthfieldSize);
+					marker = (byte) (OCCUPIED_FLAGS_OFFSET - 1 + lengthfieldSize);
 
 					writeRightPartOfMarker(address, marker);
 					address += 1;
@@ -361,47 +362,92 @@ public final class RawMemory {
 	 *             if the memory could not be set
 	 */
 	protected static void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
-		try {
-			UNSAFE.setMemory(m_memoryBase + p_address, p_size, p_value);
+		try 
+		{
+			int lengthFieldSize;
+			int size;
+
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
+
+			UNSAFE.setMemory(m_memoryBase + p_address + lengthFieldSize, p_size, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not free memory", e);
 		}
 	}
+	
+	protected static byte readByte(final long p_address) throws MemoryException {
+		return readByte(p_address, 0);
+	}
 
-	/**
-	 * Reads a byte from the memory
-	 * @param p_address
-	 *            the address to read
-	 * @return the read byte
-	 * @throws DXRAMException
-	 *             if the byte could not be read
-	 */
-	protected static byte readByte(final long p_address) throws DXRAMException {
-		try {
-			return UNSAFE.getByte(m_memoryBase + p_address);
+	protected static byte readByte(final long p_address, final long p_offset) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
+
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
+
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte read exceeds bounds");
+
+			return UNSAFE.getByte(m_memoryBase + p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
 	}
+	
+	protected static short readShort(final long p_address) throws MemoryException {
+		return readShort(p_address, 0);
+	}
 
-	/**
-	 * Reads an int from the memory
-	 * @param p_address
-	 *            the address to read
-	 * @return the read int
-	 * @throws MemoryException
-	 *             if the int could not be read
-	 */
+	protected static short readShort(final long p_address, final long p_offset) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
+
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
+
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size, "Short read exceeds bounds");
+
+			return UNSAFE.getShort(m_memoryBase + p_address + lengthFieldSize + p_offset);
+		} catch (final Throwable e) {
+			throw new MemoryException("Could not access memory", e);
+		}
+	}
+	
 	protected static int readInt(final long p_address) throws MemoryException {
-		try {
-			return UNSAFE.getInt(m_memoryBase + p_address);
+		return readInt(p_address, 0);
+	}
+
+	protected static int readInt(final long p_address, final long p_offset) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
+
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
+
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size, "Int read exceeds bounds");
+
+			return UNSAFE.getInt(m_memoryBase + p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
 	}
-
+	
 	/**
-	 * Reads a long from the memory
+	 * Reads a long for the CID table from the memory
 	 * @param p_address
 	 *            the address to read
 	 * @return the read long
@@ -409,37 +455,26 @@ public final class RawMemory {
 	 *             if the long could not be read
 	 */
 	protected static long readLong(final long p_address) throws MemoryException {
-		try {
-			return UNSAFE.getLong(m_memoryBase + p_address);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		return readLong(p_address, 0);
 	}
+	
+	protected static long readLong(final long p_address, final long p_offset) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
 
-	/**
-	 * Reads the version of a chunk from the memory
-	 * @param p_address
-	 *            the address to read
-	 * @return the read version
-	 * @throws MemoryException
-	 *             if the version could not be read
-	 */
-	protected static int readVersion(final long p_address) throws MemoryException {
-		int ret;
-		int lengthFieldSize;
-		long offset;
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
 
-		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Long.BYTES || p_offset + Long.BYTES <= size, "Long read exceeds bounds");
 
-		// This method reads the version field of every chunk at (address, ..., address + 3)
-		try {
-			offset = m_memoryBase + p_address + lengthFieldSize;
-			ret = UNSAFE.getInt(offset);
+			return UNSAFE.getLong(m_memoryBase + p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
-
-		return ret;
 	}
 
 	/**
@@ -451,20 +486,25 @@ public final class RawMemory {
 	 *             if the bytes could not be read
 	 */
 	protected static byte[] readBytes(final long p_address) throws MemoryException {
+		return readBytes(p_address, 0);
+	}
+	
+	protected static byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
 		byte[] ret;
 		int lengthFieldSize;
 		int size;
 		long offset;
 
-		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
+		lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 		size = (int) read(p_address, lengthFieldSize);
 
-		// This method skips the version field of every chunk at (address, ..., address + 3)
-		try {
-			ret = new byte[size - Integer.BYTES];
+		Contract.check(p_offset < size, "Offset out of bounds");
 
-			offset = m_memoryBase + p_address + lengthFieldSize + Integer.BYTES;
-			for (int i = 0; i < size - Integer.BYTES; i++) {
+		try {
+			ret = new byte[(int) (size - p_offset)];
+
+			offset = m_memoryBase + p_address + lengthFieldSize + p_offset;
+			for (int i = 0; i < size; i++) {
 				ret[i] = UNSAFE.getByte(offset + i);
 			}
 		} catch (final Throwable e) {
@@ -473,36 +513,71 @@ public final class RawMemory {
 
 		return ret;
 	}
-
-	/**
-	 * Writes a byte to the memory
-	 * @param p_address
-	 *            the address to write
-	 * @param p_value
-	 *            the byte to write
-	 * @throws MemoryException
-	 *             if the byte could not be written
-	 */
+	
 	protected static void writeByte(final long p_address, final byte p_value) throws MemoryException {
-		try {
-			UNSAFE.putByte(m_memoryBase + p_address, p_value);
+		writeByte(p_address, 0, p_value);
+	}
+	
+	protected static void writeByte(final long p_address, final long p_offset, final byte p_value) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
+
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
+
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte won't fit into allocated memory");
+
+			UNSAFE.putByte(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
 	}
 
-	/**
-	 * Writes an int to the memory
-	 * @param p_address
-	 *            the address to write
-	 * @param p_value
-	 *            the int to write
-	 * @throws MemoryException
-	 *             if the int could not be written
-	 */
+	protected static void writeShort(final long p_address, final short p_value) throws MemoryException {
+		writeShort(p_address, 0, p_value);
+	}
+	
+	protected static void writeShort(final long p_address, final long p_offset, final short p_value) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
+
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
+
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size, "Short won't fit into allocated memory");
+
+			UNSAFE.putShort(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+		} catch (final Throwable e) {
+			throw new MemoryException("Could not access memory", e);
+		}
+	}
+
 	protected static void writeInt(final long p_address, final int p_value) throws MemoryException {
-		try {
-			UNSAFE.putInt(m_memoryBase + p_address, p_value);
+		writeInt(p_address, 0, p_value);
+	}
+	
+	protected static void writeInt(final long p_address, final long p_offset, final int p_value) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
+
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
+
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size, "Int won't fit into allocated memory");
+
+			UNSAFE.putInt(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -518,32 +593,23 @@ public final class RawMemory {
 	 *             if the long could not be written
 	 */
 	protected static void writeLong(final long p_address, final long p_value) throws MemoryException {
-		try {
-			UNSAFE.putLong(m_memoryBase + p_address, p_value);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		writeLong(p_address, 0, p_value);
 	}
+	
+	protected static void writeLong(final long p_address, final long p_offset, final long p_value) throws MemoryException {
+		try 
+		{
+			int lengthFieldSize;
+			int size;
 
-	/**
-	 * Writes the version of a chunk to the memory
-	 * @param p_address
-	 *            the address to write
-	 * @param p_version
-	 *            the version to write
-	 * @throws MemoryException
-	 *             if the int could not be written
-	 */
-	protected static void writeVersion(final long p_address, final int p_version) throws MemoryException {
-		int lengthFieldSize;
-		long offset;
+			// skip length byte(s)
+			lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			size = (int) read(p_address, lengthFieldSize);
 
-		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
+			Contract.check(p_offset < size, "Offset out of bounds");
+			Contract.check(size >= Long.BYTES && p_offset + Long.BYTES <= size, "Long won't fit into allocated memory");
 
-		// This method writes the version field of every chunk at (address, ..., address + 3)
-		try {
-			offset = m_memoryBase + p_address + lengthFieldSize;
-			UNSAFE.putInt(offset, p_version);
+			UNSAFE.putLong(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -559,24 +625,68 @@ public final class RawMemory {
 	 *             if the bytes could not be written
 	 */
 	protected static void writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
+		writeBytes(p_address, 0, p_value);
+	}
+
+	protected static void writeBytes(final long p_address, final long p_offset, final byte[] p_value) throws MemoryException {
 		int lengthFieldSize;
 		int size;
 		long offset;
 
-		lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
+		lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 		size = (int) read(p_address, lengthFieldSize);
 
-		// This method skips the version field of every chunk at (address, ..., address + 3)
-		Contract.check(p_value.length + Integer.BYTES == size, "array size differs from memory size");
+		Contract.check(p_offset < size, "Offset out of bounds");
+		Contract.check(p_offset + p_value.length <= size, "Array won't fit memory");
 
 		try {
-			offset = m_memoryBase + p_address + lengthFieldSize + Integer.BYTES;
+			offset = m_memoryBase + p_address + lengthFieldSize + p_offset;
 			for (int i = 0; i < p_value.length; i++) {
 				UNSAFE.putByte(offset + i, p_value[i]);
 			}
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
+	}
+	
+	// -1 on invalid
+	protected static int getCustomState(final long p_address)
+	{
+		int marker;
+		
+		marker = readRightPartOfMarker(p_address - 1);
+		if (marker == SINGLE_BYTE_MARKER || marker < OCCUPIED_FLAGS_OFFSET)
+			return -1; // invalid
+		else
+			return (byte) (((marker - OCCUPIED_FLAGS_OFFSET) / OCCUPIED_FLAGS_OFFSET_MASK) - OCCUPIED_FLAGS_CSTATE_OFFSET);
+		
+	}
+	
+	protected static void setCustomState(final long p_address, final int p_customState)
+	{
+		int marker;
+		int lengthFieldSize;
+		int size;
+		
+		Contract.check(p_customState > 0 && p_customState < 3, "Custom state out of range.");
+		
+		marker = readRightPartOfMarker(p_address - 1);
+		Contract.check(marker != SINGLE_BYTE_MARKER && marker >= OCCUPIED_FLAGS_OFFSET);
+
+		lengthFieldSize = ((marker - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+		size = (int) read(p_address, lengthFieldSize);
+		marker = (OCCUPIED_FLAGS_OFFSET + lengthFieldSize - 1) * (p_customState + 1);
+		
+		writeRightPartOfMarker(p_address - 1, marker);
+		writeLeftPartOfMarker(p_address + lengthFieldSize + size, marker);
+	}
+	
+	protected static int getSize(final long p_address)
+	{
+		int lengthFieldSize;
+
+		lengthFieldSize = ((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+		return (int) read(p_address, lengthFieldSize);
 	}
 
 	/**
@@ -820,8 +930,8 @@ public final class RawMemory {
 
 			// Create a free block in the complete memory
 			createFreeBlock(p_base + 1, p_size);
-			writeLeftPartOfMarker(p_base, OCCUPIED_FLAG);
-			writeRightPartOfMarker(p_base + p_size, OCCUPIED_FLAG);
+			writeLeftPartOfMarker(p_base, OCCUPIED_FLAGS_OFFSET - 1);
+			writeRightPartOfMarker(p_base + p_size, OCCUPIED_FLAGS_OFFSET - 1);
 		}
 
 		// Getters
@@ -930,7 +1040,10 @@ public final class RawMemory {
 			}
 			size = p_size + lengthFieldSize;
 
-			marker = (byte) (OCCUPIED_FLAG + lengthFieldSize);
+			// always reserve one byte for version. might get extended
+			size += 1;
+
+			marker = (byte) (OCCUPIED_FLAGS_OFFSET - 1 + lengthFieldSize);
 
 			// Get the list with a free block which is big enough
 			list = getList(size) + 1;
@@ -971,6 +1084,7 @@ public final class RawMemory {
 					}
 				} else if (freeSize == size + 1) {
 					// 1 Byte to big -> write two markers on the right
+					// TODO replace 15 -> SINGLE_BYTE_MARKER ?
 					writeRightPartOfMarker(address + size, 15);
 					writeLeftPartOfMarker(address + size + 1, 15);
 
@@ -1020,7 +1134,7 @@ public final class RawMemory {
 			boolean rightFree;
 			long rightSize;
 
-			lengthFieldSize = readRightPartOfMarker(p_address - 1) & BITMASK_LENGTH_FIELD_SIZE;
+			lengthFieldSize = (readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK;
 			size = read(p_address, lengthFieldSize) + lengthFieldSize;
 
 			freeSize = size;
