@@ -286,7 +286,7 @@ public final class MemoryManager {
 	
 	protected static byte getSizeVersion(int version)
 	{		
-		Contract.check(version > 0, "Invalid version, < 0");
+		Contract.check(version >= 0, "Invalid version, < 0");
 		
 		// max supported 2^24 
 		if (version <= 0xFF)

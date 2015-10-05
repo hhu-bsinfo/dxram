@@ -29,9 +29,7 @@ public final class CIDTable {
 	private static final long NID_LEVEL_BITMASK = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL) - 1;
 	public static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
 	public static final int LID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_PER_LID_LEVEL + 7;
-	public static final int LID_TABLE_OFFSET = (int) Math.ceil(Math.log(LID_TABLE_SIZE) / Math.log(1 << 8));
 	public static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
-	public static final int NID_TABLE_OFFSET = (int) Math.ceil(Math.log(NID_TABLE_SIZE) / Math.log(1 << 8));
 	private static final int LID_LOCK_OFFSET = LID_TABLE_SIZE - 4;
 	private static final int NID_LOCK_OFFSET = NID_TABLE_SIZE - 4;
 
@@ -130,7 +128,7 @@ public final class CIDTable {
 		long ret;
 
 		ret = RawMemory.malloc(NID_TABLE_SIZE);
-		RawMemory.set(ret + NID_TABLE_OFFSET, NID_TABLE_SIZE, (byte) 0);
+		RawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
 
 		MemoryStatistic.getInstance().newCIDTable();
 
@@ -147,7 +145,7 @@ public final class CIDTable {
 		long ret;
 
 		ret = RawMemory.malloc(LID_TABLE_SIZE);
-		RawMemory.set(ret + LID_TABLE_OFFSET, LID_TABLE_SIZE, (byte) 0);
+		RawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
 
 		MemoryStatistic.getInstance().newCIDTable();
 
@@ -168,9 +166,9 @@ public final class CIDTable {
 		long ret;
 
 		if (p_table == m_nodeIDTableDirectory) {
-			ret = RawMemory.readLong(p_table + ENTRY_SIZE * p_index + NID_TABLE_OFFSET) & 0xFFFFFFFFFFL;
+			ret = RawMemory.readLong(p_table, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
 		} else {
-			ret = RawMemory.readLong(p_table + ENTRY_SIZE * p_index + LID_TABLE_OFFSET) & 0xFFFFFFFFFFL;
+			ret = RawMemory.readLong(p_table, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
 		}
 
 		return ret;
@@ -189,18 +187,11 @@ public final class CIDTable {
 	 */
 	private static void writeEntry(final long p_table, final long p_index, final long p_entry) throws MemoryException {
 		long value;
-		int offset;
 
-		if (p_table == m_nodeIDTableDirectory) {
-			offset = NID_TABLE_OFFSET;
-		} else {
-			offset = LID_TABLE_OFFSET;
-		}
-
-		value = RawMemory.readLong(p_table, ENTRY_SIZE * p_index + offset) & 0xFFFFFF0000000000L;
+		value = RawMemory.readLong(p_table, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
 		value += p_entry & 0xFFFFFFFFFFL;
 
-		RawMemory.writeLong(p_table + ENTRY_SIZE * p_index + offset, value);
+		RawMemory.writeLong(p_table, ENTRY_SIZE * p_index, value);
 	}
 
 	/**
@@ -310,6 +301,9 @@ public final class CIDTable {
 
 			if (entry > 0) {
 				// Set entry in the following table
+				// TODO have argument table offset for entry & BITMASK_ADDRESS
+				// and check other stuff as well.
+				// always keep p_table as the base address
 				setEntry(p_chunkID, p_address, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {

@@ -668,7 +668,7 @@ public final class RawMemory {
 		int lengthFieldSize;
 		int size;
 		
-		Contract.check(p_customState > 0 && p_customState < 3, "Custom state out of range.");
+		Contract.check(p_customState >= 0 && p_customState < 3, "Custom state out of range.");
 		
 		marker = readRightPartOfMarker(p_address - 1);
 		Contract.check(marker != SINGLE_BYTE_MARKER && marker >= OCCUPIED_FLAGS_OFFSET);
@@ -1039,9 +1039,6 @@ public final class RawMemory {
 				lengthFieldSize = 1;
 			}
 			size = p_size + lengthFieldSize;
-
-			// always reserve one byte for version. might get extended
-			size += 1;
 
 			marker = (byte) (OCCUPIED_FLAGS_OFFSET - 1 + lengthFieldSize);
 

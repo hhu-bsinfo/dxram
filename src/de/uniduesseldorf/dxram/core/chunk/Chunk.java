@@ -43,6 +43,7 @@ public class Chunk implements Comparable<Chunk> {
 	 *            the version
 	 */
 	public Chunk(final long p_chunkID, final int p_size, final int p_version) {
+		Contract.check(p_version >= 0, "Invalid version");
 		Contract.check(p_size > 0 && p_size <= MAX_SIZE, "invalid size given");
 
 		m_chunkID = p_chunkID;
@@ -128,7 +129,7 @@ public class Chunk implements Comparable<Chunk> {
 
 	@Override
 	public final String toString() {
-		return this.getClass().getSimpleName() + "[" + Long.toHexString(m_chunkID) + ", " + m_data.capacity() + "]";
+		return this.getClass().getSimpleName() + "[" + Long.toHexString(m_chunkID) + ", " + m_data.capacity() + ", " + m_version + "]";
 	}
 
 }
