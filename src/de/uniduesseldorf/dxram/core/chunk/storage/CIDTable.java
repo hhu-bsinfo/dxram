@@ -96,18 +96,18 @@ public final class CIDTable {
 
 	/**
 	 * Disengages a table
-	 * @param p_table
+	 * @param p_addressTable
 	 *            the table
 	 * @param p_level
 	 *            the table level
 	 * @throws MemoryException
 	 *             if the table could not be disengaged
 	 */
-	private static void disengage(final long p_table, final int p_level) throws MemoryException {
+	private static void disengage(final long p_addressTable, final int p_level) throws MemoryException {
 		long entry;
 
 		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
-			entry = readEntry(p_table, i) & BITMASK_ADDRESS;
+			entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
 
 			if (entry > 0) {
 				if (p_level > 0) {
@@ -154,7 +154,7 @@ public final class CIDTable {
 
 	/**
 	 * Reads a table entry
-	 * @param p_table
+	 * @param p_addressTable
 	 *            the table
 	 * @param p_index
 	 *            the index of the entry
@@ -162,13 +162,13 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be read
 	 */
-	private static long readEntry(final long p_table, final long p_index) throws MemoryException {
+	private static long readEntry(final long p_addressTable, final long p_index) throws MemoryException {
 		long ret;
 
-		if (p_table == m_nodeIDTableDirectory) {
-			ret = RawMemory.readLong(p_table, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
+		if (p_addressTable == m_nodeIDTableDirectory) {
+			ret = RawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
 		} else {
-			ret = RawMemory.readLong(p_table, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
+			ret = RawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
 		}
 
 		return ret;
@@ -185,13 +185,13 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be written
 	 */
-	private static void writeEntry(final long p_table, final long p_index, final long p_entry) throws MemoryException {
+	private static void writeEntry(final long p_addressTable, final long p_index, final long p_entry) throws MemoryException {
 		long value;
 
-		value = RawMemory.readLong(p_table, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
+		value = RawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
 		value += p_entry & 0xFFFFFFFFFFL;
 
-		RawMemory.writeLong(p_table, ENTRY_SIZE * p_index, value);
+		RawMemory.writeLong(p_addressTable, ENTRY_SIZE * p_index, value);
 	}
 
 	/**
@@ -218,7 +218,7 @@ public final class CIDTable {
 	 * Gets an entry of the level 0 table
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
-	 * @param p_table
+	 * @param p_addressTable
 	 *            the current table
 	 * @param p_level
 	 *            the table level
@@ -226,7 +226,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private static long getEntry(final long p_chunkID, final long p_table, final int p_level) throws MemoryException {
+	private static long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
 		long ret = 0;
 		long index;
 		long entry;
@@ -238,7 +238,7 @@ public final class CIDTable {
 		} else {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
-		entry = readEntry(p_table, index) & BITMASK_ADDRESS;
+		entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
 		if (p_level > 0) {
 			if (entry > 0) {
 				ret = getEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
@@ -256,29 +256,31 @@ public final class CIDTable {
 	 * Sets an entry of the level 0 table
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
-	 * @param p_address
-	 *            the address
+	 * @param p_addressChunk
+	 *            the address of the chunk
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	public static void set(final long p_chunkID, final long p_address) throws MemoryException {
-		setEntry(p_chunkID, p_address, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
+	public static void set(final long p_chunkID, final long p_addressChunk) throws MemoryException {
+		setEntry(p_chunkID, p_addressChunk, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 	}
 
 	/**
 	 * Sets an entry of the level 0 table
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
-	 * @param p_address
-	 *            the address
-	 * @param p_table
-	 *            the current table
+	 * @param p_addressChunk
+	 *            the address of the chunk
+	 * @param p_addressTable
+	 *            the address of the current CID table
+	 * @param p_addressTableOffset
+	 * 			  Offset into p_addressTable
 	 * @param p_level
 	 *            the table level
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private static void setEntry(final long p_chunkID, final long p_address, final long p_table, final int p_level) throws MemoryException {
+	private static void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) throws MemoryException {
 		long index;
 		long entry;
 
@@ -288,31 +290,28 @@ public final class CIDTable {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
 		if (p_level > 0) {
-			writeLock(p_table);
+			writeLock(p_addressTable);
 
 			// Read table entry
-			entry = readEntry(p_table, index);
+			entry = readEntry(p_addressTable, index);
 			if (entry == 0) {
 				entry = createLIDTable();
-				writeEntry(p_table, index, entry);
+				writeEntry(p_addressTable, index, entry);
 			}
 
-			writeUnlock(p_table);
+			writeUnlock(p_addressTable);
 
 			if (entry > 0) {
-				// Set entry in the following table
-				// TODO have argument table offset for entry & BITMASK_ADDRESS
-				// and check other stuff as well.
-				// always keep p_table as the base address
-				setEntry(p_chunkID, p_address, entry & BITMASK_ADDRESS, p_level - 1);
+				// move on to next table
+				setEntry(p_chunkID, p_addressChunk, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
-			writeLock(p_table);
+			writeLock(p_addressTable);
 
 			// Set the level 0 entry
-			writeEntry(p_table, index, p_address & BITMASK_ADDRESS);
+			writeEntry(p_addressTable, index, p_addressChunk & BITMASK_ADDRESS);
 
-			writeUnlock(p_table);
+			writeUnlock(p_addressTable);
 		}
 	}
 
@@ -355,7 +354,7 @@ public final class CIDTable {
 	 * Gets and deletes an entry of the level 0 table
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
-	 * @param p_table
+	 * @param p_addressTable
 	 *            the current table
 	 * @param p_level
 	 *            the table level
@@ -363,12 +362,12 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be deleted
 	 */
-	private static long deleteEntry(final long p_chunkID, final long p_table, final int p_level) throws MemoryException {
+	private static long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
 		long ret = -1;
 		long index;
 		long entry;
 
-		writeLock(p_table);
+		writeLock(p_addressTable);
 
 		if (p_level == LID_TABLE_LEVELS) {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
@@ -377,11 +376,11 @@ public final class CIDTable {
 		}
 		if (p_level > 0) {
 			// Read table entry
-			entry = readEntry(p_table, index);
+			entry = readEntry(p_addressTable, index);
 			if ((entry & FULL_FLAG) > 0) {
 				// Delete full flag
 				entry &= ~FULL_FLAG;
-				writeEntry(p_table, index, entry);
+				writeEntry(p_addressTable, index, entry);
 			}
 
 			if ((entry & BITMASK_ADDRESS) > 0) {
@@ -390,12 +389,12 @@ public final class CIDTable {
 			}
 		} else {
 			// Read the level 0 entry
-			ret = readEntry(p_table, index) & BITMASK_ADDRESS;
+			ret = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
 			// Delete the level 0 entry
-			writeEntry(p_table, index, DELETED_FLAG);
+			writeEntry(p_addressTable, index, DELETED_FLAG);
 		}
 
-		writeUnlock(p_table);
+		writeUnlock(p_addressTable);
 
 		return ret;
 	}
@@ -675,14 +674,14 @@ public final class CIDTable {
 
 	/**
 	 * Counts the subtables
-	 * @param p_table
+	 * @param p_addressTable
 	 *            the current table
 	 * @param p_level
 	 *            the level of the table
 	 * @param p_count
 	 *            the table counts
 	 */
-	private static void countTables(final long p_table, final int p_level, final int[] p_count) {
+	private static void countTables(final long p_addressTable, final int p_level, final int[] p_count) {
 		long entry;
 
 		p_count[p_level]++;
@@ -690,7 +689,7 @@ public final class CIDTable {
 		if (p_level == LID_TABLE_LEVELS) {
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
 				try {
-					entry = readEntry(p_table, i) & BITMASK_ADDRESS;
+					entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
 				} catch (final MemoryException e) {
 					entry = 0;
 				}
@@ -702,7 +701,7 @@ public final class CIDTable {
 		} else {
 			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 				try {
-					entry = readEntry(p_table, i) & BITMASK_ADDRESS;
+					entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
 				} catch (final MemoryException e) {
 					entry = 0;
 				}
@@ -822,7 +821,7 @@ public final class CIDTable {
 
 		/**
 		 * Finds free LIDs in the CIDTable
-		 * @param p_table
+		 * @param p_addressTable
 		 *            the table
 		 * @param p_level
 		 *            the table level
@@ -832,15 +831,15 @@ public final class CIDTable {
 		 * @throws MemoryException
 		 *             if the CIDTable could not be accessed
 		 */
-		private boolean findFreeLIDs(final long p_table, final int p_level, final long p_offset) throws MemoryException {
+		private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) throws MemoryException {
 			boolean ret = false;
 			long entry;
 
-			writeLock(p_table);
+			writeLock(p_addressTable);
 
 			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 				// Read table entry
-				entry = readEntry(p_table, i);
+				entry = readEntry(p_addressTable, i);
 
 				if (p_level > 0) {
 					if (entry > 0) {
@@ -848,14 +847,14 @@ public final class CIDTable {
 						if (!findFreeLIDs(entry & BITMASK_ADDRESS, p_level - 1, i << BITS_PER_LID_LEVEL * p_level)) {
 							// Mark the table as full
 							entry |= FULL_FLAG;
-							writeEntry(p_table, i, entry);
+							writeEntry(p_addressTable, i, entry);
 						} else {
 							ret = true;
 						}
 					}
 				} else {
 					if ((entry & DELETED_FLAG) > 0) {
-						writeEntry(p_table, i, 0);
+						writeEntry(p_addressTable, i, 0);
 
 						// TODO: Version is unknown, because it is not stored in CIDTable and removed from RAWMemory
 						m_localIDs[m_position + m_count] = new LIDElement(ChunkID.getLocalID(p_offset + i), -1);
@@ -870,7 +869,7 @@ public final class CIDTable {
 				}
 			}
 
-			writeUnlock(p_table);
+			writeUnlock(p_addressTable);
 
 			return ret;
 		}
@@ -980,24 +979,24 @@ public final class CIDTable {
 
 		/**
 		 * Defragments a table and its subtables
-		 * @param p_table
+		 * @param p_addressTable
 		 *            the table to defragment
 		 * @param p_level
 		 *            the level of the table
 		 * @param p_fragmentation
 		 *            the current fragmentation
 		 */
-		private void defragmentTable(final long p_table, final int p_level, final double[] p_fragmentation) {
+		private void defragmentTable(final long p_addressTable, final int p_level, final double[] p_fragmentation) {
 			long entry;
 			long address;
 			long newAddress;
 			int segment;
 			byte[] data;
 
-			writeLock(p_table);
+			writeLock(p_addressTable);
 			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 				try {
-					entry = readEntry(p_table, i);
+					entry = readEntry(p_addressTable, i);
 					address = entry & BITMASK_ADDRESS;
 					newAddress = 0;
 
@@ -1020,23 +1019,23 @@ public final class CIDTable {
 						}
 
 						if (newAddress != 0) {
-							writeEntry(p_table, i, newAddress + (entry & FULL_FLAG));
+							writeEntry(p_addressTable, i, newAddress + (entry & FULL_FLAG));
 						}
 					}
 				} catch (final MemoryException e) {}
 			}
-			writeUnlock(p_table);
+			writeUnlock(p_addressTable);
 		}
 
 		/**
 		 * Defragments a level 0 table
-		 * @param p_table
+		 * @param p_addressTable
 		 *            the level 0 table to defragment
 		 * @return the new table address
 		 * @throws MemoryException
 		 *             if the table could not be defragmented
 		 */
-		private long defragmentLevel0Table(final long p_table) throws MemoryException {
+		private long defragmentLevel0Table(final long p_addressTable) throws MemoryException {
 			long ret;
 			long table;
 			long address;
@@ -1046,7 +1045,7 @@ public final class CIDTable {
 			int position;
 			int entries;
 
-			table = p_table;
+			table = p_addressTable;
 			entries = ENTRIES_PER_LID_LEVEL + 1;
 			addresses = new long[entries];
 			Arrays.fill(addresses, 0);

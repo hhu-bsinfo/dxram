@@ -176,7 +176,7 @@ public final class MemoryManager {
 		// set the size of the version header
 		RawMemory.setCustomState(address, sizeVersion - 1);
 		writeVersion(address, version, sizeVersion);
-		RawMemory.writeBytes(address + sizeVersion, p_chunk.getData().array());
+		RawMemory.writeBytes(address, sizeVersion, p_chunk.getData().array());
 	}
 
 	/**
@@ -204,6 +204,7 @@ public final class MemoryManager {
 			sizeVersion = RawMemory.getCustomState(address) + 1;
 			version = readVersion(address, sizeVersion);
 			
+			// make sure to skip version data
 			data = RawMemory.readBytes(address, sizeVersion);
 			
 			ret = new Chunk(p_chunkID, data, version);

@@ -26,7 +26,6 @@ public final class RawMemory {
 	private static final byte SMALL_BLOCK_SIZE = 64;
 	private static final byte OCCUPIED_FLAGS_OFFSET = 0x6;
 	private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
-	private static final byte OCCUPIED_FLAGS_CSTATE_OFFSET = 0x02;
 	private static final byte SINGLE_BYTE_MARKER = 0xF;
 
 	private static final byte LIST_COUNT = 29;
@@ -504,7 +503,7 @@ public final class RawMemory {
 			ret = new byte[(int) (size - p_offset)];
 
 			offset = m_memoryBase + p_address + lengthFieldSize + p_offset;
-			for (int i = 0; i < size; i++) {
+			for (int i = 0; i < size - p_offset; i++) {
 				ret[i] = UNSAFE.getByte(offset + i);
 			}
 		} catch (final Throwable e) {
@@ -658,7 +657,7 @@ public final class RawMemory {
 		if (marker == SINGLE_BYTE_MARKER || marker < OCCUPIED_FLAGS_OFFSET)
 			return -1; // invalid
 		else
-			return (byte) (((marker - OCCUPIED_FLAGS_OFFSET) / OCCUPIED_FLAGS_OFFSET_MASK) - OCCUPIED_FLAGS_CSTATE_OFFSET);
+			return (byte) ((marker - OCCUPIED_FLAGS_OFFSET) / OCCUPIED_FLAGS_OFFSET_MASK);
 		
 	}
 	
