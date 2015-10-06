@@ -380,7 +380,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 	public final void invalidateLogEntry(final byte[] p_buffer, final int p_bufferOffset, final long p_logOffset,
 			final LogEntryHeaderInterface p_logEntryHeader, final int p_segmentIndex) throws IOException, InterruptedException {
 
-		AbstractLogEntryHeader.markAsInvalid(p_buffer, p_bufferOffset, m_storesMigrations);
+		AbstractLogEntryHeader.markAsInvalid(p_buffer, p_bufferOffset, p_logEntryHeader);
 
 		m_segmentHeaders[p_segmentIndex].updateDeletedBytes(p_logEntryHeader.getHeaderSize(p_buffer, p_bufferOffset)
 				+ p_logEntryHeader.getLength(p_buffer, p_bufferOffset));
@@ -516,7 +516,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		int logEntrySize;
 		int payloadSize;
 		int version;
-		long checksum;
+		long checksum = -1;
 		long chunkID;
 		byte[][] logData;
 		byte[] payload;
@@ -535,7 +535,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(logData[i], offset);
 					payloadSize = logEntryHeader.getLength(logData[i], offset);
 					version = logEntryHeader.getVersion(logData[i], offset);
-					checksum = logEntryHeader.getChecksum(logData[i], offset);
+					if (LogHandler.USE_CHECKSUM) {
+						checksum = logEntryHeader.getChecksum(logData[i], offset);
+					}
 					logEntrySize = logEntryHeader.getHeaderSize(logData[i], offset) + payloadSize;
 
 					if (logEntrySize > logEntryHeader.getHeaderSize(logData[i], offset)) {
@@ -545,7 +547,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 							payload = new byte[payloadSize];
 							System.arraycopy(logData[i], offset + logEntryHeader.getHeaderSize(logData[i], offset), payload, 0, payloadSize);
 							if (p_doCRCCheck) {
-								if (AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
+								if (LogHandler.USE_CHECKSUM && AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
 									// Ignore log entry
 									offset += logEntrySize;
 									continue;
@@ -586,7 +588,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		int logEntrySize;
 		int payloadSize;
 		int version;
-		long checksum;
+		long checksum = -1;
 		long chunkID;
 		long localID;
 		byte[][] logData;
@@ -609,7 +611,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(logData[i], offset);
 					localID = ChunkID.getLocalID(chunkID);
 					if (localID >= p_low || localID <= p_high) {
-						checksum = logEntryHeader.getChecksum(logData[i], offset);
+						if (LogHandler.USE_CHECKSUM) {
+							checksum = logEntryHeader.getChecksum(logData[i], offset);
+						}
 						if (logEntrySize > logEntryHeader.getHeaderSize(logData[i], offset)) {
 							// Read payload and create chunk
 							if (offset + logEntrySize <= logData[i].length) {
@@ -617,7 +621,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 								payload = new byte[payloadSize];
 								System.arraycopy(logData[i], offset + logEntryHeader.getHeaderSize(logData[i], offset), payload, 0, payloadSize);
 								if (p_doCRCCheck) {
-									if (AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
+									if (LogHandler.USE_CHECKSUM && AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
 										// Ignore log entry
 										offset += logEntrySize;
 										continue;
@@ -752,7 +756,6 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 		int writtenBytes = 0;
 		int removedObjects = 0;
 		int removedTombstones = 0;
-		long localID;
 		byte[] segmentData;
 		byte[] newData;
 		SegmentHeader header;
@@ -768,21 +771,18 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 				// TODO: Remove object if there is a newer version in this segment?
 				while (readBytes < segmentData.length) {
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segmentData, readBytes, m_storesMigrations);
-
 					length = logEntryHeader.getHeaderSize(segmentData, readBytes) + logEntryHeader.getLength(segmentData, readBytes);
-					localID = logEntryHeader.getLID(segmentData, readBytes);
 
-					// Note: Out-dated and deleted objects' and tombstones' LocalIDs
-					// are marked with -1 by remove task
-					if (localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
+					// Note: Out-dated and deleted objects and tombstones are marked with (type == 3) by markInvalidObjects()
+					if (logEntryHeader.isInvalid(segmentData, readBytes)) {
+						if (logEntryHeader.isTombstone()) {
+							removedTombstones++;
+						} else {
+							removedObjects++;
+						}
+					} else {
 						System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
 						writtenBytes += length;
-					} else {
-						if (length > logEntryHeader.getHeaderSize(segmentData, readBytes)) {
-							removedObjects++;
-						} else {
-							removedTombstones++;
-						}
 					}
 					readBytes += length;
 				}
@@ -872,6 +872,7 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						// Put object versions to hashtable
 						// Collision: Store the higher version number or tombstone version (higher priority)
 						logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segment, readBytes, m_storesMigrations);
+
 						p_hashtable.putMax(logEntryHeader.getLID(segment, readBytes),
 								logEntryHeader.getVersion(segment, readBytes));
 
@@ -892,11 +893,9 @@ public class SecondaryLogWithSegments extends AbstractLog implements LogStorageI
 						hashVersion = p_hashtable.get(localID);
 						logVersion = logEntryHeader.getVersion(segment, readBytes);
 
-						// if (((hashVersion < 0 && (-hashVersion >= logVersion || logVersion < 0))
-						if (((hashVersion < 0 && !(-hashVersion < logVersion))
-								|| hashVersion > logVersion) && localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
-							// if ((hashVersion == -1 || hashVersion > logVersion) && localID != (-1 & 0x0000FFFFFFFFFFFFL)) {
-							// Set LocalID of out-dated and deleted objects and tombstones to -1
+						if (!logEntryHeader.isInvalid(segment, readBytes)
+								&& ((hashVersion < 0 && !(-hashVersion < logVersion)) || hashVersion > logVersion)) {
+							// Set type of out-dated and deleted objects and tombstones to 3
 							invalidateLogEntry(segment, readBytes, i * LogHandler.SECLOG_SEGMENT_SIZE + readBytes, logEntryHeader, i);
 							wasUpdated = true;
 							deleteCounter++;

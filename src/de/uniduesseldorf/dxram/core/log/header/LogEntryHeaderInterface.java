@@ -37,6 +37,16 @@ public interface LogEntryHeaderInterface {
 	byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source);
 
 	/**
+	 * Returns the type of a log entry
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @return the type
+	 */
+	short getType(final byte[] p_buffer, final int p_offset);
+
+	/**
 	 * Returns RangeID of a log entry
 	 * @param p_buffer
 	 *            buffer with log entries
@@ -117,6 +127,28 @@ public interface LogEntryHeaderInterface {
 	long getChecksum(final byte[] p_buffer, final int p_offset);
 
 	/**
+	 * Checks whether this log entry was migrated or not
+	 * @return whether this log entry was migrated or not
+	 */
+	boolean wasMigrated();
+
+	/**
+	 * Checks whether this log entry is a tombstone or not
+	 * @return whether this log entry is a tombstone or not
+	 */
+	boolean isTombstone();
+
+	/**
+	 * Checks whether this log entry is invalid or not
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_offset
+	 *            the offset in buffer
+	 * @return whether this log entry is invalid or not
+	 */
+	boolean isInvalid(final byte[] p_buffer, final int p_offset);
+
+	/**
 	 * Returns the log entry header size
 	 * @param p_buffer
 	 *            buffer with log entries
@@ -164,9 +196,13 @@ public interface LogEntryHeaderInterface {
 
 	/**
 	 * Returns the length offset
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
 	 * @return the offset
 	 */
-	short getLENOffset();
+	short getLENOffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the version offset

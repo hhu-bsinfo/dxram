@@ -15,8 +15,6 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
-import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -156,7 +154,7 @@ public class PrimaryWriteBuffer {
 		}
 
 		logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_header, 0);
-		if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+		if (logEntryHeader.wasMigrated()) {
 			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + payloadLength;
 		} else {

@@ -56,6 +56,8 @@ import de.uniduesseldorf.dxram.utils.Tools;
 public final class LogHandler implements LogInterface, MessageReceiver, ConnectionLostListener {
 
 	// Constants
+	public static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_CHECKSUM);
+
 	public static final int FLASHPAGE_SIZE = 4 * 1024;
 	public static final int MAX_NODE_CNT = Short.MAX_VALUE * 2;
 	public static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
@@ -86,12 +88,20 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	// Log header component sizes
 	public static final byte LOG_ENTRY_TYP_SIZE = 1;
 	public static final byte LOG_ENTRY_NID_SIZE = 2;
-	public static final byte LOG_ENTRY_LID_SIZE = 6;
-	public static final byte DEF_LOG_ENTRY_LEN_SIZE = 4;
-	public static final byte DEF_LOG_ENTRY_VER_SIZE = 4;
+	public static final byte MAX_LOG_ENTRY_LID_SIZE = 6;
+	public static final byte MAX_LOG_ENTRY_CID_SIZE = LOG_ENTRY_NID_SIZE + MAX_LOG_ENTRY_LID_SIZE;
+	public static final byte MAX_LOG_ENTRY_LEN_SIZE = 3;
+	public static final byte MAX_LOG_ENTRY_VER_SIZE = 3;
 	public static final byte LOG_ENTRY_RID_SIZE = 1;
 	public static final byte LOG_ENTRY_SRC_SIZE = 2;
-	public static final byte LOG_ENTRY_CRC_SIZE = 8;
+	public static final byte LOG_ENTRY_CRC_SIZE;
+	static {
+		if (USE_CHECKSUM) {
+			LOG_ENTRY_CRC_SIZE = (byte) 4;
+		} else {
+			LOG_ENTRY_CRC_SIZE = (byte) 0;
+		}
+	}
 
 	public static final int PRIMLOG_MAGIC_HEADER_SIZE = PRIMLOG_MAGIC.length;
 	public static final int SECLOG_MAGIC_HEADER_SIZE = SECLOG_MAGIC.length;
@@ -299,11 +309,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		if (p_rangeID == -1) {
 			tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createTombstone(p_chunkID, p_version, (byte) -1, (short) -1);
 			/*-System.out.println("Logging Tombstone: " + p_chunkID + ", "
-					+ DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + ", " + -p_version + "; default");*/
+				+ DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + ", " + -p_version + "; default");*/
 		} else {
 			tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createTombstone(p_chunkID, p_version, p_rangeID, p_source);
 			/*-System.out.println("Logging Tombstone: " + p_chunkID + ", "
-					+ MIGRATION_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + ", " + -p_version + "; migrated");*/
+				+ MIGRATION_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + ", " + -p_version + "; migrated");*/
 		}
 
 		try {
@@ -386,17 +396,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		int version;
 		int offset = 0;
 		long localID;
-		boolean logStoresMigrations;
 		LogEntryHeaderInterface logEntryHeader;
 
-		if (p_owner == ChunkID.getCreatorID(p_chunkID)) {
-			logStoresMigrations = false;
-		} else {
-			logStoresMigrations = true;
-		}
-
 		segments = readAllEntries(p_owner, p_chunkID, p_rangeID);
-
 		if (segments != null) {
 			System.out.println();
 			System.out.println("NodeID: " + p_owner);
@@ -405,7 +407,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				readBytes = offset;
 				offset = 0;
 				while (readBytes < segments[i].length) {
-					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], readBytes, logStoresMigrations);
+					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], readBytes, p_owner != ChunkID.getCreatorID(p_chunkID));
 					localID = logEntryHeader.getLID(segments[i], readBytes);
 					length = logEntryHeader.getLength(segments[i], readBytes);
 					version = logEntryHeader.getVersion(segments[i], readBytes);
@@ -982,16 +984,16 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						for (int i = 0; i < m_logCatalogs.length(); i++) {
 						cat = m_logCatalogs.get(i);
 						if (cat != null) {
-							System.out.println("++Node " + (short) i + ":");
-							secondaryLogs = cat.getAllLogs();
-							for (int j = 0; j < secondaryLogs.length; j++) {
-								System.out.print("+++Backup range " + j + ": ");
-								secondaryLog = secondaryLogs[j];
-								if (secondaryLog != null) {
-									System.out.println(secondaryLog.getOccupiedSpace() + " bytes");
-									secondaryLog.getSegmentDistribution();
-								}
+						System.out.println("++Node " + (short) i + ":");
+						secondaryLogs = cat.getAllLogs();
+						for (int j = 0; j < secondaryLogs.length; j++) {
+							System.out.print("+++Backup range " + j + ": ");
+							secondaryLog = secondaryLogs[j];
+							if (secondaryLog != null) {
+								System.out.println(secondaryLog.getOccupiedSpace() + " bytes");
+								secondaryLog.getSegmentDistribution();
 							}
+						}
 						}
 						}
 						System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");

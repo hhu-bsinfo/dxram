@@ -231,31 +231,34 @@ public class VersionsHashTable {
 		long iter;
 		final long key = p_key + 1;
 
-		if ((-1 & 0x0000FFFFFFFFFFFFL) != p_key) {
-			index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
+		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
-			iter = getKey(index);
-			while (iter != 0) {
-				if (iter == key) {
-					ret = getValue(index);
-					if (p_value > ret && ret > 0 || p_value < 0) {
-						// -x marks deleted objects
-						set(index, key, p_value);
-					}
-					break;
-				} else {
-					m_collisions++;
+		iter = getKey(index);
+		while (iter != 0) {
+			if (iter == key) {
+				ret = getValue(index);
+				if (ret > 0 && (p_value > ret || p_value < 0)) {
+					// Both values are positive and the new one is greater -> newer log entry
+					// Or current value is positive and new value is negative -> tombstone
+					set(index, key, p_value);
+				} else if (ret < 0 && p_value < ret) {
+					// Both values are negative and the new one is smaller -> newer tombstone
+					set(index, key, p_value);
 				}
-				iter = getKey(++index);
+				break;
+			} else {
+				m_collisions++;
 			}
-			if (ret == 0) {
-				set(index, key, p_value);
-				m_count++;
-			}
+			iter = getKey(++index);
+		}
+		if (ret == 0) {
+			// Key unknown until now
+			set(index, key, p_value);
+			m_count++;
+		}
 
-			if (m_count >= m_threshold) {
-				rehash();
-			}
+		if (m_count >= m_threshold) {
+			rehash();
 		}
 
 		return ret;
@@ -343,7 +346,7 @@ public class VersionsHashTable {
 		 * return (int) ((hash >> 16) ^ hash);
 		 */
 		hash ^= hash >>> 20 ^ hash >>> 12;
-		return (int) (hash ^ hash >>> 7 ^ hash >>> 4);
+				return (int) (hash ^ hash >>> 7 ^ hash >>> 4);
 	}
 
 	/**

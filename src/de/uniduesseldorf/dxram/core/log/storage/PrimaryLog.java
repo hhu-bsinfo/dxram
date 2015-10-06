@@ -17,8 +17,6 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
-import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
 
 /**
  * This class implements the primary log. Furthermore this class manages all
@@ -71,7 +69,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 	@SuppressWarnings("unchecked")
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_lengthByBackupRange) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
@@ -167,21 +165,21 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, completeOffset);
 
 				/*
-				 * Because of the log's wrap around three cases must be
-				 * distinguished 1. Complete entry fits in current iteration 2.
-				 * Offset pointer is already in next iteration 3. Log entry must
-				 * be split over two iterations
+				 * Because of the log's wrap around three cases must be distinguished 1. Complete entry fits in current iteration 2.
+				 * Offset pointer is already in next iteration 3. Log entry must be split over two iterations
 				 */
 				if (bytesUntilEnd > logEntryHeader.getVEROffset(p_buffer, completeOffset)) {
 					logEntrySize = logEntryHeader.getHeaderSize(p_buffer, completeOffset) + logEntryHeader.getLength(p_buffer, completeOffset);
-					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+					if (logEntryHeader.wasMigrated()) {
 						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, completeOffset);
 					} else {
+						logEntryHeader.getHeaderSize(p_buffer, completeOffset);
+
 						rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, completeOffset));
 					}
 
 					bufferNode = map.get(rangeID);
-					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+					if (logEntryHeader.wasMigrated()) {
 						bufferNode.putSource(logEntryHeader.getSource(p_buffer, completeOffset));
 					}
 					bufferNode.appendToBuffer(p_buffer, completeOffset, logEntrySize, bytesUntilEnd);
@@ -190,14 +188,14 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				} else if (bytesUntilEnd <= 0) {
 					// Buffer overflow -> header is near the beginning
 					logEntrySize = logEntryHeader.getHeaderSize(p_buffer, completeOffset) + logEntryHeader.getLength(p_buffer, completeOffset);
-					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+					if (logEntryHeader.wasMigrated()) {
 						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, completeOffset);
 					} else {
 						rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, completeOffset));
 					}
 
 					bufferNode = map.get(rangeID);
-					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+					if (logEntryHeader.wasMigrated()) {
 						bufferNode.putSource(logEntryHeader.getSource(p_buffer, completeOffset));
 					}
 					bufferNode.appendToBuffer(p_buffer, completeOffset, logEntrySize, bytesUntilEnd);
@@ -212,14 +210,14 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					System.arraycopy(p_buffer, 0, header, bytesUntilEnd, headerSize - bytesUntilEnd);
 
 					logEntrySize = headerSize + logEntryHeader.getLength(header, 0);
-					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+					if (logEntryHeader.wasMigrated()) {
 						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(header, 0);
 					} else {
 						rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(header, 0));
 					}
 
 					bufferNode = map.get(rangeID);
-					if (logEntryHeader instanceof MigrationPrimLogEntryHeader || logEntryHeader instanceof MigrationPrimLogTombstone) {
+					if (logEntryHeader.wasMigrated()) {
 						bufferNode.putSource(logEntryHeader.getSource(header, 0));
 					}
 					bufferNode.appendToBuffer(p_buffer, bufferOffset + offset, logEntrySize, bytesUntilEnd);

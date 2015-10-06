@@ -260,6 +260,8 @@ public final class Configuration {
 
 		// Backup activation flag
 		public static final ConfigurationEntry<Boolean> LOG_ACTIVE = new ConfigurationEntry<Boolean>("log.active", Boolean.class, false);
+		// Checksum usage flag
+		public static final ConfigurationEntry<Boolean> LOG_CHECKSUM = new ConfigurationEntry<Boolean>("log.checksum", Boolean.class, false);
 		// Replication factor
 		public static final ConfigurationEntry<Integer> REPLICATION_FACTOR = new ConfigurationEntry<Integer>("log.replication_factor", Integer.class, 3);
 		// Size of the primary log file (default 8 GB)
@@ -322,7 +324,7 @@ public final class Configuration {
 		// Throughput-Statistic
 		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>("statistic.throughput", Boolean.class, true);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 45;
+		public static final int CONFIGURATION_ENTRY_COUNT = 46;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
 			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
@@ -349,6 +351,7 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(RAM_SIZE);
 			CONFIGURATION_ENTRIES.add(RAM_MANAGEMENT);
 			CONFIGURATION_ENTRIES.add(LOG_ACTIVE);
+			CONFIGURATION_ENTRIES.add(LOG_CHECKSUM);
 			CONFIGURATION_ENTRIES.add(REPLICATION_FACTOR);
 			CONFIGURATION_ENTRIES.add(PRIMARY_LOG_SIZE);
 			CONFIGURATION_ENTRIES.add(SECONDARY_LOG_SIZE);
