@@ -137,7 +137,7 @@ public final class MemoryManager {
 	 *            the Chunk
 	 * @throws MemoryException
 	 *             if the Chunk could not be put
-	 */	
+	 */
 	public static void put(final Chunk p_chunk) throws MemoryException {
 		int version;
 		long chunkID;
@@ -157,15 +157,12 @@ public final class MemoryManager {
 		if (address <= 0) {
 			address = RawMemory.malloc(totalChunkSize);
 			CIDTable.set(chunkID, address);
-		}
-		// check if we have to expand
-		else
-		{
+		} else {
+			// check if we have to expand
 			long oldSize;
 
 			oldSize = RawMemory.getSize(address);
-			if (oldSize < totalChunkSize)
-			{
+			if (oldSize < totalChunkSize) {
 				// re-allocate
 				RawMemory.free(address);
 				address = RawMemory.malloc(totalChunkSize);
@@ -186,7 +183,7 @@ public final class MemoryManager {
 	 * @return the corresponding Chunk
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
-	 */	
+	 */
 	public static Chunk get(final long p_chunkID) throws MemoryException {
 		Chunk ret = null;
 		long address;
@@ -195,23 +192,22 @@ public final class MemoryManager {
 		address = CIDTable.get(p_chunkID);
 
 		// If address <= 0, the Chunk does not exists in the memory
-		if (address > 0) 
-		{
+		if (address > 0) {
 			int version;
 			int sizeVersion;
 			byte[] data;
-			
+
 			sizeVersion = RawMemory.getCustomState(address) + 1;
 			version = readVersion(address, sizeVersion);
-			
+
 			// make sure to skip version data
 			data = RawMemory.readBytes(address, sizeVersion);
-			
+
 			ret = new Chunk(p_chunkID, data, version);
 		}
 
 		return ret;
-	}	
+	}
 
 	/**
 	 * Returns whether this Chunk is stored locally or not
@@ -284,61 +280,89 @@ public final class MemoryManager {
 	public static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
 		return CIDTable.getCIDOfAllMigratedChunks();
 	}
-	
-	protected static byte getSizeVersion(int version)
-	{		
-		Contract.check(version >= 0, "Invalid version, < 0");
-		
-		// max supported 2^24 
-		if (version <= 0xFF)
-			return 1;
-		else if (version <= 0xFFFF)
-			return 2;
-		else if (version <= 0xFFFFFF)
-			return 3;
-		else
-			return -1;
+
+	/** Get the necessary storage size for the given version number.
+	 *
+	 * @param p_version Version number to get the storage size for.
+	 * @return Storage size for the specified version or -1 if size not supported.
+	 */
+	protected static byte getSizeVersion(final int p_version) {
+		byte ret;
+
+		Contract.check(p_version >= 0, "Invalid version, < 0");
+
+		// max supported 2^24
+		if (p_version <= 0xFF) {
+			ret = 1;
+		} else if (p_version <= 0xFFFF) {
+			ret = 2;
+		} else if (p_version <= 0xFFFFFF) {
+			ret = 3;
+		} else {
+			ret = -1;
+		}
+
+		return ret;
 	}
-	
-	protected static void writeVersion(final long p_address, final int p_version, final int p_size) throws MemoryException
-	{
-		switch (p_size)
-		{
-			case 1:
-				RawMemory.writeByte(p_address, (byte) (p_version & 0xFF)); 
-				break;
-			case 2:
-				RawMemory.writeShort(p_address, (short) (p_version & 0xFFFF)); 
-				break;
-			case 3:
-				// store as big endian
-				RawMemory.writeByte(p_address, (byte) ((p_version >> 16) & 0xFF)); 
-				RawMemory.writeShort(p_address, 2, (short) (p_version & 0xFFFF));
-				break;
-			default:
-				assert(1 == 2); 
-				break;
+
+	/** Write the version number to the specified position.
+	 *
+	 * @param p_address Address to write version number to.
+	 * @param p_version Version number/value.
+	 * @param p_size Storage size this number needs.
+	 * @throws MemoryException If accessing memory failed.
+	 */
+	protected static void writeVersion(final long p_address, final int p_version, final int p_size)
+			throws MemoryException {
+		switch (p_size) {
+		case 1:
+			RawMemory.writeByte(p_address, (byte) (p_version & 0xFF));
+			break;
+		case 2:
+			RawMemory.writeShort(p_address, (short) (p_version & 0xFFFF));
+			break;
+		case 3:
+			// store as big endian
+			RawMemory.writeByte(p_address, (byte) ((p_version >> 16) & 0xFF));
+			RawMemory.writeShort(p_address, 2, (short) (p_version & 0xFFFF));
+			break;
+		default:
+			assert 1 == 2;
+			break;
 		}
 	}
-	
-	protected static int readVersion(final long p_address, final int p_size) throws MemoryException
-	{
-		switch (p_size)
-		{
-			case 1:
-				return (int) RawMemory.readByte(p_address);
-			case 2:
-				return (int) RawMemory.readShort(p_address);
-			case 3:
-				int tmp;
-				
-				tmp = 0;
-				tmp |= (RawMemory.readByte(p_address) << 16);
-				tmp |= (RawMemory.readShort(p_address, 2));
-				return tmp;
-			default:
-				assert 1 == 2; 
-				return -1;
+
+	/** Read the version number from the specified location.
+	 *
+	 * @param p_address Address to read the version number from.
+	 * @param p_size Storage size of the version number to read.
+	 * @return Version number read.
+	 * @throws MemoryException If accessing memory failed.
+	 */
+	protected static int readVersion(final long p_address, final int p_size) throws MemoryException {
+		int ret;
+
+		switch (p_size) {
+		case 1:
+			ret = (int) RawMemory.readByte(p_address);
+			break;
+		case 2:
+			ret = (int) RawMemory.readShort(p_address);
+			break;
+		case 3:
+			int tmp;
+
+			tmp = 0;
+			tmp |= RawMemory.readByte(p_address) << 16;
+			tmp |= RawMemory.readShort(p_address, 2);
+			ret = tmp;
+			break;
+		default:
+			assert 1 == 2;
+			ret = -1;
+			break;
 		}
+
+		return ret;
 	}
 }

@@ -176,7 +176,7 @@ public final class CIDTable {
 
 	/**
 	 * Writes a table entry
-	 * @param p_table
+	 * @param p_addressTable
 	 *            the table
 	 * @param p_index
 	 *            the index of the entry
@@ -273,8 +273,6 @@ public final class CIDTable {
 	 *            the address of the chunk
 	 * @param p_addressTable
 	 *            the address of the current CID table
-	 * @param p_addressTableOffset
-	 * 			  Offset into p_addressTable
 	 * @param p_level
 	 *            the table level
 	 * @throws MemoryException
@@ -327,13 +325,13 @@ public final class CIDTable {
 		long ret;
 		int version;
 		int sizeVersion;
-		
+
 		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 
 		// read version
 		sizeVersion = RawMemory.getCustomState(ret) + 1;
 		version = MemoryManager.readVersion(ret, sizeVersion);
-		
+
 		m_store.put(ChunkID.getLocalID(p_chunkID), version);
 
 		return ret;

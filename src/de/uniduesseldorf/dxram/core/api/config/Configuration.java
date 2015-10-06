@@ -37,7 +37,7 @@ public final class Configuration {
 	 *            defines if the configuration is immutable
 	 */
 	Configuration(final boolean p_immutable) {
-		m_entries = new HashMap<String, String>(ConfigurationConstants.CONFIGURATION_ENTRY_COUNT);
+		m_entries = new HashMap<String, String>(ConfigurationConstants.CONFIGURATION_ENTRIES.size());
 		m_immutable = p_immutable;
 	}
 
@@ -322,10 +322,9 @@ public final class Configuration {
 		// Throughput-Statistic
 		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>("statistic.throughput", Boolean.class, true);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 45;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
-			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
+			CONFIGURATION_ENTRIES = new ArrayList<>();
 			CONFIGURATION_ENTRIES.add(DXRAM_ROLE);
 			CONFIGURATION_ENTRIES.add(CHUNK_MAX_SIZE);
 			CONFIGURATION_ENTRIES.add(INTERFACE_CHUNK);
