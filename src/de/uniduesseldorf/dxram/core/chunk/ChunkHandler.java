@@ -682,7 +682,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @throws DXRAMException
 	 *             if the Chunk could not be deleted
 	 */
-	public boolean deleteChunkData(final long p_chunkID) throws DXRAMException {
+	private boolean deleteChunkData(final long p_chunkID) throws DXRAMException {
 		Locations locations;
 		byte rangeID;
 		int version;
@@ -1005,7 +1005,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @throws DXRAMException
 	 *             if the Chunk could not be migrated
 	 */
-	public void migrateNotCreatedChunk(final long p_chunkID, final short p_target) throws DXRAMException {
+	private void migrateNotCreatedChunk(final long p_chunkID, final short p_target) throws DXRAMException {
 		Chunk chunk;
 		short creator;
 		short target;
@@ -1064,7 +1064,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @throws DXRAMException
 	 *             if the Chunk could not be migrated
 	 */
-	public void migrateOwnChunk(final long p_chunkID, final short p_target) throws DXRAMException {
+	private void migrateOwnChunk(final long p_chunkID, final short p_target) throws DXRAMException {
 		short[] backupPeers;
 		Chunk chunk;
 
@@ -1173,9 +1173,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @throws LookupException
 	 *             if range could not be initialized
 	 */
-	private void initBackupRange(final long p_localID, final long p_size, final int p_version) throws LookupException {
+	private void initBackupRange(final long p_localID, final int p_size, final int p_version) throws LookupException {
 		if (LOG_ACTIVE) {
-			m_rangeSize += p_size + m_log.getHeaderSize(m_nodeID);
+			m_rangeSize += p_size + m_log.getHeaderSize(m_nodeID, p_localID, p_size, p_version);
 			if (p_localID == 1 && p_version == 0) {
 				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
 				determineBackupPeers(0);
@@ -1725,8 +1725,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				MemoryManager.put(chunk);
 
 				if (LOG_ACTIVE) {
-					// TODO: getHeaderSize returns the maximum header size, the actual header could be much smaller
-					logEntrySize = chunk.getSize() + m_log.getHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()));
+					logEntrySize = chunk.getSize() + m_log.getHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()), ChunkID.getLocalID(chunk.getChunkID()),
+							chunk.getSize(), chunk.getVersion());
 					if (m_migrationsTree.fits(size + logEntrySize) && (m_migrationsTree.size() != 0 || size > 0)) {
 						// Chunk fits in current migration backup range
 						size += logEntrySize;
@@ -1791,7 +1791,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				MemoryManager.put(chunk);
 
 				if (LOG_ACTIVE) {
-					logEntrySize = chunk.getSize() + m_log.getHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()));
+					logEntrySize = chunk.getSize() + m_log.getHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()), ChunkID.getLocalID(chunk.getChunkID()),
+							chunk.getSize(), chunk.getVersion());
 					if (m_migrationsTree.fits(size + logEntrySize) && m_migrationsTree.size() != 0) {
 						// Chunk fits in current migration backup range
 						size += logEntrySize;
@@ -1982,7 +1983,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						for (int j = 0; j < br.m_backupPeers.length; j++) {
 							// System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
 							ret = ret + Short.toString(br.m_backupPeers[j]);
-							if (j < (br.m_backupPeers.length - 1)) {
+							if (j < br.m_backupPeers.length - 1) {
 								ret = ret + ",";
 							}
 						}
@@ -2011,7 +2012,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					for (int j = 0; j < br.m_backupPeers.length; j++) {
 						// System.out.println("      backup peer: "+j+": "+br.m_backupPeers[j]);
 						ret = ret + Short.toString(br.m_backupPeers[j]);
-						if (j < (br.m_backupPeers.length - 1)) {
+						if (j < br.m_backupPeers.length - 1) {
 							ret = ret + ",";
 						}
 					}

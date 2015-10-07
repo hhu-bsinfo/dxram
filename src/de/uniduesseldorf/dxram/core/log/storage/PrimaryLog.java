@@ -3,60 +3,63 @@ package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
-import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 
 /**
  * This class implements the primary log. Furthermore this class manages all
  * secondary logs
  * @author Kevin Beineke 13.06.2014
  */
-public final class PrimaryLog extends AbstractLog implements LogStorageInterface {
+public final class PrimaryLog extends AbstractLog {
+
+	// Constants
+	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
+	private static final String PRIMLOG_FILENAME = "primary.log";
+	private static final byte[] PRIMLOG_HEADER = "DXRAMPrimLogv1".getBytes(Charset.forName("UTF-8"));
+	private static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
+	private static final int PRIMLOG_MIN_SIZE = 65535 * FLASHPAGE_SIZE;
+	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
 
 	// Attributes
-	private LogInterface m_logHandler;
+	private LogHandler m_logHandler;
 
 	private long m_totalUsableSpace;
 
 	// Constructors
 	/**
 	 * Creates an instance of PrimaryLog with user specific configuration
-	 * @param p_primaryLogSize
-	 *            size of the primary log
+	 * @param p_logHandler
+	 *            the log handler
 	 * @throws IOException
 	 *             if primary log could not be created
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public PrimaryLog(final long p_primaryLogSize) throws IOException, InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.PRIMLOG_FILENAME), p_primaryLogSize,
-				LogHandler.PRIMLOG_MAGIC_HEADER_SIZE);
+	public PrimaryLog(final LogHandler p_logHandler) throws IOException, InterruptedException {
+		super(new File(BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + PRIMLOG_FILENAME), PRIMLOG_SIZE,
+				PRIMLOG_HEADER.length);
 
-		try {
-			m_logHandler = CoreComponentFactory.getLogInterface();
-		} catch (final DXRAMException e) {
-			System.out.println("Could not get log interface");
-		}
+		m_logHandler = p_logHandler;
 
-		if (p_primaryLogSize < LogHandler.PRIMLOG_MIN_SIZE) {
+		if (PRIMLOG_SIZE < PRIMLOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Primary log too small");
 		}
 
 		m_totalUsableSpace = super.getTotalUsableSpace();
 
-		createLogAndWriteHeader();
+		createLogAndWriteHeader(PRIMLOG_HEADER);
 	}
 
 	// Methods
@@ -116,7 +119,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		byte[] primaryLogBuffer;
 		byte[] header;
 		byte[] segment;
-		LogEntryHeaderInterface logEntryHeader;
+		AbstractLogEntryHeader logEntryHeader;
 		HashMap<Long, BufferSegmentsNode> map;
 		Iterator<Entry<Long, Integer>> iter;
 		Entry<Long, Integer> entry;
@@ -144,7 +147,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				entry = iter.next();
 				rangeID = entry.getKey();
 				length = entry.getValue();
-				if (length < LogHandler.FLASHPAGE_SIZE) {
+				if (length < FLASHPAGE_SIZE) {
 					// There is less than 4096KB data from this node ->
 					// store buffer in primary log (later)
 					primaryLogBufferSize += length;
@@ -165,10 +168,11 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, completeOffset);
 
 				/*
-				 * Because of the log's wrap around three cases must be distinguished 1. Complete entry fits in current iteration 2.
+				 * Because of the log's wrap around three cases must be distinguished 1. Complete entry fits in current
+				 * iteration 2.
 				 * Offset pointer is already in next iteration 3. Log entry must be split over two iterations
 				 */
-				if (bytesUntilEnd > logEntryHeader.getVEROffset(p_buffer, completeOffset)) {
+				if (logEntryHeader.readable(p_buffer, completeOffset, bytesUntilEnd)) {
 					logEntrySize = logEntryHeader.getHeaderSize(p_buffer, completeOffset) + logEntryHeader.getLength(p_buffer, completeOffset);
 					if (logEntryHeader.wasMigrated()) {
 						rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, completeOffset);
@@ -243,7 +247,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				source = bufferNode.getSource();
 
 				while (segment != null) {
-					if (length < LogHandler.FLASHPAGE_SIZE) {
+					if (length < FLASHPAGE_SIZE) {
 						// 1. Buffer in secondary log buffer
 						bufferLogEntryInSecondaryLogBuffer(segment, 0, length, rangeID, source);
 						// 2. Copy log entry/range to write it in primary log subsequently
@@ -608,7 +612,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		public BufferSegmentsNode(final int p_length, final boolean p_convert) {
 			m_source = -1;
 
-			m_numberOfSegments = (int) Math.ceil((double) p_length / LogHandler.SECLOG_SEGMENT_SIZE);
+			m_numberOfSegments = (int) Math.ceil((double) p_length / SECLOG_SEGMENT_SIZE);
 
 			m_currentSegment = 0;
 			m_startIndex = 0;
@@ -619,7 +623,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 			m_segments = new byte[m_numberOfSegments][];
 
 			for (int i = 0; i < m_segments.length; i++) {
-				m_segments[i] = new byte[LogHandler.SECLOG_SEGMENT_SIZE];
+				m_segments[i] = new byte[SECLOG_SEGMENT_SIZE];
 			}
 		}
 
@@ -688,15 +692,15 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 		 */
 		public final void appendToBuffer(final byte[] p_buffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd) {
 			int index = -1;
-			LogEntryHeaderInterface logEntryHeader;
+			AbstractLogEntryHeader logEntryHeader;
 
 			logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, p_offset);
 
 			for (int i = m_startIndex; i <= m_currentSegment; i++) {
-				if (LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i] >= p_logEntrySize) {
+				if (SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i] >= p_logEntrySize) {
 					index = i;
 					break;
-				} else if (p_logEntrySize - logEntryHeader.getConversionOffset() + 1 > LogHandler.SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i]) {
+				} else if (p_logEntrySize - logEntryHeader.getConversionOffset() + 1 > SECLOG_SEGMENT_SIZE - m_writtenBytesPerSegment[i]) {
 					m_filledSegments[i] = true;
 					for (int j = m_startIndex; j <= m_currentSegment; j++) {
 						if (m_filledSegments[j]) {
@@ -714,7 +718,7 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 					m_segments = Arrays.copyOf(m_segments, ++m_numberOfSegments);
 					m_writtenBytesPerSegment = Arrays.copyOf(m_writtenBytesPerSegment, m_numberOfSegments);
 					m_filledSegments = Arrays.copyOf(m_filledSegments, m_numberOfSegments);
-					m_segments[m_currentSegment] = new byte[LogHandler.SECLOG_SEGMENT_SIZE];
+					m_segments[m_currentSegment] = new byte[SECLOG_SEGMENT_SIZE];
 				}
 			}
 
@@ -724,7 +728,8 @@ public final class PrimaryLog extends AbstractLog implements LogStorageInterface
 				m_writtenBytesPerSegment[index] += AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
 						m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, logEntryHeader);
 			} else {
-				// Less than one page for this node: Just append entry to node buffer without converting the log entry header
+				// Less than one page for this node: Just append entry to node buffer without converting the log entry
+				// header
 				if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
 				} else {

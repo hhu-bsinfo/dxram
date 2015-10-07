@@ -3,20 +3,19 @@ package de.uniduesseldorf.dxram.core.log.header;
 
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.log.LogHandler;
 
 /**
- * Implements a log entry header for removal (primary log)
+ * Extends AbstractLogEntryHeader for a default tombstone (primary log)
  * @author Kevin Beineke
  *         25.06.2015
  */
-public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
+public class DefaultPrimLogTombstone extends AbstractLogEntryHeader {
 
 	// Constants
-	private static final short MAX_SIZE = LogHandler.LOG_ENTRY_TYP_SIZE + LogHandler.MAX_LOG_ENTRY_CID_SIZE + LogHandler.MAX_LOG_ENTRY_VER_SIZE;
+	private static final short MAX_SIZE = LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_CID_SIZE + MAX_LOG_ENTRY_VER_SIZE;
 	private static final byte TYP_OFFSET = 0;
-	private static final byte NID_OFFSET = LogHandler.LOG_ENTRY_TYP_SIZE;
-	private static final byte LID_OFFSET = NID_OFFSET + LogHandler.LOG_ENTRY_NID_SIZE;
+	private static final byte NID_OFFSET = LOG_ENTRY_TYP_SIZE;
+	private static final byte LID_OFFSET = NID_OFFSET + LOG_ENTRY_NID_SIZE;
 
 	// Constructors
 	/**
@@ -38,27 +37,27 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 		byte versionSize;
 		byte type = 1;
 
-		localIDSize = AbstractLogEntryHeader.getSizeForLocalIDField(ChunkID.getLocalID(p_chunkID));
-		versionSize = AbstractLogEntryHeader.getSizeForVersionField(p_version);
-		type = AbstractLogEntryHeader.generateTypeField(type, localIDSize, (byte) 0, versionSize);
+		localIDSize = getSizeForLocalIDField(ChunkID.getLocalID(p_chunkID));
+		versionSize = getSizeForVersionField(p_version);
+		type = generateTypeField(type, localIDSize, (byte) 0, versionSize);
 
 		result = new byte[LID_OFFSET + localIDSize + versionSize];
-		AbstractLogEntryHeader.putType(result, type, TYP_OFFSET);
-		AbstractLogEntryHeader.putChunkID(result, p_chunkID, localIDSize, NID_OFFSET);
+		putType(result, type, TYP_OFFSET);
+		putChunkID(result, p_chunkID, localIDSize, NID_OFFSET);
 
 		if (versionSize == 1) {
-			AbstractLogEntryHeader.putVersion(result, (byte) p_version, getVEROffset(result, 0));
+			putVersion(result, (byte) p_version, getVEROffset(result, 0));
 		} else if (versionSize == 2) {
-			AbstractLogEntryHeader.putVersion(result, (short) p_version, getVEROffset(result, 0));
+			putVersion(result, (short) p_version, getVEROffset(result, 0));
 		} else if (versionSize > 2) {
-			AbstractLogEntryHeader.putVersion(result, p_version, getVEROffset(result, 0));
+			putVersion(result, p_version, getVEROffset(result, 0));
 		}
 
 		return result;
 	}
 
 	@Override
-	public short getType(final byte[] p_buffer, final int p_offset) {
+	protected short getType(final byte[] p_buffer, final int p_offset) {
 		return (short) (p_buffer[p_offset] & 0x00FF);
 	}
 
@@ -85,7 +84,7 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 	public long getLID(final byte[] p_buffer, final int p_offset) {
 		long ret = -1;
 		final int offset = p_offset + LID_OFFSET;
-		final byte length = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.LID_LENGTH_MASK) >> AbstractLogEntryHeader.LID_LENGTH_SHFT);
+		final byte length = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		if (length == 0) {
 			ret = p_buffer[offset] & 0xff;
@@ -117,7 +116,7 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 	public int getVersion(final byte[] p_buffer, final int p_offset) {
 		int ret = 1;
 		final int offset = p_offset + getVEROffset(p_buffer, p_offset);
-		final byte length = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.VER_LENGTH_MASK) >> AbstractLogEntryHeader.VER_LENGTH_SHFT);
+		final byte length = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 
 		if (length == 1) {
 			ret = p_buffer[offset] & 0xff;
@@ -132,7 +131,7 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public long getChecksum(final byte[] p_buffer, final int p_offset) {
+	public int getChecksum(final byte[] p_buffer, final int p_offset) {
 		System.out.println("No checksum available!");
 		return -1;
 	}
@@ -157,7 +156,7 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 		short ret;
 		byte versionSize;
 
-		versionSize = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.VER_LENGTH_MASK) >> AbstractLogEntryHeader.VER_LENGTH_SHFT);
+		versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 		ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
 
 		return ret;
@@ -174,37 +173,30 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getRIDOffset() {
-		System.out.println("No RangeID available!");
-		return -1;
+	public boolean readable(final byte[] p_buffer, final int p_offset, final int p_bytesUntilEnd) {
+		return p_bytesUntilEnd >= getVEROffset(p_buffer, p_offset);
 	}
 
 	@Override
-	public short getSRCOffset() {
-		System.out.println("No source available!");
-		return -1;
-	}
-
-	@Override
-	public short getNIDOffset() {
+	protected short getNIDOffset() {
 		return NID_OFFSET;
 	}
 
 	@Override
-	public short getLIDOffset() {
+	protected short getLIDOffset() {
 		return LID_OFFSET;
 	}
 
 	@Override
-	public short getLENOffset(final byte[] p_buffer, final int p_offset) {
+	protected short getLENOffset(final byte[] p_buffer, final int p_offset) {
 		System.out.println("No length available, always 0!");
 		return -1;
 	}
 
 	@Override
-	public short getVEROffset(final byte[] p_buffer, final int p_offset) {
+	protected short getVEROffset(final byte[] p_buffer, final int p_offset) {
 		short ret = LID_OFFSET;
-		final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.LID_LENGTH_MASK) >> AbstractLogEntryHeader.LID_LENGTH_SHFT);
+		final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		switch (localIDSize) {
 		case 0:
@@ -228,7 +220,7 @@ public class DefaultPrimLogTombstone implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getCRCOffset(final byte[] p_buffer, final int p_offset) {
+	protected short getCRCOffset(final byte[] p_buffer, final int p_offset) {
 		System.out.println("No checksum available!");
 		return -1;
 	}

@@ -2,20 +2,19 @@
 package de.uniduesseldorf.dxram.core.log.header;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.log.LogHandler;
 
 /**
- * Implements a log entry header for a normal secondary log
+ * Extends AbstractLogEntryHeader for a migration log entry header (secondary log)
  * @author Kevin Beineke
  *         25.06.2015
  */
-public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
+public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Attributes
-	private static final short MAX_SIZE = (short) (LogHandler.LOG_ENTRY_TYP_SIZE + LogHandler.MAX_LOG_ENTRY_CID_SIZE
-			+ LogHandler.MAX_LOG_ENTRY_LEN_SIZE + LogHandler.MAX_LOG_ENTRY_VER_SIZE + LogHandler.LOG_ENTRY_CRC_SIZE);
-	private static final byte NID_OFFSET = LogHandler.LOG_ENTRY_TYP_SIZE;;
-	private static final byte LID_OFFSET = NID_OFFSET + LogHandler.LOG_ENTRY_NID_SIZE;
+	private static final short MAX_SIZE = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_CID_SIZE + MAX_LOG_ENTRY_LEN_SIZE
+			+ MAX_LOG_ENTRY_VER_SIZE + LOG_ENTRY_CRC_SIZE);
+	private static final byte NID_OFFSET = LOG_ENTRY_TYP_SIZE;;
+	private static final byte LID_OFFSET = NID_OFFSET + LOG_ENTRY_NID_SIZE;
 
 	// Constructors
 	/**
@@ -37,7 +36,7 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getType(final byte[] p_buffer, final int p_offset) {
+	protected short getType(final byte[] p_buffer, final int p_offset) {
 		return (short) (p_buffer[p_offset] & 0x00FF);
 	}
 
@@ -64,7 +63,7 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 	public long getLID(final byte[] p_buffer, final int p_offset) {
 		long ret = -1;
 		final int offset = p_offset + LID_OFFSET;
-		final byte length = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.LID_LENGTH_MASK) >> AbstractLogEntryHeader.LID_LENGTH_SHFT);
+		final byte length = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		if (length == 0) {
 			ret = p_buffer[offset] & 0xff;
@@ -91,7 +90,7 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 	public int getLength(final byte[] p_buffer, final int p_offset) {
 		int ret = 0;
 		final int offset = p_offset + getLENOffset(p_buffer, p_offset);
-		final byte length = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.LEN_LENGTH_MASK) >> AbstractLogEntryHeader.LEN_LENGTH_SHFT);
+		final byte length = (byte) ((getType(p_buffer, p_offset) & LEN_LENGTH_MASK) >> LEN_LENGTH_SHFT);
 
 		if (length == 1) {
 			ret = p_buffer[offset] & 0xff;
@@ -109,7 +108,7 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 	public int getVersion(final byte[] p_buffer, final int p_offset) {
 		int ret = 1;
 		final int offset = p_offset + getVEROffset(p_buffer, p_offset);
-		final byte length = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.VER_LENGTH_MASK) >> AbstractLogEntryHeader.VER_LENGTH_SHFT);
+		final byte length = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 
 		if (length == 1) {
 			ret = p_buffer[offset] & 0xff;
@@ -124,11 +123,11 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public long getChecksum(final byte[] p_buffer, final int p_offset) {
-		long ret;
+	public int getChecksum(final byte[] p_buffer, final int p_offset) {
+		int ret;
 		int offset;
 
-		if (LogHandler.USE_CHECKSUM) {
+		if (USE_CHECKSUM) {
 			offset = p_offset + getCRCOffset(p_buffer, p_offset);
 			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
 					+ ((p_buffer[offset + 3] & 0xff) << 24);
@@ -152,7 +151,7 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 
 	@Override
 	public boolean isInvalid(final byte[] p_buffer, final int p_offset) {
-		return (p_buffer[p_offset] & AbstractLogEntryHeader.INVALIDATION_MASK) == 2;
+		return (p_buffer[p_offset] & INVALIDATION_MASK) == 2;
 	}
 
 	@Override
@@ -160,10 +159,10 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 		short ret;
 		byte versionSize;
 
-		if (LogHandler.USE_CHECKSUM) {
-			ret = (short) (getCRCOffset(p_buffer, p_offset) + LogHandler.LOG_ENTRY_CRC_SIZE);
+		if (USE_CHECKSUM) {
+			ret = (short) (getCRCOffset(p_buffer, p_offset) + LOG_ENTRY_CRC_SIZE);
 		} else {
-			versionSize = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.VER_LENGTH_MASK) >> AbstractLogEntryHeader.VER_LENGTH_SHFT);
+			versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 			ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
 		}
 
@@ -182,31 +181,24 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getRIDOffset() {
-		System.out.println("No RangeID available!");
-		return -1;
+	public boolean readable(final byte[] p_buffer, final int p_offset, final int p_bytesUntilEnd) {
+		return p_bytesUntilEnd >= getVEROffset(p_buffer, p_offset);
 	}
 
 	@Override
-	public short getSRCOffset() {
-		System.out.println("No source available!");
-		return -1;
-	}
-
-	@Override
-	public short getNIDOffset() {
+	protected short getNIDOffset() {
 		return NID_OFFSET;
 	}
 
 	@Override
-	public short getLIDOffset() {
+	protected short getLIDOffset() {
 		return LID_OFFSET;
 	}
 
 	@Override
-	public short getLENOffset(final byte[] p_buffer, final int p_offset) {
+	protected short getLENOffset(final byte[] p_buffer, final int p_offset) {
 		short ret = LID_OFFSET;
-		final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.LID_LENGTH_MASK) >> AbstractLogEntryHeader.LID_LENGTH_SHFT);
+		final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		switch (localIDSize) {
 		case 0:
@@ -230,19 +222,19 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 	}
 
 	@Override
-	public short getVEROffset(final byte[] p_buffer, final int p_offset) {
+	protected short getVEROffset(final byte[] p_buffer, final int p_offset) {
 		final short ret = getLENOffset(p_buffer, p_offset);
-		final byte lengthSize = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.LEN_LENGTH_MASK) >> AbstractLogEntryHeader.LEN_LENGTH_SHFT);
+		final byte lengthSize = (byte) ((getType(p_buffer, p_offset) & LEN_LENGTH_MASK) >> LEN_LENGTH_SHFT);
 
 		return (short) (ret + lengthSize);
 	}
 
 	@Override
-	public short getCRCOffset(final byte[] p_buffer, final int p_offset) {
+	protected short getCRCOffset(final byte[] p_buffer, final int p_offset) {
 		short ret = getVEROffset(p_buffer, p_offset);
-		final byte versionSize = (byte) ((getType(p_buffer, p_offset) & AbstractLogEntryHeader.VER_LENGTH_MASK) >> AbstractLogEntryHeader.VER_LENGTH_SHFT);
+		final byte versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 
-		if (LogHandler.USE_CHECKSUM) {
+		if (USE_CHECKSUM) {
 			ret += versionSize;
 		} else {
 			System.out.println("No checksum available!");
@@ -258,7 +250,7 @@ public class MigrationSecLogEntryHeader implements LogEntryHeaderInterface {
 		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
 		System.out.println("* Length: " + getLength(p_buffer, p_offset));
 		System.out.println("* Version: " + getVersion(p_buffer, p_offset));
-		if (LogHandler.USE_CHECKSUM) {
+		if (USE_CHECKSUM) {
 			System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
 		}
 		System.out.println("***************************************************************************");

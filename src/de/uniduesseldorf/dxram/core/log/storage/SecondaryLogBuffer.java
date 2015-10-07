@@ -4,9 +4,9 @@ package de.uniduesseldorf.dxram.core.log.storage;
 import java.io.IOException;
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.log.LogHandler;
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 
 /**
  * This class implements the secondary log buffer
@@ -14,6 +14,9 @@ import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
  *         20.06.2014
  */
 public final class SecondaryLogBuffer {
+
+	// Constants
+	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
 
 	// Attributes
 	private byte[] m_buffer;
@@ -32,7 +35,7 @@ public final class SecondaryLogBuffer {
 		m_secondaryLog = p_secondaryLog;
 
 		m_bytesInBuffer = 0;
-		m_buffer = new byte[LogHandler.FLASHPAGE_SIZE];
+		m_buffer = new byte[FLASHPAGE_SIZE];
 	}
 
 	// Getter
@@ -85,7 +88,7 @@ public final class SecondaryLogBuffer {
 
 		// Trim log entries (removes all NodeIDs)
 		buffer = processBuffer(p_buffer, p_bufferOffset, p_entryOrRangeSize);
-		if (m_bytesInBuffer + buffer.length >= LogHandler.FLASHPAGE_SIZE) {
+		if (m_bytesInBuffer + buffer.length >= FLASHPAGE_SIZE) {
 			// Merge current secondary log buffer and new buffer and write to secondary log
 			flushAllDataToSecLog(buffer, p_bufferOffset, buffer.length);
 		} else {
@@ -110,7 +113,7 @@ public final class SecondaryLogBuffer {
 		int oldBufferOffset = p_bufferOffset;
 		int newBufferOffset = 0;
 		int logEntrySize;
-		LogEntryHeaderInterface logEntryHeader;
+		AbstractLogEntryHeader logEntryHeader;
 
 		buffer = new byte[p_entryOrRangeSize];
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
@@ -119,7 +122,8 @@ public final class SecondaryLogBuffer {
 			logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
 
 			// Copy primary log header, but skip NodeID and RangeID
-			// System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize - secLogOffset);
+			// System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize -
+			// secLogOffset);
 			newBufferOffset += AbstractLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize,
 					buffer.length - newBufferOffset, logEntryHeader);
 			oldBufferOffset += logEntrySize;

@@ -6,7 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.uniduesseldorf.dxram.core.log.LogHandler;
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
 /**
  * Skeleton for a log
@@ -14,6 +15,9 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
  *         06.06.2014
  */
 public abstract class AbstractLog {
+
+	// Constants
+	protected static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
 
 	// Attributes
 	// m_logFileSize must be a multiple of a flash page!
@@ -52,6 +56,34 @@ public abstract class AbstractLog {
 
 		m_lock = new ReentrantReadWriteLock(false);
 	}
+
+	/**
+	 * Closes the log
+	 * @throws InterruptedException
+	 *             if the closure fails
+	 * @throws IOException
+	 *             if the flushing during closure fails
+	 */
+	abstract void closeLog() throws InterruptedException, IOException;
+
+	/**
+	 * Writes data in log sequentially
+	 * @param p_data
+	 *            a buffer
+	 * @param p_offset
+	 *            offset within the buffer
+	 * @param p_length
+	 *            length of data
+	 * @param p_additionalInformation
+	 *            place holder for additional information
+	 * @throws InterruptedException
+	 *             if the write access fails
+	 * @throws IOException
+	 *             if the write access fails
+	 * @return number of successfully written bytes
+	 */
+	abstract int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_additionalInformation) throws IOException,
+	InterruptedException;
 
 	// Getter
 	/**
@@ -137,12 +169,14 @@ public abstract class AbstractLog {
 
 	/**
 	 * Creates and initializes random access file
+	 * @param p_header
+	 *            the log type specific header
 	 * @throws IOException
 	 *             if the header could not be read or written
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	protected final void createLogAndWriteHeader() throws IOException, InterruptedException {
+	protected final void createLogAndWriteHeader(final byte[] p_header) throws IOException, InterruptedException {
 
 		if (m_logFile.exists()) {
 			m_logFile.delete();
@@ -155,11 +189,7 @@ public abstract class AbstractLog {
 		// Write header
 		m_logRAF = openRingFile(m_logFile);
 		m_logRAF.seek(0);
-		if (PrimaryLog.class.isInstance(this)) {
-			m_logRAF.write(LogHandler.PRIMLOG_MAGIC);
-		} else {
-			m_logRAF.write(LogHandler.SECLOG_MAGIC);
-		}
+		m_logRAF.write(p_header);
 
 		m_logRAF.seek(0);
 		m_logRAF.setLength(m_logFileSize);

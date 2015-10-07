@@ -7,14 +7,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
-import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
-import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -32,14 +28,22 @@ import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 public class PrimaryWriteBuffer {
 
 	// Constants
-	public static final boolean PARALLEL_BUFFERING = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_PARALLEL_BUFFERING);
+	private static final int WRITE_BUFFER_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.WRITE_BUFFER_SIZE);
+	private static final int WRITE_BUFFER_MAX_SIZE = Integer.MAX_VALUE;
+	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
+	// Must be smaller than 1/2 of WRITE_BUFFER_SIZE
+	private static final int SIGNAL_ON_BYTE_COUNT = 64 * 1024 * 1024;
+	private static final int MAX_BYTE_COUNT = 80 * 1024 * 1024;
+	private static final boolean PARALLEL_BUFFERING = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_PARALLEL_BUFFERING);
 
 	// Attributes
-	private LogInterface m_logHandler;
+	private LogHandler m_logHandler;
 
 	private byte[] m_buffer;
 	private int m_ringBufferSize;
 	private PrimaryLogWriterThread m_writerThread;
+
+	private PrimaryLog m_primaryLog;
 
 	private HashMap<Long, Integer> m_lengthByBackupRange;
 
@@ -60,32 +64,26 @@ public class PrimaryWriteBuffer {
 	/**
 	 * Creates an instance of PrimaryWriteBuffer with user-specific
 	 * configuration
+	 * @param p_logHandler
+	 *            the log Handler
 	 * @param p_primaryLog
-	 *            Instance of the primary log. Used to write directly to primary
-	 *            log if buffer is full
-	 * @param p_bufferSize
-	 *            size of the ring buffer in bytes (is rounded to a power of
-	 *            two)
+	 *            Instance of the primary log. Used to write directly to primary log if buffer is full
 	 */
-	public PrimaryWriteBuffer(final PrimaryLog p_primaryLog, final int p_bufferSize) {
+	public PrimaryWriteBuffer(final LogHandler p_logHandler, final PrimaryLog p_primaryLog) {
 		m_bufferReadPointer = 0;
 		m_bufferWritePointer = 0;
 		m_bytesInWriteBuffer = 0;
 		m_writerThread = null;
 		m_flushingComplete = false;
 		m_dataAvailable = false;
+		m_logHandler = p_logHandler;
+		m_primaryLog = p_primaryLog;
 
-		try {
-			m_logHandler = CoreComponentFactory.getLogInterface();
-		} catch (final DXRAMException e) {
-			System.out.println("Could not get log interface");
-		}
-
-		if (p_bufferSize < LogHandler.FLASHPAGE_SIZE || p_bufferSize > LogHandler.WRITE_BUFFER_MAX_SIZE || Integer.bitCount(p_bufferSize) != 1) {
-			throw new IllegalArgumentException("Illegal buffer size! Must be 2^x with " + Math.log(LogHandler.FLASHPAGE_SIZE) / Math.log(2) + " <= x <= 31");
+		if (WRITE_BUFFER_SIZE < FLASHPAGE_SIZE || WRITE_BUFFER_SIZE > WRITE_BUFFER_MAX_SIZE || Integer.bitCount(WRITE_BUFFER_SIZE) != 1) {
+			throw new IllegalArgumentException("Illegal buffer size! Must be 2^x with " + Math.log(FLASHPAGE_SIZE) / Math.log(2) + " <= x <= 31");
 		} else {
-			m_buffer = new byte[p_bufferSize];
-			m_ringBufferSize = p_bufferSize;
+			m_buffer = new byte[WRITE_BUFFER_SIZE];
+			m_ringBufferSize = WRITE_BUFFER_SIZE;
 			m_lengthByBackupRange = new HashMap<Long, Integer>();
 			m_isShuttingDown = false;
 		}
@@ -139,7 +137,7 @@ public class PrimaryWriteBuffer {
 	 * @return the number of written bytes
 	 */
 	public final int putLogData(final byte[] p_header, final byte[] p_payload) throws IOException, InterruptedException {
-		LogEntryHeaderInterface logEntryHeader;
+		AbstractLogEntryHeader logEntryHeader;
 		int payloadLength;
 		int bytesToWrite;
 		int bytesUntilEnd = 0;
@@ -169,7 +167,7 @@ public class PrimaryWriteBuffer {
 			if (PARALLEL_BUFFERING) {
 				while (true) {
 					m_metaDataLock.acquire();
-					if (!m_writerThreadWantsToFlush && m_bytesInWriteBuffer + bytesToWrite <= LogHandler.MAX_BYTE_COUNT) {
+					if (!m_writerThreadWantsToFlush && m_bytesInWriteBuffer + bytesToWrite <= MAX_BYTE_COUNT) {
 						m_writingNetworkThreads++;
 						break;
 					} else {
@@ -177,7 +175,7 @@ public class PrimaryWriteBuffer {
 					}
 				}
 			} else {
-				while (m_bytesInWriteBuffer + bytesToWrite > LogHandler.MAX_BYTE_COUNT) {
+				while (m_bytesInWriteBuffer + bytesToWrite > MAX_BYTE_COUNT) {
 					Thread.yield();
 				}
 				m_metaDataLock.acquire();
@@ -250,7 +248,7 @@ public class PrimaryWriteBuffer {
 				m_writingNetworkThreads--;
 			}
 
-			if (m_bytesInWriteBuffer >= LogHandler.SIGNAL_ON_BYTE_COUNT) {
+			if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
 				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is
 				// written
 				m_dataAvailable = true;
@@ -281,6 +279,9 @@ public class PrimaryWriteBuffer {
 	 * @author Kevin Beineke 06.06.2014
 	 */
 	private final class PrimaryLogWriterThread extends Thread {
+
+		// Constants
+		private static final long WRITERTHREAD_TIMEOUTTIME = 500L;
 
 		// Attributes
 		private long m_time;
@@ -324,7 +325,7 @@ public class PrimaryWriteBuffer {
 					timeStart = System.currentTimeMillis();
 					while (!m_dataAvailable) {
 						m_logHandler.grantAccess();
-						if (System.currentTimeMillis() > timeStart + LogHandler.WRITERTHREAD_TIMEOUTTIME) {
+						if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
 							// Time-out
 							break;
 						} else {
@@ -391,7 +392,7 @@ public class PrimaryWriteBuffer {
 			if (bytesInWriteBuffer > 0) {
 				// Write data to primary log
 				try {
-					writtenBytes = m_logHandler.getPrimaryLog().appendData(m_buffer, readPointer, bytesInWriteBuffer, lengthByBackupRange);
+					writtenBytes = m_primaryLog.appendData(m_buffer, readPointer, bytesInWriteBuffer, lengthByBackupRange);
 				} catch (final IOException | InterruptedException e) {
 					System.out.println("Error: Could not write to log");
 					e.printStackTrace();

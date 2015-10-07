@@ -3,24 +3,34 @@ package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.log.LogHandler;
 
 /**
  * This class implements the secondary log
  * @author Kevin Beineke
  *         23.10.2014
  */
-public class SecondaryLog extends AbstractLog implements LogStorageInterface {
+public class SecondaryLog extends AbstractLog {
 
-	// TODO: Three secondary logs per node to accelerate recovery (recover everything from primary)
+	// Constants
+	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
+	private static final String SECLOG_PREFIX_FILENAME = "secondary";
+	private static final String SECLOG_POSTFIX_FILENAME = ".log";
+	private static final byte[] SECLOG_HEADER = "DXRAMSecLogv1".getBytes(Charset.forName("UTF-8"));
+
+	private static final long SECLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
+	private static final int SECLOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
+	private static final int REORG_UTILIZATION_THRESHOLD = Core.getConfiguration().getIntValue(ConfigurationConstants.REORG_UTILIZATION_THRESHOLD);
 
 	// Attributes
 	private volatile boolean m_isShuttingDown;
@@ -51,43 +61,9 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 	 */
 	public SecondaryLog(final Lock p_reorganizationLock, final Condition p_thresholdReachedCondition, final Condition p_reorganizationFinishedCondition,
 			final short p_nodeID) throws IOException, InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
-				+ LogHandler.SECLOG_POSTFIX_FILENAME), LogHandler.SECLOG_SIZE, LogHandler.SECLOG_MAGIC_HEADER_SIZE);
-
-		m_totalUsableSpace = super.getTotalUsableSpace();
-		m_secondaryLogLock = new ReentrantLock();
-
-		m_reorganizationLock = p_reorganizationLock;
-		m_reorganizationFinishedCondition = p_reorganizationFinishedCondition;
-		m_thresholdReachedCondition = p_thresholdReachedCondition;
-
-		m_secondaryLogReorgThreshold = (int) (LogHandler.SECLOG_SIZE * (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
-
-		createLogAndWriteHeader();
-	}
-
-	/**
-	 * Creates an instance of SecondaryLog with default configuration except secondary log size
-	 * @param p_secLogSize
-	 *            the size of the secondary log
-	 * @param p_reorganizationLock
-	 *            the reorganization lock
-	 * @param p_thresholdReachedCondition
-	 *            the start condition for reorganization
-	 * @param p_reorganizationFinishedCondition
-	 *            the end condition for reorganization
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @throws IOException
-	 *             if secondary log could not be created
-	 * @throws InterruptedException
-	 *             if the caller was interrupted
-	 */
-	public SecondaryLog(final long p_secLogSize, final Lock p_reorganizationLock, final Condition p_thresholdReachedCondition,
-			final Condition p_reorganizationFinishedCondition, final short p_nodeID) throws IOException, InterruptedException {
-		super(new File(LogHandler.BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + LogHandler.SECLOG_PREFIX_FILENAME + p_nodeID
-				+ LogHandler.SECLOG_POSTFIX_FILENAME), p_secLogSize, LogHandler.SECLOG_MAGIC_HEADER_SIZE);
-		if (p_secLogSize < LogHandler.SECLOG_MIN_SIZE) {
+		super(new File(BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + SECLOG_PREFIX_FILENAME + p_nodeID
+				+ SECLOG_POSTFIX_FILENAME), SECLOG_SIZE, SECLOG_HEADER.length);
+		if (SECLOG_SIZE < SECLOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
 		}
 
@@ -98,9 +74,9 @@ public class SecondaryLog extends AbstractLog implements LogStorageInterface {
 		m_reorganizationFinishedCondition = p_reorganizationFinishedCondition;
 		m_thresholdReachedCondition = p_thresholdReachedCondition;
 
-		m_secondaryLogReorgThreshold = (int) (p_secLogSize * (LogHandler.REORG_UTILIZATION_THRESHOLD / 100));
+		m_secondaryLogReorgThreshold = (int) (SECLOG_SIZE * (REORG_UTILIZATION_THRESHOLD / 100));
 
-		createLogAndWriteHeader();
+		createLogAndWriteHeader(SECLOG_HEADER);
 	}
 
 	// Methods
