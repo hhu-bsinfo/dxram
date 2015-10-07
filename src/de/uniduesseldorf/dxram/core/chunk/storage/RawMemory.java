@@ -1258,6 +1258,7 @@ public final class RawMemory {
 			long rightSize;
 
 			lengthFieldSize = (readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK;
+			lengthFieldSize++; // size 1 stored as 0 index
 			size = read(p_address, lengthFieldSize) + lengthFieldSize;
 
 			freeSize = size;

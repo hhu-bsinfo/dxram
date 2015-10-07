@@ -8,7 +8,9 @@ import java.util.concurrent.locks.Lock;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
@@ -249,7 +251,7 @@ public final class CIDTable {
 
 		// readUnlock(p_table);
 
-		return ret;
+ 		return ret;
 	}
 
 	/**
@@ -307,6 +309,7 @@ public final class CIDTable {
 			writeLock(p_addressTable);
 
 			// Set the level 0 entry
+			// valid and active entry, delete flag 0
 			writeEntry(p_addressTable, index, p_addressChunk & BITMASK_ADDRESS);
 
 			writeUnlock(p_addressTable);
@@ -317,24 +320,37 @@ public final class CIDTable {
 	 * Gets and deletes an entry of the level 0 table
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
-	 * @return the entry
+	 * @return A pair with a bool indicating that the entry was fully removed and memory
+	 * 			needs to be free'd. If false the entry was flaged as deleted/zombie i.e.
+	 * 			do not free the memory for it, yet.
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	protected static long delete(final long p_chunkID) throws MemoryException {
+	protected static Pair<Boolean, Long> delete(final long p_chunkID) throws MemoryException {
 		long ret;
 		int version;
 		int sizeVersion;
+		boolean storeFull;
 
-		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
+		// delete and flag as zombie first
+		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, true);
 
 		// read version
 		sizeVersion = RawMemory.getCustomState(ret) + 1;
 		version = MemoryManager.readVersion(ret, sizeVersion);
 
-		m_store.put(ChunkID.getLocalID(p_chunkID), version);
+		// more space for another zombie?
+		if (m_store.put(ChunkID.getLocalID(p_chunkID), version)) {
+			// detach reference to zombie and have him killed
+			// by the caller
+			deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, false);
+			storeFull = false;
+		} else {
+			// no space for zombie, keep him "alive" in memory
+			storeFull = true;
+		}
 
-		return ret;
+		return new Pair<Boolean, Long>(!storeFull, ret);
 	}
 
 	/**
@@ -360,7 +376,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be deleted
 	 */
-	private static long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
+	private static long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) throws MemoryException {
 		long ret = -1;
 		long index;
 		long entry;
@@ -383,13 +399,20 @@ public final class CIDTable {
 
 			if ((entry & BITMASK_ADDRESS) > 0) {
 				// Delete entry in the following table
-				ret = deleteEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
+				ret = deleteEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1, p_flagZombie);
 			}
 		} else {
 			// Read the level 0 entry
 			ret = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
 			// Delete the level 0 entry
-			writeEntry(p_addressTable, index, DELETED_FLAG);
+			// invalid + active address but deleted flag 1
+			// -> zombie entry
+			if (p_flagZombie) {
+				writeEntry(p_addressTable, index, ret | DELETED_FLAG);
+			} else {
+				// delete flag cleared, but address is 0 -> free entry
+				writeEntry(p_addressTable, index, 0);
+			}
 		}
 
 		writeUnlock(p_addressTable);
@@ -729,7 +752,12 @@ public final class CIDTable {
 		// Attributes
 		private final LIDElement[] m_localIDs;
 		private int m_position;
+		// available free lid elements stored in our array
 		private int m_count;
+		// This counts the total available lids in the array
+		// as well as elements that are still allocated
+		// (because they don't fit into the local array anymore)
+		// but not valid -> zombies
 		private volatile long m_overallCount;
 
 		private Lock m_lock;
@@ -759,10 +787,9 @@ public final class CIDTable {
 			if (m_overallCount > 0) {
 				m_lock.lock();
 
-				// TODO: Removed until version is stored in CIDTable
-				/*-if (m_count == 0) {
+				if (m_count == 0) {
 					fill();
-				}*/
+				}
 
 				if (m_count > 0) {
 					ret = m_localIDs[m_position];
@@ -784,24 +811,32 @@ public final class CIDTable {
 		 *            a LocalID
 		 * @param p_version
 		 *            a version
+		 * @return True if adding an entry to our local ID store was successful, false otherwise.
 		 */
-		public void put(final long p_localID, final int p_version) {
+		public boolean put(final long p_localID, final int p_version) {
+			boolean ret;
+
 			m_lock.lock();
 
 			if (m_count < m_localIDs.length) {
 				m_localIDs[m_position + m_count] = new LIDElement(p_localID, p_version);
 
 				m_count++;
+				ret = true;
+			} else {
+				ret = false;
 			}
+
 			m_overallCount++;
 
 			m_lock.unlock();
+
+			return ret;
 		}
 
 		/**
 		 * Fills the store
 		 */
-		@SuppressWarnings("unused")
 		private void fill() {
 			try {
 				findFreeLIDs();
@@ -851,12 +886,31 @@ public final class CIDTable {
 						}
 					}
 				} else {
-					if ((entry & DELETED_FLAG) > 0) {
+					// check if we got an entry referencing a zombie
+					if ((entry & DELETED_FLAG) > 0 && (entry & BITMASK_ADDRESS) > 0) {
+						Chunk chunk;
+						long chunkID;
+						long nodeID;
+						long localID;
+
+						nodeID = NodeID.getLocalNodeID();
+						localID = p_offset + i;
+
+						chunkID = nodeID << 48;
+						chunkID = chunkID + localID;
+
+						// get zombie chunk that is still allocated
+						// to preserve the version data
+						chunk = MemoryManager.get(chunkID);
+
+						// cleanup zombie in table
 						writeEntry(p_addressTable, i, 0);
 
-						// TODO: Version is unknown, because it is not stored in CIDTable and removed from RAWMemory
-						m_localIDs[m_position + m_count] = new LIDElement(ChunkID.getLocalID(p_offset + i), -1);
+						m_localIDs[m_position + m_count] = new LIDElement(localID, chunk.getVersion());
 						m_count++;
+
+						// cleanup zombie in raw memory
+						RawMemory.free(entry & BITMASK_ADDRESS);
 
 						ret = true;
 					}

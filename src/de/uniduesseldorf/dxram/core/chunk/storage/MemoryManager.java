@@ -13,6 +13,7 @@ import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
 /**
@@ -245,16 +246,18 @@ public final class MemoryManager {
 	 *             if the Chunk could not be get
 	 */
 	public static void remove(final long p_chunkID) throws MemoryException {
-		long address;
+		Pair<Boolean, Long> chunkCleanup;
 
 		// Get and delete the address from the CIDTable
-		address = CIDTable.delete(p_chunkID);
+		chunkCleanup = CIDTable.delete(p_chunkID);
 
-		// If address <= 0, the Chunk does not exists in the memory
-		if (address > 0) {
-			RawMemory.free(address);
-		} else {
-			throw new MemoryException("MemoryManager.remove failed");
+		// check if we have to cleanup the zombie chunk
+		// the table can tell us not to do this to keep the
+		// zombie "alive" in memory for later garbage collection.
+		// The table marks it as deleted, but keeps the address
+		// for this purpose
+		if (chunkCleanup.first()) {
+			RawMemory.free(chunkCleanup.second());
 		}
 	}
 
