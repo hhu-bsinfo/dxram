@@ -90,6 +90,7 @@ public class PrimaryWriteBuffer {
 		m_metaDataLock = new Semaphore(1, false);
 
 		m_writerThread = new PrimaryLogWriterThread();
+		m_writerThread.setName("Logging: Writer Thread");
 		m_writerThread.start();
 	}
 

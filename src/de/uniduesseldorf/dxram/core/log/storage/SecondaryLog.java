@@ -74,7 +74,7 @@ public class SecondaryLog extends AbstractLog {
 		m_reorganizationFinishedCondition = p_reorganizationFinishedCondition;
 		m_thresholdReachedCondition = p_thresholdReachedCondition;
 
-		m_secondaryLogReorgThreshold = (int) (SECLOG_SIZE * (REORG_UTILIZATION_THRESHOLD / 100));
+		m_secondaryLogReorgThreshold = (int) (SECLOG_SIZE * ((double) REORG_UTILIZATION_THRESHOLD / 100));
 
 		createLogAndWriteHeader(SECLOG_HEADER);
 	}

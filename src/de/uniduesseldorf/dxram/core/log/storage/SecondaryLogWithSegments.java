@@ -95,7 +95,7 @@ public class SecondaryLogWithSegments extends AbstractLog {
 
 		m_reorganizationThread = p_reorganizationThread;
 
-		m_secondaryLogReorgThreshold = (int) (SECLOG_SIZE * (REORG_UTILIZATION_THRESHOLD / 100));
+		m_secondaryLogReorgThreshold = (int) (SECLOG_SIZE * ((double) REORG_UTILIZATION_THRESHOLD / 100));
 
 		m_isLocked = new AtomicBoolean(false);
 		m_segmentHeaders = new SegmentHeader[(int) (SECLOG_SIZE / SECLOG_SEGMENT_SIZE)];

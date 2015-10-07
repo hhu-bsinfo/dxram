@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.log;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
+import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 /**
@@ -9,6 +10,37 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
  * @author Kevin Beineke 23.05.2014
  */
 public interface LogInterface extends CoreComponent {
+
+	/**
+	 * Initializes a backup range for Chunks created on this node
+	 * @Note: Test method to stress logging
+	 */
+	// TODO: Remove
+	void initBackupRangeLocallyTEST();
+
+	/**
+	 * Logs a Chunk locally (created on the very same node)
+	 * @param p_chunk
+	 *            the Chunk
+	 * @throws DXRAMException
+	 *             if the Chunks could not be logged
+	 * @Note: Test method to stress logging
+	 */
+	// TODO: Remove
+	void logChunkLocallyTEST(final Chunk p_chunk) throws DXRAMException;
+
+	/**
+	 * Removes a Chunk locally (created on the very same node)
+	 * @param p_chunkID
+	 *            the Chunk
+	 * @param p_version
+	 *            the version
+	 * @throws DXRAMException
+	 *             if the Chunks could not be removed
+	 * @Note: Test method to stress logging
+	 */
+	// TODO: Remove
+	void removeChunkLocallyTEST(final long p_chunkID, final int p_version) throws DXRAMException;
 
 	// Methods
 	/**

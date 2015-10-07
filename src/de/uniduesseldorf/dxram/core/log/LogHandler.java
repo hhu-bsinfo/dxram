@@ -135,6 +135,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		// Create reorganization thread for secondary logs
 		m_secondaryLogsReorgThread = new SecondaryLogsReorgThread();
+		m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 		// Start secondary logs reorganization thread
 		m_secondaryLogsReorgThread.start();
 
@@ -372,6 +373,41 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					+ "\t Version - " + p_version + " \t Payload is no String");
 		}
 		// p_localID: -1 can only be printed as an int
+	}
+
+	@Override
+	public void logChunkLocallyTEST(final Chunk p_chunk) throws DXRAMException {
+		byte[] logHeader;
+
+		logHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(p_chunk, (byte) -1, (short) -1);
+		/*-System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "
+				+ (p_chunk.getSize() + DEFAULT_PRIM_LOG_ENTRY_HEADER.getHeaderSize(logHeader, 0)) + ", " + p_chunk.getVersion() +
+				"; default");*/
+
+		try {
+			m_writeBuffer.putLogData(logHeader, p_chunk.getData().array());
+			if (p_chunk.getVersion() > 1) {
+				getSecondaryLog(p_chunk.getChunkID(), (short) -1, (byte) -1).incLogInvalidCounter();
+			}
+		} catch (final IOException | InterruptedException e) {
+			System.out.println("Error during logging (" + p_chunk.getChunkID() + ")!");
+		}
+	}
+
+	@Override
+	public void removeChunkLocallyTEST(final long p_chunkID, final int p_version) throws DXRAMException {
+		byte[] tombstone;
+
+		tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createTombstone(p_chunkID, p_version, (byte) -1, (short) -1);
+		/*-System.out.println("Logging Tombstone: " + p_chunkID + ", "
+			+ DEFAULT_PRIM_LOG_TOMBSTONE.getHeaderSize() + ", " + p_rangeID + ", " + -p_version + "; default");*/
+
+		try {
+			m_writeBuffer.putLogData(tombstone, null);
+			getSecondaryLog(p_chunkID, (short) -1, (byte) -1).incLogInvalidCounter();
+		} catch (final IOException | InterruptedException e) {
+			System.out.println("Error during deletion (" + p_chunkID + ")!");
+		}
 	}
 
 	/**
@@ -734,6 +770,29 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		}
 	}
 
+	@Override
+	public void initBackupRangeLocallyTEST() {
+		final short owner = NodeID.getLocalNodeID();
+		LogCatalog cat;
+		SecondaryLogWithSegments secLog = null;
+
+		m_secondaryLogCreationLock.lock();
+		cat = m_logCatalogs.get(owner & 0xFFFF);
+		if (cat == null) {
+			cat = new LogCatalog();
+			m_logCatalogs.set(owner & 0xFFFF, cat);
+		}
+		try {
+			// Create new secondary log
+			secLog = new SecondaryLogWithSegments(m_secondaryLogsReorgThread, owner, 0, false);
+			// Insert range in log catalog
+			cat.insertRange((long) NodeID.getLocalNodeID() << 48, secLog);
+		} catch (final IOException | InterruptedException e) {
+			System.out.println("ERROR: New range could not be initialized");
+		}
+		m_secondaryLogCreationLock.unlock();
+	}
+
 	/**
 	 * Handles an incoming InitRequest
 	 * @param p_message
@@ -979,9 +1038,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								getAccessToSecLog(m_secLog);
 								m_secLog.markInvalidObjects(new VersionsHashTable(6400000, 0.9f));
 								m_secLog.reorganizeAll();
-								m_secLog = null;
 								leaveSecLog(secondaryLog);
 								m_secLog.setAccessFlag(false);
+								m_secLog = null;
 								m_reorganizationFinishedCondition.signal();
 							} else {
 								if (m_isShuttingDown) {
