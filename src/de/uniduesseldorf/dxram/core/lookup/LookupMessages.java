@@ -30,8 +30,8 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_INIT_RANGE_RESPONSE = 4;
 	public static final byte SUBTYPE_LOOKUP_REQUEST = 5;
 	public static final byte SUBTYPE_LOOKUP_RESPONSE = 6;
-	public static final byte SUBTYPE_ALL_BACKUP_RANGES_REQUEST = 7;
-	public static final byte SUBTYPE_ALL_BACKUP_RANGES_RESPONSE = 8;
+	public static final byte SUBTYPE_GET_BACKUP_RANGES_REQUEST = 7;
+	public static final byte SUBTYPE_GET_BACKUP_RANGES_RESPONSE = 8;
 	public static final byte SUBTYPE_MIGRATE_REQUEST = 9;
 	public static final byte SUBTYPE_MIGRATE_RESPONSE = 10;
 	public static final byte SUBTYPE_MIGRATE_MESSAGE = 11;
@@ -63,6 +63,8 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_GET_MAPPING_COUNT_RESPONSE = 37;
 	public static final byte SUBTYPE_LOOKUP_REFLECTION_REQUEST = 38;
 	public static final byte SUBTYPE_LOOKUP_REFLECTION_RESPONSE = 39;
+	public static final byte SUBTYPE_TEST_REQUEST = 40;
+	public static final byte SUBTYPE_TEST_RESPONSE = 41;
 
 	// Constructors
 	/**
@@ -518,36 +520,34 @@ public final class LookupMessages {
 	}
 
 	/**
-	 * All Backup Ranges Request
+	 * Get Backup Ranges Request
 	 * @author Kevin Beineke
 	 *         08.10.2015
 	 */
-	public static class AllBackupRangesRequest extends AbstractRequest {
+	public static class GetBackupRangesRequest extends AbstractRequest {
 
 		// Attributes
 		private short m_nodeID;
 
 		// Constructors
 		/**
-		 * Creates an instance of AllBackupRangesRequest
+		 * Creates an instance of GetBackupRangesRequest
 		 */
-		public AllBackupRangesRequest() {
+		public GetBackupRangesRequest() {
 			super();
 
 			m_nodeID = -1;
 		}
 
 		/**
-		 * Creates an instance of AllBackupRangesRequest
+		 * Creates an instance of GetBackupRangesRequest
 		 * @param p_destination
 		 *            the destination
 		 * @param p_nodeID
 		 *            the NodeID
 		 */
-		public AllBackupRangesRequest(final short p_destination, final short p_nodeID) {
-			super(p_destination, TYPE, SUBTYPE_ALL_BACKUP_RANGES_REQUEST);
-
-			Contract.checkNotNull(p_nodeID, "no NodeID given");
+		public GetBackupRangesRequest(final short p_destination, final short p_nodeID) {
+			super(p_destination, TYPE, SUBTYPE_GET_BACKUP_RANGES_REQUEST);
 
 			m_nodeID = p_nodeID;
 		}
@@ -574,40 +574,40 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength();
+			return OutputHelper.getNodeIDWriteLength();
 		}
 
 	}
 
 	/**
-	 * Response to a AllBackupRangesRequest
+	 * Response to a GetBackupRangesRequest
 	 * @author Kevin Beineke
 	 *         08.10.2015
 	 */
-	public static class AllBackupRangesResponse extends AbstractResponse {
+	public static class GetBackupRangesResponse extends AbstractResponse {
 
 		// Attributes
 		private BackupRange[] m_backupRanges;
 
 		// Constructors
 		/**
-		 * Creates an instance of AllBackupRangesResponse
+		 * Creates an instance of GetBackupRangesResponse
 		 */
-		public AllBackupRangesResponse() {
+		public GetBackupRangesResponse() {
 			super();
 
 			m_backupRanges = null;
 		}
 
 		/**
-		 * Creates an instance of AllBackupRangesResponse
+		 * Creates an instance of GetBackupRangesResponse
 		 * @param p_request
-		 *            the corresponding AllBackupRangesRequest
+		 *            the corresponding GetBackupRangesRequest
 		 * @param p_backupRanges
 		 *            all backup ranges for requested NodeID
 		 */
-		public AllBackupRangesResponse(final AllBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
-			super(p_request, SUBTYPE_ALL_BACKUP_RANGES_RESPONSE);
+		public GetBackupRangesResponse(final GetBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
+			super(p_request, SUBTYPE_GET_BACKUP_RANGES_RESPONSE);
 
 			m_backupRanges = p_backupRanges;
 		}
@@ -643,7 +643,7 @@ public final class LookupMessages {
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getBooleanWriteLength() + OutputHelper.getLocationsWriteLength();
+			return OutputHelper.getIntWriteLength() + OutputHelper.getBackupRangeWriteLength() * m_backupRanges.length;
 		}
 
 	}

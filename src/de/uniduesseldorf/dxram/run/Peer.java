@@ -36,7 +36,7 @@ public final class Peer {
 		System.out.println("Peer started");
 
 		// Recovery test:
-		try {
+		/*-try {
 			Thread.sleep(10000);
 		} catch (final InterruptedException e) {}
 		try {
@@ -44,7 +44,7 @@ public final class Peer {
 		} catch (DXRAMException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		}
+		}*/
 
 		while (true) {
 			// Wait a moment

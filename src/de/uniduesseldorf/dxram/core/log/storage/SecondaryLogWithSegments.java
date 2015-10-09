@@ -521,7 +521,7 @@ public class SecondaryLogWithSegments extends AbstractLog {
 	 *             if the caller was interrupted
 	 * @return ArrayList with all log entries as chunks
 	 */
-	public final ArrayList<Chunk> recoverAllLogEntries(final boolean p_doCRCCheck) throws IOException, InterruptedException {
+	public final Chunk[] recoverAllLogEntries(final boolean p_doCRCCheck) throws IOException, InterruptedException {
 		int i = 0;
 		int offset = 0;
 		int logEntrySize;
@@ -531,6 +531,7 @@ public class SecondaryLogWithSegments extends AbstractLog {
 		long chunkID;
 		byte[][] logData;
 		byte[] payload;
+		Chunk chunk;
 		HashMap<Long, Chunk> chunkMap = null;
 		AbstractLogEntryHeader logEntryHeader;
 
@@ -538,7 +539,7 @@ public class SecondaryLogWithSegments extends AbstractLog {
 		// TODO: Coordinate with reorganization thread
 		try {
 			logData = readAllWithoutReadPtrSet(false);
-			while (logData[i] != null) {
+			while (i < logData.length && logData[i] != null) {
 				chunkMap = new HashMap<Long, Chunk>();
 				while (offset < logData[i].length) {
 					// Determine header of next log entry
@@ -551,7 +552,7 @@ public class SecondaryLogWithSegments extends AbstractLog {
 					}
 					logEntrySize = logEntryHeader.getHeaderSize(logData[i], offset) + payloadSize;
 
-					if (logEntrySize > logEntryHeader.getHeaderSize(logData[i], offset)) {
+					if (!logEntryHeader.isTombstone()) {
 						// Read payload and create chunk
 						if (offset + logEntrySize <= logData[i].length) {
 							// Create chunk only if log entry complete
@@ -564,7 +565,10 @@ public class SecondaryLogWithSegments extends AbstractLog {
 									continue;
 								}
 							}
-							chunkMap.put(chunkID, new Chunk(chunkID, payload, version));
+							chunk = chunkMap.get(chunkID);
+							if (chunk == null || chunk.getVersion() < version) {
+								chunkMap.put(chunkID, new Chunk(chunkID, payload, version));
+							}
 						}
 					}
 					offset += logEntrySize;
@@ -576,7 +580,7 @@ public class SecondaryLogWithSegments extends AbstractLog {
 			logData = null;
 			payload = null;
 		}
-		return (ArrayList<Chunk>) chunkMap.values();
+		return chunkMap.values().toArray(new Chunk[chunkMap.size()]);
 	}
 
 	/**

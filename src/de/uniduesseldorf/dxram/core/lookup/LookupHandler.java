@@ -25,13 +25,13 @@ import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AllBackupRangesRequest;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AllBackupRangesResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutSuccessorRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutSuccessorResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.DelegatePromotePeerMessage;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.GetBackupRangesRequest;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.GetBackupRangesResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.GetChunkIDRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.GetChunkIDResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.GetMappingCountRequest;
@@ -178,7 +178,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(JoinRequest.class, this);
 		m_network.register(LookupRequest.class, this);
-		m_network.register(AllBackupRangesRequest.class, this);
+		m_network.register(GetBackupRangesRequest.class, this);
 		m_network.register(MigrateRequest.class, this);
 		m_network.register(MigrateMessage.class, this);
 		m_network.register(MigrateRangeRequest.class, this);
@@ -290,8 +290,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		short responsibleSuperpeer;
 		boolean check = false;
 
-		AllBackupRangesRequest request;
-		AllBackupRangesResponse response;
+		GetBackupRangesRequest request;
+		GetBackupRangesResponse response;
 
 		LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=" + p_nodeID);
 
@@ -302,23 +302,21 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			responsibleSuperpeer = getResponsibleSuperpeer(p_nodeID, check);
 
 			if (-1 != responsibleSuperpeer) {
-				request = new AllBackupRangesRequest(responsibleSuperpeer, p_nodeID);
+				request = new GetBackupRangesRequest(responsibleSuperpeer, p_nodeID);
 				Contract.checkNotNull(request);
 				try {
 					request.sendSync(m_network);
+					response = request.getResponse(GetBackupRangesResponse.class);
 				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again and check responsible superpeer
 					check = true;
 					continue;
 				}
-				response = request.getResponse(AllBackupRangesResponse.class);
-
-				System.out.println("Got here!");
 				ret = response.getBackupRanges();
 			}
 		}
 
-		LOGGER.trace("Exiting get");
+		LOGGER.trace("Exiting getAllBackupRanges");
 		return ret;
 	}
 
@@ -1351,21 +1349,21 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	/**
-	 * Handles an incoming AllBackupRangesRequest
-	 * @param p_allBackupRangesRequest
-	 *            the AllBackupRanges
+	 * Handles an incoming GetBackupRangesRequest
+	 * @param p_getBackupRangesRequest
+	 *            the GetBackupRangesRequest
 	 */
-	private void incomingAllBackupRangesRequest(final AllBackupRangesRequest p_allBackupRangesRequest) {
+	private void incomingGetBackupRangesRequest(final GetBackupRangesRequest p_getBackupRangesRequest) {
 		int counter = 0;
 		BackupRange[] result = null;
 		LookupTree tree;
 		ArrayList<long[]> ownBackupRanges;
 		ArrayList<Long> migrationBackupRanges;
 
-		LOGGER.trace("Got request: ALL_BACKUP_RANGES_REQUEST " + p_allBackupRangesRequest.getSource());
+		LOGGER.trace("Got request: GET_BACKUP_RANGES_REQUEST " + p_getBackupRangesRequest.getSource());
 
 		m_dataLock.lock();
-		tree = getCIDTree(p_allBackupRangesRequest.getNodeID());
+		tree = getCIDTree(p_getBackupRangesRequest.getNodeID());
 		if (tree != null) {
 			ownBackupRanges = tree.getAllBackupRanges();
 			migrationBackupRanges = tree.getAllMigratedBackupRanges();
@@ -1382,8 +1380,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		}
 		m_dataLock.unlock();
 		try {
-			new AllBackupRangesResponse(p_allBackupRangesRequest, result).send(m_network);
-			System.out.println("Got here!");
+			new GetBackupRangesResponse(p_getBackupRangesRequest, result).send(m_network);
 		} catch (final NetworkException e) {
 			// Requesting peer is not available anymore, ignore it
 		}
@@ -2339,8 +2336,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				case LookupMessages.SUBTYPE_LOOKUP_REQUEST:
 					incomingLookupRequest((LookupRequest) p_message);
 					break;
-				case LookupMessages.SUBTYPE_ALL_BACKUP_RANGES_REQUEST:
-					incomingAllBackupRangesRequest((AllBackupRangesRequest) p_message);
+				case LookupMessages.SUBTYPE_GET_BACKUP_RANGES_REQUEST:
+					incomingGetBackupRangesRequest((GetBackupRangesRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
 					incomingMigrateRequest((MigrateRequest) p_message);
@@ -3747,7 +3744,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-									+ (m_backupPeers[0] & 0x000000000000FFFFL);
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {
@@ -3812,7 +3809,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 48) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
-									+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+							+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else {

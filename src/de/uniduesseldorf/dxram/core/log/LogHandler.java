@@ -236,7 +236,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 	@Override
 	public Chunk[] recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws RecoveryException, LookupException {
-		ArrayList<Chunk> chunkList = null;
+		Chunk[] chunks = null;
 		SecondaryLogBuffer secondaryLogBuffer;
 
 		try {
@@ -245,13 +245,13 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			secondaryLogBuffer = getSecondaryLogBuffer(p_chunkID, p_owner, p_rangeID);
 			if (secondaryLogBuffer != null) {
 				secondaryLogBuffer.flushSecLogBuffer();
-				chunkList = getSecondaryLog(p_chunkID, p_owner, p_rangeID).recoverAllLogEntries(true);
+				chunks = getSecondaryLog(p_chunkID, p_owner, p_rangeID).recoverAllLogEntries(true);
 			}
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during recovery");
 		}
 
-		return chunkList.toArray(new Chunk[chunkList.size()]);
+		return chunks;
 	}
 
 	@Override

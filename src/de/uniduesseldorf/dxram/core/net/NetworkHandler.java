@@ -102,8 +102,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE, LookupMessages.InitRangeResponse.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_REQUEST, LookupMessages.LookupRequest.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_RESPONSE, LookupMessages.LookupResponse.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ALL_BACKUP_RANGES_REQUEST, LookupMessages.AllBackupRangesRequest.class);
-		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_ALL_BACKUP_RANGES_RESPONSE, LookupMessages.AllBackupRangesResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_REQUEST, LookupMessages.GetBackupRangesRequest.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_RESPONSE, LookupMessages.GetBackupRangesResponse.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_REQUEST, LookupMessages.MigrateRequest.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RESPONSE, LookupMessages.MigrateResponse.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_MESSAGE, LookupMessages.MigrateMessage.class);

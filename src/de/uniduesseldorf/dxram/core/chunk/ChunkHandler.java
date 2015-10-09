@@ -2204,8 +2204,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		 *            the locations in long representation
 		 */
 		public BackupRange(final long p_firstChunkIDORRangeID, final long p_backupPeers) {
-			this(p_firstChunkIDORRangeID, new short[] {(short) ((p_backupPeers & 0x00000000FFFF0000L) >> 16),
-					(short) ((p_backupPeers & 0x0000FFFF00000000L) >> 32), (short) ((p_backupPeers & 0xFFFF000000000000L) >> 48)});
+			this(p_firstChunkIDORRangeID, new short[] {(short) (p_backupPeers & 0x000000000000FFFFL),
+					(short) ((p_backupPeers & 0x00000000FFFF0000L) >> 16), (short) ((p_backupPeers & 0x0000FFFF00000000L) >> 32)});
 		}
 
 		// Getter
@@ -2235,7 +2235,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+									+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {
