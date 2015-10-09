@@ -19,11 +19,14 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AllBackupRangesRequest;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AllBackupRangesResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutSuccessorRequest;
@@ -175,6 +178,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(JoinRequest.class, this);
 		m_network.register(LookupRequest.class, this);
+		m_network.register(AllBackupRangesRequest.class, this);
 		m_network.register(MigrateRequest.class, this);
 		m_network.register(MigrateMessage.class, this);
 		m_network.register(MigrateRangeRequest.class, this);
@@ -225,12 +229,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		createOrJoinSuperpeerOverlay(m_bootstrap);
 
-		LOGGER.trace("Exiting initialize");
-	}
-
-	@Override
-	public void initChunkHandler() throws DXRAMException {
 		m_chunk = CoreComponentFactory.getChunkInterface();
+
+		LOGGER.trace("Exiting initialize");
 	}
 
 	@Override
@@ -276,6 +277,44 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				response = request.getResponse(LookupResponse.class);
 
 				ret = response.getLocations();
+			}
+		}
+
+		LOGGER.trace("Exiting get");
+		return ret;
+	}
+
+	@Override
+	public BackupRange[] getAllBackupRanges(final short p_nodeID) throws LookupException {
+		BackupRange[] ret = null;
+		short responsibleSuperpeer;
+		boolean check = false;
+
+		AllBackupRangesRequest request;
+		AllBackupRangesResponse response;
+
+		LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=" + p_nodeID);
+
+		if (!overlayIsStable()) {
+			check = true;
+		}
+		while (null == ret) {
+			responsibleSuperpeer = getResponsibleSuperpeer(p_nodeID, check);
+
+			if (-1 != responsibleSuperpeer) {
+				request = new AllBackupRangesRequest(responsibleSuperpeer, p_nodeID);
+				Contract.checkNotNull(request);
+				try {
+					request.sendSync(m_network);
+				} catch (final NetworkException e) {
+					// Responsible superpeer is not available, try again and check responsible superpeer
+					check = true;
+					continue;
+				}
+				response = request.getResponse(AllBackupRangesResponse.class);
+
+				System.out.println("Got here!");
+				ret = response.getBackupRanges();
 			}
 		}
 
@@ -1312,6 +1351,45 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	/**
+	 * Handles an incoming AllBackupRangesRequest
+	 * @param p_allBackupRangesRequest
+	 *            the AllBackupRanges
+	 */
+	private void incomingAllBackupRangesRequest(final AllBackupRangesRequest p_allBackupRangesRequest) {
+		int counter = 0;
+		BackupRange[] result = null;
+		LookupTree tree;
+		ArrayList<long[]> ownBackupRanges;
+		ArrayList<Long> migrationBackupRanges;
+
+		LOGGER.trace("Got request: ALL_BACKUP_RANGES_REQUEST " + p_allBackupRangesRequest.getSource());
+
+		m_dataLock.lock();
+		tree = getCIDTree(p_allBackupRangesRequest.getNodeID());
+		if (tree != null) {
+			ownBackupRanges = tree.getAllBackupRanges();
+			migrationBackupRanges = tree.getAllMigratedBackupRanges();
+
+			result = new BackupRange[ownBackupRanges.size() + migrationBackupRanges.size()];
+			for (long[] backupRange : ownBackupRanges) {
+				result[counter++] = new BackupRange(backupRange[0], backupRange[1]);
+			}
+			counter = 0;
+			for (long backupRange : migrationBackupRanges) {
+				result[counter + ownBackupRanges.size()] = new BackupRange(counter, backupRange);
+				counter++;
+			}
+		}
+		m_dataLock.unlock();
+		try {
+			new AllBackupRangesResponse(p_allBackupRangesRequest, result).send(m_network);
+			System.out.println("Got here!");
+		} catch (final NetworkException e) {
+			// Requesting peer is not available anymore, ignore it
+		}
+	}
+
+	/**
 	 * Handles an incoming InitRangeRequest
 	 * @param p_initRangeRequest
 	 *            the InitRangeRequest
@@ -1758,9 +1836,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						final long[] br = tree.getAllBackupRanges().get(i);
 						// System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br[0]);
 						ret = ret + "    BR" + Integer.toString(i) + ": " + Long.toString(br[0]) + " (";
-						ret = ret + Short.toString((short) ((br[1] >> 32) & 0xFFFF));
+						ret = ret + Short.toString((short) (br[1] >> 32 & 0xFFFF));
 						ret = ret + ",";
-						ret = ret + Short.toString((short) ((br[1] >> 16) & 0xFFFF));
+						ret = ret + Short.toString((short) (br[1] >> 16 & 0xFFFF));
 						ret = ret + ",";
 						ret = ret + Short.toString((short) (br[1] & 0xFFFF));
 						ret = ret + ")\n";
@@ -1780,9 +1858,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 						for (int i = 0; i < tree.getAllMigratedBackupRanges().size(); i++) {
 							final ArrayList<Long> backupPeers = tree.getAllMigratedBackupRanges();
 							ret = ret + "    BR" + Integer.toString(i) + ": (";
-							ret = ret + Short.toString((short) ((backupPeers.get(i) >> 32) & 0xFFFF));
+							ret = ret + Short.toString((short) (backupPeers.get(i) >> 32 & 0xFFFF));
 							ret = ret + ",";
-							ret = ret + Short.toString((short) ((backupPeers.get(i) >> 16) & 0xFFFF));
+							ret = ret + Short.toString((short) (backupPeers.get(i) >> 16 & 0xFFFF));
 							ret = ret + ",";
 							ret = ret + Short.toString((short) (backupPeers.get(i) & 0xFFFF));
 							ret = ret + ")\n";
@@ -2260,6 +2338,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					break;
 				case LookupMessages.SUBTYPE_LOOKUP_REQUEST:
 					incomingLookupRequest((LookupRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_ALL_BACKUP_RANGES_REQUEST:
+					incomingAllBackupRangesRequest((AllBackupRangesRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
 					incomingMigrateRequest((MigrateRequest) p_message);
@@ -3666,7 +3747,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+									+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {
@@ -3731,7 +3812,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 48) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
-							+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+									+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else {

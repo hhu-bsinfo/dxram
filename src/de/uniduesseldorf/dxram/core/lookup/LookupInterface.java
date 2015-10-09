@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.lookup;
 import java.util.List;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 
@@ -17,13 +17,6 @@ public interface LookupInterface extends CoreComponent {
 
 	// Methods
 	/**
-	 * Initializes chunk handler
-	 * @throws DXRAMException
-	 *             if the component could not be initialized
-	 */
-	void initChunkHandler() throws DXRAMException;
-
-	/**
 	 * Get the corresponding NodeID for the given ID
 	 * @param p_chunkID
 	 *            the ID
@@ -32,6 +25,16 @@ public interface LookupInterface extends CoreComponent {
 	 *             if the NodeID could not be get
 	 */
 	Locations get(long p_chunkID) throws LookupException;
+
+	/**
+	 * Returns all backup ranges (RangeID + backup peers) for given node
+	 * @param p_nodeID
+	 *            the NodeID
+	 * @return all backup ranges for given node
+	 * @throws LookupException
+	 *             if the NodeID could not be get
+	 */
+	BackupRange[] getAllBackupRanges(short p_nodeID) throws LookupException;
 
 	/**
 	 * Store migration in meta-data management

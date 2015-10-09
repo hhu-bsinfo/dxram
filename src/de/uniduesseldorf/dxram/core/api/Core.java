@@ -32,6 +32,7 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
+import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
@@ -51,6 +52,7 @@ public final class Core {
 
 	private static NetworkInterface m_network;
 	private static ChunkInterface m_chunk;
+	private static RecoveryInterface m_recovery;
 	private static ExceptionHandler m_exceptionHandler;
 
 	// must be registered for handling 'execute' commands
@@ -134,6 +136,7 @@ public final class Core {
 
 			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE) && NodeID.getRole().equals(Role.PEER)) {
 				CoreComponentFactory.getLogInterface();
+				m_recovery = CoreComponentFactory.getRecoveryInterface();
 			}
 
 			registerCmdListener(new CommandHandler());
@@ -726,14 +729,16 @@ public final class Core {
 	}
 
 	/**
-	 * Recovers the local data from the log
+	 * Recovers all Chunks from a failed peer
+	 * @param p_owner
+	 *            the NodeID of the failed peer
 	 * @throws DXRAMException
 	 *             if the chunks could not be recovered
 	 */
-	public static void recoverFromLog() throws DXRAMException {
+	public static void recover(final short p_owner) throws DXRAMException {
 		try {
-			if (m_chunk != null) {
-				m_chunk.recoverFromLog();
+			if (m_recovery != null) {
+				m_recovery.recover(p_owner);
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_RECOVER_FROM_LOG);

@@ -53,45 +53,18 @@ public interface LogInterface extends CoreComponent {
 	void initBackupRange(long p_firstChunkIDOrRangeID, short[] p_backupPeers);
 
 	/**
-	 * Recovers the local data of one backup range
+	 * Recovers all Chunks of given backup range
 	 * @param p_owner
-	 *            the NodeID
+	 *            the NodeID of the node whose Chunks have to be restored
 	 * @param p_chunkID
 	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the RangeID
+	 * @return the recovered Chunks
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	void recoverAllLogEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
-
-	/**
-	 * Recovers some local data of one node from log
-	 * @param p_owner
-	 *            the NodeID
-	 * @param p_low
-	 *            lower bound
-	 * @param p_high
-	 *            higher bound
-	 * @throws DXRAMException
-	 *             if the Chunks could not be read
-	 */
-	void recoverRange(short p_owner, long p_low, long p_high) throws DXRAMException;
-
-	/**
-	 * Reads the local data of one log
-	 * @param p_owner
-	 *            the NodeID
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @throws DXRAMException
-	 *             if the Chunks could not be read
-	 * @return the local data
-	 * @note for testing only
-	 */
-	byte[][] readAllEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
+	Chunk[] recoverBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
 	 * Prints the metadata of one node's log
@@ -105,7 +78,7 @@ public interface LogInterface extends CoreComponent {
 	 *             if the Chunks could not be read
 	 * @note for testing only
 	 */
-	void printMetadataOfAllEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
+	void printBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
 	 * Returns the header size

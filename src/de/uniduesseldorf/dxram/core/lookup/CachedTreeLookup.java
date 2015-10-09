@@ -10,6 +10,7 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
@@ -71,11 +72,6 @@ public final class CachedTreeLookup implements LookupInterface {
 	}
 
 	@Override
-	public void initChunkHandler() throws DXRAMException {
-		m_lookup.initChunkHandler();
-	}
-
-	@Override
 	public void close() {
 		m_lookup.close();
 
@@ -104,6 +100,11 @@ public final class CachedTreeLookup implements LookupInterface {
 			}
 		}
 		return ret;
+	}
+
+	@Override
+	public BackupRange[] getAllBackupRanges(final short p_nodeID) throws LookupException {
+		return m_lookup.getAllBackupRanges(p_nodeID);
 	}
 
 	@Override

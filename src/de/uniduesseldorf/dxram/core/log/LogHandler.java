@@ -20,7 +20,9 @@ import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
+import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
+import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitResponse;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandRequest;
@@ -230,72 +232,30 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				}
 			}
 		}
-
 	}
 
 	@Override
-	public void recoverAllLogEntries(final short p_nodeID, final long p_chunkID, final byte p_rangeID) throws DXRAMException {
+	public Chunk[] recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws RecoveryException, LookupException {
 		ArrayList<Chunk> chunkList = null;
 		SecondaryLogBuffer secondaryLogBuffer;
 
 		try {
 			flushDataToPrimaryLog();
 
-			secondaryLogBuffer = getSecondaryLogBuffer(p_chunkID, p_nodeID, p_rangeID);
+			secondaryLogBuffer = getSecondaryLogBuffer(p_chunkID, p_owner, p_rangeID);
 			if (secondaryLogBuffer != null) {
 				secondaryLogBuffer.flushSecLogBuffer();
-				chunkList = getSecondaryLog(p_chunkID, p_nodeID, p_rangeID).recoverAllLogEntries(true);
+				chunkList = getSecondaryLog(p_chunkID, p_owner, p_rangeID).recoverAllLogEntries(true);
 			}
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during recovery");
 		}
 
-		if (chunkList != null) {
-			// TODO: Handle recovered chunks
-		}
-
+		return chunkList.toArray(new Chunk[chunkList.size()]);
 	}
 
 	@Override
-	public void recoverRange(final short p_nodeID, final long p_low, final long p_high) throws DXRAMException {
-		// ArrayList<Chunk> chunkList = null;
-		// SecondaryLogBuffer secondaryLogBuffer;
-
-		try {
-			flushDataToPrimaryLog();
-			// TODO:
-		} catch (final IOException | InterruptedException e) {
-			System.out.println("Error during recovery");
-		}
-		/*
-		 * if (chunkList != null) {
-		 * // TODO: Handle recovered chunks
-		 * }
-		 */
-	}
-
-	@Override
-	public byte[][] readAllEntries(final short p_nodeID, final long p_chunkID, final byte p_rangeID) throws DXRAMException {
-		byte[][] ret = null;
-		SecondaryLogBuffer secondaryLogBuffer;
-
-		try {
-			flushDataToPrimaryLog();
-			flushDataToSecondaryLogs();
-
-			secondaryLogBuffer = getSecondaryLogBuffer(p_chunkID, p_nodeID, p_rangeID);
-			if (secondaryLogBuffer != null) {
-				secondaryLogBuffer.flushSecLogBuffer();
-
-				ret = getSecondaryLog(p_chunkID, p_nodeID, p_rangeID).readAllSegments();
-			}
-		} catch (final IOException | InterruptedException e) {}
-
-		return ret;
-	}
-
-	@Override
-	public void printMetadataOfAllEntries(final short p_owner, final long p_chunkID, final byte p_rangeID) throws DXRAMException {
+	public void printBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws DXRAMException {
 		byte[][] segments = null;
 		int i = 0;
 		int j = 1;
@@ -306,7 +266,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		long localID;
 		AbstractLogEntryHeader logEntryHeader;
 
-		segments = readAllEntries(p_owner, p_chunkID, p_rangeID);
+		segments = readBackupRange(p_owner, p_chunkID, p_rangeID);
 		if (segments != null) {
 			System.out.println();
 			System.out.println("NodeID: " + p_owner);
@@ -373,6 +333,38 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					+ "\t Version - " + p_version + " \t Payload is no String");
 		}
 		// p_localID: -1 can only be printed as an int
+	}
+
+	/**
+	 * Reads the local data of one log
+	 * @param p_owner
+	 *            the NodeID
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_rangeID
+	 *            the RangeID
+	 * @throws DXRAMException
+	 *             if the Chunks could not be read
+	 * @return the local data
+	 * @note for testing only
+	 */
+	public byte[][] readBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws DXRAMException {
+		byte[][] ret = null;
+		SecondaryLogBuffer secondaryLogBuffer;
+
+		try {
+			flushDataToPrimaryLog();
+			flushDataToSecondaryLogs();
+
+			secondaryLogBuffer = getSecondaryLogBuffer(p_chunkID, p_owner, p_rangeID);
+			if (secondaryLogBuffer != null) {
+				secondaryLogBuffer.flushSecLogBuffer();
+
+				ret = getSecondaryLog(p_chunkID, p_owner, p_rangeID).readAllSegments();
+			}
+		} catch (final IOException | InterruptedException e) {}
+
+		return ret;
 	}
 
 	@Override
@@ -1089,4 +1081,5 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			}
 		}
 	}
+
 }

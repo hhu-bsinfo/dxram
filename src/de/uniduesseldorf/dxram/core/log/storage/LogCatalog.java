@@ -80,7 +80,7 @@ public final class LogCatalog {
 			ret = m_creatorBuffers.get(rangeID);
 		}
 		if (ret == null) {
-			System.out.println("ERROR: No secondary log buffer for " + p_chunkID);
+			System.out.println("ERROR: No secondary log buffer for " + p_chunkID + ", " + p_rangeID);
 		}
 
 		return ret;

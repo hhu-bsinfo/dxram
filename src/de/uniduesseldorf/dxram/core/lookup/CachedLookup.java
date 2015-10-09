@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
@@ -113,11 +114,6 @@ public final class CachedLookup implements LookupInterface {
 	}
 
 	@Override
-	public void initChunkHandler() throws DXRAMException {
-		m_lookup.initChunkHandler();
-	}
-
-	@Override
 	public void close() {
 		m_lookup.close();
 	}
@@ -125,6 +121,11 @@ public final class CachedLookup implements LookupInterface {
 	@Override
 	public Locations get(final long p_chunkID) throws LookupException {
 		return get(p_chunkID, false);
+	}
+
+	@Override
+	public BackupRange[] getAllBackupRanges(final short p_nodeID) throws LookupException {
+		return m_lookup.getAllBackupRanges(p_nodeID);
 	}
 
 	/**
