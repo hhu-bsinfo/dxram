@@ -72,13 +72,13 @@ public final class PrimaryLog extends AbstractLog {
 	@SuppressWarnings("unchecked")
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_lengthByBackupRange) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {
 			throw new IllegalArgumentException("invalid data size");
 		} else {
-			ret = bufferAndStoreSegmentsHashSort(p_data, p_offset, p_length, (Set<Entry<Long, Integer>>) p_lengthByBackupRange);
+			ret = bufferAndStore(p_data, p_offset, p_length, (Set<Entry<Long, Integer>>) p_lengthByBackupRange);
 		}
 		return ret;
 	}
@@ -101,7 +101,7 @@ public final class PrimaryLog extends AbstractLog {
 	 *             if caller is interrupted
 	 * @return the number of stored bytes
 	 */
-	private int bufferAndStoreSegmentsHashSort(final byte[] p_buffer, final int p_offset, final int p_length,
+	private int bufferAndStore(final byte[] p_buffer, final int p_offset, final int p_length,
 			final Set<Entry<Long, Integer>> p_lengthByBackupRange) throws InterruptedException, IOException {
 		int i = 0;
 		int offset = 0;
@@ -120,12 +120,12 @@ public final class PrimaryLog extends AbstractLog {
 		byte[] header;
 		byte[] segment;
 		AbstractLogEntryHeader logEntryHeader;
-		HashMap<Long, BufferSegmentsNode> map;
+		HashMap<Long, BufferNode> map;
 		Iterator<Entry<Long, Integer>> iter;
 		Entry<Long, Integer> entry;
-		Iterator<Entry<Long, BufferSegmentsNode>> iter2;
-		Entry<Long, BufferSegmentsNode> entry2;
-		BufferSegmentsNode bufferNode;
+		Iterator<Entry<Long, BufferNode>> iter2;
+		Entry<Long, BufferNode> entry2;
+		BufferNode bufferNode;
 
 		// Sort buffer by backup range
 		if (p_buffer.length >= 0) {
@@ -141,7 +141,7 @@ public final class PrimaryLog extends AbstractLog {
 			 * log (complete header) The offset is two if the buffer will be
 			 * stored directly in secondary log (header without NodeID).
 			 */
-			map = new HashMap<Long, BufferSegmentsNode>();
+			map = new HashMap<Long, BufferNode>();
 			iter = p_lengthByBackupRange.iterator();
 			while (iter.hasNext()) {
 				entry = iter.next();
@@ -151,9 +151,9 @@ public final class PrimaryLog extends AbstractLog {
 					// There is less than 4096KB data from this node ->
 					// store buffer in primary log (later)
 					primaryLogBufferSize += length;
-					bufferNode = new BufferSegmentsNode(length, false);
+					bufferNode = new BufferNode(length, false);
 				} else {
-					bufferNode = new BufferSegmentsNode(length, true);
+					bufferNode = new BufferNode(length, true);
 				}
 				map.put(rangeID, bufferNode);
 			}
@@ -184,7 +184,7 @@ public final class PrimaryLog extends AbstractLog {
 
 					bufferNode = map.get(rangeID);
 					if (logEntryHeader.wasMigrated()) {
-						bufferNode.putSource(logEntryHeader.getSource(p_buffer, completeOffset));
+						bufferNode.setSource(logEntryHeader.getSource(p_buffer, completeOffset));
 					}
 					bufferNode.appendToBuffer(p_buffer, completeOffset, logEntrySize, bytesUntilEnd);
 
@@ -200,7 +200,7 @@ public final class PrimaryLog extends AbstractLog {
 
 					bufferNode = map.get(rangeID);
 					if (logEntryHeader.wasMigrated()) {
-						bufferNode.putSource(logEntryHeader.getSource(p_buffer, completeOffset));
+						bufferNode.setSource(logEntryHeader.getSource(p_buffer, completeOffset));
 					}
 					bufferNode.appendToBuffer(p_buffer, completeOffset, logEntrySize, bytesUntilEnd);
 
@@ -222,7 +222,7 @@ public final class PrimaryLog extends AbstractLog {
 
 					bufferNode = map.get(rangeID);
 					if (logEntryHeader.wasMigrated()) {
-						bufferNode.putSource(logEntryHeader.getSource(header, 0));
+						bufferNode.setSource(logEntryHeader.getSource(header, 0));
 					}
 					bufferNode.appendToBuffer(p_buffer, bufferOffset + offset, logEntrySize, bytesUntilEnd);
 
@@ -281,182 +281,6 @@ public final class PrimaryLog extends AbstractLog {
 
 		return bytesRead;
 	}
-
-	/**
-	 * Writes given data to secondary log buffers or directly to secondary logs
-	 * if longer than a flash page Merges consecutive log entries of the same
-	 * node to limit the number of write accesses
-	 * @param p_buffer
-	 *            data block
-	 * @param p_offset
-	 *            offset within the buffer
-	 * @param p_length
-	 *            length of data
-	 * @param p_lengthByNode
-	 *            length of data per node
-	 * @throws IOException
-	 *             if secondary log (buffer) could not be written
-	 * @throws InterruptedException
-	 *             if caller is interrupted
-	 * @return the number of stored bytes
-	 */
-	/*
-	 * private int bufferAndStoreHashSort(final byte[] p_buffer,
-	 * final int p_offset, final int p_length, final int[] p_lengthByNode)
-	 * throws InterruptedException, IOException {
-	 * final int logHeaderSize = LogHandler.PRIMARY_HEADER_SIZE;
-	 * short nodeID;
-	 * int offset = 0;
-	 * int bufferOffset = p_offset;
-	 * int nodeIDOffset;
-	 * int primaryLogBufferOffset = 0;
-	 * int primaryLogBufferSize = 0;
-	 * int bytesRead = 0;
-	 * int logEntrySize;
-	 * int bytesUntilEnd;
-	 * int length;
-	 * byte[] primaryLogBuffer;
-	 * byte[] header;
-	 * byte[] buffer;
-	 * HashMap<Short, BufferNode> map;
-	 * Iterator<Entry<Short, BufferNode>> iter;
-	 * Entry<Short, BufferNode> entry;
-	 * BufferNode bufferNode;
-	 * if (p_buffer.length >= logHeaderSize) {
-	 * // Sort buffer by NodeID
-	 * map = new HashMap<Short, BufferNode>();
-	 * while (bytesRead < p_length) {
-	 * bytesUntilEnd = p_buffer.length - (bufferOffset + offset);
-	 * Because of the log's wrap around three cases must be
-	 * distinguished 1. Complete entry fits in current iteration 2.
-	 * Offset pointer is already in next iteration 3. Log entry must
-	 * be split over two iterations
-	 * if (bytesUntilEnd > LogHandler.PRIMARY_HEADER_LEN_OFFSET
-	 * + LogHandler.LOG_HEADER_LEN_SIZE) {
-	 * // Determine header of next log entry
-	 * logEntrySize = logHeaderSize
-	 * + getLengthOfLogEntry(p_buffer, bufferOffset
-	 * + offset, true);
-	 * nodeID = getNodeIDOfLogEntry(p_buffer, bufferOffset
-	 * + offset);
-	 * For every NodeID with at least one log entry in this
-	 * buffer a hashmap entry will be created The hashmap entry
-	 * contains the NodeID (key), a buffer fitting all log
-	 * entries and an offset The size of the buffer is known
-	 * from the monitoring information p_lengthByNode The offset
-	 * is zero if the buffer will be stored in primary log
-	 * (complete header) The offset is two if the buffer will be
-	 * stored directly in secondary log (header without NodeID)
-	 * bufferNode = map.get(nodeID);
-	 * if (bufferNode == null) {
-	 * length = p_lengthByNode[nodeID & 0xFFFF];
-	 * if (length < LogHandler.FLASHPAGE_SIZE) {
-	 * // There is less than 4096KB data from this node ->
-	 * // store buffer in primary log (later)
-	 * primaryLogBufferSize += length;
-	 * nodeIDOffset = 0;
-	 * } else {
-	 * nodeIDOffset = LogHandler.LOG_HEADER_NID_SIZE;
-	 * }
-	 * bufferNode = new BufferNode(nodeIDOffset, new byte[length]);
-	 * map.put(nodeID, bufferNode);
-	 * }
-	 * bufferNode.appendToBuffer(p_buffer, bufferOffset + offset,
-	 * logEntrySize, bytesUntilEnd);
-	 * offset += logEntrySize;
-	 * } else if (bytesUntilEnd <= 0) {
-	 * // Buffer overflow -> header is near the beginning
-	 * logEntrySize = logHeaderSize
-	 * + getLengthOfLogEntry(p_buffer, -bytesUntilEnd,
-	 * true);
-	 * nodeID = getNodeIDOfLogEntry(p_buffer, -bytesUntilEnd);
-	 * bufferNode = map.get(nodeID);
-	 * if (bufferNode == null) {
-	 * length = p_lengthByNode[nodeID & 0xFFFF];
-	 * if (length < LogHandler.FLASHPAGE_SIZE) {
-	 * primaryLogBufferSize += length;
-	 * nodeIDOffset = 0;
-	 * } else {
-	 * nodeIDOffset = LogHandler.LOG_HEADER_NID_SIZE;
-	 * }
-	 * bufferNode = new BufferNode(nodeIDOffset, new byte[length]);
-	 * map.put(nodeID, bufferNode);
-	 * }
-	 * bufferNode.appendToBuffer(p_buffer, -bytesUntilEnd,
-	 * logEntrySize, bytesUntilEnd);
-	 * bufferOffset = 0;
-	 * offset = logEntrySize - bytesUntilEnd;
-	 * } else {
-	 * // Buffer overflow -> header is split
-	 * header = new byte[logHeaderSize];
-	 * System.arraycopy(p_buffer, bufferOffset + offset, header,
-	 * 0, bytesUntilEnd);
-	 * System.arraycopy(p_buffer, 0, header, bytesUntilEnd,
-	 * logHeaderSize - bytesUntilEnd);
-	 * logEntrySize = logHeaderSize
-	 * + getLengthOfLogEntry(header, 0, true);
-	 * nodeID = getNodeIDOfLogEntry(header, 0);
-	 * bufferNode = map.get(nodeID);
-	 * if (bufferNode == null) {
-	 * length = p_lengthByNode[nodeID & 0xFFFF];
-	 * if (length < LogHandler.FLASHPAGE_SIZE) {
-	 * primaryLogBufferSize += length;
-	 * nodeIDOffset = 0;
-	 * } else {
-	 * nodeIDOffset = LogHandler.LOG_HEADER_NID_SIZE;
-	 * }
-	 * bufferNode = new BufferNode(nodeIDOffset, new byte[length]);
-	 * map.put(nodeID, bufferNode);
-	 * }
-	 * bufferNode.appendToBuffer(p_buffer, bufferOffset + offset,
-	 * logEntrySize, bytesUntilEnd);
-	 * bufferOffset = 0;
-	 * offset = logEntrySize - bytesUntilEnd;
-	 * }
-	 * bytesRead += logEntrySize;
-	 * }
-	 * // Write sorted buffers to log
-	 * primaryLogBuffer = new byte[primaryLogBufferSize];
-	 * iter = map.entrySet().iterator();
-	 * while (iter.hasNext()) {
-	 * entry = iter.next();
-	 * nodeID = entry.getKey();
-	 * bufferNode = entry.getValue();
-	 * length = bufferNode.getLength();
-	 * buffer = bufferNode.getData();
-	 * if (length < LogHandler.FLASHPAGE_SIZE) {
-	 * // 1. Buffer in secondary log buffer
-	 * bufferLogEntryInSecondaryLogBuffer(buffer, 0, length,
-	 * nodeID);
-	 * // 2. Copy log entry/range to write it in primary log
-	 * // subsequently
-	 * System.arraycopy(buffer, 0, primaryLogBuffer,
-	 * primaryLogBufferOffset, length);
-	 * primaryLogBufferOffset += length;
-	 * } else {
-	 * // Buffer contains an object/range that is bigger than one
-	 * // flash page -> skip primary log
-	 * writeDirectlyToSecondaryLog(buffer, 0, length, nodeID);
-	 * }
-	 * iter.remove();
-	 * bufferNode = null;
-	 * }
-	 * if (primaryLogBufferSize > 0) {
-	 * // Write all log entries, that were not written to secondary
-	 * // log, in primary log with one write access
-	 * if (getWritableSpace() < primaryLogBufferOffset) {
-	 * // Not enough free space in primary log -> flush to
-	 * // secondary logs and reset primary log
-	 * m_logHandler.flushDataToSecondaryLogs();
-	 * resetLog();
-	 * }
-	 * appendToLog(primaryLogBuffer, 0, primaryLogBufferOffset);
-	 * primaryLogBuffer = null;
-	 * }
-	 * }
-	 * return bytesRead;
-	 * }
-	 */
 
 	/**
 	 * Buffers an log entry or log entry range in corresponding secondary log
@@ -520,76 +344,7 @@ public final class PrimaryLog extends AbstractLog {
 	 * BufferNode
 	 * @author Kevin Beineke 11.08.2014
 	 */
-	public class BufferNode {
-
-		// Attributes
-		private int m_length;
-		private int m_nodeIDOffset;
-		private byte[] m_data;
-
-		// Constructors
-		/**
-		 * Creates an instance of BufferNode
-		 * @param p_nodeIDOffset
-		 *            the header offset (with or without NodeID)
-		 * @param p_data
-		 *            the buffer
-		 */
-		public BufferNode(final int p_nodeIDOffset, final byte[] p_data) {
-			m_length = 0;
-			m_nodeIDOffset = p_nodeIDOffset;
-			m_data = p_data;
-		}
-
-		// Getter
-		/**
-		 * Returns the number of written bytes
-		 * @return the number of written bytes
-		 */
-		public final int getLength() {
-			return m_length;
-		}
-
-		/**
-		 * Returns the buffer
-		 * @return the buffer
-		 */
-		public final byte[] getData() {
-			return m_data;
-		}
-
-		// Methods
-		/**
-		 * Appends data to node buffer
-		 * @param p_buffer
-		 *            the buffer
-		 * @param p_offset
-		 *            the offset within the buffer
-		 * @param p_logEntrySize
-		 *            the log entry size
-		 * @param p_bytesUntilEnd
-		 *            the number of bytes until end
-		 */
-		public final void appendToBuffer(final byte[] p_buffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd) {
-			if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
-				System.arraycopy(p_buffer, p_offset + m_nodeIDOffset, m_data, m_length, p_logEntrySize - m_nodeIDOffset);
-			} else {
-				if (p_bytesUntilEnd > m_nodeIDOffset) {
-					System.arraycopy(p_buffer, p_offset + m_nodeIDOffset, m_data, m_length, p_bytesUntilEnd - m_nodeIDOffset);
-					System.arraycopy(p_buffer, 0, m_data, m_length + p_bytesUntilEnd - m_nodeIDOffset, p_logEntrySize - p_bytesUntilEnd);
-				} else {
-					System.arraycopy(p_buffer, 0, m_data, m_length + m_nodeIDOffset - p_bytesUntilEnd, p_logEntrySize - (m_nodeIDOffset - p_bytesUntilEnd));
-				}
-			}
-			m_length += p_logEntrySize - m_nodeIDOffset;
-		}
-	}
-
-	/**
-	 * BufferNode
-	 * @author Kevin Beineke 11.08.2014
-	 */
-	public class BufferSegmentsNode {
+	private final class BufferNode {
 
 		// Attributes
 		private short m_source;
@@ -609,7 +364,7 @@ public final class PrimaryLog extends AbstractLog {
 		 * @param p_convert
 		 *            wether the log entry headers have to be converted or not
 		 */
-		public BufferSegmentsNode(final int p_length, final boolean p_convert) {
+		private BufferNode(final int p_length, final boolean p_convert) {
 			m_source = -1;
 
 			m_numberOfSegments = (int) Math.ceil((double) p_length / SECLOG_SEGMENT_SIZE);
@@ -634,7 +389,7 @@ public final class PrimaryLog extends AbstractLog {
 		 *            the index
 		 * @return the number of written bytes per segment
 		 */
-		public final int getLength(final int p_index) {
+		private int getLength(final int p_index) {
 			int ret = 0;
 
 			if (p_index < m_numberOfSegments) {
@@ -650,7 +405,7 @@ public final class PrimaryLog extends AbstractLog {
 		 *            the index
 		 * @return the buffer
 		 */
-		public final byte[] getData(final int p_index) {
+		private byte[] getData(final int p_index) {
 			byte[] ret = null;
 
 			if (p_index < m_numberOfSegments) {
@@ -664,7 +419,7 @@ public final class PrimaryLog extends AbstractLog {
 		 * Returns the source
 		 * @return the NodeID
 		 */
-		public final short getSource() {
+		private short getSource() {
 			return m_source;
 		}
 
@@ -674,7 +429,7 @@ public final class PrimaryLog extends AbstractLog {
 		 * @param p_source
 		 *            the NodeID
 		 */
-		public final void putSource(final short p_source) {
+		private void setSource(final short p_source) {
 			m_source = p_source;
 		}
 
@@ -690,7 +445,7 @@ public final class PrimaryLog extends AbstractLog {
 		 * @param p_bytesUntilEnd
 		 *            the number of bytes until end
 		 */
-		public final void appendToBuffer(final byte[] p_buffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd) {
+		private void appendToBuffer(final byte[] p_buffer, final int p_offset, final int p_logEntrySize, final int p_bytesUntilEnd) {
 			int index = -1;
 			AbstractLogEntryHeader logEntryHeader;
 
@@ -744,7 +499,7 @@ public final class PrimaryLog extends AbstractLog {
 		/**
 		 * Trims the last segment
 		 */
-		public final void trimLastSegment() {
+		private void trimLastSegment() {
 			int length;
 
 			length = m_writtenBytesPerSegment[m_numberOfSegments - 1];

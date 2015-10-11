@@ -2,7 +2,6 @@
 package de.uniduesseldorf.dxram.core.recovery;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 
@@ -18,12 +17,12 @@ public interface RecoveryInterface extends CoreComponent {
 	 * Recovers all Chunks of given node
 	 * @param p_nodeID
 	 *            the NodeID of the node whose Chunks have to be restored
-	 * @return the recovered Chunks
+	 * @return whether the operation was successful or not
 	 * @throws RecoveryException
 	 *             if the recovery fails
 	 * @throws LookupException
 	 *             if the backup peers could not be determined
 	 */
-	Chunk[] recover(short p_nodeID) throws RecoveryException, LookupException;
+	boolean recover(short p_nodeID) throws RecoveryException, LookupException;
 
 }

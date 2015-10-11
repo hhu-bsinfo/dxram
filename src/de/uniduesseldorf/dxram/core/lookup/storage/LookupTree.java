@@ -100,7 +100,7 @@ public final class LookupTree implements Serializable {
 
 		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
 
-		Contract.check(0 < localID, "LocalID smaller than 1");
+		Contract.check(0 <= localID, "LocalID smaller than 0");
 
 		node = createOrReplaceEntry(localID, p_nodeID);
 

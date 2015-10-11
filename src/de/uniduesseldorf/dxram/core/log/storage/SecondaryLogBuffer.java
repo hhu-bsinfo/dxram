@@ -22,7 +22,7 @@ public final class SecondaryLogBuffer {
 	private byte[] m_buffer;
 	private int m_bytesInBuffer;
 
-	private SecondaryLogWithSegments m_secondaryLog;
+	private SecondaryLog m_secondaryLog;
 
 	// Constructors
 	/**
@@ -30,7 +30,7 @@ public final class SecondaryLogBuffer {
 	 * @param p_secondaryLog
 	 *            Instance of the corresponding secondary log. Used to write directly to secondary
 	 */
-	public SecondaryLogBuffer(final SecondaryLogWithSegments p_secondaryLog) {
+	public SecondaryLogBuffer(final SecondaryLog p_secondaryLog) {
 
 		m_secondaryLog = p_secondaryLog;
 
@@ -40,19 +40,19 @@ public final class SecondaryLogBuffer {
 
 	// Getter
 	/**
-	 * Returns whether the secondary log buffer is empty or not
-	 * @return whether buffer is empty or not
-	 */
-	public boolean isBufferEmpty() {
-		return m_bytesInBuffer == 0;
-	}
-
-	/**
 	 * Returns the number of bytes
 	 * @return the number of bytes
 	 */
 	public int getOccupiedSpace() {
 		return m_bytesInBuffer;
+	}
+
+	/**
+	 * Returns whether the secondary log buffer is empty or not
+	 * @return whether buffer is empty or not
+	 */
+	public boolean isBufferEmpty() {
+		return m_bytesInBuffer == 0;
 	}
 
 	// Methods

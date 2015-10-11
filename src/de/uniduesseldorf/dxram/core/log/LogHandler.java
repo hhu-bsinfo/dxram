@@ -39,8 +39,8 @@ import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
 import de.uniduesseldorf.dxram.core.log.storage.LogCatalog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryWriteBuffer;
+import de.uniduesseldorf.dxram.core.log.storage.SecondaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogBuffer;
-import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogWithSegments;
 import de.uniduesseldorf.dxram.core.log.storage.VersionsHashTable;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
@@ -348,7 +348,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @return the local data
 	 * @note for testing only
 	 */
-	public byte[][] readBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws DXRAMException {
+	private byte[][] readBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws DXRAMException {
 		byte[][] ret = null;
 		SecondaryLogBuffer secondaryLogBuffer;
 
@@ -400,6 +400,29 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		} catch (final IOException | InterruptedException e) {
 			System.out.println("Error during deletion (" + p_chunkID + ")!");
 		}
+	}
+
+	@Override
+	public void initBackupRangeLocallyTEST() {
+		final short owner = NodeID.getLocalNodeID();
+		LogCatalog cat;
+		SecondaryLog secLog = null;
+
+		m_secondaryLogCreationLock.lock();
+		cat = m_logCatalogs.get(owner & 0xFFFF);
+		if (cat == null) {
+			cat = new LogCatalog();
+			m_logCatalogs.set(owner & 0xFFFF, cat);
+		}
+		try {
+			// Create new secondary log
+			secLog = new SecondaryLog(m_secondaryLogsReorgThread, owner, 0, false);
+			// Insert range in log catalog
+			cat.insertRange((long) NodeID.getLocalNodeID() << 48, secLog);
+		} catch (final IOException | InterruptedException e) {
+			System.out.println("ERROR: New range could not be initialized");
+		}
+		m_secondaryLogCreationLock.unlock();
 	}
 
 	/**
@@ -509,9 +532,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @throws InterruptedException
 	 *             if the secondary log could not be returned
 	 */
-	private SecondaryLogWithSegments getSecondaryLog(final long p_chunkID, final short p_source,
+	private SecondaryLog getSecondaryLog(final long p_chunkID, final short p_source,
 			final byte p_rangeID) throws IOException, InterruptedException {
-		SecondaryLogWithSegments ret;
+		SecondaryLog ret;
 		LogCatalog cat;
 
 		// Can be executed by application/network thread or writer thread
@@ -612,7 +635,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @param p_secLog
 	 *            the Secondary Log
 	 */
-	public void getAccessToSecLog(final SecondaryLogWithSegments p_secLog) {
+	private void getAccessToSecLog(final SecondaryLog p_secLog) {
 		if (!p_secLog.isAccessed()) {
 			p_secLog.setAccessFlag(true);
 			m_reorgThreadWaits = true;
@@ -629,7 +652,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @param p_secLog
 	 *            the Secondary Log
 	 */
-	public void leaveSecLog(final SecondaryLogWithSegments p_secLog) {
+	private void leaveSecLog(final SecondaryLog p_secLog) {
 		if (p_secLog.isAccessed()) {
 			p_secLog.setAccessFlag(false);
 		}
@@ -651,7 +674,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private String getCurrentUtilization() {
 		String ret;
 		int counter;
-		SecondaryLogWithSegments[] secondaryLogs;
+		SecondaryLog[] secondaryLogs;
 		SecondaryLogBuffer[] secLogBuffers;
 		LogCatalog cat;
 
@@ -762,29 +785,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		}
 	}
 
-	@Override
-	public void initBackupRangeLocallyTEST() {
-		final short owner = NodeID.getLocalNodeID();
-		LogCatalog cat;
-		SecondaryLogWithSegments secLog = null;
-
-		m_secondaryLogCreationLock.lock();
-		cat = m_logCatalogs.get(owner & 0xFFFF);
-		if (cat == null) {
-			cat = new LogCatalog();
-			m_logCatalogs.set(owner & 0xFFFF, cat);
-		}
-		try {
-			// Create new secondary log
-			secLog = new SecondaryLogWithSegments(m_secondaryLogsReorgThread, owner, 0, false);
-			// Insert range in log catalog
-			cat.insertRange((long) NodeID.getLocalNodeID() << 48, secLog);
-		} catch (final IOException | InterruptedException e) {
-			System.out.println("ERROR: New range could not be initialized");
-		}
-		m_secondaryLogCreationLock.unlock();
-	}
-
 	/**
 	 * Handles an incoming InitRequest
 	 * @param p_message
@@ -795,7 +795,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		long firstChunkIDOrRangeID;
 		boolean success = true;
 		LogCatalog cat;
-		SecondaryLogWithSegments secLog = null;
+		SecondaryLog secLog = null;
 
 		owner = p_message.getOwner();
 		firstChunkIDOrRangeID = p_message.getFirstCIDOrRangeID();
@@ -809,10 +809,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		try {
 			if (owner == ChunkID.getCreatorID(firstChunkIDOrRangeID)) {
 				// Create new secondary log
-				secLog = new SecondaryLogWithSegments(m_secondaryLogsReorgThread, owner, ChunkID.getLocalID(firstChunkIDOrRangeID), false);
+				secLog = new SecondaryLog(m_secondaryLogsReorgThread, owner, ChunkID.getLocalID(firstChunkIDOrRangeID), false);
 			} else {
 				// Create new secondary log for migrations
-				secLog = new SecondaryLogWithSegments(m_secondaryLogsReorgThread, owner, firstChunkIDOrRangeID, true);
+				secLog = new SecondaryLog(m_secondaryLogsReorgThread, owner, firstChunkIDOrRangeID, true);
 			}
 			// Insert range in log catalog
 			cat.insertRange(firstChunkIDOrRangeID, secLog);
@@ -893,7 +893,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		// Attributes
 		private VersionsHashTable m_versionsHT;
-		private SecondaryLogWithSegments m_secLog;
+		private SecondaryLog m_secLog;
 
 		// Constructors
 		/**
@@ -903,6 +903,18 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			m_versionsHT = new VersionsHashTable(6400000, 0.9f);
 		}
 
+		// Setter
+		/**
+		 * Sets the secondary log to reorganize next
+		 * @param p_secLog
+		 *            the Secondary Log
+		 * @note Called before signaling
+		 */
+		public void setLog(final SecondaryLog p_secLog) {
+			m_secLog = p_secLog;
+		}
+
+		// Methods
 		/**
 		 * Locks the reorganization lock
 		 * @note Called before signaling
@@ -941,14 +953,14 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		 * Determines next log to process
 		 * @return secondary log
 		 */
-		private SecondaryLogWithSegments chooseLog() {
-			SecondaryLogWithSegments ret = null;
+		private SecondaryLog chooseLog() {
+			SecondaryLog ret = null;
 			long max = 0;
 			long current;
 			LogCatalog cat;
 			ArrayList<LogCatalog> cats;
-			SecondaryLogWithSegments[] secLogs;
-			SecondaryLogWithSegments secLog;
+			SecondaryLog[] secLogs;
+			SecondaryLog secLog;
 
 			cats = new ArrayList<LogCatalog>();
 			for (int i = 0; i < m_logCatalogs.length(); i++) {
@@ -983,23 +995,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			return ret;
 		}
 
-		/**
-		 * Sets the secondary log to reorganize next
-		 * @param p_secLog
-		 *            the Secondary Log
-		 * @note Called before signaling
-		 */
-		public void setLog(final SecondaryLogWithSegments p_secLog) {
-			m_secLog = p_secLog;
-		}
-
 		@Override
 		public void run() {
-			SecondaryLogWithSegments secondaryLog;
-			// SecondaryLogWithSegments[] secondaryLogs;
-			// LogCatalog cat;
-
-			// long start = 0;
+			SecondaryLog secondaryLog;
 
 			while (!m_isShuttingDown) {
 				try {
@@ -1007,12 +1005,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					if (m_isShuttingDown) {
 						break;
 					}
-					/*-if (start == 0 || System.currentTimeMillis() - start > 10000) {
-					start = System.currentTimeMillis();
-					System.out.println("***********************************************************************");
-					System.out.println("*Primary log: " + m_primaryLog.getOccupiedSpace() + " bytes");
-					System.out.println("***********************************************************************");
-					}*/
 
 					secondaryLog = chooseLog();
 					if (null != secondaryLog) {
@@ -1038,33 +1030,12 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								if (m_isShuttingDown) {
 									break;
 								}
-								// Time-out -> reorganize another segment in
-								// current log
+								// Time-out -> reorganize another segment in current log
 								getAccessToSecLog(secondaryLog);
 								secondaryLog.reorganizeIteratively();
 							}
 						}
 						secondaryLog.setAccessFlag(false);
-
-						/*-System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-						System.out.println("+Secondary logs:");
-						for (int i = 0; i < m_logCatalogs.length(); i++) {
-						cat = m_logCatalogs.get(i);
-						if (cat != null) {
-						System.out.println("++Node " + (short) i + ":");
-						secondaryLogs = cat.getAllLogs();
-						for (int j = 0; j < secondaryLogs.length; j++) {
-							System.out.print("+++Backup range " + j + ": ");
-							secondaryLog = secondaryLogs[j];
-							if (secondaryLog != null) {
-								System.out.println(secondaryLog.getOccupiedSpace() + " bytes");
-								secondaryLog.getSegmentDistribution();
-							}
-						}
-						}
-						}
-						System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-						System.out.println();*/
 
 					} else {
 						// All secondary logs empty -> sleep

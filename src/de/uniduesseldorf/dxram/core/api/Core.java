@@ -503,15 +503,9 @@ public final class Core {
 	public static void remove(final long p_chunkID) throws DXRAMException {
 		ChunkID.check(p_chunkID);
 
-		// try {
 		if (m_chunk != null) {
 			m_chunk.remove(p_chunkID);
 		}
-		/*
-		 * } catch (final DXRAMException e) {
-		 * handleException(e, ExceptionSource.DXRAM_REMOVE, p_chunkID);
-		 * }
-		 */
 	}
 
 	/**

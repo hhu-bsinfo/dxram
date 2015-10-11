@@ -8,6 +8,7 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
+import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
@@ -33,6 +34,7 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 
 	// Attributes
 	private NetworkInterface m_network;
+	private ChunkInterface m_chunk;
 	private LookupInterface m_lookup;
 	private LogInterface m_log;
 
@@ -50,6 +52,7 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(RecoverBackupRangeRequest.class, this);
 
+		m_chunk = CoreComponentFactory.getChunkInterface();
 		m_lookup = CoreComponentFactory.getLookupInterface();
 		m_log = CoreComponentFactory.getLogInterface();
 
@@ -64,10 +67,10 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	}
 
 	@Override
-	public Chunk[] recover(final short p_nodeID) throws RecoveryException {
-		Chunk[] ret = null;
+	public boolean recover(final short p_nodeID) throws RecoveryException {
 		long firstChunkIDOrRangeID;
 		short[] backupPeers;
+		Chunk[] chunks = null;
 		BackupRange[] backupRanges = null;
 		RecoverBackupRangeRequest request;
 
@@ -85,9 +88,9 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 					if (backupPeer == NodeID.getLocalNodeID()) {
 						try {
 							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_nodeID) {
-								ret = m_log.recoverBackupRange(p_nodeID, firstChunkIDOrRangeID, (byte) -1);
+								chunks = m_log.recoverBackupRange(p_nodeID, firstChunkIDOrRangeID, (byte) -1);
 							} else {
-								ret = m_log.recoverBackupRange(p_nodeID, -1, (byte) firstChunkIDOrRangeID);
+								chunks = m_log.recoverBackupRange(p_nodeID, -1, (byte) firstChunkIDOrRangeID);
 							}
 						} catch (final DXRAMException e) {
 							System.out.println("Cannot recover Chunks! Trying next backup peer.");
@@ -97,7 +100,7 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 						request = new RecoverBackupRangeRequest(backupPeer, p_nodeID, firstChunkIDOrRangeID);
 						try {
 							request.sendSync(m_network);
-							ret = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
+							chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
 						} catch (final NetworkException e) {
 							System.out.println("Cannot retrieve Chunks from backup range! Trying next backup peer.");
 							continue;
@@ -105,10 +108,16 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 					}
 					break;
 				}
+
+				System.out.println("Retrieved " + chunks.length + " Chunks.");
+
+				try {
+					m_chunk.putRecoveredChunks(chunks);
+				} catch (final DXRAMException e) {}
 			}
 		}
 
-		return ret;
+		return true;
 	}
 
 	/**
