@@ -57,7 +57,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	// Constants
 	private static final int MAX_NODE_CNT = 65535;
 	private static final long FLUSHING_WAITTIME = 1000L;
-	private static final long REORGTHREAD_TIMEOUT = 500L;
+	private static final long REORGTHREAD_TIMEOUT = 100L;
 
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
@@ -240,6 +240,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		SecondaryLogBuffer secondaryLogBuffer;
 
 		try {
+			// TODO: Only flush if there is data for this backup range. Worth it?
 			flushDataToPrimaryLog();
 
 			secondaryLogBuffer = getSecondaryLogBuffer(p_chunkID, p_owner, p_rangeID);

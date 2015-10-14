@@ -159,6 +159,11 @@ public final class CachedLookup implements LookupInterface {
 	}
 
 	@Override
+	public void updateAllAfterRecovery(final short p_owner) throws LookupException {
+		m_lookup.updateAllAfterRecovery(p_owner);
+	}
+
+	@Override
 	public void migrate(final long p_chunkID, final short p_nodeID) throws LookupException {
 		ChunkID.check(p_chunkID);
 

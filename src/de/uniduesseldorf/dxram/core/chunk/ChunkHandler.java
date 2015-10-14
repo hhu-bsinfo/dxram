@@ -805,7 +805,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						if (response != null) {
 							ret = response.getChunk();
 						}
-						System.out.println("Got chunk from " + primaryPeer);
 						if (-1 == ret.getChunkID()) {
 							try {
 								// Chunk is locked, wait a bit
@@ -900,9 +899,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				}
 
 				m_migrationsTree.putObject(chunk.getChunkID(), (byte) m_currentMigrationBackupRange.getRangeID(), chunk.getSize());
-
-				// TODO: Remove
-				m_lookup.migrate(chunk.getChunkID(), m_nodeID);
 
 				// Send backups for logging (unreliable)
 				if (backupPeers != null) {
@@ -2283,7 +2279,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+									+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {

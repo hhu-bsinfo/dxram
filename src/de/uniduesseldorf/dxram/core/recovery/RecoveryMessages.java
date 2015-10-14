@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
+import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.AbstractRequest;
 import de.uniduesseldorf.dxram.core.net.AbstractResponse;
 import de.uniduesseldorf.dxram.utils.Contract;
@@ -19,20 +20,81 @@ public final class RecoveryMessages {
 
 	// Constants
 	public static final byte TYPE = 40;
-	public static final byte SUBTYPE_RECOVER_REQUEST = 1;
-	public static final byte SUBTYPE_RECOVER_RESPONSE = 2;
+	public static final byte SUBTYPE_RECOVER_MESSAGE = 1;
+	public static final byte SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST = 2;
+	public static final byte SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE = 3;
 
 	// Constructors
 	/**
-	 * Creates an instance of LookupMessages
+	 * Creates an instance of RecoveryMessages
 	 */
 	private RecoveryMessages() {}
 
 	// Classes
 	/**
+	 * Recover Message
+	 * @author Kevin Beineke
+	 *         12.10.2015
+	 */
+	public static class RecoverMessage extends AbstractMessage {
+
+		// Attributes
+		private short m_owner;
+
+		// Constructors
+		/**
+		 * Creates an instance of RecoverMessage
+		 */
+		public RecoverMessage() {
+			super();
+
+			m_owner = (short) -1;
+		}
+
+		/**
+		 * Creates an instance of RecoverMessage
+		 * @param p_destination
+		 *            the destination
+		 * @param p_owner
+		 *            the NodeID of the owner
+		 */
+		public RecoverMessage(final short p_destination, final short p_owner) {
+			super(p_destination, TYPE, SUBTYPE_RECOVER_MESSAGE);
+
+			m_owner = p_owner;
+		}
+
+		// Getters
+		/**
+		 * Get the owner
+		 * @return the NodeID
+		 */
+		public final short getOwner() {
+			return m_owner;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeNodeID(p_buffer, m_owner);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_owner = InputHelper.readNodeID(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getNodeIDWriteLength();
+		}
+
+	}
+
+	/**
 	 * Recover Backup Range Request
 	 * @author Kevin Beineke
-	 *         06.09.2012
+	 *         08.10.2015
 	 */
 	public static class RecoverBackupRangeRequest extends AbstractRequest {
 
@@ -61,7 +123,7 @@ public final class RecoveryMessages {
 		 *            the first ChunkID of the backup range or the RangeID for migrations
 		 */
 		public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final long p_firstChunkIDOrRangeID) {
-			super(p_destination, TYPE, SUBTYPE_RECOVER_REQUEST);
+			super(p_destination, TYPE, SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST);
 
 			Contract.checkNotNull(p_owner, "no NodeID given");
 			Contract.checkNotNull(p_firstChunkIDOrRangeID, "no RangeID given");
@@ -110,7 +172,7 @@ public final class RecoveryMessages {
 	/**
 	 * Response to a RecoverBackupRangeRequest
 	 * @author Kevin Beineke
-	 *         06.09.2012
+	 *         08.10.2015
 	 */
 	public static class RecoverBackupRangeResponse extends AbstractResponse {
 
@@ -135,7 +197,7 @@ public final class RecoveryMessages {
 		 *            the recovered Chunks
 		 */
 		public RecoverBackupRangeResponse(final RecoverBackupRangeRequest p_request, final Chunk[] p_chunks) {
-			super(p_request, SUBTYPE_RECOVER_RESPONSE);
+			super(p_request, SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE);
 
 			m_chunks = p_chunks;
 		}

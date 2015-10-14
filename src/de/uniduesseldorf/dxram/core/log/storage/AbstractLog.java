@@ -81,7 +81,7 @@ public abstract class AbstractLog {
 	 * @return number of successfully written bytes
 	 */
 	abstract int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_additionalInformation) throws IOException,
-			InterruptedException;
+	InterruptedException;
 
 	// Getter
 	/**

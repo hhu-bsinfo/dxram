@@ -26,6 +26,7 @@ public final class LookupTree implements Serializable {
 	private Node m_root;
 	private int m_size;
 	private short m_creator;
+	private short m_restorer;
 	private boolean m_status;
 
 	private ArrayList<long[]> m_backupRanges;
@@ -50,6 +51,7 @@ public final class LookupTree implements Serializable {
 		m_root = null;
 		m_size = -1;
 		m_creator = -1;
+		m_restorer = -1;
 		m_status = true;
 
 		m_backupRanges = new ArrayList<long[]>();
@@ -83,6 +85,15 @@ public final class LookupTree implements Serializable {
 	 */
 	public void setStatus(final boolean p_status) {
 		m_status = p_status;
+	}
+
+	/**
+	 * Set the restorer
+	 * @param p_nodeID
+	 *            the NodeID of the peer that restored this peer
+	 */
+	public void setRestorer(final short p_nodeID) {
+		m_restorer = p_nodeID;
 	}
 
 	// Methods
@@ -174,13 +185,11 @@ public final class LookupTree implements Serializable {
 	 * Initializes a range for migrated chunks
 	 * @param p_rangeID
 	 *            the RangeID
-	 * @param p_creator
-	 *            the creator
 	 * @param p_backupPeers
 	 *            the backup peers
 	 * @return true if insertion was successful
 	 */
-	public boolean initMigrationRange(final int p_rangeID, final short p_creator, final short[] p_backupPeers) {
+	public boolean initMigrationRange(final int p_rangeID, final short[] p_backupPeers) {
 
 		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
 				+ (p_backupPeers[0] & 0x0000FFFF));
@@ -292,6 +301,7 @@ public final class LookupTree implements Serializable {
 	 * @note should always be called if an object is deleted
 	 */
 	public void removeObject(final long p_chunkID) {
+		short creatorOrRestorer;
 		int index;
 		Node node;
 		long localID;
@@ -302,6 +312,11 @@ public final class LookupTree implements Serializable {
 
 		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
 		if (null != m_root) {
+			if (m_restorer == -1) {
+				creatorOrRestorer = m_creator;
+			} else {
+				creatorOrRestorer = m_restorer;
+			}
 			node = getNodeOrSuccessorsNode(localID);
 			if (null != node) {
 				currentLID = -1;
@@ -313,30 +328,30 @@ public final class LookupTree implements Serializable {
 					predecessor = getPredecessorsEntry(localID, node);
 					currentEntry = new Entry(currentLID, node.getNodeID(index));
 					successor = getSuccessorsEntry(localID, node);
-					if (m_creator != currentEntry.getNodeID() && null != predecessor) {
+					if (creatorOrRestorer != currentEntry.getNodeID() && null != predecessor) {
 						if (localID - 1 == predecessor.getLocalID()) {
 							// Predecessor is direct neighbor: AB
 							// Successor might be direct neighbor or not: ABC or AB___C
-							if (m_creator == successor.getNodeID()) {
+							if (creatorOrRestorer == successor.getNodeID()) {
 								// Successor is barrier: ABC -> A_C or AB___C -> A___C
 								remove(localID);
 							} else {
 								// Successor is no barrier: ABC -> AXC or AB___C -> AX___C
-								node.changeEntry(localID, m_creator, index);
+								node.changeEntry(localID, creatorOrRestorer, index);
 							}
-							if (m_creator == predecessor.getNodeID()) {
+							if (creatorOrRestorer == predecessor.getNodeID()) {
 								// Predecessor is barrier: A_C -> ___C or AXC -> ___XC
 								// or A___C -> ___C or AX___C -> ___X___C
 								remove(predecessor.getLocalID());
 							}
 						} else {
 							// Predecessor is no direct neighbor: A___B
-							if (m_creator == successor.getNodeID()) {
+							if (creatorOrRestorer == successor.getNodeID()) {
 								// Successor is barrier: A___BC -> A___C or A___B___C -> A___'___C
 								remove(localID);
 							} else {
 								// Successor is no barrier: A___BC -> A___XC or A___B___C -> A___X___C
-								node.changeEntry(localID, m_creator, index);
+								node.changeEntry(localID, creatorOrRestorer, index);
 							}
 							// Predecessor is barrier: A___C -> A___(B-1)_C or A___XC -> ___(B-1)XC
 							// or A___'___C -> A___(B-1)___C or A___X___C -> A___(B-1)X___C
@@ -348,13 +363,13 @@ public final class LookupTree implements Serializable {
 					index = index * -1 - 1;
 					successor = new Entry(node.getLocalID(index), node.getNodeID(index));
 					predecessor = getPredecessorsEntry(successor.getLocalID(), node);
-					if (m_creator != successor.getNodeID() && null != predecessor) {
+					if (creatorOrRestorer != successor.getNodeID() && null != predecessor) {
 						// Entry is in range
 						if (localID - 1 == predecessor.getLocalID()) {
 							// Predecessor is direct neighbor: A'B'
 							// Successor might be direct neighbor or not: A'B'C -> AXC or A'B'___C -> AX___C
-							createOrReplaceEntry(localID, m_creator);
-							if (m_creator == predecessor.getNodeID()) {
+							createOrReplaceEntry(localID, creatorOrRestorer);
+							if (creatorOrRestorer == predecessor.getNodeID()) {
 								// Predecessor is barrier: AXC -> ___XC or AX___C -> ___X___C
 								remove(localID - 1);
 							}
@@ -362,7 +377,7 @@ public final class LookupTree implements Serializable {
 							// Predecessor is no direct neighbor: A___'B'
 							// Successor might be direct neighbor or not: A___'B'C -> A___(B-1)XC
 							// or A___'B'___C -> A___(B-1)X___C
-							createOrReplaceEntry(localID, m_creator);
+							createOrReplaceEntry(localID, creatorOrRestorer);
 							createOrReplaceEntry(localID - 1, successor.getNodeID());
 						}
 					}
@@ -1277,7 +1292,7 @@ public final class LookupTree implements Serializable {
 	 * @author Kevin Beineke
 	 *         13.06.2013
 	 */
-	private static final class Node implements Comparable<Node>, Serializable {
+	private final class Node implements Comparable<Node>, Serializable {
 
 		// Attributes
 		private static final long serialVersionUID = 8096853988906422021L;
@@ -1365,7 +1380,15 @@ public final class LookupTree implements Serializable {
 		 * @return the data leaf to given index
 		 */
 		private short getNodeID(final int p_index) {
-			return m_dataLeafs[p_index];
+			short ret;
+
+			ret = m_dataLeafs[p_index];
+			if (m_restorer != -1 && ret == m_creator) {
+				m_dataLeafs[p_index] = m_restorer;
+				ret = m_restorer;
+			}
+
+			return ret;
 		}
 
 		/**
@@ -1387,16 +1410,16 @@ public final class LookupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_localID) {
-					low = mid + 1;
-				} else if (midVal > p_localID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_localID) {
+				low = mid + 1;
+			} else if (midVal > p_localID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1586,16 +1609,16 @@ public final class LookupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLocalID(0);
+			midVal = m_children[mid].getLocalID(0);
 
-				if (midVal < localID) {
-					low = mid + 1;
-				} else if (midVal > localID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < localID) {
+				low = mid + 1;
+			} else if (midVal > localID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1758,7 +1781,7 @@ public final class LookupTree implements Serializable {
 	 * @author Kevin Beineke
 	 *         13.06.2013
 	 */
-	private static final class Entry implements Serializable {
+	private final class Entry implements Serializable {
 
 		// Constants
 		private static final long serialVersionUID = -7000053901808777917L;

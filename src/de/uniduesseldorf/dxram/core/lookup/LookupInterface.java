@@ -37,6 +37,15 @@ public interface LookupInterface extends CoreComponent {
 	BackupRange[] getAllBackupRanges(short p_nodeID) throws LookupException;
 
 	/**
+	 * Returns all backup ranges (RangeID + backup peers) for given node
+	 * @param p_owner
+	 *            the NodeID of the recovered peer
+	 * @throws LookupException
+	 *             if the NodeID could not be get
+	 */
+	void updateAllAfterRecovery(short p_owner) throws LookupException;
+
+	/**
 	 * Store migration in meta-data management
 	 * @param p_chunkID
 	 *            the ID

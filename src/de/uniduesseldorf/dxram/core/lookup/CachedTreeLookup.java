@@ -96,7 +96,8 @@ public final class CachedTreeLookup implements LookupInterface {
 			if (ret != null) {
 				nodeID = ret.getPrimaryPeer();
 
-				m_chunkIDCacheTree.cacheRange(((long) nodeID << 48) + ret.getRange()[0], ((long) nodeID << 48) + ret.getRange()[1], nodeID);
+				m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
+						((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], nodeID);
 			}
 		}
 		return ret;
@@ -105,6 +106,11 @@ public final class CachedTreeLookup implements LookupInterface {
 	@Override
 	public BackupRange[] getAllBackupRanges(final short p_nodeID) throws LookupException {
 		return m_lookup.getAllBackupRanges(p_nodeID);
+	}
+
+	@Override
+	public void updateAllAfterRecovery(final short p_owner) throws LookupException {
+		m_lookup.updateAllAfterRecovery(p_owner);
 	}
 
 	@Override

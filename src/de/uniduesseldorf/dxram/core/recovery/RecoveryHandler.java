@@ -16,12 +16,12 @@ import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
-import de.uniduesseldorf.dxram.core.lookup.LookupMessages;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeRequest;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeResponse;
+import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverMessage;
 
 /**
  * Implements the Recovery-Service
@@ -50,6 +50,7 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 		LOGGER.trace("Entering initialize");
 
 		m_network = CoreComponentFactory.getNetworkInterface();
+		m_network.register(RecoverMessage.class, this);
 		m_network.register(RecoverBackupRangeRequest.class, this);
 
 		m_chunk = CoreComponentFactory.getChunkInterface();
@@ -67,15 +68,100 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	}
 
 	@Override
-	public boolean recover(final short p_nodeID) throws RecoveryException {
+	public boolean recover(final short p_owner, final short p_dest) throws RecoveryException {
+		boolean ret = true;
 		long firstChunkIDOrRangeID;
 		short[] backupPeers;
 		Chunk[] chunks = null;
 		BackupRange[] backupRanges = null;
 		RecoverBackupRangeRequest request;
 
+		if (p_dest == NodeID.getLocalNodeID()) {
+			try {
+				backupRanges = m_lookup.getAllBackupRanges(p_owner);
+			} catch (final LookupException e1) {
+				System.out.println("Cannot retrieve backup ranges! Aborting.");
+			}
+
+			if (backupRanges != null) {
+				for (BackupRange backupRange : backupRanges) {
+					backupPeers = backupRange.getBackupPeers();
+					firstChunkIDOrRangeID = backupRange.getRangeID();
+
+					// Get Chunks from backup peers (or locally if this is the primary backup peer)
+					for (short backupPeer : backupPeers) {
+						if (backupPeer == NodeID.getLocalNodeID()) {
+							try {
+								if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
+									chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
+								} else {
+									chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
+								}
+							} catch (final DXRAMException e) {
+								System.out.println("Cannot recover Chunks! Trying next backup peer.");
+								continue;
+							}
+						} else if (backupPeer != -1) {
+							request = new RecoverBackupRangeRequest(backupPeer, p_owner, firstChunkIDOrRangeID);
+							try {
+								request.sendSync(m_network);
+								chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
+							} catch (final NetworkException e) {
+								System.out.println("Cannot retrieve Chunks from backup range! Trying next backup peer.");
+								continue;
+							}
+						}
+						break;
+					}
+
+					try {
+						System.out.println("Retrieved " + chunks.length + " Chunks.");
+
+						// Store recovered Chunks
+						m_chunk.putRecoveredChunks(chunks);
+
+						// Inform superpeers about new location of migrated Chunks (non-migrated Chunks are processed later)
+						for (Chunk chunk : chunks) {
+							if (ChunkID.getCreatorID(chunk.getChunkID()) != p_owner) {
+								m_lookup.migrate(chunk.getChunkID(), p_dest);
+							}
+						}
+					} catch (final DXRAMException e) {}
+				}
+			}
+			try {
+				// Inform superpeers about new location of non-migrated Chunks
+				m_lookup.updateAllAfterRecovery(p_owner);
+			} catch (final LookupException e) {}
+		} else {
+			System.out.println("Forwarding recovery to " + p_dest);
+			try {
+				new RecoverMessage(p_dest, p_owner).send(m_network);
+			} catch (final NetworkException e) {
+				System.out.println("Could not forward command to " + p_dest + ". Aborting recovery!");
+				ret = false;
+			}
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Handles an incoming RecoverMessage
+	 * @param p_message
+	 *            the RecoverMessage
+	 */
+	private void incomingRecoverMessage(final RecoverMessage p_message) {
+		short owner;
+		long firstChunkIDOrRangeID;
+		short[] backupPeers;
+		Chunk[] chunks = null;
+		BackupRange[] backupRanges = null;
+		RecoverBackupRangeRequest request;
+
+		owner = p_message.getOwner();
 		try {
-			backupRanges = m_lookup.getAllBackupRanges(p_nodeID);
+			backupRanges = m_lookup.getAllBackupRanges(owner);
 		} catch (final LookupException e1) {
 			System.out.println("Cannot retrieve backup ranges! Aborting.");
 		}
@@ -84,20 +170,22 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 			for (BackupRange backupRange : backupRanges) {
 				backupPeers = backupRange.getBackupPeers();
 				firstChunkIDOrRangeID = backupRange.getRangeID();
+
+				// Get Chunks from backup peers (or locally if this is the primary backup peer)
 				for (short backupPeer : backupPeers) {
 					if (backupPeer == NodeID.getLocalNodeID()) {
 						try {
-							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_nodeID) {
-								chunks = m_log.recoverBackupRange(p_nodeID, firstChunkIDOrRangeID, (byte) -1);
+							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == owner) {
+								chunks = m_log.recoverBackupRange(owner, firstChunkIDOrRangeID, (byte) -1);
 							} else {
-								chunks = m_log.recoverBackupRange(p_nodeID, -1, (byte) firstChunkIDOrRangeID);
+								chunks = m_log.recoverBackupRange(owner, -1, (byte) firstChunkIDOrRangeID);
 							}
 						} catch (final DXRAMException e) {
 							System.out.println("Cannot recover Chunks! Trying next backup peer.");
 							continue;
 						}
 					} else if (backupPeer != -1) {
-						request = new RecoverBackupRangeRequest(backupPeer, p_nodeID, firstChunkIDOrRangeID);
+						request = new RecoverBackupRangeRequest(backupPeer, owner, firstChunkIDOrRangeID);
 						try {
 							request.sendSync(m_network);
 							chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
@@ -109,15 +197,24 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 					break;
 				}
 
-				System.out.println("Retrieved " + chunks.length + " Chunks.");
-
 				try {
+					System.out.println("Retrieved " + chunks.length + " Chunks.");
+
+					// Store recovered Chunks
 					m_chunk.putRecoveredChunks(chunks);
+
+					// Inform superpeers about new location of migrated Chunks (non-migrated Chunks are processed later)
+					for (Chunk chunk : chunks) {
+						if (ChunkID.getCreatorID(chunk.getChunkID()) != owner) {
+							m_lookup.migrate(chunk.getChunkID(), NodeID.getLocalNodeID());
+						}
+					}
 				} catch (final DXRAMException e) {}
 			}
 		}
-
-		return true;
+		try {
+			m_lookup.updateAllAfterRecovery(owner);
+		} catch (final LookupException e) {}
 	}
 
 	/**
@@ -125,7 +222,7 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	 * @param p_request
 	 *            the RecoverBackupRangeRequest
 	 */
-	private void incomingRecoverRequest(final RecoverBackupRangeRequest p_request) {
+	private void incomingRecoverBackupRangeRequest(final RecoverBackupRangeRequest p_request) {
 		short owner;
 		long firstChunkIDOrRangeID;
 		Chunk[] chunks = null;
@@ -154,10 +251,13 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == LookupMessages.TYPE) {
+			if (p_message.getType() == RecoveryMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case RecoveryMessages.SUBTYPE_RECOVER_REQUEST:
-					incomingRecoverRequest((RecoverBackupRangeRequest) p_message);
+				case RecoveryMessages.SUBTYPE_RECOVER_MESSAGE:
+					incomingRecoverMessage((RecoverMessage) p_message);
+					break;
+				case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
+					incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
 					break;
 				default:
 					break;

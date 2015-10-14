@@ -64,6 +64,7 @@ import de.uniduesseldorf.dxram.core.lookup.LookupMessages.SearchForPeerResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.SendBackupsMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.SendSuperpeersMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.StartRecoveryMessage;
+import de.uniduesseldorf.dxram.core.lookup.LookupMessages.UpdateAllMessage;
 import de.uniduesseldorf.dxram.core.lookup.storage.AIDTableOptimized;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
@@ -179,6 +180,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		m_network.register(JoinRequest.class, this);
 		m_network.register(LookupRequest.class, this);
 		m_network.register(GetBackupRangesRequest.class, this);
+		m_network.register(UpdateAllMessage.class, this);
 		m_network.register(MigrateRequest.class, this);
 		m_network.register(MigrateMessage.class, this);
 		m_network.register(MigrateRangeRequest.class, this);
@@ -318,6 +320,35 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 
 		LOGGER.trace("Exiting getAllBackupRanges");
 		return ret;
+	}
+
+	@Override
+	public void updateAllAfterRecovery(final short p_owner) throws LookupException {
+		short responsibleSuperpeer;
+		boolean check = false;
+
+		LOGGER.trace("Entering updateAllAfterRecovery with: p_owner=" + p_owner);
+
+		if (!overlayIsStable()) {
+			check = true;
+		}
+		while (true) {
+			responsibleSuperpeer = getResponsibleSuperpeer(p_owner, check);
+
+			try {
+				new UpdateAllMessage(responsibleSuperpeer, p_owner).send(m_network);
+			} catch (final NetworkException e) {
+				// Responsible superpeer is not available, try again (superpeers will be updated
+				// automatically by network thread)
+				try {
+					Thread.sleep(1000);
+				} catch (final InterruptedException e1) {}
+				continue;
+			}
+			break;
+		}
+
+		LOGGER.trace("Exiting updateAllAfterRecovery");
 	}
 
 	@Override
@@ -1387,6 +1418,24 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	/**
+	 * Handles an incoming UpdateAllMessage
+	 * @param p_updateAllMessage
+	 *            the UpdateAllMessage
+	 */
+	private void incomingUpdateAllMessage(final UpdateAllMessage p_updateAllMessage) {
+		LookupTree tree;
+
+		LOGGER.trace("Got request: GET_UPDATE_ALL_MESSAGE " + p_updateAllMessage.getSource());
+
+		m_dataLock.lock();
+		tree = getCIDTree(p_updateAllMessage.getOwner());
+		if (tree != null) {
+			tree.setRestorer(p_updateAllMessage.getSource());
+		}
+		m_dataLock.unlock();
+	}
+
+	/**
 	 * Handles an incoming InitRangeRequest
 	 * @param p_initRangeRequest
 	 *            the InitRangeRequest
@@ -1417,7 +1466,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			if (ChunkID.getCreatorID(startChunkIDRangeID) != -1) {
 				tree.initRange(startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
 			} else {
-				tree.initMigrationRange((int) startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
+				tree.initMigrationRange((int) startChunkIDRangeID, primaryAndBackupPeers.getBackupPeers());
 			}
 			m_dataLock.unlock();
 
@@ -1452,7 +1501,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			if ((startChunkIDRangeID & 0x0000FFFFFFFFFFFFL) != 0) {
 				tree.initRange(startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
 			} else {
-				tree.initMigrationRange((int) startChunkIDRangeID, creator, primaryAndBackupPeers.getBackupPeers());
+				tree.initMigrationRange((int) startChunkIDRangeID, primaryAndBackupPeers.getBackupPeers());
 			}
 			m_dataLock.unlock();
 			try {
@@ -2338,6 +2387,9 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					break;
 				case LookupMessages.SUBTYPE_GET_BACKUP_RANGES_REQUEST:
 					incomingGetBackupRangesRequest((GetBackupRangesRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_UPDATE_ALL_MESSAGE:
+					incomingUpdateAllMessage((UpdateAllMessage) p_message);
 					break;
 				case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
 					incomingMigrateRequest((MigrateRequest) p_message);
@@ -3744,7 +3796,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-							+ (m_backupPeers[0] & 0x000000000000FFFFL);
+									+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {
@@ -3809,7 +3861,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 48) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
-							+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+									+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else {

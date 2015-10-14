@@ -104,6 +104,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_LOOKUP_RESPONSE, LookupMessages.LookupResponse.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_REQUEST, LookupMessages.GetBackupRangesRequest.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_RESPONSE, LookupMessages.GetBackupRangesResponse.class);
+		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_UPDATE_ALL_MESSAGE, LookupMessages.UpdateAllMessage.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_REQUEST, LookupMessages.MigrateRequest.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_RESPONSE, LookupMessages.MigrateResponse.class);
 		MessageDirectory.register(lookupType, LookupMessages.SUBTYPE_MIGRATE_MESSAGE, LookupMessages.MigrateMessage.class);
@@ -139,8 +140,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		// Recovery Messages
 		recoveryType = RecoveryMessages.TYPE;
-		MessageDirectory.register(recoveryType, RecoveryMessages.SUBTYPE_RECOVER_REQUEST, RecoveryMessages.RecoverBackupRangeRequest.class);
-		MessageDirectory.register(recoveryType, RecoveryMessages.SUBTYPE_RECOVER_RESPONSE, RecoveryMessages.RecoverBackupRangeResponse.class);
+		MessageDirectory.register(recoveryType, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE, RecoveryMessages.RecoverMessage.class);
+		MessageDirectory.register(recoveryType, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, RecoveryMessages.RecoverBackupRangeRequest.class);
+		MessageDirectory.register(recoveryType, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE, RecoveryMessages.RecoverBackupRangeResponse.class);
 
 		m_manager = new ConnectionManager(AbstractConnectionCreator.getInstance(), this);
 
