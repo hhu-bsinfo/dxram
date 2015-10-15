@@ -26,7 +26,7 @@ public final class PrimaryLog extends AbstractLog {
 
 	// Constants
 	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
-	private static final String PRIMLOG_FILENAME = "primary.log";
+	private static final String PRIMLOG_SUFFIX_FILENAME = "prim.log";
 	private static final byte[] PRIMLOG_HEADER = "DXRAMPrimLogv1".getBytes(Charset.forName("UTF-8"));
 	private static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
 	private static final int PRIMLOG_MIN_SIZE = 65535 * FLASHPAGE_SIZE;
@@ -48,7 +48,7 @@ public final class PrimaryLog extends AbstractLog {
 	 *             if the caller was interrupted
 	 */
 	public PrimaryLog(final LogHandler p_logHandler) throws IOException, InterruptedException {
-		super(new File(BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + PRIMLOG_FILENAME), PRIMLOG_SIZE,
+		super(new File(BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + PRIMLOG_SUFFIX_FILENAME), PRIMLOG_SIZE,
 				PRIMLOG_HEADER.length);
 
 		m_logHandler = p_logHandler;
@@ -72,7 +72,7 @@ public final class PrimaryLog extends AbstractLog {
 	@SuppressWarnings("unchecked")
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_lengthByBackupRange) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		int ret = 0;
 
 		if (p_length <= 0 || p_length > m_totalUsableSpace) {

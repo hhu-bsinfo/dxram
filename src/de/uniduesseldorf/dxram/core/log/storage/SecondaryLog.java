@@ -23,7 +23,7 @@ public class SecondaryLog extends AbstractLog {
 
 	// Constants
 	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
-	private static final String SECLOG_PREFIX_FILENAME = "secondary";
+	private static final String SECLOG_PREFIX_FILENAME = "sec";
 	private static final String SECLOG_POSTFIX_FILENAME = ".log";
 	private static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_CHECKSUM);
 	private static final byte[] SECLOG_HEADER = "DXRAMSecLogv1".getBytes(Charset.forName("UTF-8"));
@@ -64,6 +64,8 @@ public class SecondaryLog extends AbstractLog {
 	 *            the NodeID
 	 * @param p_rangeIDOrFirstLocalID
 	 *            the RangeID (for migrations) or the first localID of the backup range
+	 * @param p_rangeIdentification
+	 *            the unique identification of this backup range
 	 * @param p_storesMigrations
 	 *            whether this secondary log stores migrations or not
 	 * @throws IOException
@@ -71,9 +73,9 @@ public class SecondaryLog extends AbstractLog {
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public SecondaryLog(final SecondaryLogsReorgThread p_reorganizationThread, final short p_nodeID,
-			final long p_rangeIDOrFirstLocalID, final boolean p_storesMigrations) throws IOException, InterruptedException {
-		super(new File(BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + SECLOG_PREFIX_FILENAME + p_nodeID
+	public SecondaryLog(final SecondaryLogsReorgThread p_reorganizationThread, final short p_nodeID, final long p_rangeIDOrFirstLocalID,
+			final String p_rangeIdentification, final boolean p_storesMigrations) throws IOException, InterruptedException {
+		super(new File(BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + SECLOG_PREFIX_FILENAME + p_nodeID + "_" + p_rangeIdentification
 				+ SECLOG_POSTFIX_FILENAME), SECLOG_SIZE, SECLOG_HEADER.length);
 		if (SECLOG_SIZE < SECLOG_MIN_SIZE) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
@@ -317,7 +319,6 @@ public class SecondaryLog extends AbstractLog {
 			if (p_isAccessed) {
 				m_activeSegment = header;
 				m_lock.unlock();
-				System.out.println("Active segment: " + segment);
 			}
 
 			writeToLog(p_data, p_offset, (long) segment * SECLOG_SEGMENT_SIZE, p_length, p_isAccessed);
@@ -363,11 +364,14 @@ public class SecondaryLog extends AbstractLog {
 			segment = getUsedSegment(length);
 			header = m_segmentHeaders[segment];
 
+			if (header == null) {
+				break;
+			}
+
 			if (p_isAccessed) {
 				// Set active segment. Must be synchronized.
 				m_activeSegment = header;
 				m_lock.unlock();
-				System.out.println("Active segment: " + segment + ", free space: " + header.getFreeBytes());
 			}
 
 			if (length <= header.getFreeBytes()) {
@@ -427,7 +431,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @return the index of the best-fitting segment
 	 */
 	private short getUsedSegment(final int p_length) {
-		short ret;
+		short ret = -1;
 		short bestFitSegment = 0;
 		short maxSegment = 0;
 		short i = 0;
@@ -435,7 +439,13 @@ public class SecondaryLog extends AbstractLog {
 		int bestFit = Integer.MAX_VALUE;
 		int max = 0;
 
-		while (i < m_segmentHeaders.length && m_segmentHeaders[i] != null) {
+		while (i < m_segmentHeaders.length) {
+			if (m_segmentHeaders[i] == null) {
+				if (bestFit < p_length || bestFit == Integer.MAX_VALUE) {
+					ret = i;
+				}
+				break;
+			}
 			freeBytes = m_segmentHeaders[i].getFreeBytes();
 			if (freeBytes >= p_length) {
 				if (freeBytes < bestFit) {
@@ -449,10 +459,12 @@ public class SecondaryLog extends AbstractLog {
 			i++;
 		}
 
-		if (bestFit >= p_length && bestFit != Integer.MAX_VALUE) {
-			ret = bestFitSegment;
-		} else {
-			ret = maxSegment;
+		if (ret == -1) {
+			if (bestFit >= p_length && bestFit != Integer.MAX_VALUE) {
+				ret = bestFitSegment;
+			} else {
+				ret = maxSegment;
+			}
 		}
 
 		return ret;
@@ -484,6 +496,7 @@ public class SecondaryLog extends AbstractLog {
 
 		// TODO: Guarantee that there is no more data to come
 		// TODO: lock log and reorganize during recovery
+		m_activeSegment = null;
 		signalReorganizationAndWait();
 		try {
 			chunkMap = new HashMap<Long, Chunk>();
@@ -642,6 +655,11 @@ public class SecondaryLog extends AbstractLog {
 
 		m_segmentHeaders[p_segmentIndex].updateDeletedBytes(p_logEntryHeader.getHeaderSize(p_buffer, p_bufferOffset)
 				+ p_logEntryHeader.getLength(p_buffer, p_bufferOffset));
+	}
+
+	@Override
+	public String toString() {
+		return "NodeID: " + getNodeID() + " - RangeID: " + getRangeIDOrFirstLocalID() + " - Written bytes: " + getOccupiedSpace();
 	}
 
 	/**
