@@ -5,7 +5,10 @@ import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
@@ -31,6 +34,7 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(RecoveryHandler.class);
+	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE);
 
 	// Attributes
 	private NetworkInterface m_network;
@@ -55,7 +59,10 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 
 		m_chunk = CoreComponentFactory.getChunkInterface();
 		m_lookup = CoreComponentFactory.getLookupInterface();
-		m_log = CoreComponentFactory.getLogInterface();
+
+		if (LOG_ACTIVE && NodeID.getRole().equals(Role.PEER)) {
+			m_log = CoreComponentFactory.getLogInterface();
+		}
 
 		LOGGER.trace("Exiting initialize");
 	}
@@ -128,11 +135,11 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 						}
 					} catch (final DXRAMException e) {}
 				}
+				try {
+					// Inform superpeers about new location of non-migrated Chunks
+					m_lookup.updateAllAfterRecovery(p_owner);
+				} catch (final LookupException e) {}
 			}
-			try {
-				// Inform superpeers about new location of non-migrated Chunks
-				m_lookup.updateAllAfterRecovery(p_owner);
-			} catch (final LookupException e) {}
 		} else {
 			System.out.println("Forwarding recovery to " + p_dest);
 			try {

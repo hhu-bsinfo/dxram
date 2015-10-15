@@ -37,6 +37,24 @@ public final class LogCatalog {
 
 	// Getter
 	/**
+	 * Gets the unique identification for the next backup range
+	 * @param p_isMigration
+	 *            whether the next backup range is for migrations or not
+	 * @return the secondary log
+	 */
+	public String getNewID(final boolean p_isMigration) {
+		String ret;
+
+		if (!p_isMigration) {
+			ret = "C" + m_creatorLogs.size();
+		} else {
+			ret = "M" + (m_currentRangeID + 1);
+		}
+
+		return ret;
+	}
+
+	/**
 	 * Gets the corresponding secondary log
 	 * @param p_chunkID
 	 *            the ChunkID
@@ -254,5 +272,10 @@ public final class LogCatalog {
 		}
 		m_migrationBuffers = null;
 		m_migrationLogs = null;
+	}
+
+	@Override
+	public String toString() {
+		return "Creator logs: " + m_creatorLogs.toString() + "\n Migration logs: " + m_migrationLogs.toString();
 	}
 }
