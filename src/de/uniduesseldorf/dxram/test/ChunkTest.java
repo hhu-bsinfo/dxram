@@ -50,7 +50,7 @@ public final class ChunkTest {
 
 			System.out.println(putChunk.equals(getChunk));
 
-			Core.remove(putChunk.getChunkID());
+			Core.removeChunk(putChunk.getChunkID());
 			System.out.println(Core.get(putChunk.getChunkID()));
 		} catch (final DXRAMException e) {
 			e.printStackTrace();

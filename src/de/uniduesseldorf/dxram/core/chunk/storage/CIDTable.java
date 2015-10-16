@@ -8,7 +8,6 @@ import java.util.concurrent.locks.Lock;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
@@ -329,15 +328,13 @@ public final class CIDTable {
 	protected static Pair<Boolean, Long> delete(final long p_chunkID) throws MemoryException {
 		long ret;
 		int version;
-		int sizeVersion;
 		boolean storeFull;
 
 		// delete and flag as zombie first
 		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, true);
 
 		// read version
-		sizeVersion = RawMemory.getCustomState(ret) + 1;
-		version = MemoryManager.readVersion(ret, sizeVersion);
+		version = MemoryManager.readChunkVersion(p_chunkID);
 
 		// more space for another zombie?
 		if (m_store.put(ChunkID.getLocalID(p_chunkID), version)) {
@@ -891,7 +888,7 @@ public final class CIDTable {
 				} else {
 					// check if we got an entry referencing a zombie
 					if ((entry & DELETED_FLAG) > 0 && (entry & BITMASK_ADDRESS) > 0) {
-						Chunk chunk;
+						int chunkVersion;
 						long chunkID;
 						long nodeID;
 						long localID;
@@ -904,12 +901,12 @@ public final class CIDTable {
 
 						// get zombie chunk that is still allocated
 						// to preserve the version data
-						chunk = MemoryManager.get(chunkID);
+						chunkVersion = MemoryManager.readChunkVersion(chunkID);
 
 						// cleanup zombie in table
 						writeEntry(p_addressTable, i, 0);
 
-						m_localIDs[m_position + m_count] = new LIDElement(localID, chunk.getVersion());
+						m_localIDs[m_position + m_count] = new LIDElement(localID, chunkVersion);
 						m_count++;
 
 						// cleanup zombie in raw memory
@@ -1062,10 +1059,10 @@ public final class CIDTable {
 							defragmentTable(address, p_level - 1, p_fragmentation);
 
 							if (p_fragmentation[segment] > MAX_FRAGMENTATION) {
-								data = RawMemory.readBytes(address);
+								data = RawMemory.readAllBytes(address);
 								RawMemory.free(address);
 								newAddress = RawMemory.malloc(data.length);
-								RawMemory.writeBytes(newAddress, data);
+								RawMemory.writeAllBytes(newAddress, data);
 							}
 						} else {
 							if (p_fragmentation[segment] > MAX_FRAGMENTATION) {
@@ -1112,7 +1109,7 @@ public final class CIDTable {
 
 			try {
 				addresses[0] = table;
-				data[0] = RawMemory.readBytes(table);
+				data[0] = RawMemory.readAllBytes(table);
 				sizes[0] = LID_TABLE_SIZE;
 				for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 					position = i + 1;
@@ -1120,7 +1117,7 @@ public final class CIDTable {
 					address = readEntry(table, i) & BITMASK_ADDRESS;
 					if (address != 0) {
 						addresses[position] = address;
-						data[position] = RawMemory.readBytes(address);
+						data[position] = RawMemory.readAllBytes(address);
 						sizes[position] = data[position].length;
 					}
 				}
@@ -1129,7 +1126,7 @@ public final class CIDTable {
 				addresses = RawMemory.malloc(sizes);
 
 				table = addresses[0];
-				RawMemory.writeBytes(table, data[0]);
+				RawMemory.writeAllBytes(table, data[0]);
 				for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 					position = i + 1;
 
@@ -1137,7 +1134,7 @@ public final class CIDTable {
 					if (address != 0) {
 						writeEntry(table, i, address);
 
-						RawMemory.writeBytes(address, data[position]);
+						RawMemory.writeAllBytes(address, data[position]);
 					}
 				}
 			} finally {

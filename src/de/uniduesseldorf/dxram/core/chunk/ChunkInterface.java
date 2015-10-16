@@ -18,39 +18,13 @@ public interface ChunkInterface extends CoreComponent {
 	 * @param p_listener
 	 *            the IncomingChunkListener
 	 */
-	void setListener(IncomingChunkListener p_listener);
+	void setListener(final IncomingChunkListener p_listener);
 
-	/**
-	 * Creates a new Chunk
-	 * @param p_size
-	 *            the size of the new Chunk
-	 * @return a new Chunk
-	 * @throws DXRAMException
-	 *             if the Chunk could not be created
-	 */
-	Chunk create(int p_size) throws DXRAMException;
+	long create(final int p_size) throws DXRAMException;
+	
+	long[] create(final int[] p_sizes) throws DXRAMException;
 
-	/**
-	 * Creates multiple new Chunks
-	 * @param p_sizes
-	 *            the sizes of the new Chunks
-	 * @return new Chunks
-	 * @throws DXRAMException
-	 *             if the Chunks could not be created
-	 */
-	Chunk[] create(int[] p_sizes) throws DXRAMException;
-
-	/**
-	 * Creates a new Chunk with identifier
-	 * @param p_size
-	 *            the size of the new Chunk
-	 * @param p_id
-	 *            the id of the new Chunk
-	 * @return a new Chunk
-	 * @throws DXRAMException
-	 *             if the Chunk could not be created
-	 */
-	Chunk create(int p_size, int p_id) throws DXRAMException;
+	long create(final int p_size, final int p_id) throws DXRAMException;
 
 	/**
 	 * Creates multiple new Chunks with identifier
@@ -62,37 +36,20 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be created
 	 */
-	Chunk[] create(int[] p_sizes, int p_id) throws DXRAMException;
+	long[] create(final int[] p_sizes, final int p_id) throws DXRAMException;
 
-	/**
-	 * Get the corresponding Chunk for the given ID
-	 * @param p_chunkID
-	 *            the ID
-	 * @return the corresponding Chunk
-	 * @throws DXRAMException
-	 *             if the Chunk could not be get
-	 */
-	Chunk get(long p_chunkID) throws DXRAMException;
-
-	/**
-	 * Get the corresponding Chunks for the given IDs
-	 * @param p_chunkIDs
-	 *            the IDs
-	 * @return the corresponding Chunks
-	 * @throws DXRAMException
-	 *             if the Chunks could not be get
-	 */
-	Chunk[] get(long[] p_chunkIDs) throws DXRAMException;
-
-	/**
-	 * Get the corresponding Chunk for the given identifier
-	 * @param p_id
-	 *            the id
-	 * @return the corresponding Chunk
-	 * @throws DXRAMException
-	 *             if the Chunk could not be get
-	 */
-	Chunk get(int p_id) throws DXRAMException;
+	
+	int readVersion(final long p_chunkID) throws DXRAMException;
+	
+	int readVersion(final int p_id) throws DXRAMException;
+	
+	int readPayloadSize(final long p_chunkID) throws DXRAMException;
+	
+	int readPayloadSize(final int p_id) throws DXRAMException;
+	
+	int readPayload(final long p_chunkID, final byte[] p_buffer) throws DXRAMException;
+	
+	int readPayload(final long p_chunkID, final int p_payloadOffset, final int p_length, final int p_bufferOffset, final byte[] p_buffer) throws DXRAMException;
 
 	/**
 	 * Get the corresponding ChunkID for the given identifier
@@ -102,7 +59,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be get
 	 */
-	long getChunkID(int p_id) throws DXRAMException;
+	long getChunkID(final int p_id) throws DXRAMException;
 
 	/**
 	 * Request the corresponding Chunk for the given ID<br>
@@ -112,36 +69,12 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be get
 	 */
-	void getAsync(long p_chunkID) throws DXRAMException;
+	void getAsync(final long p_chunkID) throws DXRAMException;
 
-	/**
-	 * Updates the given Chunk
-	 * @param p_chunk
-	 *            the Chunk
-	 * @throws DXRAMException
-	 *             if the Chunk could not be put
-	 */
-	void put(Chunk p_chunk) throws DXRAMException;
 
-	/**
-	 * Updates the given Chunk
-	 * @param p_chunk
-	 *            the Chunk
-	 * @param p_releaseLock
-	 *            if true a possible lock is released
-	 * @throws DXRAMException
-	 *             if the Chunk could not be put
-	 */
-	void put(Chunk p_chunk, boolean p_releaseLock) throws DXRAMException;
-
-	/**
-	 * Updates given Chunks
-	 * @param p_chunks
-	 *            the Chunks
-	 * @throws DXRAMException
-	 *             if the Chunks could not be put
-	 */
-	void put(Chunk[] p_chunks) throws DXRAMException;
+	int writePayload(final long p_chunkID, final byte[] p_buffer) throws DXRAMException;
+	
+	int writePayload(final long p_chunkID, final int p_payloadOffset, final int p_length, final int p_bufferOffset, final byte[] p_buffer) throws DXRAMException;
 
 	/**
 	 * Removes the corresponding Chunk for the given ID
@@ -150,7 +83,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be removed
 	 */
-	void remove(long p_chunkID) throws DXRAMException;
+	void remove(final long p_chunkID) throws DXRAMException;
 
 	/**
 	 * Removes the corresponding Chunks for the given IDs
@@ -159,7 +92,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be removed
 	 */
-	void remove(long[] p_chunkIDs) throws DXRAMException;
+	void remove(final long[] p_chunkIDs) throws DXRAMException;
 
 	/**
 	 * Requests and locks the corresponding Chunk for the giving ID
@@ -169,7 +102,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be locked
 	 */
-	Chunk lock(long p_chunkID) throws DXRAMException;
+	boolean lock(final long p_chunkID) throws DXRAMException;
 
 	/**
 	 * Requests and locks the corresponding Chunk for the giving ID
@@ -181,7 +114,7 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be locked
 	 */
-	Chunk lock(long p_chunkID, boolean p_readLock) throws DXRAMException;
+	boolean lock(final long p_chunkID, final boolean p_readLock) throws DXRAMException;
 
 	/**
 	 * Unlocks the corresponding Chunk for the giving ID
@@ -190,16 +123,16 @@ public interface ChunkInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be unlocked
 	 */
-	void unlock(long p_chunkID) throws DXRAMException;
+	boolean unlock(long p_chunkID) throws DXRAMException;
 
-	/**
-	 * Puts recovered Chunks
-	 * @param p_chunks
-	 *            the Chunks
-	 * @throws DXRAMException
-	 *             if the Chunks could not be put
-	 */
-	void putRecoveredChunks(Chunk[] p_chunks) throws DXRAMException;
+//	/**
+//	 * Puts recovered Chunks
+//	 * @param p_chunks
+//	 *            the Chunks
+//	 * @throws DXRAMException
+//	 *             if the Chunks could not be put
+//	 */
+//	void putRecoveredChunks(Chunk[] p_chunks) throws DXRAMException;
 
 	/**
 	 * Migrates the corresponding Chunk for the giving ID to another Node

@@ -53,16 +53,10 @@ public final class RawMemory {
 	 */
 	private RawMemory() {}
 
-	// Getters
-	/**
-	 * Return the current base address
-	 * @return the memoryBase the base address
-	 */
-	protected static long getMemoryBase() {
-		return m_memoryBase;
-	}
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
 
-	// Methods
 	/**
 	 * Initializes the memory
 	 * @param p_size
@@ -121,7 +115,7 @@ public final class RawMemory {
 
 		MemoryStatistic.getInstance().initMemory(p_size);
 
-		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x" + Long.toHexString(m_memoryBase) + ")");
+		//System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x" + Long.toHexString(m_memoryBase) + ")");
 
 		ret = m_memorySize;
 
@@ -225,6 +219,64 @@ public final class RawMemory {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * Gets the current segment status
+	 * @return the segment status
+	 */
+	public static Segment.Status[] getSegmentStatus() {
+		Segment.Status[] ret;
+
+		ret = new Segment.Status[m_segments.length];
+		for (int i = 0; i < m_segments.length; i++) {
+			ret[i] = m_segments[i].getStatus();
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Prints debug infos
+	 */
+	public static void printDebugInfos() {
+		StringBuilder output;
+		Segment.Status[] stati;
+		long freeSpace;
+		long freeBlocks;
+
+		stati = getSegmentStatus();
+		freeSpace = 0;
+		freeBlocks = 0;
+		for (Segment.Status status : stati) {
+			freeSpace += status.m_freeSpace;
+			freeBlocks += status.m_freeBlocks;
+		}
+
+		output = new StringBuilder();
+		output.append("\nRawMemory (" + Long.toHexString(m_memoryBase).toUpperCase() + "):");
+		output.append("\nSize: " + Tools.readableSize(m_memorySize));
+		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(FULL_SEGMENT_SIZE));
+		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
+		for (int i = 0; i < stati.length; i++) {
+			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assignedThread + "): " + Tools.readableSize(stati[i].m_freeSpace) + " in "
+					+ stati[i].m_freeBlocks + " blocks");
+		}
+		output.append("\n");
+
+		System.out.println(output);
+	}
+
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
+
+	/**
+	 * Return the current base address
+	 * @return the memoryBase the base address
+	 */
+	protected static long getMemoryBase() {
+		return m_memoryBase;
 	}
 
 	/**
@@ -395,6 +447,9 @@ public final class RawMemory {
 	 *             if the memory could not be set
 	 */
 	protected static void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
+		assert p_address > 0;
+		assert p_size >= 0;
+
 		try {
 			int lengthFieldSize;
 
@@ -425,13 +480,16 @@ public final class RawMemory {
 	 * Read a single byte from the specified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @return Byte read.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static byte readByte(final long p_address, final long p_offset) throws MemoryException {
+	protected static byte readByte(final long p_address, final long p_addressOffset) throws MemoryException {
+		assert p_address > 0;
+		assert p_addressOffset >= 0;
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -441,10 +499,11 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte read exceeds bounds");
+			// TODO asserts instead? have contracts on higher level
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Byte.BYTES && p_addressOffset + Byte.BYTES <= size, "Byte read exceeds bounds");
 
-			return UNSAFE.getByte(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return UNSAFE.getByte(m_memoryBase + p_address + lengthFieldSize + p_addressOffset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -466,13 +525,16 @@ public final class RawMemory {
 	 * Read a single short from the specified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @return Short read.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static short readShort(final long p_address, final long p_offset) throws MemoryException {
+	protected static short readShort(final long p_address, final long p_addressOffset) throws MemoryException {
+		assert p_address > 0;
+		assert p_addressOffset >= 0;
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -482,10 +544,11 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size, "Short read exceeds bounds");
+			// TODO asserts instead? have contracts on higher level
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Short.BYTES && p_addressOffset + Short.BYTES <= size, "Short read exceeds bounds");
 
-			return UNSAFE.getShort(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return UNSAFE.getShort(m_memoryBase + p_address + lengthFieldSize + p_addressOffset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -507,13 +570,16 @@ public final class RawMemory {
 	 * Read a single int from the specified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @return Int read.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static int readInt(final long p_address, final long p_offset) throws MemoryException {
+	protected static int readInt(final long p_address, final long p_addressOffset) throws MemoryException {
+		assert p_address > 0;
+		assert p_addressOffset >= 0;
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -523,10 +589,11 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size, "Int read exceeds bounds");
+			// TODO asserts instead? have contracts on higher level
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Integer.BYTES && p_addressOffset + Integer.BYTES <= size, "Int read exceeds bounds");
 
-			return UNSAFE.getInt(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return UNSAFE.getInt(m_memoryBase + p_address + lengthFieldSize + p_addressOffset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -548,13 +615,16 @@ public final class RawMemory {
 	 * Read a long from the specified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @return Long read.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static long readLong(final long p_address, final long p_offset) throws MemoryException {
+	protected static long readLong(final long p_address, final long p_addressOffset) throws MemoryException {
+		assert p_address > 0;
+		assert p_addressOffset >= 0;
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -564,62 +634,30 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Long.BYTES || p_offset + Long.BYTES <= size, "Long read exceeds bounds");
+			// TODO asserts instead? have contracts on higher level
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Long.BYTES || p_addressOffset + Long.BYTES <= size, "Long read exceeds bounds");
 
-			return UNSAFE.getLong(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return UNSAFE.getLong(m_memoryBase + p_address + lengthFieldSize + p_addressOffset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
 	}
 
-	/**
-	 * Reads a block of bytes from the memory
-	 * @param p_address
-	 *            the address to start reading
-	 * @return the read bytes
-	 * @throws MemoryException
-	 *             if the bytes could not be read
-	 */
-	protected static byte[] readBytes(final long p_address) throws MemoryException {
-		return readBytes(p_address, 0);
+	protected static int readBytes(final long p_address, final int p_addressOffset, final int p_length,
+			final int p_arrayOffset, final byte[] p_array) throws MemoryException {
+		return readWriteBytes(p_address, p_addressOffset, p_length, p_arrayOffset, p_array, true);
 	}
-
-	/**
-	 * Read a block from memory. This will read bytes until the end
-	 * of the allocated block, starting address + offset.
-	 * @param p_address
-	 *            Address of allocated block.
-	 * @param p_offset
-	 *            Offset added to address for start address to read from.
-	 * @return Byte array with read data.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	protected static byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
-		byte[] ret;
-		int lengthFieldSize;
+	
+	protected static byte[] readAllBytes(final long p_address) throws MemoryException {
 		int size;
-		long offset;
-
-		lengthFieldSize =
-				((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
-		size = (int) read(p_address, lengthFieldSize);
-
-		Contract.check(p_offset < size, "Offset out of bounds");
-
-		try {
-			ret = new byte[(int) (size - p_offset)];
-
-			offset = m_memoryBase + p_address + lengthFieldSize + p_offset;
-			for (int i = 0; i < size - p_offset; i++) {
-				ret[i] = UNSAFE.getByte(offset + i);
-			}
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
-
-		return ret;
+		byte[] data;
+		
+		size = getSize(p_address);
+		data = new byte[size];
+		readWriteBytes(p_address, 0, size, 0, data, true);
+		
+		return data;
 	}
 
 	/**
@@ -639,14 +677,14 @@ public final class RawMemory {
 	 * Write a single byte to the specified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @param p_value
 	 *            Byte to write.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeByte(final long p_address, final long p_offset, final byte p_value)
+	protected static void writeByte(final long p_address, final long p_addressOffset, final byte p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -657,10 +695,10 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte won't fit into allocated memory");
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Byte.BYTES && p_addressOffset + Byte.BYTES <= size, "Byte won't fit into allocated memory");
 
-			UNSAFE.putByte(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			UNSAFE.putByte(m_memoryBase + p_address + lengthFieldSize + p_addressOffset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -683,14 +721,14 @@ public final class RawMemory {
 	 * Write a short to the spcified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @param p_value
 	 *            Short to write.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeShort(final long p_address, final long p_offset, final short p_value)
+	protected static void writeShort(final long p_address, final long p_addressOffset, final short p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -701,11 +739,11 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size,
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Short.BYTES && p_addressOffset + Short.BYTES <= size,
 					"Short won't fit into allocated memory");
 
-			UNSAFE.putShort(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			UNSAFE.putShort(m_memoryBase + p_address + lengthFieldSize + p_addressOffset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -728,14 +766,14 @@ public final class RawMemory {
 	 * Write a single int to the specified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @param p_value
 	 *            int to write.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeInt(final long p_address, final long p_offset, final int p_value)
+	protected static void writeInt(final long p_address, final long p_addressOffset, final int p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -746,11 +784,11 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size,
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Integer.BYTES && p_addressOffset + Integer.BYTES <= size,
 					"Int won't fit into allocated memory");
 
-			UNSAFE.putInt(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			UNSAFE.putInt(m_memoryBase + p_address + lengthFieldSize + p_addressOffset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -773,14 +811,14 @@ public final class RawMemory {
 	 * Write a long value to the specified address + offset.
 	 * @param p_address
 	 *            Address.
-	 * @param p_offset
+	 * @param p_addressOffset
 	 *            Offset to add to the address.
 	 * @param p_value
 	 *            Long value to write.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeLong(final long p_address, final long p_offset, final long p_value)
+	protected static void writeLong(final long p_address, final long p_addressOffset, final long p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -791,62 +829,24 @@ public final class RawMemory {
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Long.BYTES && p_offset + Long.BYTES <= size, "Long won't fit into allocated memory");
+			Contract.check(p_addressOffset < size, "Offset out of bounds");
+			Contract.check(size >= Long.BYTES && p_addressOffset + Long.BYTES <= size, "Long won't fit into allocated memory");
 
-			UNSAFE.putLong(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			UNSAFE.putLong(m_memoryBase + p_address + lengthFieldSize + p_addressOffset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
 	}
 
-	/**
-	 * Write an array of bytes to the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @param p_value
-	 *            Bytes to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	protected static void writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
-		writeBytes(p_address, 0, p_value);
+	protected static int writeBytes(final long p_address, final int p_addressOffset, final int p_length,
+			final int p_arrayOffset, final byte[] p_array) throws MemoryException {
+		return readWriteBytes(p_address, p_addressOffset, p_length, p_arrayOffset, p_array, false);
 	}
 
-	/**
-	 * Write an array of bytes to the specified address + offset.
-	 * @param p_address
-	 *            Address.
-	 * @param p_offset
-	 *            Offset to add to the address.
-	 * @param p_value
-	 *            Bytes to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	protected static void writeBytes(final long p_address, final long p_offset, final byte[] p_value)
-			throws MemoryException {
-		int lengthFieldSize;
-		int size;
-		long offset;
-
-		lengthFieldSize =
-				((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
-		size = (int) read(p_address, lengthFieldSize);
-
-		Contract.check(p_offset < size, "Offset out of bounds");
-		Contract.check(p_offset + p_value.length <= size, "Array won't fit memory");
-
-		try {
-			offset = m_memoryBase + p_address + lengthFieldSize + p_offset;
-			for (int i = 0; i < p_value.length; i++) {
-				UNSAFE.putByte(offset + i, p_value[i]);
-			}
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+	protected static void writeAllBytes(final long p_address, byte[] p_data) throws MemoryException {
+		readWriteBytes(p_address, 0, p_data.length, 0, p_data, false);
 	}
-
+	
 	/**
 	 * Get the user definable state of a specified address referring
 	 * a malloc'd block of memory.
@@ -936,52 +936,62 @@ public final class RawMemory {
 		return (int) (p_address / FULL_SEGMENT_SIZE);
 	}
 
-	/**
-	 * Gets the current segment status
-	 * @return the segment status
-	 */
-	public static Segment.Status[] getSegmentStatus() {
-		Segment.Status[] ret;
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
 
-		ret = new Segment.Status[m_segments.length];
-		for (int i = 0; i < m_segments.length; i++) {
-			ret[i] = m_segments[i].getStatus();
+	private static int readWriteBytes(final long p_address, final int p_addressOffset, final int p_length,
+			final int p_arrayOffset, final byte[] p_array, final boolean p_isRead) throws MemoryException {
+		assert p_address > 0;
+		assert p_addressOffset >= 0;
+		assert p_length >= 0;
+		assert p_arrayOffset >= 0;
+		assert p_array != null;
+
+		int read;
+		int lengthFieldSize;
+		int size;
+		long memoryOffset;
+
+		lengthFieldSize =
+				((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+		size = (int) read(p_address, lengthFieldSize);
+
+		// verify bounds
+		if (p_addressOffset + p_length >= size || p_arrayOffset + p_length >= p_array.length) {
+			read = -1;
+		} else {
+			try {
+				memoryOffset = m_memoryBase + p_address + lengthFieldSize + p_addressOffset;
+				read = p_length;
+				// do we fit the memory region?
+				// limit to read max size of region
+				if (p_addressOffset + read > size) {
+					read = size - p_addressOffset;
+				}
+				// do we fit the target array?
+				// limit to size of target area in buffer
+				if (p_arrayOffset + read > p_array.length) {
+					read = p_array.length - p_arrayOffset;
+				}
+
+				if (p_isRead) {
+					for (int i = 0; i < read; i++) {
+						p_array[p_arrayOffset + i] = UNSAFE.getByte(memoryOffset + i);
+					}
+				} else {
+					for (int i = 0; i < read; i++) {
+						UNSAFE.putByte(memoryOffset + i, p_array[p_arrayOffset + i]);
+					}
+				}
+			} catch (final Throwable e) {
+				throw new MemoryException("Could not access memory", e);
+			}
 		}
 
-		return ret;
+		return read;
 	}
-
-	/**
-	 * Prints debug infos
-	 */
-	public static void printDebugInfos() {
-		StringBuilder output;
-		Segment.Status[] stati;
-		long freeSpace;
-		long freeBlocks;
-
-		stati = getSegmentStatus();
-		freeSpace = 0;
-		freeBlocks = 0;
-		for (Segment.Status status : stati) {
-			freeSpace += status.m_freeSpace;
-			freeBlocks += status.m_freeBlocks;
-		}
-
-		output = new StringBuilder();
-		output.append("\nRawMemory (" + Long.toHexString(m_memoryBase).toUpperCase() + "):");
-		output.append("\nSize: " + Tools.readableSize(m_memorySize));
-		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(FULL_SEGMENT_SIZE));
-		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
-		for (int i = 0; i < stati.length; i++) {
-			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assignedThread + "): " + Tools.readableSize(stati[i].m_freeSpace) + " in "
-					+ stati[i].m_freeBlocks + " blocks");
-		}
-		output.append("\n");
-
-		System.out.println(output);
-	}
-
+	
 	/**
 	 * Gets the suitable list for the given size
 	 * @param p_size
@@ -1116,6 +1126,10 @@ public final class RawMemory {
 
 		UNSAFE.putLong(m_memoryBase + p_address, value);
 	}
+	
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------
 
 	// Classes
 	/**

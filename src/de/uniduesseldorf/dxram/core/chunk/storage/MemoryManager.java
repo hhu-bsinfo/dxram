@@ -8,11 +8,9 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
@@ -25,12 +23,18 @@ public final class MemoryManager {
 
 	// Attributes
 	private static AtomicLong m_nextLocalID;
+	
+	public static final long INVALID_CHUNK_ID = ChunkID.INVALID_ID;
 
 	// Constructors
 	/**
 	 * Creates an instance of MemoryManager
 	 */
 	private MemoryManager() {}
+	
+	// -----------------------------------------------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------------------------------------------
 
 	// Methods
 	/**
@@ -131,83 +135,143 @@ public final class MemoryManager {
 
 		return ret;
 	}
-
-	/**
-	 * Puts a Chunk in the memory
-	 * @param p_chunk
-	 *            the Chunk
-	 * @throws MemoryException
-	 *             if the Chunk could not be put
-	 */
-	public static void put(final Chunk p_chunk) throws MemoryException {
-		int version;
-		long chunkID;
+	
+	public static boolean createChunk(final long p_chunkID, final int p_size) throws MemoryException
+	{
+		boolean ret;
 		long address;
-		byte sizeVersion;
-		int totalChunkSize;
-
-		chunkID = p_chunk.getChunkID();
-		version = p_chunk.getVersion();
-		sizeVersion = getSizeVersion(version);
-		totalChunkSize = p_chunk.getSize() + sizeVersion;
-
-		// Get the address from the CIDTable
-		address = CIDTable.get(chunkID);
-
-		// If address <= 0, the Chunk does not exists in the memory
+		
+		// check first if exists
+		address = CIDTable.get(p_chunkID);
 		if (address <= 0) {
-			address = RawMemory.malloc(totalChunkSize);
-			CIDTable.set(chunkID, address);
+			ret = false;
 		} else {
-			// check if we have to expand
-			long oldSize;
-
-			oldSize = RawMemory.getSize(address);
-			if (oldSize < totalChunkSize) {
-				// re-allocate
-				RawMemory.free(address);
-				address = RawMemory.malloc(totalChunkSize);
-				CIDTable.set(chunkID, address);
-			}
+			// + 1 byte default for version number
+			address = RawMemory.malloc(p_size + 1);
+			CIDTable.set(p_chunkID, address);
+			ret = true;
 		}
-
-		// set the size of the version header
-		RawMemory.setCustomState(address, sizeVersion - 1);
-		writeVersion(address, version, sizeVersion);
-		RawMemory.writeBytes(address, sizeVersion, p_chunk.getData().array());
+		
+		return ret;
 	}
 
-	/**
-	 * Gets the Chunk for the given ChunkID from the memory
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @return the corresponding Chunk
-	 * @throws MemoryException
-	 *             if the Chunk could not be get
-	 */
-	public static Chunk get(final long p_chunkID) throws MemoryException {
-		Chunk ret = null;
+	public static boolean chunkExists(final long p_chunkID) throws MemoryException
+	{
+		return CIDTable.get(p_chunkID) != 0;
+	}
+	
+	public static int readChunkVersion(final long p_chunkID) throws MemoryException
+	{
 		long address;
+		int version;
+		
+		// Get the address from the CIDTable
+		address = CIDTable.get(p_chunkID);
+		
+		if (address <= 0)
+		{
+			// TODO log?
+			version = -1;
+		} else {
+			version = readVersion(address, RawMemory.getCustomState(address) + 1);
+		}
+		
+		return version;
+	}
+	
+	public static int readChunkPayloadSize(final long p_chunkID) throws MemoryException {
+		long address;
+		int versionSize;
+		int size;
 
 		// Get the address from the CIDTable
 		address = CIDTable.get(p_chunkID);
 
-		// If address <= 0, the Chunk does not exists in the memory
-		if (address > 0) {
-			int version;
-			int sizeVersion;
-			byte[] data;
-
-			sizeVersion = RawMemory.getCustomState(address) + 1;
-			version = readVersion(address, sizeVersion);
-
-			// make sure to skip version data
-			data = RawMemory.readBytes(address, sizeVersion);
-
-			ret = new Chunk(p_chunkID, data, version);
+		if (address <= 0) {
+			// TODO log?
+			size = -1;
+		} else {
+			versionSize = RawMemory.getCustomState(address) + 1;
+			size = RawMemory.getSize(address) - versionSize;
 		}
 
-		return ret;
+		return size;
+	}
+	
+	public static int readChunkPayload(final long p_chunkID, final int p_payloadOffset, final int p_length, final int p_bufferOffset, final byte[] p_buffer) throws MemoryException
+	{		
+		long address;
+		int versionSize;
+		int read;
+		
+		// TODO Stefan: contract to check offset + length with buffer? 
+		// or have asserts only and runtime checks on api level? <-
+
+		// Get the address from the CIDTable
+		address = CIDTable.get(p_chunkID);
+
+		if (address <= 0) {
+			// TODO log?
+			read = -1;
+		} else {
+			// skip version when reading payload
+			versionSize = RawMemory.getCustomState(address) + 1;
+			read =  RawMemory.readBytes(address, versionSize + p_bufferOffset, p_length, p_bufferOffset, p_buffer);
+		}
+		
+		return read;
+	}
+	
+	public static int writeChunkPayload(final long p_chunkID, final int p_payloadOffset, final int p_length, final int p_bufferOffset, final byte[] p_buffer) throws MemoryException {
+		long address;
+		int written;
+		int currentVersionSize;
+		int currentVersion;
+		int currentVersionPayloadSize;
+		int currentVersionTotalChunkSize;
+		int nextVersionSize;
+		int nextVersion;
+		int nextVersionTotalChunkSize;
+		
+		// TODO Stefan: contract to check offset + length with buffer? 
+		// or have asserts only and runtime checks on api level? <-
+
+		// Get the address from the CIDTable
+		address = CIDTable.get(p_chunkID);
+
+		if (address <= 0)
+		{
+			// TODO log?
+			written = -1;
+		}
+		else
+		{
+			// get all metadata about the chunk
+			currentVersionSize = RawMemory.getCustomState(address) + 1;
+			currentVersion = readVersion(address, currentVersionSize);
+			currentVersionTotalChunkSize = RawMemory.getSize(address);
+			currentVersionPayloadSize = currentVersionTotalChunkSize - currentVersionSize;
+			
+			// check if we have to expand the chunk due to version size growth
+			nextVersion = currentVersion + 1;
+			nextVersionSize = getSizeVersion(nextVersion);
+			nextVersionTotalChunkSize = currentVersionPayloadSize + nextVersionSize;
+	
+			if (currentVersionTotalChunkSize < nextVersionTotalChunkSize) {
+				// re-allocate
+				RawMemory.free(address);
+				address = RawMemory.malloc(nextVersionTotalChunkSize);
+				CIDTable.set(p_chunkID, address);
+			}
+	
+			// write data
+			if (currentVersionSize != nextVersionSize)
+				RawMemory.setCustomState(address, nextVersionSize - 1);
+			writeVersion(address, nextVersion, nextVersionSize);
+			written = RawMemory.writeBytes(address, nextVersionSize + p_bufferOffset, p_length, p_bufferOffset, p_buffer);
+		}
+		
+		return written;
 	}
 
 	/**
@@ -218,7 +282,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be checked
 	 */
-	public static boolean isResponsible(final long p_chunkID) throws MemoryException {
+	public static boolean isResponsibleForChunk(final long p_chunkID) throws MemoryException {
 		long address;
 
 		// Get the address from the CIDTable
@@ -234,7 +298,7 @@ public final class MemoryManager {
 	 *            the ChunkID
 	 * @return whether this Chunk was migrated here or not
 	 */
-	public static boolean wasMigrated(final long p_chunkID) {
+	public static boolean wasChunkMigrated(final long p_chunkID) {
 		return ChunkID.getCreatorID(p_chunkID) != NodeID.getLocalNodeID();
 	}
 
@@ -245,7 +309,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public static void remove(final long p_chunkID) throws MemoryException {
+	public static void removeChunk(final long p_chunkID) throws MemoryException {
 		Pair<Boolean, Long> chunkCleanup;
 
 		// Get and delete the address from the CIDTable
@@ -283,6 +347,10 @@ public final class MemoryManager {
 	public static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
 		return CIDTable.getCIDOfAllMigratedChunks();
 	}
+	
+	// -----------------------------------------------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * Get the necessary storage size for the given version number.
@@ -290,10 +358,10 @@ public final class MemoryManager {
 	 *            Version number to get the storage size for.
 	 * @return Storage size for the specified version or -1 if size not supported.
 	 */
-	protected static byte getSizeVersion(final int p_version) {
+	private static byte getSizeVersion(final int p_version) {
+		assert p_version >= 0;
+		
 		byte ret;
-
-		Contract.check(p_version >= 0, "Invalid version, < 0");
 
 		// max supported 2^24
 		if (p_version <= 0xFF) {
@@ -320,7 +388,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeVersion(final long p_address, final int p_version, final int p_size)
+	private static void writeVersion(final long p_address, final int p_version, final int p_size)
 			throws MemoryException {
 		switch (p_size) {
 		case 1:
@@ -350,7 +418,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static int readVersion(final long p_address, final int p_size) throws MemoryException {
+	private static int readVersion(final long p_address, final int p_size) throws MemoryException {
 		int ret;
 
 		switch (p_size) {
