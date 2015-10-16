@@ -1,7 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -16,8 +15,6 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
-
-import sun.misc.Unsafe;
 
 /**
  * Controls the access to the RawMemory and the CIDTable
@@ -287,9 +284,10 @@ public final class MemoryManager {
 		return CIDTable.getCIDOfAllMigratedChunks();
 	}
 
-	/** Get the necessary storage size for the given version number.
-	 *
-	 * @param p_version Version number to get the storage size for.
+	/**
+	 * Get the necessary storage size for the given version number.
+	 * @param p_version
+	 *            Version number to get the storage size for.
 	 * @return Storage size for the specified version or -1 if size not supported.
 	 */
 	protected static byte getSizeVersion(final int p_version) {
@@ -311,12 +309,16 @@ public final class MemoryManager {
 		return ret;
 	}
 
-	/** Write the version number to the specified position.
-	 *
-	 * @param p_address Address to write version number to.
-	 * @param p_version Version number/value.
-	 * @param p_size Storage size this number needs.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write the version number to the specified position.
+	 * @param p_address
+	 *            Address to write version number to.
+	 * @param p_version
+	 *            Version number/value.
+	 * @param p_size
+	 *            Storage size this number needs.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeVersion(final long p_address, final int p_version, final int p_size)
 			throws MemoryException {
@@ -338,12 +340,15 @@ public final class MemoryManager {
 		}
 	}
 
-	/** Read the version number from the specified location.
-	 *
-	 * @param p_address Address to read the version number from.
-	 * @param p_size Storage size of the version number to read.
+	/**
+	 * Read the version number from the specified location.
+	 * @param p_address
+	 *            Address to read the version number from.
+	 * @param p_size
+	 *            Storage size of the version number to read.
 	 * @return Version number read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static int readVersion(final long p_address, final int p_size) throws MemoryException {
 		int ret;

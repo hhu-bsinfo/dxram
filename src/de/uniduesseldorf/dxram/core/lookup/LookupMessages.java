@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
@@ -29,37 +30,42 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_INIT_RANGE_RESPONSE = 4;
 	public static final byte SUBTYPE_LOOKUP_REQUEST = 5;
 	public static final byte SUBTYPE_LOOKUP_RESPONSE = 6;
-	public static final byte SUBTYPE_MIGRATE_REQUEST = 7;
-	public static final byte SUBTYPE_MIGRATE_RESPONSE = 8;
-	public static final byte SUBTYPE_MIGRATE_MESSAGE = 9;
-	public static final byte SUBTYPE_MIGRATE_RANGE_REQUEST = 10;
-	public static final byte SUBTYPE_MIGRATE_RANGE_RESPONSE = 11;
-	public static final byte SUBTYPE_REMOVE_REQUEST = 12;
-	public static final byte SUBTYPE_REMOVE_RESPONSE = 13;
-	public static final byte SUBTYPE_SEND_BACKUPS_MESSAGE = 14;
-	public static final byte SUBTYPE_SEND_SUPERPEERS_MESSAGE = 15;
-	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST = 16;
-	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE = 17;
-	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST = 18;
-	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE = 19;
-	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE = 20;
-	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE = 21;
-	public static final byte SUBTYPE_PING_SUPERPEER_MESSAGE = 22;
-	public static final byte SUBTYPE_SEARCH_FOR_PEER_REQUEST = 23;
-	public static final byte SUBTYPE_SEARCH_FOR_PEER_RESPONSE = 24;
-	public static final byte SUBTYPE_PROMOTE_PEER_REQUEST = 25;
-	public static final byte SUBTYPE_PROMOTE_PEER_RESPONSE = 26;
-	public static final byte SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE = 27;
-	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 28;
-	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 29;
-	public static final byte SUBTYPE_INSERT_ID_REQUEST = 30;
-	public static final byte SUBTYPE_INSERT_ID_RESPONSE = 31;
-	public static final byte SUBTYPE_GET_CHUNKID_REQUEST = 32;
-	public static final byte SUBTYPE_GET_CHUNKID_RESPONSE = 33;
-	public static final byte SUBTYPE_GET_MAPPING_COUNT_REQUEST = 34;
-	public static final byte SUBTYPE_GET_MAPPING_COUNT_RESPONSE = 35;
-	public static final byte SUBTYPE_LOOKUP_REFLECTION_REQUEST = 36;
-	public static final byte SUBTYPE_LOOKUP_REFLECTION_RESPONSE = 37;
+	public static final byte SUBTYPE_GET_BACKUP_RANGES_REQUEST = 7;
+	public static final byte SUBTYPE_GET_BACKUP_RANGES_RESPONSE = 8;
+	public static final byte SUBTYPE_UPDATE_ALL_MESSAGE = 9;
+	public static final byte SUBTYPE_MIGRATE_REQUEST = 10;
+	public static final byte SUBTYPE_MIGRATE_RESPONSE = 11;
+	public static final byte SUBTYPE_MIGRATE_MESSAGE = 12;
+	public static final byte SUBTYPE_MIGRATE_RANGE_REQUEST = 13;
+	public static final byte SUBTYPE_MIGRATE_RANGE_RESPONSE = 14;
+	public static final byte SUBTYPE_REMOVE_REQUEST = 15;
+	public static final byte SUBTYPE_REMOVE_RESPONSE = 16;
+	public static final byte SUBTYPE_SEND_BACKUPS_MESSAGE = 17;
+	public static final byte SUBTYPE_SEND_SUPERPEERS_MESSAGE = 18;
+	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST = 19;
+	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE = 20;
+	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST = 21;
+	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE = 22;
+	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE = 23;
+	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE = 24;
+	public static final byte SUBTYPE_PING_SUPERPEER_MESSAGE = 25;
+	public static final byte SUBTYPE_SEARCH_FOR_PEER_REQUEST = 26;
+	public static final byte SUBTYPE_SEARCH_FOR_PEER_RESPONSE = 27;
+	public static final byte SUBTYPE_PROMOTE_PEER_REQUEST = 28;
+	public static final byte SUBTYPE_PROMOTE_PEER_RESPONSE = 29;
+	public static final byte SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE = 30;
+	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 31;
+	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 32;
+	public static final byte SUBTYPE_INSERT_ID_REQUEST = 33;
+	public static final byte SUBTYPE_INSERT_ID_RESPONSE = 34;
+	public static final byte SUBTYPE_GET_CHUNKID_REQUEST = 35;
+	public static final byte SUBTYPE_GET_CHUNKID_RESPONSE = 36;
+	public static final byte SUBTYPE_GET_MAPPING_COUNT_REQUEST = 37;
+	public static final byte SUBTYPE_GET_MAPPING_COUNT_RESPONSE = 38;
+	public static final byte SUBTYPE_LOOKUP_REFLECTION_REQUEST = 39;
+	public static final byte SUBTYPE_LOOKUP_REFLECTION_RESPONSE = 40;
+	public static final byte SUBTYPE_TEST_REQUEST = 41;
+	public static final byte SUBTYPE_TEST_RESPONSE = 42;
 
 	// Constructors
 	/**
@@ -510,6 +516,195 @@ public final class LookupMessages {
 			}
 
 			return ret;
+		}
+
+	}
+
+	/**
+	 * Get Backup Ranges Request
+	 * @author Kevin Beineke
+	 *         08.10.2015
+	 */
+	public static class GetBackupRangesRequest extends AbstractRequest {
+
+		// Attributes
+		private short m_nodeID;
+
+		// Constructors
+		/**
+		 * Creates an instance of GetBackupRangesRequest
+		 */
+		public GetBackupRangesRequest() {
+			super();
+
+			m_nodeID = -1;
+		}
+
+		/**
+		 * Creates an instance of GetBackupRangesRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_nodeID
+		 *            the NodeID
+		 */
+		public GetBackupRangesRequest(final short p_destination, final short p_nodeID) {
+			super(p_destination, TYPE, SUBTYPE_GET_BACKUP_RANGES_REQUEST);
+
+			m_nodeID = p_nodeID;
+		}
+
+		// Getters
+		/**
+		 * Get the NodeID
+		 * @return the NodeID
+		 */
+		public final short getNodeID() {
+			return m_nodeID;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeNodeID(p_buffer, m_nodeID);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_nodeID = InputHelper.readNodeID(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getNodeIDWriteLength();
+		}
+
+	}
+
+	/**
+	 * Response to a GetBackupRangesRequest
+	 * @author Kevin Beineke
+	 *         08.10.2015
+	 */
+	public static class GetBackupRangesResponse extends AbstractResponse {
+
+		// Attributes
+		private BackupRange[] m_backupRanges;
+
+		// Constructors
+		/**
+		 * Creates an instance of GetBackupRangesResponse
+		 */
+		public GetBackupRangesResponse() {
+			super();
+
+			m_backupRanges = null;
+		}
+
+		/**
+		 * Creates an instance of GetBackupRangesResponse
+		 * @param p_request
+		 *            the corresponding GetBackupRangesRequest
+		 * @param p_backupRanges
+		 *            all backup ranges for requested NodeID
+		 */
+		public GetBackupRangesResponse(final GetBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
+			super(p_request, SUBTYPE_GET_BACKUP_RANGES_RESPONSE);
+
+			m_backupRanges = p_backupRanges;
+		}
+
+		// Getters
+		/**
+		 * Get all backup ranges
+		 * @return all backup ranges
+		 */
+		public final BackupRange[] getBackupRanges() {
+			return m_backupRanges;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeInt(p_buffer, m_backupRanges.length);
+			for (BackupRange backupRange : m_backupRanges) {
+				OutputHelper.writeBackupRange(p_buffer, backupRange);
+			}
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			int length;
+
+			length = InputHelper.readInt(p_buffer);
+			m_backupRanges = new BackupRange[length];
+			for (int i = 0; i < length; i++) {
+				m_backupRanges[i] = InputHelper.readBackupRange(p_buffer);
+			}
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getIntWriteLength() + OutputHelper.getBackupRangeWriteLength() * m_backupRanges.length;
+		}
+
+	}
+
+	/**
+	 * Update All Message
+	 * @author Kevin Beineke
+	 *         12.10.2015
+	 */
+	public static class UpdateAllMessage extends AbstractMessage {
+
+		// Attributes
+		private short m_owner;
+
+		// Constructors
+		/**
+		 * Creates an instance of UpdateAllMessage
+		 */
+		public UpdateAllMessage() {
+			super();
+
+			m_owner = -1;
+		}
+
+		/**
+		 * Creates an instance of UpdateAllMessage
+		 * @param p_destination
+		 *            the destination
+		 * @param p_owner
+		 *            the failed peer
+		 */
+		public UpdateAllMessage(final short p_destination, final short p_owner) {
+			super(p_destination, TYPE, SUBTYPE_UPDATE_ALL_MESSAGE);
+
+			m_owner = p_owner;
+		}
+
+		// Getters
+		/**
+		 * Get the owner
+		 * @return the NodeID
+		 */
+		public final short getOwner() {
+			return m_owner;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeNodeID(p_buffer, m_owner);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_owner = InputHelper.readNodeID(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getNodeIDWriteLength();
 		}
 
 	}

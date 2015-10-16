@@ -18,8 +18,6 @@ public class VersionsHashTable {
 	private int m_threshold;
 	private float m_loadFactor;
 
-	private int m_collisions;
-
 	// Constructors
 	/**
 	 * Creates an instance of VersionsHashTable
@@ -45,47 +43,7 @@ public class VersionsHashTable {
 		}
 	}
 
-	/**
-	 * Sets the key-value tuple at given index
-	 * @param p_index
-	 *            the index
-	 * @param p_key
-	 *            the key
-	 * @param p_value
-	 *            the value
-	 */
-	public final void set(final int p_index, final long p_key, final int p_value) {
-		int index;
-
-		index = p_index % m_elementCapacity * 3;
-		m_table[index] = (int) (p_key >> 32);
-		m_table[index + 1] = (int) p_key;
-		m_table[index + 2] = p_value;
-	}
-
-	/**
-	 * Gets the key at given index
-	 * @param p_index
-	 *            the index
-	 * @return the key
-	 */
-	public final long getKey(final int p_index) {
-		int index;
-
-		index = p_index % m_elementCapacity * 3;
-		return (long) m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
-	}
-
-	/**
-	 * Gets the value at given index
-	 * @param p_index
-	 *            the index
-	 * @return the value
-	 */
-	public final int getValue(final int p_index) {
-		return m_table[p_index % m_elementCapacity * 3 + 2];
-	}
-
+	// Getter
 	/**
 	 * Returns the number of keys in VersionsHashTable
 	 * @return the number of keys in VersionsHashTable
@@ -95,65 +53,14 @@ public class VersionsHashTable {
 	}
 
 	/**
-	 * Tests if VersionsHashTable is empty
+	 * Checks if VersionsHashTable is empty
 	 * @return true if VersionsHashTable maps no keys to values, false otherwise
 	 */
 	public final boolean isEmpty() {
 		return m_count == 0;
 	}
 
-	/**
-	 * Clears VersionsHashTable
-	 */
-	public final synchronized void clear() {
-		Arrays.fill(m_table, 0);
-		m_count = 0;
-		m_collisions = 0;
-	}
-
-	/**
-	 * Returns if there is an entry with given value in VersionsHashTable
-	 * @param p_value
-	 *            the searched value
-	 * @return whether there is an entry with given value in VersionsHashTable or not
-	 */
-	public final boolean containsValue(final int p_value) {
-		boolean ret = false;
-
-		for (int i = 0; i < m_intCapacity && !ret; i++) {
-			if (getValue(i) == p_value) {
-				ret = true;
-				break;
-			}
-		}
-		return ret;
-	}
-
-	/**
-	 * Returns if there is an entry with given key in VersionsHashTable
-	 * @param p_key
-	 *            the searched key (is incremented before insertion to avoid 0)
-	 * @return whether there is an entry with given key in VersionsHashTable or not
-	 */
-	public final boolean containsKey(final long p_key) {
-		boolean ret = false;
-		int index;
-		long iter;
-		final long key = p_key + 1;
-
-		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
-
-		iter = getKey(index);
-		while (iter != 0) {
-			if (iter == key) {
-				ret = true;
-				break;
-			}
-			iter = getKey(++index);
-		}
-		return ret;
-	}
-
+	// Methods
 	/**
 	 * Returns the value to which the specified key is mapped in VersionsHashTable
 	 * @param p_key
@@ -187,7 +94,114 @@ public class VersionsHashTable {
 	 *            the value
 	 * @return the old value
 	 */
-	public final long put(final long p_key, final int p_value) {
+	public final long putMax(final long p_key, final int p_value) {
+		long ret = 0;
+		int index;
+		long iter;
+		final long key = p_key + 1;
+
+		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
+
+		iter = getKey(index);
+		while (iter != 0) {
+			if (iter == key) {
+				ret = getValue(index);
+				if (ret > 0 && (p_value > ret || p_value < 0)) {
+					// Both values are positive and the new one is greater -> newer log entry
+					// Or current value is positive and new value is negative -> tombstone
+					set(index, key, p_value);
+				} else if (ret < 0 && p_value < ret) {
+					// Both values are negative and the new one is smaller -> newer tombstone
+					set(index, key, p_value);
+				}
+				break;
+			}
+			iter = getKey(++index);
+		}
+		if (ret == 0) {
+			// Key unknown until now
+			set(index, key, p_value);
+			m_count++;
+		}
+
+		if (m_count >= m_threshold) {
+			rehash();
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Clears VersionsHashTable
+	 */
+	public final void clear() {
+		Arrays.fill(m_table, 0);
+		m_count = 0;
+	}
+
+	/**
+	 * Gets the key at given index
+	 * @param p_index
+	 *            the index
+	 * @return the key
+	 */
+	private long getKey(final int p_index) {
+		int index;
+
+		index = p_index % m_elementCapacity * 3;
+		return (long) m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
+	}
+
+	/**
+	 * Gets the value at given index
+	 * @param p_index
+	 *            the index
+	 * @return the value
+	 */
+	private int getValue(final int p_index) {
+		return m_table[p_index % m_elementCapacity * 3 + 2];
+	}
+
+	/**
+	 * Sets the key-value tuple at given index
+	 * @param p_index
+	 *            the index
+	 * @param p_key
+	 *            the key
+	 * @param p_value
+	 *            the value
+	 */
+	private void set(final int p_index, final long p_key, final int p_value) {
+		int index;
+
+		index = p_index % m_elementCapacity * 3;
+		m_table[index] = (int) (p_key >> 32);
+		m_table[index + 1] = (int) p_key;
+		m_table[index + 2] = p_value;
+	}
+
+	/**
+	 * Hashes the given key
+	 * @param p_key
+	 *            the key
+	 * @return the hash value
+	 */
+	private int hash(final long p_key) {
+		long hash = p_key;
+
+		hash ^= hash >>> 20 ^ hash >>> 12;
+		return (int) (hash ^ hash >>> 7 ^ hash >>> 4);
+	}
+
+	/**
+	 * Maps the given key to the given value in VersionsHashTable
+	 * @param p_key
+	 *            the key (is incremented before insertion to avoid 0)
+	 * @param p_value
+	 *            the value
+	 * @return the old value
+	 */
+	private long put(final long p_key, final int p_value) {
 		long ret = -1;
 		int index;
 		long iter;
@@ -200,8 +214,6 @@ public class VersionsHashTable {
 			if (iter == key) {
 				ret = getValue(index);
 				break;
-			} else {
-				m_collisions++;
 			}
 			iter = getKey(++index);
 		}
@@ -218,88 +230,9 @@ public class VersionsHashTable {
 	}
 
 	/**
-	 * Maps the given key to the given value in VersionsHashTable
-	 * @param p_key
-	 *            the key (is incremented before insertion to avoid 0)
-	 * @param p_value
-	 *            the value
-	 * @return the old value
-	 */
-	public final long putMax(final long p_key, final int p_value) {
-		long ret = 0;
-		int index;
-		long iter;
-		final long key = p_key + 1;
-
-		if ((-1 & 0x0000FFFFFFFFFFFFL) != p_key) {
-			index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
-
-			iter = getKey(index);
-			while (iter != 0) {
-				if (iter == key) {
-					ret = getValue(index);
-					if (p_value > ret && ret > 0 || p_value < 0) {
-						// -x marks deleted objects
-						set(index, key, p_value);
-					}
-					break;
-				} else {
-					m_collisions++;
-				}
-				iter = getKey(++index);
-			}
-			if (ret == 0) {
-				set(index, key, p_value);
-				m_count++;
-			}
-
-			if (m_count >= m_threshold) {
-				rehash();
-			}
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Removes the given key from VersionsHashTable
-	 * @param p_key
-	 *            the key (is incremented before insertion to avoid 0)
-	 * @return the value
-	 */
-	public final long remove(final long p_key) {
-		long ret = -1;
-		int index;
-		long iter;
-		final long key = p_key + 1;
-
-		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
-
-		iter = getKey(index);
-		while (iter != 0) {
-			if (iter == key) {
-				ret = getValue(index);
-				set(index, 0, 0);
-				break;
-			}
-			iter = getKey(++index);
-		}
-
-		iter = getKey(++index);
-		while (iter != 0) {
-			set(index, 0, 0);
-			put(iter, getValue(index));
-
-			iter = getKey(++index);
-		}
-
-		return ret;
-	}
-
-	/**
 	 * Increases the capacity of and internally reorganizes VersionsHashTable
 	 */
-	protected final void rehash() {
+	private void rehash() {
 		int index = 0;
 		int oldCount;
 		int oldThreshold;
@@ -328,42 +261,4 @@ public class VersionsHashTable {
 		System.out.println("done");
 	}
 
-	/**
-	 * Hashes the given key
-	 * @param p_key
-	 *            the key
-	 * @return the hash value
-	 */
-	public final int hash(final long p_key) {
-		long hash = p_key;
-
-		/*
-		 * hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		 * hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-		 * return (int) ((hash >> 16) ^ hash);
-		 */
-		hash ^= hash >>> 20 ^ hash >>> 12;
-		return (int) (hash ^ hash >>> 7 ^ hash >>> 4);
-	}
-
-	/**
-	 * Print all tuples in VersionsHashTable
-	 */
-	public final void printCollisions() {
-		System.out.println("Number of collisions: " + m_collisions);
-	}
-
-	/**
-	 * Print all tuples in VersionsHashTable
-	 */
-	public final void print() {
-		long iter;
-
-		for (int i = 0; i < m_elementCapacity; i++) {
-			iter = getKey(i);
-			if (iter != 0) {
-				System.out.println("Key: " + iter + ", value: " + getValue(i));
-			}
-		}
-	}
 }

@@ -21,15 +21,18 @@ import de.uniduesseldorf.dxram.utils.Tools;
 public final class LogTest implements Runnable {
 
 	// Constants
+	private static final boolean TEST_LOCALLY = false;
+
+	// Attributes
 	private static int m_numberOfThreads;
 	private static int m_minChunkSize;
 	private static int m_maxChunkSize;
-	private static int m_updates;
-	private static int m_deletes;
 	private static long m_numberOfChunks;
 	private static long m_chunksPerThread;
-
-	// Attributes
+	private static int m_numberOfUpdates;
+	private static int m_updatesPerThread;
+	private static int m_numberOfDeletes;
+	private static int m_deletesPerThread;
 	private short m_nodeID;
 	private int m_id;
 
@@ -65,8 +68,10 @@ public final class LogTest implements Runnable {
 			m_chunksPerThread = m_numberOfChunks / m_numberOfThreads;
 			m_minChunkSize = Integer.parseInt(p_arguments[2]);
 			m_maxChunkSize = Integer.parseInt(p_arguments[3]);
-			m_updates = Integer.parseInt(p_arguments[4]);
-			m_deletes = Integer.parseInt(p_arguments[5]);
+			m_numberOfUpdates = Integer.parseInt(p_arguments[4]);
+			m_updatesPerThread = m_numberOfUpdates / m_numberOfThreads;
+			m_numberOfDeletes = Integer.parseInt(p_arguments[5]);
+			m_deletesPerThread = m_numberOfDeletes / m_numberOfThreads;
 
 			if (m_chunksPerThread > Integer.MAX_VALUE) {
 				System.out.println("Too many chunks per thread! Exiting.");
@@ -127,6 +132,7 @@ public final class LogTest implements Runnable {
 		Chunk[] fillChunks;
 		ArrayList<Long> chunkIDList;
 		ArrayList<Chunk> chunkList;
+		LogInterface log = null;
 
 		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize + " Bytes and " + m_maxChunkSize + " Bytes");
 
@@ -150,7 +156,7 @@ public final class LogTest implements Runnable {
 				chunkList.add(chunks[i]);
 			}
 			Collections.shuffle(chunkList);
-			updates = chunkList.subList(0, m_updates).toArray(new Chunk[m_updates]);
+			updates = chunkList.subList(0, m_updatesPerThread).toArray(new Chunk[m_updatesPerThread]);
 
 			// Create list for deletes (chunkIDs)
 			chunkIDList = new ArrayList<Long>();
@@ -158,32 +164,63 @@ public final class LogTest implements Runnable {
 				chunkIDList.add(chunks[i].getChunkID());
 			}
 			Collections.shuffle(chunkIDList);
-			removes = chunkIDList.subList(0, m_deletes).stream().mapToLong(l -> l).toArray();
+			removes = chunkIDList.subList(0, m_deletesPerThread).stream().mapToLong(l -> l).toArray();
 
 			// Create fill chunks (to clear secondary log buffer)
 			fillChunks = Core.createNewChunks(new int[] {1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576});
+
+			if (TEST_LOCALLY) {
+				log = CoreComponentFactory.getLogInterface();
+				log.initBackupRangeLocallyTEST();
+			}
 
 			/*
 			 * Execution
 			 */
 			// Put
 			System.out.print("Starting replication...");
-			Core.put(chunks);
+			if (TEST_LOCALLY) {
+				for (Chunk chunk : chunks) {
+					chunk.incVersion();
+					log.logChunkLocallyTEST(chunk);
+				}
+			} else {
+				Core.put(chunks);
+			}
 			System.out.println("done\n");
 
 			// Updates
 			System.out.print("Starting updates...");
-			Core.put(updates);
+			if (TEST_LOCALLY) {
+				for (Chunk chunk : updates) {
+					chunk.incVersion();
+					log.logChunkLocallyTEST(chunk);
+				}
+			} else {
+				Core.put(updates);
+			}
 			System.out.println("done\n");
 
 			// Delete
 			System.out.print("Starting deletion...");
-			Core.remove(removes);
+			if (TEST_LOCALLY) {
+				for (long chunkID : removes) {
+					log.removeChunkLocallyTEST(chunkID, 1000);
+				}
+			} else {
+				Core.remove(removes);
+			}
 			System.out.println("done\n");
 
 			// Put dummies
 			System.out.print("Starting fill replication...");
-			Core.put(fillChunks);
+			if (TEST_LOCALLY) {
+				for (Chunk chunk : fillChunks) {
+					log.logChunkLocallyTEST(chunk);
+				}
+			} else {
+				Core.put(fillChunks);
+			}
 			System.out.println("done");
 
 		} catch (final DXRAMException e) {

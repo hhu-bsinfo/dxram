@@ -260,6 +260,8 @@ public final class Configuration {
 
 		// Backup activation flag
 		public static final ConfigurationEntry<Boolean> LOG_ACTIVE = new ConfigurationEntry<Boolean>("log.active", Boolean.class, false);
+		// Checksum usage flag
+		public static final ConfigurationEntry<Boolean> LOG_CHECKSUM = new ConfigurationEntry<Boolean>("log.checksum", Boolean.class, false);
 		// Replication factor
 		public static final ConfigurationEntry<Integer> REPLICATION_FACTOR = new ConfigurationEntry<Integer>("log.replication_factor", Integer.class, 3);
 		// Size of the primary log file (default 8 GB)
@@ -271,6 +273,11 @@ public final class Configuration {
 				new ConfigurationEntry<Integer>("log.buffer_size", Integer.class, 256 * 1024 * 1024);
 		// Size of the segments (default 8 MB)
 		public static final ConfigurationEntry<Integer> LOG_SEGMENT_SIZE = new ConfigurationEntry<Integer>("log.segment_size", Integer.class, 8 * 1024 * 1024);
+		// Size of the segments (default 8 MB)
+		public static final ConfigurationEntry<Integer> FLASHPAGE_SIZE = new ConfigurationEntry<Integer>("log.flashpage_size", Integer.class, 4096);
+		// Size of the segments (default 8 MB)
+		public static final ConfigurationEntry<Integer> REORG_UTILIZATION_THRESHOLD = new ConfigurationEntry<Integer>("log.reorg_util_threshold",
+				Integer.class, 70);
 		// Directory for log files
 		public static final ConfigurationEntry<String> LOG_DIRECTORY = new ConfigurationEntry<String>("log.directory", String.class, "./log/");
 		// Write buffer synchronization method
@@ -348,11 +355,14 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(RAM_SIZE);
 			CONFIGURATION_ENTRIES.add(RAM_MANAGEMENT);
 			CONFIGURATION_ENTRIES.add(LOG_ACTIVE);
+			CONFIGURATION_ENTRIES.add(LOG_CHECKSUM);
 			CONFIGURATION_ENTRIES.add(REPLICATION_FACTOR);
 			CONFIGURATION_ENTRIES.add(PRIMARY_LOG_SIZE);
 			CONFIGURATION_ENTRIES.add(SECONDARY_LOG_SIZE);
 			CONFIGURATION_ENTRIES.add(WRITE_BUFFER_SIZE);
 			CONFIGURATION_ENTRIES.add(LOG_SEGMENT_SIZE);
+			CONFIGURATION_ENTRIES.add(FLASHPAGE_SIZE);
+			CONFIGURATION_ENTRIES.add(REORG_UTILIZATION_THRESHOLD);
 			CONFIGURATION_ENTRIES.add(LOG_DIRECTORY);
 			CONFIGURATION_ENTRIES.add(LOG_PARALLEL_BUFFERING);
 			CONFIGURATION_ENTRIES.add(LOOKUP_SLEEP);

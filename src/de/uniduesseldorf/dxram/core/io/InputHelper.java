@@ -9,6 +9,7 @@ import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.utils.Contract;
@@ -555,6 +556,40 @@ public final class InputHelper {
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		ret = new Locations(p_buffer.getLong(), new long[] {p_buffer.getLong(), p_buffer.getLong()});
+
+		return ret;
+	}
+
+	/**
+	 * Reads a BackupRange
+	 * @param p_input
+	 *            the input
+	 * @return the BackupRange
+	 * @throws IOException
+	 *             if the locations could not be read
+	 */
+	public static BackupRange readBackupRange(final DataInput p_input) throws IOException {
+		BackupRange ret;
+
+		Contract.checkNotNull(p_input, "no input given");
+
+		ret = new BackupRange(p_input.readLong(), p_input.readLong());
+
+		return ret;
+	}
+
+	/**
+	 * Reads a BackupRange
+	 * @param p_buffer
+	 *            the buffer
+	 * @return the BackupRange
+	 */
+	public static BackupRange readBackupRange(final ByteBuffer p_buffer) {
+		BackupRange ret;
+
+		Contract.checkNotNull(p_buffer, "no buffer given");
+
+		ret = new BackupRange(p_buffer.getLong(), p_buffer.getLong());
 
 		return ret;
 	}

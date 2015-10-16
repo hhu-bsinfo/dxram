@@ -4,9 +4,9 @@ package de.uniduesseldorf.dxram.core.log.storage;
 import java.io.IOException;
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.log.LogHandler;
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
 
 /**
  * This class implements the secondary log buffer
@@ -15,11 +15,14 @@ import de.uniduesseldorf.dxram.core.log.header.LogEntryHeaderInterface;
  */
 public final class SecondaryLogBuffer {
 
+	// Constants
+	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
+
 	// Attributes
 	private byte[] m_buffer;
 	private int m_bytesInBuffer;
 
-	private SecondaryLogWithSegments m_secondaryLog;
+	private SecondaryLog m_secondaryLog;
 
 	// Constructors
 	/**
@@ -27,29 +30,29 @@ public final class SecondaryLogBuffer {
 	 * @param p_secondaryLog
 	 *            Instance of the corresponding secondary log. Used to write directly to secondary
 	 */
-	public SecondaryLogBuffer(final SecondaryLogWithSegments p_secondaryLog) {
+	public SecondaryLogBuffer(final SecondaryLog p_secondaryLog) {
 
 		m_secondaryLog = p_secondaryLog;
 
 		m_bytesInBuffer = 0;
-		m_buffer = new byte[LogHandler.FLASHPAGE_SIZE];
+		m_buffer = new byte[FLASHPAGE_SIZE];
 	}
 
 	// Getter
-	/**
-	 * Returns whether the secondary log buffer is empty or not
-	 * @return whether buffer is empty or not
-	 */
-	public boolean isBufferEmpty() {
-		return m_bytesInBuffer == 0;
-	}
-
 	/**
 	 * Returns the number of bytes
 	 * @return the number of bytes
 	 */
 	public int getOccupiedSpace() {
 		return m_bytesInBuffer;
+	}
+
+	/**
+	 * Returns whether the secondary log buffer is empty or not
+	 * @return whether buffer is empty or not
+	 */
+	public boolean isBufferEmpty() {
+		return m_bytesInBuffer == 0;
 	}
 
 	// Methods
@@ -85,7 +88,7 @@ public final class SecondaryLogBuffer {
 
 		// Trim log entries (removes all NodeIDs)
 		buffer = processBuffer(p_buffer, p_bufferOffset, p_entryOrRangeSize);
-		if (m_bytesInBuffer + buffer.length >= LogHandler.FLASHPAGE_SIZE) {
+		if (m_bytesInBuffer + buffer.length >= FLASHPAGE_SIZE) {
 			// Merge current secondary log buffer and new buffer and write to secondary log
 			flushAllDataToSecLog(buffer, p_bufferOffset, buffer.length);
 		} else {
@@ -110,21 +113,20 @@ public final class SecondaryLogBuffer {
 		int oldBufferOffset = p_bufferOffset;
 		int newBufferOffset = 0;
 		int logEntrySize;
-		short secLogOffset;
-		LogEntryHeaderInterface logEntryHeader;
+		AbstractLogEntryHeader logEntryHeader;
 
 		buffer = new byte[p_entryOrRangeSize];
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry
 			logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, oldBufferOffset);
-			logEntrySize = logEntryHeader.getHeaderSize() + logEntryHeader.getLength(p_buffer, oldBufferOffset);
-			secLogOffset = logEntryHeader.getConversionOffset();
+			logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
 
 			// Copy primary log header, but skip NodeID and RangeID
-			System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize - secLogOffset);
-
+			// System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize -
+			// secLogOffset);
+			newBufferOffset += AbstractLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize,
+					buffer.length - newBufferOffset, logEntryHeader);
 			oldBufferOffset += logEntrySize;
-			newBufferOffset += logEntrySize - secLogOffset;
 		}
 		buffer = Arrays.copyOf(buffer, newBufferOffset);
 

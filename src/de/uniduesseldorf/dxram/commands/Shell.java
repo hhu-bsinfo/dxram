@@ -24,6 +24,8 @@ public final class Shell {
 
 		c = new CmdHelp();
 		m_commandMap.put(c.getName(), c);
+		c = new CmdRecover();
+		m_commandMap.put(c.getName(), c);
 		c = new CmdClear();
 		m_commandMap.put(c.getName(), c);
 		c = new CmdNodes();

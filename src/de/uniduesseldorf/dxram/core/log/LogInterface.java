@@ -1,14 +1,9 @@
 
 package de.uniduesseldorf.dxram.core.log;
 
-import java.io.IOException;
-
 import de.uniduesseldorf.dxram.core.CoreComponent;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.log.storage.PrimaryLog;
-import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogBuffer;
-import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogWithSegments;
 
 /**
  * Methods for logging the data
@@ -16,60 +11,36 @@ import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogWithSegments;
  */
 public interface LogInterface extends CoreComponent {
 
-	// Getter
 	/**
-	 * Returns the primary log
-	 * @return the primary log
+	 * Initializes a backup range for Chunks created on this node
+	 * @Note: Test method to stress logging
 	 */
-	PrimaryLog getPrimaryLog();
+	// TODO: Remove
+	void initBackupRangeLocallyTEST();
 
 	/**
-	 * Returns the secondary log
+	 * Logs a Chunk locally (created on the very same node)
+	 * @param p_chunk
+	 *            the Chunk
+	 * @throws DXRAMException
+	 *             if the Chunks could not be logged
+	 * @Note: Test method to stress logging
+	 */
+	// TODO: Remove
+	void logChunkLocallyTEST(final Chunk p_chunk) throws DXRAMException;
+
+	/**
+	 * Removes a Chunk locally (created on the very same node)
 	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_source
-	 *            the source NodeID
-	 * @param p_rangeID
-	 *            the RangeID for migrations or -1
-	 * @return the secondary log
-	 * @throws IOException
-	 *             if the secondary log could not be returned
-	 * @throws InterruptedException
-	 *             if the secondary log could not be returned
+	 *            the Chunk
+	 * @param p_version
+	 *            the version
+	 * @throws DXRAMException
+	 *             if the Chunks could not be removed
+	 * @Note: Test method to stress logging
 	 */
-	SecondaryLogWithSegments getSecondaryLog(long p_chunkID, short p_source, byte p_rangeID) throws IOException, InterruptedException;
-
-	/**
-	 * Returns the secondary log buffer
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_source
-	 *            the source NodeID
-	 * @param p_rangeID
-	 *            the RangeID for migrations or -1
-	 * @return the secondary log buffer
-	 * @throws IOException
-	 *             if the secondary log buffer could not be returned
-	 * @throws InterruptedException
-	 *             if the secondary log buffer could not be returned
-	 */
-	SecondaryLogBuffer getSecondaryLogBuffer(long p_chunkID, short p_source, byte p_rangeID) throws IOException, InterruptedException;
-
-	/**
-	 * Returns the backup range
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @return the first ChunkID of the range
-	 */
-	long getBackupRange(long p_chunkID);
-
-	/**
-	 * Returns the header size
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @return the header size
-	 */
-	short getHeaderSize(final short p_nodeID);
+	// TODO: Remove
+	void removeChunkLocallyTEST(final long p_chunkID, final int p_version) throws DXRAMException;
 
 	// Methods
 	/**
@@ -82,74 +53,18 @@ public interface LogInterface extends CoreComponent {
 	void initBackupRange(long p_firstChunkIDOrRangeID, short[] p_backupPeers);
 
 	/**
-	 * Creates a new Chunk
-	 * @param p_chunk
-	 *            the chunk
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @param p_source
-	 *            the source NodeID
-	 * @return number of successfully written bytes
-	 * @throws DXRAMException
-	 *             if the Chunk could not be logged
-	 */
-	long logChunk(Chunk p_chunk, byte p_rangeID, short p_source) throws DXRAMException;
-
-	/**
-	 * Creates a new Chunk
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_version
-	 *            the version
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @param p_source
-	 *            the source NodeID
-	 * @throws DXRAMException
-	 *             if the Chunk could not be logged
-	 */
-	void removeChunk(long p_chunkID, int p_version, byte p_rangeID, short p_source) throws DXRAMException;
-
-	/**
-	 * Recovers the local data of one backup range
+	 * Recovers all Chunks of given backup range
 	 * @param p_owner
-	 *            the NodeID
+	 *            the NodeID of the node whose Chunks have to be restored
 	 * @param p_chunkID
 	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the RangeID
+	 * @return the recovered Chunks
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	void recoverAllLogEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
-
-	/**
-	 * Recovers some local data of one node from log
-	 * @param p_owner
-	 *            the NodeID
-	 * @param p_low
-	 *            lower bound
-	 * @param p_high
-	 *            higher bound
-	 * @throws DXRAMException
-	 *             if the Chunks could not be read
-	 */
-	void recoverRange(short p_owner, long p_low, long p_high) throws DXRAMException;
-
-	/**
-	 * Reads the local data of one log
-	 * @param p_owner
-	 *            the NodeID
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @throws DXRAMException
-	 *             if the Chunks could not be read
-	 * @return the local data
-	 * @note for testing only
-	 */
-	byte[][] readAllEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
+	Chunk[] recoverBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
 	 * Prints the metadata of one node's log
@@ -163,28 +78,19 @@ public interface LogInterface extends CoreComponent {
 	 *             if the Chunks could not be read
 	 * @note for testing only
 	 */
-	void printMetadataOfAllEntries(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
+	void printBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
-	 * Flushes the primary log write buffer
-	 * @throws IOException
-	 *             if primary log could not be flushed
-	 * @throws InterruptedException
-	 *             if caller is interrupted
+	 * Returns the header size
+	 * @param p_nodeID
+	 *            the NodeID
+	 * @param p_localID
+	 *            the LocalID
+	 * @param p_size
+	 *            the size of the Chunk
+	 * @param p_version
+	 *            the version of the Chunk
+	 * @return the header size
 	 */
-	void flushDataToPrimaryLog() throws IOException, InterruptedException;
-
-	/**
-	 * Flushes all secondary log buffers
-	 * @throws IOException
-	 *             if at least one secondary log could not be flushed
-	 * @throws InterruptedException
-	 *             if caller is interrupted
-	 */
-	void flushDataToSecondaryLogs() throws IOException, InterruptedException;
-
-	/**
-	 * Grants the reorganization thread access to a secondary log
-	 */
-	void grantAccess();
+	short getHeaderSize(final short p_nodeID, final long p_localID, final int p_size, final int p_version);
 }
