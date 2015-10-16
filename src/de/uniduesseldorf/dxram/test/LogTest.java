@@ -168,22 +168,23 @@ public final class LogTest implements Runnable {
 			 */
 			// Put
 			System.out.print("Starting replication...");
-			Core.put(chunks);
+			for (int i = 0; i < 257; i++)
+				Core.put(chunks);
 			System.out.println("done\n");
 
 			// Updates
 			System.out.print("Starting updates...");
-			Core.put(updates);
+			//Core.put(updates);
 			System.out.println("done\n");
 
 			// Delete
 			System.out.print("Starting deletion...");
-			Core.remove(removes);
+			//Core.remove(removes);
 			System.out.println("done\n");
 
 			// Put dummies
 			System.out.print("Starting fill replication...");
-			Core.put(fillChunks);
+			//Core.put(fillChunks);
 			System.out.println("done");
 
 		} catch (final DXRAMException e) {

@@ -288,6 +288,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		short primaryPeer;
 		GetRequest request;
 		GetResponse response;
+		Locations locations;
 
 		Operation.GET.enter();
 
@@ -301,7 +302,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				ret = MemoryManager.get(p_chunkID);
 			} else {
 				while (null == ret) {
-					primaryPeer = m_lookup.get(p_chunkID).getPrimaryPeer();
+					locations = m_lookup.get(p_chunkID);
+					if (locations == null)
+						break;
+					
+					primaryPeer = locations.getPrimaryPeer();
 
 					if (primaryPeer == m_nodeID) {
 						// Local get
