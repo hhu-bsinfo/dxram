@@ -8,10 +8,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
+import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
+import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Tools;
 
@@ -26,7 +29,7 @@ public final class MemoryManagementTest {
 	private static final String ARGUMENT_CHUNK_COUNT = "-c";
 	private static final String ARGUMENT_THREAD_COUNT = "-t";
 
-	private static final int DEFAULT_CHUNK_COUNT = 1000000;
+	private static final int DEFAULT_CHUNK_COUNT = 1;
 	private static final int DEFAULT_THREAD_COUNT = 1;
 
 	// Constructors
@@ -89,13 +92,14 @@ public final class MemoryManagementTest {
 	 *             if the memory management could not be initialized
 	 */
 	private static void init(final int p_chunkCount, final int p_threadCount) throws MemoryException {
-		long size;
 
-		size = p_threadCount - 1;
-		size *= 1 << 30;
-		size += p_chunkCount * 50L;
-
-		MemoryManager.initialize(size);
+		// Initialize DXRAM
+		try {
+			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
+					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
+		} catch (final DXRAMException e1) {
+			e1.printStackTrace();
+		}
 	}
 
 	/**
@@ -107,7 +111,7 @@ public final class MemoryManagementTest {
 		CIDTable.printDebugInfos();
 		RawMemory.printDebugInfos();
 
-		MemoryManager.disengage();
+		Core.close();
 	}
 
 	/**
@@ -138,19 +142,22 @@ public final class MemoryManagementTest {
 				public void run() {
 					final int count = p_chunkCount / p_threadCount;
 					Chunk chunk;
-					long chunkID;
+					// long chunkID;
 					byte[] data;
 					Random random;
 
 					random = new Random();
 					for (int i = 1; i <= count; i++) {
 						try {
-							chunkID = MemoryManager.getNextLocalID().getLocalID();
+							// chunkID = MemoryManager.getNextLocalID().getLocalID();
 							data = new byte[random.nextInt(49) + 16];
-							chunk = new Chunk(chunkID, data, 0);
-
-							MemoryManager.put(chunk);
-						} catch (final MemoryException e) {
+							// chunk = new Chunk(chunkID, data, 0);
+							//
+							// MemoryManager.put(chunk);
+							chunk = Core.createNewChunk(data.length);
+							chunk.getData().put(data);
+							Core.put(chunk);
+						} catch (final DXRAMException e) {
 							e.printStackTrace();
 						}
 					}
@@ -198,8 +205,8 @@ public final class MemoryManagementTest {
 
 					for (int i = 1; i <= count; i++) {
 						try {
-							MemoryManager.get(i);
-						} catch (final MemoryException e) {
+							Core.get(i);
+						} catch (final DXRAMException e) {
 							e.printStackTrace();
 						}
 					}

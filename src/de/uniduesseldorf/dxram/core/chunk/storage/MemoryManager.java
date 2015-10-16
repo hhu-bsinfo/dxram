@@ -12,6 +12,8 @@ import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
 /**
@@ -141,21 +143,38 @@ public final class MemoryManager {
 		int version;
 		long chunkID;
 		long address;
+		byte sizeVersion;
+		int totalChunkSize;
 
 		chunkID = p_chunk.getChunkID();
 		version = p_chunk.getVersion();
+		sizeVersion = getSizeVersion(version);
+		totalChunkSize = p_chunk.getSize() + sizeVersion;
 
 		// Get the address from the CIDTable
 		address = CIDTable.get(chunkID);
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address <= 0) {
-			address = RawMemory.malloc(p_chunk.getSize() + Integer.BYTES);
+			address = RawMemory.malloc(totalChunkSize);
 			CIDTable.set(chunkID, address);
+		} else {
+			// check if we have to expand
+			long oldSize;
+
+			oldSize = RawMemory.getSize(address);
+			if (oldSize < totalChunkSize) {
+				// re-allocate
+				RawMemory.free(address);
+				address = RawMemory.malloc(totalChunkSize);
+				CIDTable.set(chunkID, address);
+			}
 		}
 
-		RawMemory.writeVersion(address, version);
-		RawMemory.writeBytes(address, p_chunk.getData().array());
+		// set the size of the version header
+		RawMemory.setCustomState(address, sizeVersion - 1);
+		writeVersion(address, version, sizeVersion);
+		RawMemory.writeBytes(address, sizeVersion, p_chunk.getData().array());
 	}
 
 	/**
@@ -168,7 +187,6 @@ public final class MemoryManager {
 	 */
 	public static Chunk get(final long p_chunkID) throws MemoryException {
 		Chunk ret = null;
-		int version;
 		long address;
 
 		// Get the address from the CIDTable
@@ -176,8 +194,17 @@ public final class MemoryManager {
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address > 0) {
-			version = RawMemory.readVersion(address);
-			ret = new Chunk(p_chunkID, RawMemory.readBytes(address), version);
+			int version;
+			int sizeVersion;
+			byte[] data;
+
+			sizeVersion = RawMemory.getCustomState(address) + 1;
+			version = readVersion(address, sizeVersion);
+
+			// make sure to skip version data
+			data = RawMemory.readBytes(address, sizeVersion);
+
+			ret = new Chunk(p_chunkID, data, version);
 		}
 
 		return ret;
@@ -219,16 +246,18 @@ public final class MemoryManager {
 	 *             if the Chunk could not be get
 	 */
 	public static void remove(final long p_chunkID) throws MemoryException {
-		long address;
+		Pair<Boolean, Long> chunkCleanup;
 
 		// Get and delete the address from the CIDTable
-		address = CIDTable.delete(p_chunkID);
+		chunkCleanup = CIDTable.delete(p_chunkID);
 
-		// If address <= 0, the Chunk does not exists in the memory
-		if (address > 0) {
-			RawMemory.free(address);
-		} else {
-			throw new MemoryException("MemoryManager.remove failed");
+		// check if we have to cleanup the zombie chunk
+		// the table can tell us not to do this to keep the
+		// zombie "alive" in memory for later garbage collection.
+		// The table marks it as deleted, but keeps the address
+		// for this purpose
+		if (chunkCleanup.first()) {
+			RawMemory.free(chunkCleanup.second());
 		}
 	}
 
@@ -253,5 +282,98 @@ public final class MemoryManager {
 	 */
 	public static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
 		return CIDTable.getCIDOfAllMigratedChunks();
+	}
+
+	/**
+	 * Get the necessary storage size for the given version number.
+	 * @param p_version
+	 *            Version number to get the storage size for.
+	 * @return Storage size for the specified version or -1 if size not supported.
+	 */
+	protected static byte getSizeVersion(final int p_version) {
+		byte ret;
+
+		Contract.check(p_version >= 0, "Invalid version, < 0");
+
+		// max supported 2^24
+		if (p_version <= 0xFF) {
+			ret = 1;
+		} else if (p_version <= 0xFFFF) {
+			ret = 2;
+		} else if (p_version <= 0xFFFFFF) {
+			ret = 3;
+		} else {
+			ret = -1;
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Write the version number to the specified position.
+	 * @param p_address
+	 *            Address to write version number to.
+	 * @param p_version
+	 *            Version number/value.
+	 * @param p_size
+	 *            Storage size this number needs.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
+	 */
+	protected static void writeVersion(final long p_address, final int p_version, final int p_size)
+			throws MemoryException {
+		switch (p_size) {
+		case 1:
+			RawMemory.writeByte(p_address, (byte) (p_version & 0xFF));
+			break;
+		case 2:
+			RawMemory.writeShort(p_address, (short) (p_version & 0xFFFF));
+			break;
+		case 3:
+			// store as big endian
+			RawMemory.writeByte(p_address, (byte) ((p_version >> 16) & 0xFF));
+			RawMemory.writeShort(p_address, 2, (short) (p_version & 0xFFFF));
+			break;
+		default:
+			assert 1 == 2;
+			break;
+		}
+	}
+
+	/**
+	 * Read the version number from the specified location.
+	 * @param p_address
+	 *            Address to read the version number from.
+	 * @param p_size
+	 *            Storage size of the version number to read.
+	 * @return Version number read.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
+	 */
+	protected static int readVersion(final long p_address, final int p_size) throws MemoryException {
+		int ret;
+
+		switch (p_size) {
+		case 1:
+			ret = (int) RawMemory.readByte(p_address) & 0xFF;
+			break;
+		case 2:
+			ret = (int) RawMemory.readShort(p_address) & 0xFF;
+			break;
+		case 3:
+			int tmp;
+
+			tmp = 0;
+			tmp |= (RawMemory.readByte(p_address) << 16) & 0xFF;
+			tmp |= RawMemory.readShort(p_address, 2) & 0xFF;
+			ret = tmp;
+			break;
+		default:
+			assert 1 == 2;
+			ret = -1;
+			break;
+		}
+
+		return ret;
 	}
 }
