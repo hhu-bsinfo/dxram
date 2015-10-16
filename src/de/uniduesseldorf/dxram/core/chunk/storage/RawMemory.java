@@ -1,6 +1,10 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -152,6 +156,31 @@ public final class RawMemory {
 			m_listSizes = null;
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not free memory", e);
+		}
+	}
+	
+	public static void dump(File file, long p_addr, long p_count) throws MemoryException
+	{
+		RandomAccessFile outFile = null;
+		try {
+			outFile = new RandomAccessFile(file, "rw");
+			
+			long offset = 0;
+			while (offset < p_count)
+			{
+				outFile.writeByte(UNSAFE.getByte(m_memoryBase + p_addr + offset));
+				offset++;
+			}
+		} catch (IOException e) {
+			throw new MemoryException(e.getMessage());
+		}
+		finally
+		{
+			try {
+				if (outFile != null)
+					outFile.close();
+			} catch (IOException e) {
+			}
 		}
 	}
 
@@ -795,7 +824,7 @@ public final class RawMemory {
 
 		lengthFieldSize = ((marker - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 		size = (int) read(p_address, lengthFieldSize);
-		marker = (OCCUPIED_FLAGS_OFFSET + lengthFieldSize - 1) * (p_customState + 1);
+		marker = (OCCUPIED_FLAGS_OFFSET + lengthFieldSize - 1) + (p_customState * 3);
 
 		writeRightPartOfMarker(p_address - 1, marker);
 		writeLeftPartOfMarker(p_address + lengthFieldSize + size, marker);

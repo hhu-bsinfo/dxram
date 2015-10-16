@@ -1,6 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -15,6 +16,8 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
+
+import sun.misc.Unsafe;
 
 /**
  * Controls the access to the RawMemory and the CIDTable
@@ -347,17 +350,17 @@ public final class MemoryManager {
 
 		switch (p_size) {
 		case 1:
-			ret = (int) RawMemory.readByte(p_address);
+			ret = (int) RawMemory.readByte(p_address) & 0xFF;
 			break;
 		case 2:
-			ret = (int) RawMemory.readShort(p_address);
+			ret = (int) RawMemory.readShort(p_address) & 0xFF;
 			break;
 		case 3:
 			int tmp;
 
 			tmp = 0;
-			tmp |= RawMemory.readByte(p_address) << 16;
-			tmp |= RawMemory.readShort(p_address, 2);
+			tmp |= (RawMemory.readByte(p_address) << 16) & 0xFF;
+			tmp |= RawMemory.readShort(p_address, 2) & 0xFF;
 			ret = tmp;
 			break;
 		default:
