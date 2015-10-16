@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.utils.Contract;
@@ -644,8 +645,8 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Get the length of a boolean
-	 * @return the length of a boolean
+	 * Get the length of a Location
+	 * @return the length of a Location
 	 */
 	public static int getLocationsWriteLength() {
 		return 24;
@@ -683,6 +684,46 @@ public final class OutputHelper {
 		p_buffer.putLong(p_locations.convertToLong());
 		p_buffer.putLong(p_locations.getStartID());
 		p_buffer.putLong(p_locations.getEndID());
+	}
+
+	/**
+	 * Get the length of a BackupRange
+	 * @return the length of a BackupRange
+	 */
+	public static int getBackupRangeWriteLength() {
+		return 16;
+	}
+
+	/**
+	 * Writes a BackupRange
+	 * @param p_output
+	 *            the output
+	 * @param p_backupRange
+	 *            the BackupRange
+	 * @throws IOException
+	 *             if the location could not be written
+	 */
+	public static void writeBackupRange(final DataOutput p_output, final BackupRange p_backupRange) throws IOException {
+		Contract.checkNotNull(p_output, "no output given");
+		Contract.checkNotNull(p_backupRange, "no backup range given");
+
+		p_output.writeLong(p_backupRange.getRangeID());
+		p_output.writeLong(p_backupRange.getBackupPeersAsLong());
+	}
+
+	/**
+	 * Writes a BackupRange
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_backupRange
+	 *            the BackupRange
+	 */
+	public static void writeBackupRange(final ByteBuffer p_buffer, final BackupRange p_backupRange) {
+		Contract.checkNotNull(p_buffer, "no buffer given");
+		Contract.checkNotNull(p_backupRange, "no backup range given");
+
+		p_buffer.putLong(p_backupRange.getRangeID());
+		p_buffer.putLong(p_backupRange.getBackupPeersAsLong());
 	}
 
 	/**

@@ -1,8 +1,10 @@
 #Classes
-AbstractLogEntryHeader - Helper class for log entry headers
-LogEntryHeaderInterface - Default implementation of the LogEntryHeaderInterface
-NormalLogEntryHeader - Implementation of a normal log entry header
-NormalSecondaryLogEntryHeader - Implementation of a normal log entry header for secondary log
-MigrationLogEntryHeader - Implementation of a migration log entry header
-MigrationSecondaryLogEntryHeader - Implementation of a migration log entry header for secondary log
-Tombstone - Implementation of a tombstone
+AbstractLogEntryHeader - Model of a log entry header
+DefaultPrimLogEntryHeader - Extends AbstractLogEntryHeader for a normal log entry header (primary log)
+DefaultPrimLogTombstone - Extends AbstractLogEntryHeader for a default tombstone (primary log)
+DefaultSecLogEntryHeader - Extends AbstractLogEntryHeader for a normal log entry header (secondary log)
+DefaultSecLogTomstone - Extends AbstractLogEntryHeader for a normal tombstone (secondary log)
+MigrationPrimLogEntryHeader - Extends AbstractLogEntryHeader for a migration log entry header (primary log)
+MigrationPrimLogTombstone - Extends AbstractLogEntryHeader for a migration tombstone (primary log)
+MigrationSecLogEntryHeader - Extends AbstractLogEntryHeader for a migration log entry header (secondary log)
+MigrationSecLogTomstone - Extends AbstractLogEntryHeader for a migration tombstone (secondary log)

@@ -6,7 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.uniduesseldorf.dxram.core.log.LogHandler;
+import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
 /**
  * Skeleton for a log
@@ -15,6 +16,9 @@ import de.uniduesseldorf.dxram.core.log.LogHandler;
  */
 public abstract class AbstractLog {
 
+	// Constants
+	protected static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
+
 	// Attributes
 	// m_logFileSize must be a multiple of a flash page!
 	private final long m_logFileSize;
@@ -22,7 +26,6 @@ public abstract class AbstractLog {
 	private int m_logFileHeaderSize;
 	private volatile long m_readPos;
 	private volatile long m_writePos;
-	private volatile long m_reorgPos;
 	private volatile long m_bytesInRAF;
 	private File m_logFile;
 	private RandomAccessFile m_logRAF;
@@ -46,12 +49,39 @@ public abstract class AbstractLog {
 
 		m_readPos = 0;
 		m_writePos = 0;
-		m_reorgPos = 0;
 		m_bytesInRAF = 0;
 		m_logRAF = null;
 
 		m_lock = new ReentrantReadWriteLock(false);
 	}
+
+	/**
+	 * Closes the log
+	 * @throws InterruptedException
+	 *             if the closure fails
+	 * @throws IOException
+	 *             if the flushing during closure fails
+	 */
+	abstract void closeLog() throws InterruptedException, IOException;
+
+	/**
+	 * Writes data in log sequentially
+	 * @param p_data
+	 *            a buffer
+	 * @param p_offset
+	 *            offset within the buffer
+	 * @param p_length
+	 *            length of data
+	 * @param p_additionalInformation
+	 *            place holder for additional information
+	 * @throws InterruptedException
+	 *             if the write access fails
+	 * @throws IOException
+	 *             if the write access fails
+	 * @return number of successfully written bytes
+	 */
+	abstract int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_additionalInformation) throws IOException,
+	InterruptedException;
 
 	// Getter
 	/**
@@ -71,21 +101,6 @@ public abstract class AbstractLog {
 	}
 
 	/**
-	 * Determines the number of bytes between read and reorganization pointer
-	 * @return the number of bytes between read and reorganization pointer
-	 */
-	protected final long getFreeSpaceBetweenReadAndReorgPos() {
-		long ret;
-
-		if (m_reorgPos >= m_readPos) {
-			ret = m_reorgPos - m_readPos;
-		} else {
-			ret = m_totalUsableSpace - m_readPos + m_reorgPos;
-		}
-		return ret;
-	}
-
-	/**
 	 * Determines the number of bytes left to write
 	 * @return the number of bytes left to write
 	 */
@@ -94,6 +109,15 @@ public abstract class AbstractLog {
 	}
 
 	// Setter
+	/**
+	 * Updates byte counter
+	 * @param p_length
+	 *            number of deleted bytes
+	 */
+	protected final void removeFromLog(final int p_length) {
+		m_bytesInRAF -= p_length;
+	}
+
 	/**
 	 * Calculates and sets the read pointer
 	 * @param p_readBytes
@@ -107,7 +131,7 @@ public abstract class AbstractLog {
 	/**
 	 * Calculates and sets the write pointer
 	 */
-	protected final void calcAndSetWritePos() {
+	private void calcAndSetWritePos() {
 		m_writePos = (m_readPos + m_bytesInRAF) % m_totalUsableSpace;
 	}
 
@@ -121,7 +145,6 @@ public abstract class AbstractLog {
 		m_bytesInRAF = 0;
 		m_readPos = 0;
 		m_writePos = 0;
-		m_reorgPos = 0;
 		m_logRAF.close();
 	}
 
@@ -132,17 +155,18 @@ public abstract class AbstractLog {
 		m_bytesInRAF = 0;
 		m_readPos = 0;
 		m_writePos = 0;
-		m_reorgPos = 0;
 	}
 
 	/**
 	 * Creates and initializes random access file
+	 * @param p_header
+	 *            the log type specific header
 	 * @throws IOException
 	 *             if the header could not be read or written
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	protected final void createLogAndWriteHeader() throws IOException, InterruptedException {
+	protected final void createLogAndWriteHeader(final byte[] p_header) throws IOException, InterruptedException {
 
 		if (m_logFile.exists()) {
 			m_logFile.delete();
@@ -155,11 +179,7 @@ public abstract class AbstractLog {
 		// Write header
 		m_logRAF = openRingFile(m_logFile);
 		m_logRAF.seek(0);
-		if (PrimaryLog.class.isInstance(this)) {
-			m_logRAF.write(LogHandler.PRIMLOG_MAGIC);
-		} else {
-			m_logRAF.write(LogHandler.SECLOG_MAGIC);
-		}
+		m_logRAF.write(p_header);
 
 		m_logRAF.seek(0);
 		m_logRAF.setLength(m_logFileSize);
@@ -173,7 +193,7 @@ public abstract class AbstractLog {
 	 *             if opening the random access file failed
 	 * @return file descriptor to the log file
 	 */
-	protected final RandomAccessFile openRingFile(final File p_logFile) throws IOException {
+	private RandomAccessFile openRingFile(final File p_logFile) throws IOException {
 		return new RandomAccessFile(p_logFile, "rw");
 	}
 
@@ -254,7 +274,7 @@ public abstract class AbstractLog {
 	 *             if reading the random access file failed
 	 * @return number of bytes that were read successfully
 	 */
-	protected final int readOnRAFRing(final byte[] p_data, final int p_length, final boolean p_manipulateReadPtr, final boolean p_accessed) throws IOException {
+	private int readOnRAFRing(final byte[] p_data, final int p_length, final boolean p_manipulateReadPtr, final boolean p_accessed) throws IOException {
 		final long bytesUntilEnd = m_totalUsableSpace - m_readPos;
 
 		if (p_length > 0) {
@@ -368,56 +388,6 @@ public abstract class AbstractLog {
 	}
 
 	/**
-	 * Key function to write in log sequentially by reorganization thread without manipulation write pointer
-	 * @param p_data
-	 *            buffer with data to write in log
-	 * @param p_offset
-	 *            offset in log file
-	 * @param p_length
-	 *            number of bytes to write
-	 * @param p_innerWritePos
-	 *            the position within the log file
-	 * @param p_accessed
-	 *            whether the RAF is accessed by another thread or not
-	 * @throws IOException
-	 *             if reading the random access file failed
-	 * @return number of bytes that were written successfully
-	 */
-	protected final int appendToLogWithoutPtrManipulation(final byte[] p_data, final int p_offset, final int p_length, final long p_innerWritePos,
-			final boolean p_accessed) throws IOException {
-		final long bytesUntilEnd;
-		final long freeSpace = getFreeSpaceBetweenReadAndReorgPos();
-		final int writableData = (int) Math.min(p_length, freeSpace);
-
-		if (m_reorgPos >= p_innerWritePos) {
-			bytesUntilEnd = m_reorgPos - p_innerWritePos;
-		} else {
-			bytesUntilEnd = m_totalUsableSpace - p_innerWritePos;
-		}
-
-		if (p_length > 0) {
-			if (p_accessed) {
-				m_lock.writeLock().lock();
-			}
-			m_logRAF.seek(m_logFileHeaderSize + p_innerWritePos);
-			if (writableData <= bytesUntilEnd) {
-				m_logRAF.write(p_data, p_offset, writableData);
-			} else {
-				// Twofold cyclic write access
-				// NOTE: bytesUntilEnd is smaller than p_length -> smaller than Integer.MAX_VALUE
-				m_logRAF.write(p_data, p_offset, (int) bytesUntilEnd);
-				m_logRAF.seek(m_logFileHeaderSize);
-				m_logRAF.write(p_data, p_offset + (int) bytesUntilEnd, writableData - (int) bytesUntilEnd);
-			}
-			// m_logRAF.getFD().sync();
-			if (p_accessed) {
-				m_lock.writeLock().unlock();
-			}
-		}
-		return writableData;
-	}
-
-	/**
 	 * Key function to write in log
 	 * @param p_data
 	 *            buffer with data to write in log
@@ -500,33 +470,5 @@ public abstract class AbstractLog {
 			}
 		}
 		return p_length;
-	}
-
-	/**
-	 * Updates byte counter
-	 * @param p_length
-	 *            number of deleted bytes
-	 */
-	protected final void removeFromLog(final int p_length) {
-		m_bytesInRAF -= p_length;
-	}
-
-	/**
-	 * Clears all log data by manipulating the pointers
-	 * @note is called after flushing
-	 */
-	protected final void clearAllLogData() {
-		m_bytesInRAF = 0;
-		m_readPos = m_writePos;
-	}
-
-	/**
-	 * Deletes the log file
-	 * @throws IOException
-	 *             if deleting the random access file failed
-	 * @return whether the deletion was successful or not
-	 */
-	protected final boolean deleteLogFile() throws IOException {
-		return m_logFile.delete();
 	}
 }
