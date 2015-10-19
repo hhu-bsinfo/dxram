@@ -181,7 +181,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		if (m_primaryLog != null) {
 			try {
 				m_primaryLog.closeLog();
-			} catch (final InterruptedException | IOException e) {
+			} catch (final IOException e) {
 				System.out.println("Could not close primary log");
 			}
 			m_primaryLog = null;
