@@ -2,7 +2,6 @@
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
@@ -158,29 +157,36 @@ public final class RawMemory {
 			throw new MemoryException("Could not free memory", e);
 		}
 	}
-	
-	public static void dump(File file, long p_addr, long p_count) throws MemoryException
-	{
+
+	/**
+	 * Dump a range of memory to a file.
+	 * @param p_file
+	 *            Destination file to dump to.
+	 * @param p_addr
+	 *            Start address.
+	 * @param p_count
+	 *            Number of bytes to dump.
+	 * @throws MemoryException
+	 *             If dumping memory failed.
+	 */
+	public static void dump(final File p_file, final long p_addr, final long p_count) throws MemoryException {
 		RandomAccessFile outFile = null;
 		try {
-			outFile = new RandomAccessFile(file, "rw");
-			
+			outFile = new RandomAccessFile(p_file, "rw");
+
 			long offset = 0;
-			while (offset < p_count)
-			{
+			while (offset < p_count) {
 				outFile.writeByte(UNSAFE.getByte(m_memoryBase + p_addr + offset));
 				offset++;
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new MemoryException(e.getMessage());
-		}
-		finally
-		{
+		} finally {
 			try {
-				if (outFile != null)
+				if (outFile != null) {
 					outFile.close();
-			} catch (IOException e) {
-			}
+				}
+			} catch (final IOException e) {}
 		}
 	}
 
@@ -391,12 +397,11 @@ public final class RawMemory {
 	protected static void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
 		try {
 			int lengthFieldSize;
-			int size;
 
 			// skip length byte(s)
 			lengthFieldSize =
 					((readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
-			size = (int) read(p_address, lengthFieldSize);
+			read(p_address, lengthFieldSize);
 
 			UNSAFE.setMemory(m_memoryBase + p_address + lengthFieldSize, p_size, p_value);
 		} catch (final Throwable e) {
@@ -404,22 +409,27 @@ public final class RawMemory {
 		}
 	}
 
-	/** Read a single byte from the specified address.
-	 *
-	 * @param p_address Address.
+	/**
+	 * Read a single byte from the specified address.
+	 * @param p_address
+	 *            Address.
 	 * @return Byte read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static byte readByte(final long p_address) throws MemoryException {
 		return readByte(p_address, 0);
 	}
 
-	/** Read a single byte from the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
+	/**
+	 * Read a single byte from the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
 	 * @return Byte read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static byte readByte(final long p_address, final long p_offset) throws MemoryException {
 		try {
@@ -440,22 +450,27 @@ public final class RawMemory {
 		}
 	}
 
-	/** Read a single short from the specified address.
-	 *
-	 * @param p_address Address
+	/**
+	 * Read a single short from the specified address.
+	 * @param p_address
+	 *            Address
 	 * @return Short read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static short readShort(final long p_address) throws MemoryException {
 		return readShort(p_address, 0);
 	}
 
-	/** Read a single short from the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
+	/**
+	 * Read a single short from the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
 	 * @return Short read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static short readShort(final long p_address, final long p_offset) throws MemoryException {
 		try {
@@ -476,22 +491,27 @@ public final class RawMemory {
 		}
 	}
 
-	/** Read a single int from the specified address.
-	 *
-	 * @param p_address Address.
+	/**
+	 * Read a single int from the specified address.
+	 * @param p_address
+	 *            Address.
 	 * @return Int read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static int readInt(final long p_address) throws MemoryException {
 		return readInt(p_address, 0);
 	}
 
-	/** Read a single int from the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
+	/**
+	 * Read a single int from the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
 	 * @return Int read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static int readInt(final long p_address, final long p_offset) throws MemoryException {
 		try {
@@ -512,22 +532,27 @@ public final class RawMemory {
 		}
 	}
 
-	/** Read a long from the specified address.
-	 *
-	 * @param p_address Address.
+	/**
+	 * Read a long from the specified address.
+	 * @param p_address
+	 *            Address.
 	 * @return Long read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static long readLong(final long p_address) throws MemoryException {
 		return readLong(p_address, 0);
 	}
 
-	/** Read a long from the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
+	/**
+	 * Read a long from the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
 	 * @return Long read.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static long readLong(final long p_address, final long p_offset) throws MemoryException {
 		try {
@@ -560,13 +585,16 @@ public final class RawMemory {
 		return readBytes(p_address, 0);
 	}
 
-	/** Read a block from memory. This will read bytes until the end
-	 *  of the allocated block, starting address + offset.
-	 *
-	 * @param p_address Address of allocated block.
-	 * @param p_offset Offset added to address for start address to read from.
+	/**
+	 * Read a block from memory. This will read bytes until the end
+	 * of the allocated block, starting address + offset.
+	 * @param p_address
+	 *            Address of allocated block.
+	 * @param p_offset
+	 *            Offset added to address for start address to read from.
 	 * @return Byte array with read data.
-	 * @throws MemoryException If accessing memory failed.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
 		byte[] ret;
@@ -594,22 +622,29 @@ public final class RawMemory {
 		return ret;
 	}
 
-	/** Write a single byte to the specified address.
-	 *
-	 * @param p_address Address.
-	 * @param p_value Byte to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a single byte to the specified address.
+	 * @param p_address
+	 *            Address.
+	 * @param p_value
+	 *            Byte to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeByte(final long p_address, final byte p_value) throws MemoryException {
 		writeByte(p_address, 0, p_value);
 	}
 
-	/** Write a single byte to the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
-	 * @param p_value Byte to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a single byte to the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
+	 * @param p_value
+	 *            Byte to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeByte(final long p_address, final long p_offset, final byte p_value)
 			throws MemoryException {
@@ -631,22 +666,29 @@ public final class RawMemory {
 		}
 	}
 
-	/** Write a single short to the specified address.
-	 *
-	 * @param p_address Address.
-	 * @param p_value Short to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a single short to the specified address.
+	 * @param p_address
+	 *            Address.
+	 * @param p_value
+	 *            Short to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeShort(final long p_address, final short p_value) throws MemoryException {
 		writeShort(p_address, 0, p_value);
 	}
 
-	/** Write a short to the spcified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
-	 * @param p_value Short to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a short to the spcified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
+	 * @param p_value
+	 *            Short to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeShort(final long p_address, final long p_offset, final short p_value)
 			throws MemoryException {
@@ -669,22 +711,29 @@ public final class RawMemory {
 		}
 	}
 
-	/** Write a single int to the specified address.
-	 *
-	 * @param p_address Address.
-	 * @param p_value Int to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a single int to the specified address.
+	 * @param p_address
+	 *            Address.
+	 * @param p_value
+	 *            Int to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeInt(final long p_address, final int p_value) throws MemoryException {
 		writeInt(p_address, 0, p_value);
 	}
 
-	/** Write a single int to the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
-	 * @param p_value int to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a single int to the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
+	 * @param p_value
+	 *            int to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeInt(final long p_address, final long p_offset, final int p_value)
 			throws MemoryException {
@@ -707,22 +756,29 @@ public final class RawMemory {
 		}
 	}
 
-	/** Write a long value to the specified address.
-	 *
-	 * @param p_address Address.
-	 * @param p_value Long value to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a long value to the specified address.
+	 * @param p_address
+	 *            Address.
+	 * @param p_value
+	 *            Long value to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeLong(final long p_address, final long p_value) throws MemoryException {
 		writeLong(p_address, 0, p_value);
 	}
 
-	/** Write a long value to the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
-	 * @param p_value Long value to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write a long value to the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
+	 * @param p_value
+	 *            Long value to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeLong(final long p_address, final long p_offset, final long p_value)
 			throws MemoryException {
@@ -744,22 +800,29 @@ public final class RawMemory {
 		}
 	}
 
-	/** Write an array of bytes to the specified address.
-	 *
-	 * @param p_address Address.
-	 * @param p_value Bytes to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write an array of bytes to the specified address.
+	 * @param p_address
+	 *            Address.
+	 * @param p_value
+	 *            Bytes to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
 		writeBytes(p_address, 0, p_value);
 	}
 
-	/** Write an array of bytes to the specified address + offset.
-	 *
-	 * @param p_address Address.
-	 * @param p_offset Offset to add to the address.
-	 * @param p_value Bytes to write.
-	 * @throws MemoryException If accessing memory failed.
+	/**
+	 * Write an array of bytes to the specified address + offset.
+	 * @param p_address
+	 *            Address.
+	 * @param p_offset
+	 *            Offset to add to the address.
+	 * @param p_value
+	 *            Bytes to write.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
 	 */
 	protected static void writeBytes(final long p_address, final long p_offset, final byte[] p_value)
 			throws MemoryException {
@@ -784,10 +847,11 @@ public final class RawMemory {
 		}
 	}
 
-	/** Get the user definable state of a specified address referring
-	 *  a malloc'd block of memory.
-	 *
-	 * @param p_address Address of malloc'd block of memory.
+	/**
+	 * Get the user definable state of a specified address referring
+	 * a malloc'd block of memory.
+	 * @param p_address
+	 *            Address of malloc'd block of memory.
 	 * @return User definable state stored for that block (valid values: 0, 1, 2. invalid: -1)
 	 */
 	protected static int getCustomState(final long p_address) {
@@ -805,12 +869,14 @@ public final class RawMemory {
 		return ret;
 	}
 
-	/** Set the user definable state for a specified address referring
-	 *  a malloc'd block of memory.
-	 *
-	 * @param p_address Address of malloc'd block of memory.
-	 * @param p_customState State to set for that block of memory (valid values: 0, 1, 2.
-	 * 						all other values invalid).
+	/**
+	 * Set the user definable state for a specified address referring
+	 * a malloc'd block of memory.
+	 * @param p_address
+	 *            Address of malloc'd block of memory.
+	 * @param p_customState
+	 *            State to set for that block of memory (valid values: 0, 1, 2.
+	 *            all other values invalid).
 	 */
 	protected static void setCustomState(final long p_address, final int p_customState) {
 		int marker;
@@ -830,10 +896,11 @@ public final class RawMemory {
 		writeLeftPartOfMarker(p_address + lengthFieldSize + size, marker);
 	}
 
-	/** Get the size of the allocated block of memory specified
-	 *  by the given address.
-	 *
-	 * @param p_address Address of block to get the size of.
+	/**
+	 * Get the size of the allocated block of memory specified
+	 * by the given address.
+	 * @param p_address
+	 *            Address of block to get the size of.
 	 * @return Size of memory block at specified address.
 	 */
 	protected static int getSize(final long p_address) {
@@ -1287,7 +1354,8 @@ public final class RawMemory {
 			long rightSize;
 
 			lengthFieldSize = (readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK;
-			lengthFieldSize++; // size 1 stored as 0 index
+			// size 1 stored as 0 index
+			lengthFieldSize++;
 			size = read(p_address, lengthFieldSize) + lengthFieldSize;
 
 			freeSize = size;

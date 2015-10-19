@@ -13,11 +13,11 @@ import de.uniduesseldorf.dxram.core.api.ChunkID;
 public final class LogCatalog {
 
 	// Attributes
-	private ArrayList<SecondaryLogWithSegments> m_creatorLogs;
+	private ArrayList<SecondaryLog> m_creatorLogs;
 	private ArrayList<SecondaryLogBuffer> m_creatorBuffers;
 	private ArrayList<Long> m_creatorBackupRanges;
 
-	private ArrayList<SecondaryLogWithSegments> m_migrationLogs;
+	private ArrayList<SecondaryLog> m_migrationLogs;
 	private ArrayList<SecondaryLogBuffer> m_migrationBuffers;
 	private int m_currentRangeID;
 
@@ -26,16 +26,34 @@ public final class LogCatalog {
 	 * Creates an instance of SecondaryLogsReorgThread
 	 */
 	public LogCatalog() {
-		m_creatorLogs = new ArrayList<SecondaryLogWithSegments>();
+		m_creatorLogs = new ArrayList<SecondaryLog>();
 		m_creatorBuffers = new ArrayList<SecondaryLogBuffer>();
 		m_creatorBackupRanges = new ArrayList<Long>();
 
-		m_migrationLogs = new ArrayList<SecondaryLogWithSegments>();
+		m_migrationLogs = new ArrayList<SecondaryLog>();
 		m_migrationBuffers = new ArrayList<SecondaryLogBuffer>();
 		m_currentRangeID = 0;
 	}
 
 	// Getter
+	/**
+	 * Gets the unique identification for the next backup range
+	 * @param p_isMigration
+	 *            whether the next backup range is for migrations or not
+	 * @return the secondary log
+	 */
+	public String getNewID(final boolean p_isMigration) {
+		String ret;
+
+		if (!p_isMigration) {
+			ret = "C" + m_creatorLogs.size();
+		} else {
+			ret = "M" + (m_currentRangeID + 1);
+		}
+
+		return ret;
+	}
+
 	/**
 	 * Gets the corresponding secondary log
 	 * @param p_chunkID
@@ -44,8 +62,8 @@ public final class LogCatalog {
 	 *            the RangeID for migrations or -1
 	 * @return the secondary log
 	 */
-	public SecondaryLogWithSegments getLog(final long p_chunkID, final byte p_rangeID) {
-		SecondaryLogWithSegments ret;
+	public SecondaryLog getLog(final long p_chunkID, final byte p_rangeID) {
+		SecondaryLog ret;
 		int rangeID;
 
 		if (p_rangeID != -1) {
@@ -80,7 +98,7 @@ public final class LogCatalog {
 			ret = m_creatorBuffers.get(rangeID);
 		}
 		if (ret == null) {
-			System.out.println("ERROR: No secondary log buffer for " + p_chunkID);
+			System.out.println("ERROR: No secondary log buffer for " + p_chunkID + ", " + p_rangeID);
 		}
 
 		return ret;
@@ -109,15 +127,15 @@ public final class LogCatalog {
 	 * Gets all secondary logs from this node
 	 * @return the secondary log array
 	 */
-	public SecondaryLogWithSegments[] getAllLogs() {
-		SecondaryLogWithSegments[] ret;
-		SecondaryLogWithSegments[] creatorLogs;
-		SecondaryLogWithSegments[] migrationLogs;
+	public SecondaryLog[] getAllLogs() {
+		SecondaryLog[] ret;
+		SecondaryLog[] creatorLogs;
+		SecondaryLog[] migrationLogs;
 
-		creatorLogs = m_creatorLogs.toArray(new SecondaryLogWithSegments[m_creatorLogs.size()]);
-		migrationLogs = m_migrationLogs.toArray(new SecondaryLogWithSegments[m_migrationLogs.size()]);
+		creatorLogs = m_creatorLogs.toArray(new SecondaryLog[m_creatorLogs.size()]);
+		migrationLogs = m_migrationLogs.toArray(new SecondaryLog[m_migrationLogs.size()]);
 
-		ret = new SecondaryLogWithSegments[creatorLogs.length + migrationLogs.length];
+		ret = new SecondaryLog[creatorLogs.length + migrationLogs.length];
 		System.arraycopy(creatorLogs, 0, ret, 0, creatorLogs.length);
 		System.arraycopy(migrationLogs, 0, ret, creatorLogs.length, migrationLogs.length);
 
@@ -128,16 +146,16 @@ public final class LogCatalog {
 	 * Gets all creator secondary logs from this node
 	 * @return the creator secondary log array
 	 */
-	public SecondaryLogWithSegments[] getAllCreatorLogs() {
-		return m_creatorLogs.toArray(new SecondaryLogWithSegments[m_creatorLogs.size()]);
+	public SecondaryLog[] getAllCreatorLogs() {
+		return m_creatorLogs.toArray(new SecondaryLog[m_creatorLogs.size()]);
 	}
 
 	/**
 	 * Gets all migration secondary logs from this node
 	 * @return the migration secondary log array
 	 */
-	public SecondaryLogWithSegments[] getAllMigrationLogs() {
-		return m_migrationLogs.toArray(new SecondaryLogWithSegments[m_migrationLogs.size()]);
+	public SecondaryLog[] getAllMigrationLogs() {
+		return m_migrationLogs.toArray(new SecondaryLog[m_migrationLogs.size()]);
 	}
 
 	/**
@@ -187,7 +205,7 @@ public final class LogCatalog {
 	 * @throws InterruptedException
 	 *             if no new secondary log could be created
 	 */
-	public void insertRange(final long p_firstChunkIDOrRangeID, final SecondaryLogWithSegments p_log) throws IOException, InterruptedException {
+	public void insertRange(final long p_firstChunkIDOrRangeID, final SecondaryLog p_log) throws IOException, InterruptedException {
 		SecondaryLogBuffer buffer;
 		int rangeID;
 
@@ -212,6 +230,7 @@ public final class LogCatalog {
 		}
 	}
 
+	// Methods
 	/**
 	 * Determines the corresponding range
 	 * @param p_chunkID
@@ -253,5 +272,10 @@ public final class LogCatalog {
 		}
 		m_migrationBuffers = null;
 		m_migrationLogs = null;
+	}
+
+	@Override
+	public String toString() {
+		return "Creator logs: " + m_creatorLogs.toString() + "\n Migration logs: " + m_migrationLogs.toString();
 	}
 }

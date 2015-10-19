@@ -32,6 +32,7 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
+import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
@@ -51,6 +52,7 @@ public final class Core {
 
 	private static NetworkInterface m_network;
 	private static ChunkInterface m_chunk;
+	private static RecoveryInterface m_recovery;
 	private static ExceptionHandler m_exceptionHandler;
 
 	// must be registered for handling 'execute' commands
@@ -135,6 +137,7 @@ public final class Core {
 			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE) && NodeID.getRole().equals(Role.PEER)) {
 				CoreComponentFactory.getLogInterface();
 			}
+			m_recovery = CoreComponentFactory.getRecoveryInterface();
 
 			registerCmdListener(new CommandHandler());
 
@@ -500,15 +503,9 @@ public final class Core {
 	public static void remove(final long p_chunkID) throws DXRAMException {
 		ChunkID.check(p_chunkID);
 
-		// try {
 		if (m_chunk != null) {
 			m_chunk.remove(p_chunkID);
 		}
-		/*
-		 * } catch (final DXRAMException e) {
-		 * handleException(e, ExceptionSource.DXRAM_REMOVE, p_chunkID);
-		 * }
-		 */
 	}
 
 	/**
@@ -640,6 +637,19 @@ public final class Core {
 		return ret;
 	}
 
+	/**
+	 * Executes given command, send to chunk handler
+	 * @param p_nodeID
+	 *            NodeID of failed peer
+	 * @param p_dest
+	 *            NodeID of destination node for this request
+	 * @throws DXRAMException
+	 *             if the chunk could not be get
+	 */
+	public static void executeRecoveryCommand(final short p_nodeID, final short p_dest) throws DXRAMException {
+		m_recovery.recover(p_nodeID, p_dest);
+	}
+
 	/*
 	 * public static void execute(final String p_command, final String... p_args) throws DXRAMException {
 	 * short type;
@@ -726,14 +736,29 @@ public final class Core {
 	}
 
 	/**
-	 * Recovers the local data from the log
+	 * Recovers all Chunks from a failed peer
+	 * @param p_owner
+	 *            the NodeID of the failed peer
 	 * @throws DXRAMException
 	 *             if the chunks could not be recovered
 	 */
-	public static void recoverFromLog() throws DXRAMException {
+	public static void recover(final short p_owner) throws DXRAMException {
+		recover(p_owner, NodeID.getLocalNodeID());
+	}
+
+	/**
+	 * Recovers all Chunks from a failed peer
+	 * @param p_owner
+	 *            the NodeID of the failed peer
+	 * @param p_dest
+	 *            the NodeID of the peer that should restore the Chunks
+	 * @throws DXRAMException
+	 *             if the chunks could not be recovered
+	 */
+	public static void recover(final short p_owner, final short p_dest) throws DXRAMException {
 		try {
-			if (m_chunk != null) {
-				m_chunk.recoverFromLog();
+			if (m_recovery != null) {
+				m_recovery.recover(p_owner, p_dest);
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_RECOVER_FROM_LOG);

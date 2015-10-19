@@ -193,6 +193,15 @@ public interface ChunkInterface extends CoreComponent {
 	void unlock(long p_chunkID) throws DXRAMException;
 
 	/**
+	 * Puts recovered Chunks
+	 * @param p_chunks
+	 *            the Chunks
+	 * @throws DXRAMException
+	 *             if the Chunks could not be put
+	 */
+	void putRecoveredChunks(Chunk[] p_chunks) throws DXRAMException;
+
+	/**
 	 * Migrates the corresponding Chunk for the giving ID to another Node
 	 * @param p_chunkID
 	 *            the ID
@@ -226,12 +235,5 @@ public interface ChunkInterface extends CoreComponent {
 	 *             if the Chunks could not be migrated
 	 */
 	void migrateAll(short p_target) throws DXRAMException;
-
-	/**
-	 * Recover the local data from the log
-	 * @throws DXRAMException
-	 *             if the Chunks could not be recoverd
-	 */
-	void recoverFromLog() throws DXRAMException;
 
 }

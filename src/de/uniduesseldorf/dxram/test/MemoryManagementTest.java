@@ -13,7 +13,6 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
@@ -93,11 +92,6 @@ public final class MemoryManagementTest {
 	 *             if the memory management could not be initialized
 	 */
 	private static void init(final int p_chunkCount, final int p_threadCount) throws MemoryException {
-		long size;
-
-		size = p_threadCount - 1;
-		size *= 1 << 30;
-		size += p_chunkCount * 50L;
 
 		// Initialize DXRAM
 		try {
@@ -148,18 +142,18 @@ public final class MemoryManagementTest {
 				public void run() {
 					final int count = p_chunkCount / p_threadCount;
 					Chunk chunk;
-					long chunkID;
+					// long chunkID;
 					byte[] data;
 					Random random;
 
 					random = new Random();
 					for (int i = 1; i <= count; i++) {
 						try {
-//							chunkID = MemoryManager.getNextLocalID().getLocalID();
+							// chunkID = MemoryManager.getNextLocalID().getLocalID();
 							data = new byte[random.nextInt(49) + 16];
-//							chunk = new Chunk(chunkID, data, 0);
-//
-//							MemoryManager.put(chunk);
+							// chunk = new Chunk(chunkID, data, 0);
+							//
+							// MemoryManager.put(chunk);
 							chunk = Core.createNewChunk(data.length);
 							chunk.getData().put(data);
 							Core.put(chunk);

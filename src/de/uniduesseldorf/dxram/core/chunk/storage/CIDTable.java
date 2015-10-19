@@ -251,7 +251,7 @@ public final class CIDTable {
 
 		// readUnlock(p_table);
 
- 		return ret;
+		return ret;
 	}
 
 	/**
@@ -321,8 +321,8 @@ public final class CIDTable {
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
 	 * @return A pair with a bool indicating that the entry was fully removed and memory
-	 * 			needs to be free'd. If false the entry was flaged as deleted/zombie i.e.
-	 * 			do not free the memory for it, yet.
+	 *         needs to be free'd. If false the entry was flaged as deleted/zombie i.e.
+	 *         do not free the memory for it, yet.
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
@@ -372,6 +372,9 @@ public final class CIDTable {
 	 *            the current table
 	 * @param p_level
 	 *            the table level
+	 * @param p_flagZombie
+	 *            flag the deleted entry as zombie i.e. keep the chunk
+	 *            allocated but remove it from the table index.
 	 * @return the entry
 	 * @throws MemoryException
 	 *             if the entry could not be deleted
