@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.dxram.test.nothaas;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +21,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
  * Manages a large memory block
  * @author Florian Klein 13.02.2014
  */
-public final class RawMemory {
+public final class RawMemoryEdgeListMappings {
 
 	// Constants
 	private static final byte POINTER_SIZE = 5;
@@ -51,7 +51,7 @@ public final class RawMemory {
 	/**
 	 * Creates an instance of RawMemory
 	 */
-	private RawMemory() {}
+	private RawMemoryEdgeListMappings() {}
 
 	// Getters
 	/**

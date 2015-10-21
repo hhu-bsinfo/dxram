@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.test;
+package de.uniduesseldorf.dxram.test.nothaas;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,34 +31,60 @@ public class BFSPeer
 			e1.printStackTrace();
 		}
 
-		System.out.println("BFS Peer started, ID: " + Core.getNodeID());
-
-//		for (int i = 0; i < 1000; i++)
+//		System.out.println("BFS Peer started, ID: " + Core.getNodeID());
+//
+//		Chunk chunk = Core.createNewChunk(70);
+//		for (int i = 0; i < 70; i++)
+//			chunk.getData().array()[i] = (byte) 0xAA;
+//		Chunk chunk2 = Core.createNewChunk(100);
+//		for (int i = 0; i < 100; i++)
+//			chunk2.getData().array()[i] = (byte) 0xBB;
+//		for (int i = 0; i < 348; i++)
 //		{
-//			Chunk chunk = Core.createNewChunk(68, "bla" + i);
+//			Core.put(chunk);
+//			Core.put(chunk2);
+//		}
+//		Core.remove(chunk.getChunkID());
+//		Core.remove(chunk2.getChunkID());
+//		
+//		System.out.println("done");
+		
+//		Chunk[] chunks = new Chunk[4000];
+//		for (int i = 0; i < chunks.length; i++)
+//		{
+//			chunks[i] = Core.createNewChunk(68, "bla" + i);
 //		}
 //		
 //		System.out.println("next");
 //		
-//		Chunk chunk = Core.createNewChunk(80, "myChunk");
-//		System.out.println("ChunkID: " + chunk.getChunkID());
-//		for (int i = 0; i < 257; i++)
-//			Core.put(chunk);
+//		for (int i = 0; i < chunks.length; i++)
+//		{
+//			for (int j = 0; j < 100; j++)
+//				Core.put(chunks[i]);
+//		}
+//		
+//		System.out.println("next");
+//		
+//		for (int i = 0; i < chunks.length; i++)
+//		{
+//			Core.remove(chunks[i].getChunkID());
+//		}
 		
+		System.out.println("done");
 		
-		BFSPeer bfsPeer = new BFSPeer();
-		bfsPeer.start();
-		
-		System.out.println("Waiting...");
-		while (true)
-		{
-			try {
-				Thread.sleep(100000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+//		BFSPeer bfsPeer = new BFSPeer();
+//		bfsPeer.start();
+//		
+//		System.out.println("Waiting...");
+//		while (true)
+//		{
+//			try {
+//				Thread.sleep(100000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
 	}
 	
 	public BFSPeer()

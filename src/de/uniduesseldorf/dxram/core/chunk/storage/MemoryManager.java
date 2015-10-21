@@ -1,6 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -175,6 +176,8 @@ public final class MemoryManager {
 		RawMemory.setCustomState(address, sizeVersion - 1);
 		writeVersion(address, version, sizeVersion);
 		RawMemory.writeBytes(address, sizeVersion, p_chunk.getData().array());
+		
+		RawMemory.dump(new File(Long.toString(address)), address - 1, p_chunk.getSize() + 20);
 	}
 
 	/**
@@ -206,6 +209,8 @@ public final class MemoryManager {
 
 			ret = new Chunk(p_chunkID, data, version);
 		}
+		
+		RawMemory.dump(new File(Long.toString(address) + "_2"), address - 1, ret.getSize() + 20);
 
 		return ret;
 	}
@@ -258,6 +263,7 @@ public final class MemoryManager {
 		// for this purpose
 		if (chunkCleanup.first()) {
 			RawMemory.free(chunkCleanup.second());
+			RawMemory.dump(new File(Long.toString(chunkCleanup.second()) + "_3"), chunkCleanup.second() - 1, 200);
 		}
 	}
 
