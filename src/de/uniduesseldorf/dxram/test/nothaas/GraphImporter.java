@@ -3,13 +3,14 @@ package de.uniduesseldorf.dxram.test.nothaas;
 import java.io.File;
 import java.util.List;
 
+import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
 import de.uniduesseldorf.dxram.utils.Pair;
 
 public interface GraphImporter 
 {
 	// make sure to use the same table across multiple threads
 	// and that the table is thread safe
-	public void setMappingTable(EdgeListNodeIDMappingTable mappingTable);
+	public void setMappingTable(CIDTable mappingTable);
 	
 	// false if opening the file or anything related failed
 	// can be called multiple times

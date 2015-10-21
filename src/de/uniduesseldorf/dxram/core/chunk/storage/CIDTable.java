@@ -207,7 +207,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	protected long get(final long p_chunkID) throws MemoryException {
+	public long get(final long p_chunkID) throws MemoryException {
 		long ret;
 
 		readLock(m_nodeIDTableDirectory);
@@ -330,7 +330,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	protected long delete(final long p_chunkID, boolean p_flagZombie) throws MemoryException {
+	public long delete(final long p_chunkID, boolean p_flagZombie) throws MemoryException {
 		long ret;
 		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
 		return ret;

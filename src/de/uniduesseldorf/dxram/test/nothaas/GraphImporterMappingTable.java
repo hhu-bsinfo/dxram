@@ -7,13 +7,14 @@ import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.Vector;
 
+import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 
 public class GraphImporterMappingTable implements GraphImporter
 {
 	private RandomAccessFile m_edgeFile;
-	private EdgeListNodeIDMappingTable m_mappingTable;
+	private CIDTable m_mappingTable;
 	
 	public GraphImporterMappingTable()
 	{
@@ -21,7 +22,7 @@ public class GraphImporterMappingTable implements GraphImporter
 	}
 	
 	@Override
-	public void setMappingTable(EdgeListNodeIDMappingTable mappingTable)
+	public void setMappingTable(CIDTable mappingTable)
 	{
 		m_mappingTable = mappingTable;
 	}
@@ -70,10 +71,8 @@ public class GraphImporterMappingTable implements GraphImporter
 	@Override
 	public long getChunkIDForNode(long node) 
 	{
-		// TODO we need instance calls here
-		
 		try {
-			long chunkID = EdgeListNodeIDMappingTable.get(node);
+			long chunkID = m_mappingTable.get(node);
 			if (chunkID <= 0)
 				return -1;
 			else 
@@ -91,7 +90,7 @@ public class GraphImporterMappingTable implements GraphImporter
 		// TODO we need instance calls here
 		
 		try {
-			EdgeListNodeIDMappingTable.set(node, chunkID);
+			m_mappingTable.set(node, chunkID);
 		} catch (MemoryException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
