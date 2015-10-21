@@ -43,8 +43,6 @@ public class SecondaryLog extends AbstractLog {
 	private long m_secondaryLogReorgThreshold;
 	private SecondaryLogsReorgThread m_reorganizationThread;
 
-	private long m_totalUsableSpace;
-
 	private SegmentHeader[] m_segmentHeaders;
 	private byte m_numberOfFreeSegments;
 
@@ -89,8 +87,6 @@ public class SecondaryLog extends AbstractLog {
 
 		m_numberOfBytes = 0;
 		m_numberOfInvalidsInLog = 0;
-
-		m_totalUsableSpace = super.getTotalUsableSpace();
 
 		m_reorganizationThread = p_reorganizationThread;
 
@@ -187,23 +183,17 @@ public class SecondaryLog extends AbstractLog {
 
 	// Methods
 	@Override
-	public final void closeLog() throws InterruptedException, IOException {
-
-		super.closeRing();
-	}
-
-	@Override
-	public final int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_unused) throws IOException, InterruptedException {
+	public final int appendData(final byte[] p_data, final int p_offset, final int p_length) throws IOException, InterruptedException {
 		int length = p_length;
 		int logEntrySize;
 		int rangeSize = 0;
 		SegmentHeader header;
 		AbstractLogEntryHeader logEntryHeader;
 
-		if (length <= 0 || length > m_totalUsableSpace) {
+		if (length <= 0 || length > SECLOG_SIZE) {
 			throw new IllegalArgumentException("Error: Invalid data size");
 		} else {
-			while (m_totalUsableSpace - m_numberOfBytes < length) {
+			while (SECLOG_SIZE - m_numberOfBytes < length) {
 				System.out.println("Secondary log for " + getNodeID() + " is full. Initializing reorganization and awaiting execution.");
 				signalReorganizationAndWait();
 			}
@@ -221,7 +211,7 @@ public class SecondaryLog extends AbstractLog {
 				// Reorganization thread is working on this secondary log -> only write in active segment
 				if (m_activeSegment != null && length + m_activeSegment.getUsedBytes() <= SECLOG_SEGMENT_SIZE) {
 					// Fill active segment
-					writeToLog(p_data, p_offset, m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + m_activeSegment.getUsedBytes(), length, true);
+					writeToSecondaryLog(p_data, p_offset, m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + m_activeSegment.getUsedBytes(), length, true);
 					m_numberOfBytes += length;
 					m_activeSegment.updateUsedBytes(length);
 					length = 0;
@@ -239,7 +229,8 @@ public class SecondaryLog extends AbstractLog {
 							rangeSize += logEntrySize;
 						}
 						if (rangeSize > 0) {
-							writeToLog(p_data, p_offset, (long) m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, true);
+							writeToSecondaryLog(p_data, p_offset,
+									(long) m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, true);
 							m_numberOfBytes += rangeSize;
 							header.updateUsedBytes(rangeSize);
 							length -= rangeSize;
@@ -321,7 +312,7 @@ public class SecondaryLog extends AbstractLog {
 				m_lock.unlock();
 			}
 
-			writeToLog(p_data, p_offset, (long) segment * SECLOG_SEGMENT_SIZE, p_length, p_isAccessed);
+			writeToSecondaryLog(p_data, p_offset, (long) segment * SECLOG_SEGMENT_SIZE, p_length, p_isAccessed);
 			m_numberOfBytes += p_length;
 			ret = 0;
 		} else {
@@ -375,7 +366,7 @@ public class SecondaryLog extends AbstractLog {
 			}
 
 			if (length <= header.getFreeBytes()) {
-				writeToLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), length, p_isAccessed);
+				writeToSecondaryLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), length, p_isAccessed);
 				m_numberOfBytes += length;
 				header.updateUsedBytes(length);
 				length = 0;
@@ -392,7 +383,7 @@ public class SecondaryLog extends AbstractLog {
 					}
 				}
 				if (rangeSize > 0) {
-					writeToLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, p_isAccessed);
+					writeToSecondaryLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, p_isAccessed);
 					m_numberOfBytes += rangeSize;
 					header.updateUsedBytes(rangeSize);
 					length -= rangeSize;
@@ -562,7 +553,7 @@ public class SecondaryLog extends AbstractLog {
 			if (header != null) {
 				length = header.getUsedBytes();
 				result[i] = new byte[length];
-				readOnRAFRingRandomly(result[i], length, i * SECLOG_SEGMENT_SIZE, true);
+				readFromSecondaryLog(result[i], length, i * SECLOG_SEGMENT_SIZE, true);
 			}
 		}
 		return result;
@@ -588,7 +579,7 @@ public class SecondaryLog extends AbstractLog {
 		if (header != null) {
 			length = header.getUsedBytes();
 			result = new byte[length];
-			readOnRAFRingRandomly(result, length, p_segment * SECLOG_SEGMENT_SIZE, true);
+			readFromSecondaryLog(result, length, p_segment * SECLOG_SEGMENT_SIZE, true);
 		}
 		return result;
 	}
@@ -608,7 +599,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @note executed only by reorganization thread
 	 */
 	private void updateSegment(final byte[] p_buffer, final int p_length, final int p_segmentIndex) throws IOException, InterruptedException {
-		overwriteLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length, true);
+		writeToSecondaryLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length, true);
 	}
 
 	/**
@@ -625,7 +616,6 @@ public class SecondaryLog extends AbstractLog {
 		SegmentHeader header;
 
 		header = m_segmentHeaders[p_segment];
-		removeFromLog(header.getUsedBytes());
 		header.reset();
 		m_numberOfFreeSegments++;
 	}
@@ -659,7 +649,7 @@ public class SecondaryLog extends AbstractLog {
 
 	@Override
 	public String toString() {
-		return "NodeID: " + getNodeID() + " - RangeID: " + getRangeIDOrFirstLocalID() + " - Written bytes: " + getOccupiedSpace();
+		return "NodeID: " + getNodeID() + " - RangeID: " + getRangeIDOrFirstLocalID() + " - Written bytes: " + m_numberOfBytes;
 	}
 
 	/**

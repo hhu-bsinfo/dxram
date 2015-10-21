@@ -1127,6 +1127,8 @@ public final class RawMemory {
 		// Attributes
 		private int m_segmentID;
 		private long m_pointerOffset;
+		private long m_base;
+		private long m_size;
 		private Status m_status;
 		private long m_assignedThread;
 
@@ -1144,16 +1146,16 @@ public final class RawMemory {
 		 */
 		private Segment(final int p_segmentID, final long p_base, final long p_size) {
 			m_segmentID = p_segmentID;
-			m_pointerOffset = p_base + p_size + 2;
+			m_pointerOffset = p_base + p_size;
 			m_status = new Status(p_size);
 			m_assignedThread = 0;
+			m_base = p_base;
+			m_size = p_size;
 
 			m_lock = new SpinLock();
 
 			// Create a free block in the complete memory
 			createFreeBlock(p_base + 1, p_size);
-			writeLeftPartOfMarker(p_base, 8);
-			writeRightPartOfMarker(p_base + p_size, 8);
 		}
 
 		// Getters
@@ -1303,9 +1305,8 @@ public final class RawMemory {
 					}
 				} else if (freeSize == size + 1) {
 					// 1 Byte to big -> write two markers on the right
-					// TODO replace 15 -> SINGLE_BYTE_MARKER ?
-					writeRightPartOfMarker(address + size, 15);
-					writeLeftPartOfMarker(address + size + 1, 15);
+					writeRightPartOfMarker(address + size, SINGLE_BYTE_MARKER);
+					writeLeftPartOfMarker(address + size + 1, SINGLE_BYTE_MARKER);
 
 					m_status.m_freeSpace -= size + 1;
 					m_status.m_freeBlocks--;
@@ -1361,63 +1362,79 @@ public final class RawMemory {
 			freeSize = size;
 			address = p_address;
 
-			// Read left part of the marker on the left
-			leftMarker = readLeftPartOfMarker(address - 1);
-			leftFree = true;
-			switch (leftMarker) {
-			case 0:
-				// Left neighbor block (<= 12 byte) is free -> merge free blocks
-				leftSize = read(address - 2, 1) + 1;
-				break;
-			case 1:
-			case 2:
-			case 3:
-			case 4:
-			case 5:
-				// Left neighbor block is free -> merge free blocks
-				leftSize = read(address - 1 - leftMarker, leftMarker) + 1;
+			// Only merge if left neighbor within same segment
+			if (address - 1 != m_base) {
+				// Read left part of the marker on the left
+				leftMarker = readLeftPartOfMarker(address - 1);
+				leftFree = true;
+				switch (leftMarker) {
+				case 0:
+					// Left neighbor block (<= 12 byte) is free -> merge free blocks
+					leftSize = read(address - 2, 1) + 1;
+					break;
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5:
+					// Left neighbor block is free -> merge free blocks
+					leftSize = read(address - 1 - leftMarker, leftMarker) + 1;
 
-				unhookFreeBlock(address - leftSize);
-				break;
-			case SINGLE_BYTE_MARKER:
-				// Left byte is free -> merge free blocks
-				leftSize = 1;
-				break;
-			default:
+					unhookFreeBlock(address - leftSize);
+					break;
+				case SINGLE_BYTE_MARKER:
+					// Left byte is free -> merge free blocks
+					leftSize = 1;
+					break;
+				default:
+					leftSize = 0;
+					leftFree = false;
+					break;
+				}
+			} else {
+				// Do not merge across segments
 				leftSize = 0;
 				leftFree = false;
-				break;
 			}
+
 			address -= leftSize;
 			freeSize += leftSize;
 
-			// Read right part of the marker on the right
-			rightMarker = readRightPartOfMarker(p_address + size);
-			rightFree = true;
-			switch (rightMarker) {
-			case 0:
-				// Right neighbor block (<= 12 byte) is free -> merge free blocks
-				rightSize = read(p_address + size + 1, 1) + 1;
-				break;
-			case 1:
-			case 2:
-			case 3:
-			case 4:
-			case 5:
-				// Right neighbor block is free -> merge free blocks
-				rightSize = read(p_address + size + 1, rightMarker) + 1;
+			// Only merge if right neighbor within same segment
+			if (address + size + 1 != m_base + m_size) {
+				// Read right part of the marker on the right
+				rightMarker = readRightPartOfMarker(p_address + size);
+				rightFree = true;
+				switch (rightMarker) {
+				case 0:
+					// Right neighbor block (<= 12 byte) is free -> merge free blocks
+					rightSize = read(p_address + size + 1, 1) + 1;
+					break;
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5:
+					// Right neighbor block is free -> merge free blocks
+					rightSize = read(p_address + size + 1, rightMarker) + 1;
 
-				unhookFreeBlock(p_address + size + 1);
-				break;
-			case 15:
-				// Right byte is free -> merge free blocks
-				rightSize = 1;
-				break;
-			default:
+					unhookFreeBlock(p_address + size + 1);
+					break;
+				case 15:
+					// Right byte is free -> merge free blocks
+					rightSize = 1;
+					break;
+				default:
+					rightSize = 0;
+					rightFree = false;
+					break;
+				}
+			} else {
+				// Do not merge across segments
 				rightSize = 0;
 				rightFree = false;
-				break;
 			}
+
 			freeSize += rightSize;
 
 			// Create a free block
@@ -1482,31 +1499,31 @@ public final class RawMemory {
 
 				// Calculate the number of bytes for the length field
 				size = p_size >> 8;
-				while (size > 0) {
-					lengthFieldSize++;
+			while (size > 0) {
+				lengthFieldSize++;
 
-					size = size >> 8;
-				}
+				size = size >> 8;
+			}
 
-				// Get the corresponding list
-				listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
+			// Get the corresponding list
+			listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
 
-				// Hook block in list
-				anchor = readPointer(listOffset);
+			// Hook block in list
+			anchor = readPointer(listOffset);
 
-				// Write pointer to list and successor
-				writePointer(p_address + lengthFieldSize, listOffset);
-				writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-				if (anchor != 0) {
-					// Write pointer of successor
-					writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
-				}
-				// Write pointer of list
-				writePointer(listOffset, p_address);
+			// Write pointer to list and successor
+			writePointer(p_address + lengthFieldSize, listOffset);
+			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+			if (anchor != 0) {
+				// Write pointer of successor
+				writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
+			}
+			// Write pointer of list
+			writePointer(listOffset, p_address);
 
-				// Write length
-				write(p_address, p_size, lengthFieldSize);
-				write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+			// Write length
+			write(p_address, p_size, lengthFieldSize);
+			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
 			}
 
 			// Write right and left marker
@@ -1547,8 +1564,8 @@ public final class RawMemory {
 
 		@Override
 		public String toString() {
-			return "Segment [m_segmentID=" + m_segmentID + ", m_status=" + m_status + ", m_pointerOffset=" + m_pointerOffset + ". m_assignedThread="
-					+ m_assignedThread + "]";
+			return "Segment [m_segmentID=" + m_segmentID + ", m_base=" + m_base + ", m_status=" + m_status
+					+ ", m_pointerOffset=" + m_pointerOffset + ". m_assignedThread=" + m_assignedThread + "]";
 		}
 
 		// Classes

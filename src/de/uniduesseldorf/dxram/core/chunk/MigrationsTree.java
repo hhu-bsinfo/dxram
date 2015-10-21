@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.chunk;
 
 import java.io.Serializable;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
@@ -31,6 +32,8 @@ public final class MigrationsTree implements Serializable {
 
 	private Entry m_changedEntry;
 
+	private ReentrantLock m_lock;
+
 	// Constructors
 	/**
 	 * Creates an instance of MigrationsTree
@@ -51,6 +54,8 @@ public final class MigrationsTree implements Serializable {
 
 		m_changedEntry = null;
 
+		m_lock = new ReentrantLock(false);
+
 		createOrReplaceEntry(Long.MAX_VALUE, INVALID);
 	}
 
@@ -62,7 +67,13 @@ public final class MigrationsTree implements Serializable {
 	 * @return true if it fits
 	 */
 	public boolean fits(final long p_size) {
-		return p_size + m_currentSecLogSize <= SECONDARY_LOG_SIZE;
+		boolean ret;
+
+		m_lock.lock();
+		ret = p_size + m_currentSecLogSize <= SECONDARY_LOG_SIZE;
+		m_lock.unlock();
+
+		return ret;
 	}
 
 	/**
@@ -85,6 +96,7 @@ public final class MigrationsTree implements Serializable {
 	public boolean putObject(final long p_chunkID, final byte p_rangeID, final long p_size) {
 		Node node;
 
+		m_lock.lock();
 		node = createOrReplaceEntry(p_chunkID, p_rangeID);
 
 		mergeWithPredecessorOrBound(p_chunkID, p_rangeID, node);
@@ -92,6 +104,7 @@ public final class MigrationsTree implements Serializable {
 		mergeWithSuccessor(p_chunkID, p_rangeID);
 
 		m_currentSecLogSize += p_size;
+		m_lock.unlock();
 
 		return true;
 	}
@@ -115,6 +128,7 @@ public final class MigrationsTree implements Serializable {
 		if (p_startID == p_endID) {
 			putObject(p_startID, p_rangeID, p_rangeSize);
 		} else {
+			m_lock.lock();
 			startNode = createOrReplaceEntry(p_startID, p_rangeID);
 
 			mergeWithPredecessorOrBound(p_startID, p_rangeID, startNode);
@@ -126,6 +140,7 @@ public final class MigrationsTree implements Serializable {
 			mergeWithSuccessor(p_endID, p_rangeID);
 
 			m_currentSecLogSize += p_rangeSize;
+			m_lock.unlock();
 		}
 		return true;
 	}
@@ -137,8 +152,14 @@ public final class MigrationsTree implements Serializable {
 	 * @return the backup range ID
 	 */
 	public byte getBackupRange(final long p_chunkID) {
+		byte ret;
+
+		m_lock.lock();
 		Contract.checkNotNull(m_root);
-		return getRangeIDOrSuccessorsRangeID(p_chunkID);
+		ret = getRangeIDOrSuccessorsRangeID(p_chunkID);
+		m_lock.unlock();
+
+		return ret;
 	}
 
 	/**
@@ -155,6 +176,7 @@ public final class MigrationsTree implements Serializable {
 		Entry predecessor;
 		Entry successor;
 
+		m_lock.lock();
 		if (null != m_root) {
 			node = getNodeOrSuccessorsNode(p_chunkID);
 			if (null != node) {
@@ -223,6 +245,7 @@ public final class MigrationsTree implements Serializable {
 				}
 			}
 		}
+		m_lock.unlock();
 	}
 
 	/**
@@ -452,7 +475,7 @@ public final class MigrationsTree implements Serializable {
 	 * @return RangeID for p_chunkID if p_chunkID is in btree or successors NodeID
 	 */
 	private byte getRangeIDOrSuccessorsRangeID(final long p_chunkID) {
-		byte ret = -1;
+		byte ret = INVALID;
 		int index;
 		Node node;
 
@@ -752,7 +775,7 @@ public final class MigrationsTree implements Serializable {
 					greatest = greatest.getChild(greatest.getNumberOfChildren() - 1);
 				}
 				replaceCID = -1;
-				replaceRangeID = -1;
+				replaceRangeID = INVALID;
 				if (0 < greatest.getNumberOfEntries()) {
 					replaceRangeID = greatest.getRangeID(greatest.getNumberOfEntries() - 1);
 					replaceCID = greatest.removeEntry(greatest.getNumberOfEntries() - 1);

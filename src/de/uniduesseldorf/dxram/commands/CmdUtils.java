@@ -53,6 +53,21 @@ public final class CmdUtils {
 	}
 
 	/**
+	 * Parse LocalID from String
+	 * @param p_str
+	 *            the String
+	 * @return LocalID
+	 * @throws NumberFormatException
+	 *             if an error occurred
+	 */
+	public static long getLIDfromString(final String p_str) throws NumberFormatException {
+		long localID;
+
+		localID = Long.parseLong(p_str);
+		return localID;
+	}
+
+	/**
 	 * Parse NodeID,LocalID tuple in a String and return LocalID
 	 * @param p_str
 	 *            the String
@@ -70,7 +85,7 @@ public final class CmdUtils {
 		if (chunkID.length != 2) {
 			throw new NumberFormatException();
 		}
-		localID = Integer.parseInt(chunkID[1]);
+		localID = Long.parseLong(chunkID[1]);
 		return localID;
 	}
 

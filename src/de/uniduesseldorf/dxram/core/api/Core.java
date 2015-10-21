@@ -719,7 +719,7 @@ public final class Core {
 	 *             if the chunks could not be migrated
 	 */
 	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) throws DXRAMException {
-		boolean ret = false;
+		boolean ret = true;
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
 		NodeID.check(p_target);
