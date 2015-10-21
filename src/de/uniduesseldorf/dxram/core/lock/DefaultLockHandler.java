@@ -91,7 +91,7 @@ public final class DefaultLockHandler implements LockInterface {
 				release(p_lock);
 			} else {
 				if (m_directResult) {
-					p_lock.setChunk(new Chunk(-1, 0));
+					p_lock.setChunk(Chunk.INVALID_CHUNKID);
 					p_lock.setReleased();
 				} else {
 					temp = lock.getNext();
@@ -189,8 +189,8 @@ public final class DefaultLockHandler implements LockInterface {
 	private void release(final DefaultLock p_lock) throws MemoryException {
 		Chunk chunk;
 
-		chunk = MemoryManager.get(p_lock.getChunkID());
-		p_lock.setChunk(chunk);
+//		chunk = MemoryManager.get(p_lock.getChunkID());
+//		p_lock.setChunk(chunk);
 		p_lock.setReleased();
 	}
 

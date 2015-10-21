@@ -14,6 +14,7 @@ import de.uniduesseldorf.dxram.utils.Contract;
 public class Chunk implements Comparable<Chunk> {
 
 	// Constants
+	public static final long INVALID_CHUNKID = -1;
 	private static final int MAX_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.CHUNK_MAX_SIZE);
 
 	// Attributes

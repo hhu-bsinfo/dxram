@@ -25,13 +25,16 @@ import de.uniduesseldorf.dxram.utils.StatisticsManager;
 public final class MemoryManager {
 
 	// Attributes
-	private static AtomicLong m_nextLocalID;
+	private AtomicLong m_nextLocalID;
 
+	private RawMemory m_rawMemory;
+	private CIDTable m_cidTable;
+	
 	// Constructors
 	/**
 	 * Creates an instance of MemoryManager
 	 */
-	private MemoryManager() {}
+	public MemoryManager() {}
 
 	// Methods
 	/**
@@ -42,7 +45,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the RawMemory or the CIDTable could not be initialized
 	 */
-	public static long initialize(final long p_size) throws MemoryException {
+	public long initialize(final long p_size) throws MemoryException {
 		long ret;
 
 		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_MEMORY)) {
@@ -51,8 +54,10 @@ public final class MemoryManager {
 
 		m_nextLocalID = new AtomicLong(1);
 
-		ret = RawMemory.initialize(p_size);
-		CIDTable.initialize();
+		m_rawMemory = new RawMemory();
+		ret = m_rawMemory.initialize(p_size);
+		m_cidTable = new CIDTable();
+		m_cidTable.initialize(m_rawMemory);
 
 		return ret;
 	}
@@ -62,10 +67,12 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the RawMemory or the CIDTable could not be disengaged
 	 */
-	public static void disengage() throws MemoryException {
-		CIDTable.disengage();
-		RawMemory.disengage();
+	public void disengage() throws MemoryException {
+		m_cidTable.disengage();
+		m_rawMemory.disengage();
 
+		m_cidTable = null;
+		m_rawMemory = null;
 		m_nextLocalID = null;
 	}
 
@@ -73,12 +80,12 @@ public final class MemoryManager {
 	 * Gets the next free local ID
 	 * @return the next free local ID
 	 */
-	public static LIDElement getNextLocalID() {
+	public LIDElement getNextLocalID() {
 		LIDElement ret = null;
 
 		// Try to get free ID from the CIDTable
 		try {
-			ret = CIDTable.getFreeLID();
+			ret = m_cidTable.getFreeLID();
 		} catch (final DXRAMException e) {}
 
 		// If no free ID exist, get next local ID
@@ -95,7 +102,7 @@ public final class MemoryManager {
 	 *            the number of free local IDs
 	 * @return the next free local IDs
 	 */
-	public static LIDElement[] getNextLocalIDs(final int p_count) {
+	public LIDElement[] getNextLocalIDs(final int p_count) {
 		LIDElement[] ret = null;
 		int count = 0;
 		long localID;
@@ -103,7 +110,7 @@ public final class MemoryManager {
 		ret = new LIDElement[p_count];
 		for (int i = 0; i < p_count; i++) {
 			try {
-				ret[i] = CIDTable.getFreeLID();
+				ret[i] = m_cidTable.getFreeLID();
 			} catch (final DXRAMException e) {}
 			if (ret[i] == null) {
 				count++;
@@ -125,7 +132,7 @@ public final class MemoryManager {
 	 * Gets the current local ID
 	 * @return the current local ID
 	 */
-	public static long getCurrentLocalID() {
+	public long getCurrentLocalID() {
 		long ret;
 
 		ret = m_nextLocalID.get() - 1;
@@ -140,7 +147,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be put
 	 */
-	public static void put(final Chunk p_chunk) throws MemoryException {
+	public void put(final Chunk p_chunk) throws MemoryException {
 		int version;
 		long chunkID;
 		long address;
@@ -153,29 +160,29 @@ public final class MemoryManager {
 		totalChunkSize = p_chunk.getSize() + sizeVersion;
 
 		// Get the address from the CIDTable
-		address = CIDTable.get(chunkID);
+		address = m_cidTable.get(chunkID);
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address <= 0) {
-			address = RawMemory.malloc(totalChunkSize);
-			CIDTable.set(chunkID, address);
+			address = m_rawMemory.malloc(totalChunkSize);
+			m_cidTable.set(chunkID, address);
 		} else {
 			// check if we have to expand
 			long oldSize;
 
-			oldSize = RawMemory.getSize(address);
+			oldSize = m_rawMemory.getSize(address);
 			if (oldSize < totalChunkSize) {
 				// re-allocate
-				RawMemory.free(address);
-				address = RawMemory.malloc(totalChunkSize);
-				CIDTable.set(chunkID, address);
+				m_rawMemory.free(address);
+				address = m_rawMemory.malloc(totalChunkSize);
+				m_cidTable.set(chunkID, address);
 			}
 		}
 
 		// set the size of the version header
-		RawMemory.setCustomState(address, sizeVersion - 1);
+		m_rawMemory.setCustomState(address, sizeVersion - 1);
 		writeVersion(address, version, sizeVersion);
-		RawMemory.writeBytes(address, sizeVersion, p_chunk.getData().array());
+		m_rawMemory.writeBytes(address, sizeVersion, p_chunk.getData().array());
 	}
 
 	/**
@@ -186,12 +193,12 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public static Chunk get(final long p_chunkID) throws MemoryException {
+	public Chunk get(final long p_chunkID) throws MemoryException {
 		Chunk ret = null;
 		long address;
 
 		// Get the address from the CIDTable
-		address = CIDTable.get(p_chunkID);
+		address = m_cidTable.get(p_chunkID);
 
 		// If address <= 0, the Chunk does not exists in the memory
 		if (address > 0) {
@@ -199,11 +206,11 @@ public final class MemoryManager {
 			int sizeVersion;
 			byte[] data;
 
-			sizeVersion = RawMemory.getCustomState(address) + 1;
+			sizeVersion = m_rawMemory.getCustomState(address) + 1;
 			version = readVersion(address, sizeVersion);
 
 			// make sure to skip version data
-			data = RawMemory.readBytes(address, sizeVersion);
+			data = m_rawMemory.readBytes(address, sizeVersion);
 
 			ret = new Chunk(p_chunkID, data, version);
 		}
@@ -219,11 +226,11 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be checked
 	 */
-	public static boolean isResponsible(final long p_chunkID) throws MemoryException {
+	public boolean isResponsible(final long p_chunkID) throws MemoryException {
 		long address;
 
 		// Get the address from the CIDTable
-		address = CIDTable.get(p_chunkID);
+		address = m_cidTable.get(p_chunkID);
 
 		// If address <= 0, the Chunk does not exists in the memory
 		return address > 0;
@@ -235,7 +242,7 @@ public final class MemoryManager {
 	 *            the ChunkID
 	 * @return whether this Chunk was migrated here or not
 	 */
-	public static boolean wasMigrated(final long p_chunkID) {
+	public boolean wasMigrated(final long p_chunkID) {
 		return ChunkID.getCreatorID(p_chunkID) != NodeID.getLocalNodeID();
 	}
 
@@ -246,19 +253,25 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public static void remove(final long p_chunkID) throws MemoryException {
-		Pair<Boolean, Long> chunkCleanup;
+	public void remove(final long p_chunkID) throws MemoryException {
+		int version;
+		int sizeVersion;
+		long addressDeletedChunk;
 
-		// Get and delete the address from the CIDTable
-		chunkCleanup = CIDTable.delete(p_chunkID);
-
-		// check if we have to cleanup the zombie chunk
-		// the table can tell us not to do this to keep the
-		// zombie "alive" in memory for later garbage collection.
-		// The table marks it as deleted, but keeps the address
-		// for this purpose
-		if (chunkCleanup.first()) {
-			RawMemory.free(chunkCleanup.second());
+		// Get and delete the address from the CIDTable, mark as zombie first
+		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
+		
+		// read version
+		sizeVersion = m_rawMemory.getCustomState(addressDeletedChunk) + 1;
+		version = readVersion(addressDeletedChunk, sizeVersion);
+		
+		// more space for another zombie for reuse in LID store?
+		if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID), version)) {
+			// detach reference to zombie and free memory
+			m_cidTable.delete(p_chunkID, false);
+			m_rawMemory.free(addressDeletedChunk);
+		} else {
+			// no space for zombie in LID store, keep him "alive" in memory
 		}
 	}
 
@@ -271,8 +284,8 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public static void prepareChunkIDForReuse(final long p_chunkID, final int p_version) throws MemoryException {
-		CIDTable.putChunkIDForReuse(p_chunkID, p_version);
+	public void prepareChunkIDForReuse(final long p_chunkID, final int p_version) throws MemoryException {
+		m_cidTable.putChunkIDForReuse(p_chunkID, p_version);
 	}
 
 	/**
@@ -281,8 +294,18 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	public static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
-		return CIDTable.getCIDOfAllMigratedChunks();
+	public ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
+		return m_cidTable.getCIDOfAllMigratedChunks();
+	}
+	
+	/**
+	 * Returns the ChunkID ranges of all locally stored Chunks
+	 * @return the ChunkID ranges in an ArrayList
+	 * @throws MemoryException
+	 *             if the CIDTable could not be completely accessed
+	 */
+	public ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
+		return m_cidTable.getCIDrangesOfAllLocalChunks();
 	}
 
 	/**
@@ -291,7 +314,7 @@ public final class MemoryManager {
 	 *            Version number to get the storage size for.
 	 * @return Storage size for the specified version or -1 if size not supported.
 	 */
-	protected static byte getSizeVersion(final int p_version) {
+	protected byte getSizeVersion(final int p_version) {
 		byte ret;
 
 		Contract.check(p_version >= 0, "Invalid version, < 0");
@@ -321,19 +344,19 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeVersion(final long p_address, final int p_version, final int p_size)
+	protected void writeVersion(final long p_address, final int p_version, final int p_size)
 			throws MemoryException {
 		switch (p_size) {
 		case 1:
-			RawMemory.writeByte(p_address, (byte) (p_version & 0xFF));
+			m_rawMemory.writeByte(p_address, (byte) (p_version & 0xFF));
 			break;
 		case 2:
-			RawMemory.writeShort(p_address, (short) (p_version & 0xFFFF));
+			m_rawMemory.writeShort(p_address, (short) (p_version & 0xFFFF));
 			break;
 		case 3:
 			// store as big endian
-			RawMemory.writeByte(p_address, (byte) ((p_version >> 16) & 0xFF));
-			RawMemory.writeShort(p_address, 2, (short) (p_version & 0xFFFF));
+			m_rawMemory.writeByte(p_address, (byte) ((p_version >> 16) & 0xFF));
+			m_rawMemory.writeShort(p_address, 2, (short) (p_version & 0xFFFF));
 			break;
 		default:
 			assert 1 == 2;
@@ -351,22 +374,22 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static int readVersion(final long p_address, final int p_size) throws MemoryException {
+	protected int readVersion(final long p_address, final int p_size) throws MemoryException {
 		int ret;
 
 		switch (p_size) {
 		case 1:
-			ret = (int) RawMemory.readByte(p_address) & 0xFF;
+			ret = (int) m_rawMemory.readByte(p_address) & 0xFF;
 			break;
 		case 2:
-			ret = (int) RawMemory.readShort(p_address) & 0xFF;
+			ret = (int) m_rawMemory.readShort(p_address) & 0xFF;
 			break;
 		case 3:
 			int tmp;
 
 			tmp = 0;
-			tmp |= (RawMemory.readByte(p_address) << 16) & 0xFF;
-			tmp |= RawMemory.readShort(p_address, 2) & 0xFF;
+			tmp |= (m_rawMemory.readByte(p_address) << 16) & 0xFF;
+			tmp |= m_rawMemory.readShort(p_address, 2) & 0xFF;
 			ret = tmp;
 			break;
 		default:

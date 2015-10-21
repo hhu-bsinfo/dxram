@@ -41,27 +41,30 @@ public final class CIDTable {
 	private static final long DELETED_FLAG = BIT_FLAG;
 
 	// Attributes
-	private static long m_nodeIDTableDirectory;
-	private static long m_memoryBase;
+	private long m_nodeIDTableDirectory;
+	private RawMemory m_rawMemory;
+	private long m_memoryBase;
 
-	private static LIDStore m_store;
+	private LIDStore m_store;
 
-	private static Defragmenter m_defragmenter;
+	private Defragmenter m_defragmenter;
 
 	// Constructors
 	/**
 	 * Creates an instance of CIDTable
 	 */
-	private CIDTable() {}
+	public CIDTable() {}
 
 	// Methods
 	/**
 	 * Initializes the CIDTable
+	 * @param rawMemory The raw memory instance to use for allocation.
 	 * @throws MemoryException
 	 *             if the CIDTable could not be initialized
 	 */
-	public static void initialize() throws MemoryException {
-		m_memoryBase = RawMemory.getMemoryBase();
+	public void initialize(RawMemory rawMemory) throws MemoryException {
+		m_rawMemory = rawMemory;
+		m_memoryBase = rawMemory.getMemoryBase();
 		m_nodeIDTableDirectory = createNIDTable();
 
 		m_store = new LIDStore();
@@ -77,7 +80,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be disengaged
 	 */
-	public static void disengage() throws MemoryException {
+	public void disengage() throws MemoryException {
 		long entry;
 
 		m_defragmenter.stop();
@@ -89,7 +92,7 @@ public final class CIDTable {
 			entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
 			if (entry > 0) {
 				disengage(entry, LID_TABLE_LEVELS - 1);
-				RawMemory.free(entry);
+				m_rawMemory.free(entry);
 			}
 		}
 
@@ -105,7 +108,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the table could not be disengaged
 	 */
-	private static void disengage(final long p_addressTable, final int p_level) throws MemoryException {
+	private void disengage(final long p_addressTable, final int p_level) throws MemoryException {
 		long entry;
 
 		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
@@ -115,7 +118,7 @@ public final class CIDTable {
 				if (p_level > 0) {
 					disengage(entry, p_level - 1);
 				}
-				RawMemory.free(entry);
+				m_rawMemory.free(entry);
 			}
 		}
 	}
@@ -126,11 +129,11 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the table could not be created
 	 */
-	private static long createNIDTable() throws MemoryException {
+	private long createNIDTable() throws MemoryException {
 		long ret;
 
-		ret = RawMemory.malloc(NID_TABLE_SIZE);
-		RawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
+		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
+		m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
 
 		MemoryStatistic.getInstance().newCIDTable();
 
@@ -143,11 +146,11 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the table could not be created
 	 */
-	private static long createLIDTable() throws MemoryException {
+	private long createLIDTable() throws MemoryException {
 		long ret;
 
-		ret = RawMemory.malloc(LID_TABLE_SIZE);
-		RawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
+		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
+		m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
 
 		MemoryStatistic.getInstance().newCIDTable();
 
@@ -164,13 +167,13 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be read
 	 */
-	private static long readEntry(final long p_addressTable, final long p_index) throws MemoryException {
+	private long readEntry(final long p_addressTable, final long p_index) throws MemoryException {
 		long ret;
 
 		if (p_addressTable == m_nodeIDTableDirectory) {
-			ret = RawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
+			ret = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
 		} else {
-			ret = RawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
+			ret = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFFFFFFL;
 		}
 
 		return ret;
@@ -187,13 +190,13 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be written
 	 */
-	private static void writeEntry(final long p_addressTable, final long p_index, final long p_entry) throws MemoryException {
+	private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) throws MemoryException {
 		long value;
 
-		value = RawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
+		value = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
 		value += p_entry & 0xFFFFFFFFFFL;
 
-		RawMemory.writeLong(p_addressTable, ENTRY_SIZE * p_index, value);
+		m_rawMemory.writeLong(p_addressTable, ENTRY_SIZE * p_index, value);
 	}
 
 	/**
@@ -204,7 +207,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	protected static long get(final long p_chunkID) throws MemoryException {
+	protected long get(final long p_chunkID) throws MemoryException {
 		long ret;
 
 		readLock(m_nodeIDTableDirectory);
@@ -228,7 +231,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private static long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
+	private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
 		long ret = 0;
 		long index;
 		long entry;
@@ -263,7 +266,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	public static void set(final long p_chunkID, final long p_addressChunk) throws MemoryException {
+	public void set(final long p_chunkID, final long p_addressChunk) throws MemoryException {
 		setEntry(p_chunkID, p_addressChunk, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 	}
 
@@ -280,7 +283,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private static void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) throws MemoryException {
+	private void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) throws MemoryException {
 		long index;
 		long entry;
 
@@ -320,37 +323,17 @@ public final class CIDTable {
 	 * Gets and deletes an entry of the level 0 table
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
+	 * @param p_flagZombie Flag the deleted entry as a zombie or not zombie i.e. fully deleted.
 	 * @return A pair with a bool indicating that the entry was fully removed and memory
 	 *         needs to be free'd. If false the entry was flaged as deleted/zombie i.e.
 	 *         do not free the memory for it, yet.
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	protected static Pair<Boolean, Long> delete(final long p_chunkID) throws MemoryException {
+	protected long delete(final long p_chunkID, boolean p_flagZombie) throws MemoryException {
 		long ret;
-		int version;
-		int sizeVersion;
-		boolean storeFull;
-
-		// delete and flag as zombie first
-		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, true);
-
-		// read version
-		sizeVersion = RawMemory.getCustomState(ret) + 1;
-		version = MemoryManager.readVersion(ret, sizeVersion);
-
-		// more space for another zombie?
-		if (m_store.put(ChunkID.getLocalID(p_chunkID), version)) {
-			// detach reference to zombie and have him killed
-			// by the caller
-			deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, false);
-			storeFull = false;
-		} else {
-			// no space for zombie, keep him "alive" in memory
-			storeFull = true;
-		}
-
-		return new Pair<Boolean, Long>(!storeFull, ret);
+		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
+		return ret;
 	}
 
 	/**
@@ -359,9 +342,10 @@ public final class CIDTable {
 	 *            the ChunkID of the entry
 	 * @param p_version
 	 *            the version of the entry
+	 * @return m_cidTable
 	 */
-	protected static void putChunkIDForReuse(final long p_chunkID, final int p_version) {
-		m_store.put(ChunkID.getLocalID(p_chunkID), p_version);
+	protected boolean putChunkIDForReuse(final long p_chunkID, final int p_version) {
+		return m_store.put(ChunkID.getLocalID(p_chunkID), p_version);
 	}
 
 	/**
@@ -379,7 +363,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be deleted
 	 */
-	private static long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) throws MemoryException {
+	private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) throws MemoryException {
 		long ret = -1;
 		long index;
 		long entry;
@@ -429,7 +413,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	public static ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
+	public ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
 		ArrayList<Long> ret = null;
 		long entry;
 
@@ -457,7 +441,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	public static ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
+	public ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
 		ArrayList<Long> ret = null;
 		long entry;
 		long intervalStart;
@@ -532,7 +516,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	private static ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
+	private ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
 		ArrayList<Long> ret;
 		long entry;
 		int range = 0;
@@ -577,7 +561,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	private static ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
+	private ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
 		ArrayList<Long> ret;
 		long entry;
 
@@ -604,7 +588,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be accessed
 	 */
-	protected static LIDElement getFreeLID() throws MemoryException {
+	protected LIDElement getFreeLID() throws MemoryException {
 		LIDElement ret = null;
 
 		if (m_store != null) {
@@ -619,7 +603,7 @@ public final class CIDTable {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	private static void readLock(final long p_address) {
+	private void readLock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
 			JNILock.readLock(m_memoryBase + p_address + NID_LOCK_OFFSET);
 		} else {
@@ -632,7 +616,7 @@ public final class CIDTable {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	private static void readUnlock(final long p_address) {
+	private void readUnlock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
 			JNILock.readUnlock(m_memoryBase + p_address + NID_LOCK_OFFSET);
 		} else {
@@ -645,7 +629,7 @@ public final class CIDTable {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	private static void writeLock(final long p_address) {
+	private void writeLock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
 			JNILock.writeLock(m_memoryBase + p_address + NID_LOCK_OFFSET);
 		} else {
@@ -658,7 +642,7 @@ public final class CIDTable {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	private static void writeUnlock(final long p_address) {
+	private void writeUnlock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
 			JNILock.writeUnlock(m_memoryBase + p_address + NID_LOCK_OFFSET);
 		} else {
@@ -672,14 +656,14 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the tables could not be defragmented
 	 */
-	public static long defragmentAll() throws MemoryException {
+	public long defragmentAll() throws MemoryException {
 		return m_defragmenter.defragmentAll();
 	}
 
 	/**
 	 * Prints debug informations
 	 */
-	public static void printDebugInfos() {
+	public void printDebugInfos() {
 		StringBuilder infos;
 		int[] count;
 
@@ -705,7 +689,7 @@ public final class CIDTable {
 	 * @param p_count
 	 *            the table counts
 	 */
-	private static void countTables(final long p_addressTable, final int p_level, final int[] p_count) {
+	private void countTables(final long p_addressTable, final int p_level, final int[] p_count) {
 		long entry;
 
 		p_count[p_level]++;
@@ -740,6 +724,43 @@ public final class CIDTable {
 			}
 		}
 	}
+	
+	/**
+	 * Read the version number from the specified location.
+	 * @param p_address
+	 *            Address to read the version number from.
+	 * @param p_size
+	 *            Storage size of the version number to read.
+	 * @return Version number read.
+	 * @throws MemoryException
+	 *             If accessing memory failed.
+	 */
+	protected int readVersion(final long p_address, final int p_size) throws MemoryException {
+		int ret;
+
+		switch (p_size) {
+		case 1:
+			ret = (int) m_rawMemory.readByte(p_address) & 0xFF;
+			break;
+		case 2:
+			ret = (int) m_rawMemory.readShort(p_address) & 0xFF;
+			break;
+		case 3:
+			int tmp;
+
+			tmp = 0;
+			tmp |= (m_rawMemory.readByte(p_address) << 16) & 0xFF;
+			tmp |= m_rawMemory.readShort(p_address, 2) & 0xFF;
+			ret = tmp;
+			break;
+		default:
+			assert 1 == 2;
+			ret = -1;
+			break;
+		}
+
+		return ret;
+	}
 
 	// Classes
 	/**
@@ -747,7 +768,7 @@ public final class CIDTable {
 	 * @author Florian Klein
 	 *         30.04.2014
 	 */
-	private static final class LIDStore {
+	private final class LIDStore {
 
 		// Constants
 		private static final int STORE_CAPACITY = 100000;
@@ -891,10 +912,12 @@ public final class CIDTable {
 				} else {
 					// check if we got an entry referencing a zombie
 					if ((entry & DELETED_FLAG) > 0 && (entry & BITMASK_ADDRESS) > 0) {
-						Chunk chunk;
+						long chunkAddress;
 						long chunkID;
 						long nodeID;
 						long localID;
+						int sizeVersion;
+						int version;
 
 						nodeID = NodeID.getLocalNodeID();
 						localID = p_offset + i;
@@ -904,16 +927,19 @@ public final class CIDTable {
 
 						// get zombie chunk that is still allocated
 						// to preserve the version data
-						chunk = MemoryManager.get(chunkID);
+						chunkAddress = CIDTable.this.get(chunkID);
+						
+						sizeVersion = m_rawMemory.getCustomState(chunkAddress) + 1;
+						version = CIDTable.this.readVersion(chunkAddress, sizeVersion);
 
 						// cleanup zombie in table
 						writeEntry(p_addressTable, i, 0);
 
-						m_localIDs[m_position + m_count] = new LIDElement(localID, chunk.getVersion());
+						m_localIDs[m_position + m_count] = new LIDElement(localID, version);
 						m_count++;
 
 						// cleanup zombie in raw memory
-						RawMemory.free(entry & BITMASK_ADDRESS);
+						m_rawMemory.free(entry & BITMASK_ADDRESS);
 
 						ret = true;
 					}
@@ -978,7 +1004,7 @@ public final class CIDTable {
 	 * @author Florian Klein
 	 *         05.04.2014
 	 */
-	private static final class Defragmenter implements Runnable {
+	private final class Defragmenter implements Runnable {
 
 		// Constants
 		private static final long SLEEP_TIME = 10000;
@@ -1018,7 +1044,7 @@ public final class CIDTable {
 
 				if (m_running) {
 					try {
-						fragmentation = RawMemory.getFragmentation();
+						fragmentation = m_rawMemory.getFragmentation();
 
 						table = getEntry(offset++, m_nodeIDTableDirectory, 1);
 						if (table == 0) {
@@ -1056,16 +1082,16 @@ public final class CIDTable {
 					newAddress = 0;
 
 					if (address != 0) {
-						segment = RawMemory.getSegment(address);
+						segment = m_rawMemory.getSegment(address);
 
 						if (p_level > 1) {
 							defragmentTable(address, p_level - 1, p_fragmentation);
 
 							if (p_fragmentation[segment] > MAX_FRAGMENTATION) {
-								data = RawMemory.readBytes(address);
-								RawMemory.free(address);
-								newAddress = RawMemory.malloc(data.length);
-								RawMemory.writeBytes(newAddress, data);
+								data = m_rawMemory.readBytes(address);
+								m_rawMemory.free(address);
+								newAddress = m_rawMemory.malloc(data.length);
+								m_rawMemory.writeBytes(newAddress, data);
 							}
 						} else {
 							if (p_fragmentation[segment] > MAX_FRAGMENTATION) {
@@ -1112,7 +1138,7 @@ public final class CIDTable {
 
 			try {
 				addresses[0] = table;
-				data[0] = RawMemory.readBytes(table);
+				data[0] = m_rawMemory.readBytes(table);
 				sizes[0] = LID_TABLE_SIZE;
 				for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 					position = i + 1;
@@ -1120,16 +1146,16 @@ public final class CIDTable {
 					address = readEntry(table, i) & BITMASK_ADDRESS;
 					if (address != 0) {
 						addresses[position] = address;
-						data[position] = RawMemory.readBytes(address);
+						data[position] = m_rawMemory.readBytes(address);
 						sizes[position] = data[position].length;
 					}
 				}
 
-				RawMemory.free(addresses);
-				addresses = RawMemory.malloc(sizes);
+				m_rawMemory.free(addresses);
+				addresses = m_rawMemory.malloc(sizes);
 
 				table = addresses[0];
-				RawMemory.writeBytes(table, data[0]);
+				m_rawMemory.writeBytes(table, data[0]);
 				for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 					position = i + 1;
 
@@ -1137,7 +1163,7 @@ public final class CIDTable {
 					if (address != 0) {
 						writeEntry(table, i, address);
 
-						RawMemory.writeBytes(address, data[position]);
+						m_rawMemory.writeBytes(address, data[position]);
 					}
 				}
 			} finally {
@@ -1161,7 +1187,7 @@ public final class CIDTable {
 
 			ret = System.nanoTime();
 
-			fragmentation = RawMemory.getFragmentation();
+			fragmentation = m_rawMemory.getFragmentation();
 			defragmentTable(m_nodeIDTableDirectory, LID_TABLE_LEVELS - 1, fragmentation);
 
 			ret = System.nanoTime() - ret;

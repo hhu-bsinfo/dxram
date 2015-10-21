@@ -24,41 +24,41 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
 public final class RawMemory {
 
 	// Constants
-	private static final byte POINTER_SIZE = 5;
-	private static final byte SMALL_BLOCK_SIZE = 64;
-	private static final byte OCCUPIED_FLAGS_OFFSET = 0x5;
-	private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
-	private static final byte SINGLE_BYTE_MARKER = 0xF;
+	private final byte POINTER_SIZE = 5;
+	private final byte SMALL_BLOCK_SIZE = 64;
+	private final byte OCCUPIED_FLAGS_OFFSET = 0x5;
+	private final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
+	private final byte SINGLE_BYTE_MARKER = 0xF;
 
-	private static final byte LIST_COUNT = 29;
-	private static final int LIST_SIZE = LIST_COUNT * POINTER_SIZE + 3;
-	private static final long SEGMENT_SIZE = 1 << LIST_COUNT + 1;
-	private static final long FULL_SEGMENT_SIZE = SEGMENT_SIZE + 2 + LIST_SIZE;
-	private static final int MAX_LENGTH_FIELD = 3;
+	private final byte LIST_COUNT = 29;
+	private final int LIST_SIZE = LIST_COUNT * POINTER_SIZE + 3;
+	private final long SEGMENT_SIZE = 1 << LIST_COUNT + 1;
+	private final long FULL_SEGMENT_SIZE = SEGMENT_SIZE + 2 + LIST_SIZE;
+	private final int MAX_LENGTH_FIELD = 3;
 
 	private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
 
 	// Attributes
-	private static long m_memoryBase;
-	private static long m_memorySize;
+	private long m_memoryBase;
+	private long m_memorySize;
 
-	private static Segment[] m_segments;
-	private static ArenaManager m_arenaManager;
+	private Segment[] m_segments;
+	private ArenaManager m_arenaManager;
 
-	private static long[] m_listSizes;
+	private long[] m_listSizes;
 
 	// Constructors
 	/**
 	 * Creates an instance of RawMemory
 	 */
-	private RawMemory() {}
+	public RawMemory() {}
 
 	// Getters
 	/**
 	 * Return the current base address
 	 * @return the memoryBase the base address
 	 */
-	protected static long getMemoryBase() {
+	protected long getMemoryBase() {
 		return m_memoryBase;
 	}
 
@@ -71,7 +71,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the memory could not be initialized
 	 */
-	public static long initialize(final long p_size) throws MemoryException {
+	public long initialize(final long p_size) throws MemoryException {
 		long ret;
 		int segmentCount;
 		long base;
@@ -142,7 +142,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the memory could not be disengaged
 	 */
-	public static void disengage() throws MemoryException {
+	public void disengage() throws MemoryException {
 		try {
 			UNSAFE.freeMemory(m_memoryBase);
 
@@ -169,7 +169,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If dumping memory failed.
 	 */
-	public static void dump(final File p_file, final long p_addr, final long p_count) throws MemoryException {
+	public void dump(final File p_file, final long p_addr, final long p_count) throws MemoryException {
 		RandomAccessFile outFile = null;
 		try {
 			outFile = new RandomAccessFile(p_file, "rw");
@@ -198,7 +198,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the memory block could not be allocated
 	 */
-	public static long malloc(final int p_size) throws MemoryException {
+	public long malloc(final int p_size) throws MemoryException {
 		long ret = -1;
 		Segment segment = null;
 		long threadID;
@@ -235,7 +235,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the memory block could not be allocated
 	 */
-	protected static long[] malloc(final int... p_sizes) throws MemoryException {
+	protected long[] malloc(final int... p_sizes) throws MemoryException {
 		long[] ret;
 		long address;
 		int size;
@@ -311,7 +311,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the block could not be freed
 	 */
-	protected static void free(final long p_address) throws MemoryException {
+	protected void free(final long p_address) throws MemoryException {
 		Segment segment;
 
 		segment = m_segments[(int) (p_address / FULL_SEGMENT_SIZE)];
@@ -330,7 +330,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the blocks could not be freed
 	 */
-	protected static void free(final long... p_addresses) throws MemoryException {
+	protected void free(final long... p_addresses) throws MemoryException {
 		boolean exceptionOccured = false;
 
 		Contract.checkNotNull(p_addresses, "no addresses given");
@@ -356,7 +356,7 @@ public final class RawMemory {
 	 *            the sizes od the objects
 	 * @return the size of the required memory
 	 */
-	private static int getRequiredMemory(final int... p_sizes) {
+	private int getRequiredMemory(final int... p_sizes) {
 		int ret;
 
 		Contract.checkNotNull(p_sizes, "no sizes given");
@@ -394,7 +394,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the memory could not be set
 	 */
-	protected static void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
+	protected void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
 		try {
 			int lengthFieldSize;
 
@@ -416,7 +416,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static byte readByte(final long p_address) throws MemoryException {
+	protected byte readByte(final long p_address) throws MemoryException {
 		return readByte(p_address, 0);
 	}
 
@@ -430,7 +430,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static byte readByte(final long p_address, final long p_offset) throws MemoryException {
+	protected byte readByte(final long p_address, final long p_offset) throws MemoryException {
 		try {
 			int lengthFieldSize;
 			int size;
@@ -456,7 +456,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static short readShort(final long p_address) throws MemoryException {
+	protected short readShort(final long p_address) throws MemoryException {
 		return readShort(p_address, 0);
 	}
 
@@ -470,7 +470,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static short readShort(final long p_address, final long p_offset) throws MemoryException {
+	protected short readShort(final long p_address, final long p_offset) throws MemoryException {
 		try {
 			int lengthFieldSize;
 			int size;
@@ -496,7 +496,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static int readInt(final long p_address) throws MemoryException {
+	protected int readInt(final long p_address) throws MemoryException {
 		return readInt(p_address, 0);
 	}
 
@@ -510,7 +510,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static int readInt(final long p_address, final long p_offset) throws MemoryException {
+	protected int readInt(final long p_address, final long p_offset) throws MemoryException {
 		try {
 			int lengthFieldSize;
 			int size;
@@ -536,7 +536,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static long readLong(final long p_address) throws MemoryException {
+	protected long readLong(final long p_address) throws MemoryException {
 		return readLong(p_address, 0);
 	}
 
@@ -550,7 +550,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static long readLong(final long p_address, final long p_offset) throws MemoryException {
+	protected long readLong(final long p_address, final long p_offset) throws MemoryException {
 		try {
 			int lengthFieldSize;
 			int size;
@@ -576,7 +576,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the bytes could not be read
 	 */
-	protected static byte[] readBytes(final long p_address) throws MemoryException {
+	protected byte[] readBytes(final long p_address) throws MemoryException {
 		return readBytes(p_address, 0);
 	}
 
@@ -591,7 +591,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
+	protected byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
 		byte[] ret;
 		int lengthFieldSize;
 		int size;
@@ -625,7 +625,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeByte(final long p_address, final byte p_value) throws MemoryException {
+	protected void writeByte(final long p_address, final byte p_value) throws MemoryException {
 		writeByte(p_address, 0, p_value);
 	}
 
@@ -640,7 +640,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeByte(final long p_address, final long p_offset, final byte p_value)
+	protected void writeByte(final long p_address, final long p_offset, final byte p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -668,7 +668,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeShort(final long p_address, final short p_value) throws MemoryException {
+	protected void writeShort(final long p_address, final short p_value) throws MemoryException {
 		writeShort(p_address, 0, p_value);
 	}
 
@@ -683,7 +683,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeShort(final long p_address, final long p_offset, final short p_value)
+	protected void writeShort(final long p_address, final long p_offset, final short p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -712,7 +712,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeInt(final long p_address, final int p_value) throws MemoryException {
+	protected void writeInt(final long p_address, final int p_value) throws MemoryException {
 		writeInt(p_address, 0, p_value);
 	}
 
@@ -727,7 +727,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeInt(final long p_address, final long p_offset, final int p_value)
+	protected void writeInt(final long p_address, final long p_offset, final int p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -756,7 +756,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeLong(final long p_address, final long p_value) throws MemoryException {
+	protected void writeLong(final long p_address, final long p_value) throws MemoryException {
 		writeLong(p_address, 0, p_value);
 	}
 
@@ -771,7 +771,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeLong(final long p_address, final long p_offset, final long p_value)
+	protected void writeLong(final long p_address, final long p_offset, final long p_value)
 			throws MemoryException {
 		try {
 			int lengthFieldSize;
@@ -799,7 +799,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
+	protected void writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
 		writeBytes(p_address, 0, p_value);
 	}
 
@@ -814,7 +814,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	protected static void writeBytes(final long p_address, final long p_offset, final byte[] p_value)
+	protected void writeBytes(final long p_address, final long p_offset, final byte[] p_value)
 			throws MemoryException {
 		int lengthFieldSize;
 		int size;
@@ -843,7 +843,7 @@ public final class RawMemory {
 	 *            Address of malloc'd block of memory.
 	 * @return User definable state stored for that block (valid values: 0, 1, 2. invalid: -1)
 	 */
-	protected static int getCustomState(final long p_address) {
+	protected int getCustomState(final long p_address) {
 		int marker;
 		int ret;
 
@@ -867,7 +867,7 @@ public final class RawMemory {
 	 *            State to set for that block of memory (valid values: 0, 1, 2.
 	 *            all other values invalid).
 	 */
-	protected static void setCustomState(final long p_address, final int p_customState) {
+	protected void setCustomState(final long p_address, final int p_customState) {
 		int marker;
 		int lengthFieldSize;
 		int size;
@@ -892,7 +892,7 @@ public final class RawMemory {
 	 *            Address of block to get the size of.
 	 * @return Size of memory block at specified address.
 	 */
-	protected static int getSize(final long p_address) {
+	protected int getSize(final long p_address) {
 		int lengthFieldSize;
 
 		lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
@@ -903,7 +903,7 @@ public final class RawMemory {
 	 * Gets the current fragmentation of all segments
 	 * @return the fragmentation
 	 */
-	protected static double[] getFragmentation() {
+	protected double[] getFragmentation() {
 		double[] ret;
 
 		ret = new double[m_segments.length];
@@ -920,7 +920,7 @@ public final class RawMemory {
 	 *            the address
 	 * @return the segment
 	 */
-	protected static int getSegment(final long p_address) {
+	protected int getSegment(final long p_address) {
 		return (int) (p_address / FULL_SEGMENT_SIZE);
 	}
 
@@ -928,7 +928,7 @@ public final class RawMemory {
 	 * Gets the current segment status
 	 * @return the segment status
 	 */
-	public static Segment.Status[] getSegmentStatus() {
+	public Segment.Status[] getSegmentStatus() {
 		Segment.Status[] ret;
 
 		ret = new Segment.Status[m_segments.length];
@@ -942,7 +942,7 @@ public final class RawMemory {
 	/**
 	 * Prints debug infos
 	 */
-	public static void printDebugInfos() {
+	public void printDebugInfos() {
 		StringBuilder output;
 		Segment.Status[] stati;
 		long freeSpace;
@@ -976,7 +976,7 @@ public final class RawMemory {
 	 *            the size
 	 * @return the suitable list
 	 */
-	private static int getList(final long p_size) {
+	private int getList(final long p_size) {
 		int ret = 0;
 
 		while (ret + 1 < m_listSizes.length && m_listSizes[ret + 1] <= p_size) {
@@ -992,7 +992,7 @@ public final class RawMemory {
 	 *            the address
 	 * @return the right part of a marker byte
 	 */
-	private static int readRightPartOfMarker(final long p_address) {
+	private int readRightPartOfMarker(final long p_address) {
 		return UNSAFE.getByte(m_memoryBase + p_address) & 0xF;
 	}
 
@@ -1002,11 +1002,11 @@ public final class RawMemory {
 	 *            the address
 	 * @return the left part of a marker byte
 	 */
-	private static int readLeftPartOfMarker(final long p_address) {
+	private int readLeftPartOfMarker(final long p_address) {
 		return (UNSAFE.getByte(m_memoryBase + p_address) & 0xF0) >> 4;
 	}
 	
-	private static int getLengthOccupiedFromMarker(final int p_marker)
+	private int getLengthOccupiedFromMarker(final int p_marker)
 	{
 		int ret;
 		
@@ -1025,7 +1025,7 @@ public final class RawMemory {
 	 * @param p_right
 	 *            the right part
 	 */
-	private static void writeRightPartOfMarker(final long p_address, final int p_right) {
+	private void writeRightPartOfMarker(final long p_address, final int p_right) {
 		byte marker;
 
 		marker = (byte) ((UNSAFE.getByte(m_memoryBase + p_address) & 0xF0) + (p_right & 0xF));
@@ -1039,7 +1039,7 @@ public final class RawMemory {
 	 * @param p_left
 	 *            the left part
 	 */
-	private static void writeLeftPartOfMarker(final long p_address, final int p_left) {
+	private void writeLeftPartOfMarker(final long p_address, final int p_left) {
 		byte marker;
 
 		marker = (byte) (((p_left & 0xF) << 4) + (UNSAFE.getByte(m_memoryBase + p_address) & 0xF));
@@ -1052,7 +1052,7 @@ public final class RawMemory {
 	 *            the address
 	 * @return the pointer
 	 */
-	private static long readPointer(final long p_address) {
+	private long readPointer(final long p_address) {
 		return read(p_address, POINTER_SIZE);
 	}
 
@@ -1063,7 +1063,7 @@ public final class RawMemory {
 	 * @param p_pointer
 	 *            the pointer
 	 */
-	private static void writePointer(final long p_address, final long p_pointer) {
+	private void writePointer(final long p_address, final long p_pointer) {
 		write(p_address, p_pointer, POINTER_SIZE);
 	}
 
@@ -1075,7 +1075,7 @@ public final class RawMemory {
 	 *            the number of bytes
 	 * @return the combined bytes
 	 */
-	private static long read(final long p_address, final int p_count) {
+	private long read(final long p_address, final int p_count) {
 		long ret = 0;
 		long bitmask;
 
@@ -1096,7 +1096,7 @@ public final class RawMemory {
 	 * @param p_count
 	 *            the number of bytes
 	 */
-	private static void write(final long p_address, final long p_bytes, final int p_count) {
+	private void write(final long p_address, final long p_bytes, final int p_count) {
 		long value;
 		long bitmask;
 
@@ -1122,7 +1122,7 @@ public final class RawMemory {
 	 * Represents a segment of the memory
 	 * @author Florian Klein 04.04.2014
 	 */
-	public static final class Segment {
+	public final class Segment {
 
 		// Attributes
 		private int m_segmentID;
@@ -1573,7 +1573,7 @@ public final class RawMemory {
 		 * Holds fragmentation information of a segment
 		 * @author Florian Klein 10.04.2014
 		 */
-		public static final class Status {
+		public final class Status {
 
 			// Attributes
 			private long m_freeSpace;
@@ -1700,7 +1700,7 @@ public final class RawMemory {
 	 * Manages the Thread Arenas
 	 * @author Florian Klein 28.08.2014
 	 */
-	private static final class ArenaManager {
+	private final class ArenaManager {
 
 		// Attributes
 		private Map<Long, Segment> m_arenas;

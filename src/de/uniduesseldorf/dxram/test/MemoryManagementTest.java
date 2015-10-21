@@ -108,8 +108,8 @@ public final class MemoryManagementTest {
 	 *             if the memory management could not be deinitialized
 	 */
 	private static void deinit() throws MemoryException {
-		CIDTable.printDebugInfos();
-		RawMemory.printDebugInfos();
+//		CIDTable.printDebugInfos();
+//		RawMemory.printDebugInfos();
 
 		Core.close();
 	}

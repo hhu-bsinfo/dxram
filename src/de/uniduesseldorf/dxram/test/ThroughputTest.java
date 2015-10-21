@@ -191,8 +191,8 @@ public final class ThroughputTest {
 			data.putShort(NodeID.getLocalNodeID());
 			Core.put(chunk);
 
-			CIDTable.printDebugInfos();
-			RawMemory.printDebugInfos();
+//			CIDTable.printDebugInfos();
+//			RawMemory.printDebugInfos();
 		}
 
 		/**
