@@ -3,6 +3,7 @@ package de.uniduesseldorf.dxram.core.chunk.storage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteOrder;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
@@ -224,6 +225,42 @@ public class StorageUnsafeMemory implements Storage
 		assert p_ptr + 7 < m_memorySize;
 		
 		UNSAFE.putLong(m_memoryBase + p_ptr, p_value);
+	}
+	
+	@Override
+	public long readVal(final long p_ptr, final int p_count) throws MemoryException {
+		long val = 0;
+		
+		// take endianness into account!!!
+		if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+			for (int i = 0; i < p_count; i++)
+			{
+				val |= UNSAFE.getByte(p_ptr + i) << (8 * i);
+			}
+		} else {
+			for (int i = 0; i < p_count; i++)
+			{
+				val |= UNSAFE.getByte(p_ptr + i) << (8 * (7 - i));
+			}
+		}
+		
+		return val;
+	}
+
+	@Override
+	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException {
+		// take endianness into account!!!
+		if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+			for (int i = 0; i < p_count; i++)
+			{
+				UNSAFE.putByte(p_ptr + i, (byte) (p_val >> (8 * (7 - i))));
+			}
+		} else {
+			for (int i = 0; i < p_count; i++)
+			{
+				UNSAFE.putByte(p_ptr + i, (byte) (p_val >> i));
+			}
+		}
 	}
 	
 	@Override

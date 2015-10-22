@@ -1,6 +1,7 @@
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.io.File;
+import java.nio.ByteOrder;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 
@@ -170,6 +171,26 @@ public interface Storage
 	 * @throws MemoryException If writing fails.
 	 */
 	public void writeLong(final long p_ptr, final long p_value) throws MemoryException;
+	
+	/**
+	 * Read a value with specified number of bytes length from the storage. 
+	 *  
+	 * @param p_ptr Address to read from.
+	 * @param p_count Number of bytes the value is stored to.
+	 * @return Value read.
+	 * @throws MemoryException If reading fails.
+	 */
+	public long readVal(final long p_ptr, final int p_count) throws MemoryException;
+
+	/**
+	 * Write a value with specified number of bytes length to the storage.
+	 * 
+	 * @param p_ptr Address to write to.
+	 * @param p_val Value to write.
+	 * @param p_count Number of bytes the value should occupy.
+	 * @throws MemoryException If writing fails.
+	 */
+	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException;
 	
 	/**
 	 * Locks the read lock

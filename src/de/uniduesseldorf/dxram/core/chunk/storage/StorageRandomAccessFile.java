@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
@@ -15,7 +16,7 @@ public class StorageRandomAccessFile implements Storage
 	
 	public StorageRandomAccessFile(final File p_file) throws FileNotFoundException
 	{
-		m_file = new RandomAccessFile(p_file, "rw");
+		m_file = new RandomAccessFile(p_file, "rwd");
 	}
 	
 	@Override
@@ -302,6 +303,64 @@ public class StorageRandomAccessFile implements Storage
 			m_file.writeLong(p_value);
 		} catch (IOException e) {
 			throw new MemoryException("writing failed " + e);
+		}
+	}
+	
+	@Override
+	public long readVal(final long p_ptr, final int p_count) throws MemoryException
+	{
+		long val = 0;
+		
+		try
+		{
+			m_file.seek(p_ptr);
+			
+			// take endianness into account!!!
+			if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+				for (int i = 0; i < p_count; i++)
+				{
+					// input little endian byte order
+					val |= (m_file.readByte() >> (8 * (7 - i)) & 0xFF);
+				}
+			} else {
+				for (int i = 0; i < p_count; i++)
+				{
+					// input little endian byte order
+					byte tmp = (byte) (m_file.readByte() << (8 * (7 - i)) & 0xFF);
+					val |= tmp;
+				}
+			}
+		} catch (IOException e) {
+			throw new MemoryException("reading failed " + e);
+		}
+		
+		return val;
+	}
+
+	@Override
+	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException
+	{
+		try
+		{
+			m_file.seek(p_ptr);
+			
+			// take endianness into account!!!
+			if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+				for (int i = 0; i < p_count; i++)
+				{
+					// output little endian byte order
+					m_file.writeByte((int) (p_val >> (8 * i) ) & 0xFF);
+				}
+			} else {
+				for (int i = 0; i < p_count; i++)
+				{
+					// output little endian byte order
+					byte tmp = (byte) (p_val >> (8 * (8 - i)) & 0xFF);
+					m_file.writeByte((int) tmp);
+				}
+			}
+		} catch (IOException e) {
+			throw new MemoryException("reading failed " + e);
 		}
 	}
 

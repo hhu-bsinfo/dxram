@@ -1043,15 +1043,7 @@ public final class RawMemory {
 	 * @return the combined bytes
 	 */
 	private long read(final long p_address, final int p_count) throws MemoryException {
-		long ret = 0;
-		long bitmask;
-
-		bitmask = 0xFFFFFFFFFFFFFFFFL >>> (8 - p_count) * 8;
-
-		ret = m_memory.readLong(p_address);
-		ret = ret & bitmask;
-
-		return ret;
+		return m_memory.readVal(p_address, p_count);
 	}
 
 	/**
@@ -1064,24 +1056,7 @@ public final class RawMemory {
 	 *            the number of bytes
 	 */
 	private void write(final long p_address, final long p_bytes, final int p_count) throws MemoryException {
-		long value;
-		long bitmask;
-
-		value = p_bytes;
-
-		if (p_count < 8) {
-			bitmask = 0xFFFFFFFFFFFFFFFFL << p_count * 8;
-
-			// Read current value
-			value = m_memory.readLong(p_address);
-			value = value & bitmask;
-
-			bitmask = 0xFFFFFFFFFFFFFFFFL >>> (8 - p_count) * 8;
-
-			value += p_bytes & bitmask;
-		}
-
-		m_memory.writeLong(p_address, value);
+		m_memory.writeVal(p_address, p_bytes, p_count);
 	}
 	
 	/**
@@ -1089,7 +1064,7 @@ public final class RawMemory {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	public void readLock(final long p_address) {
+	protected void readLock(final long p_address) {
 		m_memory.readLock(p_address);
 	}
 
@@ -1098,7 +1073,7 @@ public final class RawMemory {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	public void readUnlock(final long p_address) {
+	protected void readUnlock(final long p_address) {
 		m_memory.readUnlock(p_address);
 	}
 
@@ -1107,7 +1082,7 @@ public final class RawMemory {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	public void writeLock(final long p_address) {
+	protected void writeLock(final long p_address) {
 		m_memory.writeLock(p_address);
 	}
 
@@ -1116,7 +1091,7 @@ public final class RawMemory {
 	 * @param p_address
 	 *            the address of the lock
 	 */
-	public void writeUnlock(final long p_address) {
+	protected void writeUnlock(final long p_address) {
 		m_memory.writeUnlock(p_address);
 	}
 
