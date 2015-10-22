@@ -8,10 +8,7 @@ import java.util.concurrent.locks.Lock;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Pair;
-import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
 /**
@@ -43,7 +40,6 @@ public final class CIDTable {
 	// Attributes
 	private long m_nodeIDTableDirectory;
 	private RawMemory m_rawMemory;
-	private long m_memoryBase;
 
 	private LIDStore m_store;
 
@@ -64,7 +60,6 @@ public final class CIDTable {
 	 */
 	public void initialize(RawMemory rawMemory) throws MemoryException {
 		m_rawMemory = rawMemory;
-		m_memoryBase = rawMemory.getMemoryBase();
 		m_nodeIDTableDirectory = createNIDTable();
 
 		m_store = new LIDStore();
@@ -605,9 +600,9 @@ public final class CIDTable {
 	 */
 	private void readLock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
-			JNILock.readLock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+			m_rawMemory.readLock(p_address + NID_LOCK_OFFSET);
 		} else {
-			JNILock.readLock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+			m_rawMemory.readLock( p_address + LID_LOCK_OFFSET);
 		}
 	}
 
@@ -618,9 +613,9 @@ public final class CIDTable {
 	 */
 	private void readUnlock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
-			JNILock.readUnlock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+			m_rawMemory.readUnlock(p_address + NID_LOCK_OFFSET);
 		} else {
-			JNILock.readUnlock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+			m_rawMemory.readUnlock(p_address + LID_LOCK_OFFSET);
 		}
 	}
 
@@ -631,9 +626,9 @@ public final class CIDTable {
 	 */
 	private void writeLock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
-			JNILock.writeLock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+			m_rawMemory.writeLock(p_address + NID_LOCK_OFFSET);
 		} else {
-			JNILock.writeLock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+			m_rawMemory.writeLock(p_address + LID_LOCK_OFFSET);
 		}
 	}
 
@@ -644,9 +639,9 @@ public final class CIDTable {
 	 */
 	private void writeUnlock(final long p_address) {
 		if (p_address == m_nodeIDTableDirectory) {
-			JNILock.writeUnlock(m_memoryBase + p_address + NID_LOCK_OFFSET);
+			m_rawMemory.writeUnlock(p_address + NID_LOCK_OFFSET);
 		} else {
-			JNILock.writeUnlock(m_memoryBase + p_address + LID_LOCK_OFFSET);
+			m_rawMemory.writeUnlock(p_address + LID_LOCK_OFFSET);
 		}
 	}
 

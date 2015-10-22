@@ -1,7 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,7 +13,6 @@ import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
 /**

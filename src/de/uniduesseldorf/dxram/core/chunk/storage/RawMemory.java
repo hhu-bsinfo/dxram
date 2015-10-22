@@ -2,20 +2,16 @@
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 
-import sun.misc.Unsafe;
-
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.Tools;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
-import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
 
 /**
  * Manages a large memory block
@@ -36,11 +32,8 @@ public final class RawMemory {
 	private final long FULL_SEGMENT_SIZE = SEGMENT_SIZE + 2 + LIST_SIZE;
 	private final int MAX_LENGTH_FIELD = 3;
 
-	private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
-
 	// Attributes
-	private long m_memoryBase;
-	private long m_memorySize;
+	private Storage m_memory;
 
 	private Segment[] m_segments;
 	private ArenaManager m_arenaManager;
@@ -52,15 +45,6 @@ public final class RawMemory {
 	 * Creates an instance of RawMemory
 	 */
 	public RawMemory() {}
-
-	// Getters
-	/**
-	 * Return the current base address
-	 * @return the memoryBase the base address
-	 */
-	protected long getMemoryBase() {
-		return m_memoryBase;
-	}
 
 	// Methods
 	/**
@@ -96,15 +80,15 @@ public final class RawMemory {
 		m_listSizes[3] = 48;
 
 		// Set the size of the memory
-		m_memorySize = p_size + segmentCount * (2 + LIST_SIZE);
-
-		// Allocate Memory
 		try {
-			m_memoryBase = UNSAFE.allocateMemory(m_memorySize);
-			UNSAFE.setMemory(m_memoryBase, m_memorySize, (byte) 0);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not initialize memory", e);
+			m_memory = new StorageRandomAccessFile(new File("raw.mem_" + Math.random()));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+//		m_memory = new StorageUnsafeMemory();
+		m_memory.allocate(p_size + segmentCount * (2 + LIST_SIZE));
+		m_memory.set(0, m_memory.getSize(), (byte) 0);
 
 		// Initialize segments
 		base = 0;
@@ -121,9 +105,9 @@ public final class RawMemory {
 
 		MemoryStatistic.getInstance().initMemory(p_size);
 
-		System.out.println("RawMemory: init success (size=" + Tools.readableSize(m_memorySize) + ", base-addr=0x" + Long.toHexString(m_memoryBase) + ")");
+		System.out.println("RawMemory: init success (" + m_memory + ")");
 
-		ret = m_memorySize;
+		ret = m_memory.getSize();
 
 		// new Timer(true).schedule(new TimerTask() {
 		//
@@ -143,19 +127,13 @@ public final class RawMemory {
 	 *             if the memory could not be disengaged
 	 */
 	public void disengage() throws MemoryException {
-		try {
-			UNSAFE.freeMemory(m_memoryBase);
+		m_memory.free();
+		m_memory = null;
 
-			m_memorySize = 0;
-			m_memoryBase = 0;
+		m_segments = null;
+		m_arenaManager = null;
 
-			m_segments = null;
-			m_arenaManager = null;
-
-			m_listSizes = null;
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not free memory", e);
-		}
+		m_listSizes = null;
 	}
 
 	/**
@@ -170,24 +148,7 @@ public final class RawMemory {
 	 *             If dumping memory failed.
 	 */
 	public void dump(final File p_file, final long p_addr, final long p_count) throws MemoryException {
-		RandomAccessFile outFile = null;
-		try {
-			outFile = new RandomAccessFile(p_file, "rw");
-
-			long offset = 0;
-			while (offset < p_count) {
-				outFile.writeByte(UNSAFE.getByte(m_memoryBase + p_addr + offset));
-				offset++;
-			}
-		} catch (final IOException e) {
-			throw new MemoryException(e.getMessage());
-		} finally {
-			try {
-				if (outFile != null) {
-					outFile.close();
-				}
-			} catch (final IOException e) {}
-		}
+		m_memory.dump(p_file, p_addr, p_count);
 	}
 
 	/**
@@ -402,7 +363,7 @@ public final class RawMemory {
 			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
 			read(p_address, lengthFieldSize);
 
-			UNSAFE.setMemory(m_memoryBase + p_address + lengthFieldSize, p_size, p_value);
+			m_memory.set(p_address + lengthFieldSize, p_size, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not free memory", e);
 		}
@@ -442,7 +403,7 @@ public final class RawMemory {
 			Contract.check(p_offset < size, "Offset out of bounds");
 			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte read exceeds bounds");
 
-			return UNSAFE.getByte(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return m_memory.readByte(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -482,7 +443,7 @@ public final class RawMemory {
 			Contract.check(p_offset < size, "Offset out of bounds");
 			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size, "Short read exceeds bounds");
 
-			return UNSAFE.getShort(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return m_memory.readShort(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -522,7 +483,7 @@ public final class RawMemory {
 			Contract.check(p_offset < size, "Offset out of bounds");
 			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size, "Int read exceeds bounds");
 
-			return UNSAFE.getInt(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return m_memory.readInt(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -562,7 +523,7 @@ public final class RawMemory {
 			Contract.check(p_offset < size, "Offset out of bounds");
 			Contract.check(size >= Long.BYTES || p_offset + Long.BYTES <= size, "Long read exceeds bounds");
 
-			return UNSAFE.getLong(m_memoryBase + p_address + lengthFieldSize + p_offset);
+			return m_memory.readLong(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -605,9 +566,9 @@ public final class RawMemory {
 		try {
 			ret = new byte[(int) (size - p_offset)];
 
-			offset = m_memoryBase + p_address + lengthFieldSize + p_offset;
+			offset = p_address + lengthFieldSize + p_offset;
 			for (int i = 0; i < size - p_offset; i++) {
-				ret[i] = UNSAFE.getByte(offset + i);
+				ret[i] = m_memory.readByte(offset + i);
 			}
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
@@ -653,7 +614,7 @@ public final class RawMemory {
 			Contract.check(p_offset < size, "Offset out of bounds");
 			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte won't fit into allocated memory");
 
-			UNSAFE.putByte(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			m_memory.writeByte(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -697,7 +658,7 @@ public final class RawMemory {
 			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size,
 					"Short won't fit into allocated memory");
 
-			UNSAFE.putShort(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			m_memory.writeShort(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -741,7 +702,7 @@ public final class RawMemory {
 			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size,
 					"Int won't fit into allocated memory");
 
-			UNSAFE.putInt(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			m_memory.writeInt(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -784,7 +745,7 @@ public final class RawMemory {
 			Contract.check(p_offset < size, "Offset out of bounds");
 			Contract.check(size >= Long.BYTES && p_offset + Long.BYTES <= size, "Long won't fit into allocated memory");
 
-			UNSAFE.putLong(m_memoryBase + p_address + lengthFieldSize + p_offset, p_value);
+			m_memory.writeLong(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
 		}
@@ -827,9 +788,9 @@ public final class RawMemory {
 		Contract.check(p_offset + p_value.length <= size, "Array won't fit memory");
 
 		try {
-			offset = m_memoryBase + p_address + lengthFieldSize + p_offset;
+			offset = p_address + lengthFieldSize + p_offset;
 			for (int i = 0; i < p_value.length; i++) {
-				UNSAFE.putByte(offset + i, p_value[i]);
+				m_memory.writeByte(offset + i, p_value[i]);
 			}
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);
@@ -842,8 +803,9 @@ public final class RawMemory {
 	 * @param p_address
 	 *            Address of malloc'd block of memory.
 	 * @return User definable state stored for that block (valid values: 0, 1, 2. invalid: -1)
+	 * @throws MemoryException If reading memory fails.
 	 */
-	protected int getCustomState(final long p_address) {
+	protected int getCustomState(final long p_address) throws MemoryException {
 		int marker;
 		int ret;
 
@@ -866,8 +828,9 @@ public final class RawMemory {
 	 * @param p_customState
 	 *            State to set for that block of memory (valid values: 0, 1, 2.
 	 *            all other values invalid).
+	 * @throws MemoryException If reading or writing memory fails.
 	 */
-	protected void setCustomState(final long p_address, final int p_customState) {
+	protected void setCustomState(final long p_address, final int p_customState) throws MemoryException {
 		int marker;
 		int lengthFieldSize;
 		int size;
@@ -891,8 +854,9 @@ public final class RawMemory {
 	 * @param p_address
 	 *            Address of block to get the size of.
 	 * @return Size of memory block at specified address.
+	 * @throws MemoryException If reading memory fails.
 	 */
-	protected int getSize(final long p_address) {
+	protected int getSize(final long p_address) throws MemoryException {
 		int lengthFieldSize;
 
 		lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
@@ -957,8 +921,7 @@ public final class RawMemory {
 		}
 
 		output = new StringBuilder();
-		output.append("\nRawMemory (" + Long.toHexString(m_memoryBase).toUpperCase() + "):");
-		output.append("\nSize: " + Tools.readableSize(m_memorySize));
+		output.append("\nRawMemory (" + m_memory + "):");
 		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(FULL_SEGMENT_SIZE));
 		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
 		for (int i = 0; i < stati.length; i++) {
@@ -991,9 +954,10 @@ public final class RawMemory {
 	 * @param p_address
 	 *            the address
 	 * @return the right part of a marker byte
+	 * @throws MemoryException If reading fails.
 	 */
-	private int readRightPartOfMarker(final long p_address) {
-		return UNSAFE.getByte(m_memoryBase + p_address) & 0xF;
+	private int readRightPartOfMarker(final long p_address) throws MemoryException {
+		return m_memory.readByte(p_address) & 0xF;
 	}
 
 	/**
@@ -1001,9 +965,10 @@ public final class RawMemory {
 	 * @param p_address
 	 *            the address
 	 * @return the left part of a marker byte
+	 * @throws MemoryException If reading fails.
 	 */
-	private int readLeftPartOfMarker(final long p_address) {
-		return (UNSAFE.getByte(m_memoryBase + p_address) & 0xF0) >> 4;
+	private int readLeftPartOfMarker(final long p_address) throws MemoryException {
+		return (m_memory.readByte(p_address) & 0xF0) >> 4;
 	}
 	
 	private int getLengthOccupiedFromMarker(final int p_marker)
@@ -1024,12 +989,13 @@ public final class RawMemory {
 	 *            the address
 	 * @param p_right
 	 *            the right part
+	 * @throws MemoryException If reading fails.
 	 */
-	private void writeRightPartOfMarker(final long p_address, final int p_right) {
+	private void writeRightPartOfMarker(final long p_address, final int p_right) throws MemoryException {
 		byte marker;
 
-		marker = (byte) ((UNSAFE.getByte(m_memoryBase + p_address) & 0xF0) + (p_right & 0xF));
-		UNSAFE.putByte(m_memoryBase + p_address, marker);
+		marker = (byte) ((m_memory.readByte(p_address) & 0xF0) + (p_right & 0xF));
+		m_memory.writeByte(p_address, marker);
 	}
 
 	/**
@@ -1038,12 +1004,13 @@ public final class RawMemory {
 	 *            the address
 	 * @param p_left
 	 *            the left part
+	 * @throws MemoryException If reading fails.
 	 */
-	private void writeLeftPartOfMarker(final long p_address, final int p_left) {
+	private void writeLeftPartOfMarker(final long p_address, final int p_left) throws MemoryException {
 		byte marker;
 
-		marker = (byte) (((p_left & 0xF) << 4) + (UNSAFE.getByte(m_memoryBase + p_address) & 0xF));
-		UNSAFE.putByte(m_memoryBase + p_address, marker);
+		marker = (byte) (((p_left & 0xF) << 4) + (m_memory.readByte(p_address) & 0xF));
+		m_memory.writeByte(p_address, marker);
 	}
 
 	/**
@@ -1052,7 +1019,7 @@ public final class RawMemory {
 	 *            the address
 	 * @return the pointer
 	 */
-	private long readPointer(final long p_address) {
+	private long readPointer(final long p_address) throws MemoryException {
 		return read(p_address, POINTER_SIZE);
 	}
 
@@ -1063,7 +1030,7 @@ public final class RawMemory {
 	 * @param p_pointer
 	 *            the pointer
 	 */
-	private void writePointer(final long p_address, final long p_pointer) {
+	private void writePointer(final long p_address, final long p_pointer) throws MemoryException {
 		write(p_address, p_pointer, POINTER_SIZE);
 	}
 
@@ -1075,13 +1042,13 @@ public final class RawMemory {
 	 *            the number of bytes
 	 * @return the combined bytes
 	 */
-	private long read(final long p_address, final int p_count) {
+	private long read(final long p_address, final int p_count) throws MemoryException {
 		long ret = 0;
 		long bitmask;
 
 		bitmask = 0xFFFFFFFFFFFFFFFFL >>> (8 - p_count) * 8;
 
-		ret = UNSAFE.getLong(m_memoryBase + p_address);
+		ret = m_memory.readLong(p_address);
 		ret = ret & bitmask;
 
 		return ret;
@@ -1096,7 +1063,7 @@ public final class RawMemory {
 	 * @param p_count
 	 *            the number of bytes
 	 */
-	private void write(final long p_address, final long p_bytes, final int p_count) {
+	private void write(final long p_address, final long p_bytes, final int p_count) throws MemoryException {
 		long value;
 		long bitmask;
 
@@ -1106,7 +1073,7 @@ public final class RawMemory {
 			bitmask = 0xFFFFFFFFFFFFFFFFL << p_count * 8;
 
 			// Read current value
-			value = UNSAFE.getLong(m_memoryBase + p_address);
+			value = m_memory.readLong(p_address);
 			value = value & bitmask;
 
 			bitmask = 0xFFFFFFFFFFFFFFFFL >>> (8 - p_count) * 8;
@@ -1114,7 +1081,43 @@ public final class RawMemory {
 			value += p_bytes & bitmask;
 		}
 
-		UNSAFE.putLong(m_memoryBase + p_address, value);
+		m_memory.writeLong(p_address, value);
+	}
+	
+	/**
+	 * Locks the read lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	public void readLock(final long p_address) {
+		m_memory.readLock(p_address);
+	}
+
+	/**
+	 * Unlocks the read lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	public void readUnlock(final long p_address) {
+		m_memory.readUnlock(p_address);
+	}
+
+	/**
+	 * Locks the write lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	public void writeLock(final long p_address) {
+		m_memory.writeLock(p_address);
+	}
+
+	/**
+	 * Unlocks the write lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	public void writeUnlock(final long p_address) {
+		m_memory.writeUnlock(p_address);
 	}
 
 	// Classes
@@ -1144,7 +1147,7 @@ public final class RawMemory {
 		 * @param p_size
 		 *            the size of the segment
 		 */
-		private Segment(final int p_segmentID, final long p_base, final long p_size) {
+		private Segment(final int p_segmentID, final long p_base, final long p_size) throws MemoryException {
 			m_segmentID = p_segmentID;
 			m_pointerOffset = p_base + p_size;
 			m_status = new Status(p_size);
@@ -1245,7 +1248,7 @@ public final class RawMemory {
 		 *            the size of the block
 		 * @return the offset of the block
 		 */
-		private long malloc(final int p_size) {
+		private long malloc(final int p_size) throws MemoryException {
 			long ret = -1;
 			int list;
 			long address;
@@ -1342,7 +1345,7 @@ public final class RawMemory {
 		 * @param p_address
 		 *            the address of the block
 		 */
-		private void free(final long p_address) {
+		private void free(final long p_address) throws MemoryException {
 			long size;
 			int lengthFieldSize;
 			long freeSize;
@@ -1482,7 +1485,7 @@ public final class RawMemory {
 		 * @param p_size
 		 *            the size
 		 */
-		private void createFreeBlock(final long p_address, final long p_size) {
+		private void createFreeBlock(final long p_address, final long p_size) throws MemoryException {
 			long listOffset;
 			int lengthFieldSize;
 			long anchor;
@@ -1536,7 +1539,7 @@ public final class RawMemory {
 		 * @param p_address
 		 *            the address
 		 */
-		private void unhookFreeBlock(final long p_address) {
+		private void unhookFreeBlock(final long p_address) throws MemoryException {
 			int lengthFieldSize;
 			long prevPointer;
 			long nextPointer;
