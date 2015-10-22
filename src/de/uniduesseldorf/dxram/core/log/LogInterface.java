@@ -67,6 +67,18 @@ public interface LogInterface extends CoreComponent {
 	Chunk[] recoverBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
 
 	/**
+	 * Recovers all Chunks of given backup range
+	 * @param p_fileName
+	 *            the file name
+	 * @param p_path
+	 *            the path of the folder the file is in
+	 * @return the recovered Chunks
+	 * @throws DXRAMException
+	 *             if the Chunks could not be read
+	 */
+	Chunk[] recoverBackupRangeFromFile(String p_fileName, String p_path) throws DXRAMException;
+
+	/**
 	 * Prints the metadata of one node's log
 	 * @param p_owner
 	 *            the NodeID

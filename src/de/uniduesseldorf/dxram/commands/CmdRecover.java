@@ -22,24 +22,26 @@ public class CmdRecover extends AbstractCmd {
 
 	@Override
 	public String getUsageMessage() {
-		return "recover failedNodeID restorerNodeID";
+		return "recover failedNodeID restorerNodeID [-f]";
 	}
 
 	@Override
 	public String getHelpMessage() {
-		final String line = "Recover all Chunks from peer with first NID on peer with second NID.\n";
-		return line;
+		final String line = "Recover all Chunks from peer with failedNodeID (validity is not checked) on peer with restorerNodeID.\n";
+		final String line2 = "-f: Do not use live data, but recover from log files\n";
+		return line + line2;
 	}
 
 	@Override
 	public String[] getMandParams() {
-		final String[] ret = {"PNID", "PNID"};
+		final String[] ret = {"STR", "PNID"};
 		return ret;
 	}
 
 	@Override
 	public String[] getOptParams() {
-		return null;
+		final String[] ret = {"-f"};
+		return ret;
 	}
 
 	// called after parameter have been checked
@@ -52,10 +54,15 @@ public class CmdRecover extends AbstractCmd {
 
 		try {
 			arguments = p_command.split(" ");
-			nodeID = CmdUtils.getNIDfromString(arguments[1]);
+			// First argument is handled like a String because the peer to recover might not be online
+			nodeID = Short.parseShort(arguments[1]);
 			dest = CmdUtils.getNIDfromString(arguments[2]);
 
-			Core.executeRecoveryCommand(nodeID, dest);
+			if (arguments.length == 4) {
+				Core.executeRecoveryCommand(nodeID, dest, false);
+			} else {
+				Core.executeRecoveryCommand(nodeID, dest, true);
+			}
 
 			System.out.println("Initialized recovery of " + nodeID + " on " + dest + ".");
 		} catch (final DXRAMException e) {

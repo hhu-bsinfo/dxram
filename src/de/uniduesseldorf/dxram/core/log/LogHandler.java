@@ -20,7 +20,6 @@ import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
-import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitRequest;
@@ -235,7 +234,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public Chunk[] recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws RecoveryException, LookupException {
+	public Chunk[] recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) throws RecoveryException {
 		Chunk[] chunks = null;
 		SecondaryLogBuffer secondaryLogBuffer;
 
@@ -253,6 +252,19 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		}
 
 		return chunks;
+	}
+
+	@Override
+	public Chunk[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) throws RecoveryException {
+		Chunk[] ret;
+
+		try {
+			ret = SecondaryLog.recoverBackupRangeFromFile(p_fileName, p_path);
+		} catch (final IOException | InterruptedException e) {
+			throw new RecoveryException("Could not recover from file " + p_path + "!");
+		}
+
+		return ret;
 	}
 
 	@Override
@@ -441,6 +453,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private long logChunk(final Chunk p_chunk, final byte p_rangeID, final short p_source) throws DXRAMException {
 		byte[] logHeader;
 
+		assert p_chunk.getSize() > 0;
 		if (p_rangeID == -1) {
 			logHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(p_chunk, (byte) -1, (short) -1);
 			// System.out.println("Logging Chunk: " + p_chunk.getChunkID() + ", "

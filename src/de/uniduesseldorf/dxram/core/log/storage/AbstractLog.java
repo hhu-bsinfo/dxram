@@ -158,6 +158,34 @@ public abstract class AbstractLog {
 	}
 
 	/**
+	 * Key function to read from log file randomly
+	 * @param p_data
+	 *            buffer to fill with log data
+	 * @param p_length
+	 *            number of bytes to read
+	 * @param p_readPos
+	 *            the position within the log file
+	 * @param p_randomAccessFile
+	 *            the RandomAccessFile
+	 * @param p_headerSize
+	 *            the length of the secondary log header
+	 * @throws IOException
+	 *             if reading the random access file failed
+	 */
+	protected static void readFromSecondaryLogFile(final byte[] p_data, final int p_length,
+			final long p_readPos, final RandomAccessFile p_randomAccessFile, final short p_headerSize) throws IOException {
+		final long innerLogSeekPos = p_headerSize + p_readPos;
+		final long bytesUntilEnd = p_randomAccessFile.length() - (p_headerSize + p_readPos);
+
+		if (p_length > 0) {
+			assert p_length <= bytesUntilEnd;
+
+			p_randomAccessFile.seek(innerLogSeekPos);
+			p_randomAccessFile.readFully(p_data, 0, p_length);
+		}
+	}
+
+	/**
 	 * Key function to write in log sequentially
 	 * @param p_data
 	 *            buffer with data to write in log

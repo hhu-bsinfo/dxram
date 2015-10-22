@@ -643,11 +643,13 @@ public final class Core {
 	 *            NodeID of failed peer
 	 * @param p_dest
 	 *            NodeID of destination node for this request
+	 * @param p_useLiveData
+	 *            whether the recover should use current logs or log files
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static void executeRecoveryCommand(final short p_nodeID, final short p_dest) throws DXRAMException {
-		m_recovery.recover(p_nodeID, p_dest);
+	public static void executeRecoveryCommand(final short p_nodeID, final short p_dest, final boolean p_useLiveData) throws DXRAMException {
+		m_recovery.recover(p_nodeID, p_dest, p_useLiveData);
 	}
 
 	/*
@@ -758,7 +760,7 @@ public final class Core {
 	public static void recover(final short p_owner, final short p_dest) throws DXRAMException {
 		try {
 			if (m_recovery != null) {
-				m_recovery.recover(p_owner, p_dest);
+				m_recovery.recover(p_owner, p_dest, true);
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_RECOVER_FROM_LOG);

@@ -40,6 +40,7 @@ public final class RecoveryMessages {
 
 		// Attributes
 		private short m_owner;
+		private boolean m_useLiveData;
 
 		// Constructors
 		/**
@@ -55,13 +56,16 @@ public final class RecoveryMessages {
 		 * Creates an instance of RecoverMessage
 		 * @param p_destination
 		 *            the destination
+		 * @param p_useLiveData
+		 *            whether the recover should use current logs or log files
 		 * @param p_owner
 		 *            the NodeID of the owner
 		 */
-		public RecoverMessage(final short p_destination, final short p_owner) {
+		public RecoverMessage(final short p_destination, final short p_owner, final boolean p_useLiveData) {
 			super(p_destination, TYPE, SUBTYPE_RECOVER_MESSAGE);
 
 			m_owner = p_owner;
+			m_useLiveData = p_useLiveData;
 		}
 
 		// Getters
@@ -73,20 +77,30 @@ public final class RecoveryMessages {
 			return m_owner;
 		}
 
+		/**
+		 * Returns whether the recover should use current logs or log files
+		 * @return whether the recover should use current logs or log files
+		 */
+		public final boolean useLiveData() {
+			return m_useLiveData;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeNodeID(p_buffer, m_owner);
+			OutputHelper.writeBoolean(p_buffer, m_useLiveData);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_owner = InputHelper.readNodeID(p_buffer);
+			m_useLiveData = InputHelper.readBoolean(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getNodeIDWriteLength();
+			return OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
 	}

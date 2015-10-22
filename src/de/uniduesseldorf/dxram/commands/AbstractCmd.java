@@ -1,7 +1,10 @@
 
 package de.uniduesseldorf.dxram.commands;
 
+import java.io.UnsupportedEncodingException;
+
 import de.uniduesseldorf.dxram.utils.JNIconsole;
+import de.uniduesseldorf.dxram.utils.Tools;
 
 /**
  * Base class for commands
@@ -173,8 +176,12 @@ public abstract class AbstractCmd {
 
 			// next is a string?
 		} else if (p_expectedParam.compareTo("STR") == 0) {
-			pattern = pattern + "[A-Za-z]([A-Za-z0-9])*";
-			ret = p_givenParam.matches(pattern);
+			try {
+				ret = Tools.looksLikeUTF8(p_givenParam.getBytes());
+			} catch (final UnsupportedEncodingException e) {
+				System.out.println("  error: bad parameter. Expected was a string but parameter has unsupported encoding.");
+				ret = false;
+			}
 			if (!ret) {
 				System.out.println("  error: bad parameter. Given '" + p_givenParam + "' but expected was a string.");
 			}

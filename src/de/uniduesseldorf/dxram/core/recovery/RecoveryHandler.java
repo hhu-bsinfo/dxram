@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.recovery;
 
+import java.io.File;
+
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
@@ -35,6 +37,7 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(RecoveryHandler.class);
 	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE);
+	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
 
 	// Attributes
 	private NetworkInterface m_network;
@@ -75,75 +78,19 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	}
 
 	@Override
-	public boolean recover(final short p_owner, final short p_dest) throws RecoveryException {
+	public boolean recover(final short p_owner, final short p_dest, final boolean p_useLiveData) throws RecoveryException {
 		boolean ret = true;
-		long firstChunkIDOrRangeID;
-		short[] backupPeers;
-		Chunk[] chunks = null;
-		BackupRange[] backupRanges = null;
-		RecoverBackupRangeRequest request;
 
 		if (p_dest == NodeID.getLocalNodeID()) {
-			try {
-				backupRanges = m_lookup.getAllBackupRanges(p_owner);
-			} catch (final LookupException e1) {
-				System.out.println("Cannot retrieve backup ranges! Aborting.");
-			}
-
-			if (backupRanges != null) {
-				for (BackupRange backupRange : backupRanges) {
-					backupPeers = backupRange.getBackupPeers();
-					firstChunkIDOrRangeID = backupRange.getRangeID();
-
-					// Get Chunks from backup peers (or locally if this is the primary backup peer)
-					for (short backupPeer : backupPeers) {
-						if (backupPeer == NodeID.getLocalNodeID()) {
-							try {
-								if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
-									chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
-								} else {
-									chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
-								}
-							} catch (final DXRAMException e) {
-								System.out.println("Cannot recover Chunks! Trying next backup peer.");
-								continue;
-							}
-						} else if (backupPeer != -1) {
-							request = new RecoverBackupRangeRequest(backupPeer, p_owner, firstChunkIDOrRangeID);
-							try {
-								request.sendSync(m_network);
-								chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
-							} catch (final NetworkException e) {
-								System.out.println("Cannot retrieve Chunks from backup range! Trying next backup peer.");
-								continue;
-							}
-						}
-						break;
-					}
-
-					try {
-						System.out.println("Retrieved " + chunks.length + " Chunks.");
-
-						// Store recovered Chunks
-						m_chunk.putRecoveredChunks(chunks);
-
-						// Inform superpeers about new location of migrated Chunks (non-migrated Chunks are processed later)
-						for (Chunk chunk : chunks) {
-							if (ChunkID.getCreatorID(chunk.getChunkID()) != p_owner) {
-								m_lookup.migrate(chunk.getChunkID(), p_dest);
-							}
-						}
-					} catch (final DXRAMException e) {}
-				}
-				try {
-					// Inform superpeers about new location of non-migrated Chunks
-					m_lookup.updateAllAfterRecovery(p_owner);
-				} catch (final LookupException e) {}
+			if (p_useLiveData) {
+				recoverLocally(p_owner);
+			} else {
+				recoverLocallyFromFile(p_owner);
 			}
 		} else {
 			System.out.println("Forwarding recovery to " + p_dest);
 			try {
-				new RecoverMessage(p_dest, p_owner).send(m_network);
+				new RecoverMessage(p_dest, p_owner, p_useLiveData).send(m_network);
 			} catch (final NetworkException e) {
 				System.out.println("Could not forward command to " + p_dest + ". Aborting recovery!");
 				ret = false;
@@ -154,21 +101,23 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	}
 
 	/**
-	 * Handles an incoming RecoverMessage
-	 * @param p_message
-	 *            the RecoverMessage
+	 * Recovers all Chunks of given node on this node
+	 * @param p_owner
+	 *            the NodeID of the node whose Chunks have to be restored
+	 * @throws RecoveryException
+	 *             if the recovery fails
+	 * @throws LookupException
+	 *             if the backup peers could not be determined
 	 */
-	private void incomingRecoverMessage(final RecoverMessage p_message) {
-		short owner;
+	private void recoverLocally(final short p_owner) {
 		long firstChunkIDOrRangeID;
 		short[] backupPeers;
 		Chunk[] chunks = null;
 		BackupRange[] backupRanges = null;
 		RecoverBackupRangeRequest request;
 
-		owner = p_message.getOwner();
 		try {
-			backupRanges = m_lookup.getAllBackupRanges(owner);
+			backupRanges = m_lookup.getAllBackupRanges(p_owner);
 		} catch (final LookupException e1) {
 			System.out.println("Cannot retrieve backup ranges! Aborting.");
 		}
@@ -182,17 +131,17 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 				for (short backupPeer : backupPeers) {
 					if (backupPeer == NodeID.getLocalNodeID()) {
 						try {
-							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == owner) {
-								chunks = m_log.recoverBackupRange(owner, firstChunkIDOrRangeID, (byte) -1);
+							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
+								chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
 							} else {
-								chunks = m_log.recoverBackupRange(owner, -1, (byte) firstChunkIDOrRangeID);
+								chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
 							}
 						} catch (final DXRAMException e) {
 							System.out.println("Cannot recover Chunks! Trying next backup peer.");
 							continue;
 						}
 					} else if (backupPeer != -1) {
-						request = new RecoverBackupRangeRequest(backupPeer, owner, firstChunkIDOrRangeID);
+						request = new RecoverBackupRangeRequest(backupPeer, p_owner, firstChunkIDOrRangeID);
 						try {
 							request.sendSync(m_network);
 							chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
@@ -212,16 +161,85 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 
 					// Inform superpeers about new location of migrated Chunks (non-migrated Chunks are processed later)
 					for (Chunk chunk : chunks) {
-						if (ChunkID.getCreatorID(chunk.getChunkID()) != owner) {
+						if (ChunkID.getCreatorID(chunk.getChunkID()) != p_owner) {
 							m_lookup.migrate(chunk.getChunkID(), NodeID.getLocalNodeID());
 						}
 					}
 				} catch (final DXRAMException e) {}
 			}
+			try {
+				// Inform superpeers about new location of non-migrated Chunks
+				m_lookup.updateAllAfterRecovery(p_owner);
+			} catch (final LookupException e) {}
 		}
+	}
+
+	/**
+	 * Recovers all Chunks of given node from log file on this node
+	 * @param p_owner
+	 *            the NodeID of the node whose Chunks have to be restored
+	 * @throws RecoveryException
+	 *             if the recovery fails
+	 * @throws LookupException
+	 *             if the backup peers could not be determined
+	 */
+	private void recoverLocallyFromFile(final short p_owner) {
+		String fileName;
+		File folderToScan;
+		File[] listOfFiles;
+		Chunk[] chunks = null;
+
+		folderToScan = new File(BACKUP_DIRECTORY);
+		listOfFiles = folderToScan.listFiles();
+		for (int i = 0; i < listOfFiles.length; i++) {
+			if (listOfFiles[i].isFile()) {
+				fileName = listOfFiles[i].getName();
+				if (fileName.contains("sec" + p_owner)) {
+					try {
+						chunks = m_log.recoverBackupRangeFromFile(fileName, BACKUP_DIRECTORY);
+					} catch (final DXRAMException e) {
+						System.out.println("Cannot recover Chunks! Trying next backup peer.");
+						continue;
+					}
+
+					try {
+						System.out.println("Retrieved " + chunks.length + " Chunks from file.");
+
+						// Store recovered Chunks
+						m_chunk.putRecoveredChunks(chunks);
+
+						if (fileName.contains("M")) {
+							// Inform superpeers about new location of migrated Chunks (non-migrated Chunks are processed later)
+							for (Chunk chunk : chunks) {
+								if (ChunkID.getCreatorID(chunk.getChunkID()) != p_owner) {
+									// TODO: This might crash because there is no tree for creator of this chunk
+									m_lookup.migrate(chunk.getChunkID(), NodeID.getLocalNodeID());
+								}
+							}
+						}
+					} catch (final DXRAMException e) {}
+				}
+			}
+		}
+
 		try {
-			m_lookup.updateAllAfterRecovery(owner);
+			// Inform superpeers about new location of non-migrated Chunks
+			// TODO: This might crash because there is no tree for recovered peer
+			m_lookup.updateAllAfterRecovery(p_owner);
 		} catch (final LookupException e) {}
+	}
+
+	/**
+	 * Handles an incoming RecoverMessage
+	 * @param p_message
+	 *            the RecoverMessage
+	 */
+	private void incomingRecoverMessage(final RecoverMessage p_message) {
+		if (p_message.useLiveData()) {
+			recoverLocally(p_message.getOwner());
+		} else {
+			recoverLocallyFromFile(p_message.getOwner());
+		}
 	}
 
 	/**

@@ -3,8 +3,8 @@ package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -534,6 +534,80 @@ public class SecondaryLog extends AbstractLog {
 	}
 
 	/**
+	 * Returns a list with all log entries in file wrapped in chunks
+	 * @param p_fileName
+	 *            the file name of the secondary log
+	 * @param p_path
+	 *            the path of the directory the file is in
+	 * @throws IOException
+	 *             if the secondary log could not be read
+	 * @throws InterruptedException
+	 *             if the caller was interrupted
+	 * @return ArrayList with all log entries as chunks
+	 */
+	public static Chunk[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) throws IOException, InterruptedException {
+		short nodeID;
+		int i = 0;
+		int offset = 0;
+		int logEntrySize;
+		int payloadSize;
+		int version;
+		long checksum = -1;
+		long chunkID;
+		boolean storesMigrations;
+		byte[][] segments;
+		byte[] payload;
+		Chunk chunk;
+		HashMap<Long, Chunk> chunkMap = null;
+		AbstractLogEntryHeader logEntryHeader;
+
+		nodeID = Short.parseShort(p_fileName.split("_")[0].substring(1));
+		storesMigrations = p_fileName.contains("M");
+
+		try {
+			chunkMap = new HashMap<Long, Chunk>();
+			segments = readAllSegmentsFromFile(p_path + p_fileName);
+			while (i < segments.length && segments[i] != null) {
+				while (offset < segments[i].length && segments[i][offset] != 0) {
+					// Determine header of next log entry
+					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], offset, storesMigrations);
+					chunkID = ((long) nodeID << 48) + logEntryHeader.getLID(segments[i], offset);
+					payloadSize = logEntryHeader.getLength(segments[i], offset);
+					version = logEntryHeader.getVersion(segments[i], offset);
+					if (USE_CHECKSUM) {
+						checksum = logEntryHeader.getChecksum(segments[i], offset);
+					}
+					logEntrySize = logEntryHeader.getHeaderSize(segments[i], offset) + payloadSize;
+
+					// Read payload and create chunk
+					if (offset + logEntrySize <= segments[i].length) {
+						// Create chunk only if log entry complete
+						payload = new byte[payloadSize];
+						System.arraycopy(segments[i], offset + logEntryHeader.getHeaderSize(segments[i], offset), payload, 0, payloadSize);
+						if (USE_CHECKSUM && AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
+							// Ignore log entry
+							offset += logEntrySize;
+							continue;
+						}
+						chunk = chunkMap.get(chunkID);
+						if (chunk == null || chunk.getVersion() < version) {
+							chunkMap.put(chunkID, new Chunk(chunkID, payload, version));
+						}
+					}
+					offset += logEntrySize;
+				}
+				offset = 0;
+				i++;
+			}
+		} finally {
+			segments = null;
+			payload = null;
+		}
+
+		return chunkMap.values().toArray(new Chunk[chunkMap.size()]);
+	}
+
+	/**
 	 * Returns all segments of secondary log
 	 * @throws IOException
 	 *             if the secondary log could not be read
@@ -556,6 +630,35 @@ public class SecondaryLog extends AbstractLog {
 				readFromSecondaryLog(result[i], length, i * SECLOG_SEGMENT_SIZE, true);
 			}
 		}
+		return result;
+	}
+
+	/**
+	 * Returns all segments of secondary log
+	 * @param p_path
+	 *            the path of the file
+	 * @throws IOException
+	 *             if the secondary log could not be read
+	 * @throws InterruptedException
+	 *             if the caller was interrupted
+	 * @return all data
+	 * @note executed only by reorganization thread
+	 */
+	private static byte[][] readAllSegmentsFromFile(final String p_path) throws IOException, InterruptedException {
+		byte[][] result = null;
+		int numberOfSegments;
+		RandomAccessFile randomAccessFile;
+
+		// TODO: Where is the end of a segment?
+		numberOfSegments = (int) (SECLOG_SIZE / SECLOG_SEGMENT_SIZE);
+		randomAccessFile = new RandomAccessFile(new File(p_path), "r");
+		result = new byte[numberOfSegments][];
+		for (int i = 0; i < numberOfSegments; i++) {
+			result[i] = new byte[SECLOG_SEGMENT_SIZE];
+			readFromSecondaryLogFile(result[i], SECLOG_SEGMENT_SIZE, i * SECLOG_SEGMENT_SIZE, randomAccessFile, (short) SECLOG_HEADER.length);
+		}
+		randomAccessFile.close();
+
 		return result;
 	}
 
@@ -585,6 +688,25 @@ public class SecondaryLog extends AbstractLog {
 	}
 
 	/**
+	 * Marks log segment
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_length
+	 *            the segment length
+	 * @param p_segmentIndex
+	 *            the segment index
+	 * @throws IOException
+	 *             if the secondary log could not be read
+	 * @throws InterruptedException
+	 *             if the caller was interrupted
+	 * @note executed only by reorganization thread
+	 */
+	private void markSegment(final byte[] p_buffer, final int p_length, final int p_segmentIndex) throws IOException, InterruptedException {
+		// Overwrite segment on log
+		writeToSecondaryLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length, true);
+	}
+
+	/**
 	 * Updates log segment
 	 * @param p_buffer
 	 *            the buffer
@@ -599,7 +721,18 @@ public class SecondaryLog extends AbstractLog {
 	 * @note executed only by reorganization thread
 	 */
 	private void updateSegment(final byte[] p_buffer, final int p_length, final int p_segmentIndex) throws IOException, InterruptedException {
-		writeToSecondaryLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length, true);
+		SegmentHeader header;
+
+		// Mark the end of the segment
+		p_buffer[p_length] = 0;
+
+		// Overwrite segment on log
+		writeToSecondaryLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length + 1, true);
+
+		// Update segment header
+		header = m_segmentHeaders[p_segmentIndex];
+		header.reset();
+		header.updateUsedBytes(p_length);
 	}
 
 	/**
@@ -615,6 +748,7 @@ public class SecondaryLog extends AbstractLog {
 	private void freeSegment(final int p_segment) throws IOException, InterruptedException {
 		SegmentHeader header;
 
+		writeToSecondaryLog(new byte[] {0}, 0, p_segment * SECLOG_SEGMENT_SIZE, 1, true);
 		header = m_segmentHeaders[p_segment];
 		header.reset();
 		m_numberOfFreeSegments++;
@@ -717,7 +851,6 @@ public class SecondaryLog extends AbstractLog {
 		// int removedTombstones = 0;
 		byte[] segmentData;
 		byte[] newData;
-		SegmentHeader header;
 		AbstractLogEntryHeader logEntryHeader;
 
 		if (-1 != p_segmentIndex) {
@@ -748,14 +881,9 @@ public class SecondaryLog extends AbstractLog {
 				if (m_activeSegment == null || m_activeSegment.getIndex() != p_segmentIndex) {
 					if (writtenBytes < readBytes) {
 						if (writtenBytes > 0) {
-							newData = Arrays.copyOf(newData, writtenBytes);
-							updateSegment(newData, newData.length, p_segmentIndex);
-							header = m_segmentHeaders[p_segmentIndex];
-							header.reset();
-							header.updateUsedBytes(writtenBytes);
+							updateSegment(newData, writtenBytes, p_segmentIndex);
 						} else {
 							freeSegment(p_segmentIndex);
-							m_segmentHeaders[p_segmentIndex].reset();
 						}
 						m_numberOfBytes -= readBytes - writtenBytes;
 					}
@@ -865,7 +993,7 @@ public class SecondaryLog extends AbstractLog {
 					if (deleteCounter > 0) {
 						m_lock.lock();
 						if (m_activeSegment == null || m_activeSegment.getIndex() != i) {
-							updateSegment(segment, readBytes, i);
+							markSegment(segment, readBytes, i);
 							// allDeleteCounter += deleteCounter;
 						}
 						m_lock.unlock();
