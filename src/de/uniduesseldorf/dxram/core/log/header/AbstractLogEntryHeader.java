@@ -364,41 +364,32 @@ public abstract class AbstractLogEntryHeader {
 	 *            the length of the log entry
 	 * @param p_bytesUntilEnd
 	 *            the number of bytes to the end of the input buffer
-	 * @param p_logEntryHeader
-	 *            the log entry header
+	 * @param p_conversionOffset
+	 *            the conversion offset
 	 * @return the number of written bytes
 	 */
 	public static int convertAndPut(final byte[] p_input, final int p_inputOffset, final byte[] p_output, final int p_outputOffset, final int p_logEntrySize,
-			final int p_bytesUntilEnd, final AbstractLogEntryHeader p_logEntryHeader) {
-		int ret = 0;
-		short conversionOffset;
+			final int p_bytesUntilEnd, final short p_conversionOffset) {
+		int ret;
 
-		conversionOffset = p_logEntryHeader.getConversionOffset();
-		if (p_bytesUntilEnd >= p_logEntrySize || p_bytesUntilEnd <= 0) {
-			// Set type field (only differentiate between log entry and tombstone, not migrations)
-			p_output[p_outputOffset] = (byte) (p_input[p_inputOffset] & 0xFD);
+		// Set type field (only differentiate between log entry and tombstone, not migrations)
+		p_output[p_outputOffset] = (byte) (p_input[p_inputOffset] & 0xFD);
+		if (p_logEntrySize <= p_bytesUntilEnd) {
 			// Copy shortened header and payload
-			System.arraycopy(p_input, p_inputOffset + conversionOffset, p_output, p_outputOffset + 1, p_logEntrySize - conversionOffset);
-			ret = p_logEntrySize - conversionOffset + 1;
+			System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
 		} else {
 			// Entry is bisected
-			if (p_bytesUntilEnd > conversionOffset) {
-				// Set type field (only differentiate between log entry and tombstone, not migrations)
-				p_output[p_outputOffset] = (byte) (p_input[p_inputOffset] & 0xFD);
-				// Copy shortened header and payload in two steps
-				System.arraycopy(p_input, p_inputOffset + conversionOffset, p_output, p_outputOffset + 1, p_bytesUntilEnd - conversionOffset);
-				ret += p_bytesUntilEnd - conversionOffset + 1;
-				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - conversionOffset, p_logEntrySize - p_bytesUntilEnd);
-				ret += p_logEntrySize - p_bytesUntilEnd;
-			} else {
-				// Set type field (only differentiate between log entry and tombstone, not migrations)
-				p_output[p_outputOffset + conversionOffset - p_bytesUntilEnd] = (byte) (p_input[0] & 0xFD);
+			if (p_conversionOffset >= p_bytesUntilEnd) {
 				// Copy shortened header and payload
-				System.arraycopy(p_input, 0, p_output, p_outputOffset + conversionOffset - p_bytesUntilEnd + 1, p_logEntrySize
-						- (conversionOffset - p_bytesUntilEnd));
-				ret = p_logEntrySize - (conversionOffset - p_bytesUntilEnd) + 1;
+				System.arraycopy(p_input, p_conversionOffset - p_bytesUntilEnd, p_output, p_outputOffset + 1, p_logEntrySize - p_conversionOffset);
+			} else {
+				// Copy shortened header and payload in two steps
+				System.arraycopy(p_input, p_inputOffset + p_conversionOffset, p_output, p_outputOffset + 1, p_bytesUntilEnd - p_conversionOffset);
+				System.arraycopy(p_input, 0, p_output, p_outputOffset + p_bytesUntilEnd - p_conversionOffset + 1,
+						p_logEntrySize - (p_bytesUntilEnd - p_conversionOffset));
 			}
 		}
+		ret = p_logEntrySize - (p_conversionOffset - 1);
 
 		return ret;
 	}

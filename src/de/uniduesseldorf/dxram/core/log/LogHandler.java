@@ -921,6 +921,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		 * @note Called before signaling
 		 */
 		public void lock() {
+			// Grant access for reorganization thread to avoid deadlock
+			grantAccess();
+
 			m_reorganizationLock.lock();
 		}
 
@@ -1037,7 +1040,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 							}
 						}
 						leaveSecLog(secondaryLog);
-
 					} else {
 						// All secondary logs empty -> sleep
 						Thread.sleep(100);

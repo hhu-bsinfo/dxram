@@ -713,8 +713,8 @@ public class SecondaryLog extends AbstractLog {
 		int length;
 		int readBytes = 0;
 		int writtenBytes = 0;
-		int removedObjects = 0;
-		int removedTombstones = 0;
+		// int removedObjects = 0;
+		// int removedTombstones = 0;
 		byte[] segmentData;
 		byte[] newData;
 		SegmentHeader header;
@@ -733,11 +733,11 @@ public class SecondaryLog extends AbstractLog {
 
 					// Note: Out-dated and deleted objects and tombstones are marked with (type == 3) by markInvalidObjects()
 					if (logEntryHeader.isInvalid(segmentData, readBytes)) {
-						if (logEntryHeader.isTombstone()) {
+						/*-if (logEntryHeader.isTombstone()) {
 							removedTombstones++;
 						} else {
 							removedObjects++;
-						}
+						}*/
 					} else {
 						System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
 						writtenBytes += length;
@@ -759,21 +759,21 @@ public class SecondaryLog extends AbstractLog {
 						}
 						m_numberOfBytes -= readBytes - writtenBytes;
 					}
-				} else {
-					removedObjects = 0;
-					removedTombstones = 0;
+					/*-} else {
+						removedObjects = 0;
+						removedTombstones = 0;*/
 				}
 				m_lock.unlock();
 			} catch (final IOException | InterruptedException e) {
 				System.out.println("Reorganization failed!");
 			}
 
-			if (removedObjects != 0 || removedTombstones != 0) {
+			/*-if (removedObjects != 0 || removedTombstones != 0) {
 				System.out.println("\n- Reorganization of Segment: " + p_segmentIndex
 						+ "(Peer: " + m_nodeID + ", Range: " + getRangeIDOrFirstLocalID() + ") finished:");
 				System.out.println("-- " + removedObjects + " entries removed");
 				System.out.println("-- " + removedTombstones + " tombstones removed\n");
-			}
+			}*/
 		}
 	}
 
@@ -809,18 +809,18 @@ public class SecondaryLog extends AbstractLog {
 	 *            a hash table to note version numbers in
 	 */
 	public final void markInvalidObjects(final VersionsHashTable p_hashtable) {
-		long timeStart;
+		// long timeStart;
 		int readBytes = 0;
 		int hashVersion;
 		int logVersion;
 		int deleteCounter = 0;
-		int allDeleteCounter = 0;
+		// int allDeleteCounter = 0;
 		long localID;
 		byte[][] segments;
 		byte[] segment;
 		AbstractLogEntryHeader logEntryHeader;
 
-		timeStart = System.currentTimeMillis();
+		// timeStart = System.currentTimeMillis();
 		p_hashtable.clear();
 		try {
 			segments = readAllSegments();
@@ -866,7 +866,7 @@ public class SecondaryLog extends AbstractLog {
 						m_lock.lock();
 						if (m_activeSegment == null || m_activeSegment.getIndex() != i) {
 							updateSegment(segment, readBytes, i);
-							allDeleteCounter += deleteCounter;
+							// allDeleteCounter += deleteCounter;
 						}
 						m_lock.unlock();
 						deleteCounter = 0;
@@ -878,12 +878,12 @@ public class SecondaryLog extends AbstractLog {
 			System.out.println("Removing tombstones failed!");
 		}
 
-		if (allDeleteCounter > 0) {
+		/*-if (allDeleteCounter > 0) {
 			System.out.println("\n+ Marking invalid objects(Peer: " + getNodeID() + ", Range: " + getRangeIDOrFirstLocalID() + ")");
 			System.out.println("++ Entries in hashtable: " + p_hashtable.size());
 			System.out.println("++ " + allDeleteCounter + " entries invalidated");
 			System.out.println("++ All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms\n");
-		}
+		}*/
 	}
 
 	// Classes
