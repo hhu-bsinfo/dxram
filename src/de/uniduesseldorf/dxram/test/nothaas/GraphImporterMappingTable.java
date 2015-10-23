@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.Vector;
 
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
+import de.uniduesseldorf.dxram.core.chunk.storage.NodeIDToChunkIDTable;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 
 public class GraphImporterMappingTable implements GraphImporter
 {
 	private RandomAccessFile m_edgeFile;
-	private CIDTable m_mappingTable;
+	private NodeIDToChunkIDTable m_mappingTable;
 	
 	public GraphImporterMappingTable()
 	{
@@ -22,7 +23,7 @@ public class GraphImporterMappingTable implements GraphImporter
 	}
 	
 	@Override
-	public void setMappingTable(CIDTable mappingTable)
+	public void setMappingTable(NodeIDToChunkIDTable mappingTable)
 	{
 		m_mappingTable = mappingTable;
 	}
@@ -67,12 +68,23 @@ public class GraphImporterMappingTable implements GraphImporter
 			return ret;
 		}
 	}
+	
+	@Override
+	public long getNumberOfEdges()
+	{
+		try {
+			return m_edgeFile.length() / 16;
+		} catch (IOException e) {
+			return 0;
+		}
+	}
 
 	@Override
 	public long getChunkIDForNode(long node) 
 	{
 		try {
 			long chunkID = m_mappingTable.get(node);
+			//System.out.println("Get: " + node + " -> " + chunkID);
 			if (chunkID <= 0)
 				return -1;
 			else 
@@ -87,9 +99,8 @@ public class GraphImporterMappingTable implements GraphImporter
 	@Override
 	public void setChunkIDForNode(long node, long chunkID)
 	{
-		// TODO we need instance calls here
-		
 		try {
+			//System.out.println("Set: " + node + " -> " + chunkID);
 			m_mappingTable.set(node, chunkID);
 		} catch (MemoryException e) {
 			// TODO Auto-generated catch block

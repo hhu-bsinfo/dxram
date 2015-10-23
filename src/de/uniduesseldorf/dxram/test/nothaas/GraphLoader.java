@@ -10,6 +10,7 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
+import de.uniduesseldorf.dxram.core.chunk.storage.NodeIDToChunkIDTable;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.utils.Pair;
@@ -31,8 +32,8 @@ public class GraphLoader implements Runnable
 		Vector<Thread> loaderThreads = new Vector<Thread>();
 		
 		RawMemory rawMemory = new RawMemory();
-		rawMemory.initialize(1024 * 1024 * 32); // XXX 32 mb enough?
-		CIDTable nodeMappingTable = new CIDTable();
+		rawMemory.initialize(1024 * 1024 * 1024); // XXX should be big enough? maybe a little less is sufficient too
+		NodeIDToChunkIDTable nodeMappingTable = new NodeIDToChunkIDTable();
 		nodeMappingTable.initialize(rawMemory);
 		
 		// start a new thread for every edge list file
@@ -49,22 +50,21 @@ public class GraphLoader implements Runnable
 			importer.setMappingTable(nodeMappingTable);
 			
 			GraphLoader loader = new GraphLoader(importer);
-			loader.run();
-			//Thread thread = new Thread(loader);
-			//thread.start();
-			//loaderThreads.add(thread);
+			Thread thread = new Thread(loader);
+			thread.start();
+			loaderThreads.add(thread);
 		}
 		
 		System.out.println("All loader instances started.");
-//		
-//		for (Thread thread : loaderThreads)
-//		{
-//			try {
-//				thread.join();
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//		}
+		
+		for (Thread thread : loaderThreads)
+		{
+			try {
+				thread.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		
 		System.out.println("All threads fininshed.");
 		
@@ -90,17 +90,21 @@ public class GraphLoader implements Runnable
 	@Override
 	public void run() 
 	{
+		long counter = 0;
+		long totalEdges = m_importer.getNumberOfEdges();
+		System.out.println("Total edges: " + totalEdges);
+		
 		try 
 		{
 			while (true)
 			{
-				List<Pair<Long, Long>> edges = m_importer.readEdges(100);
+				List<Pair<Long, Long>> edges = m_importer.readEdges(1000);
 				if (edges.isEmpty())
 					break; // nothing left to read
 				
 				Iterator<Pair<Long, Long>> it = edges.iterator();
 				while (it.hasNext())
-				{
+				{					
 					long chunkIDFrom = Chunk.INVALID_CHUNKID;
 					long chunkIDTo = Chunk.INVALID_CHUNKID;
 					
@@ -125,6 +129,7 @@ public class GraphLoader implements Runnable
 					{
 						chunkFrom = Core.createNewChunk(Integer.BYTES);
 						chunkFrom.getData().putInt(0, 0); // 0 edges
+						Core.put(chunkFrom);
 						chunkIDFrom = chunkFrom.getChunkID();
 						m_importer.setChunkIDForNode(pair.first(), chunkIDFrom);
 					}
@@ -146,7 +151,10 @@ public class GraphLoader implements Runnable
 					}
 					
 					Core.put(chunkFrom);
+					counter++;
 				}
+				
+				System.out.println("Progress: " + counter + "/" + totalEdges);
 			}
 		} catch (DXRAMException e) {
 			// TODO Auto-generated catch block
