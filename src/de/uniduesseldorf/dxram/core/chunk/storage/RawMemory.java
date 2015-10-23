@@ -2,7 +2,6 @@
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -80,13 +79,13 @@ public final class RawMemory {
 		m_listSizes[3] = 48;
 
 		// Set the size of the memory
-		try {
-			m_memory = new StorageRandomAccessFile(new File("raw.mem_" + Math.random()));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-//		m_memory = new StorageUnsafeMemory();
+		// for debugging, use file as memory
+//		try {
+//			m_memory = new StorageRandomAccessFile(new File("raw.mem_" + Math.random()));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		m_memory = new StorageUnsafeMemory();
 		m_memory.allocate(p_size + segmentCount * (2 + LIST_SIZE));
 		m_memory.set(0, m_memory.getSize(), (byte) 0);
 
@@ -360,7 +359,7 @@ public final class RawMemory {
 			int lengthFieldSize;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			read(p_address, lengthFieldSize);
 
 			m_memory.set(p_address + lengthFieldSize, p_size, p_value);
@@ -397,7 +396,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -437,7 +436,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -477,7 +476,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -517,7 +516,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -558,7 +557,7 @@ public final class RawMemory {
 		int size;
 		long offset;
 
-		lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 		size = (int) read(p_address, lengthFieldSize);
 
 		Contract.check(p_offset < size, "Offset out of bounds");
@@ -608,7 +607,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -651,7 +650,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -695,7 +694,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -739,7 +738,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -781,7 +780,7 @@ public final class RawMemory {
 		int size;
 		long offset;
 
-		lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 		size = (int) read(p_address, lengthFieldSize);
 
 		Contract.check(p_offset < size, "Offset out of bounds");
@@ -840,7 +839,7 @@ public final class RawMemory {
 		marker = readRightPartOfMarker(p_address - 1);
 		Contract.check(marker != SINGLE_BYTE_MARKER && marker > OCCUPIED_FLAGS_OFFSET);
 
-		lengthFieldSize = getLengthOccupiedFromMarker(marker);
+		lengthFieldSize = getLengthFromMarker(marker);
 		size = (int) read(p_address, lengthFieldSize);
 		marker = (OCCUPIED_FLAGS_OFFSET + lengthFieldSize) + (p_customState * 3);
 
@@ -849,7 +848,7 @@ public final class RawMemory {
 	}
 
 	/**
-	 * Get the size of the allocated block of memory specified
+	 * Get the size of the allocated or free'd block of memory specified
 	 * by the given address.
 	 * @param p_address
 	 *            Address of block to get the size of.
@@ -859,7 +858,7 @@ public final class RawMemory {
 	protected int getSize(final long p_address) throws MemoryException {
 		int lengthFieldSize;
 
-		lengthFieldSize = getLengthOccupiedFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
 		return (int) read(p_address, lengthFieldSize);
 	}
 
@@ -971,12 +970,12 @@ public final class RawMemory {
 		return (m_memory.readByte(p_address) & 0xF0) >> 4;
 	}
 	
-	private int getLengthOccupiedFromMarker(final int p_marker)
+	private int getLengthFromMarker(final int p_marker)
 	{
 		int ret;
 		
 		if (p_marker <= OCCUPIED_FLAGS_OFFSET)
-			ret = -1;
+			ret = p_marker; // free block size
 		else
 			ret = ((p_marker - OCCUPIED_FLAGS_OFFSET - 1) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
 	
@@ -1322,9 +1321,9 @@ public final class RawMemory {
 		 */
 		private void free(final long p_address) throws MemoryException {
 			long size;
-			int lengthFieldSize;
 			long freeSize;
 			long address;
+			int lengthFieldSize;
 			int leftMarker;
 			int rightMarker;
 			boolean leftFree;
@@ -1332,11 +1331,9 @@ public final class RawMemory {
 			boolean rightFree;
 			long rightSize;
 
-			lengthFieldSize = (readRightPartOfMarker(p_address - 1) - OCCUPIED_FLAGS_OFFSET) % OCCUPIED_FLAGS_OFFSET_MASK;
-			// size 1 stored as 0 index
-			lengthFieldSize++;
-			size = read(p_address, lengthFieldSize) + lengthFieldSize;
-
+			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			size = getSize(p_address);
+			
 			freeSize = size;
 			address = p_address;
 
@@ -1381,12 +1378,12 @@ public final class RawMemory {
 			// Only merge if right neighbor within same segment
 			if (address + size + 1 != m_base + m_size) {
 				// Read right part of the marker on the right
-				rightMarker = readRightPartOfMarker(p_address + size);
+				rightMarker = readRightPartOfMarker(p_address + lengthFieldSize + size);
 				rightFree = true;
 				switch (rightMarker) {
 				case 0:
 					// Right neighbor block (<= 12 byte) is free -> merge free blocks
-					rightSize = read(p_address + size + 1, 1) + 1;
+					rightSize = getSize(p_address + lengthFieldSize + size + 1);
 					break;
 				case 1:
 				case 2:
@@ -1394,9 +1391,9 @@ public final class RawMemory {
 				case 4:
 				case 5:
 					// Right neighbor block is free -> merge free blocks
-					rightSize = read(p_address + size + 1, rightMarker) + 1;
+					rightSize = getSize(p_address + lengthFieldSize + size + 1);
 
-					unhookFreeBlock(p_address + size + 1);
+					unhookFreeBlock(p_address + lengthFieldSize + size + 1);
 					break;
 				case 15:
 					// Right byte is free -> merge free blocks

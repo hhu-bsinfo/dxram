@@ -8,6 +8,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.Endianness;
 
 public class StorageRandomAccessFile implements Storage
 {
@@ -62,9 +63,9 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void dump(File p_file, long p_ptr, long p_length) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_size;
-		assert p_ptr + p_length < m_size;
+		assert p_ptr + p_length <= m_size;
 		
 		RandomAccessFile outFile = null;
 		try {
@@ -94,9 +95,9 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void set(long p_ptr, long p_size, byte p_value) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_size;
-		assert p_ptr + p_size < m_size;
+		assert p_ptr + p_size <= m_size;
 		
 		byte[] buf = new byte[8192];
 		Arrays.fill(buf, p_value);
@@ -104,7 +105,7 @@ public class StorageRandomAccessFile implements Storage
 		
 		try
 		{
-			m_file.seek(0);
+			m_file.seek(p_ptr);
 			
 			while (size > 0)
 			{
@@ -130,9 +131,9 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public byte[] readBytes(long p_ptr, int p_length) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_size;
-		assert p_ptr + p_length < m_size;
+		assert p_ptr + p_length <= m_size;
 		
 		byte[] data = new byte[p_length];
 		
@@ -148,9 +149,9 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void readBytes(long p_ptr, byte[] p_array, int p_arrayOffset, int p_length) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_size;
-		assert p_ptr + p_length < m_size;
+		assert p_ptr + p_length <= m_size;
 		
 		try {
 			m_file.seek(p_ptr);
@@ -162,7 +163,7 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public byte readByte(long p_ptr) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		
 		byte value = 0;
@@ -179,7 +180,7 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public short readShort(long p_ptr) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_size;
 		
 		short value = 0;
@@ -196,7 +197,7 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public int readInt(long p_ptr) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_size;
 		
 		int value = 0;
@@ -213,7 +214,7 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public long readLong(long p_ptr) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_size;
 		
 		long value = 0;
@@ -230,8 +231,8 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void writeBytes(long p_ptr, byte[] p_array) throws MemoryException {
-		assert p_ptr > 0;
-		assert p_ptr + p_array.length < m_size;
+		assert p_ptr >= 0;
+		assert p_ptr + p_array.length <= m_size;
 		
 		try {
 			m_file.seek(p_ptr);
@@ -243,8 +244,8 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void writeBytes(long p_ptr, byte[] p_array, int p_arrayOffset, int p_length) throws MemoryException {
-		assert p_ptr > 0;
-		assert p_ptr + p_array.length < m_size;
+		assert p_ptr >= 0;
+		assert p_ptr + p_array.length <= m_size;
 		
 		try {
 			m_file.seek(p_ptr);
@@ -256,7 +257,7 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void writeByte(long p_ptr, byte p_value) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		
 		try {
@@ -282,7 +283,7 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void writeInt(long p_ptr, int p_value) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_size;
 		
 		try {
@@ -295,7 +296,7 @@ public class StorageRandomAccessFile implements Storage
 
 	@Override
 	public void writeLong(long p_ptr, long p_value) throws MemoryException {
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_size;
 		
 		try {
@@ -309,6 +310,9 @@ public class StorageRandomAccessFile implements Storage
 	@Override
 	public long readVal(final long p_ptr, final int p_count) throws MemoryException
 	{
+		assert p_ptr >= 0;
+		assert p_ptr + p_count <= m_size;
+		
 		long val = 0;
 		
 		try
@@ -316,18 +320,21 @@ public class StorageRandomAccessFile implements Storage
 			m_file.seek(p_ptr);
 			
 			// take endianness into account!!!
-			if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+			if (Endianness.getEndianness() > 0) {
 				for (int i = 0; i < p_count; i++)
 				{
 					// input little endian byte order
-					val |= (m_file.readByte() >> (8 * (7 - i)) & 0xFF);
+					// work around not having unsigned data types and "wipe"
+					// the sign by & 0xFF
+					val |= ((((long) (m_file.readByte() & 0xFF)) << (8 * i)));
 				}
 			} else {
 				for (int i = 0; i < p_count; i++)
 				{
 					// input little endian byte order
-					byte tmp = (byte) (m_file.readByte() << (8 * (7 - i)) & 0xFF);
-					val |= tmp;
+					// work around not having unsigned data types and "wipe"
+					// the sign by & 0xFF
+					val |= ((((long) (m_file.readByte() & 0xFF)) << (8 * (7 - i))));
 				}
 			}
 		} catch (IOException e) {
@@ -340,23 +347,25 @@ public class StorageRandomAccessFile implements Storage
 	@Override
 	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException
 	{
+		assert p_ptr >= 0;
+		assert p_ptr + p_count <= m_size;
+		
 		try
 		{
 			m_file.seek(p_ptr);
 			
 			// take endianness into account!!!
-			if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+			if (Endianness.getEndianness() > 0) {
 				for (int i = 0; i < p_count; i++)
 				{
 					// output little endian byte order
-					m_file.writeByte((int) (p_val >> (8 * i) ) & 0xFF);
+					m_file.writeByte((byte) ((p_val >> (8 * i)) & 0xFF));
 				}
 			} else {
 				for (int i = 0; i < p_count; i++)
 				{
 					// output little endian byte order
-					byte tmp = (byte) (p_val >> (8 * (8 - i)) & 0xFF);
-					m_file.writeByte((int) tmp);
+					m_file.writeByte((byte) (p_val >> (8 * (7 - i)) & 0xFF));
 				}
 			}
 		} catch (IOException e) {

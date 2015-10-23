@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.Endianness;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
 
@@ -61,9 +62,9 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void dump(final File p_file, final long p_ptr, final long p_length) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
-		assert p_ptr + p_length < m_memorySize;
+		assert p_ptr + p_length <= m_memorySize;
 		
 		RandomAccessFile outFile = null;
 		try {
@@ -94,9 +95,9 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void set(final long p_ptr, final long p_size, final byte p_value) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
-		assert p_ptr + p_size < m_memorySize;
+		assert p_ptr + p_size <= m_memorySize;
 		
 		UNSAFE.setMemory(m_memoryBase + p_ptr, p_size, p_value);
 	}
@@ -104,9 +105,9 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public byte[] readBytes(final long p_ptr, final int p_length) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
-		assert p_ptr + p_length < m_memorySize;
+		assert p_ptr + p_length <= m_memorySize;
 		
 		byte[] array = new byte[p_length];
 		
@@ -121,9 +122,9 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void readBytes(final long p_ptr, byte[] p_array, int p_arrayOffset, int p_length) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
-		assert p_ptr + p_length < m_memorySize;
+		assert p_ptr + p_length <= m_memorySize;
 		
 		for (int i = 0; i < p_length; i++)
 		{
@@ -134,7 +135,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public byte readByte(final long p_ptr) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		
 		return UNSAFE.getByte(m_memoryBase + p_ptr);
@@ -143,7 +144,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public short readShort(final long p_ptr) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
 		
 		return UNSAFE.getShort(m_memoryBase + p_ptr);
@@ -152,7 +153,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public int readInt(final long p_ptr) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 		
 		return UNSAFE.getInt(m_memoryBase + p_ptr);
@@ -161,7 +162,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public long readLong(final long p_ptr) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
 		
 		return UNSAFE.getLong(m_memoryBase + p_ptr);
@@ -170,8 +171,8 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException
 	{
-		assert p_ptr > 0;
-		assert p_ptr + p_array.length < m_memorySize;
+		assert p_ptr >= 0;
+		assert p_ptr + p_array.length <= m_memorySize;
 		
 		for (int i = 0; i < p_array.length; i++)
 		{
@@ -182,8 +183,8 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException
 	{
-		assert p_ptr > 0;
-		assert p_ptr + p_length < m_memorySize;
+		assert p_ptr >= 0;
+		assert p_ptr + p_length <= m_memorySize;
 		
 		for (int i = 0; i < p_length; i++)
 		{
@@ -194,7 +195,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void writeByte(final long p_ptr, final byte p_value) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		
 		UNSAFE.putByte(m_memoryBase + p_ptr, p_value);
@@ -203,7 +204,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void writeShort(final long p_ptr, final short p_value) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
 		
 		UNSAFE.putShort(m_memoryBase + p_ptr, p_value);
@@ -212,7 +213,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void writeInt(final long p_ptr, final int p_value) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 		
 		UNSAFE.putInt(m_memoryBase + p_ptr, p_value);
@@ -221,7 +222,7 @@ public class StorageUnsafeMemory implements Storage
 	@Override
 	public void writeLong(final long p_ptr, final long p_value) throws MemoryException
 	{
-		assert p_ptr > 0;
+		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
 		
 		UNSAFE.putLong(m_memoryBase + p_ptr, p_value);
@@ -229,18 +230,25 @@ public class StorageUnsafeMemory implements Storage
 	
 	@Override
 	public long readVal(final long p_ptr, final int p_count) throws MemoryException {
+		assert p_ptr >= 0;
+		assert p_ptr + p_count <= m_memorySize;
+		
 		long val = 0;
 		
 		// take endianness into account!!!
-		if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+		if (Endianness.getEndianness() > 0) {
 			for (int i = 0; i < p_count; i++)
 			{
-				val |= UNSAFE.getByte(p_ptr + i) << (8 * i);
+				// work around not having unsigned data types and "wipe"
+				// the sign by & 0xFF
+				val |= ((((long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF)) << (8 * i)));
 			}
 		} else {
 			for (int i = 0; i < p_count; i++)
 			{
-				val |= UNSAFE.getByte(p_ptr + i) << (8 * (7 - i));
+				// work around not having unsigned data types and "wipe"
+				// the sign by & 0xFF
+				val |= ((((long) (UNSAFE.getByte(m_memoryBase + p_ptr + i) & 0xFF)) << (8 * (7 - i))));
 			}
 		}
 		
@@ -249,16 +257,19 @@ public class StorageUnsafeMemory implements Storage
 
 	@Override
 	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException {
+		assert p_ptr >= 0;
+		assert p_ptr + p_count <= m_memorySize;
+		
 		// take endianness into account!!!
-		if (ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)) {
+		if (Endianness.getEndianness() > 0) {
 			for (int i = 0; i < p_count; i++)
 			{
-				UNSAFE.putByte(p_ptr + i, (byte) (p_val >> (8 * (7 - i))));
+				UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) ((p_val >> (8 * i)) & 0xFF));
 			}
 		} else {
 			for (int i = 0; i < p_count; i++)
 			{
-				UNSAFE.putByte(p_ptr + i, (byte) (p_val >> i));
+				UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> (8 * (7 - i)) & 0xFF));
 			}
 		}
 	}
