@@ -10,7 +10,7 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.NodeIDToChunkIDTable;
+import de.uniduesseldorf.dxram.core.chunk.storage.PagingTable;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.utils.Pair;
@@ -33,7 +33,7 @@ public class GraphLoader implements Runnable
 		
 		RawMemory rawMemory = new RawMemory();
 		rawMemory.initialize(1024 * 1024 * 1024); // XXX should be big enough? maybe a little less is sufficient too
-		NodeIDToChunkIDTable nodeMappingTable = new NodeIDToChunkIDTable();
+		PagingTable nodeMappingTable = new PagingTable();
 		nodeMappingTable.initialize(rawMemory);
 		
 		// start a new thread for every edge list file

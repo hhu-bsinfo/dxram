@@ -54,12 +54,12 @@ public final class CIDTable {
 	// Methods
 	/**
 	 * Initializes the CIDTable
-	 * @param rawMemory The raw memory instance to use for allocation.
+	 * @param p_rawMemory The raw memory instance to use for allocation.
 	 * @throws MemoryException
 	 *             if the CIDTable could not be initialized
 	 */
-	public void initialize(RawMemory rawMemory) throws MemoryException {
-		m_rawMemory = rawMemory;
+	public void initialize(final RawMemory p_rawMemory) throws MemoryException {
+		m_rawMemory = p_rawMemory;
 		m_nodeIDTableDirectory = createNIDTable();
 
 		m_store = new LIDStore();
@@ -325,7 +325,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	public long delete(final long p_chunkID, boolean p_flagZombie) throws MemoryException {
+	public long delete(final long p_chunkID, final boolean p_flagZombie) throws MemoryException {
 		long ret;
 		ret = deleteEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
 		return ret;
@@ -602,7 +602,7 @@ public final class CIDTable {
 		if (p_address == m_nodeIDTableDirectory) {
 			m_rawMemory.readLock(p_address + NID_LOCK_OFFSET);
 		} else {
-			m_rawMemory.readLock( p_address + LID_LOCK_OFFSET);
+			m_rawMemory.readLock(p_address + LID_LOCK_OFFSET);
 		}
 	}
 
@@ -719,7 +719,7 @@ public final class CIDTable {
 			}
 		}
 	}
-	
+
 	/**
 	 * Read the version number from the specified location.
 	 * @param p_address
@@ -923,7 +923,7 @@ public final class CIDTable {
 						// get zombie chunk that is still allocated
 						// to preserve the version data
 						chunkAddress = CIDTable.this.get(chunkID);
-						
+
 						sizeVersion = m_rawMemory.getCustomState(chunkAddress) + 1;
 						version = CIDTable.this.readVersion(chunkAddress, sizeVersion);
 

@@ -19,17 +19,17 @@ import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 public final class RawMemory {
 
 	// Constants
-	private final byte POINTER_SIZE = 5;
-	private final byte SMALL_BLOCK_SIZE = 64;
-	private final byte OCCUPIED_FLAGS_OFFSET = 0x5;
-	private final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
-	private final byte SINGLE_BYTE_MARKER = 0xF;
+	private static final byte POINTER_SIZE = 5;
+	private static final byte SMALL_BLOCK_SIZE = 64;
+	private static final byte OCCUPIED_FLAGS_OFFSET = 0x5;
+	private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
+	private static final byte SINGLE_BYTE_MARKER = 0xF;
 
-	private final byte LIST_COUNT = 29;
-	private final int LIST_SIZE = LIST_COUNT * POINTER_SIZE + 3;
-	private final long SEGMENT_SIZE = 1 << LIST_COUNT + 1;
-	private final long FULL_SEGMENT_SIZE = SEGMENT_SIZE + 2 + LIST_SIZE;
-	private final int MAX_LENGTH_FIELD = 3;
+	private static final byte LIST_COUNT = 29;
+	private static final int LIST_SIZE = LIST_COUNT * POINTER_SIZE + 3;
+	private static final long SEGMENT_SIZE = 1 << LIST_COUNT + 1;
+	private static final long FULL_SEGMENT_SIZE = SEGMENT_SIZE + 2 + LIST_SIZE;
+	private static final int MAX_LENGTH_FIELD = 3;
 
 	// Attributes
 	private Storage m_memory;
@@ -359,7 +359,7 @@ public final class RawMemory {
 			int lengthFieldSize;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			read(p_address, lengthFieldSize);
 
 			m_memory.set(p_address + lengthFieldSize, p_size, p_value);
@@ -396,7 +396,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -436,7 +436,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -476,7 +476,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -516,7 +516,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -557,7 +557,7 @@ public final class RawMemory {
 		int size;
 		long offset;
 
-		lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 		size = (int) read(p_address, lengthFieldSize);
 
 		Contract.check(p_offset < size, "Offset out of bounds");
@@ -607,7 +607,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -650,7 +650,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -694,7 +694,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -738,7 +738,7 @@ public final class RawMemory {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -780,7 +780,7 @@ public final class RawMemory {
 		int size;
 		long offset;
 
-		lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 		size = (int) read(p_address, lengthFieldSize);
 
 		Contract.check(p_offset < size, "Offset out of bounds");
@@ -839,7 +839,7 @@ public final class RawMemory {
 		marker = readRightPartOfMarker(p_address - 1);
 		Contract.check(marker != SINGLE_BYTE_MARKER && marker > OCCUPIED_FLAGS_OFFSET);
 
-		lengthFieldSize = getLengthFromMarker(marker);
+		lengthFieldSize = getSizeFromMarker(marker);
 		size = (int) read(p_address, lengthFieldSize);
 		marker = (OCCUPIED_FLAGS_OFFSET + lengthFieldSize) + (p_customState * 3);
 
@@ -858,7 +858,7 @@ public final class RawMemory {
 	protected int getSize(final long p_address) throws MemoryException {
 		int lengthFieldSize;
 
-		lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 		return (int) read(p_address, lengthFieldSize);
 	}
 
@@ -969,19 +969,27 @@ public final class RawMemory {
 	private int readLeftPartOfMarker(final long p_address) throws MemoryException {
 		return (m_memory.readByte(p_address) & 0xF0) >> 4;
 	}
-	
-	private int getLengthFromMarker(final int p_marker)
-	{
+
+	/**
+	 * Extract the size of the length field of the allocated or free area
+	 * from the marker byte.
+	 *
+	 * @param p_marker Marker byte.
+	 * @return Size of the length field of block with specified marker byte.
+	 */
+	private int getSizeFromMarker(final int p_marker) {
 		int ret;
-		
-		if (p_marker <= OCCUPIED_FLAGS_OFFSET)
-			ret = p_marker; // free block size
-		else
+
+		if (p_marker <= OCCUPIED_FLAGS_OFFSET) {
+			// free block size
+			ret = p_marker;
+		} else {
 			ret = ((p_marker - OCCUPIED_FLAGS_OFFSET - 1) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
-	
+		}
+
 		return ret;
 	}
-	
+
 	/**
 	 * Writes a marker byte
 	 * @param p_address
@@ -1017,6 +1025,7 @@ public final class RawMemory {
 	 * @param p_address
 	 *            the address
 	 * @return the pointer
+	 * @throws MemoryException If reading pointer failed.
 	 */
 	private long readPointer(final long p_address) throws MemoryException {
 		return read(p_address, POINTER_SIZE);
@@ -1028,6 +1037,7 @@ public final class RawMemory {
 	 *            the address
 	 * @param p_pointer
 	 *            the pointer
+	 * @throws MemoryException If writing pointer failed.
 	 */
 	private void writePointer(final long p_address, final long p_pointer) throws MemoryException {
 		write(p_address, p_pointer, POINTER_SIZE);
@@ -1040,6 +1050,7 @@ public final class RawMemory {
 	 * @param p_count
 	 *            the number of bytes
 	 * @return the combined bytes
+	 * @throws MemoryException If reading failed.
 	 */
 	private long read(final long p_address, final int p_count) throws MemoryException {
 		return m_memory.readVal(p_address, p_count);
@@ -1053,11 +1064,12 @@ public final class RawMemory {
 	 *            the combined bytes
 	 * @param p_count
 	 *            the number of bytes
+	 * @throws MemoryException If writing failed.
 	 */
 	private void write(final long p_address, final long p_bytes, final int p_count) throws MemoryException {
 		m_memory.writeVal(p_address, p_bytes, p_count);
 	}
-	
+
 	/**
 	 * Locks the read lock
 	 * @param p_address
@@ -1120,6 +1132,7 @@ public final class RawMemory {
 		 *            the base address of the segment
 		 * @param p_size
 		 *            the size of the segment
+		 * @throws MemoryException If creating segement block failed.
 		 */
 		private Segment(final int p_segmentID, final long p_base, final long p_size) throws MemoryException {
 			m_segmentID = p_segmentID;
@@ -1221,6 +1234,7 @@ public final class RawMemory {
 		 * @param p_size
 		 *            the size of the block
 		 * @return the offset of the block
+		 * @throws MemoryException If allocating memory in segment failed.
 		 */
 		private long malloc(final int p_size) throws MemoryException {
 			long ret = -1;
@@ -1318,6 +1332,7 @@ public final class RawMemory {
 		 * Frees a memory block
 		 * @param p_address
 		 *            the address of the block
+		 * @throws MemoryException If free'ing memory in segment failed.
 		 */
 		private void free(final long p_address) throws MemoryException {
 			long size;
@@ -1331,9 +1346,9 @@ public final class RawMemory {
 			boolean rightFree;
 			long rightSize;
 
-			lengthFieldSize = getLengthFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
 			size = getSize(p_address);
-			
+
 			freeSize = size;
 			address = p_address;
 
@@ -1456,6 +1471,7 @@ public final class RawMemory {
 		 *            the address
 		 * @param p_size
 		 *            the size
+		 * @throws MemoryException If creating free block failed.
 		 */
 		private void createFreeBlock(final long p_address, final long p_size) throws MemoryException {
 			long listOffset;
@@ -1510,6 +1526,7 @@ public final class RawMemory {
 		 * Unhooks a free block
 		 * @param p_address
 		 *            the address
+		 * @throws MemoryException If unhooking free block failed.
 		 */
 		private void unhookFreeBlock(final long p_address) throws MemoryException {
 			int lengthFieldSize;

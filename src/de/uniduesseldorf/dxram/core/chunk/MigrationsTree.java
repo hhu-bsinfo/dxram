@@ -1606,7 +1606,7 @@ public final class MigrationsTree implements Serializable {
 		 * @param p_rangeID
 		 *            the backup range ID
 		 */
-		public Entry(final long p_chunkID, final byte p_rangeID) {
+		Entry(final long p_chunkID, final byte p_rangeID) {
 			m_chunkID = p_chunkID;
 			m_rangeID = p_rangeID;
 		}

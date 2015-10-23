@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.Vector;
 
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.NodeIDToChunkIDTable;
+import de.uniduesseldorf.dxram.core.chunk.storage.PagingTable;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 
 public class GraphImporterMappingTable implements GraphImporter
 {
 	private RandomAccessFile m_edgeFile;
-	private NodeIDToChunkIDTable m_mappingTable;
+	private PagingTable m_mappingTable;
 	
 	public GraphImporterMappingTable()
 	{
@@ -23,7 +23,7 @@ public class GraphImporterMappingTable implements GraphImporter
 	}
 	
 	@Override
-	public void setMappingTable(NodeIDToChunkIDTable mappingTable)
+	public void setMappingTable(PagingTable mappingTable)
 	{
 		m_mappingTable = mappingTable;
 	}

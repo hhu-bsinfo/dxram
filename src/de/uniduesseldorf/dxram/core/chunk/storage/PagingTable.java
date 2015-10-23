@@ -1,22 +1,17 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.locks.Lock;
-
-import de.uniduesseldorf.dxram.commands.CmdUtils;
-import de.uniduesseldorf.dxram.core.api.ChunkID;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
 /**
- * Paging-like Tables for the ChunkID-VA mapping
- * @author Florian Klein
- *         13.02.2014
+ * Paging tables based on CIDTable, but with less features.
+ * This can be used for any scenario that requires some kind
+ * of address translation.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de>
+ *
  */
-public final class NodeIDToChunkIDTable {
+public final class PagingTable {
 
 	// Constants
 	public static final byte ENTRY_SIZE = 8;
@@ -40,28 +35,28 @@ public final class NodeIDToChunkIDTable {
 
 	// Constructors
 	/**
-	 * Creates an instance of CIDTable
+	 * Creates an instance of PagingTable
 	 */
-	public NodeIDToChunkIDTable() {}
+	public PagingTable() {}
 
 	// Methods
 	/**
-	 * Initializes the CIDTable
-	 * @param rawMemory The raw memory instance to use for allocation.
+	 * Initializes the PagingTable
+	 * @param p_rawMemory The raw memory instance to use for allocation.
 	 * @throws MemoryException
-	 *             if the CIDTable could not be initialized
+	 *             if the PagingTable could not be initialized
 	 */
-	public void initialize(RawMemory rawMemory) throws MemoryException {
-		m_rawMemory = rawMemory;
+	public void initialize(final RawMemory p_rawMemory) throws MemoryException {
+		m_rawMemory = p_rawMemory;
 		m_nodeIDTableDirectory = createNIDTable();
 
-		System.out.println("NodeIDtoChunkIDTable: init success (page directory at: 0x" + Long.toHexString(m_nodeIDTableDirectory) + ")");
+		System.out.println("PagingTable: init success (page directory at: 0x" + Long.toHexString(m_nodeIDTableDirectory) + ")");
 	}
 
 	/**
-	 * Disengages the CIDTable
+	 * Disengages the PagingTable
 	 * @throws MemoryException
-	 *             if the CIDTable could not be disengaged
+	 *             if the PagingTable could not be disengaged
 	 */
 	public void disengage() throws MemoryException {
 		long entry;
@@ -216,7 +211,7 @@ public final class NodeIDToChunkIDTable {
 		} else {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
-		
+
 		if (p_level > 0) {
 			entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
 			if (entry > 0) {
@@ -303,7 +298,7 @@ public final class NodeIDToChunkIDTable {
 		if (p_address == m_nodeIDTableDirectory) {
 			m_rawMemory.readLock(p_address + NID_LOCK_OFFSET);
 		} else {
-			m_rawMemory.readLock( p_address + LID_LOCK_OFFSET);
+			m_rawMemory.readLock(p_address + LID_LOCK_OFFSET);
 		}
 	}
 

@@ -86,7 +86,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	// Attributes
 	private short m_nodeID;
 	private long m_rangeSize;
-	
+
 	private MemoryManager m_memoryManager;
 
 	private BackupRange m_currentBackupRange;
@@ -114,7 +114,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	public ChunkHandler() {
 		m_nodeID = NodeID.INVALID_ID;
-		
+
 		m_memoryManager = null;
 
 		if (LOG_ACTIVE && NodeID.getRole().equals(Role.PEER)) {
@@ -310,9 +310,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			} else {
 				while (null == ret) {
 					locations = m_lookup.get(p_chunkID);
-					if (locations == null)
+					if (locations == null) {
 						break;
-					
+					}
+
 					primaryPeer = locations.getPrimaryPeer();
 
 					if (primaryPeer == m_nodeID) {
@@ -2138,7 +2139,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		/**
 		 * Creates an instance of GetRequestAction
 		 */
-		public GetRequestAction() {}
+		GetRequestAction() {}
 
 		// Methods
 		/**

@@ -27,7 +27,7 @@ public final class MemoryManager {
 
 	private RawMemory m_rawMemory;
 	private CIDTable m_cidTable;
-	
+
 	// Constructors
 	/**
 	 * Creates an instance of MemoryManager
@@ -258,11 +258,11 @@ public final class MemoryManager {
 
 		// Get and delete the address from the CIDTable, mark as zombie first
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
-		
+
 		// read version
 		sizeVersion = m_rawMemory.getCustomState(addressDeletedChunk) + 1;
 		version = readVersion(addressDeletedChunk, sizeVersion);
-		
+
 		// more space for another zombie for reuse in LID store?
 		if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID), version)) {
 			// detach reference to zombie and free memory
@@ -295,7 +295,7 @@ public final class MemoryManager {
 	public ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
 		return m_cidTable.getCIDOfAllMigratedChunks();
 	}
-	
+
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
 	 * @return the ChunkID ranges in an ArrayList
