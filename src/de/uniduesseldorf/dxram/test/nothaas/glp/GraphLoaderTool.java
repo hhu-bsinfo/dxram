@@ -23,7 +23,6 @@ public class GraphLoaderTool
 		
 		// TODO hardcoded thread count
 		final int threadCount = 2;
-		
 		GraphLoader loader = new GraphLoader(threadCount);
 		loader.setNodeMapping(new NodeMappingPagingInMemory());
 		
