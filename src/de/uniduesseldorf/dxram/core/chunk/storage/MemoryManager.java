@@ -45,15 +45,18 @@ public final class MemoryManager {
 	 */
 	public long initialize(final long p_size) throws MemoryException {
 		long ret;
+		long segmentSize;
 
 		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_MEMORY)) {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 		}
+		
+		segmentSize = Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SEGMENT_SIZE);
 
 		m_nextLocalID = new AtomicLong(1);
 
 		m_rawMemory = new RawMemory();
-		ret = m_rawMemory.initialize(p_size);
+		ret = m_rawMemory.initialize(p_size, segmentSize);
 		m_cidTable = new CIDTable();
 		m_cidTable.initialize(m_rawMemory);
 

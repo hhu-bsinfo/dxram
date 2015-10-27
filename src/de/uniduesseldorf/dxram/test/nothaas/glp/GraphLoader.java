@@ -75,7 +75,7 @@ public class GraphLoader
 			m_executor.submit(worker);
 		}
 		
-		m_executor.shutdown();
+		//m_executor.shutdown();
 		
 		try {
 			// that kind of says "wait forever"

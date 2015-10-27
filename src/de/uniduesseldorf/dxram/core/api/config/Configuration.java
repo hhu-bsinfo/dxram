@@ -251,6 +251,8 @@ public final class Configuration {
 
 		// Size of the RAM
 		public static final ConfigurationEntry<Long> RAM_SIZE = new ConfigurationEntry<Long>("ram.size", Long.class, 1073741824L);
+		// Size of the RAM
+		public static final ConfigurationEntry<Long> RAM_SEGMENT_SIZE = new ConfigurationEntry<Long>("ram.segment_size", Long.class, 1073741824L);
 		// Class for the Memory-Management of the RAM
 		public static final ConfigurationEntry<String> RAM_MANAGEMENT = new ConfigurationEntry<String>("ram.management", String.class,
 				"de.uniduesseldorf.dxram.core.chunk.storage.SimpleListStorageManagement");

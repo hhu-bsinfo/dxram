@@ -25,10 +25,6 @@ public final class RawMemory {
 	private static final byte OCCUPIED_FLAGS_OFFSET_MASK = 0x03;
 	private static final byte SINGLE_BYTE_MARKER = 0xF;
 
-	private static final byte LIST_COUNT = 29;
-	private static final int LIST_SIZE = LIST_COUNT * POINTER_SIZE + 3;
-	private static final long SEGMENT_SIZE = 1 << LIST_COUNT + 1;
-	private static final long FULL_SEGMENT_SIZE = SEGMENT_SIZE + 2 + LIST_SIZE;
 	private static final int MAX_LENGTH_FIELD = 3;
 
 	// Attributes
@@ -37,6 +33,11 @@ public final class RawMemory {
 	private Segment[] m_segments;
 	private ArenaManager m_arenaManager;
 
+	private long m_segmentSize = -1;
+	private long m_fullSegmentSize = -1;
+	private int m_freeBlocksListCountPerSegment = -1;
+	private int m_freeBlocksListSizePerSegment = -1;
+	
 	private long[] m_listSizes;
 
 	// Constructors
@@ -54,7 +55,7 @@ public final class RawMemory {
 	 * @throws MemoryException
 	 *             if the memory could not be initialized
 	 */
-	public long initialize(final long p_size) throws MemoryException {
+	public long initialize(final long p_size, final long p_segmentSize) throws MemoryException {
 		long ret;
 		int segmentCount;
 		long base;
@@ -62,15 +63,29 @@ public final class RawMemory {
 		long size;
 
 		Contract.check(p_size >= 0, "invalid size given");
+		Contract.check(p_segmentSize >= 0, "invalid segment size given");
+		
+		// detect highest bit using log2 to have proper segment sizes
+		{
+			int tmp = (int) (Math.log(p_segmentSize) / Math.log(2));
+		
+			m_segmentSize = (long) Math.pow(2, tmp);
+			// according to segment size, have a proper amount of
+			// free memory block lists
+			// -1, because we don't need a free block list for the full segment
+			m_freeBlocksListCountPerSegment = tmp - 1; 
+			m_freeBlocksListSizePerSegment = m_freeBlocksListCountPerSegment * POINTER_SIZE + 3;
+			m_fullSegmentSize = m_segmentSize + m_freeBlocksListSizePerSegment;
+		}
 
-		segmentCount = (int) (p_size / SEGMENT_SIZE);
-		if (p_size % SEGMENT_SIZE > 0) {
+		segmentCount = (int) (p_size / m_segmentSize);
+		if (p_size % m_segmentSize > 0) {
 			segmentCount++;
 		}
 
 		// Initializes the list sizes
-		m_listSizes = new long[LIST_COUNT];
-		for (int i = 0; i < LIST_COUNT; i++) {
+		m_listSizes = new long[m_freeBlocksListCountPerSegment];
+		for (int i = 0; i < m_freeBlocksListCountPerSegment; i++) {
 			m_listSizes[i] = (long) Math.pow(2, i + 2);
 		}
 		m_listSizes[0] = 12;
@@ -86,7 +101,7 @@ public final class RawMemory {
 //			e.printStackTrace();
 //		}
 		m_memory = new StorageUnsafeMemory();
-		m_memory.allocate(p_size + segmentCount * (2 + LIST_SIZE));
+		m_memory.allocate(p_size + segmentCount * (2 + m_freeBlocksListSizePerSegment));
 		m_memory.set(0, m_memory.getSize(), (byte) 0);
 
 		// Initialize segments
@@ -94,17 +109,21 @@ public final class RawMemory {
 		remaining = p_size;
 		m_segments = new Segment[segmentCount];
 		for (int i = 0; i < segmentCount; i++) {
-			size = Math.min(SEGMENT_SIZE, remaining);
+			size = Math.min(m_segmentSize, remaining);
 			m_segments[i] = new Segment(i, base, size);
 
-			base += FULL_SEGMENT_SIZE;
-			remaining -= SEGMENT_SIZE;
+			base += m_fullSegmentSize;
+			remaining -= m_segmentSize;
 		}
 		m_arenaManager = new ArenaManager();
 
 		MemoryStatistic.getInstance().initMemory(p_size);
 
-		System.out.println("RawMemory: init success (" + m_memory + ")");
+		System.out.println(
+				"RawMemory: init success (" + m_memory + 
+				"), segment size " + m_segmentSize + 
+				", full segment size " + m_fullSegmentSize +
+				", free blocks list count per segment " + m_freeBlocksListCountPerSegment);
 
 		ret = m_memory.getSize();
 
@@ -274,7 +293,7 @@ public final class RawMemory {
 	protected void free(final long p_address) throws MemoryException {
 		Segment segment;
 
-		segment = m_segments[(int) (p_address / FULL_SEGMENT_SIZE)];
+		segment = m_segments[(int) (p_address / m_fullSegmentSize)];
 		segment.lock();
 		try {
 			segment.free(p_address);
@@ -884,7 +903,7 @@ public final class RawMemory {
 	 * @return the segment
 	 */
 	protected int getSegment(final long p_address) {
-		return (int) (p_address / FULL_SEGMENT_SIZE);
+		return (int) (p_address / m_fullSegmentSize);
 	}
 
 	/**
@@ -921,7 +940,7 @@ public final class RawMemory {
 
 		output = new StringBuilder();
 		output.append("\nRawMemory (" + m_memory + "):");
-		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(FULL_SEGMENT_SIZE));
+		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(m_fullSegmentSize));
 		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
 		for (int i = 0; i < stati.length; i++) {
 			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assignedThread + "): " + Tools.readableSize(stati[i].m_freeSpace) + " in "
@@ -1259,10 +1278,10 @@ public final class RawMemory {
 
 			// Get the list with a free block which is big enough
 			list = getList(size) + 1;
-			while (list < LIST_COUNT && readPointer(m_pointerOffset + list * POINTER_SIZE) == 0) {
+			while (list < m_freeBlocksListCountPerSegment && readPointer(m_pointerOffset + list * POINTER_SIZE) == 0) {
 				list++;
 			}
-			if (list < LIST_COUNT) {
+			if (list < m_freeBlocksListCountPerSegment) {
 				// A list is found
 				address = readPointer(m_pointerOffset + list * POINTER_SIZE);
 			} else {
