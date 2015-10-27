@@ -35,6 +35,8 @@ public class GraphReaderFile implements GraphReader
 			try {
 				readBytes = m_edgeFile.read(buffer.array());
 				System.out.println("File pos: (" + m_edgeFile.getFilePointer() + "/" + m_edgeFile.length() + ")");
+				if (readBytes == -1)
+					return 0;
 			} catch (IOException e) {
 			}
 		}

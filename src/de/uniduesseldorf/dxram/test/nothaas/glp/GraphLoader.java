@@ -2,8 +2,10 @@ package de.uniduesseldorf.dxram.test.nothaas.glp;
 
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import de.uniduesseldorf.dxram.utils.Pair;
@@ -51,6 +53,11 @@ public class GraphLoader
 		m_nodeMapping = p_nodeMappingInstance;
 	}
 	
+	public NodeMapping getNodeMapping()
+	{
+		return m_nodeMapping;
+	}
+	
 	public boolean execute()
 	{
 		if (m_nodeMapping == null)
@@ -70,20 +77,29 @@ public class GraphLoader
 		}
 		
 		Vector<Worker> tasks = createTasksQueue();
+		Vector<Future<?>> submitedTasks = new Vector<Future<?>>();
 		for (Worker worker : tasks)
 		{
-			m_executor.submit(worker);
+			submitedTasks.add(m_executor.submit(worker));
 		}
 		
-		//m_executor.shutdown();
+		System.out.println("Waiting for workers to finish...");
 		
-		try {
-			// that kind of says "wait forever"
-			m_executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			return false;
+		for (Future<?> future : submitedTasks)
+		{
+			try
+			{
+				future.get();
+			}
+			catch (final ExecutionException | InterruptedException e)
+			{
+				e.printStackTrace();
+			}
 		}
+		
+		m_executor.shutdown();
+		
+		System.out.println("Workers finished.");
 		
 		return true;
 	}
@@ -97,6 +113,7 @@ public class GraphLoader
 			final int numReaderInstances = m_importers.size() / m_readers.size(); 
 			int remainder = m_importers.size() % m_readers.size();
 			
+			int workerInstance = 0;
 			int readerIdx = 0;
 			int importerIdx = 0;
 			while (readerIdx < m_readers.size())
@@ -113,7 +130,7 @@ public class GraphLoader
 					ReaderInstance readerInstance = new ReaderInstance(readInst, totalReaderInstances, m_readers.get(readerIdx));
 					ImporterInstance importerInstance = new ImporterInstance(0, 1, m_importers.get(importerIdx));
 				
-					queue.add(new Worker(readerInstance, importerInstance));
+					queue.add(new Worker(workerInstance++, readerInstance, importerInstance));
 					importerIdx++;
 				}
 				
@@ -125,6 +142,7 @@ public class GraphLoader
 			final int numImporterInstances = m_importers.size() / m_readers.size(); 
 			int remainder = m_importers.size() % m_readers.size();
 			
+			int workerInstance = 0;
 			int readerIdx = 0;
 			int importerIdx = 0;
 			while (importerIdx < m_importers.size())
@@ -141,7 +159,7 @@ public class GraphLoader
 					ReaderInstance readerInstance = new ReaderInstance(0, 1, m_readers.get(readerIdx));
 					ImporterInstance importerInstance = new ImporterInstance(importerInst, totalImporterInstances, m_importers.get(importerIdx));
 				
-					queue.add(new Worker(readerInstance, importerInstance));
+					queue.add(new Worker(workerInstance++, readerInstance, importerInstance));
 					readerIdx++;
 				}
 				
@@ -155,7 +173,7 @@ public class GraphLoader
 				ReaderInstance readerInstance = new ReaderInstance(i, m_readers.size(), m_readers.get(i));
 				ImporterInstance importerInstance = new ImporterInstance(i, m_importers.size(), m_importers.get(i));
 				
-				queue.add(new Worker(readerInstance, importerInstance));
+				queue.add(new Worker(i, readerInstance, importerInstance));
 			}
 		}
 		
@@ -229,11 +247,13 @@ public class GraphLoader
 	
 	private class Worker implements Runnable
 	{
-		ReaderInstance m_reader = null;
-		ImporterInstance m_importer = null;
+		private int m_workerInstance = -1;
+		private ReaderInstance m_reader = null;
+		private ImporterInstance m_importer = null;
 		
-		public Worker(ReaderInstance p_readerInstance, ImporterInstance p_importerInstance)
+		public Worker(int p_workerInstance, ReaderInstance p_readerInstance, ImporterInstance p_importerInstance)
 		{
+			m_workerInstance = p_workerInstance;
 			m_reader = p_readerInstance;
 			m_importer = p_importerInstance;
 		}
@@ -248,7 +268,7 @@ public class GraphLoader
 			do
 			{				
 				readEdges = m_reader.readEdges(buffer, edgeCount);
-				if (readEdges == 0)
+				if (readEdges <= 0)
 					break;
 				
 				for (Pair<Long, Long> edge : buffer)
@@ -258,7 +278,9 @@ public class GraphLoader
 				
 				buffer.clear();
 			}
-			while (readEdges != 0);
+			while (readEdges > 0);
+			
+			System.out.println("Worker (" + m_workerInstance + ") finished.");
 		}
 		
 		@Override

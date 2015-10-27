@@ -1,6 +1,9 @@
 package de.uniduesseldorf.dxram.test.nothaas.glp;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Vector;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
@@ -13,7 +16,7 @@ public class GraphLoaderTool
 	{
 		if (args.length < 1)
 		{
-			System.out.println("Usage: GraphLoaderTool <edge list files> ...");
+			System.out.println("Usage: GraphLoaderTool --entryNodes <entry nodes list> <edge list files> ...");
 			return;
 		}
 		
@@ -22,7 +25,7 @@ public class GraphLoaderTool
 				NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 		
 		// TODO hardcoded thread count
-		final int threadCount = 4;
+		final int threadCount = 8;
 		GraphLoader loader = new GraphLoader(threadCount);
 		loader.setNodeMapping(new NodeMappingPagingInMemory());
 		
@@ -32,11 +35,20 @@ public class GraphLoaderTool
 			loader.addImporter(new GraphImporterSimple());
 		}
 
-		for (int i = 0; i < args.length; i++)
+		String entryNodes = null;
+		int i = 0;
+		if (args.length > 2 && args[0].equals("--entryNodes"))
+		{
+			entryNodes = args[1];
+			i = 2;
+		}
+		
+		while (i < args.length)
 		{
 			System.out.println("Adding edge list file '" + args[i] + "'.");
 			
 			loader.addReader(new GraphReaderFile(new File(args[i])));
+			i++;
 		}
 		
 		System.out.println("Execute loading....");
@@ -47,7 +59,24 @@ public class GraphLoaderTool
 
 		System.out.println("All fininshed.");
 		
-		Core.close();
+		if (entryNodes != null)
+		{
+			Vector<Long> entryNodesConverted = new Vector<Long>();
+			RandomAccessFile entryNodesFile = null;
+			try {
+				entryNodesFile = new RandomAccessFile(new File(entryNodes), "r");
+				while (entryNodesFile.getFilePointer() < entryNodesFile.length())
+					entryNodesConverted.add(loader.getNodeMapping().getChunkIDForNodeID(entryNodesFile.readLong()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			System.out.println("EntryNodes: ");
+			for (Long node : entryNodesConverted)
+				System.out.println(node);
+		}
+		
+		//Core.close();
 		System.out.println("Done");
 	}
 }

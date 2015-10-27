@@ -240,7 +240,7 @@ public class StorageUnsafeMemory implements Storage {
 	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException {
 		assert p_ptr >= 0;
 		assert p_ptr + p_count <= m_memorySize;
-
+		
 		// take endianness into account!!!
 		if (Endianness.getEndianness() > 0) {
 			for (int i = 0; i < p_count; i++) {

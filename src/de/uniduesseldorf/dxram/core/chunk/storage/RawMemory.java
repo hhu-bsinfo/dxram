@@ -856,7 +856,8 @@ public final class RawMemory {
 		Contract.check(p_customState >= 0 && p_customState < 3, "Custom state out of range.");
 
 		marker = readRightPartOfMarker(p_address - 1);
-		Contract.check(marker != SINGLE_BYTE_MARKER && marker > OCCUPIED_FLAGS_OFFSET);
+		Contract.check(marker != SINGLE_BYTE_MARKER);
+		Contract.check(marker > OCCUPIED_FLAGS_OFFSET);
 
 		lengthFieldSize = getSizeFromMarker(marker);
 		size = (int) read(p_address, lengthFieldSize);
@@ -939,12 +940,13 @@ public final class RawMemory {
 		}
 
 		output = new StringBuilder();
-		output.append("\nRawMemory (" + m_memory + "):");
+		output.append("\nRawMemory (" + m_memory + "), segment size " + m_segmentSize + 
+				", full segment size " + m_fullSegmentSize +
+				", free blocks list count per segment " + m_freeBlocksListCountPerSegment);
 		output.append("\nSegment Count: " + m_segments.length + " at " + Tools.readableSize(m_fullSegmentSize));
 		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
 		for (int i = 0; i < stati.length; i++) {
-			output.append("\n\tSegment " + i + " (" + m_segments[i].m_assignedThread + "): " + Tools.readableSize(stati[i].m_freeSpace) + " in "
-					+ stati[i].m_freeBlocks + " blocks");
+			output.append("\n\t" + m_segments[i]);
 		}
 		output.append("\n");
 
@@ -1575,8 +1577,10 @@ public final class RawMemory {
 
 		@Override
 		public String toString() {
-			return "Segment [m_segmentID=" + m_segmentID + ", m_base=" + m_base + ", m_status=" + m_status
-					+ ", m_pointerOffset=" + m_pointerOffset + ". m_assignedThread=" + m_assignedThread + "]";
+			return "Segment " + m_segmentID + " (assigned thread: " + m_assignedThread + "): " +
+					Tools.readableSize(getStatus().m_freeSpace) + " in "
+					+ getStatus().m_freeBlocks + " blocks, borders: " + m_base + "|" + (m_base + m_size) +
+					" free blocks pointers offset: " + m_pointerOffset;
 		}
 
 		// Classes
@@ -1799,7 +1803,7 @@ public final class RawMemory {
 			tempAssigned = null;
 			fragmentationAssigned = 1;
 			freeAssigned = 0;
-			for (int tries = 0; tries < 10 && tempUnassigned == null && tempAssigned == null; tries++) {
+			for (int tries = 0; tries < 100 && tempUnassigned == null && tempAssigned == null; tries++) {
 				for (int i = 0; i < m_segments.length; i++) {
 					if (m_segments[i].m_status.m_freeSpace > p_minSize && m_segments[i].tryLock()) {
 						if (m_segments[i].isAssigned()) {

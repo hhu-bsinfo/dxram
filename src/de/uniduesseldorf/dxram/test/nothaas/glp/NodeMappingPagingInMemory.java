@@ -12,8 +12,8 @@ public class NodeMappingPagingInMemory implements NodeMapping
 	public NodeMappingPagingInMemory() throws MemoryException
 	{
 		m_rawMemory = new RawMemory();
-		// 128mb ram and 8mb segments  
-		m_rawMemory.initialize(1024 * 1024 * 256, 1024 * 1024 * 8);
+		// 1GB ram and 128mb segments  
+		m_rawMemory.initialize(1024 * 1024 * 1024 * 2L, 1024 * 1024 * 128);
 		m_nodeMappingTable = new PagingTable();
 		m_nodeMappingTable.initialize(m_rawMemory);
 	}
