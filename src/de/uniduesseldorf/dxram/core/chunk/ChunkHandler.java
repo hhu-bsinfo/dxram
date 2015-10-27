@@ -164,13 +164,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (LOG_ACTIVE && NodeID.getRole().equals(Role.PEER)) {
 			m_log = CoreComponentFactory.getLogInterface();
 		}
-		m_lock = CoreComponentFactory.getLockInterface();
-
-		m_memoryManager = new MemoryManager();
-		m_memoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE));
 
 		m_lookup = CoreComponentFactory.getLookupInterface();
 		if (NodeID.getRole().equals(Role.PEER)) {
+			m_lock = CoreComponentFactory.getLockInterface();
+			
+			m_memoryManager = new MemoryManager();
+			m_memoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE));
+			
 			m_migrationLock = new ReentrantLock(false);
 			registerPeer();
 
@@ -185,7 +186,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	@Override
 	public void close() {
 		try {
-			m_memoryManager.disengage();
+			if (NodeID.getRole().equals(Role.PEER)) {
+				m_memoryManager.disengage();
+			}
 		} catch (final MemoryException e) {}
 	}
 
