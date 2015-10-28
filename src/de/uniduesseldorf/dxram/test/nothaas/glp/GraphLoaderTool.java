@@ -27,7 +27,8 @@ public class GraphLoaderTool
 		// TODO hardcoded thread count
 		final int threadCount = 8;
 		GraphLoader loader = new GraphLoader(threadCount);
-		loader.setNodeMapping(new NodeMappingPagingInMemory());
+		//loader.setNodeMapping(new NodeMappingPagingInMemory());
+		loader.setNodeMapping(new NodeMappingHashMap());
 		
 		// add same amount of importers as threads by default
 		for (int i = 0; i < threadCount; i++)

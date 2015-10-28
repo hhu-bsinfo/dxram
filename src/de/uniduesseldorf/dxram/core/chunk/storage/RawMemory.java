@@ -853,11 +853,14 @@ public final class RawMemory {
 		int lengthFieldSize;
 		int size;
 
-		Contract.check(p_customState >= 0 && p_customState < 3, "Custom state out of range.");
+		Contract.check(p_customState >= 0 && p_customState < 3, 
+				"Custom state (" + p_customState + ") out of range, addr: " + p_address);
 
 		marker = readRightPartOfMarker(p_address - 1);
-		Contract.check(marker != SINGLE_BYTE_MARKER);
-		Contract.check(marker > OCCUPIED_FLAGS_OFFSET);
+		Contract.check(marker != SINGLE_BYTE_MARKER, 
+				"Single byte marker not valid, addr " + p_address + ", marker: " + marker);
+		Contract.check(marker > OCCUPIED_FLAGS_OFFSET,
+				"Invalid marker " + marker + " at address " + p_address);
 
 		lengthFieldSize = getSizeFromMarker(marker);
 		size = (int) read(p_address, lengthFieldSize);
