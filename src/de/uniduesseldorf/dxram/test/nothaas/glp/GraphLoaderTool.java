@@ -1,14 +1,17 @@
 package de.uniduesseldorf.dxram.test.nothaas.glp;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Iterator;
 import java.util.Vector;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.utils.Pair;
 
 public class GraphLoaderTool 
 {
@@ -25,7 +28,7 @@ public class GraphLoaderTool
 				NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
 		
 		// TODO hardcoded thread count
-		final int threadCount = 8;
+		final int threadCount = 1;
 		GraphLoader loader = new GraphLoader(threadCount);
 		//loader.setNodeMapping(new NodeMappingPagingInMemory());
 		loader.setNodeMapping(new NodeMappingHashMap());
@@ -60,21 +63,45 @@ public class GraphLoaderTool
 
 		System.out.println("All fininshed.");
 		
+		System.out.println("Mapping table entries: " + loader.getNodeMapping().getNumMappingEntries());
+		
+		// dump entries
+		{
+			try {
+				RandomAccessFile mappingsDump = new RandomAccessFile(new File("nodeMappings"), "rw");
+
+				Iterator<Pair<Long, Long>> it = loader.getNodeMapping().getIterator();
+				while (it.hasNext())
+				{
+					Pair<Long, Long> elem = it.next();
+					mappingsDump.writeLong(elem.first());
+					mappingsDump.writeLong(elem.second());
+				}
+				
+				mappingsDump.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		if (entryNodes != null)
 		{
 			Vector<Long> entryNodesConverted = new Vector<Long>();
 			RandomAccessFile entryNodesFile = null;
 			try {
 				entryNodesFile = new RandomAccessFile(new File(entryNodes), "r");
+				System.out.println("EntryNodes: ");
 				while (entryNodesFile.getFilePointer() < entryNodesFile.length())
-					entryNodesConverted.add(loader.getNodeMapping().getChunkIDForNodeID(entryNodesFile.readLong()));
+				{
+					Long node = entryNodesFile.readLong();
+					Long chunk = loader.getNodeMapping().getChunkIDForNodeID(node);
+					entryNodesConverted.add(chunk);
+					System.out.println(node + " -> " + chunk);
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-			System.out.println("EntryNodes: ");
-			for (Long node : entryNodesConverted)
-				System.out.println(node);
 		}
 		
 		//Core.close();

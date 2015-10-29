@@ -351,16 +351,16 @@ public class StorageRandomAccessFile implements Storage {
 			if (Endianness.getEndianness() > 0) {
 				for (int i = 0; i < p_count; i++) {
 					// output little endian byte order
-					m_file.writeByte((byte) ((p_val >> (8 * i)) & 0xFF));
+					m_file.writeByte((int) ((p_val >> (8 * i)) & 0xFF));
 				}
 			} else {
 				for (int i = 0; i < p_count; i++) {
 					// output little endian byte order
-					m_file.writeByte((byte) (p_val >> (8 * (7 - i)) & 0xFF));
+					m_file.writeByte((int) (p_val >> (8 * (7 - i)) & 0xFF));
 				}
 			}
 		} catch (final IOException e) {
-			throw new MemoryException("reading failed " + e);
+			throw new MemoryException("writing failed " + e);
 		}
 	}
 

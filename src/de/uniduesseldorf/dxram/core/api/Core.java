@@ -190,6 +190,7 @@ public final class Core {
 		try {
 			if (m_chunk != null) {
 				ret = m_chunk.create(p_size);
+				System.out.println("Create: " + p_size + " | " + ret.getChunkID());
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_CREATE_NEW_CHUNK);

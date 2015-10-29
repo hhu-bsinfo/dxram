@@ -55,7 +55,7 @@ public final class MemoryManager {
 
 		m_nextLocalID = new AtomicLong(1);
 
-		m_rawMemory = new RawMemory();
+		m_rawMemory = new RawMemory(new StorageUnsafeMemory());
 		ret = m_rawMemory.initialize(p_size, segmentSize);
 		m_cidTable = new CIDTable();
 		m_cidTable.initialize(m_rawMemory);
@@ -219,6 +219,54 @@ public final class MemoryManager {
 		return ret;
 	}
 
+//	public Chunk resize(final long p_chunkID, final long p_newSize) throws MemoryException {
+//		Chunk ret = null;
+//		long address = -1;
+//
+//		// Get the address from the CIDTable
+//		address = m_cidTable.get(p_chunkID);
+//
+//		// If address <= 0, the Chunk does not exists in the memory
+//		if (address > 0) {
+//			long newAddress = -1;
+//			
+//			// try reallocating the block
+//			newAddress = m_rawMemory.realloc(address, p_newSize);
+//			if (newAddress != address)
+//			{
+//				int customState = -1;
+//				byte[] data = null;
+//				
+//				// copy data and free old block
+//				customState = m_rawMemory.getCustomState(address);
+//				data = m_rawMemory.readBytes(address);
+//				
+//				m_rawMemory.setCustomState(newAddress, customState);
+//				
+//				// if the new block is smaller, trunc data
+//				if (p_newSize < data.length)
+//					m_rawMemory.writeBytes(newAddress, data, p_);
+//				else
+//					m_rawMemory.writeBytes(newAddress, data);
+//			}
+//			
+//			
+//			int version;
+//			int sizeVersion;
+//			byte[] data;
+//
+//			sizeVersion = m_rawMemory.getCustomState(address) + 1;
+//			version = readVersion(address, sizeVersion);
+//
+//			// make sure to skip version data
+//			data = m_rawMemory.readBytes(address, sizeVersion);
+//
+//			ret = new Chunk(p_chunkID, data, version);
+//		}
+//
+//		return ret;
+//	}
+	
 	/**
 	 * Returns whether this Chunk is stored locally or not
 	 * @param p_chunkID

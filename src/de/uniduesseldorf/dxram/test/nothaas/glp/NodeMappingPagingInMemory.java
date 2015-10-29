@@ -1,8 +1,11 @@
 package de.uniduesseldorf.dxram.test.nothaas.glp;
 
+import java.util.Iterator;
+
 import de.uniduesseldorf.dxram.core.chunk.storage.PagingTable;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.Pair;
 
 public class NodeMappingPagingInMemory implements NodeMapping
 {
@@ -41,5 +44,17 @@ public class NodeMappingPagingInMemory implements NodeMapping
 			e.printStackTrace();
 		}
 	}
+	
+	@Override
+	public long getNumMappingEntries()
+	{
+		// TODO ?
+		return -1;
+	}
 
+	@Override
+	public Iterator<Pair<Long, Long>> getIterator() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
