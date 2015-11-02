@@ -1,9 +1,6 @@
 
 package de.uniduesseldorf.dxram.utils.locks;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-
 /**
  * Provides lock functions for virtual memory addresses using JNI
  * @author Florian Klein
@@ -12,8 +9,8 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
 public final class JNILock {
 
 	// Statics
-	static {
-		System.load(Core.getConfiguration().getStringValue(ConfigurationConstants.JNI_LOCK_DIRECTORY));
+	public static void load(final String p_pathNativeLibrary) {
+		System.load(p_pathNativeLibrary);
 	}
 
 	// Constructors

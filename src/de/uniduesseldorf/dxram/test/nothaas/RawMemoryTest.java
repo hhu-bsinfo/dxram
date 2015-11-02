@@ -9,10 +9,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.StorageRandomAccessFile;
 import de.uniduesseldorf.dxram.core.chunk.storage.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.locks.JNILock;
 
 public class RawMemoryTest 
 {
@@ -36,6 +38,8 @@ public class RawMemoryTest
 		assert p_blockSizeMin > 0;
 		assert p_blockSizeMax > 0;
 		assert p_blockSizeMax > p_blockSizeMin;
+		
+		JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
 		
 		//m_memory = new RawMemory(new StorageUnsafeMemory());
 		try {
