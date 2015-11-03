@@ -644,14 +644,13 @@ public final class RawMemory {
 		}
 
 		output = new StringBuilder();
-		output.append("\nRawMemory (" + m_memory + ")");
+		output.append("RawMemory (" + m_memory + ")");
 		output.append("\nSegment Count: " + m_segments.length + " each of size " + Tools.readableSize(m_segmentSize));
 		output.append("\nFree Space: " + Tools.readableSize(freeSpace) + " in " + freeBlocks + " blocks");
 		
 		for (int i = 0; i < stati.length; i++) {
 			output.append("\n\t" + m_segments[i]);
 		}
-		output.append("\n");
 
 		return output.toString();
 	}
@@ -660,7 +659,7 @@ public final class RawMemory {
 	 * Prints debug infos
 	 */
 	public void printDebugInfos() {
-		System.out.println(this);
+		System.out.println("\n" + this);
 	}
 	
 	// --------------------------------------------------------------------------------------------------------

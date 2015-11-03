@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
 import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.StorageRandomAccessFile;
 import de.uniduesseldorf.dxram.core.chunk.storage.StorageUnsafeMemory;
@@ -24,10 +25,11 @@ public class RawMemoryTest
 	private float m_mallocFreeRatio;
 	private int m_blockSizeMin = -1;
 	private int m_blockSizeMax = -1;
+	private boolean m_debugPrint = false;
 	
 	public RawMemoryTest(final long p_memorySize, final long p_segmentSize, 
 			final int p_numThreads, final int p_numOperations, final float p_mallocFreeRatio, 
-			final int p_blockSizeMin, final int p_blockSizeMax)
+			final int p_blockSizeMin, final int p_blockSizeMax, final boolean p_debugPrint)
 	{
 		assert p_memorySize > 0;
 		assert p_segmentSize > 0;
@@ -39,7 +41,8 @@ public class RawMemoryTest
 		assert p_blockSizeMax > 0;
 		assert p_blockSizeMax > p_blockSizeMin;
 		
-		JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
+		//JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
+		JNILock.load("/home/stefan/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
 		
 		//m_memory = new RawMemory(new StorageUnsafeMemory());
 		try {
@@ -50,7 +53,8 @@ public class RawMemoryTest
 				file.createNewFile();
 			}
 			
-			m_memory = new RawMemory(new StorageRandomAccessFile(file));
+			//m_memory = new RawMemory(new StorageRandomAccessFile(file));
+			m_memory = new RawMemory(new StorageUnsafeMemory());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -66,18 +70,21 @@ public class RawMemoryTest
 		m_mallocFreeRatio = p_mallocFreeRatio;
 		m_blockSizeMin = p_blockSizeMin;
 		m_blockSizeMax = p_blockSizeMax;
+		m_debugPrint = p_debugPrint;
 	}
 	
 	public void run()
 	{
 		ExecutorService executor = Executors.newFixedThreadPool(m_numThreads);
 		
+		System.out.println(m_memory);
+		
 		System.out.println("Starting " + m_numThreads + " threads.");
 		Vector<Future<?>> submitedTasks = new Vector<Future<?>>();
 		for (int i = 0; i < m_numThreads; i++)
 		{
 			MemoryThread memThread = new MemoryThread(m_memory, m_numOperations, 
-					m_mallocFreeRatio, m_blockSizeMin, m_blockSizeMax);
+					m_mallocFreeRatio, m_blockSizeMin, m_blockSizeMax, m_debugPrint);
 			submitedTasks.add(executor.submit(memThread));
 		}
 		
@@ -96,16 +103,16 @@ public class RawMemoryTest
 		}
 	
 		System.out.println("All workers finished.");
-		m_memory.printDebugInfos();
+		System.out.println("Final memory status:\n" + m_memory);
 		
 		executor.shutdown();
 	}
 	
 	public static void main(String[] args) throws MemoryException
 	{
-		if (args.length < 7)
+		if (args.length < 8)
 		{
-			System.out.println("Usage: RawMemoryTest <memorySize> <segmentSize> <numThreads> <numOperations> <mallocFreeRatio> <blockSizeMin> <blockSizeMax>");
+			System.out.println("Usage: RawMemoryTest <memorySize> <segmentSize> <numThreads> <numOperations> <mallocFreeRatio> <blockSizeMin> <blockSizeMax> <debugPrint>");
 			return;
 		}
 		
@@ -116,9 +123,10 @@ public class RawMemoryTest
 		float mallocFreeRatio = Float.parseFloat(args[4]);
 		int blockSizeMin = Integer.parseInt(args[5]);
 		int blockSizeMax = Integer.parseInt(args[6]);
+		boolean debugPrint = Boolean.parseBoolean(args[7]);
 		
-		System.out.println("Initializing test...");
-		RawMemoryTest test = new RawMemoryTest(memorySize, segmentSize, numThreads, numOperations, mallocFreeRatio, blockSizeMin, blockSizeMax);
+		System.out.println("Initializing RawMemory test...");
+		RawMemoryTest test = new RawMemoryTest(memorySize, segmentSize, numThreads, numOperations, mallocFreeRatio, blockSizeMin, blockSizeMax, debugPrint);
 		System.out.println("Running test...");
 		test.run();
 		System.out.println("Test done.");
@@ -135,10 +143,11 @@ public class RawMemoryTest
 		private int m_numFreeOperations = -1;
 		private int m_blockSizeMin = -1;
 		private int m_blockSizeMax = -1;
+		private boolean m_debugPrint = false;
 		
 		private Vector<Long> m_blocksAlloced = new Vector<Long>();
 		
-		public MemoryThread(RawMemory rawMemory, int numOperations, float mallocFreeRatio, int blockSizeMin, int blockSizeMax)
+		public MemoryThread(RawMemory rawMemory, int numOperations, float mallocFreeRatio, int blockSizeMin, int blockSizeMax, boolean p_debugPrint)
 		{
 			assert m_blockSizeMin > 0;
 			assert m_blockSizeMax > 0;
@@ -148,6 +157,7 @@ public class RawMemoryTest
 			m_blockSizeMin = blockSizeMin;
 			m_blockSizeMax = blockSizeMax;
 			m_mallocFreeRatio = mallocFreeRatio;
+			m_debugPrint = p_debugPrint;
 		
 			if (m_blockSizeMax < m_blockSizeMin)
 				m_blockSizeMax = m_blockSizeMin;
@@ -167,7 +177,7 @@ public class RawMemoryTest
 		@Override
 		public void run() 
 		{
-			System.out.println("(" + Thread.currentThread().getId() + ")" + this);
+			System.out.println("(" + Thread.currentThread().getId() + ") " + this);
 			
 			while (m_numMallocOperations + m_numFreeOperations > 0)
 			{
@@ -178,11 +188,12 @@ public class RawMemoryTest
 					int size = 0;
 					while (size <= 0)
 						size = (int) (Math.random() * (m_blockSizeMax - m_blockSizeMin));
-					System.out.println(size);
 					try {
 						long ptr = -1;
 						
 						ptr = m_memory.malloc(size);
+						if (m_debugPrint)
+							System.out.println(">>> Allocated " + size + ":\n" + m_memory);
 						m_blocksAlloced.add(ptr);
 						m_memory.set(ptr, size, (byte) 0xFF);
 					} catch (MemoryException e) {
@@ -204,6 +215,8 @@ public class RawMemoryTest
 						
 						try {
 							m_memory.free(memoryPtr);
+							if (m_debugPrint)
+								System.out.println(">>> Freed " + memoryPtr + ":\n" + m_memory);
 						} catch (MemoryException e) {
 							System.out.println("Free try address: " + memoryPtr);
 							printDebug();
@@ -219,7 +232,7 @@ public class RawMemoryTest
 		
 		public void printDebug()
 		{
-			System.out.println("mallocOpsLeft " + m_numMallocOperations + ", freeOpsLeft: " + m_numFreeOperations);
+			System.out.println(this);
 		}
 		
 		@Override

@@ -55,7 +55,6 @@ public final class Segment {
 	public Segment(final Storage p_memory, final int p_segmentID, final long p_base, final long p_size) throws MemoryException {
 		m_memory = p_memory;
 		m_segmentID = p_segmentID;
-		m_status = new Status(p_size);
 		m_assignedThread = 0;
 		m_base = p_base;
 		m_fullSize = p_size;
@@ -67,7 +66,7 @@ public final class Segment {
 		// -1, because we don't need a free block list for the full segment
 		// detect highest bit using log2 to have proper segment sizes
 		m_freeBlocksListCount = (int) (Math.log(p_size) / Math.log(2)) - 1; 
-		m_freeBlocksListSizePerSegment = m_freeBlocksListCount * POINTER_SIZE + 3;
+		m_freeBlocksListSizePerSegment = m_freeBlocksListCount * POINTER_SIZE;// + 3;
 		m_size = m_fullSize - m_freeBlocksListSizePerSegment;
 		m_baseFreeBlockList = m_base + m_size;
 		
@@ -82,7 +81,9 @@ public final class Segment {
 		m_freeBlockListSizes[3] = 48;		
 		
 		// Create a free block in the complete memory
-		createFreeBlock(p_base + 1, p_size);
+		// -2 for the marker bytes
+		createFreeBlock(p_base + 1, m_size - 2); 
+		m_status = new Status(m_size - 2);
 	}
 
 	/**
@@ -180,11 +181,11 @@ public final class Segment {
 		long ret = -1;
 		int list;
 		long address;
-		long size;
+		long blockSize;
 		int lengthFieldSize;
 		long freeSize;
 		int freeLengthFieldSize;
-		byte marker;
+		byte blockMarker;
 		
 		if (p_size <= 0 || p_size > MAX_SIZE_MEMORY_BLOCK)
 			return -1;
@@ -196,12 +197,11 @@ public final class Segment {
 		} else {
 			lengthFieldSize = 1;
 		}
-		size = p_size + lengthFieldSize;
-
-		marker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+		blockSize = p_size + lengthFieldSize;
+		blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
 
 		// Get the list with a free block which is big enough
-		list = getList(size) + 1;
+		list = getList(blockSize) + 1;
 		while (list < m_freeBlocksListCount && readPointer(m_baseFreeBlockList + list * POINTER_SIZE) == 0) {
 			list++;
 		}
@@ -210,12 +210,12 @@ public final class Segment {
 			address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
 		} else {
 			// Traverse through the lower list
-			list = getList(size);
+			list = getList(blockSize);
 			address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
 			if (address != 0) {
 				freeLengthFieldSize = readRightPartOfMarker(address - 1);
 				freeSize = read(address, freeLengthFieldSize);
-				while (freeSize < size && address != 0) {
+				while (freeSize < blockSize && address != 0) {
 					address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
 					if (address != 0) {
 						freeLengthFieldSize = readRightPartOfMarker(address - 1);
@@ -231,39 +231,41 @@ public final class Segment {
 
 			freeLengthFieldSize = readRightPartOfMarker(address - 1);
 			freeSize = read(address, freeLengthFieldSize);
-			if (freeSize == size) {
-				m_status.m_freeSpace -= size;
+			if (freeSize == blockSize) {
+				m_status.m_freeSpace -= blockSize;
 				m_status.m_freeBlocks--;
 				if (freeSize < SMALL_BLOCK_SIZE) {
 					m_status.m_smallBlocks--;
 				}
-			} else if (freeSize == size + 1) {
+			} else if (freeSize == blockSize + 1) {
 				// 1 Byte to big -> write two markers on the right
-				writeRightPartOfMarker(address + size, SINGLE_BYTE_MARKER);
-				writeLeftPartOfMarker(address + size + 1, SINGLE_BYTE_MARKER);
+				writeRightPartOfMarker(address + blockSize, SINGLE_BYTE_MARKER);
+				writeLeftPartOfMarker(address + blockSize + 1, SINGLE_BYTE_MARKER);
 
-				m_status.m_freeSpace -= size + 1;
+				// +1 for the marker byte added
+				m_status.m_freeSpace -= blockSize + 1; 
 				m_status.m_freeBlocks--;
 				if (freeSize + 1 < SMALL_BLOCK_SIZE) {
 					m_status.m_smallBlocks--;
 				}
 			} else {
 				// Block is to big -> create a new free block with the remaining size
-				createFreeBlock(address + size + 1, freeSize - size - 1);
+				createFreeBlock(address + blockSize + 1, freeSize - blockSize - 1);
 
-				m_status.m_freeSpace -= size + 1;
-				if (freeSize >= SMALL_BLOCK_SIZE && freeSize - size - 1 < SMALL_BLOCK_SIZE) {
+				// +1 for the marker byte added
+				m_status.m_freeSpace -= blockSize + 1;
+				if (freeSize >= SMALL_BLOCK_SIZE && freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
 					m_status.m_smallBlocks++;
 				}
 			}
 			// Write marker
-			writeLeftPartOfMarker(address + size, marker);
-			writeRightPartOfMarker(address - 1, marker);
+			writeLeftPartOfMarker(address + blockSize, blockMarker);
+			writeRightPartOfMarker(address - 1, blockMarker);
 
 			// Write block size
 			write(address, p_size, lengthFieldSize);
 
-			MemoryStatistic.getInstance().malloc(size);
+			MemoryStatistic.getInstance().malloc(blockSize);
 
 			ret = address;
 		}
@@ -355,7 +357,7 @@ public final class Segment {
 	 * @throws MemoryException If free'ing memory in segment failed.
 	 */
 	public void free(final long p_address) throws MemoryException {
-		long size;
+		long blockSize;
 		long freeSize;
 		long address;
 		int lengthFieldSize;
@@ -369,9 +371,9 @@ public final class Segment {
 		assertSegmentBounds(p_address);
 		
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
-		size = getSize(p_address);
+		blockSize = getSize(p_address);
 
-		freeSize = size;
+		freeSize = blockSize + lengthFieldSize;
 		address = p_address;
 
 		// Only merge if left neighbor within same segment
@@ -382,7 +384,9 @@ public final class Segment {
 			switch (leftMarker) {
 			case 0:
 				// Left neighbor block (<= 12 byte) is free -> merge free blocks
-				leftSize = read(address - 2, 1) + 1;
+				leftSize = read(address - 2, 1);
+				// merge marker byte
+				leftSize += 1;
 				break;
 			case 1:
 			case 2:
@@ -390,9 +394,10 @@ public final class Segment {
 			case 4:
 			case 5:
 				// Left neighbor block is free -> merge free blocks
-				leftSize = read(address - 1 - leftMarker, leftMarker) + 1;
-
-				unhookFreeBlock(address - leftSize);
+				leftSize = read(address - 1 - leftMarker, leftMarker);
+				// skip leftSize and marker byte from address to get block offset
+				unhookFreeBlock(address - leftSize - 1);
+				leftSize += 1; // we also merge the marker byte
 				break;
 			case SINGLE_BYTE_MARKER:
 				// Left byte is free -> merge free blocks
@@ -409,18 +414,22 @@ public final class Segment {
 			leftFree = false;
 		}
 
+		// update start address of free block and size
 		address -= leftSize;
 		freeSize += leftSize;
 
-		// Only merge if right neighbor within same segment
-		if (address + size + 1 != m_base + m_size) {
+		// Only merge if right neighbor within same segment, +1 for marker byte
+		if (address + blockSize + 1 != m_base + m_size) {
 			// Read right part of the marker on the right
-			rightMarker = readRightPartOfMarker(p_address + lengthFieldSize + size);
+			rightMarker = readRightPartOfMarker(p_address + lengthFieldSize + blockSize);
 			rightFree = true;
 			switch (rightMarker) {
 			case 0:
 				// Right neighbor block (<= 12 byte) is free -> merge free blocks
-				rightSize = getSize(p_address + lengthFieldSize + size + 1);
+				// + 1 to skip marker byte
+				rightSize = getSize(p_address + lengthFieldSize + blockSize + 1);
+				// merge marker byte
+				rightSize += 1;
 				break;
 			case 1:
 			case 2:
@@ -428,9 +437,10 @@ public final class Segment {
 			case 4:
 			case 5:
 				// Right neighbor block is free -> merge free blocks
-				rightSize = getSize(p_address + lengthFieldSize + size + 1);
-
-				unhookFreeBlock(p_address + lengthFieldSize + size + 1);
+				// + 1 to skip marker byte
+				rightSize = getSize(p_address + lengthFieldSize + blockSize + 1);				
+				unhookFreeBlock(p_address + lengthFieldSize + blockSize + 1);
+				rightSize += 1; // we also merge the marker byte
 				break;
 			case 15:
 				// Right byte is free -> merge free blocks
@@ -447,35 +457,34 @@ public final class Segment {
 			rightFree = false;
 		}
 
+		// update size of full free block
 		freeSize += rightSize;
 
 		// Create a free block
 		createFreeBlock(address, freeSize);
 
-		leftSize--;
-		rightSize--;
-
 		if (!leftFree && !rightFree) {
-			m_status.m_freeSpace += size;
+			m_status.m_freeSpace += blockSize + lengthFieldSize;
 			m_status.m_freeBlocks++;
-			if (size < SMALL_BLOCK_SIZE) {
+			if (blockSize + lengthFieldSize < SMALL_BLOCK_SIZE) {
 				m_status.m_smallBlocks++;
 			}
 		} else if (leftFree && !rightFree) {
-			m_status.m_freeSpace += size + 1;
-			if (size + leftSize >= SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
+			m_status.m_freeSpace += blockSize + lengthFieldSize + 1;
+			if (blockSize + lengthFieldSize + leftSize >= SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
 				m_status.m_smallBlocks--;
 			}
 		} else if (!leftFree && rightFree) {
-			m_status.m_freeSpace += size + 1;
-			if (size + rightSize >= SMALL_BLOCK_SIZE && rightSize < SMALL_BLOCK_SIZE) {
+			m_status.m_freeSpace += blockSize + lengthFieldSize + 1;
+			if (blockSize + lengthFieldSize + rightSize >= SMALL_BLOCK_SIZE && rightSize < SMALL_BLOCK_SIZE) {
 				m_status.m_smallBlocks--;
 			}
 		} else if (leftFree && rightFree) {
-			m_status.m_freeSpace += size + 2;
+			// +2 for two marker bytes being merged
+			m_status.m_freeSpace += blockSize + lengthFieldSize + 2;
 			m_status.m_freeBlocks--;
 			m_status.m_smallBlocks--;
-			if (size + leftSize + rightSize >= SMALL_BLOCK_SIZE) {
+			if (blockSize + lengthFieldSize + leftSize + rightSize >= SMALL_BLOCK_SIZE) {
 				if (rightSize < SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
 					m_status.m_smallBlocks--;
 				} else if (rightSize >= SMALL_BLOCK_SIZE && leftSize >= SMALL_BLOCK_SIZE) {
@@ -484,7 +493,7 @@ public final class Segment {
 			}
 		}
 
-		MemoryStatistic.getInstance().free(size);
+		MemoryStatistic.getInstance().free(blockSize + lengthFieldSize);
 	}
 	
 	/**

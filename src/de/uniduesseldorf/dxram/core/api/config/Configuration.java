@@ -228,7 +228,7 @@ public final class Configuration {
 		public static final ConfigurationEntry<Integer> NETWORK_PORT = new ConfigurationEntry<Integer>("network.port", Integer.class, Tools.getFreePort(22222));
 		// Max connection count at the same time
 		public static final ConfigurationEntry<Integer> NETWORK_CONNECTIONS = new ConfigurationEntry<Integer>("network.connections", Integer.class, 100);
-		// Size of the incoming message buffer (default 64 KB)
+		// Size of the incoming message buffer (default 32 KB)
 		public static final ConfigurationEntry<Integer> NETWORK_BUFFER_SIZE = new ConfigurationEntry<Integer>("network.buffer_size", Integer.class, 32 * 1024);
 		// Class for creating new network connections (default creator uses Java NIO)
 		public static final ConfigurationEntry<String> NETWORK_CREATOR = new ConfigurationEntry<String>("network.creator", String.class,
