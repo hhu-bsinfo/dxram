@@ -27,6 +27,7 @@ public final class Segment {
 	// limits a single block of memory to 16777216 bytes i.e 16MB
 	public static final int MAX_LENGTH_FIELD = 3;
 	public static final int MAX_SIZE_MEMORY_BLOCK = (int) Math.pow(2, 8 * MAX_LENGTH_FIELD);
+	public static final int SIZE_MARKER_BYTE = 1;
 	
 	// Attributes, have them protected to enable walking and analyzing the segment
 	// don't modify or access them 
@@ -71,7 +72,7 @@ public final class Segment {
 		// -1, because we don't need a free block list for the full segment
 		// detect highest bit using log2 to have proper segment sizes
 		m_freeBlocksListCount = (int) (Math.log(p_size) / Math.log(2)) - 1; 
-		m_freeBlocksListSizePerSegment = m_freeBlocksListCount * POINTER_SIZE;// + 3;
+		m_freeBlocksListSizePerSegment = m_freeBlocksListCount * POINTER_SIZE;;
 		m_size = m_fullSize - m_freeBlocksListSizePerSegment;
 		m_baseFreeBlockList = m_base + m_size;
 		
@@ -87,8 +88,8 @@ public final class Segment {
 		
 		// Create a free block in the complete memory
 		// -2 for the marker bytes
-		createFreeBlock(p_base + 1, m_size - 2); 
-		m_status = new Status(m_size - 2);
+		createFreeBlock(p_base + SIZE_MARKER_BYTE, m_size - SIZE_MARKER_BYTE * 2); 
+		m_status = new Status(m_size - SIZE_MARKER_BYTE * 2);
 	}
 	
 	/**
@@ -249,7 +250,7 @@ public final class Segment {
 			// Unhook the free block
 			unhookFreeBlock(address);
 
-			freeLengthFieldSize = readRightPartOfMarker(address - 1);
+			freeLengthFieldSize = readRightPartOfMarker(address - SIZE_MARKER_BYTE);
 			freeSize = read(address, freeLengthFieldSize);
 			if (freeSize == blockSize) {
 				m_status.m_freeSpace -= blockSize;
@@ -269,7 +270,7 @@ public final class Segment {
 					m_status.m_small64ByteBlocks--;
 				}
 			} else {
-				// Block is to big -> create a new free block with the remaining size
+				// Block is too big -> create a new free block with the remaining size
 				createFreeBlock(address + blockSize + 1, freeSize - blockSize - 1);
 
 				// +1 for the marker byte added
@@ -280,7 +281,7 @@ public final class Segment {
 			}
 			// Write marker
 			writeLeftPartOfMarker(address + blockSize, blockMarker);
-			writeRightPartOfMarker(address - 1, blockMarker);
+			writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
 
 			// Write block size
 			write(address, p_size, lengthFieldSize);
@@ -390,23 +391,23 @@ public final class Segment {
 
 		assertSegmentBounds(p_address);
 		
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		blockSize = getSizeMemoryBlock(p_address);
 
 		freeSize = blockSize + lengthFieldSize;
 		address = p_address;
 
 		// Only merge if left neighbor within same segment
-		if (address - 1 != m_base) {
+		if (address - SIZE_MARKER_BYTE != m_base) {
 			// Read left part of the marker on the left
 			leftMarker = readLeftPartOfMarker(address - 1);
 			leftFree = true;
 			switch (leftMarker) {
 			case 0:
 				// Left neighbor block (<= 12 byte) is free -> merge free blocks
-				leftSize = read(address - 2, 1);
+				leftSize = read(address - 2 * SIZE_MARKER_BYTE, SIZE_MARKER_BYTE);
 				// merge marker byte
-				leftSize += 1;
+				leftSize += SIZE_MARKER_BYTE;
 				break;
 			case 1:
 			case 2:
@@ -414,10 +415,10 @@ public final class Segment {
 			case 4:
 			case 5:
 				// Left neighbor block is free -> merge free blocks
-				leftSize = read(address - 1 - leftMarker, leftMarker);
+				leftSize = read(address - SIZE_MARKER_BYTE - leftMarker, leftMarker);
 				// skip leftSize and marker byte from address to get block offset
-				unhookFreeBlock(address - leftSize - 1);
-				leftSize += 1; // we also merge the marker byte
+				unhookFreeBlock(address - leftSize - SIZE_MARKER_BYTE);
+				leftSize += SIZE_MARKER_BYTE; // we also merge the marker byte
 				break;
 			case SINGLE_BYTE_MARKER:
 				// Left byte is free -> merge free blocks
@@ -439,7 +440,7 @@ public final class Segment {
 		freeSize += leftSize;
 
 		// Only merge if right neighbor within same segment, +1 for marker byte
-		if (address + blockSize + 1 != m_base + m_size) {
+		if (address + blockSize + SIZE_MARKER_BYTE != m_base + m_size) {
 			// Read right part of the marker on the right
 			rightMarker = readRightPartOfMarker(p_address + lengthFieldSize + blockSize);
 			rightFree = true;
@@ -447,9 +448,9 @@ public final class Segment {
 			case 0:
 				// Right neighbor block (<= 12 byte) is free -> merge free blocks
 				// + 1 to skip marker byte
-				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + 1);
+				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
 				// merge marker byte
-				rightSize += 1;
+				rightSize += SIZE_MARKER_BYTE;
 				break;
 			case 1:
 			case 2:
@@ -458,9 +459,9 @@ public final class Segment {
 			case 5:
 				// Right neighbor block is free -> merge free blocks
 				// + 1 to skip marker byte
-				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + 1);				
-				unhookFreeBlock(p_address + lengthFieldSize + blockSize + 1);
-				rightSize += 1; // we also merge the marker byte
+				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);				
+				unhookFreeBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+				rightSize += SIZE_MARKER_BYTE; // we also merge the marker byte
 				break;
 			case 15:
 				// Right byte is free -> merge free blocks
@@ -490,18 +491,18 @@ public final class Segment {
 				m_status.m_small64ByteBlocks++;
 			}
 		} else if (leftFree && !rightFree) {
-			m_status.m_freeSpace += blockSize + lengthFieldSize + 1;
+			m_status.m_freeSpace += blockSize + lengthFieldSize + SIZE_MARKER_BYTE;
 			if (blockSize + lengthFieldSize + leftSize >= SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
 				m_status.m_small64ByteBlocks--;
 			}
 		} else if (!leftFree && rightFree) {
-			m_status.m_freeSpace += blockSize + lengthFieldSize + 1;
+			m_status.m_freeSpace += blockSize + lengthFieldSize + SIZE_MARKER_BYTE;
 			if (blockSize + lengthFieldSize + rightSize >= SMALL_BLOCK_SIZE && rightSize < SMALL_BLOCK_SIZE) {
 				m_status.m_small64ByteBlocks--;
 			}
 		} else if (leftFree && rightFree) {
 			// +2 for two marker bytes being merged
-			m_status.m_freeSpace += blockSize + lengthFieldSize + 2;
+			m_status.m_freeSpace += blockSize + lengthFieldSize + 2 * SIZE_MARKER_BYTE;
 			m_status.m_freeBlocks--;
 			m_status.m_small64ByteBlocks--;
 			if (blockSize + lengthFieldSize + leftSize + rightSize >= SMALL_BLOCK_SIZE) {
@@ -535,7 +536,7 @@ public final class Segment {
 			int lengthFieldSize;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 
 			m_memory.set(p_address + lengthFieldSize, p_size, p_value);
 		} catch (final Throwable e) {
@@ -574,7 +575,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -616,7 +617,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -658,7 +659,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -700,7 +701,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -743,7 +744,7 @@ public final class Segment {
 		int size;
 		long offset;
 
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		size = (int) read(p_address, lengthFieldSize);
 
 		Contract.check(p_offset < size, "Offset out of bounds");
@@ -795,7 +796,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -840,7 +841,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -886,7 +887,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -932,7 +933,7 @@ public final class Segment {
 			int size;
 
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
 			Contract.check(p_offset < size, "Offset out of bounds");
@@ -994,7 +995,7 @@ public final class Segment {
 		int size;
 		long offset;
 
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		size = (int) read(p_address, lengthFieldSize);
 
 		Contract.check(p_offset < size, "Offset out of bounds");
@@ -1024,7 +1025,7 @@ public final class Segment {
 		
 		assertSegmentBounds(p_address);
 
-		marker = readRightPartOfMarker(p_address - 1);
+		marker = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
 		if (marker == SINGLE_BYTE_MARKER || marker <= OCCUPIED_FLAGS_OFFSET) {
 			// invalid
 			ret = -1;
@@ -1055,7 +1056,7 @@ public final class Segment {
 		Contract.check(p_customState >= 0 && p_customState < 3, 
 				"Custom state (" + p_customState + ") out of range, addr: " + p_address);
 
-		marker = readRightPartOfMarker(p_address - 1);
+		marker = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
 		Contract.check(marker != SINGLE_BYTE_MARKER, 
 				"Single byte marker not valid, addr " + p_address + ", marker: " + marker);
 		Contract.check(marker > OCCUPIED_FLAGS_OFFSET,
@@ -1065,7 +1066,7 @@ public final class Segment {
 		size = (int) read(p_address, lengthFieldSize);
 		marker = (OCCUPIED_FLAGS_OFFSET + lengthFieldSize) + (p_customState * 3);
 
-		writeRightPartOfMarker(p_address - 1, marker);
+		writeRightPartOfMarker(p_address - SIZE_MARKER_BYTE, marker);
 		writeLeftPartOfMarker(p_address + lengthFieldSize + size, marker);
 	}
 
@@ -1082,7 +1083,7 @@ public final class Segment {
 		
 		assertSegmentBounds(p_address);
 
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - 1));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		return (int) read(p_address, lengthFieldSize);
 	}
 	
@@ -1197,7 +1198,7 @@ public final class Segment {
 		System.out.println("(2) writing pointer2 " + p_address + lengthFieldSize + POINTER_SIZE + " | " + anchor);
 		if (anchor != 0) {
 			// Write pointer of successor
-			int marker = readRightPartOfMarker(anchor - 1);
+			int marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
 			writePointer(anchor + marker, p_address);
 			System.out.println("(2) writing pointer3 " + anchor + marker + " | " + p_address);
 		}
@@ -1211,7 +1212,7 @@ public final class Segment {
 		}
 
 		// Write right and left marker
-		writeRightPartOfMarker(p_address - 1, lengthFieldSize);
+		writeRightPartOfMarker(p_address - SIZE_MARKER_BYTE, lengthFieldSize);
 		writeLeftPartOfMarker(p_address + p_size, lengthFieldSize);
 	}
 
@@ -1229,7 +1230,7 @@ public final class Segment {
 		System.out.println("(1) Unhooking free block: " + p_address);
 		
 		// Read size of length field
-		lengthFieldSize = readRightPartOfMarker(p_address - 1);
+		lengthFieldSize = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
 
 		// Read pointers
 		prevPointer = readPointer(p_address + lengthFieldSize);
@@ -1276,7 +1277,7 @@ public final class Segment {
 	 * @return the right part of a marker byte
 	 * @throws MemoryException If reading fails.
 	 */
-	private int readRightPartOfMarker(final long p_address) throws MemoryException {
+	protected int readRightPartOfMarker(final long p_address) throws MemoryException {
 		return m_memory.readByte(p_address) & 0xF;
 	}
 
@@ -1287,7 +1288,7 @@ public final class Segment {
 	 * @return the left part of a marker byte
 	 * @throws MemoryException If reading fails.
 	 */
-	private int readLeftPartOfMarker(final long p_address) throws MemoryException {
+	protected int readLeftPartOfMarker(final long p_address) throws MemoryException {
 		return (m_memory.readByte(p_address) & 0xF0) >> 4;
 	}
 
@@ -1298,7 +1299,7 @@ public final class Segment {
 	 * @param p_marker Marker byte.
 	 * @return Size of the length field of block with specified marker byte.
 	 */
-	private int getSizeFromMarker(final int p_marker) {
+	protected int getSizeFromMarker(final int p_marker) {
 		int ret;
 
 		if (p_marker <= OCCUPIED_FLAGS_OFFSET) {
@@ -1348,7 +1349,7 @@ public final class Segment {
 	 * @return the pointer
 	 * @throws MemoryException If reading pointer failed.
 	 */
-	private long readPointer(final long p_address) throws MemoryException {
+	protected long readPointer(final long p_address) throws MemoryException {
 		return read(p_address, POINTER_SIZE);
 	}
 
@@ -1373,7 +1374,7 @@ public final class Segment {
 	 * @return the combined bytes
 	 * @throws MemoryException If reading failed.
 	 */
-	private long read(final long p_address, final int p_count) throws MemoryException {
+	protected long read(final long p_address, final int p_count) throws MemoryException {
 		return m_memory.readVal(p_address, p_count);
 	}
 

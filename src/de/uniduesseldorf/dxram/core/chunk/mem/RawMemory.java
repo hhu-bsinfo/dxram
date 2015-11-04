@@ -87,6 +87,16 @@ public final class RawMemory {
 
 		return ret;
 	}
+	
+	// TODO remove/change later
+	public void verifySegments()
+	{
+		for (Segment segment : m_segments)
+		{
+			SegmentWalker walker = new SegmentWalker(segment);
+			walker.walk();
+		}
+	}
 
 	/**
 	 * Disengages the memory

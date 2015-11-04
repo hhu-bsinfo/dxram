@@ -56,8 +56,8 @@ public class RawMemoryTest
 				file.createNewFile();
 			}
 			
-			m_memory = new RawMemory(new StorageRandomAccessFile(file));
-			//m_memory = new RawMemory(new StorageUnsafeMemory());
+			//m_memory = new RawMemory(new StorageRandomAccessFile(file));
+			m_memory = new RawMemory(new StorageUnsafeMemory());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -111,6 +111,8 @@ public class RawMemoryTest
 		System.out.println("Final memory status:\n" + m_memory);
 		
 		System.out.println(StatisticsManager.getStatistics());
+		
+		m_memory.verifySegments();
 		
 		executor.shutdown();
 	}
