@@ -476,12 +476,10 @@ public class SecondaryLog extends AbstractLog {
 		int offset = 0;
 		int logEntrySize;
 		int payloadSize;
-		int version;
 		long checksum = -1;
 		long chunkID;
 		byte[][] segments;
 		byte[] payload;
-		Chunk chunk;
 		HashMap<Long, Chunk> chunkMap = null;
 		AbstractLogEntryHeader logEntryHeader;
 
@@ -498,7 +496,6 @@ public class SecondaryLog extends AbstractLog {
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], offset, m_storesMigrations);
 					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(segments[i], offset);
 					payloadSize = logEntryHeader.getLength(segments[i], offset);
-					version = logEntryHeader.getVersion(segments[i], offset);
 					if (USE_CHECKSUM) {
 						checksum = logEntryHeader.getChecksum(segments[i], offset);
 					}
@@ -516,10 +513,7 @@ public class SecondaryLog extends AbstractLog {
 								continue;
 							}
 						}
-						chunk = chunkMap.get(chunkID);
-						if (chunk == null || chunk.getVersion() < version) {
-							chunkMap.put(chunkID, new Chunk(chunkID, payload, version));
-						}
+						chunkMap.put(chunkID, new Chunk(chunkID, payload));
 					}
 					offset += logEntrySize;
 				}
@@ -551,13 +545,11 @@ public class SecondaryLog extends AbstractLog {
 		int offset = 0;
 		int logEntrySize;
 		int payloadSize;
-		int version;
 		long checksum = -1;
 		long chunkID;
 		boolean storesMigrations;
 		byte[][] segments;
 		byte[] payload;
-		Chunk chunk;
 		HashMap<Long, Chunk> chunkMap = null;
 		AbstractLogEntryHeader logEntryHeader;
 
@@ -567,13 +559,13 @@ public class SecondaryLog extends AbstractLog {
 		try {
 			chunkMap = new HashMap<Long, Chunk>();
 			segments = readAllSegmentsFromFile(p_path + p_fileName);
+			// TODO: Reorganize log
 			while (i < segments.length && segments[i] != null) {
 				while (offset < segments[i].length && segments[i][offset] != 0) {
 					// Determine header of next log entry
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], offset, storesMigrations);
 					chunkID = ((long) nodeID << 48) + logEntryHeader.getLID(segments[i], offset);
 					payloadSize = logEntryHeader.getLength(segments[i], offset);
-					version = logEntryHeader.getVersion(segments[i], offset);
 					if (USE_CHECKSUM) {
 						checksum = logEntryHeader.getChecksum(segments[i], offset);
 					}
@@ -589,10 +581,7 @@ public class SecondaryLog extends AbstractLog {
 							offset += logEntrySize;
 							continue;
 						}
-						chunk = chunkMap.get(chunkID);
-						if (chunk == null || chunk.getVersion() < version) {
-							chunkMap.put(chunkID, new Chunk(chunkID, payload, version));
-						}
+						chunkMap.put(chunkID, new Chunk(chunkID, payload));
 					}
 					offset += logEntrySize;
 				}

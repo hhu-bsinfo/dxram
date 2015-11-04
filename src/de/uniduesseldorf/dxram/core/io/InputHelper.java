@@ -153,7 +153,7 @@ public final class InputHelper {
 
 		length = p_input.readInt();
 
-		ret = new Chunk(chunkID, length, p_input.readInt());
+		ret = new Chunk(chunkID, length);
 		data = ret.getData();
 
 		for (int i = 0; i < length; i++) {
@@ -173,20 +173,16 @@ public final class InputHelper {
 		Chunk ret;
 		long chunkID;
 		int length;
-		ByteBuffer data;
+		byte[] data;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
 		chunkID = p_buffer.getLong();
-
 		length = p_buffer.getInt();
+		data = new byte[length];
+		p_buffer.get(data, 0, length);
 
-		ret = new Chunk(chunkID, length, p_buffer.getInt());
-		data = ret.getData();
-
-		for (int i = 0; i < length; i++) {
-			data.put(p_buffer.get());
-		}
+		ret = new Chunk(chunkID, data);
 
 		return ret;
 	}
@@ -518,10 +514,7 @@ public final class InputHelper {
 
 		length = p_buffer.getShort();
 		byteArray = new byte[length];
-
-		for (int i = 0; i < length; i++) {
-			byteArray[i] = p_buffer.get();
-		}
+		p_buffer.get(byteArray, 0, length);
 
 		return new String(byteArray);
 	}
@@ -703,13 +696,13 @@ public final class InputHelper {
 	 */
 	public static byte[] readByteArray(final ByteBuffer p_buffer) {
 		byte[] ret;
+		int length;
 
 		Contract.checkNotNull(p_buffer, "no buffer given");
 
-		ret = new byte[p_buffer.getInt()];
-		for (int i = 0; i < ret.length; i++) {
-			ret[i] = p_buffer.get();
-		}
+		length = p_buffer.getInt();
+		ret = new byte[length];
+		p_buffer.get(ret, 0, length);
 
 		return ret;
 	}

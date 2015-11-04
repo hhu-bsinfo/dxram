@@ -7,7 +7,6 @@ import java.util.zip.Checksum;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 
 /**
  * A helper class for the LogEntryHeaderInterface.
@@ -68,15 +67,21 @@ public abstract class AbstractLogEntryHeader {
 	// Methods
 	/**
 	 * Generates a log entry with filled-in header but without any payload
-	 * @param p_chunk
-	 *            the Chunk
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_size
+	 *            the payload length
+	 * @param p_version
+	 *            the version
+	 * @param p_data
+	 *            the payload (null if checksums disabled)
 	 * @param p_rangeID
 	 *            the RangeID
 	 * @param p_source
 	 *            the source NodeID
 	 * @return the log entry
 	 */
-	public abstract byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source);
+	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, int p_version, byte[] p_data, byte p_rangeID, short p_source);
 
 	/**
 	 * Generates a tombstone
@@ -731,4 +736,5 @@ public abstract class AbstractLogEntryHeader {
 
 		return ret;
 	}
+
 }

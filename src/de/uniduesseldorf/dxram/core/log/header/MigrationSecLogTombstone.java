@@ -1,8 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
-
 /**
  * Extends AbstractLogEntryHeader for migration tombstone (secondary log)
  * @author Kevin Beineke
@@ -23,7 +21,8 @@ public class MigrationSecLogTombstone extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final int p_version,
+			final byte[] p_data, final byte p_rangeID, final short p_source) {
 		System.out.println("Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
 		return null;
 	}

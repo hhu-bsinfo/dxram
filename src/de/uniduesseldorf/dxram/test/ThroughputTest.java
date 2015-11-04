@@ -275,7 +275,7 @@ public final class ThroughputTest {
 
 						for (int i = 1; i <= count; i++) {
 							try {
-								chunk = new Chunk(i + nodeID, new byte[40], 0);
+								chunk = new Chunk(i + nodeID, new byte[40]);
 								Core.put(chunk);
 							} catch (final DXRAMException e) {
 								e.printStackTrace();

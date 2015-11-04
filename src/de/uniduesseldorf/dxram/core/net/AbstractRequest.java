@@ -167,7 +167,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 		while (!m_fulfilled && !m_aborted) {
 			timeNow = System.currentTimeMillis();
-			if (timeNow - timeStart > 1200 && !m_ignoreTimeout) {
+			if (timeNow - timeStart > 12000 && !m_ignoreTimeout) {
 				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
 				System.out.println("wait-for-response time-out: " + print());
 				throw new NetworkException("Timeout Occurred");

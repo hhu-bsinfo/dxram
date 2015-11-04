@@ -155,7 +155,7 @@ public final class OutputHelper {
 	public static int getChunkWriteLength(final Chunk p_chunk) {
 		Contract.checkNotNull(p_chunk, "no chunk given");
 
-		return 16 + p_chunk.getSize();
+		return 12 + p_chunk.getSize();
 	}
 
 	/**
@@ -173,7 +173,6 @@ public final class OutputHelper {
 
 		p_output.writeLong(p_chunk.getChunkID());
 		p_output.writeInt(p_chunk.getSize());
-		p_output.writeInt(p_chunk.getVersion());
 		p_output.write(p_chunk.getData().array());
 	}
 
@@ -190,7 +189,6 @@ public final class OutputHelper {
 
 		p_buffer.putLong(p_chunk.getChunkID());
 		p_buffer.putInt(p_chunk.getSize());
-		p_buffer.putInt(p_chunk.getVersion());
 		p_buffer.put(p_chunk.getData());
 	}
 

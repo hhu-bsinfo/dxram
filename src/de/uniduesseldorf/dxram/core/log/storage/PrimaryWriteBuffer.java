@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -133,36 +134,31 @@ public class PrimaryWriteBuffer {
 	 * /////// // CID // LEN // CRC// DATA ... ///////
 	 * @param p_header
 	 *            the log entry's header as a byte array
-	 * @param p_payload
-	 *            the log entry's payload as a byte array
+	 * @param p_buffer
+	 *            the message buffer (position is on payload)
+	 * @param p_payloadLength
+	 *            the payload length
 	 * @throws IOException
 	 *             if data could not be flushed to primary log
 	 * @throws InterruptedException
 	 *             if caller is interrupted
 	 * @return the number of written bytes
 	 */
-	public final int putLogData(final byte[] p_header, final byte[] p_payload) throws IOException, InterruptedException {
+	public final int putLogData(final byte[] p_header, final ByteBuffer p_buffer, final int p_payloadLength) throws IOException, InterruptedException {
 		AbstractLogEntryHeader logEntryHeader;
-		int payloadLength;
 		int bytesToWrite;
 		int bytesUntilEnd = 0;
 		int writePointer;
 		Integer counter;
 		long rangeID;
 
-		if (p_payload != null) {
-			payloadLength = p_payload.length;
-		} else {
-			payloadLength = 0;
-		}
-
 		logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_header, 0);
 		if (logEntryHeader.wasMigrated()) {
 			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
-			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + payloadLength;
+			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		} else {
 			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0));
-			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + payloadLength;
+			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		}
 
 		if (bytesToWrite > m_ringBufferSize) {
@@ -216,8 +212,9 @@ public class PrimaryWriteBuffer {
 				// Write header
 				System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
 				// Write payload
-				if (payloadLength > 0) {
-					System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, payloadLength);
+				if (p_payloadLength > 0) {
+					// System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, payloadLength);
+					p_buffer.get(m_buffer, writePointer + p_header.length, p_payloadLength);
 				}
 			} else {
 				// Twofold cyclic write access
@@ -226,24 +223,28 @@ public class PrimaryWriteBuffer {
 					System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
 					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
 					// Write payload
-					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer, p_header.length - bytesUntilEnd, payloadLength);
+					if (p_payloadLength > 0) {
+						// System.arraycopy(p_payload, 0, m_buffer, p_header.length - bytesUntilEnd, payloadLength);
+						p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, p_payloadLength);
 					}
 				} else if (bytesUntilEnd > p_header.length) {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
 					bytesUntilEnd -= p_header.length;
 					// Write payload
-					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, bytesUntilEnd);
-						System.arraycopy(p_payload, bytesUntilEnd, m_buffer, 0, payloadLength - bytesUntilEnd);
+					if (p_payloadLength > 0) {
+						// System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, bytesUntilEnd);
+						p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd);
+						// System.arraycopy(p_payload, bytesUntilEnd, m_buffer, 0, payloadLength - bytesUntilEnd);
+						p_buffer.get(m_buffer, 0, p_payloadLength - bytesUntilEnd);
 					}
 				} else {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
 					// Write payload
-					if (payloadLength > 0) {
-						System.arraycopy(p_payload, 0, m_buffer, 0, payloadLength);
+					if (p_payloadLength > 0) {
+						// System.arraycopy(p_payload, 0, m_buffer, 0, payloadLength);
+						p_buffer.get(m_buffer, 0, p_payloadLength);
 					}
 				}
 			}

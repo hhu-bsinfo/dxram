@@ -8,7 +8,6 @@ import java.util.concurrent.locks.Lock;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
@@ -869,6 +868,10 @@ public final class CIDTable {
 		 */
 		private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) throws MemoryException {
 			boolean ret = false;
+			int version;
+			long chunkID;
+			long nodeID;
+			long localID;
 			long entry;
 
 			writeLock(p_addressTable);
@@ -891,10 +894,6 @@ public final class CIDTable {
 				} else {
 					// check if we got an entry referencing a zombie
 					if ((entry & DELETED_FLAG) > 0 && (entry & BITMASK_ADDRESS) > 0) {
-						Chunk chunk;
-						long chunkID;
-						long nodeID;
-						long localID;
 
 						nodeID = NodeID.getLocalNodeID();
 						localID = p_offset + i;
@@ -902,14 +901,13 @@ public final class CIDTable {
 						chunkID = nodeID << 48;
 						chunkID = chunkID + localID;
 
-						// get zombie chunk that is still allocated
-						// to preserve the version data
-						chunk = MemoryManager.get(chunkID);
+						// get version from zombie chunk that is still allocated to preserve the version data
+						version = MemoryManager.getVersion(chunkID);
 
 						// cleanup zombie in table
 						writeEntry(p_addressTable, i, 0);
 
-						m_localIDs[m_position + m_count] = new LIDElement(localID, chunk.getVersion());
+						m_localIDs[m_position + m_count] = new LIDElement(localID, version);
 						m_count++;
 
 						// cleanup zombie in raw memory

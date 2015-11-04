@@ -235,12 +235,12 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			buffer = p_message.getBuffer();
 			synchronized (this) {
-				while (m_unconfirmedBytes > MAX_OUTSTANDING_BYTES) {
-					try {
-						LOGGER.info(super.getDestination() + ": waiting " + m_unconfirmedBytes + " of " + MAX_OUTSTANDING_BYTES);
-						super.wait();
-					} catch (final InterruptedException e) { /* ignore */}
-				}
+				// while (m_unconfirmedBytes > MAX_OUTSTANDING_BYTES) {
+				// try {
+				// System.out.println(super.getDestination() + ": waiting " + m_unconfirmedBytes + " of " + MAX_OUTSTANDING_BYTES);
+				// super.wait();
+				// } catch (final InterruptedException e) { /* ignore */}
+				// }
 
 				m_unconfirmedBytes += buffer.remaining();
 			}
@@ -259,7 +259,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
 				}
 
+				// System.out.println("Offering");
 				m_outgoing.offer(p_buffer);
+				// System.out.println("Offered " + p_buffer.capacity() + " Bytes");
 			}
 		}
 
@@ -281,6 +283,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					buffer = m_outgoing.poll();
 				}
 
+				// System.out.println(buffer.capacity() + ", " + buffer.remaining());
 				// skip when buffer is completed
 				if (buffer == null || !buffer.hasRemaining()) {
 					continue;
@@ -821,6 +824,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			ByteBuffer[] buffers;
 
 			buffers = p_connection.getOutgoingBytes(SEND_BYTES);
+			/*-if (buffers != null) {
+				System.out.println("Sending " + buffers.length + " buffer" + ", lenght: " + buffers[0].capacity());
+			}*/
 			try {
 				while (buffers != null && buffers.length > 0) {
 					int sum = 0;

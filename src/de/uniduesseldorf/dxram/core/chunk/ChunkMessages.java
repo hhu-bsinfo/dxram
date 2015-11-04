@@ -676,6 +676,7 @@ public final class ChunkMessages {
 
 		// Attributes
 		private Chunk[] m_chunks;
+		private int[] m_versions;
 
 		// Constructors
 		/**
@@ -693,13 +694,16 @@ public final class ChunkMessages {
 		 *            the destination
 		 * @param p_chunk
 		 *            a single Chunk to store
+		 * @param p_version
+		 *            the version of the Chunk
 		 */
-		public DataRequest(final short p_destination, final Chunk p_chunk) {
+		public DataRequest(final short p_destination, final Chunk p_chunk, final int p_version) {
 			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
 
 			Contract.checkNotNull(p_chunk, "no chunk given");
 
 			m_chunks = new Chunk[] {p_chunk};
+			m_versions = new int[] {p_version};
 		}
 
 		/**
@@ -708,13 +712,16 @@ public final class ChunkMessages {
 		 *            the destination
 		 * @param p_chunks
 		 *            the Chunks to store
+		 * @param p_versions
+		 *            the versions of the Chunks
 		 */
-		public DataRequest(final short p_destination, final Chunk[] p_chunks) {
+		public DataRequest(final short p_destination, final Chunk[] p_chunks, final int[] p_versions) {
 			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
 			m_chunks = p_chunks;
+			m_versions = p_versions;
 		}
 
 		// Getters
@@ -726,20 +733,30 @@ public final class ChunkMessages {
 			return m_chunks;
 		}
 
+		/**
+		 * Get the versions
+		 * @return the versions
+		 */
+		public final int[] getVersions() {
+			return m_versions;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunks(p_buffer, m_chunks);
+			OutputHelper.writeIntArray(p_buffer, m_versions);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunks = InputHelper.readChunks(p_buffer);
+			m_versions = InputHelper.readIntArray(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunksWriteLength(m_chunks);
+			return OutputHelper.getChunksWriteLength(m_chunks) + OutputHelper.getIntArrayWriteLength(m_versions.length);
 		}
 
 	}
@@ -777,6 +794,7 @@ public final class ChunkMessages {
 
 		// Attributes
 		private Chunk[] m_chunks;
+		private int[] m_versions;
 
 		// Constructors
 		/**
@@ -794,13 +812,16 @@ public final class ChunkMessages {
 		 *            the destination
 		 * @param p_chunks
 		 *            the Chunks to store
+		 * @param p_versions
+		 *            the versions of the Chunks
 		 */
-		public DataMessage(final short p_destination, final Chunk[] p_chunks) {
+		public DataMessage(final short p_destination, final Chunk[] p_chunks, final int[] p_versions) {
 			super(p_destination, TYPE, SUBTYPE_DATA_MESSAGE);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
 			m_chunks = p_chunks;
+			m_versions = p_versions;
 		}
 
 		// Getters
@@ -812,20 +833,30 @@ public final class ChunkMessages {
 			return m_chunks;
 		}
 
+		/**
+		 * Get the versions
+		 * @return the versions
+		 */
+		public final int[] getVersions() {
+			return m_versions;
+		}
+
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunks(p_buffer, m_chunks);
+			OutputHelper.writeIntArray(p_buffer, m_versions);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunks = InputHelper.readChunks(p_buffer);
+			m_versions = InputHelper.readIntArray(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunksWriteLength(m_chunks);
+			return OutputHelper.getChunksWriteLength(m_chunks) + OutputHelper.getIntArrayWriteLength(m_versions.length);
 		}
 
 	}

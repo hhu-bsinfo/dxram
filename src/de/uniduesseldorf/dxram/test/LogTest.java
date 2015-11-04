@@ -4,13 +4,11 @@ package de.uniduesseldorf.dxram.test;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.utils.Tools;
 
 /**
@@ -19,9 +17,6 @@ import de.uniduesseldorf.dxram.utils.Tools;
  *         28.07.2014
  */
 public final class LogTest implements Runnable {
-
-	// Constants
-	private static final boolean TEST_LOCALLY = false;
 
 	// Attributes
 	private static int m_numberOfThreads;
@@ -41,12 +36,10 @@ public final class LogTest implements Runnable {
 	 * Creates an instance of LogTest
 	 * @param p_nodeID
 	 *            the NodeID
-	 * @param p_log
-	 *            the log interface
 	 * @param p_id
 	 *            the thread identifier
 	 */
-	private LogTest(final short p_nodeID, final LogInterface p_log, final int p_id) {
+	private LogTest(final short p_nodeID, final int p_id) {
 		m_nodeID = p_nodeID;
 		m_id = p_id;
 	}
@@ -60,7 +53,6 @@ public final class LogTest implements Runnable {
 		long timeStart;
 		short[] nodes;
 		Thread[] threads = null;
-		LogInterface log = null;
 
 		if (p_arguments.length == 6) {
 			m_numberOfThreads = Integer.parseInt(p_arguments[0]);
@@ -81,7 +73,7 @@ public final class LogTest implements Runnable {
 			System.out.println("Too many program arguments! Exiting.");
 			System.exit(-1);
 		} else {
-			System.out.println("Missing program arguments (#threads, number of chunks, " + "minimal chunk size, maximal chunk size)! Exiting.");
+			System.out.println("Missing program arguments (#threads, #chunks, minimal chunk size, maximal chunk size, #updates, #deletes)! Exiting.");
 			System.exit(-1);
 		}
 
@@ -89,7 +81,6 @@ public final class LogTest implements Runnable {
 		try {
 			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
 					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-			log = CoreComponentFactory.getLogInterface();
 		} catch (final DXRAMException e) {
 			System.out.println("Error during initialization of DXRAM");
 		}
@@ -99,7 +90,7 @@ public final class LogTest implements Runnable {
 		for (int i = 0; i < m_numberOfThreads; i++) {
 			nodes[i] = (short) (Math.random() * (65536 - 1 + 1) + 1);
 
-			threads[i] = new Thread(new LogTest(nodes[i], log, i));
+			threads[i] = new Thread(new LogTest(nodes[i], i));
 			threads[i].start();
 		}
 		for (Thread thread : threads) {
@@ -132,7 +123,6 @@ public final class LogTest implements Runnable {
 		Chunk[] fillChunks;
 		ArrayList<Long> chunkIDList;
 		ArrayList<Chunk> chunkList;
-		LogInterface log = null;
 
 		System.out.println("I am " + m_id + ", writing " + m_chunksPerThread + " chunks between " + m_minChunkSize + " Bytes and " + m_maxChunkSize + " Bytes");
 
@@ -169,58 +159,27 @@ public final class LogTest implements Runnable {
 			// Create fill chunks (to clear secondary log buffer)
 			fillChunks = Core.createNewChunks(new int[] {1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576, 1048576});
 
-			if (TEST_LOCALLY) {
-				log = CoreComponentFactory.getLogInterface();
-				log.initBackupRangeLocallyTEST();
-			}
-
 			/*
 			 * Execution
 			 */
 			// Put
 			System.out.print("Starting replication...");
-			if (TEST_LOCALLY) {
-				for (Chunk chunk : chunks) {
-					chunk.incVersion();
-					log.logChunkLocallyTEST(chunk);
-				}
-			} else {
-				Core.put(chunks);
-			}
+			Core.put(chunks);
 			System.out.println("done\n");
 
 			// Updates
-			System.out.print("Starting updates...");
-			if (TEST_LOCALLY) {
-				for (Chunk chunk : updates) {
-					chunk.incVersion();
-					log.logChunkLocallyTEST(chunk);
-				}
-			} else {
-				Core.put(updates);
-			}
+			System.out.print("Starting updates...");//
+			// Core.put(updates);
 			System.out.println("done\n");
 
 			// Delete
 			System.out.print("Starting deletion...");
-			if (TEST_LOCALLY) {
-				for (long chunkID : removes) {
-					log.removeChunkLocallyTEST(chunkID, 1000);
-				}
-			} else {
-				Core.remove(removes);
-			}
+			// Core.remove(removes);
 			System.out.println("done\n");
 
 			// Put dummies
 			System.out.print("Starting fill replication...");
-			if (TEST_LOCALLY) {
-				for (Chunk chunk : fillChunks) {
-					log.logChunkLocallyTEST(chunk);
-				}
-			} else {
-				Core.put(fillChunks);
-			}
+			// Core.put(fillChunks);
 			System.out.println("done");
 
 		} catch (final DXRAMException e) {

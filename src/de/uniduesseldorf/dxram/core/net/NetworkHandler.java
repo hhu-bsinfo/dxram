@@ -6,6 +6,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -37,6 +38,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	private final MessageHandler m_messageHandler;
 
 	private ConnectionManager m_manager;
+	private ReentrantLock m_receiversLock;
 
 	// Constructors
 	/**
@@ -45,6 +47,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	public NetworkHandler() {
 		m_executor = TaskExecutor.getDefaultExecutor();
 		m_receivers = new HashMap<>();
+		m_receiversLock = new ReentrantLock(false);
 		m_messageHandler = new MessageHandler();
 	}
 
@@ -85,8 +88,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		// Log Messages
 		logType = LogMessages.TYPE;
-		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_REQUEST, LogMessages.LogRequest.class);
-		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_RESPONSE, LogMessages.LogResponse.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessages.LogMessage.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_REMOVE_MESSAGE, LogMessages.RemoveMessage.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_REQUEST, LogMessages.InitRequest.class);
@@ -181,16 +182,16 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		Entry entry;
 
 		if (p_receiver != null) {
-			synchronized (m_receivers) {
-				entry = m_receivers.get(p_message);
-				if (entry == null) {
-					entry = new Entry();
-					m_receivers.put(p_message, entry);
-				}
-				entry.add(p_receiver);
-
-				LOGGER.info("new MessageReceiver");
+			m_receiversLock.lock();
+			entry = m_receivers.get(p_message);
+			if (entry == null) {
+				entry = new Entry();
+				m_receivers.put(p_message, entry);
 			}
+			entry.add(p_receiver);
+
+			LOGGER.info("new MessageReceiver");
+			m_receiversLock.unlock();
 		}
 	}
 
@@ -199,14 +200,14 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		Entry entry;
 
 		if (p_receiver != null) {
-			synchronized (m_receivers) {
-				entry = m_receivers.get(p_message);
-				if (entry != null) {
-					entry.remove(p_receiver);
+			m_receiversLock.lock();
+			entry = m_receivers.get(p_message);
+			if (entry != null) {
+				entry.remove(p_receiver);
 
-					LOGGER.info("MessageReceiver removed");
-				}
+				LOGGER.info("MessageReceiver removed");
 			}
+			m_receiversLock.unlock();
 		}
 	}
 
@@ -272,6 +273,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		// Attributes
 		private final ArrayDeque<AbstractMessage> m_messages;
 		private final TaskExecutor m_executor;
+		private ReentrantLock m_lock;
 
 		// Constructors
 		/**
@@ -280,6 +282,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		public MessageHandler() {
 			m_executor = new TaskExecutor("MessageHandler", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MESSAGE_HANDLER_THREAD_COUNT));
 			m_messages = new ArrayDeque<>();
+			m_lock = new ReentrantLock(false);
 		}
 
 		// Methods
@@ -289,9 +292,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			synchronized (m_messages) {
-				m_messages.offer(p_message);
-			}
+			// synchronized (m_messages) {
+			m_lock.lock();
+			m_messages.offer(p_message);
+			m_lock.unlock();
 
 			m_executor.execute(this);
 		}
@@ -301,13 +305,13 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			AbstractMessage message;
 			Entry entry;
 
-			synchronized (m_messages) {
-				message = m_messages.poll();
-			}
+			m_lock.lock();
+			message = m_messages.poll();
+			m_lock.unlock();
 
-			synchronized (m_receivers) {
-				entry = m_receivers.get(message.getClass());
-			}
+			m_receiversLock.lock();
+			entry = m_receivers.get(message.getClass());
+			m_receiversLock.unlock();
 
 			if (entry != null) {
 				entry.newMessage(message);
