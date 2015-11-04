@@ -8,6 +8,7 @@ import java.util.concurrent.locks.Lock;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 

@@ -1,6 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 
 /**

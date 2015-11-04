@@ -2,8 +2,8 @@ package de.uniduesseldorf.dxram.test.nothaas.glp;
 
 import java.util.Iterator;
 
+import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.PagingTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 

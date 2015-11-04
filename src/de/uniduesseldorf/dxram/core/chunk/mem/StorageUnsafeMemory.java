@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.dxram.core.chunk.mem;
 
 import java.io.File;
 import java.io.IOException;
@@ -251,25 +251,5 @@ public class StorageUnsafeMemory implements Storage {
 				UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> (8 * (7 - i)) & 0xFF));
 			}
 		}
-	}
-
-	@Override
-	public void readLock(final long p_address) {
-		JNILock.readLock(m_memoryBase + p_address);
-	}
-
-	@Override
-	public void readUnlock(final long p_address) {
-		JNILock.readUnlock(m_memoryBase + p_address);
-	}
-
-	@Override
-	public void writeLock(final long p_address) {
-		JNILock.writeLock(m_memoryBase + p_address);
-	}
-
-	@Override
-	public void writeUnlock(final long p_address) {
-		JNILock.writeUnlock(m_memoryBase + p_address);
 	}
 }

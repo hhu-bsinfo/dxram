@@ -9,6 +9,8 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
+import de.uniduesseldorf.dxram.core.chunk.mem.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
@@ -171,7 +173,7 @@ public final class MemoryManager {
 			// check if we have to expand
 			long oldSize;
 
-			oldSize = m_rawMemory.getSize(address);
+			oldSize = m_rawMemory.getSizeMemoryBlock(address);
 			if (oldSize < totalChunkSize) {
 				// re-allocate
 				m_rawMemory.free(address);

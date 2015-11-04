@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.dxram.core.chunk.mem;
 
 import java.io.File;
 
@@ -189,32 +189,4 @@ public interface Storage {
 	 * @throws MemoryException If writing fails.
 	 */
 	void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException;
-
-	/**
-	 * Locks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void readLock(final long p_address);
-
-	/**
-	 * Unlocks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void readUnlock(final long p_address);
-
-	/**
-	 * Locks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void writeLock(final long p_address);
-
-	/**
-	 * Unlocks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void writeUnlock(final long p_address);
 }

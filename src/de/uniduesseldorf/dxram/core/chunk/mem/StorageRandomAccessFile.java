@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.dxram.core.chunk.mem;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -363,25 +363,4 @@ public class StorageRandomAccessFile implements Storage {
 			throw new MemoryException("writing failed " + e);
 		}
 	}
-
-	@Override
-	public void readLock(final long p_address) {
-		// TODO not needed?
-	}
-
-	@Override
-	public void readUnlock(final long p_address) {
-		// TODO not needed?
-	}
-
-	@Override
-	public void writeLock(final long p_address) {
-		// TODO not needed?
-	}
-
-	@Override
-	public void writeUnlock(final long p_address) {
-		// TODO not needed?
-	}
-
 }

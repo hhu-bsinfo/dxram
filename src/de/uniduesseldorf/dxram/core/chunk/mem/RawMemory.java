@@ -1,8 +1,10 @@
 
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.dxram.core.chunk.mem;
 
 import java.io.File;
 
+import de.uniduesseldorf.dxram.core.chunk.storage.ArenaManager;
+import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.Tools;
@@ -133,7 +135,7 @@ public final class RawMemory {
 		try {
 			// Try to allocate in the current segment
 			ret = segment.malloc(p_size);
-
+			
 			// Try to allocate in another segment
 			if (ret == -1) {
 				segment = m_arenaManager.assignNewSegmentOnMalloc(threadID, segment, p_size + Segment.MAX_LENGTH_FIELD);

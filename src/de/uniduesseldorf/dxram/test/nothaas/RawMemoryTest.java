@@ -10,12 +10,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
+import de.uniduesseldorf.dxram.core.chunk.mem.StorageRandomAccessFile;
+import de.uniduesseldorf.dxram.core.chunk.mem.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
-import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
-import de.uniduesseldorf.dxram.core.chunk.storage.StorageRandomAccessFile;
-import de.uniduesseldorf.dxram.core.chunk.storage.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.utils.StatisticsManager;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
+
+import sun.misc.Lock;
 
 public class RawMemoryTest 
 {
@@ -53,8 +56,8 @@ public class RawMemoryTest
 				file.createNewFile();
 			}
 			
-			//m_memory = new RawMemory(new StorageRandomAccessFile(file));
-			m_memory = new RawMemory(new StorageUnsafeMemory());
+			m_memory = new RawMemory(new StorageRandomAccessFile(file));
+			//m_memory = new RawMemory(new StorageUnsafeMemory());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -71,6 +74,8 @@ public class RawMemoryTest
 		m_blockSizeMin = p_blockSizeMin;
 		m_blockSizeMax = p_blockSizeMax;
 		m_debugPrint = p_debugPrint;
+		
+		StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 	}
 	
 	public void run()
@@ -105,6 +110,8 @@ public class RawMemoryTest
 		System.out.println("All workers finished.");
 		System.out.println("Final memory status:\n" + m_memory);
 		
+		System.out.println(StatisticsManager.getStatistics());
+		
 		executor.shutdown();
 	}
 	
@@ -132,7 +139,7 @@ public class RawMemoryTest
 		System.out.println("Test done.");
 	}
 	
-	
+	private static final Lock m_lock = new Lock();
 	
 	public class MemoryThread implements Runnable
 	{
@@ -144,6 +151,8 @@ public class RawMemoryTest
 		private int m_blockSizeMin = -1;
 		private int m_blockSizeMax = -1;
 		private boolean m_debugPrint = false;
+		
+		
 		
 		private Vector<Long> m_blocksAlloced = new Vector<Long>();
 		
@@ -191,7 +200,14 @@ public class RawMemoryTest
 					try {
 						long ptr = -1;
 						
+						try {
+							m_lock.lock();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 						ptr = m_memory.malloc(size);
+						m_lock.unlock();
 						if (m_debugPrint)
 							System.out.println(">>> Allocated " + size + ":\n" + m_memory);
 						m_blocksAlloced.add(ptr);
@@ -214,7 +230,14 @@ public class RawMemoryTest
 						m_blocksAlloced.remove(0);
 						
 						try {
+							try {
+								m_lock.lock();
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 							m_memory.free(memoryPtr);
+							m_lock.unlock();
 							if (m_debugPrint)
 								System.out.println(">>> Freed " + memoryPtr + ":\n" + m_memory);
 						} catch (MemoryException e) {
