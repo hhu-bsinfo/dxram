@@ -69,9 +69,10 @@ public final class Segment {
 
 		// according to segment size, have a proper amount of
 		// free memory block lists
-		// -1, because we don't need a free block list for the full segment
+		// -2, because we don't need a free block list for the full segment
+		// and the first size greater than the full segment size
 		// detect highest bit using log2 to have proper segment sizes
-		m_freeBlocksListCount = (int) (Math.log(p_size) / Math.log(2)) - 1; 
+		m_freeBlocksListCount = (int) (Math.log(p_size) / Math.log(2)) - 2; 
 		m_freeBlocksListSizePerSegment = m_freeBlocksListCount * POINTER_SIZE;;
 		m_size = m_fullSize - m_freeBlocksListSizePerSegment;
 		m_baseFreeBlockList = m_base + m_size;
@@ -405,7 +406,8 @@ public final class Segment {
 			switch (leftMarker) {
 			case 0:
 				// Left neighbor block (<= 12 byte) is free -> merge free blocks
-				leftSize = read(address - 2 * SIZE_MARKER_BYTE, SIZE_MARKER_BYTE);
+				// -1, length field size is 1
+				leftSize = read(address - SIZE_MARKER_BYTE - 1, 1);
 				// merge marker byte
 				leftSize += SIZE_MARKER_BYTE;
 				break;
@@ -448,7 +450,7 @@ public final class Segment {
 			case 0:
 				// Right neighbor block (<= 12 byte) is free -> merge free blocks
 				// + 1 to skip marker byte
-				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+				rightSize = read(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE, 1);
 				// merge marker byte
 				rightSize += SIZE_MARKER_BYTE;
 				break;
@@ -1179,36 +1181,32 @@ public final class Segment {
 
 			// Calculate the number of bytes for the length field
 			size = p_size >> 8;
-		while (size > 0) {
-			lengthFieldSize++;
-
-			size = size >> 8;
-		}
-
-		// Get the corresponding list
-		listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
-
-		// Hook block in list
-		anchor = readPointer(listOffset);
-
-		// Write pointer to list and successor
-		writePointer(p_address + lengthFieldSize, listOffset);
-		System.out.println("(2) writing pointer1 " + p_address + lengthFieldSize + " | " + listOffset);
-		writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-		System.out.println("(2) writing pointer2 " + p_address + lengthFieldSize + POINTER_SIZE + " | " + anchor);
-		if (anchor != 0) {
-			// Write pointer of successor
-			int marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
-			writePointer(anchor + marker, p_address);
-			System.out.println("(2) writing pointer3 " + anchor + marker + " | " + p_address);
-		}
-		// Write pointer of list
-		writePointer(listOffset, p_address);
-		System.out.println("(2) writing pointer4 " + listOffset + " | " + p_address);
-
-		// Write length
-		write(p_address, p_size, lengthFieldSize);
-		write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+			while (size > 0) {
+				lengthFieldSize++;
+	
+				size = size >> 8;
+			}
+	
+			// Get the corresponding list
+			listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
+	
+			// Hook block in list
+			anchor = readPointer(listOffset);
+	
+			// Write pointer to list and successor
+			writePointer(p_address + lengthFieldSize, listOffset);
+			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+			if (anchor != 0) {
+				// Write pointer of successor
+				int marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
+				writePointer(anchor + marker, p_address);
+			}
+			// Write pointer of list
+			writePointer(listOffset, p_address);
+	
+			// Write length
+			write(p_address, p_size, lengthFieldSize);
+			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
 		}
 
 		// Write right and left marker
@@ -1226,8 +1224,6 @@ public final class Segment {
 		int lengthFieldSize;
 		long prevPointer;
 		long nextPointer;
-
-		System.out.println("(1) Unhooking free block: " + p_address);
 		
 		// Read size of length field
 		lengthFieldSize = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
@@ -1235,21 +1231,17 @@ public final class Segment {
 		// Read pointers
 		prevPointer = readPointer(p_address + lengthFieldSize);
 		nextPointer = readPointer(p_address + lengthFieldSize + POINTER_SIZE);
-		System.out.println("(1) reading pointers " + prevPointer + " | " + nextPointer);
 		
 		if (prevPointer >= m_baseFreeBlockList) {
 			// Write Pointer of list
-			System.out.println("(1) writing pointer 1 " + prevPointer + " | " + nextPointer);
 			writePointer(prevPointer, nextPointer);
 		} else {
 			// Write Pointer of predecessor
-			System.out.println("(1) writing pointer 2 " + prevPointer + lengthFieldSize + POINTER_SIZE + " | " + nextPointer);
 			writePointer(prevPointer + lengthFieldSize + POINTER_SIZE, nextPointer);
 		}
 
 		if (nextPointer != 0) {
 			// Write pointer of successor
-			System.out.println("(1) writing pointer 3 " + nextPointer + lengthFieldSize + " | " + prevPointer);
 			writePointer(nextPointer + lengthFieldSize, prevPointer);
 		}
 	}
