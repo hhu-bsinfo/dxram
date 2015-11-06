@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 
-import de.uniduesseldorf.dxram.core.chunk.mem.Segment;
+import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeapSegment;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
@@ -26,8 +26,8 @@ import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 public final class ArenaManager {
 	
 	// Attributes
-	private Map<Long, Segment> m_arenas;
-	private Segment[] m_segments = null;
+	private Map<Long, SmallObjectHeapSegment> m_arenas;
+	private SmallObjectHeapSegment[] m_segments = null;
 	
 	private Lock m_segmentLock;
 
@@ -35,7 +35,7 @@ public final class ArenaManager {
 	/**
 	 * Creates an instance of ArenaManager
 	 */
-	public ArenaManager(final Segment[] p_segments) {
+	public ArenaManager(final SmallObjectHeapSegment[] p_segments) {
 		assert p_segments != null;
 		assert p_segments.length > 0;
 		
@@ -47,8 +47,8 @@ public final class ArenaManager {
 
 	// Methods
 	
-	public Segment enterArenaOnMalloc(final long p_threadID, final int p_minSize) throws MemoryException {
-		Segment ret;
+	public SmallObjectHeapSegment enterArenaOnMalloc(final long p_threadID, final int p_minSize) throws MemoryException {
+		SmallObjectHeapSegment ret;
 
 		ret = m_arenas.get(p_threadID);
 		if (ret == null || !ret.tryLockManage()) {
@@ -58,7 +58,7 @@ public final class ArenaManager {
 		return ret;
 	}
 	
-	public void leaveArenaOnMalloc(final long p_threadID, final Segment p_segment) {
+	public void leaveArenaOnMalloc(final long p_threadID, final SmallObjectHeapSegment p_segment) {
 		p_segment.unlockManage();
 	}
 
@@ -74,12 +74,12 @@ public final class ArenaManager {
 	 * @throws MemoryException
 	 *             if no Segment could be assigned
 	 */
-	public Segment assignNewSegmentOnMalloc(final long p_threadID, final Segment p_current, final int p_minSize) throws MemoryException {
-		Segment ret = null;
-		Segment tempUnassigned;
+	public SmallObjectHeapSegment assignNewSegmentOnMalloc(final long p_threadID, final SmallObjectHeapSegment p_current, final int p_minSize) throws MemoryException {
+		SmallObjectHeapSegment ret = null;
+		SmallObjectHeapSegment tempUnassigned;
 		double fragmentationUnassigned;
 		long freeUnassigned;
-		Segment tempAssigned;
+		SmallObjectHeapSegment tempAssigned;
 		double fragmentationAssigned;
 		long freeAssigned;
 		double fragmentationTemp;

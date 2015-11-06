@@ -1,7 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
-import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
+import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 
 /**
@@ -25,14 +25,12 @@ public final class PagingTable {
 	public static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
 	public static final int LID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_PER_LID_LEVEL + 7;
 	public static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
-	private static final int LID_LOCK_OFFSET = LID_TABLE_SIZE - 4;
-	private static final int NID_LOCK_OFFSET = NID_TABLE_SIZE - 4;
 
 	private static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
 
 	// Attributes
 	private long m_nodeIDTableDirectory;
-	private RawMemory m_rawMemory;
+	private SmallObjectHeap m_rawMemory;
 
 	// Constructors
 	/**
@@ -47,7 +45,7 @@ public final class PagingTable {
 	 * @throws MemoryException
 	 *             if the PagingTable could not be initialized
 	 */
-	public void initialize(final RawMemory p_rawMemory) throws MemoryException {
+	public void initialize(final SmallObjectHeap p_rawMemory) throws MemoryException {
 		m_rawMemory = p_rawMemory;
 		m_nodeIDTableDirectory = createNIDTable();
 
@@ -287,58 +285,6 @@ public final class PagingTable {
 			writeEntry(p_addressTable, index, p_addressChunk);
 
 			writeUnlock(p_addressTable);
-		}
-	}
-
-	/**
-	 * Locks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void readLock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.readLock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.readLock(p_address + LID_LOCK_OFFSET);
-		}
-	}
-
-	/**
-	 * Unlocks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void readUnlock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.readUnlock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.readUnlock(p_address + LID_LOCK_OFFSET);
-		}
-	}
-
-	/**
-	 * Locks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void writeLock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.writeLock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.writeLock(p_address + LID_LOCK_OFFSET);
-		}
-	}
-
-	/**
-	 * Unlocks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void writeUnlock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.writeUnlock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.writeUnlock(p_address + LID_LOCK_OFFSET);
 		}
 	}
 

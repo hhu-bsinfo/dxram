@@ -9,7 +9,6 @@ import sun.misc.Unsafe;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Endianness;
-import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
 
 /**

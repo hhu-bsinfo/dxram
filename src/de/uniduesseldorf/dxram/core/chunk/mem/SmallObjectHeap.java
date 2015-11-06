@@ -19,13 +19,14 @@ import de.uniduesseldorf.dxram.utils.Tools;
  * @author Florian Klein 13.02.2014
  * @author Stefan Nothaas 02.11.2015
  */
-public final class RawMemory {
+public final class SmallObjectHeap {
 
 	// Attributes
-	private Storage m_memory;
+	// have a few attributes protected for the HeapWalker/Analyzer
+	protected Storage m_memory;
 
-	private long m_segmentSize;
-	private Segment[] m_segments;
+	protected long m_segmentSize;
+	protected SmallObjectHeapSegment[] m_segments;
 	private ArenaManager m_arenaManager;
 
 	// Constructors
@@ -34,7 +35,7 @@ public final class RawMemory {
 	 * 
 	 * @param p_storageInstance Storage instance used as memory.
 	 */
-	public RawMemory(final Storage p_storageInstance) 
+	public SmallObjectHeap(final Storage p_storageInstance) 
 	{
 		m_memory = p_storageInstance;
 	}
@@ -71,10 +72,10 @@ public final class RawMemory {
 		// Initialize segments
 		base = 0;
 		remaining = p_size;
-		m_segments = new Segment[segmentCount];
+		m_segments = new SmallObjectHeapSegment[segmentCount];
 		for (int i = 0; i < segmentCount; i++) {
 			size = Math.min(p_segmentSize, remaining);
-			m_segments[i] = new Segment(m_memory, i, base, size);
+			m_segments[i] = new SmallObjectHeapSegment(m_memory, i, base, size);
 
 			base += p_segmentSize;
 			remaining -= p_segmentSize;
@@ -86,16 +87,6 @@ public final class RawMemory {
 		ret = m_memory.getSize();
 
 		return ret;
-	}
-	
-	// TODO remove/change later
-	public void verifySegments()
-	{
-		for (Segment segment : m_segments)
-		{
-			SegmentWalker walker = new SegmentWalker(segment);
-			walker.walk();
-		}
 	}
 
 	/**
@@ -136,19 +127,19 @@ public final class RawMemory {
 	 */
 	public long malloc(final int p_size) throws MemoryException {
 		long ret = -1;
-		Segment segment = null;
+		SmallObjectHeapSegment segment = null;
 		long threadID;
 
 		threadID = Thread.currentThread().getId();
 
-		segment = m_arenaManager.enterArenaOnMalloc(threadID, p_size + Segment.MAX_LENGTH_FIELD);
+		segment = m_arenaManager.enterArenaOnMalloc(threadID, p_size + SmallObjectHeapSegment.MAX_LENGTH_FIELD);
 		try {
 			// Try to allocate in the current segment
 			ret = segment.malloc(p_size);
 			
 			// Try to allocate in another segment
 			if (ret == -1) {
-				segment = m_arenaManager.assignNewSegmentOnMalloc(threadID, segment, p_size + Segment.MAX_LENGTH_FIELD);
+				segment = m_arenaManager.assignNewSegmentOnMalloc(threadID, segment, p_size + SmallObjectHeapSegment.MAX_LENGTH_FIELD);
 
 				ret = segment.malloc(p_size);
 				if (ret == -1) {
@@ -171,7 +162,7 @@ public final class RawMemory {
 	 *             if the block could not be freed
 	 */
 	public void free(final long p_address) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockManage();
@@ -194,7 +185,7 @@ public final class RawMemory {
 	 *             if the memory could not be set
 	 */
 	public void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockAccess();
@@ -228,7 +219,7 @@ public final class RawMemory {
 	 *             If accessing memory failed.
 	 */
 	public byte readByte(final long p_address, final long p_offset) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		byte val;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -265,7 +256,7 @@ public final class RawMemory {
 	 *             If accessing memory failed.
 	 */
 	public short readShort(final long p_address, final long p_offset) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		short val;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -302,7 +293,7 @@ public final class RawMemory {
 	 *             If accessing memory failed.
 	 */
 	public int readInt(final long p_address, final long p_offset) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		int val;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -339,7 +330,7 @@ public final class RawMemory {
 	 *             If accessing memory failed.
 	 */
 	public long readLong(final long p_address, final long p_offset) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		long val;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -377,7 +368,7 @@ public final class RawMemory {
 	 *             If accessing memory failed.
 	 */
 	public byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		byte[] vals;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -417,7 +408,7 @@ public final class RawMemory {
 	 */
 	public void writeByte(final long p_address, final long p_offset, final byte p_value)
 			throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockAccess();
@@ -454,7 +445,7 @@ public final class RawMemory {
 	 */
 	public void writeShort(final long p_address, final long p_offset, final short p_value)
 			throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockAccess();
@@ -491,7 +482,7 @@ public final class RawMemory {
 	 */
 	public void writeInt(final long p_address, final long p_offset, final int p_value)
 			throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockAccess();
@@ -528,7 +519,7 @@ public final class RawMemory {
 	 */
 	public void writeLong(final long p_address, final long p_offset, final long p_value)
 			throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockAccess();
@@ -583,7 +574,7 @@ public final class RawMemory {
 	 */
 	public void writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_length)
 			throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockAccess();
@@ -603,7 +594,7 @@ public final class RawMemory {
 	 * @throws MemoryException If reading memory fails.
 	 */
 	public int getCustomState(final long p_address) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		int val;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -628,7 +619,7 @@ public final class RawMemory {
 	 * @throws MemoryException If reading or writing memory fails.
 	 */
 	public void setCustomState(final long p_address, final int p_customState) throws MemoryException {
-		Segment segment;
+		SmallObjectHeapSegment segment;
 		
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.lockAccess();
@@ -643,14 +634,14 @@ public final class RawMemory {
 	public String toString()
 	{
 		StringBuilder output;
-		Segment.Status[] stati;
+		SmallObjectHeapSegment.Status[] stati;
 		long freeSpace;
 		long freeBlocks;
 
 		stati = getSegmentStatus();
 		freeSpace = 0;
 		freeBlocks = 0;
-		for (Segment.Status status : stati) {
+		for (SmallObjectHeapSegment.Status status : stati) {
 			freeSpace += status.getFreeSpace();
 			freeBlocks += status.getFreeBlocks();
 		}
@@ -705,10 +696,10 @@ public final class RawMemory {
 	 * Gets the current segment status
 	 * @return the segment status
 	 */
-	protected Segment.Status[] getSegmentStatus() {
-		Segment.Status[] ret;
+	protected SmallObjectHeapSegment.Status[] getSegmentStatus() {
+		SmallObjectHeapSegment.Status[] ret;
 
-		ret = new Segment.Status[m_segments.length];
+		ret = new SmallObjectHeapSegment.Status[m_segments.length];
 		for (int i = 0; i < m_segments.length; i++) {
 			ret[i] = m_segments[i].getStatus();
 		}

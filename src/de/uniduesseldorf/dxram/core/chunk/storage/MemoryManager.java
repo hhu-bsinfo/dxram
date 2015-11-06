@@ -9,7 +9,7 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
+import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.chunk.mem.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
@@ -27,7 +27,7 @@ public final class MemoryManager {
 	// Attributes
 	private AtomicLong m_nextLocalID;
 
-	private RawMemory m_rawMemory;
+	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 
 	// Constructors
@@ -57,7 +57,7 @@ public final class MemoryManager {
 
 		m_nextLocalID = new AtomicLong(1);
 
-		m_rawMemory = new RawMemory(new StorageUnsafeMemory());
+		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 		ret = m_rawMemory.initialize(p_size, segmentSize);
 		m_cidTable = new CIDTable();
 		m_cidTable.initialize(m_rawMemory);

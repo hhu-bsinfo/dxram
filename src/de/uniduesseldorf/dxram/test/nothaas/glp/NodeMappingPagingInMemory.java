@@ -2,19 +2,19 @@ package de.uniduesseldorf.dxram.test.nothaas.glp;
 
 import java.util.Iterator;
 
-import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
+import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.chunk.storage.PagingTable;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 
 public class NodeMappingPagingInMemory implements NodeMapping
 {
-	private RawMemory m_rawMemory = null;
+	private SmallObjectHeap m_rawMemory = null;
 	private PagingTable m_nodeMappingTable = null;
 	
 	public NodeMappingPagingInMemory() throws MemoryException
 	{
-		m_rawMemory = new RawMemory();
+		m_rawMemory = new SmallObjectHeap();
 		// 1GB ram and 128mb segments  
 		m_rawMemory.initialize(1024 * 1024 * 1024 * 2L, 1024 * 1024 * 128);
 		m_nodeMappingTable = new PagingTable();

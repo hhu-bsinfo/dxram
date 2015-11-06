@@ -1,21 +1,17 @@
 package de.uniduesseldorf.dxram.core.chunk.mem;
 
 import java.util.Arrays;
-import java.util.concurrent.locks.ReadWriteLock;
 
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
-import de.uniduesseldorf.dxram.utils.locks.JNISpinLock;
-
-import sun.misc.Lock;
 
 /**
  * Represents a segment of the memory
  * @author Florian Klein 04.04.2014
  */
-public final class Segment {
+public final class SmallObjectHeapSegment {
 
 	// Constants
 	public static final byte POINTER_SIZE = 5;
@@ -28,9 +24,9 @@ public final class Segment {
 	public static final int MAX_LENGTH_FIELD = 3;
 	public static final int MAX_SIZE_MEMORY_BLOCK = (int) Math.pow(2, 8 * MAX_LENGTH_FIELD);
 	public static final int SIZE_MARKER_BYTE = 1;
-	
+
 	// Attributes, have them protected to enable walking and analyzing the segment
-	// don't modify or access them 
+	// don't modify or access them
 	protected Storage m_memory;
 	protected int m_segmentID;
 	protected long m_base;
@@ -38,15 +34,15 @@ public final class Segment {
 	protected Status m_status;
 	protected long m_assignedThread;
 
-	protected JNISpinLock m_lock;
-	
+	protected JNIReadWriteSpinLock m_lock;
+
 	protected long[] m_freeBlockListSizes;
 
 	protected long m_size = -1;
 	protected long m_fullSize = -1;
 	protected int m_freeBlocksListCount = -1;
 	protected int m_freeBlocksListSizePerSegment = -1;
-	
+
 	// Constructors
 	/**
 	 * Creates an instance of Segment
@@ -58,25 +54,25 @@ public final class Segment {
 	 *            the size of the segment
 	 * @throws MemoryException If creating segement block failed.
 	 */
-	public Segment(final Storage p_memory, final int p_segmentID, final long p_base, final long p_size) throws MemoryException {
+	public SmallObjectHeapSegment(final Storage p_memory, final int p_segmentID, final long p_base, final long p_size) throws MemoryException {
 		m_memory = p_memory;
 		m_segmentID = p_segmentID;
 		m_assignedThread = 0;
 		m_base = p_base;
 		m_fullSize = p_size;
 
-		m_lock = new JNISpinLock();// JNIReadWriteSpinLock();
+		m_lock = new JNIReadWriteSpinLock();
 
 		// according to segment size, have a proper amount of
 		// free memory block lists
 		// -2, because we don't need a free block list for the full segment
 		// and the first size greater than the full segment size
 		// detect highest bit using log2 to have proper segment sizes
-		m_freeBlocksListCount = (int) (Math.log(p_size) / Math.log(2)) - 2; 
-		m_freeBlocksListSizePerSegment = m_freeBlocksListCount * POINTER_SIZE;;
+		m_freeBlocksListCount = (int) (Math.log(p_size) / Math.log(2)) - 2;
+		m_freeBlocksListSizePerSegment = m_freeBlocksListCount * POINTER_SIZE;
 		m_size = m_fullSize - m_freeBlocksListSizePerSegment;
 		m_baseFreeBlockList = m_base + m_size;
-		
+
 		// Initializes the list sizes
 		m_freeBlockListSizes = new long[m_freeBlocksListCount];
 		for (int i = 0; i < m_freeBlocksListCount; i++) {
@@ -85,14 +81,14 @@ public final class Segment {
 		m_freeBlockListSizes[0] = 12;
 		m_freeBlockListSizes[1] = 24;
 		m_freeBlockListSizes[2] = 36;
-		m_freeBlockListSizes[3] = 48;		
-		
+		m_freeBlockListSizes[3] = 48;
+
 		// Create a free block in the complete memory
 		// -2 for the marker bytes
-		createFreeBlock(p_base + SIZE_MARKER_BYTE, m_size - SIZE_MARKER_BYTE * 2); 
+		createFreeBlock(p_base + SIZE_MARKER_BYTE, m_size - SIZE_MARKER_BYTE * 2);
 		m_status = new Status(m_size - SIZE_MARKER_BYTE * 2);
 	}
-	
+
 	/**
 	 * Get the total size of the segment.
 	 * @return
@@ -142,35 +138,29 @@ public final class Segment {
 
 
 	public void lockAccess() {
-		//m_lock.readLock().lock();
-		m_lock.lock();
+		m_lock.readLock().lock();
 	}
 
 
 	public boolean tryLockAccess() {
-		//return m_lock.readLock().tryLock();
-		return m_lock.tryLock();
+		return m_lock.readLock().tryLock();
 	}
 
 
 	public void unlockAccess() {
-		//m_lock.readLock().unlock();
-		m_lock.unlock();
+		m_lock.readLock().unlock();
 	}
 
 	public void lockManage() {
-		//m_lock.writeLock().lock();
-		m_lock.lock();
+		m_lock.writeLock().lock();
 	}
 	
 	public boolean tryLockManage() {
-		//return m_lock.writeLock().tryLock();
-		return m_lock.tryLock();
+		return m_lock.writeLock().tryLock();
 	}
 	
 	public void unlockManage() {
-		//m_lock.writeLock().unlock();
-		m_lock.unlock();
+		m_lock.writeLock().unlock();
 	}
 
 	/**
@@ -257,7 +247,7 @@ public final class Segment {
 				m_status.m_freeSpace -= blockSize;
 				m_status.m_freeBlocks--;
 				if (freeSize < SMALL_BLOCK_SIZE) {
-					m_status.m_small64ByteBlocks--;
+					m_status.m_freeSmall64ByteBlocks--;
 				}
 			} else if (freeSize == blockSize + 1) {
 				// 1 Byte to big -> write two markers on the right
@@ -268,7 +258,7 @@ public final class Segment {
 				m_status.m_freeSpace -= blockSize + 1; 
 				m_status.m_freeBlocks--;
 				if (freeSize + 1 < SMALL_BLOCK_SIZE) {
-					m_status.m_small64ByteBlocks--;
+					m_status.m_freeSmall64ByteBlocks--;
 				}
 			} else {
 				// Block is too big -> create a new free block with the remaining size
@@ -276,9 +266,24 @@ public final class Segment {
 
 				// +1 for the marker byte added
 				m_status.m_freeSpace -= blockSize + 1;
+
+				// TODO remove
+//				if (freeSize < SMALL_BLOCK_SIZE) {
+//					m_status.m_small64ByteBlocks--;
+//				}
+//				
+//				if (blockSize < SMALL_BLOCK_SIZE) {
+//					m_status.m_small64ByteBlocks++;
+//				}
+//					
+//				if (freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
+//					m_status.m_small64ByteBlocks++;
+//				}
+				
 				if (freeSize >= SMALL_BLOCK_SIZE && freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
-					m_status.m_small64ByteBlocks++;
+					m_status.m_freeSmall64ByteBlocks++;
 				}
+				
 			}
 			// Write marker
 			writeLeftPartOfMarker(address + blockSize, blockMarker);
@@ -490,30 +495,36 @@ public final class Segment {
 			m_status.m_freeSpace += blockSize + lengthFieldSize;
 			m_status.m_freeBlocks++;
 			if (blockSize + lengthFieldSize < SMALL_BLOCK_SIZE) {
-				m_status.m_small64ByteBlocks++;
+				m_status.m_freeSmall64ByteBlocks++;
 			}
 		} else if (leftFree && !rightFree) {
 			m_status.m_freeSpace += blockSize + lengthFieldSize + SIZE_MARKER_BYTE;
 			if (blockSize + lengthFieldSize + leftSize >= SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
-				m_status.m_small64ByteBlocks--;
+				m_status.m_freeSmall64ByteBlocks--;
 			}
 		} else if (!leftFree && rightFree) {
 			m_status.m_freeSpace += blockSize + lengthFieldSize + SIZE_MARKER_BYTE;
 			if (blockSize + lengthFieldSize + rightSize >= SMALL_BLOCK_SIZE && rightSize < SMALL_BLOCK_SIZE) {
-				m_status.m_small64ByteBlocks--;
+				m_status.m_freeSmall64ByteBlocks--;
 			}
 		} else if (leftFree && rightFree) {
 			// +2 for two marker bytes being merged
 			m_status.m_freeSpace += blockSize + lengthFieldSize + 2 * SIZE_MARKER_BYTE;
 			m_status.m_freeBlocks--;
-			m_status.m_small64ByteBlocks--;
 			if (blockSize + lengthFieldSize + leftSize + rightSize >= SMALL_BLOCK_SIZE) {
 				if (rightSize < SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
-					m_status.m_small64ByteBlocks--;
+					m_status.m_freeSmall64ByteBlocks--;
 				} else if (rightSize >= SMALL_BLOCK_SIZE && leftSize >= SMALL_BLOCK_SIZE) {
-					m_status.m_small64ByteBlocks++;
+					m_status.m_freeSmall64ByteBlocks++;
 				}
 			}
+//			if (blockSize + lengthFieldSize + leftSize + rightSize >= SMALL_BLOCK_SIZE) {
+//				if (rightSize < SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
+//					m_status.m_freeSmall64ByteBlocks--;
+//				} else if (rightSize >= SMALL_BLOCK_SIZE && leftSize >= SMALL_BLOCK_SIZE) {
+//					m_status.m_freeSmall64ByteBlocks++;
+//				}
+//			}
 		}
 
 		MemoryStatistic.getInstance().free(blockSize + lengthFieldSize);
@@ -1396,7 +1407,7 @@ public final class Segment {
 		// Attributes
 		private long m_freeSpace;
 		private int m_freeBlocks;
-		private int m_small64ByteBlocks;
+		private int m_freeSmall64ByteBlocks;
 		private long[] m_sizes;
 		private long[] m_blocks;
 
@@ -1409,7 +1420,7 @@ public final class Segment {
 		private Status(final long p_freeSpace) {
 			m_freeSpace = p_freeSpace;
 			m_freeBlocks = 1;
-			m_small64ByteBlocks = 0;
+			m_freeSmall64ByteBlocks = 0;
 		}
 
 		// Getters
@@ -1434,7 +1445,7 @@ public final class Segment {
 		 * @return the smallBlocks
 		 */
 		public int getSmallBlocks() {
-			return m_small64ByteBlocks;
+			return m_freeSmall64ByteBlocks;
 		}
 
 		/**
@@ -1464,7 +1475,7 @@ public final class Segment {
 			ret = new Status(0);
 			ret.m_freeSpace = m_freeSpace;
 			ret.m_freeBlocks = m_freeBlocks;
-			ret.m_small64ByteBlocks = m_small64ByteBlocks;
+			ret.m_freeSmall64ByteBlocks = m_freeSmall64ByteBlocks;
 
 			ret.m_sizes = m_freeBlockListSizes;
 			// ret.m_blocks = new long[0];
@@ -1505,7 +1516,7 @@ public final class Segment {
 
 		@Override
 		public String toString() {
-			return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks=" + m_small64ByteBlocks + "]";
+			return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks=" + m_freeSmall64ByteBlocks + "]";
 		}
 
 	}

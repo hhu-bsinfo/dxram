@@ -10,7 +10,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.chunk.mem.RawMemory;
+import de.uniduesseldorf.dxram.core.chunk.mem.HeapIntegrityChecker;
+import de.uniduesseldorf.dxram.core.chunk.mem.HeapWalker;
+import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.chunk.mem.StorageRandomAccessFile;
 import de.uniduesseldorf.dxram.core.chunk.mem.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
@@ -22,7 +24,7 @@ import sun.misc.Lock;
 
 public class RawMemoryTest 
 {
-	private RawMemory m_memory = null;
+	private SmallObjectHeap m_memory = null;
 	private int m_numThreads = -1;
 	private int m_numOperations = -1;
 	private float m_mallocFreeRatio;
@@ -57,7 +59,7 @@ public class RawMemoryTest
 			}
 			
 			//m_memory = new RawMemory(new StorageRandomAccessFile(file));
-			m_memory = new RawMemory(new StorageUnsafeMemory());
+			m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -112,7 +114,9 @@ public class RawMemoryTest
 		
 		System.out.println(StatisticsManager.getStatistics());
 		
-		m_memory.verifySegments();
+		HeapWalker.Results results = HeapWalker.walk(m_memory);
+		System.out.println(results);
+		HeapIntegrityChecker.check(results);
 		
 		executor.shutdown();
 	}
@@ -145,7 +149,7 @@ public class RawMemoryTest
 	
 	public class MemoryThread implements Runnable
 	{
-		private RawMemory m_memory;
+		private SmallObjectHeap m_memory;
 		
 		private float m_mallocFreeRatio = 0;
 		private int m_numMallocOperations = -1;
@@ -158,7 +162,7 @@ public class RawMemoryTest
 		
 		private Vector<Long> m_blocksAlloced = new Vector<Long>();
 		
-		public MemoryThread(RawMemory rawMemory, int numOperations, float mallocFreeRatio, int blockSizeMin, int blockSizeMax, boolean p_debugPrint)
+		public MemoryThread(SmallObjectHeap rawMemory, int numOperations, float mallocFreeRatio, int blockSizeMin, int blockSizeMax, boolean p_debugPrint)
 		{
 			assert m_blockSizeMin > 0;
 			assert m_blockSizeMax > 0;
