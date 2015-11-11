@@ -15,7 +15,7 @@ import de.uniduesseldorf.dxram.utils.Tools;
  * Memory-Statistic
  * @author klein 26.03.2015
  */
-final public class MemoryStatistic implements Statistic {
+final class MemoryStatistic implements Statistic {
 
 	// Constants
 	private static final String NAME_MALLOC_COUNT = "Allocation Count";

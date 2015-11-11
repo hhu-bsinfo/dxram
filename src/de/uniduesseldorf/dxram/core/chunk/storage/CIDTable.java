@@ -8,7 +8,6 @@ import java.util.concurrent.locks.Lock;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.locks.SpinLock;
 
@@ -16,6 +15,7 @@ import de.uniduesseldorf.dxram.utils.locks.SpinLock;
  * Paging-like Tables for the ChunkID-VA mapping
  * @author Florian Klein
  *         13.02.2014
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public final class CIDTable {
 
@@ -33,14 +33,15 @@ public final class CIDTable {
 	private static final int LID_LOCK_OFFSET = LID_TABLE_SIZE - 4;
 	private static final int NID_LOCK_OFFSET = NID_TABLE_SIZE - 4;
 
-	private static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
-	private static final long BIT_FLAG = 0x8000000000L;
-	private static final long FULL_FLAG = BIT_FLAG;
-	private static final long DELETED_FLAG = BIT_FLAG;
+	protected static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
+	protected static final long BIT_FLAG = 0x8000000000L;
+	protected static final long FULL_FLAG = BIT_FLAG;
+	protected static final long DELETED_FLAG = BIT_FLAG;
 
 	// Attributes
-	private long m_nodeIDTableDirectory;
-	private SmallObjectHeap m_rawMemory;
+	// have these protected for the defragmenter to access
+	protected long m_nodeIDTableDirectory;
+	protected SmallObjectHeap m_rawMemory;
 
 	private LIDStore m_store;
 
@@ -65,7 +66,7 @@ public final class CIDTable {
 
 		m_store = new LIDStore();
 
-		m_defragmenter = new Defragmenter();
+		m_defragmenter = new Defragmenter(this);
 		// TODO: new Thread(m_defragmenter).start();
 
 		System.out.println("CIDTable: init success (page directory at: 0x" + Long.toHexString(m_nodeIDTableDirectory) + ")");
@@ -163,7 +164,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be read
 	 */
-	private long readEntry(final long p_addressTable, final long p_index) throws MemoryException {
+	protected long readEntry(final long p_addressTable, final long p_index) throws MemoryException {
 		long ret;
 
 		if (p_addressTable == m_nodeIDTableDirectory) {
@@ -186,7 +187,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be written
 	 */
-	private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) throws MemoryException {
+	protected void writeEntry(final long p_addressTable, final long p_index, final long p_entry) throws MemoryException {
 		long value;
 
 		value = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
@@ -227,12 +228,12 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
+	protected long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
 		long ret = 0;
 		long index;
 		long entry;
 
-		// readLock(p_table);
+		readLock(p_addressTable);
 
 		if (p_level == LID_TABLE_LEVELS) {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
@@ -248,7 +249,7 @@ public final class CIDTable {
 			ret = entry;
 		}
 
-		// readUnlock(p_table);
+		readUnlock(p_addressTable);
 
 		return ret;
 	}
@@ -836,7 +837,7 @@ public final class CIDTable {
 			boolean ret = false;
 			long entry;
 
-//			writeLock(p_addressTable);
+			writeLock(p_addressTable);
 
 			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 				// Read table entry
@@ -894,11 +895,62 @@ public final class CIDTable {
 				}
 			}
 
-//			writeUnlock(p_addressTable);
+			writeUnlock(p_addressTable);
 
 			return ret;
 		}
+	}
+	
+	/**
+	 * Locks the read lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	private void readLock(final long p_address) {
+		if (p_address == m_nodeIDTableDirectory) {
+			m_rawMemory.readLock(p_address + NID_LOCK_OFFSET);
+		} else {
+			m_rawMemory.readLock(p_address + LID_LOCK_OFFSET);
+		}
+	}
 
+	/**
+	 * Unlocks the read lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	private void readUnlock(final long p_address) {
+		if (p_address == m_nodeIDTableDirectory) {
+			m_rawMemory.readUnlock(p_address + NID_LOCK_OFFSET);
+		} else {
+			m_rawMemory.readUnlock(p_address + LID_LOCK_OFFSET);
+		}
+	}
+
+	/**
+	 * Locks the write lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	private void writeLock(final long p_address) {
+		if (p_address == m_nodeIDTableDirectory) {
+			m_rawMemory.writeLock(p_address + NID_LOCK_OFFSET);
+		} else {
+			m_rawMemory.writeLock(p_address + LID_LOCK_OFFSET);
+		}
+	}
+
+	/**
+	 * Unlocks the write lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	private void writeUnlock(final long p_address) {
+		if (p_address == m_nodeIDTableDirectory) {
+			m_rawMemory.writeUnlock(p_address + NID_LOCK_OFFSET);
+		} else {
+			m_rawMemory.writeUnlock(p_address + LID_LOCK_OFFSET);
+		}
 	}
 
 	/**

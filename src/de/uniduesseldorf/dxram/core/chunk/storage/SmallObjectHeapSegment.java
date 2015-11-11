@@ -1,15 +1,18 @@
-package de.uniduesseldorf.dxram.core.chunk.mem;
+package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
 
 /**
- * Represents a segment of the memory
+ * The memory is divided into segments to enable better concurrent access
+ * to the memory as a a whole. This also enables locking single segmens
+ * for house keeping tasks such as defragmentation.
+ *
  * @author Florian Klein 04.04.2014
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.2015
  */
 public final class SmallObjectHeapSegment {
 
@@ -25,34 +28,32 @@ public final class SmallObjectHeapSegment {
 	public static final int MAX_SIZE_MEMORY_BLOCK = (int) Math.pow(2, 8 * MAX_LENGTH_FIELD);
 	public static final int SIZE_MARKER_BYTE = 1;
 
-	// Attributes, have them protected to enable walking and analyzing the segment
-	// don't modify or access them
-	protected Storage m_memory;
-	protected int m_segmentID;
-	protected long m_base;
-	protected long m_baseFreeBlockList;
-	protected Status m_status;
-	protected long m_assignedThread;
+	// Attributes, have them accessible by the package to enable walking and analyzing the segment
+	// don't modify or access them otherwise
+	Storage m_memory;
+	int m_segmentID;
+	long m_base;
+	long m_baseFreeBlockList;
+	Status m_status;
+	long m_assignedThread;
 
-	protected JNIReadWriteSpinLock m_lock;
+	JNIReadWriteSpinLock m_lock;
 
-	protected long[] m_freeBlockListSizes;
+	long[] m_freeBlockListSizes;
 
-	protected long m_size = -1;
-	protected long m_fullSize = -1;
-	protected int m_freeBlocksListCount = -1;
-	protected int m_freeBlocksListSizePerSegment = -1;
+	long m_size = -1;
+	long m_fullSize = -1;
+	int m_freeBlocksListCount = -1;
+	int m_freeBlocksListSizePerSegment = -1;
 
 	// Constructors
 	/**
 	 * Creates an instance of Segment
-	 * @param p_segmentID
-	 *            the ID of the segment
-	 * @param p_base
-	 *            the base address of the segment
-	 * @param p_size
-	 *            the size of the segment
-	 * @throws MemoryException If creating segement block failed.
+	 * @param p_memory The underlying storage to use for this segment.
+	 * @param p_segmentID The ID of the segment
+	 * @param p_base The base address of the segment
+	 * @param p_size The size of the segment in bytes.
+	 * @throws MemoryException If creating segement failed.
 	 */
 	public SmallObjectHeapSegment(final Storage p_memory, final int p_segmentID, final long p_base, final long p_size) throws MemoryException {
 		m_memory = p_memory;
@@ -90,11 +91,10 @@ public final class SmallObjectHeapSegment {
 	}
 
 	/**
-	 * Get the total size of the segment.
-	 * @return
+	 * Get the total size of the segment in bytes.
+	 * @return Size in bytes.
 	 */
-	public long getSize()
-	{
+	public long getSize() {
 		return m_fullSize;
 	}
 
@@ -107,7 +107,7 @@ public final class SmallObjectHeapSegment {
 	}
 
 	/**
-	 * Checks if the Segment is assigned
+	 * Checks if the Segment is assigned to a thread.
 	 * @return true if the Segment is assigned, false otherwise
 	 */
 	public boolean isAssigned() {
@@ -115,10 +115,10 @@ public final class SmallObjectHeapSegment {
 	}
 
 	/**
-	 * Assigns the Segment
+	 * Assigns the Segment to a thread.
 	 * @param p_threadID
-	 *            the assigned thread
-	 * @return the previous assigned thread
+	 *            The thread ID to assign this segment to.
+	 * @return the previously assigned thread
 	 */
 	public long assign(final long p_threadID) {
 		long ret;
@@ -136,35 +136,58 @@ public final class SmallObjectHeapSegment {
 		m_assignedThread = 0;
 	}
 
-
+	/**
+	 * Lock this segment for normal access,
+	 * i.e. userdata read/write operations.
+	 */
 	public void lockAccess() {
 		m_lock.readLock().lock();
 	}
 
-
+	/**
+	 * Try to lock this segment for normal access,
+	 * i.e. userdata read/write operations.
+	 * @return True if locking was successful, false otherwise.
+	 */
 	public boolean tryLockAccess() {
 		return m_lock.readLock().tryLock();
 	}
 
-
+	/**
+	 * Unlock this segment after normal access,
+	 * i.e. userdata read/write operations.
+	 */
 	public void unlockAccess() {
 		m_lock.readLock().unlock();
 	}
 
+	/**
+	 * Lock this segment for managing access,
+	 * i.e. malloc/free operations.
+	 */
 	public void lockManage() {
 		m_lock.writeLock().lock();
 	}
-	
+
+	/**
+	 * Try to lock this segment for managing access,
+	 * i.e. malloc/free operations.
+	 * @return True if locking was successful, false otherwise.
+	 */
 	public boolean tryLockManage() {
 		return m_lock.writeLock().tryLock();
 	}
-	
+
+	/**
+	 * Unlock this segment after managing access,
+	 * i.e. malloc/free operations.
+	 */
 	public void unlockManage() {
 		m_lock.writeLock().unlock();
 	}
 
 	/**
-	 * Gets the current fragmentation
+	 * Gets the current fragmentation in percentage
 	 * @return the fragmentation
 	 */
 	public double getFragmentation() {
@@ -185,8 +208,8 @@ public final class SmallObjectHeapSegment {
 	/**
 	 * Allocate a memory block
 	 * @param p_size
-	 *            the size of the block
-	 * @return the offset of the block
+	 *            the size of the block in bytes.
+	 * @return the address of the block
 	 * @throws MemoryException If allocating memory in segment failed.
 	 */
 	public long malloc(final int p_size) throws MemoryException {
@@ -198,112 +221,97 @@ public final class SmallObjectHeapSegment {
 		long freeSize;
 		int freeLengthFieldSize;
 		byte blockMarker;
-		
-		if (p_size <= 0 || p_size > MAX_SIZE_MEMORY_BLOCK)
-			return -1;
-		
-		if (p_size >= 1 << 16) {
-			lengthFieldSize = 3;
-		} else if (p_size >= 1 << 8) {
-			lengthFieldSize = 2;
-		} else {
-			lengthFieldSize = 1;
-		}
-		blockSize = p_size + lengthFieldSize;
-		blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
 
-		// Get the list with a free block which is big enough
-		list = getList(blockSize) + 1;
-		while (list < m_freeBlocksListCount && readPointer(m_baseFreeBlockList + list * POINTER_SIZE) == 0) {
-			list++;
-		}
-		if (list < m_freeBlocksListCount) {
-			// A list is found
-			address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-		} else {
-			// Traverse through the lower list
-			list = getList(blockSize);
-			address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
-			if (address != 0) {
-				freeLengthFieldSize = readRightPartOfMarker(address - 1);
-				freeSize = read(address, freeLengthFieldSize);
-				while (freeSize < blockSize && address != 0) {
-					address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
-					if (address != 0) {
-						freeLengthFieldSize = readRightPartOfMarker(address - 1);
-						freeSize = read(address, freeLengthFieldSize);
+		if (p_size > 0 && p_size <= MAX_SIZE_MEMORY_BLOCK) {
+			if (p_size >= 1 << 16) {
+				lengthFieldSize = 3;
+			} else if (p_size >= 1 << 8) {
+				lengthFieldSize = 2;
+			} else {
+				lengthFieldSize = 1;
+			}
+			blockSize = p_size + lengthFieldSize;
+			blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
+
+			// Get the list with a free block which is big enough
+			list = getList(blockSize) + 1;
+			while (list < m_freeBlocksListCount && readPointer(m_baseFreeBlockList + list * POINTER_SIZE) == 0) {
+				list++;
+			}
+			if (list < m_freeBlocksListCount) {
+				// A list is found
+				address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+			} else {
+				// Traverse through the lower list
+				list = getList(blockSize);
+				address = readPointer(m_baseFreeBlockList + list * POINTER_SIZE);
+				if (address != 0) {
+					freeLengthFieldSize = readRightPartOfMarker(address - 1);
+					freeSize = read(address, freeLengthFieldSize);
+					while (freeSize < blockSize && address != 0) {
+						address = readPointer(address + freeLengthFieldSize + POINTER_SIZE);
+						if (address != 0) {
+							freeLengthFieldSize = readRightPartOfMarker(address - 1);
+							freeSize = read(address, freeLengthFieldSize);
+						}
 					}
 				}
 			}
-		}
 
-		if (address != 0) {
-			// Unhook the free block
-			unhookFreeBlock(address);
+			if (address != 0) {
+				// Unhook the free block
+				unhookFreeBlock(address);
 
-			freeLengthFieldSize = readRightPartOfMarker(address - SIZE_MARKER_BYTE);
-			freeSize = read(address, freeLengthFieldSize);
-			if (freeSize == blockSize) {
-				m_status.m_freeSpace -= blockSize;
-				m_status.m_freeBlocks--;
-				if (freeSize < SMALL_BLOCK_SIZE) {
-					m_status.m_freeSmall64ByteBlocks--;
+				freeLengthFieldSize = readRightPartOfMarker(address - SIZE_MARKER_BYTE);
+				freeSize = read(address, freeLengthFieldSize);
+				if (freeSize == blockSize) {
+					m_status.m_freeSpace -= blockSize;
+					m_status.m_freeBlocks--;
+					if (freeSize < SMALL_BLOCK_SIZE) {
+						m_status.m_freeSmall64ByteBlocks--;
+					}
+				} else if (freeSize == blockSize + 1) {
+					// 1 Byte to big -> write two markers on the right
+					writeRightPartOfMarker(address + blockSize, SINGLE_BYTE_MARKER);
+					writeLeftPartOfMarker(address + blockSize + 1, SINGLE_BYTE_MARKER);
+
+					// +1 for the marker byte added
+					m_status.m_freeSpace -= blockSize + 1;
+					m_status.m_freeBlocks--;
+					if (freeSize + 1 < SMALL_BLOCK_SIZE) {
+						m_status.m_freeSmall64ByteBlocks--;
+					}
+				} else {
+					// Block is too big -> create a new free block with the remaining size
+					createFreeBlock(address + blockSize + 1, freeSize - blockSize - 1);
+
+					// +1 for the marker byte added
+					m_status.m_freeSpace -= blockSize + 1;
+
+					if (freeSize >= SMALL_BLOCK_SIZE && freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
+						m_status.m_freeSmall64ByteBlocks++;
+					}
 				}
-			} else if (freeSize == blockSize + 1) {
-				// 1 Byte to big -> write two markers on the right
-				writeRightPartOfMarker(address + blockSize, SINGLE_BYTE_MARKER);
-				writeLeftPartOfMarker(address + blockSize + 1, SINGLE_BYTE_MARKER);
+				// Write marker
+				writeLeftPartOfMarker(address + blockSize, blockMarker);
+				writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
 
-				// +1 for the marker byte added
-				m_status.m_freeSpace -= blockSize + 1; 
-				m_status.m_freeBlocks--;
-				if (freeSize + 1 < SMALL_BLOCK_SIZE) {
-					m_status.m_freeSmall64ByteBlocks--;
-				}
-			} else {
-				// Block is too big -> create a new free block with the remaining size
-				createFreeBlock(address + blockSize + 1, freeSize - blockSize - 1);
+				// Write block size
+				write(address, p_size, lengthFieldSize);
 
-				// +1 for the marker byte added
-				m_status.m_freeSpace -= blockSize + 1;
+				MemoryStatistic.getInstance().malloc(blockSize);
 
-				// TODO remove
-//				if (freeSize < SMALL_BLOCK_SIZE) {
-//					m_status.m_small64ByteBlocks--;
-//				}
-//				
-//				if (blockSize < SMALL_BLOCK_SIZE) {
-//					m_status.m_small64ByteBlocks++;
-//				}
-//					
-//				if (freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
-//					m_status.m_small64ByteBlocks++;
-//				}
-				
-				if (freeSize >= SMALL_BLOCK_SIZE && freeSize - blockSize - 1 < SMALL_BLOCK_SIZE) {
-					m_status.m_freeSmall64ByteBlocks++;
-				}
-				
+				ret = address;
 			}
-			// Write marker
-			writeLeftPartOfMarker(address + blockSize, blockMarker);
-			writeRightPartOfMarker(address - SIZE_MARKER_BYTE, blockMarker);
-
-			// Write block size
-			write(address, p_size, lengthFieldSize);
-
-			MemoryStatistic.getInstance().malloc(blockSize);
-
-			ret = address;
 		}
 
 		return ret;
 	}
-	
+
 	/**
 	 * Allocate a large memory block for multiple objects
 	 * @param p_sizes
-	 *            the sizes of the objects
+	 *            the sizes of the objects in bytes
 	 * @return the offsets of the objects
 	 * @throws MemoryException
 	 *             if the memory block could not be allocated
@@ -396,7 +404,7 @@ public final class SmallObjectHeapSegment {
 		long rightSize;
 
 		assertSegmentBounds(p_address);
-		
+
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		blockSize = getSizeMemoryBlock(p_address);
 
@@ -425,7 +433,8 @@ public final class SmallObjectHeapSegment {
 				leftSize = read(address - SIZE_MARKER_BYTE - leftMarker, leftMarker);
 				// skip leftSize and marker byte from address to get block offset
 				unhookFreeBlock(address - leftSize - SIZE_MARKER_BYTE);
-				leftSize += SIZE_MARKER_BYTE; // we also merge the marker byte
+				// we also merge the marker byte
+				leftSize += SIZE_MARKER_BYTE;
 				break;
 			case SINGLE_BYTE_MARKER:
 				// Left byte is free -> merge free blocks
@@ -466,9 +475,10 @@ public final class SmallObjectHeapSegment {
 			case 5:
 				// Right neighbor block is free -> merge free blocks
 				// + 1 to skip marker byte
-				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);				
+				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
 				unhookFreeBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
-				rightSize += SIZE_MARKER_BYTE; // we also merge the marker byte
+				// we also merge the marker byte
+				rightSize += SIZE_MARKER_BYTE;
 				break;
 			case 15:
 				// Right byte is free -> merge free blocks
@@ -518,18 +528,30 @@ public final class SmallObjectHeapSegment {
 					m_status.m_freeSmall64ByteBlocks++;
 				}
 			}
-//			if (blockSize + lengthFieldSize + leftSize + rightSize >= SMALL_BLOCK_SIZE) {
-//				if (rightSize < SMALL_BLOCK_SIZE && leftSize < SMALL_BLOCK_SIZE) {
-//					m_status.m_freeSmall64ByteBlocks--;
-//				} else if (rightSize >= SMALL_BLOCK_SIZE && leftSize >= SMALL_BLOCK_SIZE) {
-//					m_status.m_freeSmall64ByteBlocks++;
-//				}
-//			}
 		}
 
 		MemoryStatistic.getInstance().free(blockSize + lengthFieldSize);
 	}
 	
+	/**
+	 * Get the size of an allocated block of memory.
+	 * @param p_address Address of the block.
+	 * @return Size of the block in bytes (payload only).
+	 * @throws MemoryException If getting size failed.
+	 */
+	public int getSizeBlock(final long p_address) throws MemoryException {
+		int lengthFieldSize;
+		int size;
+		
+		assertSegmentBounds(p_address);
+
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
+		
+		return size;
+	}
+
 	/**
 	 * Overwrites the bytes in the memory with the given value
 	 * @param p_address
@@ -544,7 +566,7 @@ public final class SmallObjectHeapSegment {
 	public void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
 		assertSegmentBounds(p_address, p_size);
 		assertSegmentMaxBlocksize(p_size);
-		
+
 		try {
 			int lengthFieldSize;
 
@@ -553,9 +575,9 @@ public final class SmallObjectHeapSegment {
 
 			m_memory.set(p_address + lengthFieldSize, p_size, p_value);
 		} catch (final Throwable e) {
-			throw new MemoryException("Could not set memory, addr " + p_address + 
+			throw new MemoryException("Could not set memory, addr " + p_address +
 					", size " + p_size + ", value " + p_value + " of segment: " + this);
-		} 
+		}
 	}
 
 	/**
@@ -582,7 +604,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public byte readByte(final long p_address, final long p_offset) throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -624,7 +646,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public short readShort(final long p_address, final long p_offset) throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -666,7 +688,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public int readInt(final long p_address, final long p_offset) throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -708,7 +730,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public long readLong(final long p_address, final long p_offset) throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -751,7 +773,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		byte[] ret;
 		int lengthFieldSize;
 		int size;
@@ -803,7 +825,7 @@ public final class SmallObjectHeapSegment {
 	public void writeByte(final long p_address, final long p_offset, final byte p_value)
 			throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -848,7 +870,7 @@ public final class SmallObjectHeapSegment {
 	public void writeShort(final long p_address, final long p_offset, final short p_value)
 			throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -894,7 +916,7 @@ public final class SmallObjectHeapSegment {
 	public void writeInt(final long p_address, final long p_offset, final int p_value)
 			throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -940,7 +962,7 @@ public final class SmallObjectHeapSegment {
 	public void writeLong(final long p_address, final long p_offset, final long p_value)
 			throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		try {
 			int lengthFieldSize;
 			int size;
@@ -986,7 +1008,7 @@ public final class SmallObjectHeapSegment {
 			throws MemoryException {
 		writeBytes(p_address, p_offset, p_value, p_value.length);
 	}
-	
+
 	/**
 	 * Write an array of bytes to the specified address + offset.
 	 * @param p_address
@@ -995,7 +1017,7 @@ public final class SmallObjectHeapSegment {
 	 *            Offset to add to the address.
 	 * @param p_value
 	 *            Bytes to write.
-	 * @param p_length 
+	 * @param p_length
 	 * 				Number of bytes to write.
 	 * @throws MemoryException
 	 *             If accessing memory failed.
@@ -1003,7 +1025,7 @@ public final class SmallObjectHeapSegment {
 	public void writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_length)
 			throws MemoryException {
 		assertSegmentBounds(p_address, p_offset);
-		
+
 		int lengthFieldSize;
 		int size;
 		long offset;
@@ -1035,7 +1057,7 @@ public final class SmallObjectHeapSegment {
 	public int getCustomState(final long p_address) throws MemoryException {
 		int marker;
 		int ret;
-		
+
 		assertSegmentBounds(p_address);
 
 		marker = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
@@ -1063,17 +1085,18 @@ public final class SmallObjectHeapSegment {
 		int marker;
 		int lengthFieldSize;
 		int size;
-		
+
 		assertSegmentBounds(p_address);
 
-		Contract.check(p_customState >= 0 && p_customState < 3, 
-				"Custom state (" + p_customState + ") out of range, addr: " + p_address);
+		if (!(p_customState >= 0 && p_customState < 3)) {
+			throw new MemoryException("Custom state (" + p_customState + ") out of range, addr: " + p_address);
+		}
 
 		marker = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
-		Contract.check(marker != SINGLE_BYTE_MARKER, 
-				"Single byte marker not valid, addr " + p_address + ", marker: " + marker);
-		Contract.check(marker > OCCUPIED_FLAGS_OFFSET,
-				"Invalid marker " + marker + " at address " + p_address);
+
+		if (!(marker != SINGLE_BYTE_MARKER && marker > OCCUPIED_FLAGS_OFFSET)) {
+			throw new MemoryException("Invalid marker " + marker + " at address " + p_address);
+		}
 
 		lengthFieldSize = getSizeFromMarker(marker);
 		size = (int) read(p_address, lengthFieldSize);
@@ -1093,31 +1116,31 @@ public final class SmallObjectHeapSegment {
 	 */
 	public int getSizeMemoryBlock(final long p_address) throws MemoryException {
 		int lengthFieldSize;
-		
+
 		assertSegmentBounds(p_address);
 
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		return (int) read(p_address, lengthFieldSize);
 	}
-	
+
 	@Override
 	public String toString() {
-		return "Segment(id: " + m_segmentID + ", m_assignedThread " + m_assignedThread + "): " + 
-				"m_base " + m_base + ", " +
-				"m_baseFreeBlockList " + m_baseFreeBlockList + ", " +
-				"m_size " + m_size + ", " +
-				"m_fullSize " + m_fullSize + ", " +
-				"segment borders: " + m_base + "|" + (m_base + m_fullSize) + ", " +
-				"status: " + m_status;
+		return "Segment(id: " + m_segmentID + ", m_assignedThread " + m_assignedThread + "): "
+				+ "m_base " + m_base + ", m_baseFreeBlockList "
+				+ m_baseFreeBlockList + ", m_size "
+				+ m_size + ", m_fullSize "
+				+ m_fullSize + ", segment borders: "
+				+ m_base + "|" + (m_base + m_fullSize) + ", status: "
+				+ m_status;
 	}
-	
+
 	/**
 	 * Calculates the required memory for multiple objects
 	 * @param p_sizes
 	 *            the sizes od the objects
 	 * @return the size of the required memory
 	 */
-	static public int getRequiredMemory(final int... p_sizes) {
+	public static int getRequiredMemory(final int... p_sizes) {
 		int ret;
 
 		Contract.checkNotNull(p_sizes, "no sizes given");
@@ -1143,30 +1166,46 @@ public final class SmallObjectHeapSegment {
 
 		return ret;
 	}
-	
+
 	// -------------------------------------------------------------------------------------------
 
-	private void assertSegmentBounds(final long p_address) throws MemoryException
-	{
-		if (p_address < m_base || p_address > m_base + m_fullSize)
+	/**
+	 * Check the segment bounds with the specified address.
+	 * @param p_address Address to check if within segment.
+	 * @throws MemoryException If address not within segment bounds.
+	 */
+	private void assertSegmentBounds(final long p_address) throws MemoryException {
+		if (p_address < m_base || p_address > m_base + m_fullSize) {
 			throw new MemoryException("Address " + p_address + " is not within segment: " + this);
+		}
 	}
-	
-	private void assertSegmentBounds(final long p_address, final long p_length) throws MemoryException
-	{
-		if (p_address < m_base || p_address > m_base + m_fullSize || 
-			p_address + p_length < m_base || p_address + p_length > m_base + m_fullSize)
-			throw new MemoryException("Address " + p_address + 
-					" with length " + p_length + "is not within segment: " + this);
+
+	/**
+	 * Check the segment bounds with the specified start address and size.
+	 * @param p_address Address to check if within bounds.
+	 * @param p_length Number of bytes starting at address.
+	 * @throws MemoryException If address and specified length not within segment bounds.
+	 */
+	private void assertSegmentBounds(final long p_address, final long p_length) throws MemoryException {
+		if (p_address < m_base || p_address > m_base + m_fullSize
+			|| p_address + p_length < m_base || p_address + p_length > m_base + m_fullSize) {
+			throw new MemoryException("Address " + p_address
+					+ " with length " + p_length + "is not within segment: " + this);
+		}
 	}
-	
-	public void assertSegmentMaxBlocksize(final long p_size) throws MemoryException
-	{
-		if (p_size > MAX_SIZE_MEMORY_BLOCK)
-			throw new MemoryException("Size " + p_size + 
-					" exceeds max blocksize " + MAX_SIZE_MEMORY_BLOCK + " of segment: " + this);
+
+	/**
+	 * Check if the specified size is within the range of the max blocksize.
+	 * @param p_size Size to check if not exceeding max blocksize.
+	 * @throws MemoryException If size exceeds max blocksize.
+	 */
+	public void assertSegmentMaxBlocksize(final long p_size) throws MemoryException {
+		if (p_size > MAX_SIZE_MEMORY_BLOCK) {
+			throw new MemoryException("Size " + p_size
+					+ " exceeds max blocksize " + MAX_SIZE_MEMORY_BLOCK + " of segment: " + this);
+		}
 	}
-	
+
 	/**
 	 * Creates a free block
 	 * @param p_address
@@ -1194,27 +1233,28 @@ public final class SmallObjectHeapSegment {
 			size = p_size >> 8;
 			while (size > 0) {
 				lengthFieldSize++;
-	
+
 				size = size >> 8;
 			}
-	
+
 			// Get the corresponding list
 			listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
-	
+
 			// Hook block in list
 			anchor = readPointer(listOffset);
-	
+
 			// Write pointer to list and successor
 			writePointer(p_address + lengthFieldSize, listOffset);
 			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
 			if (anchor != 0) {
 				// Write pointer of successor
-				int marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
+				int marker;
+				marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
 				writePointer(anchor + marker, p_address);
 			}
 			// Write pointer of list
 			writePointer(listOffset, p_address);
-	
+
 			// Write length
 			write(p_address, p_size, lengthFieldSize);
 			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
@@ -1235,14 +1275,14 @@ public final class SmallObjectHeapSegment {
 		int lengthFieldSize;
 		long prevPointer;
 		long nextPointer;
-		
+
 		// Read size of length field
 		lengthFieldSize = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
 
 		// Read pointers
 		prevPointer = readPointer(p_address + lengthFieldSize);
 		nextPointer = readPointer(p_address + lengthFieldSize + POINTER_SIZE);
-		
+
 		if (prevPointer >= m_baseFreeBlockList) {
 			// Write Pointer of list
 			writePointer(prevPointer, nextPointer);
@@ -1256,7 +1296,7 @@ public final class SmallObjectHeapSegment {
 			writePointer(nextPointer + lengthFieldSize, prevPointer);
 		}
 	}
-	
+
 	/**
 	 * Gets the suitable list for the given size
 	 * @param p_size
@@ -1394,7 +1434,7 @@ public final class SmallObjectHeapSegment {
 	private void write(final long p_address, final long p_bytes, final int p_count) throws MemoryException {
 		m_memory.writeVal(p_address, p_bytes, p_count);
 	}
-	
+
 	// --------------------------------------------------------------------------------------
 
 	// Classes

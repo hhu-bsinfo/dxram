@@ -14,7 +14,7 @@ import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
+import de.uniduesseldorf.dxram.core.chunk.storage.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.Tools;

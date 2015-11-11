@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.chunk.mem;
+package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,7 +16,7 @@ import de.uniduesseldorf.dxram.utils.Endianness;
  * as much disk space as memory is requested on initialization.
  * Used for testing/memory debugging only.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de>
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.2015
  *
  */
 public class StorageRandomAccessFile implements Storage {
@@ -362,5 +362,25 @@ public class StorageRandomAccessFile implements Storage {
 		} catch (final IOException e) {
 			throw new MemoryException("writing failed " + e);
 		}
+	}
+
+	@Override
+	public void readLock(final long p_address) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void readUnlock(final long p_address) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void writeLock(final long p_address) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void writeUnlock(final long p_address) {
+		// TODO Auto-generated method stub
 	}
 }

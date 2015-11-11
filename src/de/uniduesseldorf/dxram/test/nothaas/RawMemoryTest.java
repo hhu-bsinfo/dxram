@@ -10,12 +10,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.chunk.mem.HeapIntegrityChecker;
-import de.uniduesseldorf.dxram.core.chunk.mem.HeapWalker;
-import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
-import de.uniduesseldorf.dxram.core.chunk.mem.StorageRandomAccessFile;
-import de.uniduesseldorf.dxram.core.chunk.mem.StorageUnsafeMemory;
+import de.uniduesseldorf.dxram.core.chunk.storage.HeapIntegrityChecker;
+import de.uniduesseldorf.dxram.core.chunk.storage.HeapWalker;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
+import de.uniduesseldorf.dxram.core.chunk.storage.SmallObjectHeap;
+import de.uniduesseldorf.dxram.core.chunk.storage.StorageRandomAccessFile;
+import de.uniduesseldorf.dxram.core.chunk.storage.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;

@@ -1,3 +1,4 @@
+
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.util.Arrays;
@@ -9,6 +10,9 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
  * @author Florian Klein
  *         05.04.2014
  */
+// TODO rewrite defragmenter as external instance using
+// the public available interfaces of the CIDTable and
+// SmallObjectHeap
 public final class Defragmenter implements Runnable {
 
 	// Constants
@@ -18,19 +22,23 @@ public final class Defragmenter implements Runnable {
 	// Attributes
 	private boolean m_running;
 
+	private CIDTable m_cidTable;
+
 	// Constructors
 	/**
 	 * Creates an instance of Defragmenter
 	 */
-	private Defragmenter() {
+	public Defragmenter(final CIDTable p_cidTable) {
 		m_running = false;
+
+		m_cidTable = p_cidTable;
 	}
 
 	// Methods
 	/**
 	 * Stops the defragmenter
 	 */
-	private void stop() {
+	public void stop() {
 		m_running = false;
 	}
 
@@ -49,18 +57,38 @@ public final class Defragmenter implements Runnable {
 
 			if (m_running) {
 				try {
-					fragmentation = m_rawMemory.getFragmentation();
+					fragmentation = m_cidTable.m_rawMemory.getFragmentation();
 
-					table = getEntry(offset++, m_nodeIDTableDirectory, 1);
+					table = m_cidTable.getEntry(offset++, m_cidTable.m_nodeIDTableDirectory, 1);
 					if (table == 0) {
 						offset = 0;
-						table = getEntry(offset++, m_nodeIDTableDirectory, 1);
+						table = m_cidTable.getEntry(offset++, m_cidTable.m_nodeIDTableDirectory, 1);
 					}
 
 					defragmentTable(table, 1, fragmentation);
 				} catch (final MemoryException e) {}
 			}
 		}
+	}
+
+	/**
+	 * Defragments all Tables
+	 * @return the time of the defragmentation
+	 * @throws MemoryException
+	 *             if the tables could not be defragmented
+	 */
+	public long defragmentAll() throws MemoryException {
+		long ret;
+		double[] fragmentation;
+
+		ret = System.nanoTime();
+
+		fragmentation = m_cidTable.m_rawMemory.getFragmentation();
+		defragmentTable(m_cidTable.m_nodeIDTableDirectory, CIDTable.LID_TABLE_LEVELS - 1, fragmentation);
+
+		ret = System.nanoTime() - ret;
+
+		return ret;
 	}
 
 	/**
@@ -79,24 +107,24 @@ public final class Defragmenter implements Runnable {
 		int segment;
 		byte[] data;
 
-//		writeLock(p_addressTable);
-		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
+		// writeLock(p_addressTable);
+		for (int i = 0; i < CIDTable.ENTRIES_PER_LID_LEVEL; i++) {
 			try {
-				entry = readEntry(p_addressTable, i);
-				address = entry & BITMASK_ADDRESS;
+				entry = m_cidTable.readEntry(p_addressTable, i);
+				address = entry & CIDTable.BITMASK_ADDRESS;
 				newAddress = 0;
 
 				if (address != 0) {
-					segment = m_rawMemory.getSegment(address);
+					segment = m_cidTable.m_rawMemory.getSegment(address);
 
 					if (p_level > 1) {
 						defragmentTable(address, p_level - 1, p_fragmentation);
 
 						if (p_fragmentation[segment] > MAX_FRAGMENTATION) {
-							data = m_rawMemory.readBytes(address);
-							m_rawMemory.free(address);
-							newAddress = m_rawMemory.malloc(data.length);
-							m_rawMemory.writeBytes(newAddress, data);
+							data = m_cidTable.m_rawMemory.readBytes(address);
+							m_cidTable.m_rawMemory.free(address);
+							newAddress = m_cidTable.m_rawMemory.malloc(data.length);
+							m_cidTable.m_rawMemory.writeBytes(newAddress, data);
 						}
 					} else {
 						if (p_fragmentation[segment] > MAX_FRAGMENTATION) {
@@ -105,12 +133,12 @@ public final class Defragmenter implements Runnable {
 					}
 
 					if (newAddress != 0) {
-						writeEntry(p_addressTable, i, newAddress + (entry & FULL_FLAG));
+						m_cidTable.writeEntry(p_addressTable, i, newAddress + (entry & CIDTable.FULL_FLAG));
 					}
 				}
 			} catch (final MemoryException e) {}
 		}
-//		writeUnlock(p_addressTable);
+		// writeUnlock(p_addressTable);
 	}
 
 	/**
@@ -132,72 +160,52 @@ public final class Defragmenter implements Runnable {
 		int entries;
 
 		table = p_addressTable;
-		entries = ENTRIES_PER_LID_LEVEL + 1;
+		entries = CIDTable.ENTRIES_PER_LID_LEVEL + 1;
 		addresses = new long[entries];
 		Arrays.fill(addresses, 0);
 		data = new byte[entries][];
 		sizes = new int[entries];
 		Arrays.fill(sizes, 0);
 
-//		writeLock(table);
+		// writeLock(table);
 
 		try {
 			addresses[0] = table;
-			data[0] = m_rawMemory.readBytes(table);
-			sizes[0] = LID_TABLE_SIZE;
-			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
+			data[0] = m_cidTable.m_rawMemory.readBytes(table);
+			sizes[0] = CIDTable.LID_TABLE_SIZE;
+			for (int i = 0; i < CIDTable.ENTRIES_PER_LID_LEVEL; i++) {
 				position = i + 1;
 
-				address = readEntry(table, i) & BITMASK_ADDRESS;
+				address = m_cidTable.readEntry(table, i) & CIDTable.BITMASK_ADDRESS;
 				if (address != 0) {
 					addresses[position] = address;
-					data[position] = m_rawMemory.readBytes(address);
+					data[position] = m_cidTable.m_rawMemory.readBytes(address);
 					sizes[position] = data[position].length;
 				}
 			}
 
-			m_rawMemory.free(addresses);
-			addresses = m_rawMemory.malloc(sizes);
+			// TODO
+			// m_cidTable.m_rawMemory.free(addresses);
+			// addresses = m_cidTable.m_rawMemory.malloc(sizes);
 
 			table = addresses[0];
-			m_rawMemory.writeBytes(table, data[0]);
-			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
+			m_cidTable.m_rawMemory.writeBytes(table, data[0]);
+			for (int i = 0; i < CIDTable.ENTRIES_PER_LID_LEVEL; i++) {
 				position = i + 1;
 
 				address = addresses[position];
 				if (address != 0) {
-					writeEntry(table, i, address);
+					m_cidTable.writeEntry(table, i, address);
 
-					m_rawMemory.writeBytes(address, data[position]);
+					m_cidTable.m_rawMemory.writeBytes(address, data[position]);
 				}
 			}
 		} finally {
-//			writeUnlock(table);
+			// writeUnlock(table);
 		}
 
 		ret = table;
 
 		return ret;
 	}
-
-	/**
-	 * Defragments all Tables
-	 * @return the time of the defragmentation
-	 * @throws MemoryException
-	 *             if the tables could not be defragmented
-	 */
-	private long defragmentAll() throws MemoryException {
-		long ret;
-		double[] fragmentation;
-
-		ret = System.nanoTime();
-
-		fragmentation = m_rawMemory.getFragmentation();
-		defragmentTable(m_nodeIDTableDirectory, LID_TABLE_LEVELS - 1, fragmentation);
-
-		ret = System.nanoTime() - ret;
-
-		return ret;
-	}
-
 }

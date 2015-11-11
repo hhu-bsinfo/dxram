@@ -9,8 +9,6 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
-import de.uniduesseldorf.dxram.core.chunk.mem.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
@@ -52,7 +50,7 @@ public final class MemoryManager {
 		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_MEMORY)) {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 		}
-		
+
 		segmentSize = Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SEGMENT_SIZE);
 
 		m_nextLocalID = new AtomicLong(1);
@@ -173,7 +171,7 @@ public final class MemoryManager {
 			// check if we have to expand
 			long oldSize;
 
-			oldSize = m_rawMemory.getSizeMemoryBlock(address);
+			oldSize = m_rawMemory.getSizeBlock(address);
 			if (oldSize < totalChunkSize) {
 				// re-allocate
 				m_rawMemory.free(address);
@@ -231,28 +229,28 @@ public final class MemoryManager {
 //		// If address <= 0, the Chunk does not exists in the memory
 //		if (address > 0) {
 //			long newAddress = -1;
-//			
+//
 //			// try reallocating the block
 //			newAddress = m_rawMemory.realloc(address, p_newSize);
 //			if (newAddress != address)
 //			{
 //				int customState = -1;
 //				byte[] data = null;
-//				
+//
 //				// copy data and free old block
 //				customState = m_rawMemory.getCustomState(address);
 //				data = m_rawMemory.readBytes(address);
-//				
+//
 //				m_rawMemory.setCustomState(newAddress, customState);
-//				
+//
 //				// if the new block is smaller, trunc data
 //				if (p_newSize < data.length)
 //					m_rawMemory.writeBytes(newAddress, data, p_);
 //				else
 //					m_rawMemory.writeBytes(newAddress, data);
 //			}
-//			
-//			
+//
+//
 //			int version;
 //			int sizeVersion;
 //			byte[] data;
@@ -268,7 +266,7 @@ public final class MemoryManager {
 //
 //		return ret;
 //	}
-	
+
 	/**
 	 * Returns whether this Chunk is stored locally or not
 	 * @param p_chunkID

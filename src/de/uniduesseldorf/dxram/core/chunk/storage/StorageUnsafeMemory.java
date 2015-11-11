@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.chunk.mem;
+package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,13 +9,14 @@ import sun.misc.Unsafe;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Endianness;
+import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
 
 /**
  * Implementation of a storage based on an unsafe allocated
  * block of memory.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de>
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.2015
  */
 public class StorageUnsafeMemory implements Storage {
 	private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
@@ -239,7 +240,7 @@ public class StorageUnsafeMemory implements Storage {
 	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException {
 		assert p_ptr >= 0;
 		assert p_ptr + p_count <= m_memorySize;
-		
+
 		// take endianness into account!!!
 		if (Endianness.getEndianness() > 0) {
 			for (int i = 0; i < p_count; i++) {
@@ -250,5 +251,25 @@ public class StorageUnsafeMemory implements Storage {
 				UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> (8 * (7 - i)) & 0xFF));
 			}
 		}
+	}
+
+	@Override
+	public void readLock(final long p_address) {
+		JNILock.readLock(m_memoryBase + p_address);
+	}
+
+	@Override
+	public void readUnlock(final long p_address) {
+		JNILock.readUnlock(m_memoryBase + p_address);
+	}
+
+	@Override
+	public void writeLock(final long p_address) {
+		JNILock.writeLock(m_memoryBase + p_address);
+	}
+
+	@Override
+	public void writeUnlock(final long p_address) {
+		JNILock.writeUnlock(m_memoryBase + p_address);
 	}
 }

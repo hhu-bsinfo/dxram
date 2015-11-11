@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.core.chunk.mem;
+package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.io.File;
 
@@ -8,7 +8,7 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
  * Interface to describe a type of storage/memory to store
  * data to.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de>
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.2015
  */
 public interface Storage {
 	/**
@@ -189,4 +189,32 @@ public interface Storage {
 	 * @throws MemoryException If writing fails.
 	 */
 	void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException;
+
+	/**
+	 * Locks the read lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	void readLock(final long p_address);
+
+	/**
+	 * Unlocks the read lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	void readUnlock(final long p_address);
+
+	/**
+	 * Locks the write lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	void writeLock(final long p_address);
+
+	/**
+	 * Unlocks the write lock
+	 * @param p_address
+	 *            the address of the lock
+	 */
+	void writeUnlock(final long p_address);
 }

@@ -1,7 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
-import de.uniduesseldorf.dxram.core.chunk.mem.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 
 /**
@@ -9,7 +8,7 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
  * This can be used for any scenario that requires some kind
  * of address translation.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de>
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  *
  */
 public final class PagingTable {
@@ -177,11 +176,11 @@ public final class PagingTable {
 	public long get(final long p_chunkID) throws MemoryException {
 		long ret;
 
-		readLock(m_nodeIDTableDirectory);
+		m_rawMemory.readLock(m_nodeIDTableDirectory);
 
 		ret = getEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
 
-		readUnlock(m_nodeIDTableDirectory);
+		m_rawMemory.readUnlock(m_nodeIDTableDirectory);
 
 		return ret;
 	}
@@ -262,7 +261,7 @@ public final class PagingTable {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
 		if (p_level > 0) {
-			writeLock(p_addressTable);
+			m_rawMemory.writeLock(p_addressTable);
 
 			// Read table entry
 			entry = readEntry(p_addressTable, index);
@@ -271,20 +270,20 @@ public final class PagingTable {
 				writeEntry(p_addressTable, index, entry);
 			}
 
-			writeUnlock(p_addressTable);
+			m_rawMemory.writeUnlock(p_addressTable);
 
 			if (entry > 0) {
 				// move on to next table
 				setEntry(p_chunkID, p_addressChunk, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
-			writeLock(p_addressTable);
+			m_rawMemory.writeLock(p_addressTable);
 
 			// Set the level 0 entry
 			// valid and active entry, delete flag 0
 			writeEntry(p_addressTable, index, p_addressChunk);
 
-			writeUnlock(p_addressTable);
+			m_rawMemory.writeUnlock(p_addressTable);
 		}
 	}
 
