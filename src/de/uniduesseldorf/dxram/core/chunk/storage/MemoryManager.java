@@ -39,24 +39,25 @@ public final class MemoryManager {
 	 * Initializes the RawMemory and the CIDTable
 	 * @param p_size
 	 *            the size of the memory
+	 * @param p_segmentSize 
+	 * 			  size of a single segment
+	 * @param p_registerStatistics
+	 * 			  True to register memory statistics, false otherwise.
 	 * @return the actual size of the memory
 	 * @throws MemoryException
 	 *             if the RawMemory or the CIDTable could not be initialized
 	 */
-	public long initialize(final long p_size) throws MemoryException {
+	public long initialize(final long p_size, final long p_segmentSize, final boolean p_registerStatistics) throws MemoryException {
 		long ret;
-		long segmentSize;
 
-		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_MEMORY)) {
+		if (p_registerStatistics) {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 		}
-
-		segmentSize = Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SEGMENT_SIZE);
 
 		m_nextLocalID = new AtomicLong(1);
 
 		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
-		ret = m_rawMemory.initialize(p_size, segmentSize);
+		ret = m_rawMemory.initialize(p_size, p_segmentSize);
 		m_cidTable = new CIDTable();
 		m_cidTable.initialize(m_rawMemory);
 

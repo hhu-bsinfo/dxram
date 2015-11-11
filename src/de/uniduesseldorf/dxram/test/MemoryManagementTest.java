@@ -8,19 +8,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.SmallObjectHeap;
+import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Tools;
+import de.uniduesseldorf.dxram.utils.locks.JNILock;
 
 /**
  * Test cases for the evaluation of the memory management
  * @author klein 26.03.2015
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public final class MemoryManagementTest {
 
@@ -31,6 +29,8 @@ public final class MemoryManagementTest {
 
 	private static final int DEFAULT_CHUNK_COUNT = 1;
 	private static final int DEFAULT_THREAD_COUNT = 1;
+	
+	private static MemoryManager m_memoryManager;
 
 	// Constructors
 	/**
@@ -49,6 +49,9 @@ public final class MemoryManagementTest {
 		int threadCount;
 		ArgumentHelper helper;
 		TestResult result;
+		
+		//JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
+		JNILock.load("/home/stefan/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
 
 		helper = new ArgumentHelper(p_arguments);
 		if (helper.containsArgument(ARGUMENT_HELP)) {
@@ -93,13 +96,8 @@ public final class MemoryManagementTest {
 	 */
 	private static void init(final int p_chunkCount, final int p_threadCount) throws MemoryException {
 
-		// Initialize DXRAM
-		try {
-			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-		} catch (final DXRAMException e1) {
-			e1.printStackTrace();
-		}
+		m_memoryManager = new MemoryManager();
+		m_memoryManager.initialize(1073741824L * 8, 1073741824L, false);
 	}
 
 	/**
@@ -108,10 +106,8 @@ public final class MemoryManagementTest {
 	 *             if the memory management could not be deinitialized
 	 */
 	private static void deinit() throws MemoryException {
-//		CIDTable.printDebugInfos();
-//		RawMemory.printDebugInfos();
-
-		Core.close();
+		m_memoryManager.disengage();
+		m_memoryManager = null;
 	}
 
 	/**
@@ -149,14 +145,16 @@ public final class MemoryManagementTest {
 					random = new Random();
 					for (int i = 1; i <= count; i++) {
 						try {
-							// chunkID = MemoryManager.getNextLocalID().getLocalID();
-							data = new byte[random.nextInt(49) + 16];
-							// chunk = new Chunk(chunkID, data, 0);
-							//
-							// MemoryManager.put(chunk);
-							chunk = Core.createNewChunk(data.length);
-							chunk.getData().put(data);
-							Core.put(chunk);
+							long chunkID;
+							
+							chunkID = m_memoryManager.getNextLocalID().getLocalID();
+							//data = new byte[random.nextInt(49) + 16];
+							data = new byte[16]; // TODO have chunk size setable (range as well)
+							chunk = new Chunk(chunkID, data, 0);
+
+							m_memoryManager.put(chunk);
+							//chunk.getData().put(data);
+							//Core.put(chunk);
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
 						}
@@ -205,7 +203,7 @@ public final class MemoryManagementTest {
 
 					for (int i = 1; i <= count; i++) {
 						try {
-							Core.get(i);
+							m_memoryManager.get(i);
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
 						}

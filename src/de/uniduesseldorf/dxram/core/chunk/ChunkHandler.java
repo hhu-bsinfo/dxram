@@ -41,6 +41,7 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.UnlockMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
+import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener.IncomingChunkEvent;
@@ -167,10 +168,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		m_lookup = CoreComponentFactory.getLookupInterface();
 		if (NodeID.getRole().equals(Role.PEER)) {
+			
 			m_lock = CoreComponentFactory.getLockInterface();
 			
 			m_memoryManager = new MemoryManager();
-			m_memoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE));
+			m_memoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE),
+										Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SEGMENT_SIZE),
+										Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_MEMORY));
 			
 			m_migrationLock = new ReentrantLock(false);
 			registerPeer();

@@ -9,6 +9,7 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
  * Defragments the memory periodical
  * @author Florian Klein
  *         05.04.2014
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 // TODO rewrite defragmenter as external instance using
 // the public available interfaces of the CIDTable and
