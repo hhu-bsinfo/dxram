@@ -59,16 +59,17 @@ public class DXRAMGraph implements DXRAMGraphAPI
 	{
 		Chunk chunk = Core.get(p_sourceNodeID);
 		
-		// realloc bigger chunk
-		Core.remove(chunk.getChunkID());
-		Chunk reallocedChunk = Core.createNewChunk(chunkFrom.getData().capacity() + Long.BYTES);
-		reallocedChunk.getData().put(chunkFrom.getData());
-		reallocedChunk.getData().putLong(chunkFrom.getData().capacity(), chunkIDTo);
-		// increase outgoing edges count
-		int outgoingEdges = reallocedChunk.getData().getInt(0);
-		reallocedChunk.getData().putInt(0, outgoingEdges + 1);
-		
-		chunkFrom = reallocedChunk;
+//		// realloc bigger chunk
+//		Core.remove(chunk.getChunkID());
+//		Chunk reallocedChunk = Core.createNewChunk(chunkFrom.getData().capacity() + Long.BYTES);
+//		reallocedChunk.getData().put(chunkFrom.getData());
+//		reallocedChunk.getData().putLong(chunkFrom.getData().capacity(), chunkIDTo);
+//		// increase outgoing edges count
+//		int outgoingEdges = reallocedChunk.getData().getInt(0);
+//		reallocedChunk.getData().putInt(0, outgoingEdges + 1);
+//		
+//		chunkFrom = reallocedChunk;
+		return -1;
 	}
 
 

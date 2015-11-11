@@ -35,7 +35,6 @@ public class LinkedListBenchmark
 		Stopwatch.printAndStop();
 		System.out.println("Walking linked list done, total elements touched: " + itemsTouched);
 		
-		Core.close();
 		System.out.println("Done");
 	}
 	
@@ -56,8 +55,6 @@ public class LinkedListBenchmark
 			previousChunk = chunk;
 		}
 		
-		// make sure to not forget the last one
-		// TODO replace with invalid chunkid
 		previousChunk.getData().putLong(-1);
 		Core.put(previousChunk);
 		

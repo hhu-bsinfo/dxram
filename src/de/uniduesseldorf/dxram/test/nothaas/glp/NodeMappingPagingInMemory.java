@@ -4,6 +4,7 @@ import java.util.Iterator;
 
 import de.uniduesseldorf.dxram.core.chunk.storage.PagingTable;
 import de.uniduesseldorf.dxram.core.chunk.storage.SmallObjectHeap;
+import de.uniduesseldorf.dxram.core.chunk.storage.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Pair;
 
@@ -14,7 +15,7 @@ public class NodeMappingPagingInMemory implements NodeMapping
 	
 	public NodeMappingPagingInMemory() throws MemoryException
 	{
-		m_rawMemory = new SmallObjectHeap();
+		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 		// 1GB ram and 128mb segments  
 		m_rawMemory.initialize(1024 * 1024 * 1024 * 2L, 1024 * 1024 * 128);
 		m_nodeMappingTable = new PagingTable();

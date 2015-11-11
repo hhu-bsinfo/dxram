@@ -646,7 +646,7 @@ public final class SmallObjectHeap {
 		try {
 			segment.setCustomState(p_address, p_customState);
 		} finally {
-			segment.lockManage();
+			segment.unlockManage();
 		}
 	}
 
