@@ -3,7 +3,6 @@ package de.uniduesseldorf.dxram.core.chunk.storage;
 import java.util.Arrays;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
 
 /**
@@ -324,8 +323,8 @@ public final class SmallObjectHeapSegment {
 		byte marker;
 		boolean oneByteOverhead = false;
 
-		Contract.checkNotNull(p_sizes, "no sizes given");
-		Contract.check(p_sizes.length > 0, "no sizes given");
+		assert p_sizes != null;
+		assert p_sizes.length > 0;
 
 		ret = new long[p_sizes.length];
 		Arrays.fill(ret, 0);
@@ -403,7 +402,7 @@ public final class SmallObjectHeapSegment {
 		boolean rightFree;
 		long rightSize;
 
-		assertSegmentBounds(p_address);
+		assert assertSegmentBounds(p_address);
 
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		blockSize = getSizeMemoryBlock(p_address);
@@ -543,7 +542,7 @@ public final class SmallObjectHeapSegment {
 		int lengthFieldSize;
 		int size;
 		
-		assertSegmentBounds(p_address);
+		assert assertSegmentBounds(p_address);
 
 		// skip length byte(s)
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
@@ -564,8 +563,8 @@ public final class SmallObjectHeapSegment {
 	 *             if the memory could not be set
 	 */
 	public void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
-		assertSegmentBounds(p_address, p_size);
-		assertSegmentMaxBlocksize(p_size);
+		assert assertSegmentBounds(p_address, p_size);
+		assert assertSegmentMaxBlocksize(p_size);
 
 		try {
 			int lengthFieldSize;
@@ -603,7 +602,7 @@ public final class SmallObjectHeapSegment {
 	 *             If accessing memory failed.
 	 */
 	public byte readByte(final long p_address, final long p_offset) throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -613,8 +612,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte read exceeds bounds");
+			assert p_offset < size;
+			assert size >= Byte.BYTES && p_offset + Byte.BYTES <= size;
 
 			return m_memory.readByte(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
@@ -645,7 +644,7 @@ public final class SmallObjectHeapSegment {
 	 *             If accessing memory failed.
 	 */
 	public short readShort(final long p_address, final long p_offset) throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -655,8 +654,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size, "Short read exceeds bounds");
+			assert p_offset < size;
+			assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
 
 			return m_memory.readShort(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
@@ -687,7 +686,7 @@ public final class SmallObjectHeapSegment {
 	 *             If accessing memory failed.
 	 */
 	public int readInt(final long p_address, final long p_offset) throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -697,8 +696,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size, "Int read exceeds bounds");
+			assert p_offset < size;
+			assert size >= Integer.BYTES && p_offset + Integer.BYTES <= size;
 
 			return m_memory.readInt(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
@@ -729,7 +728,7 @@ public final class SmallObjectHeapSegment {
 	 *             If accessing memory failed.
 	 */
 	public long readLong(final long p_address, final long p_offset) throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -739,8 +738,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Long.BYTES || p_offset + Long.BYTES <= size, "Long read exceeds bounds");
+			assert p_offset < size;
+			assert size >= Long.BYTES || p_offset + Long.BYTES <= size;
 
 			return m_memory.readLong(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
@@ -772,7 +771,7 @@ public final class SmallObjectHeapSegment {
 	 *             If accessing memory failed.
 	 */
 	public byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		byte[] ret;
 		int lengthFieldSize;
@@ -782,7 +781,7 @@ public final class SmallObjectHeapSegment {
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		size = (int) read(p_address, lengthFieldSize);
 
-		Contract.check(p_offset < size, "Offset out of bounds");
+		assert p_offset < size;
 
 		try {
 			ret = new byte[(int) (size - p_offset)];
@@ -824,7 +823,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public void writeByte(final long p_address, final long p_offset, final byte p_value)
 			throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -834,8 +833,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Byte.BYTES && p_offset + Byte.BYTES <= size, "Byte won't fit into allocated memory");
+			assert p_offset < size;
+			assert size >= Byte.BYTES && p_offset + Byte.BYTES <= size;
 
 			m_memory.writeByte(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
@@ -869,7 +868,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public void writeShort(final long p_address, final long p_offset, final short p_value)
 			throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -879,9 +878,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Short.BYTES && p_offset + Short.BYTES <= size,
-					"Short won't fit into allocated memory");
+			assert p_offset < size;
+			assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
 
 			m_memory.writeShort(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
@@ -915,7 +913,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public void writeInt(final long p_address, final long p_offset, final int p_value)
 			throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -925,9 +923,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Integer.BYTES && p_offset + Integer.BYTES <= size,
-					"Int won't fit into allocated memory");
+			assert p_offset < size;
+			assert size >= Integer.BYTES && p_offset + Integer.BYTES <= size;
 
 			m_memory.writeInt(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
@@ -961,7 +958,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public void writeLong(final long p_address, final long p_offset, final long p_value)
 			throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		try {
 			int lengthFieldSize;
@@ -971,8 +968,8 @@ public final class SmallObjectHeapSegment {
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 			size = (int) read(p_address, lengthFieldSize);
 
-			Contract.check(p_offset < size, "Offset out of bounds");
-			Contract.check(size >= Long.BYTES && p_offset + Long.BYTES <= size, "Long won't fit into allocated memory");
+			assert p_offset < size;
+			assert size >= Long.BYTES && p_offset + Long.BYTES <= size;
 
 			m_memory.writeLong(p_address + lengthFieldSize + p_offset, p_value);
 		} catch (final Throwable e) {
@@ -1024,7 +1021,7 @@ public final class SmallObjectHeapSegment {
 	 */
 	public void writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_length)
 			throws MemoryException {
-		assertSegmentBounds(p_address, p_offset);
+		assert assertSegmentBounds(p_address, p_offset);
 
 		int lengthFieldSize;
 		int size;
@@ -1033,8 +1030,8 @@ public final class SmallObjectHeapSegment {
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		size = (int) read(p_address, lengthFieldSize);
 
-		Contract.check(p_offset < size, "Offset out of bounds");
-		Contract.check(p_offset + p_length <= size, "Array won't fit memory");
+		assert p_offset < size;
+		assert p_offset + p_length <= size;
 
 		try {
 			offset = p_address + lengthFieldSize + p_offset;
@@ -1058,7 +1055,7 @@ public final class SmallObjectHeapSegment {
 		int marker;
 		int ret;
 
-		assertSegmentBounds(p_address);
+		assert assertSegmentBounds(p_address);
 
 		marker = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
 		if (marker == SINGLE_BYTE_MARKER || marker <= OCCUPIED_FLAGS_OFFSET) {
@@ -1086,7 +1083,7 @@ public final class SmallObjectHeapSegment {
 		int lengthFieldSize;
 		int size;
 
-		assertSegmentBounds(p_address);
+		assert assertSegmentBounds(p_address);
 
 		if (!(p_customState >= 0 && p_customState < 3)) {
 			throw new MemoryException("Custom state (" + p_customState + ") out of range, addr: " + p_address);
@@ -1117,7 +1114,7 @@ public final class SmallObjectHeapSegment {
 	public int getSizeMemoryBlock(final long p_address) throws MemoryException {
 		int lengthFieldSize;
 
-		assertSegmentBounds(p_address);
+		assert assertSegmentBounds(p_address);
 
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 		return (int) read(p_address, lengthFieldSize);
@@ -1143,8 +1140,8 @@ public final class SmallObjectHeapSegment {
 	public static int getRequiredMemory(final int... p_sizes) {
 		int ret;
 
-		Contract.checkNotNull(p_sizes, "no sizes given");
-		Contract.check(p_sizes.length > 0, "no sizes given");
+		assert p_sizes != null;
+		assert p_sizes.length > 0;
 
 		ret = 0;
 		for (final int size : p_sizes) {
@@ -1174,10 +1171,12 @@ public final class SmallObjectHeapSegment {
 	 * @param p_address Address to check if within segment.
 	 * @throws MemoryException If address not within segment bounds.
 	 */
-	private void assertSegmentBounds(final long p_address) throws MemoryException {
+	private boolean assertSegmentBounds(final long p_address) throws MemoryException {
 		if (p_address < m_base || p_address > m_base + m_fullSize) {
 			throw new MemoryException("Address " + p_address + " is not within segment: " + this);
 		}
+		
+		return true;
 	}
 
 	/**
@@ -1186,12 +1185,14 @@ public final class SmallObjectHeapSegment {
 	 * @param p_length Number of bytes starting at address.
 	 * @throws MemoryException If address and specified length not within segment bounds.
 	 */
-	private void assertSegmentBounds(final long p_address, final long p_length) throws MemoryException {
+	private boolean assertSegmentBounds(final long p_address, final long p_length) throws MemoryException {
 		if (p_address < m_base || p_address > m_base + m_fullSize
 			|| p_address + p_length < m_base || p_address + p_length > m_base + m_fullSize) {
 			throw new MemoryException("Address " + p_address
 					+ " with length " + p_length + "is not within segment: " + this);
 		}
+		
+		return true;
 	}
 
 	/**
@@ -1199,11 +1200,13 @@ public final class SmallObjectHeapSegment {
 	 * @param p_size Size to check if not exceeding max blocksize.
 	 * @throws MemoryException If size exceeds max blocksize.
 	 */
-	public void assertSegmentMaxBlocksize(final long p_size) throws MemoryException {
+	public boolean assertSegmentMaxBlocksize(final long p_size) throws MemoryException {
 		if (p_size > MAX_SIZE_MEMORY_BLOCK) {
 			throw new MemoryException("Size " + p_size
 					+ " exceeds max blocksize " + MAX_SIZE_MEMORY_BLOCK + " of segment: " + this);
 		}
+		
+		return true;
 	}
 
 	/**

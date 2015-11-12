@@ -207,11 +207,7 @@ public final class CIDTable {
 	public long get(final long p_chunkID) throws MemoryException {
 		long ret;
 
-		readLock(m_nodeIDTableDirectory);
-
 		ret = getEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
-
-		readUnlock(m_nodeIDTableDirectory);
 
 		return ret;
 	}
@@ -233,23 +229,22 @@ public final class CIDTable {
 		long index;
 		long entry;
 
-		readLock(p_addressTable);
-
 		if (p_level == LID_TABLE_LEVELS) {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
 		} else {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
-		entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
+		
 		if (p_level > 0) {
+			entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
 			if (entry > 0) {
 				ret = getEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
-			ret = entry;
-		}
-
-		readUnlock(p_addressTable);
+			readLock(p_addressTable);
+			entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
+			readUnlock(p_addressTable);
+		}		
 
 		return ret;
 	}
