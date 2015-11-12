@@ -2,7 +2,6 @@
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 
 import de.uniduesseldorf.dxram.commands.CmdUtils;
@@ -241,9 +240,9 @@ public final class CIDTable {
 				ret = getEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
-			readLock(p_addressTable);
+			//readLock(p_addressTable);
 			entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
-			readUnlock(p_addressTable);
+			//readUnlock(p_addressTable);
 		}		
 
 		return ret;
@@ -285,7 +284,7 @@ public final class CIDTable {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
 		if (p_level > 0) {
-			writeLock(p_addressTable);
+			//writeLock(p_addressTable);
 
 			// Read table entry
 			entry = readEntry(p_addressTable, index);
@@ -294,20 +293,20 @@ public final class CIDTable {
 				writeEntry(p_addressTable, index, entry);
 			}
 
-			writeUnlock(p_addressTable);
+			//writeUnlock(p_addressTable);
 
 			if (entry > 0) {
 				// move on to next table
 				setEntry(p_chunkID, p_addressChunk, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
-			writeLock(p_addressTable);
+			//writeLock(p_addressTable);
 
 			// Set the level 0 entry
 			// valid and active entry, delete flag 0
 			writeEntry(p_addressTable, index, p_addressChunk & BITMASK_ADDRESS);
 
-			writeUnlock(p_addressTable);
+			//writeUnlock(p_addressTable);
 		}
 	}
 
@@ -360,7 +359,7 @@ public final class CIDTable {
 		long index;
 		long entry;
 
-		writeLock(p_addressTable);
+		//writeLock(p_addressTable);
 
 		if (p_level == LID_TABLE_LEVELS) {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & NID_LEVEL_BITMASK;
@@ -394,7 +393,7 @@ public final class CIDTable {
 			}
 		}
 
-		writeUnlock(p_addressTable);
+		//writeUnlock(p_addressTable);
 
 		return ret;
 	}
@@ -411,7 +410,7 @@ public final class CIDTable {
 
 		if (m_store != null) {
 
-			readLock(m_nodeIDTableDirectory);
+			//readLock(m_nodeIDTableDirectory);
 
 			ret = new ArrayList<Long>();
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
@@ -421,7 +420,7 @@ public final class CIDTable {
 				}
 			}
 
-			readUnlock(m_nodeIDTableDirectory);
+			//readUnlock(m_nodeIDTableDirectory);
 		}
 
 		return ret;
@@ -441,7 +440,7 @@ public final class CIDTable {
 
 		if (m_store != null) {
 
-			readLock(m_nodeIDTableDirectory);
+			//readLock(m_nodeIDTableDirectory);
 
 			ret = new ArrayList<Long>();
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
@@ -454,7 +453,7 @@ public final class CIDTable {
 				}
 			}
 
-			readUnlock(m_nodeIDTableDirectory);
+			//readUnlock(m_nodeIDTableDirectory);
 		}
 
 		/*
@@ -832,7 +831,7 @@ public final class CIDTable {
 			boolean ret = false;
 			long entry;
 
-			writeLock(p_addressTable);
+			//writeLock(p_addressTable);
 
 			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 				// Read table entry
@@ -890,63 +889,63 @@ public final class CIDTable {
 				}
 			}
 
-			writeUnlock(p_addressTable);
+			//writeUnlock(p_addressTable);
 
 			return ret;
 		}
 	}
 	
-	/**
-	 * Locks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void readLock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.readLock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.readLock(p_address + LID_LOCK_OFFSET);
-		}
-	}
-
-	/**
-	 * Unlocks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void readUnlock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.readUnlock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.readUnlock(p_address + LID_LOCK_OFFSET);
-		}
-	}
-
-	/**
-	 * Locks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void writeLock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.writeLock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.writeLock(p_address + LID_LOCK_OFFSET);
-		}
-	}
-
-	/**
-	 * Unlocks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	private void writeUnlock(final long p_address) {
-		if (p_address == m_nodeIDTableDirectory) {
-			m_rawMemory.writeUnlock(p_address + NID_LOCK_OFFSET);
-		} else {
-			m_rawMemory.writeUnlock(p_address + LID_LOCK_OFFSET);
-		}
-	}
+//	/**
+//	 * Locks the read lock
+//	 * @param p_address
+//	 *            the address of the lock
+//	 */
+//	private void readLock(final long p_address) {
+//		if (p_address == m_nodeIDTableDirectory) {
+//			m_rawMemory.readLock(p_address + NID_LOCK_OFFSET);
+//		} else {
+//			m_rawMemory.readLock(p_address + LID_LOCK_OFFSET);
+//		}
+//	}
+//
+//	/**
+//	 * Unlocks the read lock
+//	 * @param p_address
+//	 *            the address of the lock
+//	 */
+//	private void readUnlock(final long p_address) {
+//		if (p_address == m_nodeIDTableDirectory) {
+//			m_rawMemory.readUnlock(p_address + NID_LOCK_OFFSET);
+//		} else {
+//			m_rawMemory.readUnlock(p_address + LID_LOCK_OFFSET);
+//		}
+//	}
+//
+//	/**
+//	 * Locks the write lock
+//	 * @param p_address
+//	 *            the address of the lock
+//	 */
+//	private void writeLock(final long p_address) {
+//		if (p_address == m_nodeIDTableDirectory) {
+//			m_rawMemory.writeLock(p_address + NID_LOCK_OFFSET);
+//		} else {
+//			m_rawMemory.writeLock(p_address + LID_LOCK_OFFSET);
+//		}
+//	}
+//
+//	/**
+//	 * Unlocks the write lock
+//	 * @param p_address
+//	 *            the address of the lock
+//	 */
+//	private void writeUnlock(final long p_address) {
+//		if (p_address == m_nodeIDTableDirectory) {
+//			m_rawMemory.writeUnlock(p_address + NID_LOCK_OFFSET);
+//		} else {
+//			m_rawMemory.writeUnlock(p_address + LID_LOCK_OFFSET);
+//		}
+//	}
 
 	/**
 	 * Stores free LocalIDs

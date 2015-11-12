@@ -36,7 +36,7 @@ public final class SmallObjectHeapSegment {
 	Status m_status;
 	long m_assignedThread;
 
-	JNIReadWriteSpinLock m_lock;
+	//JNIReadWriteSpinLock m_lock;
 
 	long[] m_freeBlockListSizes;
 
@@ -61,7 +61,7 @@ public final class SmallObjectHeapSegment {
 		m_base = p_base;
 		m_fullSize = p_size;
 
-		m_lock = new JNIReadWriteSpinLock();
+		//m_lock = new JNIReadWriteSpinLock();
 
 		// according to segment size, have a proper amount of
 		// free memory block lists
@@ -135,55 +135,55 @@ public final class SmallObjectHeapSegment {
 		m_assignedThread = 0;
 	}
 
-	/**
-	 * Lock this segment for normal access,
-	 * i.e. userdata read/write operations.
-	 */
-	public void lockAccess() {
-		m_lock.readLock().lock();
-	}
-
-	/**
-	 * Try to lock this segment for normal access,
-	 * i.e. userdata read/write operations.
-	 * @return True if locking was successful, false otherwise.
-	 */
-	public boolean tryLockAccess() {
-		return m_lock.readLock().tryLock();
-	}
-
-	/**
-	 * Unlock this segment after normal access,
-	 * i.e. userdata read/write operations.
-	 */
-	public void unlockAccess() {
-		m_lock.readLock().unlock();
-	}
-
-	/**
-	 * Lock this segment for managing access,
-	 * i.e. malloc/free operations.
-	 */
-	public void lockManage() {
-		m_lock.writeLock().lock();
-	}
-
-	/**
-	 * Try to lock this segment for managing access,
-	 * i.e. malloc/free operations.
-	 * @return True if locking was successful, false otherwise.
-	 */
-	public boolean tryLockManage() {
-		return m_lock.writeLock().tryLock();
-	}
-
-	/**
-	 * Unlock this segment after managing access,
-	 * i.e. malloc/free operations.
-	 */
-	public void unlockManage() {
-		m_lock.writeLock().unlock();
-	}
+//	/**
+//	 * Lock this segment for normal access,
+//	 * i.e. userdata read/write operations.
+//	 */
+//	public void lockAccess() {
+//		m_lock.readLock().lock();
+//	}
+//
+//	/**
+//	 * Try to lock this segment for normal access,
+//	 * i.e. userdata read/write operations.
+//	 * @return True if locking was successful, false otherwise.
+//	 */
+//	public boolean tryLockAccess() {
+//		return m_lock.readLock().tryLock();
+//	}
+//
+//	/**
+//	 * Unlock this segment after normal access,
+//	 * i.e. userdata read/write operations.
+//	 */
+//	public void unlockAccess() {
+//		m_lock.readLock().unlock();
+//	}
+//
+//	/**
+//	 * Lock this segment for managing access,
+//	 * i.e. malloc/free operations.
+//	 */
+//	public void lockManage() {
+//		m_lock.writeLock().lock();
+//	}
+//
+//	/**
+//	 * Try to lock this segment for managing access,
+//	 * i.e. malloc/free operations.
+//	 * @return True if locking was successful, false otherwise.
+//	 */
+//	public boolean tryLockManage() {
+//		return m_lock.writeLock().tryLock();
+//	}
+//
+//	/**
+//	 * Unlock this segment after managing access,
+//	 * i.e. malloc/free operations.
+//	 */
+//	public void unlockManage() {
+//		m_lock.writeLock().unlock();
+//	}
 
 	/**
 	 * Gets the current fragmentation in percentage

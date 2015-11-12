@@ -97,7 +97,7 @@ public final class MemoryManagementTest {
 	private static void init(final int p_chunkCount, final int p_threadCount) throws MemoryException {
 
 		m_memoryManager = new MemoryManager();
-		m_memoryManager.initialize(1073741824L * 8, 1073741824L, false);
+		m_memoryManager.initialize(1073741824L * 8, 1073741824L * 8, false);
 	}
 
 	/**
@@ -147,12 +147,14 @@ public final class MemoryManagementTest {
 						try {
 							long chunkID;
 							
+							m_memoryManager.lockManage();
 							chunkID = m_memoryManager.getNextLocalID().getLocalID();
 							//data = new byte[random.nextInt(49) + 16];
 							data = new byte[16]; // TODO have chunk size setable (range as well)
 							chunk = new Chunk(chunkID, data, 0);
 
 							m_memoryManager.put(chunk);
+							m_memoryManager.unlockManage();
 							//chunk.getData().put(data);
 							//Core.put(chunk);
 						} catch (final DXRAMException e) {
@@ -203,7 +205,9 @@ public final class MemoryManagementTest {
 
 					for (int i = 1; i <= count; i++) {
 						try {
+							//m_memoryManager.lockAccess();
 							m_memoryManager.get(i);
+							//m_memoryManager.unlockAccess();
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
 						}

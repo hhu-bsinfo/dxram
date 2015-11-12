@@ -56,13 +56,13 @@ public final class HeapWalker {
 		Segment resultsSegment;
 		resultsSegment = new Segment();
 
-		p_segment.lockManage();
+		//p_segment.lockManage();
 
 		resultsSegment.m_segmentBlock = walkSegmentMetadata(p_segment);
 		resultsSegment.m_memoryBlocks = walkMemoryBlocks(p_segment);
 		resultsSegment.m_freeBlockLists = walkMemoryFreeBlockList(p_segment);
 
-		p_segment.unlockManage();
+		//p_segment.unlockManage();
 
 		return resultsSegment;
 	}
