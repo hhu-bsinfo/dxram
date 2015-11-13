@@ -39,7 +39,6 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.UnlockMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
-import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
@@ -199,7 +198,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	@Override
 	public Chunk create(final int p_size) throws DXRAMException {
 		Chunk ret = null;
-		LIDElement localIDElement;
+		CIDElement localIDElement;
 
 		Operation.CREATE.enter();
 
@@ -220,7 +219,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	@Override
 	public Chunk[] create(final int[] p_sizes) throws DXRAMException {
 		Chunk[] ret = null;
-		final LIDElement[] localIDElements;
+		final CIDElement[] localIDElements;
 
 		Operation.MULTI_CREATE.enter();
 

@@ -147,17 +147,21 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public void readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
+	public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		assert p_ptr + p_length <= m_size;
+		
+		int bytesRead = -1;
 
 		try {
 			m_file.seek(p_ptr);
-			m_file.read(p_array, p_arrayOffset, p_length);
+			bytesRead = m_file.read(p_array, p_arrayOffset, p_length);
 		} catch (final IOException e) {
 			throw new MemoryException("reading bytes failed " + e);
 		}
+		
+		return bytesRead;
 	}
 
 	@Override
@@ -229,29 +233,39 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public void writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException {
+	public int writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException {
 		assert p_ptr >= 0;
 		assert p_ptr + p_array.length <= m_size;
 
+		int bytesWritten = -1;
+		
 		try {
 			m_file.seek(p_ptr);
 			m_file.write(p_array);
+			bytesWritten = p_array.length;
 		} catch (final IOException e) {
 			throw new MemoryException("writing failed " + e);
 		}
+		
+		return bytesWritten;
 	}
 
 	@Override
-	public void writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
+	public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
 		assert p_ptr >= 0;
 		assert p_ptr + p_array.length <= m_size;
 
+		int bytesWritten = -1;
+		
 		try {
 			m_file.seek(p_ptr);
 			m_file.write(p_array, p_arrayOffset, p_length);
+			bytesWritten = p_array.length;
 		} catch (final IOException e) {
 			throw new MemoryException("writing failed " + e);
 		}
+		
+		return bytesWritten;
 	}
 
 	@Override

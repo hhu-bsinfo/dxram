@@ -20,11 +20,12 @@ import de.uniduesseldorf.dxram.utils.locks.ReadWriteSpinLock;
  * @author Florian Klein
  *         13.02.2014
  */
+// TODO better doc
+// TODO get rid of exceptions? -> have proper return values like -1
+// to indicate something failed?
 public final class MemoryManager {
 
-	// Attributes
-	private AtomicLong m_nextLocalID;
-
+	private long m_nodeID;
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	private JNIReadWriteSpinLock m_lock;
@@ -33,7 +34,10 @@ public final class MemoryManager {
 	/**
 	 * Creates an instance of MemoryManager
 	 */
-	public MemoryManager() {}
+	public MemoryManager(final long p_nodeID) 
+	{
+		m_nodeID = p_nodeID;
+	}
 
 	// Methods
 	/**
@@ -55,11 +59,9 @@ public final class MemoryManager {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 		}
 
-		m_nextLocalID = new AtomicLong(1);
-
 		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 		ret = m_rawMemory.initialize(p_size, p_segmentSize);
-		m_cidTable = new CIDTable();
+		m_cidTable = new CIDTable(m_nodeID);
 		m_cidTable.initialize(m_rawMemory);
 		
 		m_lock = new JNIReadWriteSpinLock();
@@ -78,7 +80,6 @@ public final class MemoryManager {
 
 		m_cidTable = null;
 		m_rawMemory = null;
-		m_nextLocalID = null;
 		m_lock = null;
 	}
 	
@@ -255,35 +256,27 @@ public final class MemoryManager {
 		return version;
 	}
 
-	public long create(final int p_size)
+	public long create(final int p_size) throws MemoryException
 	{
 		assert p_size > 0;
 		
 		long address = -1;
-		long chunkSize = -1;
+		int chunkSize = -1;
 		LIDElement lid = null;
 		
-		// Try to get free ID from the CIDTable
-		try {
-			lid = m_cidTable.getFreeLID();
-		} catch (final DXRAMException e) {}
-
-		// If no free ID exist, get next local ID
-		if (lid == null) {
-			lid = new LIDElement(m_nextLocalID.getAndIncrement(), 0);
-		}	
-		
-		// TODO increment version if existing LID reused?
+		// get new LID from CIDTable
+		// TODO this is the lid only, but we want the CID for the new chunk?
+		lid = m_cidTable.getFreeLID();
 		
 		assert lid.getVersion() >= 0;
 		
 		chunkSize = p_size + getSizeVersion(lid.getVersion());		
 			
 		// first, try to allocate. maybe early return
-		address = m_rawMemory.malloc(p_size);
+		address = m_rawMemory.malloc(chunkSize);
 		if (address >= 0) {
 			// register new chunk
-			m_cidTable.set(lid.getLocalID(), address);
+			m_cidTable.set(lid.getLocalID(), address); // TODO add NID to LID
 			
 			writeVersion(address, lid.getVersion());
 		}
@@ -298,21 +291,110 @@ public final class MemoryManager {
 		return address;
 	}
 	
-	public int getSize(final long p_chunkID)
+	// gets the size of the block (payload only, i.e. minus size for version
+	public int getSize(final long p_chunkID) throws MemoryException
 	{
+		long address = -1;
+		int size = -1;
 		
+		address = m_cidTable.get(p_chunkID);
+		if (address > 0)
+		{
+			size = m_rawMemory.getSizeBlock(address) - getSizeVersion(readVersion(address));
+		}
+		
+		return size;
 	}
 	
-	public int get(final long p_chunkID, byte[] p_buffer, int p_offset, int p_length)
+	public int get(final long p_chunkID, byte[] p_buffer, int p_offset, int p_length) throws MemoryException
 	{
+		long address;
+		int bytesRead = -1;
 		
+		address = m_cidTable.get(p_chunkID);
+		if (address > 0)
+		{
+			int sizeVersion;
+			
+			sizeVersion = getSizeVersion(readVersion(address));
+			bytesRead = m_rawMemory.readBytes(address, sizeVersion, p_buffer, p_offset, p_length);
+		}
+		
+		return bytesRead;
 	}
 	
-	public int put(final long p_chunkID, byte[] p_buffer, int p_offset, int p_length)
+	public int getVersion(final long p_chunkID) throws MemoryException
+	{
+		long address = 0;
+		int version = -1;
+		
+		address = m_cidTable.get(p_chunkID);
+		if (address > 0)
+		{
+			version = readVersion(address);
+		}
+		
+		return version;
+	}
+	
+	public boolean triggersReallocOnNextVersion(final int p_version)
+	{
+		return getSizeVersion(p_version) != getSizeVersion(p_version + 1);
+	}
+	
+	// call triggersReallocOnNextVersion to check 
+	// if a realloc is going to happen when incrementing the
+	// version and make sure to write lock this call instead
+	// of read locking
+	public void incrementVersion(final long p_chunkID)
+	{
+		int curVersion;
+		int sizeVersion;
+		int sizeVersionNext;
+		
+		address = m_cidTable.get(p_chunkID);
+		if (address > 0)
+		{
+			curVersion = readVersion(address);
+			sizeVersion = getSizeVersion(curVersion);
+			sizeVersionNext = getSizeVersion(curVersion + 1);
+			
+			// check if we have to reallocate due to version growth
+			if (sizeVersion != sizeVersionNext)
+			{
+				int sizePayload;
+				
+				// skip version and read payload
+				byte[] payload = m_rawMemory.readBytes(address, sizeVersion);
+			
+				m_rawMemory.free(p_address);
+			}
+			
+			writeVersion(address, sizeVersion + 1);
+		}
+	}
+	
+	// note: this does NOT update the version due to possible reallocation 
+	// on dynamic version field
+	public int put(final long p_chunkID, byte[] p_buffer, int p_offset, int p_length) throws MemoryException
 	{
 		// TODO check when incrementing version
 		// if we have to reallocate first, then reallocate
 		// and make sure to write version again
+		
+		long address;
+		int bytesWritten = -1;
+		
+		address = m_cidTable.get(p_chunkID);
+		if (address > 0)
+		{
+			int sizeVersion = -1;
+			
+			sizeVersion = getSizeVersion(readVersion(address));
+			bytesWritten = m_rawMemory.writeBytes(address, sizeVersion, p_buffer, p_offset, p_length);
+		}
+		
+		return bytesWritten;
 	}
 	
 	public int resize(final long p_chunkID, final int p_newSize)
@@ -329,7 +411,7 @@ public final class MemoryManager {
 	 * Gets the next free local ID
 	 * @return the next free local ID
 	 */
-	public LIDElement getNextLocalID() {
+	public CIDElement getNextLocalID() {
 
 
 		return ret;
@@ -341,12 +423,12 @@ public final class MemoryManager {
 	 *            the number of free local IDs
 	 * @return the next free local IDs
 	 */
-	public LIDElement[] getNextLocalIDs(final int p_count) {
-		LIDElement[] ret = null;
+	public CIDElement[] getNextLocalIDs(final int p_count) {
+		CIDElement[] ret = null;
 		int count = 0;
 		long localID;
 
-		ret = new LIDElement[p_count];
+		ret = new CIDElement[p_count];
 		for (int i = 0; i < p_count; i++) {
 			try {
 				ret[i] = m_cidTable.getFreeLID();
@@ -360,7 +442,7 @@ public final class MemoryManager {
 		count = 0;
 		for (int i = 0; i < p_count; i++) {
 			if (ret[i] == null) {
-				ret[i] = new LIDElement(localID + count++, 0);
+				ret[i] = new CIDElement(localID + count++, 0);
 			}
 		}
 

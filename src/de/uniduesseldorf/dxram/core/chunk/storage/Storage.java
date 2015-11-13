@@ -76,7 +76,7 @@ public interface Storage {
 	 * @param p_length Number of bytes to read from specified start.
 	 * @throws MemoryException If reading fails.
 	 */
-	void readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException;
+	int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException;
 
 	/**
 	 * Read a single byte value.
@@ -121,7 +121,7 @@ public interface Storage {
 	 * @param p_array Array with data to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	void writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException;
+	int writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException;
 
 	/**
 	 * Write an array of bytes to the storage.
@@ -132,7 +132,7 @@ public interface Storage {
 	 * @param p_length Number of bytes to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	void writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException;
+	int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException;
 
 	/**
 	 * Write a single byte value to the storage.

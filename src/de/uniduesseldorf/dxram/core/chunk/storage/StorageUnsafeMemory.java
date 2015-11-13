@@ -116,14 +116,19 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
+	public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length <= m_memorySize;
 
+		int bytesRead = 0;
+		
 		for (int i = 0; i < p_length; i++) {
 			p_array[p_arrayOffset + i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
+			bytesRead++;
 		}
+		
+		return bytesRead;
 	}
 
 	@Override
@@ -159,24 +164,24 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException {
-		assert p_ptr >= 0;
-		assert p_ptr + p_array.length <= m_memorySize;
-
-		for (int i = 0; i < p_array.length; i++) {
-			UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[i]);
-		}
+	public int writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException {
+		return writeBytes(p_ptr, p_array, 0, p_array.length);
 	}
 
 	@Override
-	public void writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length)
+	public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length)
 			throws MemoryException {
 		assert p_ptr >= 0;
 		assert p_ptr + p_length <= m_memorySize;
 
+		int bytesWritten = 0;
+		
 		for (int i = 0; i < p_length; i++) {
 			UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
+			bytesWritten++;
 		}
+		
+		return bytesWritten;
 	}
 
 	@Override

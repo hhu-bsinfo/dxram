@@ -15,7 +15,7 @@ import de.uniduesseldorf.dxram.utils.Tools;
  * write calls are handled in this class.
  *
  * @author Florian Klein 13.02.2014
- * @author @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public final class SmallObjectHeap {
 
@@ -25,7 +25,6 @@ public final class SmallObjectHeap {
 
 	protected long m_segmentSize;
 	protected SmallObjectHeapSegment[] m_segments;
-	//private ArenaManager m_arenaManager;
 
 	// Constructors
 	/**
@@ -136,24 +135,6 @@ public final class SmallObjectHeap {
 			if (ret != -1)
 				break;
 		}
-//		segment = m_arenaManager.enterArenaOnMalloc(threadID, p_size + SmallObjectHeapSegment.MAX_LENGTH_FIELD);
-//		try {
-//			// Try to allocate in the current segment
-//			ret = segment.malloc(p_size);
-//
-//			// Try to allocate in another segment
-//			if (ret == -1) {
-//				segment = m_arenaManager.assignNewSegmentOnMalloc(threadID, segment, p_size + SmallObjectHeapSegment.MAX_LENGTH_FIELD);
-//
-//				ret = segment.malloc(p_size);
-//				if (ret == -1) {
-//					printDebugInfos();
-//					throw new MemoryException("Could not allocate memory of size " + p_size);
-//				}
-//			}
-//		} finally {
-//			m_arenaManager.leaveArenaOnMalloc(threadID, segment);
-//		}
 
 		return ret;
 	}
@@ -169,12 +150,7 @@ public final class SmallObjectHeap {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockManage();
-		try {
-			segment.free(p_address);
-		} finally {
-			//segment.unlockManage();
-		}
+		segment.free(p_address);
 	}
 	
 	/**
@@ -188,12 +164,7 @@ public final class SmallObjectHeap {
 		int size = -1;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			size = segment.getSizeBlock(p_address);
-		} finally {
-			//segment.unlockAccess();
-		}	
+		size = segment.getSizeBlock(p_address);
 		
 		return size;
 	}
@@ -213,12 +184,7 @@ public final class SmallObjectHeap {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			segment.set(p_address, p_size, p_value);
-		} finally {
-			//segment.unlockAccess();
-		}
+		segment.set(p_address, p_size, p_value);
 	}
 
 	/**
@@ -248,12 +214,7 @@ public final class SmallObjectHeap {
 		byte val;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			val = segment.readByte(p_address, p_offset);
-		} finally {
-			//segment.unlockAccess();
-		}
+		val = segment.readByte(p_address, p_offset);
 
 		return val;
 	}
@@ -285,12 +246,7 @@ public final class SmallObjectHeap {
 		short val;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			val = segment.readShort(p_address, p_offset);
-		} finally {
-			//segment.unlockAccess();
-		}
+		val = segment.readShort(p_address, p_offset);
 
 		return val;
 	}
@@ -322,12 +278,7 @@ public final class SmallObjectHeap {
 		int val;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			val = segment.readInt(p_address, p_offset);
-		} finally {
-			//segment.unlockAccess();
-		}
+		val = segment.readInt(p_address, p_offset);
 
 		return val;
 	}
@@ -359,12 +310,7 @@ public final class SmallObjectHeap {
 		long val;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			val = segment.readLong(p_address, p_offset);
-		} finally {
-			//segment.unlockAccess();
-		}
+		val = segment.readLong(p_address, p_offset);
 
 		return val;
 	}
@@ -397,14 +343,20 @@ public final class SmallObjectHeap {
 		byte[] vals;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			vals = segment.readBytes(p_address, p_offset);
-		} finally {
-			//segment.unlockAccess();
-		}
+		vals = segment.readBytes(p_address, p_offset);
 
 		return vals;
+	}
+	
+	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, int p_offsetArray, int p_length) throws MemoryException
+	{
+		SmallObjectHeapSegment segment;
+		int bytesRead = -1;
+
+		segment = m_segments[(int) (p_address / m_segmentSize)];
+		bytesRead = segment.readBytes(p_address, p_offset, p_buffer, p_offsetArray, p_length);
+
+		return bytesRead;
 	}
 
 	/**
@@ -436,12 +388,7 @@ public final class SmallObjectHeap {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			segment.writeByte(p_address, p_offset, p_value);
-		} finally {
-			//segment.unlockAccess();
-		}
+		segment.writeByte(p_address, p_offset, p_value);
 	}
 
 	/**
@@ -473,12 +420,7 @@ public final class SmallObjectHeap {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			segment.writeShort(p_address, p_offset, p_value);
-		} finally {
-			//segment.unlockAccess();
-		}
+		segment.writeShort(p_address, p_offset, p_value);
 	}
 
 	/**
@@ -510,12 +452,7 @@ public final class SmallObjectHeap {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			segment.writeInt(p_address, p_offset, p_value);
-		} finally {
-			//segment.unlockAccess();
-		}
+		segment.writeInt(p_address, p_offset, p_value);
 	}
 
 	/**
@@ -547,12 +484,7 @@ public final class SmallObjectHeap {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			segment.writeLong(p_address, p_offset, p_value);
-		} finally {
-			//segment.unlockAccess();
-		}
+		segment.writeLong(p_address, p_offset, p_value);
 	}
 
 	/**
@@ -564,8 +496,8 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
-		writeBytes(p_address, 0, p_value);
+	public int writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
+		return writeBytes(p_address, 0, p_value);
 	}
 
 	/**
@@ -579,9 +511,9 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeBytes(final long p_address, final long p_offset, final byte[] p_value)
+	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value)
 			throws MemoryException {
-		writeBytes(p_address, p_offset, p_value, p_value.length);
+		return writeBytes(p_address, p_offset, p_value, 0, p_value.length);
 	}
 
 	/**
@@ -597,17 +529,12 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_length)
+	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length)
 			throws MemoryException {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			segment.writeBytes(p_address, p_offset, p_value, p_length);
-		} finally {
-			//segment.unlockAccess();
-		}
+		return segment.writeBytes(p_address, p_offset, p_value, p_offsetArray, p_length);
 	}
 
 	/**
@@ -623,12 +550,7 @@ public final class SmallObjectHeap {
 		int val;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockAccess();
-		try {
-			val = segment.getCustomState(p_address);
-		} finally {
-			//segment.unlockAccess();
-		}
+		val = segment.getCustomState(p_address);
 
 		return val;
 	}
@@ -647,12 +569,7 @@ public final class SmallObjectHeap {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
-		//segment.lockManage();
-		try {
-			segment.setCustomState(p_address, p_customState);
-		} finally {
-			//segment.unlockManage();
-		}
+		segment.setCustomState(p_address, p_customState);
 	}
 
 	@Override

@@ -60,10 +60,10 @@ public final class Defragmenter implements Runnable {
 				try {
 					fragmentation = m_cidTable.m_rawMemory.getFragmentation();
 
-					table = m_cidTable.getEntry(offset++, m_cidTable.m_nodeIDTableDirectory, 1);
+					table = m_cidTable.getEntry(offset++, m_cidTable.m_addressTableDirectory, 1);
 					if (table == 0) {
 						offset = 0;
-						table = m_cidTable.getEntry(offset++, m_cidTable.m_nodeIDTableDirectory, 1);
+						table = m_cidTable.getEntry(offset++, m_cidTable.m_addressTableDirectory, 1);
 					}
 
 					defragmentTable(table, 1, fragmentation);
@@ -85,7 +85,7 @@ public final class Defragmenter implements Runnable {
 		ret = System.nanoTime();
 
 		fragmentation = m_cidTable.m_rawMemory.getFragmentation();
-		defragmentTable(m_cidTable.m_nodeIDTableDirectory, CIDTable.LID_TABLE_LEVELS - 1, fragmentation);
+		defragmentTable(m_cidTable.m_addressTableDirectory, CIDTable.LID_TABLE_LEVELS - 1, fragmentation);
 
 		ret = System.nanoTime() - ret;
 
