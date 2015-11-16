@@ -12,11 +12,11 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.NodesConfigurationEntry;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.BloomFilter;
 import de.uniduesseldorf.dxram.utils.CRC16;
 import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;

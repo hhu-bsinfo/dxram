@@ -3,9 +3,9 @@ package de.uniduesseldorf.dxram.core.net;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**

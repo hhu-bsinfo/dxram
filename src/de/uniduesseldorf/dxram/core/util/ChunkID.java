@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.api;
+package de.uniduesseldorf.dxram.core.util;
 
 import de.uniduesseldorf.dxram.utils.Contract;
 

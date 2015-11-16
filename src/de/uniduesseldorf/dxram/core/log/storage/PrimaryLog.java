@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * This class implements the primary log. Furthermore this class manages all

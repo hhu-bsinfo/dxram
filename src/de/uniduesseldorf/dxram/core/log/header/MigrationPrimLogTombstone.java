@@ -1,8 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
  * Extends AbstractLogEntryHeader for a migration tombstone (primary log)

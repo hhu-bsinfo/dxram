@@ -1,19 +1,12 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicLong;
-
-import de.uniduesseldorf.dxram.core.api.ChunkID;
-import de.uniduesseldorf.dxram.core.api.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
-import de.uniduesseldorf.dxram.utils.locks.ReadWriteSpinLock;
 
 /**
  * Controls the access to the RawMemory and the CIDTable
@@ -23,6 +16,7 @@ import de.uniduesseldorf.dxram.utils.locks.ReadWriteSpinLock;
 // TODO better doc
 // TODO get rid of exceptions? -> have proper return values like -1
 // to indicate something failed?
+// TODO get rid of references into core
 public final class MemoryManager {
 
 	private long m_nodeID;
@@ -256,16 +250,17 @@ public final class MemoryManager {
 		return version;
 	}
 
+	// write lock
 	public long create(final int p_size) throws MemoryException
 	{
 		assert p_size > 0;
 		
 		long address = -1;
+		long chunkID = -1;
 		int chunkSize = -1;
 		LIDElement lid = null;
 		
 		// get new LID from CIDTable
-		// TODO this is the lid only, but we want the CID for the new chunk?
 		lid = m_cidTable.getFreeLID();
 		
 		assert lid.getVersion() >= 0;
@@ -276,7 +271,8 @@ public final class MemoryManager {
 		address = m_rawMemory.malloc(chunkSize);
 		if (address >= 0) {
 			// register new chunk
-			m_cidTable.set(lid.getLocalID(), address); // TODO add NID to LID
+			chunkID = ((long) m_nodeID << 48) + lid.getLocalID();
+			m_cidTable.set(chunkID, address);
 			
 			writeVersion(address, lid.getVersion());
 		}
@@ -288,10 +284,11 @@ public final class MemoryManager {
 			m_cidTable.putChunkIDForReuse(lid.getLocalID(), lid.getVersion());
 		}
 
-		return address;
+		return chunkID;
 	}
 	
 	// gets the size of the block (payload only, i.e. minus size for version
+	// read lock
 	public int getSize(final long p_chunkID) throws MemoryException
 	{
 		long address = -1;
@@ -306,6 +303,7 @@ public final class MemoryManager {
 		return size;
 	}
 	
+	// read lock
 	public int get(final long p_chunkID, byte[] p_buffer, int p_offset, int p_length) throws MemoryException
 	{
 		long address;
@@ -323,6 +321,7 @@ public final class MemoryManager {
 		return bytesRead;
 	}
 	
+	// read lock
 	public int getVersion(final long p_chunkID) throws MemoryException
 	{
 		long address = 0;
@@ -337,24 +336,21 @@ public final class MemoryManager {
 		return version;
 	}
 	
-	public boolean triggersReallocOnNextVersion(final int p_version)
-	{
-		return getSizeVersion(p_version) != getSizeVersion(p_version + 1);
-	}
-	
-	// call triggersReallocOnNextVersion to check 
-	// if a realloc is going to happen when incrementing the
-	// version and make sure to write lock this call instead
-	// of read locking
-	public void incrementVersion(final long p_chunkID)
-	{
-		int curVersion;
-		int sizeVersion;
-		int sizeVersionNext;
+	// FIXME: put needs to be write locked, because it
+	// can reallocate memory due to payload size increase (version increment)
+	// and incrementing the version
+	public int put(final long p_chunkID, byte[] p_buffer, int p_offset, int p_length) throws MemoryException
+	{		
+		long address;
+		int bytesWritten = -1;
 		
 		address = m_cidTable.get(p_chunkID);
 		if (address > 0)
 		{
+			int curVersion = -1;
+			int sizeVersion = -1;
+			int sizeVersionNext = -1;
+			
 			curVersion = readVersion(address);
 			sizeVersion = getSizeVersion(curVersion);
 			sizeVersionNext = getSizeVersion(curVersion + 1);
@@ -362,182 +358,116 @@ public final class MemoryManager {
 			// check if we have to reallocate due to version growth
 			if (sizeVersion != sizeVersionNext)
 			{
-				int sizePayload;
+				int newTotalSizePayload;
+				long newAddress = -1;
 				
 				// skip version and read payload
 				byte[] payload = m_rawMemory.readBytes(address, sizeVersion);
-			
-				m_rawMemory.free(p_address);
+				newTotalSizePayload = payload.length + sizeVersionNext;
+				
+				// try to allocate first
+				newAddress = m_rawMemory.malloc(newTotalSizePayload);
+				if (newAddress != -1)
+				{
+					if (m_rawMemory.writeBytes(address, sizeVersionNext, payload) != payload.length)
+					{
+						// revert
+						m_rawMemory.free(newAddress);
+					}
+					else
+					{
+						m_rawMemory.free(address);
+						m_cidTable.set(p_chunkID, newAddress);
+						address = newAddress;
+					}
+				}
 			}
 			
-			writeVersion(address, sizeVersion + 1);
-		}
-	}
-	
-	// note: this does NOT update the version due to possible reallocation 
-	// on dynamic version field
-	public int put(final long p_chunkID, byte[] p_buffer, int p_offset, int p_length) throws MemoryException
-	{
-		// TODO check when incrementing version
-		// if we have to reallocate first, then reallocate
-		// and make sure to write version again
-		
-		long address;
-		int bytesWritten = -1;
-		
-		address = m_cidTable.get(p_chunkID);
-		if (address > 0)
-		{
-			int sizeVersion = -1;
-			
-			sizeVersion = getSizeVersion(readVersion(address));
+			writeVersion(address, curVersion + 1);
 			bytesWritten = m_rawMemory.writeBytes(address, sizeVersion, p_buffer, p_offset, p_length);
 		}
 		
 		return bytesWritten;
 	}
-	
-	public int resize(final long p_chunkID, final int p_newSize)
+
+	// make sure to write lock this call
+	public boolean delete(final long p_chunkID) throws MemoryException
 	{
-		
-	}
-	
-	public void delete(final long p_chunkID)
-	{
-		
-	}
-	
-	/**
-	 * Gets the next free local ID
-	 * @return the next free local ID
-	 */
-	public CIDElement getNextLocalID() {
-
-
-		return ret;
-	}
-
-	/**
-	 * Gets the next free local IDs
-	 * @param p_count
-	 *            the number of free local IDs
-	 * @return the next free local IDs
-	 */
-	public CIDElement[] getNextLocalIDs(final int p_count) {
-		CIDElement[] ret = null;
-		int count = 0;
-		long localID;
-
-		ret = new CIDElement[p_count];
-		for (int i = 0; i < p_count; i++) {
-			try {
-				ret[i] = m_cidTable.getFreeLID();
-			} catch (final DXRAMException e) {}
-			if (ret[i] == null) {
-				count++;
-			}
-		}
-
-		localID = m_nextLocalID.getAndAdd(count);
-		count = 0;
-		for (int i = 0; i < p_count; i++) {
-			if (ret[i] == null) {
-				ret[i] = new CIDElement(localID + count++, 0);
-			}
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Gets the current local ID
-	 * @return the current local ID
-	 */
-	public long getCurrentLocalID() {
-		long ret;
-
-		ret = m_nextLocalID.get() - 1;
-
-		return ret;
-	}
-
-	/**
-	 * Puts a Chunk in the memory
-	 * @param p_chunk
-	 *            the Chunk
-	 * @throws MemoryException
-	 *             if the Chunk could not be put
-	 */
-	public void put(final Chunk p_chunk) throws MemoryException {
-		int version;
-		long chunkID;
 		long address;
-		byte sizeVersion;
-		int totalChunkSize;
-
-		chunkID = p_chunk.getChunkID();
-		version = p_chunk.getVersion();
-		sizeVersion = getSizeVersion(version);
-		totalChunkSize = p_chunk.getSize() + sizeVersion;
-
-		// Get the address from the CIDTable
-		address = m_cidTable.get(chunkID);
-
-		// If address <= 0, the Chunk does not exists in the memory
-		if (address <= 0) {
-			address = m_rawMemory.malloc(totalChunkSize);
-			m_cidTable.set(chunkID, address);
-		} else {
-			// check if we have to expand
-			long oldSize;
-
-			oldSize = m_rawMemory.getSizeBlock(address);
-			if (oldSize < totalChunkSize) {
-				// re-allocate
-				m_rawMemory.free(address);
-				address = m_rawMemory.malloc(totalChunkSize);
-				m_cidTable.set(chunkID, address);
-			}
-		}
-
-		// set the size of the version header
-		m_rawMemory.setCustomState(address, sizeVersion - 1);
-		writeVersion(address, version, sizeVersion);
-		m_rawMemory.writeBytes(address, sizeVersion, p_chunk.getData().array());
-	}
-
-	/**
-	 * Gets the Chunk for the given ChunkID from the memory
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @return the corresponding Chunk
-	 * @throws MemoryException
-	 *             if the Chunk could not be get
-	 */
-	public Chunk get(final long p_chunkID) throws MemoryException {
-		Chunk ret = null;
-		long address;
-
-		// Get the address from the CIDTable
+		boolean deleted = false;
+		
 		address = m_cidTable.get(p_chunkID);
-
-		// If address <= 0, the Chunk does not exists in the memory
-		if (address > 0) {
-			int version;
-			int sizeVersion;
-			byte[] data;
-
-			sizeVersion = m_rawMemory.getCustomState(address) + 1;
-			version = readVersion(address, sizeVersion);
-
-			// make sure to skip version data
-			data = m_rawMemory.readBytes(address, sizeVersion);
-
-			ret = new Chunk(p_chunkID, data, version);
+		if (address > 0)
+		{
+			m_rawMemory.free(address);
+			deleted = true;
 		}
-
-		return ret;
+		
+		return deleted;
 	}
+	
+	// TODO
+//	public int resize(final long p_chunkID, final int p_newSize)
+//	{
+//		
+//	}
+	
+	// TODO remove
+//	/**
+//	 * Gets the next free local ID
+//	 * @return the next free local ID
+//	 */
+//	public CIDElement getNextLocalID() {
+//
+//
+//		return ret;
+//	}
+//
+//	/**
+//	 * Gets the next free local IDs
+//	 * @param p_count
+//	 *            the number of free local IDs
+//	 * @return the next free local IDs
+//	 */
+//	public CIDElement[] getNextLocalIDs(final int p_count) {
+//		CIDElement[] ret = null;
+//		int count = 0;
+//		long localID;
+//
+//		ret = new CIDElement[p_count];
+//		for (int i = 0; i < p_count; i++) {
+//			try {
+//				ret[i] = m_cidTable.getFreeLID();
+//			} catch (final DXRAMException e) {}
+//			if (ret[i] == null) {
+//				count++;
+//			}
+//		}
+//
+//		localID = m_nextLocalID.getAndAdd(count);
+//		count = 0;
+//		for (int i = 0; i < p_count; i++) {
+//			if (ret[i] == null) {
+//				ret[i] = new CIDElement(localID + count++, 0);
+//			}
+//		}
+//
+//		return ret;
+//	}
+//
+//	/**
+//	 * Gets the current local ID
+//	 * @return the current local ID
+//	 */
+//	public long getCurrentLocalID() {
+//		long ret;
+//
+//		ret = m_nextLocalID.get() - 1;
+//
+//		return ret;
+//	}
+
+
 
 //	public Chunk resize(final long p_chunkID, final long p_newSize) throws MemoryException {
 //		Chunk ret = null;
@@ -587,6 +517,7 @@ public final class MemoryManager {
 //		return ret;
 //	}
 
+	// TODO doc: this function needs to be read locked at least
 	/**
 	 * Returns whether this Chunk is stored locally or not
 	 * @param p_chunkID
@@ -657,25 +588,26 @@ public final class MemoryManager {
 		m_cidTable.putChunkIDForReuse(p_chunkID, p_version);
 	}
 
-	/**
-	 * Returns the ChunkIDs of all migrated Chunks
-	 * @return the ChunkIDs of all migrated Chunks
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
-	 */
-	public ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
-		return m_cidTable.getCIDOfAllMigratedChunks();
-	}
-
-	/**
-	 * Returns the ChunkID ranges of all locally stored Chunks
-	 * @return the ChunkID ranges in an ArrayList
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
-	 */
-	public ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
-		return m_cidTable.getCIDrangesOfAllLocalChunks();
-	}
+	// FIXME take back in
+//	/**
+//	 * Returns the ChunkIDs of all migrated Chunks
+//	 * @return the ChunkIDs of all migrated Chunks
+//	 * @throws MemoryException
+//	 *             if the CIDTable could not be completely accessed
+//	 */
+//	public ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
+//		return m_cidTable.getCIDOfAllMigratedChunks();
+//	}
+//
+//	/**
+//	 * Returns the ChunkID ranges of all locally stored Chunks
+//	 * @return the ChunkID ranges in an ArrayList
+//	 * @throws MemoryException
+//	 *             if the CIDTable could not be completely accessed
+//	 */
+//	public ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
+//		return m_cidTable.getCIDrangesOfAllLocalChunks();
+//	}
 
 	/**
 	 * Write the version number to the specified position.

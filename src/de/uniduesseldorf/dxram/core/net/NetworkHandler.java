@@ -10,7 +10,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
@@ -18,6 +17,7 @@ import de.uniduesseldorf.dxram.core.log.LogMessages;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
 /**
