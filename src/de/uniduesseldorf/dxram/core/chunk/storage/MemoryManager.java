@@ -287,6 +287,15 @@ public final class MemoryManager {
 		return chunkID;
 	}
 	
+	// needs to be read locked
+	public boolean exists(final long p_chunkID) throws MemoryException
+	{
+		long address = -1;
+		
+		address = m_cidTable.get(p_chunkID);
+		return address != 0;
+	}
+	
 	// gets the size of the block (payload only, i.e. minus size for version
 	// read lock
 	public int getSize(final long p_chunkID) throws MemoryException
