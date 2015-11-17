@@ -207,7 +207,6 @@ public final class MemoryManagementTest {
 								System.out.println("Failed putting data for chunk #" + chunkID + " in thread " + threadID + " with size " + size);
 								break;
 							}
-							m_memoryManager.unlockManage();
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
 						}
@@ -301,11 +300,8 @@ public final class MemoryManagementTest {
 							} catch (final DXRAMException e) {
 								e.printStackTrace();
 							}
-							finally
-							{
-								m_memoryManager.unlockManage();
-							}
 						}
+						m_memoryManager.unlockManage();
 					}
 				}
 
@@ -364,9 +360,11 @@ public final class MemoryManagementTest {
 								System.out.println("Failed getting data for chunk #" + chunkID + " in thread " + threadID + " with size " + buffer.length);
 								break;
 							}
-							m_memoryManager.unlockAccess();
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
+						}
+						finally {
+							m_memoryManager.unlockAccess();
 						}
 					}
 				}
@@ -412,7 +410,7 @@ public final class MemoryManagementTest {
 				public void run() {
 					final int threadID = thread;
 					final int count = p_chunkCount / p_threadCount;
-
+					
 					for (int i = 1; i <= count; i++) {
 						try {
 							int size;
@@ -432,9 +430,10 @@ public final class MemoryManagementTest {
 								System.out.println("Failed getting data for chunk #" + chunkID + " in thread " + threadID + " with size " + size);
 								break;
 							}
-							m_memoryManager.unlockAccess();
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
+						} finally {
+							m_memoryManager.unlockAccess();
 						}
 					}
 				}
