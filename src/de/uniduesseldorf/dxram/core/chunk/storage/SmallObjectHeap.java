@@ -125,9 +125,6 @@ public final class SmallObjectHeap {
 	 */
 	public long malloc(final int p_size) throws MemoryException {
 		long ret = -1;
-		long threadID;
-
-		threadID = Thread.currentThread().getId();
 
 		for (SmallObjectHeapSegment segment : m_segments)
 		{

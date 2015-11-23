@@ -229,6 +229,7 @@ public final class HeapIntegrityChecker {
 		 * Get the name of the check.
 		 * @return Name.
 		 */
+		@SuppressWarnings("unused")
 		public String getName() {
 			return m_name;
 		}

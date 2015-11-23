@@ -3,7 +3,6 @@ package de.uniduesseldorf.dxram.core.chunk.storage;
 import java.util.Arrays;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
 
 /**
  * The memory is divided into segments to enable better concurrent access
