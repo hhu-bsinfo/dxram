@@ -59,8 +59,8 @@ public final class MemoryManagementTest {
 		ArgumentHelper helper;
 		TestResult result;
 		
-		JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
-		//JNILock.load("/home/stefan/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
+		//JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
+		JNILock.load("/home/stefan/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
 
 		helper = new ArgumentHelper(p_arguments);
 		if (helper.containsArgument(ARGUMENT_HELP)) {
@@ -198,12 +198,15 @@ public final class MemoryManagementTest {
 							chunkID = m_memoryManager.create(size);
 							if (chunkID == -1)
 							{
-								System.out.println("Failed creating chunk #" + i + " in thread " + threadID + " with size 16.");
+								System.out.println("Failed creating chunk #" + i + " in thread " + threadID + " with size " + size);
 								break;
 							}
 							
-							m_memoryManager.put(chunkID, data, 0, size);
-							m_memoryManager.unlockManage();
+							if (m_memoryManager.put(chunkID, data, 0, size) != size)
+							{
+								System.out.println("Failed putting data for chunk #" + chunkID + " in thread " + threadID + " with size " + size);
+								break;
+							}
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
 						}
@@ -288,16 +291,17 @@ public final class MemoryManagementTest {
 									break;
 								}
 								
-								m_memoryManager.put(chunkID, data, 0, size);
+								if (m_memoryManager.put(chunkID, data, 0, size) != size)
+								{
+									System.out.println("Failed putting data for chunk #" + i + " in thread " + threadID + " with size " + size);
+									break;
+								}
 								
 							} catch (final DXRAMException e) {
 								e.printStackTrace();
 							}
-							finally
-							{
-								m_memoryManager.unlockManage();
-							}
 						}
+						m_memoryManager.unlockManage();
 					}
 				}
 
@@ -346,11 +350,21 @@ public final class MemoryManagementTest {
 
 					for (int i = 1; i <= count; i++) {
 						try {
+							long chunkID;
+							
+							chunkID = (threadID * count) + i;
+							
 							m_memoryManager.lockAccess();
-							m_memoryManager.get((threadID * count) + i, buffer, 0, buffer.length);
-							m_memoryManager.unlockAccess();
+							if (m_memoryManager.get(chunkID, buffer, 0, buffer.length) == -1)
+							{
+								System.out.println("Failed getting data for chunk #" + chunkID + " in thread " + threadID + " with size " + buffer.length);
+								break;
+							}
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
+						}
+						finally {
+							m_memoryManager.unlockAccess();
 						}
 					}
 				}
@@ -396,18 +410,30 @@ public final class MemoryManagementTest {
 				public void run() {
 					final int threadID = thread;
 					final int count = p_chunkCount / p_threadCount;
-
+					
 					for (int i = 1; i <= count; i++) {
 						try {
 							int size;
+							long chunkID;
+							chunkID = (threadID * count) + i;
 							
 							m_memoryManager.lockAccess();
-							size = m_memoryManager.getSize((threadID * count) + i);
+							size = m_memoryManager.getSize(chunkID);
+							if (size == -1)
+							{
+								System.out.println("Failed getting size for chunk #" + chunkID + " in thread " + threadID);
+								break;
+							}
 							byte[] buffer = new byte[size];
-							m_memoryManager.get((threadID * count) + i, buffer, 0, buffer.length);
-							m_memoryManager.unlockAccess();
+							if (m_memoryManager.get(chunkID, buffer, 0, buffer.length) != size)
+							{
+								System.out.println("Failed getting data for chunk #" + chunkID + " in thread " + threadID + " with size " + size);
+								break;
+							}
 						} catch (final DXRAMException e) {
 							e.printStackTrace();
+						} finally {
+							m_memoryManager.unlockAccess();
 						}
 					}
 				}
@@ -455,13 +481,19 @@ public final class MemoryManagementTest {
 					final int count = p_chunkCount / p_threadCount;
 					final int chunkSetCount = count / p_sizeChunkSet;
 					byte[] buffer = new byte[p_maxChunkSize];
+					long chunkID = -1;
 
 					for (int j = 0; j < chunkSetCount; j++)
 					{
 						m_memoryManager.lockAccess();
 						for (int i = 1; i <= p_sizeChunkSet; i++) {
 							try {
-								m_memoryManager.get((threadID * count) + (j * p_sizeChunkSet) + i, buffer, 0, buffer.length);	
+								chunkID = (threadID * count) + (j * p_sizeChunkSet) + i;
+								if (m_memoryManager.get(chunkID, buffer, 0, buffer.length) == -1)
+								{
+									System.out.println("Failed getting data for chunk #" + chunkID + " in thread " + threadID + " with size " + buffer.length);
+									break;
+								}
 							} catch (final DXRAMException e) {
 								e.printStackTrace();
 							}
@@ -518,11 +550,24 @@ public final class MemoryManagementTest {
 						m_memoryManager.lockAccess();
 						for (int i = 1; i <= p_sizeChunkSet; i++) {
 							try {
+								long chunkID;
 								int size;
 								
-								size = m_memoryManager.getSize((threadID * count) + (j * p_sizeChunkSet) + i);
+								chunkID = (threadID * count) + (j * p_sizeChunkSet) + i;
+								
+								size = m_memoryManager.getSize(chunkID);
+								if (size == -1)
+								{
+									System.out.println("Failed getting size of chunk #" + chunkID + " in thread " + threadID);
+									break;
+								}
 								byte[] buffer = new byte[size];
-								m_memoryManager.get((threadID * count) + (j * p_sizeChunkSet) + i, buffer, 0, buffer.length);	
+								
+								if (m_memoryManager.get(chunkID, buffer, 0, buffer.length) != size)
+								{
+									System.out.println("Failed getting data for chunk #" + chunkID + " in thread " + threadID + " with size " + size);
+									break;
+								}
 							} catch (final DXRAMException e) {
 								e.printStackTrace();
 							}

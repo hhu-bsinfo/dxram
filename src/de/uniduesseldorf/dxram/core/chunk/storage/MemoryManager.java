@@ -148,6 +148,21 @@ public final class MemoryManager {
 
 		return chunkID;
 	}
+	
+	/**
+	 * Check if a specific chunkID exists.
+	 * This is an access call and has to be locked using lockAccess().
+	 * @param p_chunkID ChunkID to check.
+	 * @return True if a chunk with that ID exists, false otherwise.
+	 * @throws MemoryException If reading from CIDTable fails.
+	 */
+	public boolean exists(final long p_chunkID) throws MemoryException
+	{
+		long address = -1;
+		
+		address = m_cidTable.get(p_chunkID);
+		return address != 0;
+	}
 
 	/**
 	 * Get the size of a chunk (payload only, i.e. minus size for version).

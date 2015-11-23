@@ -306,7 +306,7 @@ public final class CIDTable {
 				ret = getEntry(p_chunkID, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
-			entry = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
+			ret = readEntry(p_addressTable, index) & BITMASK_ADDRESS;
 		}		
 
 		return ret;

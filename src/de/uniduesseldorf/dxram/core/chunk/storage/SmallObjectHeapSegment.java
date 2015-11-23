@@ -1083,13 +1083,13 @@ public final class SmallObjectHeapSegment {
 	 * @return Size of memory block at specified address.
 	 * @throws MemoryException If reading memory fails.
 	 */
-	public int getSizeMemoryBlock(final long p_address) throws MemoryException {
+	public long getSizeMemoryBlock(final long p_address) throws MemoryException {
 		int lengthFieldSize;
 
 		assert assertSegmentBounds(p_address);
 
 		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-		return (int) read(p_address, lengthFieldSize);
+		return read(p_address, lengthFieldSize);
 	}
 
 	@Override
