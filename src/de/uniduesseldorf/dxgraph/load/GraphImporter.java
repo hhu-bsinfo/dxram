@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.test.nothaas.glp;
+package de.uniduesseldorf.dxgraph.load;
 
 public interface GraphImporter 
 {

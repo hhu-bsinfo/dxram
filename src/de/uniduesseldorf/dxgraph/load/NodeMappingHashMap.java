@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.test.nothaas.glp;
+package de.uniduesseldorf.dxgraph.load;
 
 import java.util.Iterator;
 import java.util.Map.Entry;

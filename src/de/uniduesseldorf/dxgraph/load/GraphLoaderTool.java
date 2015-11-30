@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.test.nothaas.glp;
+package de.uniduesseldorf.dxgraph.load;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,7 +51,7 @@ public class GraphLoaderTool
 		{
 			System.out.println("Adding edge list file '" + args[i] + "'.");
 			
-			loader.addReader(new GraphReaderFile(new File(args[i])));
+			loader.addReader(new GraphEdgeReaderFile(new File(args[i])));
 			i++;
 		}
 		

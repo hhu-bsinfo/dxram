@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.test.nothaas.glp;
+package de.uniduesseldorf.dxgraph.load;
 
 import java.util.Iterator;
 import java.util.Vector;
@@ -12,7 +12,7 @@ import de.uniduesseldorf.dxram.utils.Pair;
 
 public class GraphLoader 
 {
-	protected Vector<GraphReader> m_readers = new Vector<GraphReader>();
+	protected Vector<GraphEdgeReader> m_readers = new Vector<GraphEdgeReader>();
 	protected Vector<GraphImporter> m_importers = new Vector<GraphImporter>();
 	private NodeMapping m_nodeMapping = null;
 	private ExecutorService m_executor = null;
@@ -22,10 +22,10 @@ public class GraphLoader
 		m_executor = Executors.newFixedThreadPool(p_threadPoolSize);
 	}
 	
-	public boolean addReader(GraphReader p_reader)
+	public boolean addReader(GraphEdgeReader p_reader)
 	{
 		// check if same instance already exists
-		for (GraphReader reader : m_readers)
+		for (GraphEdgeReader reader : m_readers)
 		{
 			if (reader == p_reader)
 				return false;
@@ -191,9 +191,9 @@ public class GraphLoader
 	{
 		private int m_instanceID = -1;
 		private int m_totalInstances = -1;
-		private GraphReader m_reader = null;
+		private GraphEdgeReader m_reader = null;
 		
-		public ReaderInstance(int p_instanceID, int p_totalInstances, GraphReader p_reader)
+		public ReaderInstance(int p_instanceID, int p_totalInstances, GraphEdgeReader p_reader)
 		{
 			m_instanceID = p_instanceID;
 			m_totalInstances = p_totalInstances;

@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.test.nothaas.glp;
+package de.uniduesseldorf.dxgraph.load;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;

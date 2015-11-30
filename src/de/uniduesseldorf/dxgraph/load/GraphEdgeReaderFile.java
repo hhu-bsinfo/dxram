@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.test.nothaas.glp;
+package de.uniduesseldorf.dxgraph.load;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,11 +10,11 @@ import java.util.Vector;
 
 import de.uniduesseldorf.dxram.utils.Pair;
 
-public class GraphReaderFile implements GraphReader
+public class GraphEdgeReaderFile implements GraphEdgeReader
 {
 	private RandomAccessFile m_edgeFile;
 	
-	public GraphReaderFile(File p_file)
+	public GraphEdgeReaderFile(File p_file)
 	{
 		try {
 			m_edgeFile = new RandomAccessFile(p_file, "r");
@@ -25,7 +25,7 @@ public class GraphReaderFile implements GraphReader
 	}
 	
 	@Override
-	public int readEdges(int p_instance, int p_totalInstances, Vector<Pair<Long, Long>> p_buffer, int p_count) 
+	public int readEdges(Vector<Pair<Long, Long>> p_buffer, int p_count) 
 	{		
 		ByteBuffer buffer = ByteBuffer.allocate(p_count * 16);
 		int readBytes = 0;
