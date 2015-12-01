@@ -1,22 +1,20 @@
 package de.uniduesseldorf.dxcompute;
 
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
-
 public interface StorageInterface 
 {
-	public Chunk create(final int p_size);
+	public long create(final int p_size);
 	
-	public Chunk[] create(final int[] p_sizes);
+	public long[] create(final int[] p_sizes);
 	
-	public Chunk get(final long p_handle);
+	public int get(final DataStructure p_dataStructure);
 	
-	public Chunk[] get(final long[] p_handles);
+	public int get(final DataStructure[] p_dataStructures);
 	
-	public void put(final long p_handle, Chunk p_data);
+	public int put(final DataStructure p_dataStrucutre);
 	
-	public void put(final long p_handle, Chunk[] p_data);
+	public int put(final DataStructure[] p_dataStructure);
 	
-	public void remove(final long p_handle);
+	public int remove(final DataStructure p_dataStructure);
 	
-	public void remove(final long[] p_handles);
+	public int remove(final DataStructure[] p_dataStructures);
 }
