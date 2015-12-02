@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxgraph.load;
+package de.uniduesseldorf.dxgraph.load.old;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,6 +12,9 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.utils.Pair;
+
+import de.uniduesseldorf.dxgraph.load.GraphEdgeReaderFile;
+import de.uniduesseldorf.dxgraph.load.NodeMappingHashMap;
 
 public class GraphLoaderTool 
 {

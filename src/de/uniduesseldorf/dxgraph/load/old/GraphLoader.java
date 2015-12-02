@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxgraph.load;
+package de.uniduesseldorf.dxgraph.load.old;
 
 import java.util.Iterator;
 import java.util.Vector;
@@ -9,6 +9,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import de.uniduesseldorf.dxram.utils.Pair;
+
+import de.uniduesseldorf.dxgraph.load.GraphEdgeReader;
+import de.uniduesseldorf.dxgraph.load.NodeMapping;
 
 public class GraphLoader 
 {

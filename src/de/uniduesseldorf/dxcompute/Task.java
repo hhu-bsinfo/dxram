@@ -1,31 +1,67 @@
 package de.uniduesseldorf.dxcompute;
 
+import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
+import de.uniduesseldorf.dxcompute.logger.LoggerDelegate;
+
 public abstract class Task 
 {
-	private TaskInterface m_taskInterface;
-	private StorageInterface m_storageInterface;
+	private String m_name;
+	private TaskDelegate m_taskDelegate;
+	private StorageDelegate m_storageDelegate;
+	private LoggerDelegate m_loggerDelegate;
 	
-	public Task()
+	public Task(final String p_name)
 	{
-		
+		m_name = p_name;
 	}
 	
-	public Object execute(final TaskInterface p_taskInterface, final StorageInterface p_storageInterface, final Object p_arg)
+	// -------------------------------------------------------------------
+	
+	public String getName()
 	{
-		m_taskInterface = p_taskInterface;
-		m_storageInterface = p_storageInterface;
-		return execute(p_arg);
+		return m_name;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return "Task[m_name " + m_name + "]";
+	}
+	
+	// -------------------------------------------------------------------
+	
+	void setTaskDelegate(final TaskDelegate p_taskDelegate)
+	{
+		m_taskDelegate = p_taskDelegate;
+	}
+	
+	void setStorageDelegate(final StorageDelegate p_storageDelegate)
+	{
+		m_storageDelegate = p_storageDelegate;
+	}
+	
+	void setLoggerDelegate(final LoggerDelegate p_loggerDelegate)
+	{
+		m_loggerDelegate = p_loggerDelegate;
+	}
+	
+	// -------------------------------------------------------------------
 	
 	protected abstract Object execute(final Object p_arg);
 	
-	protected TaskInterface getTaskInterface()
+	protected TaskDelegate getTaskDelegate()
 	{
-		return m_taskInterface;
+		return m_taskDelegate;
 	}
 	
-	protected StorageInterface getStorageInterface()
+	protected StorageDelegate getStorageDelegate()
 	{
-		return m_storageInterface;
+		return m_storageDelegate;
+	}
+	
+	protected void log(final LOG_LEVEL p_level, final String p_msg)
+	{
+		if (m_loggerDelegate != null)
+			m_loggerDelegate.log(p_level, "Task " + m_name, p_msg);
 	}
 }

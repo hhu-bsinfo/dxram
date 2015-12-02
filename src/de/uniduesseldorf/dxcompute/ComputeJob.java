@@ -1,25 +1,24 @@
 package de.uniduesseldorf.dxcompute;
 
 import de.uniduesseldorf.dxcompute.job.Job;
-import de.uniduesseldorf.dxcompute.job.JobInterface;
+import de.uniduesseldorf.dxcompute.job.JobDelegate;
 
 public abstract class ComputeJob extends Job
 {
-	private StorageInterface m_storageInterface;
+	private StorageDelegate m_storageDelegate;
 	
 	public ComputeJob()
 	{
 		
 	}
 	
-	public void execute(final JobInterface p_jobInterface, final StorageInterface p_storageInterface)
+	void setStorageDelegate(final StorageDelegate p_storageDelegate)
 	{
-		m_storageInterface = p_storageInterface;
-		execute(p_jobInterface);
+		m_storageDelegate = p_storageDelegate;
 	}
 	
-	protected StorageInterface getStorageInterface()
+	protected StorageDelegate getStorageDelegate()
 	{
-		return m_storageInterface;
+		return m_storageDelegate;
 	}
 }

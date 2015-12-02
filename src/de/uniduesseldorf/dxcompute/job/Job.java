@@ -1,26 +1,46 @@
 package de.uniduesseldorf.dxcompute.job;
 
+import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
+import de.uniduesseldorf.dxcompute.logger.LoggerDelegate;
+
 public abstract class Job 
 {
-	private JobInterface m_jobInterface;
+	private JobDelegate m_jobDelegate;
+	private LoggerDelegate m_loggerDelegate;
 	
 	public Job()
 	{
 		
 	}
 	
-	public void execute(final JobInterface p_jobInterface)
-	{
-		m_jobInterface = p_jobInterface;
-		execute();
-	}
-	
-	protected abstract void execute();
+	// -------------------------------------------------------------------
 	
 	public abstract long getJobID();
 	
-	protected JobInterface getJobInterface()
+	// -------------------------------------------------------------------
+	
+	void setJobDelegate(final JobDelegate p_jobDelegate)
 	{
-		return m_jobInterface;
+		m_jobDelegate = p_jobDelegate;
+	}
+	
+	void setLoggerDelegate(final LoggerDelegate p_loggerDelegate)
+	{
+		m_loggerDelegate = p_loggerDelegate;
+	}
+	
+	// -------------------------------------------------------------------
+	
+	protected abstract void execute(); 
+	
+	protected JobDelegate getJobInterface()
+	{
+		return m_jobDelegate;
+	}
+
+	protected void log(final LOG_LEVEL p_level, final String p_msg)
+	{
+		if (m_loggerDelegate != null)
+			m_loggerDelegate.log(p_level, "Job " + getJobID(), p_msg);
 	}
 }

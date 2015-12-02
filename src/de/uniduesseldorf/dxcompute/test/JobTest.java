@@ -1,9 +1,10 @@
 package de.uniduesseldorf.dxcompute.test;
 
+import de.uniduesseldorf.dxcompute.ComputeJob;
 import de.uniduesseldorf.dxcompute.job.Job;
-import de.uniduesseldorf.dxcompute.job.JobInterface;
+import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
 
-public class JobTest implements Job
+public class JobTest extends ComputeJob
 {
 	private int m_id;
 	private long m_timeToWait;
@@ -15,18 +16,19 @@ public class JobTest implements Job
 	}
 	
 	@Override
-	public void execute(JobInterface p_jobApi) 
+	public long getJobID() {
+		return m_id;
+	}
+	
+	@Override
+	protected void execute() 
 	{	
 		try {
+			log(LOG_LEVEL.LL_DEBUG, "Sleeping " + m_timeToWait);
 			Thread.sleep(m_timeToWait);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-
-	@Override
-	public long getJobID() {
-		return m_id;
 	}
 }

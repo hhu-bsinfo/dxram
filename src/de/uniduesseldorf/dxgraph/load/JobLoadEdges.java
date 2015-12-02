@@ -3,10 +3,9 @@ package de.uniduesseldorf.dxgraph.load;
 import java.util.Vector;
 
 import de.uniduesseldorf.dxcompute.ComputeJob;
+import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
 import de.uniduesseldorf.dxgraph.SimpleVertex;
-import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.utils.Pair;
 
 public class JobLoadEdges extends ComputeJob
@@ -35,14 +34,14 @@ public class JobLoadEdges extends ComputeJob
 			
 			for (Pair<Long, Long> edge : buffer)
 			{
-				m_importer.addEdge(edge.first(), edge.second(), m_nodeMapping);
+				addEdge(edge.first(), edge.second());
 			}
 			
 			buffer.clear();
 		}
 		while (readEdges > 0);
 		
-		System.out.println("Worker (" + m_workerInstance + ") finished.");
+		getJobInterface().pushJobPublicLocalQueue(new JobLoadEdges(m_edgeReader, m_nodeMapping));
 	}
 
 	@Override
@@ -53,8 +52,7 @@ public class JobLoadEdges extends ComputeJob
 
 	private boolean addEdge(long p_vertexFrom, long p_vertexTo) 
 	{
-		try 
-		{
+
 			long chunkIDFrom = Chunk.INVALID_CHUNKID;
 			long chunkIDTo = Chunk.INVALID_CHUNKID;
 			
@@ -64,15 +62,21 @@ public class JobLoadEdges extends ComputeJob
 			if (chunkIDTo == Chunk.INVALID_CHUNKID)
 			{
 				final int vertexSize = SimpleVertex.getSizeWithNeighbours(0);
-				byte[] vertexData;
+				SimpleVertex vertex;
+				long newVertexID;
 				
-				chunkIDTo = getStorageInterface().create(vertexSize);
-				vertexData = new byte[vertexSize];
-				SimpleVertex.setUserData(vertexData, -1);
-				SimpleVertex.setNumberOfNeighbours(vertexData, 0);
-	
-				getStorageInterface().put(chunkIDTo, vertexData);
-				
+				newVertexID = getStorageInterface().create(vertexSize);
+				if (newVertexID == -1)
+				{
+					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Creating destination vertex of size " + vertexSize + " failed.");
+					return false;
+				}
+				vertex = new SimpleVertex(newVertexID);
+				if (getStorageInterface().put(vertex) != 1)
+				{
+					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Putting destination vertex " + vertex + " failed.");
+					return false;
+				}
 				m_nodeMapping.setChunkIDForNodeID(p_vertexTo, chunkIDTo);
 			}
 			
@@ -82,56 +86,47 @@ public class JobLoadEdges extends ComputeJob
 			if (chunkIDFrom == Chunk.INVALID_CHUNKID)
 			{
 				final int vertexSize = SimpleVertex.getSizeWithNeighbours(1);
-				byte[] vertexData;
+				SimpleVertex vertex;
+				long newVertexID;
 				
-				chunkIDFrom = getStorageInterface().create(vertexSize);
-				vertexData = new byte[vertexSize];
-				SimpleVertex.setUserData(vertexData, -1);
-				SimpleVertex.setNumberOfNeighbours(vertexData, 1);
-				SimpleVertex.setNeighbour(vertexData, 0, chunkIDTo);
-				
-				getStorageInterface().put(chunkIDFrom, vertexData);
-				
+				newVertexID = getStorageInterface().create(vertexSize);
+				if (newVertexID == -1)
+				{
+					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Creating source vertex of size " + vertexSize + " failed.");
+					return false;
+				}
+				vertex = new SimpleVertex(newVertexID);
+				vertex.getNeighbours().add(chunkIDTo);
+
+				if (getStorageInterface().put(vertex) != 1)
+				{
+					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Putting source vertex " + vertex + " failed.");
+					return false;
+				}
 				m_nodeMapping.setChunkIDForNodeID(p_vertexFrom, chunkIDFrom);
 			}
 			// vertex exist, get and add neighbour
 			else
 			{
-				getStorageInterface().get(p_handle)
-			}
+				SimpleVertex vertex;
 			
-			// source node
-			chunkIDFrom = m_nodeMapping.getChunkIDForNodeID(p_nodeFrom);
-			Chunk chunkFrom = null;
-			if (chunkIDFrom == Chunk.INVALID_CHUNKID)
-			{
-				chunkFrom = Core.createNewChunk(Integer.BYTES);
-				chunkFrom.getData().putInt(0, 0); // 0 edges
-				Core.put(chunkFrom);
-				chunkIDFrom = chunkFrom.getChunkID();
-				m_nodeMapping.setChunkIDForNodeID(p_nodeFrom, chunkIDFrom);
-			}
-			else
-				chunkFrom = Core.get(chunkIDFrom);
-			
-			// add target node/edge
-			{						
-				// realloc bigger chunk
-				Core.remove(chunkIDFrom);
-				Chunk reallocedChunk = Core.createNewChunk(chunkFrom.getData().capacity() + Long.BYTES);
-				reallocedChunk.getData().put(chunkFrom.getData());
-				reallocedChunk.getData().putLong(chunkFrom.getData().capacity(), chunkIDTo);
-				// increase outgoing edges count
-				int outgoingEdges = reallocedChunk.getData().getInt(0);
-				reallocedChunk.getData().putInt(0, outgoingEdges + 1);
+				vertex = new SimpleVertex(chunkIDFrom);
+				if (getStorageInterface().get(vertex) != 1)
+				{
+					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Getting source vertex " + chunkIDFrom + " failed.");
+					return false;
+				}
 				
-				chunkFrom = reallocedChunk;
+				vertex.getNeighbours().add(chunkIDTo);
+				
+				if (getStorageInterface().put(vertex) != 1)
+				{
+					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Putting source vertex " + vertex + " failed.");
+					return false;
+				}
 			}
-			
-			Core.put(chunkFrom);
-		} catch (DXRAMException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return false;
-		}
+
+		
+		return true;
+	}
 }

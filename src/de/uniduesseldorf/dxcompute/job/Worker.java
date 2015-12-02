@@ -1,9 +1,9 @@
 package de.uniduesseldorf.dxcompute.job;
 
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
-import de.uniduesseldorf.dxcompute.logger.LoggerInterface;
+import de.uniduesseldorf.dxcompute.logger.LoggerDelegate;
 
-public class Worker extends Thread implements JobInterface, WorkStealingInterface
+public class Worker extends Thread implements JobDelegate
 {
 	private int m_id;
 	private volatile boolean m_running;
@@ -12,8 +12,8 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 	private WorkStealingQueue m_publicLocalQueue = new WorkStealingQueue();
 	private WorkStealingQueue m_privateQueue = new WorkStealingQueue();
 	
-	private WorkStealingInterface m_workStealingInterface;
-	private LoggerInterface m_loggerInterface;
+	private WorkerDelegate m_workerDelegate;
+	private LoggerDelegate m_loggerDelegate;
 	
 	public Worker(final int p_id)
 	{
@@ -22,14 +22,11 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 		m_shutdown = false;
 	}
 	
-	protected void setLoggerInterface(final LoggerInterface p_loggerInterface)
-	{
-		m_loggerInterface = p_loggerInterface;
-	}
+	// -------------------------------------------------------------------
 	
-	protected void setWorkStealingInterface(final WorkStealingInterface p_workStealingInterface)
+	public Job stealJobLocal() 
 	{
-		m_workStealingInterface = p_workStealingInterface;
+		return m_publicLocalQueue.steal();
 	}
 	
 	public void shutdown()
@@ -41,6 +38,8 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 	{
 		return m_running;
 	}
+	
+	// -------------------------------------------------------------------
 	
 	@Override
 	public void run()
@@ -57,7 +56,10 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 			if (job != null)
 			{
 				log(LOG_LEVEL.LL_DEBUG, "Executing job " + job.getJobID() + " from private queue.");
-				job.execute(this);
+				job.setJobDelegate(this);
+				job.setLoggerDelegate(m_loggerDelegate);
+				job.execute();
+				m_workerDelegate.finishedJob();
 				continue;
 			}
 			
@@ -65,15 +67,21 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 			if (job != null)
 			{
 				log(LOG_LEVEL.LL_DEBUG, "Executing job " + job.getJobID() + " from public local queue.");
-				job.execute(this);
+				job.setJobDelegate(this);
+				job.setLoggerDelegate(m_loggerDelegate);
+				job.execute();
+				m_workerDelegate.finishedJob();
 				continue;
 			}
 			
-			job = m_workStealingInterface.stealJobLocal();
+			job = m_workerDelegate.stealJobLocal(this);
 			if (job != null)
 			{
 				log(LOG_LEVEL.LL_DEBUG, "Executing stolen job " + job.getJobID());
-				job.execute(this);
+				job.setJobDelegate(this);
+				job.setLoggerDelegate(m_loggerDelegate);
+				job.execute();
+				m_workerDelegate.finishedJob();
 				continue;
 			}
 			
@@ -95,6 +103,7 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 	@Override
 	public boolean pushJobPublicLocalQueue(Job p_job) {
 		// TODO implement limit for jobs
+		m_workerDelegate.scheduledJob();
 		m_publicLocalQueue.push(p_job);
 		return true;
 	}
@@ -102,6 +111,7 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 	@Override
 	public boolean pushJobPrivateQueue(Job p_job) {
 		// TODO implement limit for jobs
+		m_workerDelegate.scheduledJob();
 		m_privateQueue.push(p_job);
 		return true;
 	}
@@ -110,16 +120,23 @@ public class Worker extends Thread implements JobInterface, WorkStealingInterfac
 	public int getAssignedWorkerID() {
 		return m_id;
 	}
-
-	@Override
-	public Job stealJobLocal() 
+	
+	// -------------------------------------------------------------------
+	
+	void setLoggerDelegate(final LoggerDelegate p_loggerDelegate)
 	{
-		return m_publicLocalQueue.steal();
+		m_loggerDelegate = p_loggerDelegate;
 	}
+	
+	void setWorkerDelegate(final WorkerDelegate p_workerDelegate)
+	{
+		m_workerDelegate = p_workerDelegate;
+	}
+	
+	// -------------------------------------------------------------------
 
-	@Override
-	public void log(final LOG_LEVEL p_level, final String p_msg) {
-		if (m_loggerInterface != null)
-			m_loggerInterface.log(p_level, "Worker " + m_id, p_msg);
+	private void log(final LOG_LEVEL p_level, final String p_msg) {
+		if (m_loggerDelegate != null)
+			m_loggerDelegate.log(p_level, "Worker " + m_id, p_msg);
 	}
 }

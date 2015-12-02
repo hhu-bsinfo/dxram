@@ -8,7 +8,7 @@ public class JobSystemTest
 {
 	public static void main(String[] args)
 	{
-		JobSystem jobSystem = new JobSystem();
+		JobSystem jobSystem = new JobSystem("test", new LoggerTest());
 		jobSystem.init(4);
 		
 		Random ran = new Random();
@@ -17,15 +17,8 @@ public class JobSystemTest
 			jobSystem.submit(new JobTest(i, ran.nextInt(10) * 500));
 		}
 		
-//		try {
-//			Thread.sleep(1000);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		System.out.println("Waiting for shut down.");
-//		jobSystem.shutdown();
-//		System.out.println("Done");
+		jobSystem.shutdown();
+		
+		System.out.println(">>> DONE");
 	}
 }

@@ -1,4 +1,6 @@
-package de.uniduesseldorf.dxgraph.load;
+package de.uniduesseldorf.dxgraph.load.old;
+
+import de.uniduesseldorf.dxgraph.load.NodeMapping;
 
 public interface GraphImporter 
 {

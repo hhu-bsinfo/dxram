@@ -16,6 +16,15 @@ public class SimpleVertex implements DataStructure
 	private int m_userData;
 	private Vector<Long> m_neighbours = new Vector<Long>();
 	
+	public static int getSizeWithNeighbours(int numNeighbours)
+	{
+		assert numNeighbours >= 0;
+		
+		return 	8
+			+	4
+			+	8 * numNeighbours;
+	}
+	
 	public SimpleVertex()
 	{
 		m_id = -1;
@@ -75,5 +84,16 @@ public class SimpleVertex implements DataStructure
 		return 	4
 			+ 	4
 			+	8 * m_neighbours.size();
+	}
+
+	@Override
+	public boolean hasDynamicSize() {
+		return true;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "SimpleVertex[m_id " + m_id + ", m_userData " + m_userData + ", numNeighbours " + m_neighbours.size() + "]";
 	}
 }

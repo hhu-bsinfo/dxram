@@ -16,6 +16,13 @@ public class WorkStealingQueue
 		
 	}
 	
+	// -------------------------------------------------------------------
+	
+	public int jobsScheduled()
+	{
+		return m_queue.size();
+	}
+	
 	public boolean push(final Job job)
 	{
 		m_lock.lock();

@@ -1,6 +1,6 @@
 package de.uniduesseldorf.dxcompute;
 
-public interface StorageInterface 
+public interface StorageDelegate 
 {
 	public long create(final int p_size);
 	

@@ -9,4 +9,6 @@ public interface DataStructure
 	public void read(final DataStructureReader p_reader);
 	
 	public int sizeof();
+	
+	public boolean hasDynamicSize();
 }
