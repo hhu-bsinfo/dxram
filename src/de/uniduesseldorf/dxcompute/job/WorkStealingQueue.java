@@ -6,6 +6,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+// TODO make this lock free
 public class WorkStealingQueue 
 {
 	private Deque<Job> m_queue = new LinkedList<Job>();

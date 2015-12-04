@@ -13,15 +13,12 @@ import de.uniduesseldorf.dxram.utils.Pair;
 public class GraphEdgeReaderFile implements GraphEdgeReader
 {
 	private RandomAccessFile m_edgeFile;
+	private long m_totalNumOfEdges;
 	
-	public GraphEdgeReaderFile(File p_file)
+	public GraphEdgeReaderFile(File p_file) throws IOException
 	{
-		try {
-			m_edgeFile = new RandomAccessFile(p_file, "r");
-		} catch (FileNotFoundException e) {
-			// TODO user logger?
-			System.out.println("File not found: " + p_file);
-		}
+		m_edgeFile = new RandomAccessFile(p_file, "r");
+		m_totalNumOfEdges = m_edgeFile.length() / 16;
 	}
 	
 	@Override
@@ -48,6 +45,11 @@ public class GraphEdgeReaderFile implements GraphEdgeReader
 		}
 
 		return readBytes / 16;
+	}
+
+	@Override
+	public long getTotalNumberOfEdges() {
+		return m_totalNumOfEdges;
 	}
 
 }

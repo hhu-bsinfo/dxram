@@ -7,4 +7,6 @@ import de.uniduesseldorf.dxram.utils.Pair;
 public interface GraphEdgeReader 
 {
 	int readEdges(Vector<Pair<Long, Long>> p_buffer, int p_count);
+	
+	long getTotalNumberOfEdges();
 }

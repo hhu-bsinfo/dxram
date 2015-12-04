@@ -6,6 +6,9 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
+import de.uniduesseldorf.dxcompute.data.ByteBufferDataStructureReaderWriter;
+import de.uniduesseldorf.dxcompute.data.DataStructure;
+
 public class StorageDXRAM implements StorageDelegate
 {
 	public StorageDXRAM() throws DXRAMException

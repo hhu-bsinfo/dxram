@@ -1,6 +1,7 @@
-package de.uniduesseldorf.dxgraph;
+package de.uniduesseldorf.dxgraph.bfs;
 
-import de.uniduesseldorf.dxcompute.ComputeJob;
+import de.uniduesseldorf.dxcompute.data.ComputeJob;
+import de.uniduesseldorf.dxgraph.data.SimpleVertex;
 
 public class JobBreadthFirstSearchNaive extends ComputeJob
 {
@@ -24,7 +25,7 @@ public class JobBreadthFirstSearchNaive extends ComputeJob
 		for (int i = 0; i < m_entryNode.getNeighbours().size(); i++)
 			neighbours[i] = new SimpleVertex(m_entryNode.getNeighbours().get(i));
 		
-		getStorageInterface().get(neighbours);
+		getStorageDelegate().get(neighbours);
 		
 		for (int i = 0; i < neighbours.length; i++)
 		{

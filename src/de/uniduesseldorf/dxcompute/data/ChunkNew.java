@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxcompute;
+package de.uniduesseldorf.dxcompute.data;
 
 import java.nio.ByteBuffer;
 

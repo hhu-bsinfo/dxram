@@ -6,6 +6,7 @@ import de.uniduesseldorf.dxcompute.logger.LoggerDelegate;
 public abstract class Task 
 {
 	private String m_name;
+	private int m_exitCode;
 	private TaskDelegate m_taskDelegate;
 	private StorageDelegate m_storageDelegate;
 	private LoggerDelegate m_loggerDelegate;
@@ -13,6 +14,7 @@ public abstract class Task
 	public Task(final String p_name)
 	{
 		m_name = p_name;
+		m_exitCode = 0;
 	}
 	
 	// -------------------------------------------------------------------
@@ -20,6 +22,11 @@ public abstract class Task
 	public String getName()
 	{
 		return m_name;
+	}
+	
+	public int getExitCode()
+	{
+		return m_exitCode;
 	}
 	
 	@Override
@@ -48,6 +55,11 @@ public abstract class Task
 	// -------------------------------------------------------------------
 	
 	protected abstract Object execute(final Object p_arg);
+	
+	protected void setExitCode(int exitCode)
+	{
+		m_exitCode = exitCode;
+	}
 	
 	protected TaskDelegate getTaskDelegate()
 	{

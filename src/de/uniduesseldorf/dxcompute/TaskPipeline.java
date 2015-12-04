@@ -38,7 +38,7 @@ public class TaskPipeline
 	
 	// -------------------------------------------------------------------
 	
-	void execute(final Object p_arg)
+	boolean execute(final Object p_arg)
 	{
 		Object arg;
 		
@@ -53,10 +53,18 @@ public class TaskPipeline
 			task.setLoggerDelegate(m_loggerDelegate);
 			log(LOG_LEVEL.LL_DEBUG, "Executing task " + task);
 			arg = task.execute(arg);
-			log(LOG_LEVEL.LL_DEBUG, "Executing task " + task + " finished.");
+			if (task.getExitCode() != 0)
+			{
+				log(LOG_LEVEL.LL_ERROR, "Executing task " + task + " failed with exit code " 
+						+ task.getExitCode() + ", aborting pipeline execution.");
+				return false;
+			}
+			else
+				log(LOG_LEVEL.LL_DEBUG, "Executing task " + task + " finished.");
 		}
 		
 		log(LOG_LEVEL.LL_INFO, "Executing done.");
+		return true;
 	}
 	
 	void setLoggerDelegate(final LoggerDelegate p_loggerInterface)

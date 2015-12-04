@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxcompute;
+package de.uniduesseldorf.dxcompute.data;
 
 public interface DataStructure 
 {

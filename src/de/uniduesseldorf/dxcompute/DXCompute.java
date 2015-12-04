@@ -1,5 +1,6 @@
 package de.uniduesseldorf.dxcompute;
 
+import de.uniduesseldorf.dxcompute.data.ComputeJob;
 import de.uniduesseldorf.dxcompute.job.JobSystem;
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
 import de.uniduesseldorf.dxcompute.logger.LoggerDelegate;

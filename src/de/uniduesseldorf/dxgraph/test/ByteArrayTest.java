@@ -1,7 +1,5 @@
 package de.uniduesseldorf.dxgraph.test;
 
-import de.uniduesseldorf.dxgraph.ByteArrayUtils;
-
 public class ByteArrayTest 
 {
 	public static void main(String[] args)

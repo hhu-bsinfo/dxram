@@ -2,9 +2,10 @@ package de.uniduesseldorf.dxgraph.load;
 
 import java.util.Vector;
 
-import de.uniduesseldorf.dxcompute.ComputeJob;
+import de.uniduesseldorf.dxcompute.data.ComputeJob;
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
-import de.uniduesseldorf.dxgraph.SimpleVertex;
+import de.uniduesseldorf.dxgraph.data.SimpleVertex;
+
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.utils.Pair;
 
@@ -46,85 +47,84 @@ public class JobLoadEdges extends ComputeJob
 
 	@Override
 	public long getJobID() {
-		// TODO Auto-generated method stub
+		// TODO
 		return 0;
 	}
 
 	private boolean addEdge(long p_vertexFrom, long p_vertexTo) 
 	{
+		long chunkIDFrom = Chunk.INVALID_CHUNKID;
+		long chunkIDTo = Chunk.INVALID_CHUNKID;
+		
+		// target vertex
+		chunkIDTo = m_nodeMapping.getChunkIDForNodeID(p_vertexTo);
+		// check if target vertex exists and create empty vertex if not
+		if (chunkIDTo == Chunk.INVALID_CHUNKID)
+		{
+			final int vertexSize = SimpleVertex.getSizeWithNeighbours(0);
+			SimpleVertex vertex;
+			long newVertexID;
+			
+			newVertexID = getStorageDelegate().create(vertexSize);
+			if (newVertexID == -1)
+			{
+				log(LOG_LEVEL.LL_ERROR, "Creating destination vertex of size " + vertexSize + " failed.");
+				return false;
+			}
+			vertex = new SimpleVertex(newVertexID);
+			if (getStorageDelegate().put(vertex) != 1)
+			{
+				log(LOG_LEVEL.LL_ERROR, "Putting destination vertex " + vertex + " failed.");
+				return false;
+			}
+			m_nodeMapping.setChunkIDForNodeID(p_vertexTo, chunkIDTo);
+		}
+		
+		// source vertex
+		chunkIDFrom = m_nodeMapping.getChunkIDForNodeID(p_vertexFrom);
+		// only check if exists and put back new chunk with added neighbour
+		if (chunkIDFrom == Chunk.INVALID_CHUNKID)
+		{
+			final int vertexSize = SimpleVertex.getSizeWithNeighbours(1);
+			SimpleVertex vertex;
+			long newVertexID;
+			
+			newVertexID = getStorageDelegate().create(vertexSize);
+			if (newVertexID == -1)
+			{
+				log(LOG_LEVEL.LL_ERROR, "Creating source vertex of size " + vertexSize + " failed.");
+				return false;
+			}
+			vertex = new SimpleVertex(newVertexID);
+			vertex.getNeighbours().add(chunkIDTo);
 
-			long chunkIDFrom = Chunk.INVALID_CHUNKID;
-			long chunkIDTo = Chunk.INVALID_CHUNKID;
-			
-			// target vertex
-			chunkIDTo = m_nodeMapping.getChunkIDForNodeID(p_vertexTo);
-			// check if target vertex exists and create empty vertex if not
-			if (chunkIDTo == Chunk.INVALID_CHUNKID)
+			if (getStorageDelegate().put(vertex) != 1)
 			{
-				final int vertexSize = SimpleVertex.getSizeWithNeighbours(0);
-				SimpleVertex vertex;
-				long newVertexID;
-				
-				newVertexID = getStorageInterface().create(vertexSize);
-				if (newVertexID == -1)
-				{
-					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Creating destination vertex of size " + vertexSize + " failed.");
-					return false;
-				}
-				vertex = new SimpleVertex(newVertexID);
-				if (getStorageInterface().put(vertex) != 1)
-				{
-					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Putting destination vertex " + vertex + " failed.");
-					return false;
-				}
-				m_nodeMapping.setChunkIDForNodeID(p_vertexTo, chunkIDTo);
+				log(LOG_LEVEL.LL_ERROR, "Putting source vertex " + vertex + " failed.");
+				return false;
+			}
+			m_nodeMapping.setChunkIDForNodeID(p_vertexFrom, chunkIDFrom);
+		}
+		// vertex exist, get and add neighbour
+		else
+		{
+			SimpleVertex vertex;
+		
+			vertex = new SimpleVertex(chunkIDFrom);
+			if (getStorageDelegate().get(vertex) != 1)
+			{
+				log(LOG_LEVEL.LL_ERROR, "Getting source vertex " + chunkIDFrom + " failed.");
+				return false;
 			}
 			
-			// source vertex
-			chunkIDFrom = m_nodeMapping.getChunkIDForNodeID(p_vertexFrom);
-			// only check if exists and put back new chunk with added neighbour
-			if (chunkIDFrom == Chunk.INVALID_CHUNKID)
-			{
-				final int vertexSize = SimpleVertex.getSizeWithNeighbours(1);
-				SimpleVertex vertex;
-				long newVertexID;
-				
-				newVertexID = getStorageInterface().create(vertexSize);
-				if (newVertexID == -1)
-				{
-					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Creating source vertex of size " + vertexSize + " failed.");
-					return false;
-				}
-				vertex = new SimpleVertex(newVertexID);
-				vertex.getNeighbours().add(chunkIDTo);
-
-				if (getStorageInterface().put(vertex) != 1)
-				{
-					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Putting source vertex " + vertex + " failed.");
-					return false;
-				}
-				m_nodeMapping.setChunkIDForNodeID(p_vertexFrom, chunkIDFrom);
-			}
-			// vertex exist, get and add neighbour
-			else
-			{
-				SimpleVertex vertex;
+			vertex.getNeighbours().add(chunkIDTo);
 			
-				vertex = new SimpleVertex(chunkIDFrom);
-				if (getStorageInterface().get(vertex) != 1)
-				{
-					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Getting source vertex " + chunkIDFrom + " failed.");
-					return false;
-				}
-				
-				vertex.getNeighbours().add(chunkIDTo);
-				
-				if (getStorageInterface().put(vertex) != 1)
-				{
-					getJobInterface().log(LOG_LEVEL.LL_ERROR, "Putting source vertex " + vertex + " failed.");
-					return false;
-				}
+			if (getStorageDelegate().put(vertex) != 1)
+			{
+				log(LOG_LEVEL.LL_ERROR, "Putting source vertex " + vertex + " failed.");
+				return false;
 			}
+		}
 
 		
 		return true;

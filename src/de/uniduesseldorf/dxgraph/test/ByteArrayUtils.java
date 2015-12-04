@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxgraph;
+package de.uniduesseldorf.dxgraph.test;
 
 import de.uniduesseldorf.dxram.utils.Endianness;
 
