@@ -4,6 +4,7 @@ package de.uniduesseldorf.dxram.core.net;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 import de.uniduesseldorf.dxram.core.net.AbstractConnectionCreator.ConnectionCreatorListener;
@@ -26,13 +27,15 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 	private boolean m_deactivated;
 
+	private ReentrantLock m_lock;
+
 	// Constructors
 	/**
 	 * Creates an instance of ConnectionStore
 	 * @param p_creator
 	 *            the ConnectionCreator
 	 */
-	public ConnectionManager(final AbstractConnectionCreator p_creator) {
+	ConnectionManager(final AbstractConnectionCreator p_creator) {
 		this(p_creator, null);
 	}
 
@@ -43,26 +46,30 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 * @param p_listener
 	 *            the ConnectionListener
 	 */
-	public ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener) {
+	ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener) {
 		m_connections = new HashMap<>();
 
 		m_creator = p_creator;
 		m_creator.setListener(this);
 		m_connectionListener = p_listener;
 		m_deactivated = false;
+
+		m_lock = new ReentrantLock(false);
 	}
 
 	/**
 	 * Activates the connection manager
 	 */
-	public synchronized void activate() {
+	public void activate() {
+		m_lock.lock();
 		m_deactivated = false;
+		m_lock.unlock();
 	}
 
 	/**
 	 * Deactivates the connection manager
 	 */
-	public synchronized void deactivate() {
+	public void deactivate() {
 		m_deactivated = true;
 	}
 
@@ -75,22 +82,29 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 * @throws IOException
 	 *             if the connection could not be get
 	 */
-	public synchronized AbstractConnection getConnection(final short p_destination) throws IOException {
+	public AbstractConnection getConnection(final short p_destination) throws IOException {
 		AbstractConnection ret;
 
 		Contract.checkNotNull(p_destination, "no destination given");
 
-		ret = m_connections.get(p_destination);
-		if (ret == null && !m_deactivated) {
-			if (m_connections.size() == MAX_CONNECTIONS) {
-				dismissConnection();
-			}
+		m_lock.lock();
+		try {
+			ret = m_connections.get(p_destination);
+			if (ret == null && !m_deactivated) {
+				if (m_connections.size() == MAX_CONNECTIONS) {
+					dismissConnection();
+				}
 
-			ret = m_creator.createConnection(p_destination, m_connectionListener);
-			if (null != ret) {
-				m_connections.put(ret.getDestination(), ret);
+				ret = m_creator.createConnection(p_destination, m_connectionListener);
+				if (null != ret) {
+					m_connections.put(ret.getDestination(), ret);
+				}
 			}
+		} catch (final IOException e) {
+			m_lock.unlock();
+			throw e;
 		}
+		m_lock.unlock();
 
 		return ret;
 	}
@@ -98,10 +112,11 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	/**
 	 * Dismiss the connection with the lowest rating
 	 */
-	private synchronized void dismissConnection() {
+	private void dismissConnection() {
 		AbstractConnection dismiss = null;
 		int lowestRating = Integer.MAX_VALUE;
 
+		m_lock.lock();
 		for (AbstractConnection connection : m_connections.values()) {
 			if (connection.getRating() < lowestRating) {
 				dismiss = connection;
@@ -112,6 +127,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 		if (dismiss != null) {
 			dismiss.close();
 		}
+		m_lock.unlock();
 	}
 
 	/**
@@ -119,15 +135,17 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 * @param p_destination
 	 *            the destination
 	 */
-	public synchronized void closeConnection(final short p_destination) {
+	public void closeConnection(final short p_destination) {
 		AbstractConnection connection;
 
 		Contract.checkNotNull(p_destination, "no destination given");
 
+		m_lock.lock();
 		connection = m_connections.get(p_destination);
 		if (connection != null) {
 			connection.close();
 		}
+		m_lock.unlock();
 	}
 
 	/**
@@ -136,11 +154,13 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 *            the new connection
 	 */
 	@Override
-	public synchronized void connectionCreated(final AbstractConnection p_connection) {
+	public void connectionCreated(final AbstractConnection p_connection) {
+		m_lock.lock();
 		if (!m_connections.containsKey(p_connection.getDestination())) {
 			m_connections.put(p_connection.getDestination(), p_connection);
 			p_connection.setListener(m_connectionListener);
 		}
+		m_lock.unlock();
 	}
 
 	/**
@@ -149,12 +169,14 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 *            the closed connection
 	 */
 	@Override
-	public synchronized void connectionClosed(final AbstractConnection p_connection) {
+	public void connectionClosed(final AbstractConnection p_connection) {
+		m_lock.lock();
 		if (m_connections.containsKey(p_connection.getDestination())) {
 			m_connections.remove(p_connection.getDestination());
 			p_connection.cleanup();
 			// TODO: Inform and update system
 		}
+		m_lock.unlock();
 	}
 
 }

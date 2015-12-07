@@ -14,6 +14,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.NodeID;
@@ -33,8 +35,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	// Constants
 	private static final int INCOMING_BUFFER_SIZE = 65536 * 2;
 	private static final int OUTGOING_BUFFER_SIZE = 65536;
-	private static final int SEND_BYTES = 1024;
-	private static final int CONNECTION_TIMEOUT = 1000;
+	private static final int SEND_BYTES = 1024 * 1024;
+	private static final int CONNECTION_TIMEOUT = 200;
 
 	private static final int MAX_OUTSTANDING_BYTES = BufferCache.MAX_MEMORY_CACHED;
 
@@ -97,25 +99,30 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	@Override
 	public NIOConnection createConnection(final short p_destination, final DataReceiver p_listener) throws IOException {
 		NIOConnection ret;
+		ReentrantLock condLock;
+		Condition cond;
 		long timeStart;
 		long timeNow;
 
-		ret = new NIOConnection(p_destination, p_listener);
+		condLock = new ReentrantLock(false);
+		cond = condLock.newCondition();
+		ret = new NIOConnection(p_destination, p_listener, condLock, cond);
 
 		timeStart = System.currentTimeMillis();
-		synchronized (ret) {
-			while (!ret.isConnected()) {
-				timeNow = System.currentTimeMillis();
-				if (timeNow - timeStart > CONNECTION_TIMEOUT) {
-					LOGGER.warn("connection time-out");
+		condLock.lock();
+		while (!ret.isConnected()) {
+			timeNow = System.currentTimeMillis();
+			if (timeNow - timeStart > CONNECTION_TIMEOUT) {
+				LOGGER.debug("connection time-out");
 
-					throw new IOException("Timeout occurred");
-				}
-				try {
-					ret.wait(20);
-				} catch (final InterruptedException e) { /* ignore */}
+				condLock.unlock();
+				throw new IOException("Timeout occurred");
 			}
+			try {
+				cond.awaitNanos(20000);
+			} catch (final InterruptedException e) { /* ignore */}
 		}
+		condLock.unlock();
 
 		return ret;
 	}
@@ -138,6 +145,15 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		private int m_unconfirmedBytes;
 		private int m_receivedBytes;
 
+		private ReentrantLock m_connectionCondLock;
+		private Condition m_connectionCond;
+
+		private ReentrantLock m_flowControlCondLock;
+		private Condition m_flowControlCond;
+
+		private ReentrantLock m_incomingLock;
+		private ReentrantLock m_outgoingLock;
+
 		// Constructors
 		/**
 		 * Creates an instance of NIOConnection
@@ -145,14 +161,23 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            the destination
 		 * @param p_listener
 		 *            the ConnectionListener
+		 * @param p_lock
+		 *            the ReentrantLock
+		 * @param p_cond
+		 *            the Condition
 		 * @throws IOException
 		 *             if the connection could not be created
 		 */
-		protected NIOConnection(final short p_destination, final DataReceiver p_listener) throws IOException {
+		protected NIOConnection(final short p_destination, final DataReceiver p_listener,
+				final ReentrantLock p_lock, final Condition p_cond) throws IOException {
 			super(p_destination, p_listener);
 
 			m_channel = SocketChannel.open();
 			m_channel.configureBlocking(false);
+			m_channel.socket().setSoTimeout(0);
+			m_channel.socket().setTcpNoDelay(true);
+			m_channel.socket().setSendBufferSize(OUTGOING_BUFFER_SIZE);
+			m_channel.socket().setReceiveBufferSize(INCOMING_BUFFER_SIZE);
 
 			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
@@ -160,6 +185,14 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			m_incoming = new ArrayDeque<>();
 			m_outgoing = new ArrayDeque<>();
+
+			m_connectionCondLock = p_lock;
+			m_connectionCond = p_cond;
+
+			m_flowControlCondLock = new ReentrantLock(false);
+			m_flowControlCond = m_flowControlCondLock.newCondition();
+			m_incomingLock = new ReentrantLock(false);
+			m_outgoingLock = new ReentrantLock(false);
 		}
 
 		/**
@@ -175,11 +208,21 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			super(p_destination);
 
 			m_channel = p_channel;
+			m_channel.configureBlocking(false);
+			m_channel.socket().setSoTimeout(0);
+			m_channel.socket().setTcpNoDelay(true);
 			m_channel.socket().setSendBufferSize(OUTGOING_BUFFER_SIZE);
 			m_channel.socket().setReceiveBufferSize(INCOMING_BUFFER_SIZE);
 
 			m_incoming = new ArrayDeque<>();
 			m_outgoing = new ArrayDeque<>();
+
+			m_connectionCondLock = new ReentrantLock(false);
+			m_connectionCond = m_connectionCondLock.newCondition();
+			m_flowControlCondLock = new ReentrantLock(false);
+			m_flowControlCond = m_flowControlCondLock.newCondition();
+			m_incomingLock = new ReentrantLock(false);
+			m_outgoingLock = new ReentrantLock(false);
 		}
 
 		// Methods
@@ -190,20 +233,20 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *             if the message could not be read
 		 */
 		@Override
-		protected ByteBuffer doRead() throws IOException {
+		protected ByteBuffer doRead() {
 			ByteBuffer ret;
 
-			synchronized (m_incoming) {
-				ret = m_incoming.poll();
-			}
+			m_incomingLock.lock();
+			ret = m_incoming.poll();
+			m_incomingLock.unlock();
 
 			m_receivedBytes += ret.remaining();
 
-			synchronized (this) {
-				if (m_receivedBytes > MAX_OUTSTANDING_BYTES / 8) {
-					sendFlowControlMessage();
-				}
+			m_flowControlCondLock.lock();
+			if (m_receivedBytes > MAX_OUTSTANDING_BYTES / 8) {
+				sendFlowControlMessage();
 			}
+			m_flowControlCondLock.unlock();
 
 			return ret;
 		}
@@ -214,9 +257,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            the ByteBuffer
 		 */
 		protected void addIncoming(final ByteBuffer p_buffer) {
-			synchronized (m_incoming) {
-				m_incoming.offer(p_buffer);
-			}
+			m_incomingLock.lock();
+			m_incoming.offer(p_buffer);
+			m_incomingLock.unlock();
 
 			// fireNewData();
 			newData();
@@ -230,20 +273,19 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *             if the data could not be written
 		 */
 		@Override
-		protected void doWrite(final AbstractMessage p_message) throws IOException {
+		protected void doWrite(final AbstractMessage p_message) {
 			ByteBuffer buffer;
 
 			buffer = p_message.getBuffer();
-			synchronized (this) {
-				// while (m_unconfirmedBytes > MAX_OUTSTANDING_BYTES) {
-				// try {
-				// System.out.println(super.getDestination() + ": waiting " + m_unconfirmedBytes + " of " + MAX_OUTSTANDING_BYTES);
-				// super.wait();
-				// } catch (final InterruptedException e) { /* ignore */}
-				// }
-
-				m_unconfirmedBytes += buffer.remaining();
+			m_flowControlCondLock.lock();
+			while (m_unconfirmedBytes > MAX_OUTSTANDING_BYTES) {
+				try {
+					m_flowControlCond.await();
+				} catch (final InterruptedException e) { /* ignore */}
 			}
+
+			m_unconfirmedBytes += buffer.remaining();
+			m_flowControlCondLock.unlock();
 
 			writeToChannel(buffer);
 		}
@@ -254,15 +296,13 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            Buffer
 		 */
 		private void writeToChannel(final ByteBuffer p_buffer) {
-			synchronized (m_outgoing) {
-				if (m_outgoing.isEmpty()) {
-					m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
-				}
-
-				// System.out.println("Offering");
-				m_outgoing.offer(p_buffer);
-				// System.out.println("Offered " + p_buffer.capacity() + " Bytes");
+			m_outgoingLock.lock();
+			if (m_outgoing.isEmpty()) {
+				m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
 			}
+
+			m_outgoing.offer(p_buffer);
+			m_outgoingLock.unlock();
 		}
 
 		/**
@@ -279,30 +319,29 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			buffers = new LinkedList<>();
 			while (!m_outgoing.isEmpty()) {
-				synchronized (m_outgoing) {
-					buffer = m_outgoing.poll();
-				}
+				m_outgoingLock.lock();
+				buffer = m_outgoing.poll();
+				m_outgoingLock.unlock();
 
-				// System.out.println(buffer.capacity() + ", " + buffer.remaining());
-				// skip when buffer is completed
+				// Skip when buffer is completed
 				if (buffer == null || !buffer.hasRemaining()) {
 					continue;
 				}
 
-				// append when limit will not be reached
+				// Append when limit will not be reached
 				if (length + buffer.remaining() <= p_bytes) {
 					length += buffer.remaining();
 					buffers.add(buffer);
 				} else {
-					// append when limit has exceeded but buffer is still empty
+					// Append when limit has exceeded but buffer is still empty
 					if (buffers.isEmpty()) {
 						length += buffer.remaining();
 						buffers.add(buffer);
 					} else {
-						// write back buffer for next sending call
-						synchronized (m_outgoing) {
-							m_outgoing.addFirst(buffer);
-						}
+						// Write back buffer for next sending call
+						m_outgoingLock.lock();
+						m_outgoing.addFirst(buffer);
+						m_outgoingLock.unlock();
 					}
 
 					break;
@@ -311,12 +350,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			if (length > 0) {
 				ret = buffers.toArray(new ByteBuffer[buffers.size()]);
-
-				synchronized (m_outgoing) {
-					for (int i = ret.length - 1; i >= 0; i--) {
-						m_outgoing.addFirst(ret[i]);
-					}
-				}
 			}
 
 			return ret;
@@ -338,11 +371,17 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @throws IOException
 		 *             if the connection could not be accessed
 		 */
-		protected synchronized void connected() throws IOException {
+		protected void connected() throws IOException {
 			ByteBuffer temp;
 
-			m_channel.socket().setSendBufferSize(OUTGOING_BUFFER_SIZE);
-			m_channel.socket().setReceiveBufferSize(INCOMING_BUFFER_SIZE);
+			m_connectionCondLock.lock();
+			try {
+				m_channel.socket().setSendBufferSize(OUTGOING_BUFFER_SIZE);
+				m_channel.socket().setReceiveBufferSize(INCOMING_BUFFER_SIZE);
+			} catch (final IOException e) {
+				m_connectionCondLock.unlock();
+				throw e;
+			}
 
 			temp = ByteBuffer.allocate(2);
 			OutputHelper.writeNodeID(temp, m_nodeID);
@@ -352,7 +391,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			setConnected(true);
 
-			notifyAll();
+			m_connectionCond.signalAll();
+			m_connectionCondLock.unlock();
 		}
 
 		@Override
@@ -388,10 +428,12 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @param p_message
 		 *            FlowControlMessage
 		 */
-		private synchronized void handleFlowControlMessage(final FlowControlMessage p_message) {
+		private void handleFlowControlMessage(final FlowControlMessage p_message) {
+			m_flowControlCondLock.lock();
 			m_unconfirmedBytes -= p_message.getConfirmedBytes();
 
-			super.notifyAll();
+			m_flowControlCond.signalAll();
+			m_flowControlCondLock.unlock();
 		}
 	}
 
@@ -410,6 +452,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		private final Queue<ChangeOperationsRequest> m_changeRequests;
 		private final Queue<CloseConnectionRequest> m_closeRequests;
 
+		private ReentrantLock m_changeLock;
+		private ReentrantLock m_closeLock;
+
 		private boolean m_running;
 
 		// Constructors
@@ -420,12 +465,15 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_channel = null;
 			m_selector = null;
 
-			m_executor = new TaskExecutor("NIO", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_NIO_THREAD_COUNT));
+			m_executor = new TaskExecutor("NIO");
 
 			m_changeRequests = new ArrayDeque<>();
 			m_closeRequests = new ArrayDeque<>();
 
 			m_running = false;
+
+			m_changeLock = new ReentrantLock(false);
+			m_closeLock = new ReentrantLock(false);
 		}
 
 		/**
@@ -474,22 +522,22 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			SelectionKey key;
 			final Selector selector = m_selector;
 
+			// Handle pending ChangeOperationsRequests
+			m_changeLock.lock();
+			while (!m_changeRequests.isEmpty()) {
+				changeRequest = m_changeRequests.poll();
+				changeOptions(changeRequest.m_connection, changeRequest.m_operations);
+			}
+			m_changeLock.unlock();
+
+			// Handle pending CloseConnectionRequests
+			m_closeLock.lock();
+			while (!m_closeRequests.isEmpty()) {
+				closeConnection(m_closeRequests.poll().m_connection);
+			}
+			m_closeLock.unlock();
+
 			try {
-				// Handle pending ChangeOperationsRequests
-				synchronized (m_changeRequests) {
-					while (!m_changeRequests.isEmpty()) {
-						changeRequest = m_changeRequests.poll();
-						changeOptions(changeRequest.m_connection, changeRequest.m_operations);
-					}
-				}
-
-				// Handle pending CloseConnectionRequests
-				synchronized (m_closeRequests) {
-					while (!m_closeRequests.isEmpty()) {
-						closeConnection(m_closeRequests.poll().m_connection);
-					}
-				}
-
 				// Wait for network action
 				if (selector.select() > 0 && selector.isOpen()) {
 					selected = selector.selectedKeys();
@@ -521,7 +569,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				try {
 					Thread.sleep(1);
 				} catch (final InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -533,7 +580,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            SelectionKey to handle
 		 */
 		private void dispatch(final SelectionKey p_key) {
-			SelectionKeyHandler handler;
 			NIOConnection connection;
 
 			connection = (NIOConnection) p_key.attachment();
@@ -542,14 +588,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					connection.m_handler = new SelectionKeyHandler(p_key);
 				}
 
-				handler = connection.m_handler;
-
 				// dispatch event when the connection is known
-				m_executor.execute(handler);
+				m_executor.execute(connection.m_handler);
 			} else {
 				// handle unknown events by itself
-				handler = new SelectionKeyHandler(p_key);
-				handler.run();
+				new SelectionKeyHandler(p_key).run();
 			}
 		}
 
@@ -573,9 +616,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            the ChangeOperationsRequest
 		 */
 		protected void addOperationChangeRequest(final ChangeOperationsRequest p_request) {
-			synchronized (m_changeRequests) {
-				m_changeRequests.offer(p_request);
-			}
+			m_changeLock.lock();
+			m_changeRequests.offer(p_request);
+			m_changeLock.unlock();
 
 			m_selector.wakeup();
 		}
@@ -586,9 +629,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            the CloseConnectionRequest
 		 */
 		protected void addCloseConnectionRequest(final CloseConnectionRequest p_request) {
-			synchronized (m_closeRequests) {
-				m_closeRequests.offer(p_request);
-			}
+			m_closeLock.lock();
+			m_closeRequests.offer(p_request);
+			m_closeLock.unlock();
 
 			m_selector.wakeup();
 		}
@@ -614,14 +657,18 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            the connection
 		 */
 		private void closeConnection(final NIOConnection p_connection) {
-			p_connection.m_channel.keyFor(m_selector).cancel();
-			try {
-				p_connection.m_channel.close();
-			} catch (final IOException e) {
-				LOGGER.error("ERROR::Could not close connection to " + p_connection.getDestination(), e);
-			}
+			SelectionKey key;
 
-			fireConnectionClosed(p_connection);
+			key = p_connection.m_channel.keyFor(m_selector);
+			if (key != null) {
+				key.cancel();
+				try {
+					p_connection.m_channel.close();
+				} catch (final IOException e) {
+					LOGGER.error("ERROR::Could not close connection to " + p_connection.getDestination(), e);
+				}
+				fireConnectionClosed(p_connection);
+			}
 		}
 
 		/**
@@ -700,54 +747,44 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		private final SelectionKey m_key;
 		private final ByteBuffer m_buffer;
 
-		private final Object m_writeLock = new Object();
-
-		private Boolean m_writing = false;
-		private Boolean m_reading = false;
+		private ReentrantLock m_connectionLock;
+		private ReentrantLock m_bufferLock;
+		private ReentrantLock m_writeLock;
 
 		/**
 		 * Creates a new SelectionKeyHandler
 		 * @param p_key
 		 *            SelectionKey
 		 */
-		public SelectionKeyHandler(final SelectionKey p_key) {
-			m_buffer = ByteBuffer.allocateDirect(INCOMING_BUFFER_SIZE);
+		SelectionKeyHandler(final SelectionKey p_key) {
+			m_buffer = ByteBuffer.allocateDirect(SEND_BYTES);
 			m_key = p_key;
+			m_connectionLock = new ReentrantLock(false);
+			m_bufferLock = new ReentrantLock(false);
+			m_writeLock = new ReentrantLock(false);
 		}
 
 		@Override
 		public void run() {
-			NIOConnection connection;
+			NIOConnection connection = null;
 
 			if (m_key.isValid()) {
 				try {
 					connection = (NIOConnection) m_key.attachment();
 
-					if (m_key.isReadable() && !m_reading) {
-						synchronized (m_buffer) {
-							m_reading = true;
-
-							if (connection == null) {
-								createConnection((SocketChannel) m_key.channel());
-							} else {
-								read(connection);
-							}
-
-							m_reading = false;
+					if (m_key.isReadable()) {
+						if (connection == null) {
+							createConnection((SocketChannel) m_key.channel());
+						} else {
+							read(connection);
 						}
-					} else if (m_key.isWritable() && !m_writing) {
-						synchronized (m_writeLock) {
-							m_writing = true;
-
-							write(connection);
-
-							m_writing = false;
-						}
+					} else if (m_key.isWritable()) {
+						write(connection);
 					} else if (m_key.isConnectable()) {
 						connect(connection);
 					}
 				} catch (final IOException e) {
-					LOGGER.warn("WARN::Accessing the channel");
+					LOGGER.debug("WARN::Accessing the channel");
 				}
 			}
 		}
@@ -760,31 +797,39 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @throws IOException
 		 *             if the connection could not be created
 		 */
-		private synchronized void createConnection(final SocketChannel p_channel) throws IOException {
+		private void createConnection(final SocketChannel p_channel) throws IOException {
 			NIOConnection connection;
 			ByteBuffer buffer;
 
-			m_buffer.clear();
+			m_connectionLock.lock();
+			try {
+				m_buffer.clear();
 
-			if (p_channel.read(m_buffer) == -1) {
-				p_channel.keyFor(m_worker.m_selector).cancel();
-				p_channel.close();
-			} else {
-				m_buffer.flip();
+				if (p_channel.read(m_buffer) == -1) {
+					p_channel.keyFor(m_worker.m_selector).cancel();
+					p_channel.close();
+				} else {
+					m_buffer.flip();
 
-				connection = new NIOConnection(InputHelper.readNodeID(m_buffer), p_channel);
-				p_channel.register(m_worker.m_selector, SelectionKey.OP_READ, connection);
+					connection = new NIOConnection(InputHelper.readNodeID(m_buffer), p_channel);
+					p_channel.register(m_worker.m_selector, SelectionKey.OP_READ, connection);
 
-				fireConnectionCreated(connection);
+					fireConnectionCreated(connection);
 
-				if (m_buffer.hasRemaining()) {
-					buffer = ByteBuffer.allocate(m_buffer.remaining());
-					buffer.put(m_buffer);
-					buffer.flip();
+					if (m_buffer.hasRemaining()) {
+						buffer = ByteBuffer.allocate(m_buffer.remaining());
+						buffer.put(m_buffer);
+						buffer.flip();
 
-					connection.addIncoming(buffer);
+						connection.addIncoming(buffer);
+					}
 				}
+			} catch (final IOException e) {
+				LOGGER.error("ERROR::Could not create connection", e);
+				m_connectionLock.unlock();
+				throw e;
 			}
+			m_connectionLock.unlock();
 		}
 
 		/**
@@ -797,72 +842,118 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 */
 		private void read(final NIOConnection p_connection) throws IOException {
 			ByteBuffer buffer;
+			long readBytes = 0;
 
-			m_buffer.clear();
+			m_bufferLock.lock();
+			try {
+				m_buffer.clear();
+				while (m_buffer.position() + INCOMING_BUFFER_SIZE <= m_buffer.capacity()) {
+					m_buffer.limit(m_buffer.position() + INCOMING_BUFFER_SIZE);
 
-			if (p_connection.m_channel.read(m_buffer) == -1) {
-				m_worker.closeConnection(p_connection);
-			} else {
-				m_buffer.flip();
+					try {
+						readBytes = p_connection.m_channel.read(m_buffer);
+					} catch (final ClosedChannelException e) {
+						// Channel is closed -> ignore
+						break;
+					}
+					if (readBytes == -1) {
+						m_worker.closeConnection(p_connection);
+						break;
+					} else if (readBytes == 0) {
+						m_buffer.limit(m_buffer.position());
+						m_buffer.position(0);
 
-				ThroughputStatistic.getInstance().incomingExtern(m_buffer.remaining());
-
-				buffer = ByteBuffer.allocate(m_buffer.remaining());
-				buffer.put(m_buffer);
-				buffer.flip();
-
-				p_connection.addIncoming(buffer);
+						buffer = ByteBuffer.allocate(m_buffer.limit());
+						buffer.put(m_buffer);
+						buffer.flip();
+						p_connection.addIncoming(buffer);
+						break;
+					}
+				}
+			} catch (final IOException e) {
+				LOGGER.debug("WARN::Could not read from channel (" + p_connection.getDestination() + ")", e);
+				m_bufferLock.unlock();
+				throw e;
 			}
+			m_bufferLock.unlock();
 		}
 
 		/**
 		 * Writes to the given connection
 		 * @param p_connection
 		 *            the connection
+		 * @throws IOException
+		 *             if the data could not be written
 		 */
-		private void write(final NIOConnection p_connection) {
+		private void write(final NIOConnection p_connection) throws IOException {
+			int sum = 0;
+			int size;
+			ByteBuffer view;
 			ByteBuffer[] buffers;
 
 			buffers = p_connection.getOutgoingBytes(SEND_BYTES);
-			/*-if (buffers != null) {
-				System.out.println("Sending " + buffers.length + " buffer" + ", lenght: " + buffers[0].capacity());
-			}*/
+			m_writeLock.lock();
 			try {
-				while (buffers != null && buffers.length > 0) {
-					int sum = 0;
-					for (ByteBuffer buffer : buffers) {
+				if (buffers != null) {
+					outerloop: for (ByteBuffer buffer : buffers) {
 						sum += buffer.remaining();
-					}
+						if (buffer.remaining() > SEND_BYTES) {
+							// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
+							// the length of the actual written data -> simulate a smaller buffer by slicing it
+							while (buffer.remaining() > 0) {
+								size = Math.min(buffer.remaining(), SEND_BYTES);
+								view = buffer.slice();
+								view.limit(size);
 
-					p_connection.m_channel.write(buffers);
-
-					sum -= buffers[buffers.length - 1].remaining();
-					ThroughputStatistic.getInstance().outgoingExtern(sum);
-
-					if (buffers[buffers.length - 1].hasRemaining()) {
-						buffers = null;
-					} else {
-						buffers = p_connection.getOutgoingBytes(SEND_BYTES);
+								int length = view.remaining();
+								while (length > 0) {
+									try {
+										length -= p_connection.m_channel.write(view);
+									} catch (final ClosedChannelException e) {
+										// Channel is closed -> ignore
+										break outerloop;
+									}
+								}
+								buffer.position(buffer.position() + size);
+							}
+						} else {
+							int length = buffer.remaining();
+							while (length > 0) {
+								try {
+									length -= p_connection.m_channel.write(buffer);
+								} catch (final ClosedChannelException e) {
+									// Channel is closed -> ignore
+									break outerloop;
+								}
+							}
+						}
+						ThroughputStatistic.getInstance().outgoingExtern(sum);
 					}
 				}
 			} catch (final IOException e) {
-				LOGGER.error("ERROR::Could not write to channel (" + p_connection.getDestination() + ")", e);
-				p_connection.close();
+				LOGGER.debug("WARN::Could not write to channel (" + p_connection.getDestination() + ")", e);
+				m_writeLock.unlock();
+				throw e;
 			}
+			m_writeLock.unlock();
 		}
 
 		/**
 		 * Finishes the connection process for the given connection
 		 * @param p_connection
 		 *            the connection
+		 * @throws IOException
+		 *             if connection could not be finalized
 		 */
-		private synchronized void connect(final NIOConnection p_connection) {
-			if (p_connection.m_channel.isConnectionPending()) {
-				try {
+		private void connect(final NIOConnection p_connection) {
+			m_connectionLock.lock();
+			try {
+				if (p_connection.m_channel.isConnectionPending()) {
 					p_connection.m_channel.finishConnect();
 					p_connection.connected();
-				} catch (final IOException e) { /* ignore */}
-			}
+				}
+			} catch (final IOException e) {/* ignore */}
+			m_connectionLock.unlock();
 		}
 
 	}
@@ -881,14 +972,14 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		/**
 		 * Default constructor for serialization
 		 */
-		public FlowControlMessage() {}
+		FlowControlMessage() {}
 
 		/**
 		 * Create a new Message for confirming received bytes.
 		 * @param p_confirmedBytes
 		 *            number of received bytes
 		 */
-		public FlowControlMessage(final int p_confirmedBytes) {
+		FlowControlMessage(final int p_confirmedBytes) {
 			super((short) 0, TYPE, SUBTYPE);
 			m_confirmedBytes = p_confirmedBytes;
 		}

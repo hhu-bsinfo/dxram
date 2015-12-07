@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.net;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
@@ -35,6 +36,7 @@ public abstract class AbstractMessage {
 	private byte m_ratingValue;
 
 	private static long m_nextMessageID = 1;
+	private static ReentrantLock m_lock = new ReentrantLock(false);
 
 	// Constructors
 	/**
@@ -269,8 +271,14 @@ public abstract class AbstractMessage {
 	 * Get next free messageID
 	 * @return next free messageID
 	 */
-	private static synchronized long getNextMessageID() {
-		return m_nextMessageID++;
+	private static long getNextMessageID() {
+		long ret;
+
+		m_lock.lock();
+		ret = m_nextMessageID++;
+		m_lock.unlock();
+
+		return ret;
 	}
 
 	/**

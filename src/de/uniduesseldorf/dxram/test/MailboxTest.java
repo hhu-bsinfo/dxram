@@ -64,7 +64,7 @@ public final class MailboxTest {
 		/**
 		 * Creates an instance of Superpeer
 		 */
-		public Superpeer() {}
+		Superpeer() {}
 
 		// Methods
 		/**
@@ -109,7 +109,7 @@ public final class MailboxTest {
 		 * @param p_amount
 		 *            the amount of Chunks to create
 		 */
-		public Server(final int p_amount) {
+		Server(final int p_amount) {
 			m_amount = p_amount;
 		}
 
@@ -221,7 +221,7 @@ public final class MailboxTest {
 		/**
 		 * Creates an instance of Client
 		 */
-		public Client() {}
+		Client() {}
 
 		// Methods
 		/**
@@ -283,7 +283,7 @@ public final class MailboxTest {
 		/**
 		 * Creates an instance of Backup
 		 */
-		public Backup() {}
+		Backup() {}
 
 		// Methods
 		/**

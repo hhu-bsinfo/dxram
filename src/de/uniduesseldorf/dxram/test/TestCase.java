@@ -835,7 +835,7 @@ public final class TestCase {
 		/**
 		 * Creates an instance of MemoryInput
 		 */
-		public MemoryInput() {
+		MemoryInput() {
 			m_init = null;
 			m_deinit = null;
 			m_operations = null;
@@ -926,7 +926,7 @@ public final class TestCase {
 		 * @param p_prefix
 		 *            the prefix of the test files
 		 */
-		public FileInput(final String p_prefix) {
+		FileInput(final String p_prefix) {
 			m_prefix = p_prefix;
 
 			m_input = null;
@@ -1458,7 +1458,7 @@ public final class TestCase {
 		/**
 		 * Creates an instance of DefaultEvaluation
 		 */
-		public DefaultEvaluation() {}
+		DefaultEvaluation() {}
 
 		@Override
 		public void evaluate(final TestResult p_result) {
@@ -1513,7 +1513,7 @@ public final class TestCase {
 		 * @param p_time
 		 *            the interim time
 		 */
-		public InterimTime(final String p_title, final long p_time) {
+		InterimTime(final String p_title, final long p_time) {
 			m_title = p_title;
 			m_time = p_time;
 		}

@@ -1410,16 +1410,16 @@ public final class LookupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_localID) {
-				low = mid + 1;
-			} else if (midVal > p_localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_localID) {
+					low = mid + 1;
+				} else if (midVal > p_localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1609,16 +1609,16 @@ public final class LookupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLocalID(0);
+				midVal = m_children[mid].getLocalID(0);
 
-			if (midVal < localID) {
-				low = mid + 1;
-			} else if (midVal > localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < localID) {
+					low = mid + 1;
+				} else if (midVal > localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1798,7 +1798,7 @@ public final class LookupTree implements Serializable {
 		 * @param p_nodeID
 		 *            the NodeID
 		 */
-		public Entry(final long p_localID, final short p_nodeID) {
+		Entry(final long p_localID, final short p_nodeID) {
 			m_localID = p_localID;
 			m_nodeID = p_nodeID;
 		}

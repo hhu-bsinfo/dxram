@@ -247,7 +247,7 @@ public final class LockTest {
 		 * @param p_time
 		 *            the test time
 		 */
-		public TestResult(final long p_time) {
+		TestResult(final long p_time) {
 			m_time = p_time;
 		}
 

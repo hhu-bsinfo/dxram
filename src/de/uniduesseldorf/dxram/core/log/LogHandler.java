@@ -208,8 +208,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public void initBackupRange(final long p_firstChunkIDOrRangeID, final short[] p_backupPeers) {
 		InitRequest request;
 		InitResponse response;
+		long time;
 
-		long time = System.currentTimeMillis();
+		time = System.currentTimeMillis();
 		if (null != p_backupPeers) {
 			for (int i = 0; i < p_backupPeers.length; i++) {
 				if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) != -1) {

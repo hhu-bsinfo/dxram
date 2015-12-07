@@ -298,7 +298,7 @@ public class PrimaryWriteBuffer {
 		/**
 		 * Creates an instance of PrimaryLogWriterThread
 		 */
-		public PrimaryLogWriterThread() {
+		PrimaryLogWriterThread() {
 			m_time = System.currentTimeMillis();
 			m_amount = 0;
 			m_throughput = 0;

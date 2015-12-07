@@ -251,9 +251,9 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 				}
 			}
 
-			// Add this node if it was not in start configuration
 			if (NodeID.getLocalNodeID() == 0) {
-				LOGGER.warn("node not in nodes.config");
+				// Add this node if it was not in start configuration
+				LOGGER.warn("node not in nodes.config (" + ownIP + ", " + ownPort + ")");
 
 				node = ownIP + "/" + ownPort + "/" + "P" + "/" + 0 + "/" + 0;
 
@@ -277,6 +277,12 @@ public final class DefaultNodesConfigurationParser extends AbstractNodesConfigur
 				}
 				// Set routing information for that node
 				ret[nodeID & 0x0000FFFF] = parseNode(ownIP, ownPort, nodeID);
+			} else {
+				// Remove NodeID if this node failed before
+				nodeID = NodeID.getLocalNodeID();
+				if (ZooKeeperHandler.exists("nodes/free/" + nodeID)) {
+					ZooKeeperHandler.delete("nodes/free/" + nodeID);
+				}
 			}
 			// Set watches
 			ZooKeeperHandler.setChildrenWatch("nodes/new", this);

@@ -73,7 +73,7 @@ public final class ThroughputTest {
 		/**
 		 * Creates an instance of Superpeer
 		 */
-		public Superpeer() {}
+		Superpeer() {}
 
 		// Methods
 		/**
@@ -118,7 +118,7 @@ public final class ThroughputTest {
 		 * @param p_threadCount
 		 *            the number of threads
 		 */
-		public Server(final int p_chunkCount, final int p_threadCount) {
+		Server(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
 			m_threadCount = p_threadCount;
 		}
@@ -589,7 +589,7 @@ public final class ThroughputTest {
 		 * @param p_threadCount
 		 *            the number of threads
 		 */
-		public Client(final int p_chunkCount, final int p_threadCount) {
+		Client(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
 			m_threadCount = p_threadCount;
 		}
@@ -888,7 +888,7 @@ public final class ThroughputTest {
 		 * @param p_time
 		 *            the test time
 		 */
-		public TestResult(final long p_time) {
+		TestResult(final long p_time) {
 			m_time = p_time;
 		}
 

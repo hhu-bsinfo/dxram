@@ -4,6 +4,7 @@ package de.uniduesseldorf.dxram.core.net;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -35,13 +36,15 @@ abstract class AbstractConnection {
 	private int m_rating;
 	private long m_timestamp;
 
+	private ReentrantLock m_lock;
+
 	// Constructors
 	/**
 	 * Creates an instance of AbstractConnection
 	 * @param p_destination
 	 *            the destination
 	 */
-	public AbstractConnection(final short p_destination) {
+	AbstractConnection(final short p_destination) {
 		this(p_destination, null);
 	}
 
@@ -52,7 +55,7 @@ abstract class AbstractConnection {
 	 * @param p_listener
 	 *            the ConnectionListener
 	 */
-	public AbstractConnection(final short p_destination, final DataReceiver p_listener) {
+	AbstractConnection(final short p_destination, final DataReceiver p_listener) {
 		NodeID.check(p_destination);
 
 		m_dataHandler = new DataHandler();
@@ -67,6 +70,8 @@ abstract class AbstractConnection {
 
 		m_rating = 0;
 		m_timestamp = 0;
+
+		m_lock = new ReentrantLock(false);
 	}
 
 	// Getters
@@ -74,8 +79,14 @@ abstract class AbstractConnection {
 	 * Checks if the connection is connected
 	 * @return true if the connection is connected, false otherwise
 	 */
-	public final synchronized boolean isConnected() {
-		return m_connected;
+	public final boolean isConnected() {
+		boolean ret;
+
+		m_lock.lock();
+		ret = m_connected;
+		m_lock.unlock();
+
+		return ret;
 	}
 
 	/**
@@ -108,8 +119,10 @@ abstract class AbstractConnection {
 	 * @param p_connected
 	 *            if true the connection is marked as connected, otherwise the connections marked as not connected
 	 */
-	protected final synchronized void setConnected(final boolean p_connected) {
+	protected final void setConnected(final boolean p_connected) {
+		m_lock.lock();
 		m_connected = p_connected;
+		m_lock.unlock();
 	}
 
 	/**
@@ -189,10 +202,10 @@ abstract class AbstractConnection {
 	 */
 	public final void cleanup() {
 		if (m_connected) {
-			throw new IllegalStateException("Connection to clean up is still connected");
+			System.out.println("Connection to clean up is still connected");
+		} else {
+			EXECUTOR.purgeQueue(m_destination);
 		}
-
-		EXECUTOR.purgeQueue(m_destination);
 	}
 
 	/**
@@ -200,8 +213,10 @@ abstract class AbstractConnection {
 	 * @param p_value
 	 *            the value to add to the rating
 	 */
-	final synchronized void incRating(final byte p_value) {
+	final void incRating(final byte p_value) {
+		m_lock.lock();
 		m_rating += p_value;
+		m_lock.unlock();
 	}
 
 	/**
@@ -257,7 +272,7 @@ abstract class AbstractConnection {
 		/**
 		 * Default constructor
 		 */
-		public DataHandler() {}
+		DataHandler() {}
 
 		// Methods
 		@Override
@@ -300,12 +315,14 @@ abstract class AbstractConnection {
 
 		// Attributes
 		private final ArrayDeque<ByteBuffer> m_buffers;
+		private ReentrantLock m_buffersLock;
 
 		/**
 		 * Default constructor
 		 */
-		public MessageCreator() {
+		MessageCreator() {
 			m_buffers = new ArrayDeque<>();
+			m_buffersLock = new ReentrantLock(false);
 		}
 
 		/**
@@ -314,9 +331,9 @@ abstract class AbstractConnection {
 		 *            new buffer
 		 */
 		public void newData(final ByteBuffer p_buffer) {
-			synchronized (m_buffers) {
-				m_buffers.offer(p_buffer);
-			}
+			m_buffersLock.lock();
+			m_buffers.offer(p_buffer);
+			m_buffersLock.unlock();
 
 			EXECUTOR.execute(this);
 		}
@@ -326,9 +343,9 @@ abstract class AbstractConnection {
 			AbstractMessage message;
 			ByteBuffer buffer;
 
-			synchronized (m_buffers) {
-				buffer = m_buffers.poll();
-			}
+			m_buffersLock.lock();
+			buffer = m_buffers.poll();
+			m_buffersLock.unlock();
 
 			message = createMessage(buffer);
 
@@ -390,7 +407,7 @@ abstract class AbstractConnection {
 		/**
 		 * Creates an instance of MessageCreator
 		 */
-		public ByteStreamInterpreter() {
+		ByteStreamInterpreter() {
 			m_headerBytes = ByteBuffer.allocateDirect(AbstractMessage.HEADER_SIZE - HEADER_OFFSET);
 			clear();
 		}

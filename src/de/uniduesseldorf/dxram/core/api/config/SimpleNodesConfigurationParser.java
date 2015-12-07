@@ -84,7 +84,7 @@ public final class SimpleNodesConfigurationParser extends AbstractNodesConfigura
 		/**
 		 * Creates an instance of DefaultNodesConfigurationComparator
 		 */
-		public DefaultNodesConfigurationComparator() {}
+		DefaultNodesConfigurationComparator() {}
 
 		// Methods
 		@Override

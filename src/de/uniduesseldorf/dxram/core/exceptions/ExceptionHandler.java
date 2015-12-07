@@ -99,7 +99,7 @@ public interface ExceptionHandler {
 	 * @author Florian Klein
 	 *         23.03.2012
 	 */
-	public static enum ExceptionSource {
+	enum ExceptionSource {
 
 		// Constants
 		DATA_INTERFACE, DHT_INTERFACE, DXRAM_CREATE_NEW_CHUNK, DXRAM_GET, DXRAM_GET_ASYNC, DXRAM_INITIALIZE, DXRAM_LOCK, DXRAM_MIGRATE, DXRAM_PUT,

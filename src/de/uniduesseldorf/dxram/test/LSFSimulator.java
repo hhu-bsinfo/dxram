@@ -774,9 +774,9 @@ public final class LSFSimulator {
 				runTime = Math.max(1, (System.currentTimeMillis() - startTime) / 1000);
 				if (runTime > lastPrintTime) {
 					System.out
-					.format("\r Wrote %d new objects (%d / sec), Cleaned %d segments (%d empty)," + "%d survivor objects, LSFwc = %.3f, RCwc = %.3f",
-							m_newObjectsWritten, m_newObjectsWritten / runTime, m_segmentsCleaned, m_emptySegmentsCleaned, m_cleanerObjectsWritten,
-							wcLSF, wcRC);
+							.format("\r Wrote %d new objects (%d / sec), Cleaned %d segments (%d empty)," + "%d survivor objects, LSFwc = %.3f, RCwc = %.3f",
+									m_newObjectsWritten, m_newObjectsWritten / runTime, m_segmentsCleaned, m_emptySegmentsCleaned, m_cleanerObjectsWritten,
+									wcLSF, wcRC);
 					System.out.flush();
 					lastPrintTime = runTime;
 				}
@@ -1685,7 +1685,7 @@ public final class LSFSimulator {
 		 * @param p_firstCdf
 		 *            ...
 		 */
-		public Group(final long p_firstKey, final long p_lastKey, final double p_firstCdf) {
+		Group(final long p_firstKey, final long p_lastKey, final double p_firstCdf) {
 			m_firstKey = p_firstKey;
 			m_lastKey = p_lastKey;
 			m_firstCdf = p_firstCdf;
@@ -1735,7 +1735,7 @@ public final class LSFSimulator {
 		 * @param p_secondValue
 		 *            ...
 		 */
-		public Pair(final int p_firstValue, final int p_secondValue) {
+		Pair(final int p_firstValue, final int p_secondValue) {
 			m_firstValue = p_firstValue;
 			m_secondValue = p_secondValue;
 		}
@@ -1789,7 +1789,7 @@ public final class LSFSimulator {
 		/**
 		 * Creates an instance of TimeStampComparator
 		 */
-		public TimeStampComparator() {}
+		TimeStampComparator() {}
 
 		// Methods
 		@Override
@@ -1809,7 +1809,7 @@ public final class LSFSimulator {
 		/**
 		 * Creates an instance of LifetimeComparator
 		 */
-		public LifetimeComparator() {}
+		LifetimeComparator() {}
 
 		// Methods
 		@Override

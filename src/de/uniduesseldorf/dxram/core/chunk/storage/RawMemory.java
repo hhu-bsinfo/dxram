@@ -143,18 +143,20 @@ public final class RawMemory {
 	 *             if the memory could not be disengaged
 	 */
 	public static void disengage() throws MemoryException {
-		try {
-			UNSAFE.freeMemory(m_memoryBase);
+		if (m_segments != null) {
+			try {
+				UNSAFE.freeMemory(m_memoryBase);
 
-			m_memorySize = 0;
-			m_memoryBase = 0;
+				m_memorySize = 0;
+				m_memoryBase = 0;
 
-			m_segments = null;
-			m_arenaManager = null;
+				m_segments = null;
+				m_arenaManager = null;
 
-			m_listSizes = null;
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not free memory", e);
+				m_listSizes = null;
+			} catch (final Throwable e) {
+				throw new MemoryException("Could not free memory", e);
+			}
 		}
 	}
 
@@ -1499,31 +1501,31 @@ public final class RawMemory {
 
 				// Calculate the number of bytes for the length field
 				size = p_size >> 8;
-			while (size > 0) {
-				lengthFieldSize++;
+				while (size > 0) {
+					lengthFieldSize++;
 
-				size = size >> 8;
-			}
+					size = size >> 8;
+				}
 
-			// Get the corresponding list
-			listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
+				// Get the corresponding list
+				listOffset = m_pointerOffset + getList(p_size) * POINTER_SIZE;
 
-			// Hook block in list
-			anchor = readPointer(listOffset);
+				// Hook block in list
+				anchor = readPointer(listOffset);
 
-			// Write pointer to list and successor
-			writePointer(p_address + lengthFieldSize, listOffset);
-			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-			if (anchor != 0) {
-				// Write pointer of successor
-				writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
-			}
-			// Write pointer of list
-			writePointer(listOffset, p_address);
+				// Write pointer to list and successor
+				writePointer(p_address + lengthFieldSize, listOffset);
+				writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+				if (anchor != 0) {
+					// Write pointer of successor
+					writePointer(anchor + readRightPartOfMarker(anchor - 1), p_address);
+				}
+				// Write pointer of list
+				writePointer(listOffset, p_address);
 
-			// Write length
-			write(p_address, p_size, lengthFieldSize);
-			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+				// Write length
+				write(p_address, p_size, lengthFieldSize);
+				write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
 			}
 
 			// Write right and left marker

@@ -1218,16 +1218,16 @@ public final class MigrationsTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_chunkID) {
-					low = mid + 1;
-				} else if (midVal > p_chunkID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_chunkID) {
+				low = mid + 1;
+			} else if (midVal > p_chunkID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1417,16 +1417,16 @@ public final class MigrationsTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getChunkID(0);
+			midVal = m_children[mid].getChunkID(0);
 
-				if (midVal < chunkID) {
-					low = mid + 1;
-				} else if (midVal > chunkID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < chunkID) {
+				low = mid + 1;
+			} else if (midVal > chunkID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1606,7 +1606,7 @@ public final class MigrationsTree implements Serializable {
 		 * @param p_rangeID
 		 *            the backup range ID
 		 */
-		public Entry(final long p_chunkID, final byte p_rangeID) {
+		Entry(final long p_chunkID, final byte p_rangeID) {
 			m_chunkID = p_chunkID;
 			m_rangeID = p_rangeID;
 		}

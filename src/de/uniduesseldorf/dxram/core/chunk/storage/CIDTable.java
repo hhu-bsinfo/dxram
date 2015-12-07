@@ -79,20 +79,22 @@ public final class CIDTable {
 	public static void disengage() throws MemoryException {
 		long entry;
 
-		m_defragmenter.stop();
-		m_defragmenter = null;
+		if (m_defragmenter != null) {
+			m_defragmenter.stop();
+			m_defragmenter = null;
 
-		m_store = null;
+			m_store = null;
 
-		for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-			entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
-			if (entry > 0) {
-				disengage(entry, LID_TABLE_LEVELS - 1);
-				RawMemory.free(entry);
+			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
+				entry = readEntry(m_nodeIDTableDirectory, i) & BITMASK_ADDRESS;
+				if (entry > 0) {
+					disengage(entry, LID_TABLE_LEVELS - 1);
+					RawMemory.free(entry);
+				}
 			}
-		}
 
-		m_nodeIDTableDirectory = 0;
+			m_nodeIDTableDirectory = 0;
+		}
 	}
 
 	/**

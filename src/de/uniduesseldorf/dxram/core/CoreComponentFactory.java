@@ -197,14 +197,18 @@ public final class CoreComponentFactory {
 		lookup = m_lookup;
 
 		// Stop creating new connections
-		m_network.deactivateConnectionManager();
+		if (m_network != null) {
+			m_network.deactivateConnectionManager();
+		}
 
 		closeChunkInterface();
 		closeLogInterface();
 		closeLookupInterface();
 
 		try {
-			ZooKeeperHandler.close(lookup.isLastSuperpeer());
+			if (lookup != null) {
+				ZooKeeperHandler.close(lookup.isLastSuperpeer());
+			}
 		} catch (final ZooKeeperException e) {
 			// TODO: auf Fehler reagieren
 			e.printStackTrace();

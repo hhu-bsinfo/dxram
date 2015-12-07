@@ -69,7 +69,7 @@ public final class NetworkTest {
 		 * @param p_size
 		 *            the size of the message
 		 */
-		public TestMessage(final int p_size) {
+		TestMessage(final int p_size) {
 			super(NodeID.getLocalNodeID(), DEFAULT_TYPE);
 
 			m_size = p_size;

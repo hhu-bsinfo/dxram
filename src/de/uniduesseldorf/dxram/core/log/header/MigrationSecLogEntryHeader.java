@@ -11,7 +11,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 	// Attributes
 	private static final short MAX_SIZE = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_CID_SIZE + MAX_LOG_ENTRY_LEN_SIZE
 			+ MAX_LOG_ENTRY_VER_SIZE + LOG_ENTRY_CRC_SIZE);
-	private static final byte NID_OFFSET = LOG_ENTRY_TYP_SIZE;;
+	private static final byte NID_OFFSET = LOG_ENTRY_TYP_SIZE;
 	private static final byte LID_OFFSET = NID_OFFSET + LOG_ENTRY_NID_SIZE;
 
 	// Constructors

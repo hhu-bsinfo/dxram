@@ -399,7 +399,7 @@ public final class StatisticsManager {
 		 * @param p_stream
 		 *            the output stream
 		 */
-		public StatisticsTask(final PrintStream p_stream) {
+		StatisticsTask(final PrintStream p_stream) {
 			m_stream = p_stream;
 		}
 

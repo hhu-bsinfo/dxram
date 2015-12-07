@@ -226,7 +226,7 @@ public final class RequestStatistic implements Statistic {
 		/**
 		 * Creates an instance of RequestValues
 		 */
-		public RequestValues() {
+		RequestValues() {
 			m_requestCount = 0;
 			m_timeouts = 0;
 			m_aborts = 0;

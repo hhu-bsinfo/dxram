@@ -3253,7 +3253,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		Stat status;
 
 		try {
-			if (!ZooKeeperHandler.exists("nodes/free/" + p_failedNode)) {
+			if (ZooKeeperHandler.exists("nodes/peers/" + p_failedNode)) {
 				ZooKeeperHandler.create("nodes/free/" + p_failedNode);
 
 				status = ZooKeeperHandler.getStatus("nodes/new/" + p_failedNode);
@@ -3330,7 +3330,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		/**
 		 * Creates an instance of Worker
 		 */
-		public SOWorker() {
+		SOWorker() {
 			m_next = 0;
 			m_counter = 0;
 		}

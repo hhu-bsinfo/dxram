@@ -80,7 +80,7 @@ public final class Konferenz15Test {
 		/**
 		 * Creates an instance of Superpeer
 		 */
-		public Superpeer() {}
+		Superpeer() {}
 
 		// Methods
 		/**
@@ -129,7 +129,7 @@ public final class Konferenz15Test {
 		 * @param p_seed
 		 *            the seed for the random number generator
 		 */
-		public Server(final int p_amount, final int p_migrations, final long p_seed) {
+		Server(final int p_amount, final int p_migrations, final long p_seed) {
 			m_amount = p_amount;
 			m_migrations = p_migrations;
 
@@ -228,7 +228,7 @@ public final class Konferenz15Test {
 		/**
 		 * Creates an instance of Client
 		 */
-		public Client() {}
+		Client() {}
 
 		// Methods
 		/**

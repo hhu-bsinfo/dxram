@@ -267,6 +267,10 @@ public class Cache<KeyType, ValueType> {
 	 * Represents an cache entry
 	 * @author Florian Klein
 	 *         09.03.2012
+	 * @param <KeyType>
+	 *            the key
+	 * @param <ValueType>
+	 *            the value
 	 */
 	public static final class CacheEntry<KeyType, ValueType> {
 
@@ -395,7 +399,7 @@ public class Cache<KeyType, ValueType> {
 		 * @param p_ttl
 		 *            the TTL value
 		 */
-		public TTLHandler(final long p_ttl) {
+		TTLHandler(final long p_ttl) {
 			m_ttl = p_ttl;
 
 			m_running = false;
@@ -517,7 +521,7 @@ public class Cache<KeyType, ValueType> {
 		/**
 		 * Creates an instance of DummyPolicy
 		 */
-		public DummyPolicy() {}
+		DummyPolicy() {}
 
 		// Methods
 		/**
@@ -574,7 +578,7 @@ public class Cache<KeyType, ValueType> {
 		/**
 		 * Creates an instance of LRUPolicy
 		 */
-		public LRUPolicy() {}
+		LRUPolicy() {}
 
 		// Methods
 		/**
