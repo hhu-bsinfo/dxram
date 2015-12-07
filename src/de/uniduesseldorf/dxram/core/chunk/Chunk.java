@@ -11,60 +11,30 @@ import de.uniduesseldorf.dxram.utils.Contract;
  * Stores data
  * @author Florian Klein 09.03.2012
  */
-public class Chunk implements Comparable<Chunk> {
-
+public class Chunk implements Comparable<Chunk>, DataStructure
+{
 	// Constants
 	public static final long INVALID_CHUNKID = -1;
-	private static final int MAX_SIZE = 1024 * 1024 * 16;
 
 	// Attributes
 	private long m_chunkID;
 	private ByteBuffer m_data;
 
 	// Constructors
-	/**
-	 * Creates an instance of Chunk
-	 * @param p_chunkID
-	 *            the Chunk ID
-	 * @param p_size
-	 *            the size
-	 */
-	public Chunk(final long p_chunkID, final int p_size) {
-		Contract.check(p_size > 0 && p_size <= MAX_SIZE, "invalid size given");
-
-		m_chunkID = p_chunkID;
-		m_data = ByteBuffer.allocate(p_size);
-	}
-
-	/**
-	 * Creates an instance of Chunk
-	 * @param p_chunkID
-	 *            the Chunk ID
-	 * @param p_data
-	 *            the data
-	 */
-	public Chunk(final long p_chunkID, final byte[] p_data) {
-		Contract.check(p_data != null && p_data.length <= MAX_SIZE, "invalid size given");
-
-		m_chunkID = p_chunkID;
-		m_data = ByteBuffer.wrap(p_data);
+	public Chunk() {
+		m_chunkID = INVALID_CHUNKID;
+		m_data = null;
 	}
 
 	// Getters
-	/**
-	 * Gets the ChunkID
-	 * @return the ChunkID
-	 */
-	public final long getChunkID() {
-		return m_chunkID;
-	}
 
 	/**
 	 * Gets the data
 	 * @return the data
 	 */
 	public final ByteBuffer getData() {
-		m_data.position(0);
+		if (m_data != null)
+			m_data.position(0);
 
 		return m_data;
 	}
@@ -73,30 +43,51 @@ public class Chunk implements Comparable<Chunk> {
 	 * Gets the size of the data
 	 * @return the size of the data
 	 */
-	public final int getSize() {
+	public final int getDataSize() {
 		return m_data.capacity();
-	}
-
-	// Setters
-	/**
-	 * Sets the ChunkID
-	 * @param p_chunkID
-	 *            the new ChunkID
-	 */
-	public final void setChunkID(final long p_chunkID) {
-		// This is for testing only! Do not change the ChunkID manually!
-		m_chunkID = p_chunkID;
 	}
 
 	// Methods
 	@Override
 	public final int compareTo(final Chunk p_chunk) {
-		return (int) (getChunkID() - p_chunk.getChunkID());
+		return (int) (m_chunkID - p_chunk.m_chunkID);
 	}
 
 	@Override
 	public final String toString() {
 		return this.getClass().getSimpleName() + "[" + Long.toHexString(m_chunkID) + ", " + m_data.capacity() + "]";
+	}
+	
+	@Override
+	public long getID() {
+		return m_chunkID;
+	}
+
+	@Override
+	public void write(final DataStructureWriter p_writer) 
+	{
+		p_writer.putInt(0, m_data.capacity());
+		p_writer.putBytes(4, m_data.array(), 0, m_data.capacity());
+	}
+
+	@Override
+	public void read(final DataStructureReader p_reader) 
+	{
+		m_data = ByteBuffer.allocate(p_reader.getInt(0));
+		p_reader.getBytes(4, m_data.array(), 0, m_data.capacity());
+	}
+
+	@Override
+	public int sizeof() 
+	{
+		return 	8
+			+	4
+			+ 	m_data.capacity();
+	}
+
+	@Override
+	public boolean hasDynamicSize() {
+		return true;
 	}
 
 }

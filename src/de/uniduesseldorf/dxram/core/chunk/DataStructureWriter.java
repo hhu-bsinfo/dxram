@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxcompute.data;
+package de.uniduesseldorf.dxram.core.chunk;
 
 public interface DataStructureWriter 
 {
