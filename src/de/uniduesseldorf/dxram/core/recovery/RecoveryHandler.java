@@ -6,9 +6,7 @@ import java.io.File;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
-import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
@@ -27,6 +25,8 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeRequest;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeResponse;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverMessage;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * Implements the Recovery-Service

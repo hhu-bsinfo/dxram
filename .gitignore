@@ -7,3 +7,4 @@
 /.settings
 /hs_err*
 /cmd_*
+*.DS_Store

@@ -1,7 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
  * Extends AbstractLogEntryHeader for a normal log entry header (primary log)

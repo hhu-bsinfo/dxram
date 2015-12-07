@@ -9,11 +9,11 @@ import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * This class implements the secondary log

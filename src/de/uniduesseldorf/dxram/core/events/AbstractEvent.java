@@ -1,7 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.events;
 
-import de.uniduesseldorf.dxram.core.api.NodeID;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * Respresents an Event, which can be triggered

@@ -17,8 +17,8 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * Manages multiple statistics

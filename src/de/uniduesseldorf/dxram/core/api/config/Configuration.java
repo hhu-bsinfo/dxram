@@ -228,7 +228,7 @@ public final class Configuration {
 		public static final ConfigurationEntry<Integer> NETWORK_PORT = new ConfigurationEntry<Integer>("network.port", Integer.class, Tools.getFreePort(22222));
 		// Max connection count at the same time
 		public static final ConfigurationEntry<Integer> NETWORK_CONNECTIONS = new ConfigurationEntry<Integer>("network.connections", Integer.class, 100);
-		// Size of the incoming message buffer (default 64 KB)
+		// Size of the incoming message buffer (default 32 KB)
 		public static final ConfigurationEntry<Integer> NETWORK_BUFFER_SIZE = new ConfigurationEntry<Integer>("network.buffer_size", Integer.class, 32 * 1024);
 		// Class for creating new network connections (default creator uses Java NIO)
 		public static final ConfigurationEntry<String> NETWORK_CREATOR = new ConfigurationEntry<String>("network.creator", String.class,
@@ -248,6 +248,8 @@ public final class Configuration {
 
 		// Size of the RAM
 		public static final ConfigurationEntry<Long> RAM_SIZE = new ConfigurationEntry<Long>("ram.size", Long.class, 1073741824L);
+		// Size of the RAM
+		public static final ConfigurationEntry<Long> RAM_SEGMENT_SIZE = new ConfigurationEntry<Long>("ram.segment_size", Long.class, 1073741824L);
 		// Class for the Memory-Management of the RAM
 		public static final ConfigurationEntry<String> RAM_MANAGEMENT = new ConfigurationEntry<String>("ram.management", String.class,
 				"de.uniduesseldorf.dxram.core.chunk.storage.SimpleListStorageManagement");

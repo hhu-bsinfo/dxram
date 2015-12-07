@@ -18,12 +18,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHelper;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * Creates and manages new network connections using Java NIO

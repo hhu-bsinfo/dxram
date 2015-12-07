@@ -31,7 +31,7 @@ public final class Contract {
 	 */
 	public static void check(final boolean p_condition) {
 		if (!p_condition) {
-			LOGGER.fatal("FATAL::check failed [at " + Thread.currentThread().getStackTrace()[1] + "]");
+			LOGGER.fatal("FATAL::check failed [at " + Thread.currentThread().getStackTrace()[2] + "]");
 
 			throw new ContractException();
 		}
@@ -47,7 +47,7 @@ public final class Contract {
 	 */
 	public static void check(final boolean p_condition, final String p_message) {
 		if (!p_condition) {
-			LOGGER.fatal("FATAL::check failed [at " + Thread.currentThread().getStackTrace()[1] + "]: " + p_message);
+			LOGGER.fatal("FATAL::check failed [at " + Thread.currentThread().getStackTrace()[2] + "]: " + p_message);
 
 			throw new ContractException(p_message);
 		}
@@ -61,7 +61,7 @@ public final class Contract {
 	 */
 	public static void checkNotNull(final Object p_object) {
 		if (p_object == null) {
-			LOGGER.fatal("FATAL::null check failed [at " + Thread.currentThread().getStackTrace()[1] + "]");
+			LOGGER.fatal("FATAL::null check failed [at " + Thread.currentThread().getStackTrace()[2] + "]");
 
 			throw new ContractException();
 		}
@@ -77,7 +77,7 @@ public final class Contract {
 	 */
 	public static void checkNotNull(final Object p_object, final String p_message) {
 		if (p_object == null) {
-			LOGGER.fatal("FATAL::null check failed [at " + Thread.currentThread().getStackTrace()[1] + "]: " + p_message);
+			LOGGER.fatal("FATAL::null check failed [at " + Thread.currentThread().getStackTrace()[2] + "]: " + p_message);
 
 			throw new ContractException(p_message);
 		}
@@ -91,7 +91,7 @@ public final class Contract {
 	 */
 	public static void checkNotEmpty(final Collection<?> p_collection) {
 		if (p_collection.isEmpty()) {
-			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[1] + "]");
+			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[2] + "]");
 
 			throw new ContractException();
 		}
@@ -107,7 +107,7 @@ public final class Contract {
 	 */
 	public static void checkNotEmpty(final Collection<?> p_collection, final String p_message) {
 		if (p_collection.isEmpty()) {
-			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[1] + "]: " + p_message);
+			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[2] + "]: " + p_message);
 
 			throw new ContractException(p_message);
 		}
@@ -121,7 +121,7 @@ public final class Contract {
 	 */
 	public static void checkNotEmpty(final Map<?, ?> p_map) {
 		if (p_map.isEmpty()) {
-			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[1] + "]");
+			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[2] + "]");
 
 			throw new ContractException();
 		}
@@ -137,7 +137,7 @@ public final class Contract {
 	 */
 	public static void checkNotEmpty(final Map<?, ?> p_map, final String p_message) {
 		if (p_map.isEmpty()) {
-			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[1] + "]: " + p_message);
+			LOGGER.fatal("FATAL::empty check failed [at " + Thread.currentThread().getStackTrace()[2] + "]: " + p_message);
 
 			throw new ContractException(p_message);
 		}

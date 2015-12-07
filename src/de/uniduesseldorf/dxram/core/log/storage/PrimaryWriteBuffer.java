@@ -10,11 +10,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The

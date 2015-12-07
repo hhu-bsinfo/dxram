@@ -7,8 +7,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.TreeSet;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
  * HashTable to store ID-Mappings (Linear probing)
