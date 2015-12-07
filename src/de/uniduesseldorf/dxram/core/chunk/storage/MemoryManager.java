@@ -255,23 +255,18 @@ public final class MemoryManager {
 			if (sizeVersion != sizeVersionNext) {
 				int newTotalSizePayload;
 				long newAddress = -1;
-				byte[] payload;
 
 				// skip version and read payload
-				payload = m_rawMemory.readBytes(address, sizeVersion);
-				newTotalSizePayload = payload.length + sizeVersionNext;
-
+				newTotalSizePayload = m_rawMemory.getSizeBlock(address) - sizeVersion;
+				newTotalSizePayload += sizeVersionNext;
+				sizeVersion = sizeVersionNext;
+				
 				// try to allocate first
 				newAddress = m_rawMemory.malloc(newTotalSizePayload);
 				if (newAddress != -1) {
-					if (m_rawMemory.writeBytes(address, sizeVersionNext, payload) != payload.length) {
-						// revert
-						m_rawMemory.free(newAddress);
-					} else {
-						m_rawMemory.free(address);
-						m_cidTable.set(p_chunkID, newAddress);
-						address = newAddress;
-					}
+					m_rawMemory.free(address);
+					m_cidTable.set(p_chunkID, newAddress);
+					address = newAddress;
 				}
 			}
 

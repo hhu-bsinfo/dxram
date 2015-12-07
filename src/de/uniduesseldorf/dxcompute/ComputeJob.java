@@ -1,6 +1,5 @@
-package de.uniduesseldorf.dxcompute.data;
+package de.uniduesseldorf.dxcompute;
 
-import de.uniduesseldorf.dxcompute.StorageDelegate;
 import de.uniduesseldorf.dxcompute.job.Job;
 import de.uniduesseldorf.dxcompute.job.JobDelegate;
 

@@ -32,7 +32,7 @@ public class GraphEdgeReaderFile implements GraphEdgeReader
 			try {
 				readBytes = m_edgeFile.read(buffer.array());
 				System.out.println("File pos: (" + m_edgeFile.getFilePointer() + "/" + m_edgeFile.length() + ")");
-				if (readBytes == -1)
+				if (readBytes <= 0)
 					return 0;
 			} catch (IOException e) {
 			}

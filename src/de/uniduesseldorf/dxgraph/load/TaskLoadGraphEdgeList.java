@@ -92,13 +92,34 @@ public class TaskLoadGraphEdgeList extends Task
 		}
 		
 		buffer.position(0);
+		int nonInvalidNodeCount = 0;
 		long[] vertices = new long[totalNumberOfVertices];
 		for (int i = 0; i < totalNumberOfVertices; i++)
 		{
-			vertices[i] = buffer.getLong();
+			vertices[i] = p_nodeMapping.getChunkIDForNodeID(buffer.getLong());
+			if (vertices[i] != -1)
+				nonInvalidNodeCount++;
 		}
-	
-		return vertices;
+		
+		if (nonInvalidNodeCount != vertices.length)
+		{
+			log(LOG_LEVEL.LL_WARNING, "Entry node set contains vertices, that are not found: "
+					+ (vertices.length - nonInvalidNodeCount) + "/" + vertices.length 
+					+ " vertices not found in loaded graph.");
+		}
+		
+		// filter invalid nodes
+		long[] nonInvalidVertices = new long[nonInvalidNodeCount];
+		int counter = 0;
+		for (long vertex : vertices)
+		{
+			if (vertex != -1)
+			{
+				nonInvalidVertices[counter] = vertex;
+				counter++;
+			}
+		}
+		return nonInvalidVertices;
 	}
 
 }

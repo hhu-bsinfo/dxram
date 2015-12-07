@@ -47,7 +47,7 @@ public class RawMemoryTest
 		assert p_blockSizeMax > p_blockSizeMin;
 		
 		//JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
-		JNILock.load("/home/stefan/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
+		JNILock.load("/home/nothaas/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
 		
 		//m_memory = new RawMemory(new StorageUnsafeMemory());
 		try {

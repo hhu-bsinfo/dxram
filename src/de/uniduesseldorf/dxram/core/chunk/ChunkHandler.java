@@ -464,14 +464,20 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					// Local get
 					localChunkIDs.add(new Pair<Integer, Long>(i, p_chunkIDs[i]));
 				} else {
-					peer = m_lookup.get(p_chunkIDs[i]).getPrimaryPeer();
+					Locations locations;
+					locations = m_lookup.get(p_chunkIDs[i]);
+					if (locations == null) {
+						continue;
+					} else {
+						peer = locations.getPrimaryPeer();
 
-					list = peers.get(peer);
-					if (list == null) {
-						list = new IntegerLongList();
-						peers.put(peer, list);
+						list = peers.get(peer);
+						if (list == null) {
+							list = new IntegerLongList();
+							peers.put(peer, list);
+						}
+						list.add(i, p_chunkIDs[i]);
 					}
-					list.add(i, p_chunkIDs[i]);
 				}
 			}
 			

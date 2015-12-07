@@ -2,7 +2,7 @@ package de.uniduesseldorf.dxgraph.load;
 
 import java.util.Vector;
 
-import de.uniduesseldorf.dxcompute.data.ComputeJob;
+import de.uniduesseldorf.dxcompute.ComputeJob;
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
 import de.uniduesseldorf.dxgraph.data.SimpleVertex;
 
@@ -31,7 +31,7 @@ public class JobLoadEdges extends ComputeJob
 		{				
 			readEdges = m_edgeReader.readEdges(buffer, edgeCount);
 			if (readEdges <= 0)
-				break;
+				return; // don't spawn further jobs
 			
 			for (Pair<Long, Long> edge : buffer)
 			{
@@ -77,7 +77,7 @@ public class JobLoadEdges extends ComputeJob
 				log(LOG_LEVEL.LL_ERROR, "Putting destination vertex " + vertex + " failed.");
 				return false;
 			}
-			m_nodeMapping.setChunkIDForNodeID(p_vertexTo, chunkIDTo);
+			m_nodeMapping.setChunkIDForNodeID(p_vertexTo, newVertexID);
 		}
 		
 		// source vertex
@@ -103,7 +103,7 @@ public class JobLoadEdges extends ComputeJob
 				log(LOG_LEVEL.LL_ERROR, "Putting source vertex " + vertex + " failed.");
 				return false;
 			}
-			m_nodeMapping.setChunkIDForNodeID(p_vertexFrom, chunkIDFrom);
+			m_nodeMapping.setChunkIDForNodeID(p_vertexFrom, newVertexID);
 		}
 		// vertex exist, get and add neighbour
 		else

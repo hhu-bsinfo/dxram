@@ -1,6 +1,5 @@
 package de.uniduesseldorf.dxcompute;
 
-import de.uniduesseldorf.dxcompute.data.ComputeJob;
 import de.uniduesseldorf.dxcompute.job.JobSystem;
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
 import de.uniduesseldorf.dxcompute.logger.LoggerDelegate;
@@ -56,6 +55,7 @@ public class DXCompute implements TaskDelegate
 	
 	@Override
 	public void submitJob(ComputeJob p_job) {
+		p_job.setStorageDelegate(m_storageDelegate);
 		m_jobSystem.submit(p_job);
 	}
 	
