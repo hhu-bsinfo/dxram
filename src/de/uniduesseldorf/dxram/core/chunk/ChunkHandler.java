@@ -1172,7 +1172,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			chunk = p_chunks[i];
 
 			if (LOG_ACTIVE) {
-				logEntrySize = chunk.getSize() + m_log.getHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()), ChunkID.getLocalID(chunk.getChunkID()),
+				logEntrySize = chunk.getSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()), ChunkID.getLocalID(chunk.getChunkID()),
 						chunk.getSize());
 				if (m_migrationsTree.fits(size + logEntrySize) && (m_migrationsTree.size() != 0 || size > 0)) {
 					// Chunk fits in current migration backup range
@@ -1589,7 +1589,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private void initBackupRange(final long p_localID, final int p_size) throws LookupException {
 		if (LOG_ACTIVE) {
-			m_rangeSize += p_size + m_log.getHeaderSize(m_nodeID, p_localID, p_size);
+			m_rangeSize += p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
 			if (!m_firstRangeInitialized && p_localID == 1) {
 				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
 				// This is the first put and p_localID is not reused

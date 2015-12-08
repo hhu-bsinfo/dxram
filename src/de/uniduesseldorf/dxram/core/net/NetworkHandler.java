@@ -283,9 +283,11 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	private class MessageHandler implements Runnable {
 
 		// Attributes
-		private final ArrayDeque<AbstractMessage> m_messages;
+		private final ArrayDeque<AbstractMessage> m_defaultMessages;
+		private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
 		private final TaskExecutor m_executor;
 		private ReentrantLock m_messagesLock;
+		private ReentrantLock m_exclusiveLock;
 
 		// Constructors
 		/**
@@ -293,8 +295,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 */
 		MessageHandler() {
 			m_executor = new TaskExecutor("MessageHandler", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MESSAGE_HANDLER_THREAD_COUNT));
-			m_messages = new ArrayDeque<>();
+			m_defaultMessages = new ArrayDeque<>();
+			m_exclusiveMessages = new ArrayDeque<>();
 			m_messagesLock = new ReentrantLock(false);
+			m_exclusiveLock = new ReentrantLock(false);
 		}
 
 		// Methods
@@ -304,9 +308,15 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			m_messagesLock.lock();
-			m_messages.offer(p_message);
-			m_messagesLock.unlock();
+			if (p_message.getType() == LogMessages.TYPE) {
+				m_messagesLock.lock();
+				m_exclusiveMessages.offer(p_message);
+				m_messagesLock.unlock();
+			} else {
+				m_messagesLock.lock();
+				m_defaultMessages.offer(p_message);
+				m_messagesLock.unlock();
+			}
 
 			m_executor.execute(this);
 		}
@@ -317,7 +327,11 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			Entry entry;
 
 			m_messagesLock.lock();
-			message = m_messages.poll();
+			message = m_defaultMessages.poll();
+			if (message == null) {
+				message = m_exclusiveMessages.poll();
+				m_exclusiveLock.lock();
+			}
 			m_messagesLock.unlock();
 
 			m_receiversLock.lock();
@@ -326,6 +340,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 			if (entry != null) {
 				entry.newMessage(message);
+				if (message.getType() == LogMessages.TYPE) {
+					m_exclusiveLock.unlock();
+				}
 			}
 		}
 	}

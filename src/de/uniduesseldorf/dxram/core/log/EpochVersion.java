@@ -36,4 +36,8 @@ public class EpochVersion {
 	public int getVersion() {
 		return m_version;
 	}
+
+	public boolean equals(final EpochVersion p_cmp) {
+		return (m_epoch == p_cmp.getEpoch() && m_version == p_cmp.getVersion());
+	}
 }

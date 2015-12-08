@@ -104,7 +104,14 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 	}
 
-	@Override
+	/**
+	 * Returns the LocalID
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @return the LocalID
+	 */
 	public long getLID(final byte[] p_buffer, final int p_offset) {
 		long ret = -1;
 		final int offset = p_offset + LID_OFFSET;
@@ -127,7 +134,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 	}
 
 	@Override
-	public long getChunkID(final byte[] p_buffer, final int p_offset) {
+	public long getCID(final byte[] p_buffer, final int p_offset) {
 		return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
 	}
 
@@ -150,21 +157,23 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 	}
 
 	@Override
-	public int getVersion(final byte[] p_buffer, final int p_offset) {
-		int ret = 1;
+	public EpochVersion getVersion(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + getVEROffset(p_buffer, p_offset);
 		final byte length = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
+		short epoch;
+		int version = 1;
 
+		epoch = (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 		if (length == 1) {
-			ret = p_buffer[offset] & 0xff;
+			version = p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff;
 		} else if (length == 2) {
-			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8);
+			version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8);
 		} else if (length == 3) {
-			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
-					+ ((p_buffer[offset + 2] & 0xff) << 16);
+			version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8)
+					+ ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 2] & 0xff) << 16);
 		}
 
-		return ret;
+		return new EpochVersion(epoch, version);
 	}
 
 	@Override
