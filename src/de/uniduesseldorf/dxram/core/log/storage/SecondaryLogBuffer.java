@@ -122,10 +122,8 @@ public final class SecondaryLogBuffer {
 			logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
 
 			// Copy primary log header, but skip NodeID and RangeID
-			// System.arraycopy(p_buffer, oldBufferOffset + secLogOffset, buffer, newBufferOffset, logEntrySize -
-			// secLogOffset);
 			newBufferOffset += AbstractLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize,
-					buffer.length - newBufferOffset, logEntryHeader);
+					p_buffer.length - oldBufferOffset, logEntryHeader.getConversionOffset());
 			oldBufferOffset += logEntrySize;
 		}
 		buffer = Arrays.copyOf(buffer, newBufferOffset);
@@ -152,14 +150,14 @@ public final class SecondaryLogBuffer {
 
 		if (isBufferEmpty()) {
 			// No data in secondary log buffer -> Write directly in secondary log
-			m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize, null);
+			m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize);
 		} else {
 			// Data in secondary log buffer -> Flush buffer and write new data in secondary log with one access
 			dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
 			System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
 			System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_entryOrRangeSize);
 
-			m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length, null);
+			m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length);
 			m_bytesInBuffer = 0;
 		}
 	}
@@ -174,7 +172,7 @@ public final class SecondaryLogBuffer {
 	public void flushSecLogBuffer() throws IOException, InterruptedException {
 
 		if (m_bytesInBuffer > 0) {
-			m_secondaryLog.appendData(m_buffer, 0, m_bytesInBuffer, null);
+			m_secondaryLog.appendData(m_buffer, 0, m_bytesInBuffer);
 			m_bytesInBuffer = 0;
 		}
 	}

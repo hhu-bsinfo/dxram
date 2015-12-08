@@ -244,7 +244,7 @@ public final class ZooKeeperHandler {
 	 *             if node already exists in ZooKeeper
 	 */
 	private static void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException,
-			InterruptedException {
+	InterruptedException {
 		Contract.checkNotNull(p_path, "no path given");
 		Contract.checkNotNull(p_data, "no data given");
 		Contract.checkNotNull(p_mode, "no mode given");
@@ -283,7 +283,6 @@ public final class ZooKeeperHandler {
 			if (m_zookeeper == null) {
 				connect();
 			}
-
 			m_zookeeper.delete(m_path + "/" + p_path, p_version);
 		} catch (final KeeperException | InterruptedException e) {
 			LOGGER.error("ERR:Could not access ZooKeeper", e);

@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -34,6 +35,8 @@ public final class TaskExecutor {
 	private final HashMap<Short, TaskQueue> m_taskMap;
 	private final String m_name;
 
+	private ReentrantLock m_taskMapLock;
+
 	static {
 		m_defaultExecutor = new TaskExecutor("Default", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_TASK_HANDLER_THREAD_COUNT));
 	}
@@ -50,8 +53,24 @@ public final class TaskExecutor {
 		m_taskMap = new HashMap<>();
 		m_name = p_name;
 
+		m_taskMapLock = new ReentrantLock(false);
+
 		LOGGER.info(m_name + ": Initialising " + p_threads + " threads");
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
+	}
+
+	/**
+	 * Creates a new TaskExecutor
+	 * @param p_name
+	 *            Identifier for debug prints
+	 */
+	public TaskExecutor(final String p_name) {
+		m_taskMap = new HashMap<>();
+		m_name = p_name;
+
+		m_taskMapLock = new ReentrantLock(false);
+
+		m_executor = Executors.newCachedThreadPool(new ExecutorThreadFactory());
 	}
 
 	// Methods
@@ -75,20 +94,20 @@ public final class TaskExecutor {
 	 * @param p_runnable
 	 *            Task to be executed
 	 */
-	public synchronized void execute(final short p_id, final Runnable p_runnable) {
+	public void execute(final short p_id, final Runnable p_runnable) {
 		TaskQueue taskQueue;
 
-		synchronized (m_taskMap) {
-			if (!m_taskMap.containsKey(p_id)) {
-				taskQueue = new TaskQueue();
-				m_taskMap.put(p_id, taskQueue);
-			} else {
-				taskQueue = m_taskMap.get(p_id);
-			}
-
-			// store task
-			taskQueue.add(p_runnable);
+		m_taskMapLock.lock();
+		if (!m_taskMap.containsKey(p_id)) {
+			taskQueue = new TaskQueue();
+			m_taskMap.put(p_id, taskQueue);
+		} else {
+			taskQueue = m_taskMap.get(p_id);
 		}
+
+		// store task
+		taskQueue.add(p_runnable);
+		m_taskMapLock.unlock();
 	}
 
 	/**
@@ -98,11 +117,11 @@ public final class TaskExecutor {
 	 *            Task identifier which will be purged
 	 */
 	public void purgeQueue(final short p_id) {
-		synchronized (m_taskMap) {
-			if (m_taskMap.containsKey(p_id)) {
-				m_taskMap.remove(p_id);
-			}
+		m_taskMapLock.lock();
+		if (m_taskMap.containsKey(p_id)) {
+			m_taskMap.remove(p_id);
 		}
+		m_taskMapLock.unlock();
 	}
 
 	/**
@@ -130,12 +149,14 @@ public final class TaskExecutor {
 	private class TaskQueue implements Runnable {
 
 		private final ArrayDeque<Runnable> m_queue;
+		private ReentrantLock m_queueLock;
 
 		/**
 		 * Creates a new TaskQueue
 		 */
-		public TaskQueue() {
+		TaskQueue() {
 			m_queue = new ArrayDeque<>();
+			m_queueLock = new ReentrantLock(false);
 		}
 
 		/**
@@ -144,39 +165,38 @@ public final class TaskExecutor {
 		 *            Task to be executed
 		 */
 		public void add(final Runnable p_runnable) {
-			synchronized (m_queue) {
-
-				// enqueue itself when this is the first task
-				if (m_queue.size() == 0) {
-					execute(this);
-				}
-
-				m_queue.offer(p_runnable);
+			m_queueLock.lock();
+			// enqueue itself when this is the first task
+			if (m_queue.size() == 0) {
+				execute(this);
 			}
+
+			m_queue.offer(p_runnable);
+			m_queueLock.unlock();
 		}
 
 		@Override
 		public void run() {
 			Runnable runnable;
 
-			synchronized (m_queue) {
-				runnable = m_queue.peek();
-			}
+			m_queueLock.lock();
+			runnable = m_queue.peek();
+			m_queueLock.unlock();
 
 			try {
 				runnable.run();
 			} catch (final Exception e) {
 				LOGGER.error("ERROR::" + m_name + ":exception during " + runnable, e);
 			} finally {
-				synchronized (m_queue) {
-					// remove executed task
-					m_queue.remove();
+				m_queueLock.lock();
+				// remove executed task
+				m_queue.remove();
 
-					// enqueue itself again when there are tasks left
-					if (m_queue.size() > 0) {
-						execute(this);
-					}
+				// enqueue itself again when there are tasks left
+				if (m_queue.size() > 0) {
+					execute(this);
 				}
+				m_queueLock.unlock();
 			}
 		}
 	}
@@ -192,7 +212,7 @@ public final class TaskExecutor {
 		/**
 		 * Creates a new ExecutorThreadFactory
 		 */
-		public ExecutorThreadFactory() {
+		ExecutorThreadFactory() {
 			m_threadNumber = new AtomicInteger(1);
 		}
 

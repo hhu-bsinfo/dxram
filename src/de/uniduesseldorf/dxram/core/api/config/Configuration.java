@@ -37,7 +37,7 @@ public final class Configuration {
 	 *            defines if the configuration is immutable
 	 */
 	Configuration(final boolean p_immutable) {
-		m_entries = new HashMap<String, String>(ConfigurationConstants.CONFIGURATION_ENTRY_COUNT);
+		m_entries = new HashMap<String, String>(ConfigurationConstants.CONFIGURATION_ENTRIES.size());
 		m_immutable = p_immutable;
 	}
 
@@ -126,7 +126,7 @@ public final class Configuration {
 	 * Describes a configuration entry
 	 * @author Florian Klein
 	 *         03.09.2013
-	 * @param ValueType
+	 * @param <ValueType>
 	 *            the value class
 	 */
 	public static final class ConfigurationEntry<ValueType> {
@@ -228,14 +228,11 @@ public final class Configuration {
 		public static final ConfigurationEntry<Integer> NETWORK_PORT = new ConfigurationEntry<Integer>("network.port", Integer.class, Tools.getFreePort(22222));
 		// Max connection count at the same time
 		public static final ConfigurationEntry<Integer> NETWORK_CONNECTIONS = new ConfigurationEntry<Integer>("network.connections", Integer.class, 100);
-		// Size of the incoming message buffer (default 64 KB)
+		// Size of the incoming message buffer (default 32 KB)
 		public static final ConfigurationEntry<Integer> NETWORK_BUFFER_SIZE = new ConfigurationEntry<Integer>("network.buffer_size", Integer.class, 32 * 1024);
 		// Class for creating new network connections (default creator uses Java NIO)
 		public static final ConfigurationEntry<String> NETWORK_CREATOR = new ConfigurationEntry<String>("network.creator", String.class,
 				"de.uniduesseldorf.dxram.core.net.NIOConnectionCreator");
-		//
-		public static final ConfigurationEntry<Integer> NETWORK_NIO_THREAD_COUNT =
-				new ConfigurationEntry<Integer>("network.nio_thread_count", Integer.class, 1);
 		//
 		public static final ConfigurationEntry<Integer> NETWORK_MESSAGE_HANDLER_THREAD_COUNT = new ConfigurationEntry<Integer>(
 				"network.message_handler_thread_count", Integer.class, 10);
@@ -251,6 +248,8 @@ public final class Configuration {
 
 		// Size of the RAM
 		public static final ConfigurationEntry<Long> RAM_SIZE = new ConfigurationEntry<Long>("ram.size", Long.class, 1073741824L);
+		// Size of the RAM
+		public static final ConfigurationEntry<Long> RAM_SEGMENT_SIZE = new ConfigurationEntry<Long>("ram.segment_size", Long.class, 1073741824L);
 		// Class for the Memory-Management of the RAM
 		public static final ConfigurationEntry<String> RAM_MANAGEMENT = new ConfigurationEntry<String>("ram.management", String.class,
 				"de.uniduesseldorf.dxram.core.chunk.storage.SimpleListStorageManagement");
@@ -329,10 +328,9 @@ public final class Configuration {
 		// Throughput-Statistic
 		public static final ConfigurationEntry<Boolean> STATISTIC_THROUGHPUT = new ConfigurationEntry<Boolean>("statistic.throughput", Boolean.class, true);
 
-		public static final int CONFIGURATION_ENTRY_COUNT = 48;
 		private static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 		static {
-			CONFIGURATION_ENTRIES = new ArrayList<>(CONFIGURATION_ENTRY_COUNT);
+			CONFIGURATION_ENTRIES = new ArrayList<>();
 			CONFIGURATION_ENTRIES.add(DXRAM_ROLE);
 			CONFIGURATION_ENTRIES.add(CHUNK_MAX_SIZE);
 			CONFIGURATION_ENTRIES.add(INTERFACE_CHUNK);
@@ -348,7 +346,6 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(NETWORK_CONNECTIONS);
 			CONFIGURATION_ENTRIES.add(NETWORK_BUFFER_SIZE);
 			CONFIGURATION_ENTRIES.add(NETWORK_CREATOR);
-			CONFIGURATION_ENTRIES.add(NETWORK_NIO_THREAD_COUNT);
 			CONFIGURATION_ENTRIES.add(NETWORK_MESSAGE_HANDLER_THREAD_COUNT);
 			CONFIGURATION_ENTRIES.add(NETWORK_TASK_HANDLER_THREAD_COUNT);
 			CONFIGURATION_ENTRIES.add(NETWORK_MAX_CACHE_SIZE);

@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
@@ -14,6 +13,7 @@ import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * Test case for the network interface
@@ -69,7 +69,7 @@ public final class NetworkTest {
 		 * @param p_size
 		 *            the size of the message
 		 */
-		public TestMessage(final int p_size) {
+		TestMessage(final int p_size) {
 			super(NodeID.getLocalNodeID(), DEFAULT_TYPE);
 
 			m_size = p_size;

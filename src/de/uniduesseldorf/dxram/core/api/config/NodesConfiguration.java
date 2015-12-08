@@ -141,7 +141,7 @@ public final class NodesConfiguration {
 	 * @author Florian Klein
 	 *         28.11.2013
 	 */
-	public static enum Role {
+	public enum Role {
 
 		// Constants
 		PEER('P'), SUPERPEER('S'), MONITOR('M');

@@ -201,8 +201,8 @@ public final class ReadWriteLockHandler implements LockInterface {
 	private void release(final DefaultLock p_lock) throws MemoryException {
 		Chunk chunk;
 
-		chunk = MemoryManager.get(p_lock.getChunkID());
-		p_lock.setChunk(chunk);
+//		chunk = MemoryManager.get(p_lock.getChunkID());
+//		p_lock.setChunk(chunk);
 		p_lock.setReleased();
 	}
 

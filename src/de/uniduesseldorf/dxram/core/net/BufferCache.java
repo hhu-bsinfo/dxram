@@ -84,7 +84,7 @@ final class BufferCache {
 		/**
 		 * Creates an instance of FixBufferCache
 		 */
-		public FixBufferCache() {
+		FixBufferCache() {
 			m_buffers = new ByteBuffer[TEMP_BUF_POOL_SIZE];
 		}
 

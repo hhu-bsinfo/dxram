@@ -1,0 +1,3 @@
+[submodule "wiki"]
+	path = wiki
+	url = git@git.hhu.de:kebei100/dxram.wiki.git

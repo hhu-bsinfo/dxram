@@ -200,7 +200,7 @@ public final class ThroughputStatistic implements Statistic {
 		/**
 		 * Creates an instance of ThroughputTask
 		 */
-		public ThroughputTask() {
+		ThroughputTask() {
 			m_startTime = 0;
 			m_startValue = 0;
 			m_endValue = -1;

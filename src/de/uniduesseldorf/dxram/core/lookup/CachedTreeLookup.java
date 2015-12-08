@@ -5,9 +5,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
@@ -15,6 +13,8 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Cache;
 import de.uniduesseldorf.dxram.utils.Contract;
 

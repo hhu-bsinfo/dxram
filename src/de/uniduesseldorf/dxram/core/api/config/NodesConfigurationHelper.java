@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.NodesConfigurationEntry;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * Simplifies the access to the DXRAM nodes configuration

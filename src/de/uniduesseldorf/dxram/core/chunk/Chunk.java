@@ -14,11 +14,11 @@ import de.uniduesseldorf.dxram.utils.Contract;
 public class Chunk implements Comparable<Chunk> {
 
 	// Constants
-	private static final int MAX_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.CHUNK_MAX_SIZE);
+	public static final long INVALID_CHUNKID = -1;
+	private static final int MAX_SIZE = 1024 * 1024 * 16;
 
 	// Attributes
 	private long m_chunkID;
-	private int m_version;
 	private ByteBuffer m_data;
 
 	// Constructors
@@ -30,23 +30,9 @@ public class Chunk implements Comparable<Chunk> {
 	 *            the size
 	 */
 	public Chunk(final long p_chunkID, final int p_size) {
-		this(p_chunkID, p_size, 0);
-	}
-
-	/**
-	 * Creates an instance of Chunk
-	 * @param p_chunkID
-	 *            the Chunk ID
-	 * @param p_size
-	 *            the size
-	 * @param p_version
-	 *            the version
-	 */
-	public Chunk(final long p_chunkID, final int p_size, final int p_version) {
 		Contract.check(p_size > 0 && p_size <= MAX_SIZE, "invalid size given");
 
 		m_chunkID = p_chunkID;
-		m_version = p_version;
 		m_data = ByteBuffer.allocate(p_size);
 	}
 
@@ -56,14 +42,11 @@ public class Chunk implements Comparable<Chunk> {
 	 *            the Chunk ID
 	 * @param p_data
 	 *            the data
-	 * @param p_version
-	 *            the version
 	 */
-	public Chunk(final long p_chunkID, final byte[] p_data, final int p_version) {
+	public Chunk(final long p_chunkID, final byte[] p_data) {
 		Contract.check(p_data != null && p_data.length <= MAX_SIZE, "invalid size given");
 
 		m_chunkID = p_chunkID;
-		m_version = p_version;
 		m_data = ByteBuffer.wrap(p_data);
 	}
 
@@ -74,14 +57,6 @@ public class Chunk implements Comparable<Chunk> {
 	 */
 	public final long getChunkID() {
 		return m_chunkID;
-	}
-
-	/**
-	 * Gets the version
-	 * @return the version
-	 */
-	public final int getVersion() {
-		return m_version;
 	}
 
 	/**
@@ -114,13 +89,6 @@ public class Chunk implements Comparable<Chunk> {
 	}
 
 	// Methods
-	/**
-	 * Increments version
-	 */
-	public final void incVersion() {
-		m_version++;
-	}
-
 	@Override
 	public final int compareTo(final Chunk p_chunk) {
 		return (int) (getChunkID() - p_chunk.getChunkID());

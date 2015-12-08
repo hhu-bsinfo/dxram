@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.log.storage;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
  * Log catalog: Bundles all logs and buffers for one node

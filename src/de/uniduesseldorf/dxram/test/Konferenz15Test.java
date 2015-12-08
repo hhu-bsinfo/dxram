@@ -5,11 +5,11 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Tools;
 
 /*
@@ -80,7 +80,7 @@ public final class Konferenz15Test {
 		/**
 		 * Creates an instance of Superpeer
 		 */
-		public Superpeer() {}
+		Superpeer() {}
 
 		// Methods
 		/**
@@ -129,7 +129,7 @@ public final class Konferenz15Test {
 		 * @param p_seed
 		 *            the seed for the random number generator
 		 */
-		public Server(final int p_amount, final int p_migrations, final long p_seed) {
+		Server(final int p_amount, final int p_migrations, final long p_seed) {
 			m_amount = p_amount;
 			m_migrations = p_migrations;
 
@@ -228,7 +228,7 @@ public final class Konferenz15Test {
 		/**
 		 * Creates an instance of Client
 		 */
-		public Client() {}
+		Client() {}
 
 		// Methods
 		/**

@@ -30,20 +30,21 @@ public final class BloomFilter {
 	/**
 	 * Creates an instance of BloomFilter
 	 * @param p_sizeOfBitset
-	 *            defines how many bits should be used in total for the filter
+	 *            defines how many bytes should be used in total for the filter
 	 * @param p_expectedNumberOfElements
 	 *            defines the maximum number of elements the filter is expected to contain
 	 */
 	public BloomFilter(final int p_sizeOfBitset, final int p_expectedNumberOfElements) {
-		double c;
+		final int sizeInBits = p_sizeOfBitset * 8;
 		int n;
+		double c;
 
-		c = p_sizeOfBitset / (double) p_expectedNumberOfElements;
+		c = sizeInBits / (double) p_expectedNumberOfElements;
 		n = p_expectedNumberOfElements;
 
-		m_k = (int) Math.round(p_sizeOfBitset / (double) p_expectedNumberOfElements * Math.log(2.0));
+		m_k = (int) Math.round(sizeInBits / (double) p_expectedNumberOfElements * Math.log(2.0));
 		m_sizeOfBitset = (int) Math.ceil(c * n);
-		m_bitset = new BitSet(p_sizeOfBitset);
+		m_bitset = new BitSet(sizeInBits);
 	}
 
 	// Methods

@@ -14,9 +14,7 @@ import org.apache.zookeeper.data.Stat;
 
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
-import de.uniduesseldorf.dxram.core.api.ChunkID;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
@@ -70,6 +68,8 @@ import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.CRC16;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
@@ -263,7 +263,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			check = true;
 		}
 		nodeID = ChunkID.getCreatorID(p_chunkID);
-		while (null == ret) {
+		// FIXME will not terminate if chunk id requested does not exist
+		//while (null == ret) {
 			responsibleSuperpeer = getResponsibleSuperpeer(nodeID, check);
 
 			if (-1 != responsibleSuperpeer) {
@@ -274,13 +275,13 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again and check responsible superpeer
 					check = true;
-					continue;
+		//continue;
 				}
 				response = request.getResponse(LookupResponse.class);
 
 				ret = response.getLocations();
 			}
-		}
+		//}
 
 		LOGGER.trace("Exiting get");
 		return ret;
@@ -3253,7 +3254,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		Stat status;
 
 		try {
-			if (!ZooKeeperHandler.exists("nodes/free/" + p_failedNode)) {
+			if (ZooKeeperHandler.exists("nodes/peers/" + p_failedNode)) {
 				ZooKeeperHandler.create("nodes/free/" + p_failedNode);
 
 				status = ZooKeeperHandler.getStatus("nodes/new/" + p_failedNode);
@@ -3330,7 +3331,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		/**
 		 * Creates an instance of Worker
 		 */
-		public SOWorker() {
+		SOWorker() {
 			m_next = 0;
 			m_counter = 0;
 		}

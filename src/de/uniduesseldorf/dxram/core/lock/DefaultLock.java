@@ -14,7 +14,6 @@ public class DefaultLock {
 	// Attributes
 	private long m_chunkID;
 	private short m_nodeID;
-	private Chunk m_chunk;
 
 	private boolean m_enqueued;
 	private volatile boolean m_released;
@@ -49,7 +48,6 @@ public class DefaultLock {
 	public DefaultLock(final long p_chunkID, final short p_nodeID, final boolean p_readLock) {
 		m_chunkID = p_chunkID;
 		m_nodeID = p_nodeID;
-		m_chunk = null;
 
 		m_enqueued = false;
 		m_released = false;
@@ -82,14 +80,14 @@ public class DefaultLock {
 	 * Gets the Chunk
 	 * @return the Chunk
 	 */
-	public final Chunk getChunk() {
+	public final long getChunk() {
 		while (!m_released && !m_removed) {
 			try {
 				m_waiting.acquire();
 			} catch (final InterruptedException e) {}
 		}
 
-		return m_chunk;
+		return m_chunkID;
 	}
 
 	/**
@@ -138,8 +136,8 @@ public class DefaultLock {
 	 * @param p_chunk
 	 *            the CHunk
 	 */
-	final void setChunk(final Chunk p_chunk) {
-		m_chunk = p_chunk;
+	final void setChunk(final long p_chunkID) {
+		m_chunkID = p_chunkID;
 	}
 
 	/**

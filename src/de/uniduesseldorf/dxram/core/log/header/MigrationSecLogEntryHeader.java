@@ -1,8 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
-
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (secondary log)
  * @author Kevin Beineke
@@ -13,7 +11,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 	// Attributes
 	private static final short MAX_SIZE = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_CID_SIZE + MAX_LOG_ENTRY_LEN_SIZE
 			+ MAX_LOG_ENTRY_VER_SIZE + LOG_ENTRY_CRC_SIZE);
-	private static final byte NID_OFFSET = LOG_ENTRY_TYP_SIZE;;
+	private static final byte NID_OFFSET = LOG_ENTRY_TYP_SIZE;
 	private static final byte LID_OFFSET = NID_OFFSET + LOG_ENTRY_NID_SIZE;
 
 	// Constructors
@@ -24,7 +22,8 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final int p_version,
+			final byte[] p_data, final byte p_rangeID, final short p_source) {
 		System.out.println("Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
 		return null;
 	}

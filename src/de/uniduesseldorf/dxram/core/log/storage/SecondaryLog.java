@@ -3,17 +3,17 @@ package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * This class implements the secondary log
@@ -42,8 +42,6 @@ public class SecondaryLog extends AbstractLog {
 
 	private long m_secondaryLogReorgThreshold;
 	private SecondaryLogsReorgThread m_reorganizationThread;
-
-	private long m_totalUsableSpace;
 
 	private SegmentHeader[] m_segmentHeaders;
 	private byte m_numberOfFreeSegments;
@@ -89,8 +87,6 @@ public class SecondaryLog extends AbstractLog {
 
 		m_numberOfBytes = 0;
 		m_numberOfInvalidsInLog = 0;
-
-		m_totalUsableSpace = super.getTotalUsableSpace();
 
 		m_reorganizationThread = p_reorganizationThread;
 
@@ -187,23 +183,17 @@ public class SecondaryLog extends AbstractLog {
 
 	// Methods
 	@Override
-	public final void closeLog() throws InterruptedException, IOException {
-
-		super.closeRing();
-	}
-
-	@Override
-	public final int appendData(final byte[] p_data, final int p_offset, final int p_length, final Object p_unused) throws IOException, InterruptedException {
+	public final int appendData(final byte[] p_data, final int p_offset, final int p_length) throws IOException, InterruptedException {
 		int length = p_length;
 		int logEntrySize;
 		int rangeSize = 0;
 		SegmentHeader header;
 		AbstractLogEntryHeader logEntryHeader;
 
-		if (length <= 0 || length > m_totalUsableSpace) {
+		if (length <= 0 || length > SECLOG_SIZE) {
 			throw new IllegalArgumentException("Error: Invalid data size");
 		} else {
-			while (m_totalUsableSpace - m_numberOfBytes < length) {
+			while (SECLOG_SIZE - m_numberOfBytes < length) {
 				System.out.println("Secondary log for " + getNodeID() + " is full. Initializing reorganization and awaiting execution.");
 				signalReorganizationAndWait();
 			}
@@ -221,7 +211,7 @@ public class SecondaryLog extends AbstractLog {
 				// Reorganization thread is working on this secondary log -> only write in active segment
 				if (m_activeSegment != null && length + m_activeSegment.getUsedBytes() <= SECLOG_SEGMENT_SIZE) {
 					// Fill active segment
-					writeToLog(p_data, p_offset, m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + m_activeSegment.getUsedBytes(), length, true);
+					writeToSecondaryLog(p_data, p_offset, m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + m_activeSegment.getUsedBytes(), length, true);
 					m_numberOfBytes += length;
 					m_activeSegment.updateUsedBytes(length);
 					length = 0;
@@ -239,7 +229,8 @@ public class SecondaryLog extends AbstractLog {
 							rangeSize += logEntrySize;
 						}
 						if (rangeSize > 0) {
-							writeToLog(p_data, p_offset, (long) m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, true);
+							writeToSecondaryLog(p_data, p_offset,
+									(long) m_activeSegment.getIndex() * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, true);
 							m_numberOfBytes += rangeSize;
 							header.updateUsedBytes(rangeSize);
 							length -= rangeSize;
@@ -321,7 +312,7 @@ public class SecondaryLog extends AbstractLog {
 				m_lock.unlock();
 			}
 
-			writeToLog(p_data, p_offset, (long) segment * SECLOG_SEGMENT_SIZE, p_length, p_isAccessed);
+			writeToSecondaryLog(p_data, p_offset, (long) segment * SECLOG_SEGMENT_SIZE, p_length, p_isAccessed);
 			m_numberOfBytes += p_length;
 			ret = 0;
 		} else {
@@ -375,7 +366,7 @@ public class SecondaryLog extends AbstractLog {
 			}
 
 			if (length <= header.getFreeBytes()) {
-				writeToLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), length, p_isAccessed);
+				writeToSecondaryLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), length, p_isAccessed);
 				m_numberOfBytes += length;
 				header.updateUsedBytes(length);
 				length = 0;
@@ -392,7 +383,7 @@ public class SecondaryLog extends AbstractLog {
 					}
 				}
 				if (rangeSize > 0) {
-					writeToLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, p_isAccessed);
+					writeToSecondaryLog(p_data, offset, (long) segment * SECLOG_SEGMENT_SIZE + header.getUsedBytes(), rangeSize, p_isAccessed);
 					m_numberOfBytes += rangeSize;
 					header.updateUsedBytes(rangeSize);
 					length -= rangeSize;
@@ -485,12 +476,10 @@ public class SecondaryLog extends AbstractLog {
 		int offset = 0;
 		int logEntrySize;
 		int payloadSize;
-		int version;
 		long checksum = -1;
 		long chunkID;
 		byte[][] segments;
 		byte[] payload;
-		Chunk chunk;
 		HashMap<Long, Chunk> chunkMap = null;
 		AbstractLogEntryHeader logEntryHeader;
 
@@ -507,7 +496,6 @@ public class SecondaryLog extends AbstractLog {
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], offset, m_storesMigrations);
 					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(segments[i], offset);
 					payloadSize = logEntryHeader.getLength(segments[i], offset);
-					version = logEntryHeader.getVersion(segments[i], offset);
 					if (USE_CHECKSUM) {
 						checksum = logEntryHeader.getChecksum(segments[i], offset);
 					}
@@ -525,10 +513,7 @@ public class SecondaryLog extends AbstractLog {
 								continue;
 							}
 						}
-						chunk = chunkMap.get(chunkID);
-						if (chunk == null || chunk.getVersion() < version) {
-							chunkMap.put(chunkID, new Chunk(chunkID, payload, version));
-						}
+						chunkMap.put(chunkID, new Chunk(chunkID, payload));
 					}
 					offset += logEntrySize;
 				}
@@ -539,6 +524,75 @@ public class SecondaryLog extends AbstractLog {
 			segments = null;
 			payload = null;
 		}
+		return chunkMap.values().toArray(new Chunk[chunkMap.size()]);
+	}
+
+	/**
+	 * Returns a list with all log entries in file wrapped in chunks
+	 * @param p_fileName
+	 *            the file name of the secondary log
+	 * @param p_path
+	 *            the path of the directory the file is in
+	 * @throws IOException
+	 *             if the secondary log could not be read
+	 * @throws InterruptedException
+	 *             if the caller was interrupted
+	 * @return ArrayList with all log entries as chunks
+	 */
+	public static Chunk[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) throws IOException, InterruptedException {
+		short nodeID;
+		int i = 0;
+		int offset = 0;
+		int logEntrySize;
+		int payloadSize;
+		long checksum = -1;
+		long chunkID;
+		boolean storesMigrations;
+		byte[][] segments;
+		byte[] payload;
+		HashMap<Long, Chunk> chunkMap = null;
+		AbstractLogEntryHeader logEntryHeader;
+
+		nodeID = Short.parseShort(p_fileName.split("_")[0].substring(1));
+		storesMigrations = p_fileName.contains("M");
+
+		try {
+			chunkMap = new HashMap<Long, Chunk>();
+			segments = readAllSegmentsFromFile(p_path + p_fileName);
+			// TODO: Reorganize log
+			while (i < segments.length && segments[i] != null) {
+				while (offset < segments[i].length && segments[i][offset] != 0) {
+					// Determine header of next log entry
+					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], offset, storesMigrations);
+					chunkID = ((long) nodeID << 48) + logEntryHeader.getLID(segments[i], offset);
+					payloadSize = logEntryHeader.getLength(segments[i], offset);
+					if (USE_CHECKSUM) {
+						checksum = logEntryHeader.getChecksum(segments[i], offset);
+					}
+					logEntrySize = logEntryHeader.getHeaderSize(segments[i], offset) + payloadSize;
+
+					// Read payload and create chunk
+					if (offset + logEntrySize <= segments[i].length) {
+						// Create chunk only if log entry complete
+						payload = new byte[payloadSize];
+						System.arraycopy(segments[i], offset + logEntryHeader.getHeaderSize(segments[i], offset), payload, 0, payloadSize);
+						if (USE_CHECKSUM && AbstractLogEntryHeader.calculateChecksumOfPayload(payload) != checksum) {
+							// Ignore log entry
+							offset += logEntrySize;
+							continue;
+						}
+						chunkMap.put(chunkID, new Chunk(chunkID, payload));
+					}
+					offset += logEntrySize;
+				}
+				offset = 0;
+				i++;
+			}
+		} finally {
+			segments = null;
+			payload = null;
+		}
+
 		return chunkMap.values().toArray(new Chunk[chunkMap.size()]);
 	}
 
@@ -562,9 +616,38 @@ public class SecondaryLog extends AbstractLog {
 			if (header != null) {
 				length = header.getUsedBytes();
 				result[i] = new byte[length];
-				readOnRAFRingRandomly(result[i], length, i * SECLOG_SEGMENT_SIZE, true);
+				readFromSecondaryLog(result[i], length, i * SECLOG_SEGMENT_SIZE, true);
 			}
 		}
+		return result;
+	}
+
+	/**
+	 * Returns all segments of secondary log
+	 * @param p_path
+	 *            the path of the file
+	 * @throws IOException
+	 *             if the secondary log could not be read
+	 * @throws InterruptedException
+	 *             if the caller was interrupted
+	 * @return all data
+	 * @note executed only by reorganization thread
+	 */
+	private static byte[][] readAllSegmentsFromFile(final String p_path) throws IOException, InterruptedException {
+		byte[][] result = null;
+		int numberOfSegments;
+		RandomAccessFile randomAccessFile;
+
+		// TODO: Where is the end of a segment?
+		numberOfSegments = (int) (SECLOG_SIZE / SECLOG_SEGMENT_SIZE);
+		randomAccessFile = new RandomAccessFile(new File(p_path), "r");
+		result = new byte[numberOfSegments][];
+		for (int i = 0; i < numberOfSegments; i++) {
+			result[i] = new byte[SECLOG_SEGMENT_SIZE];
+			readFromSecondaryLogFile(result[i], SECLOG_SEGMENT_SIZE, i * SECLOG_SEGMENT_SIZE, randomAccessFile, (short) SECLOG_HEADER.length);
+		}
+		randomAccessFile.close();
+
 		return result;
 	}
 
@@ -588,9 +671,28 @@ public class SecondaryLog extends AbstractLog {
 		if (header != null) {
 			length = header.getUsedBytes();
 			result = new byte[length];
-			readOnRAFRingRandomly(result, length, p_segment * SECLOG_SEGMENT_SIZE, true);
+			readFromSecondaryLog(result, length, p_segment * SECLOG_SEGMENT_SIZE, true);
 		}
 		return result;
+	}
+
+	/**
+	 * Marks log segment
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_length
+	 *            the segment length
+	 * @param p_segmentIndex
+	 *            the segment index
+	 * @throws IOException
+	 *             if the secondary log could not be read
+	 * @throws InterruptedException
+	 *             if the caller was interrupted
+	 * @note executed only by reorganization thread
+	 */
+	private void markSegment(final byte[] p_buffer, final int p_length, final int p_segmentIndex) throws IOException, InterruptedException {
+		// Overwrite segment on log
+		writeToSecondaryLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length, true);
 	}
 
 	/**
@@ -608,7 +710,18 @@ public class SecondaryLog extends AbstractLog {
 	 * @note executed only by reorganization thread
 	 */
 	private void updateSegment(final byte[] p_buffer, final int p_length, final int p_segmentIndex) throws IOException, InterruptedException {
-		overwriteLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length, true);
+		SegmentHeader header;
+
+		// Mark the end of the segment
+		p_buffer[p_length] = 0;
+
+		// Overwrite segment on log
+		writeToSecondaryLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length + 1, true);
+
+		// Update segment header
+		header = m_segmentHeaders[p_segmentIndex];
+		header.reset();
+		header.updateUsedBytes(p_length);
 	}
 
 	/**
@@ -624,8 +737,8 @@ public class SecondaryLog extends AbstractLog {
 	private void freeSegment(final int p_segment) throws IOException, InterruptedException {
 		SegmentHeader header;
 
+		writeToSecondaryLog(new byte[] {0}, 0, p_segment * SECLOG_SEGMENT_SIZE, 1, true);
 		header = m_segmentHeaders[p_segment];
-		removeFromLog(header.getUsedBytes());
 		header.reset();
 		m_numberOfFreeSegments++;
 	}
@@ -659,7 +772,7 @@ public class SecondaryLog extends AbstractLog {
 
 	@Override
 	public String toString() {
-		return "NodeID: " + getNodeID() + " - RangeID: " + getRangeIDOrFirstLocalID() + " - Written bytes: " + getOccupiedSpace();
+		return "NodeID: " + getNodeID() + " - RangeID: " + getRangeIDOrFirstLocalID() + " - Written bytes: " + m_numberOfBytes;
 	}
 
 	/**
@@ -723,11 +836,10 @@ public class SecondaryLog extends AbstractLog {
 		int length;
 		int readBytes = 0;
 		int writtenBytes = 0;
-		int removedObjects = 0;
-		int removedTombstones = 0;
+		// int removedObjects = 0;
+		// int removedTombstones = 0;
 		byte[] segmentData;
 		byte[] newData;
-		SegmentHeader header;
 		AbstractLogEntryHeader logEntryHeader;
 
 		if (-1 != p_segmentIndex) {
@@ -743,11 +855,11 @@ public class SecondaryLog extends AbstractLog {
 
 					// Note: Out-dated and deleted objects and tombstones are marked with (type == 3) by markInvalidObjects()
 					if (logEntryHeader.isInvalid(segmentData, readBytes)) {
-						if (logEntryHeader.isTombstone()) {
+						/*-if (logEntryHeader.isTombstone()) {
 							removedTombstones++;
 						} else {
 							removedObjects++;
-						}
+						}*/
 					} else {
 						System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
 						writtenBytes += length;
@@ -758,32 +870,27 @@ public class SecondaryLog extends AbstractLog {
 				if (m_activeSegment == null || m_activeSegment.getIndex() != p_segmentIndex) {
 					if (writtenBytes < readBytes) {
 						if (writtenBytes > 0) {
-							newData = Arrays.copyOf(newData, writtenBytes);
-							updateSegment(newData, newData.length, p_segmentIndex);
-							header = m_segmentHeaders[p_segmentIndex];
-							header.reset();
-							header.updateUsedBytes(writtenBytes);
+							updateSegment(newData, writtenBytes, p_segmentIndex);
 						} else {
 							freeSegment(p_segmentIndex);
-							m_segmentHeaders[p_segmentIndex].reset();
 						}
 						m_numberOfBytes -= readBytes - writtenBytes;
 					}
-				} else {
-					removedObjects = 0;
-					removedTombstones = 0;
+					/*-} else {
+						removedObjects = 0;
+						removedTombstones = 0;*/
 				}
 				m_lock.unlock();
 			} catch (final IOException | InterruptedException e) {
 				System.out.println("Reorganization failed!");
 			}
 
-			if (removedObjects != 0 || removedTombstones != 0) {
+			/*-if (removedObjects != 0 || removedTombstones != 0) {
 				System.out.println("\n- Reorganization of Segment: " + p_segmentIndex
 						+ "(Peer: " + m_nodeID + ", Range: " + getRangeIDOrFirstLocalID() + ") finished:");
 				System.out.println("-- " + removedObjects + " entries removed");
 				System.out.println("-- " + removedTombstones + " tombstones removed\n");
-			}
+			}*/
 		}
 	}
 
@@ -819,18 +926,18 @@ public class SecondaryLog extends AbstractLog {
 	 *            a hash table to note version numbers in
 	 */
 	public final void markInvalidObjects(final VersionsHashTable p_hashtable) {
-		long timeStart;
+		// long timeStart;
 		int readBytes = 0;
 		int hashVersion;
 		int logVersion;
 		int deleteCounter = 0;
-		int allDeleteCounter = 0;
+		// int allDeleteCounter = 0;
 		long localID;
 		byte[][] segments;
 		byte[] segment;
 		AbstractLogEntryHeader logEntryHeader;
 
-		timeStart = System.currentTimeMillis();
+		// timeStart = System.currentTimeMillis();
 		p_hashtable.clear();
 		try {
 			segments = readAllSegments();
@@ -875,8 +982,8 @@ public class SecondaryLog extends AbstractLog {
 					if (deleteCounter > 0) {
 						m_lock.lock();
 						if (m_activeSegment == null || m_activeSegment.getIndex() != i) {
-							updateSegment(segment, readBytes, i);
-							allDeleteCounter += deleteCounter;
+							markSegment(segment, readBytes, i);
+							// allDeleteCounter += deleteCounter;
 						}
 						m_lock.unlock();
 						deleteCounter = 0;
@@ -888,12 +995,12 @@ public class SecondaryLog extends AbstractLog {
 			System.out.println("Removing tombstones failed!");
 		}
 
-		if (allDeleteCounter > 0) {
+		/*-if (allDeleteCounter > 0) {
 			System.out.println("\n+ Marking invalid objects(Peer: " + getNodeID() + ", Range: " + getRangeIDOrFirstLocalID() + ")");
 			System.out.println("++ Entries in hashtable: " + p_hashtable.size());
 			System.out.println("++ " + allDeleteCounter + " entries invalidated");
 			System.out.println("++ All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms\n");
-		}
+		}*/
 	}
 
 	// Classes

@@ -33,9 +33,12 @@ import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionReques
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
+import de.uniduesseldorf.dxram.utils.locks.JNILock;
 
 /**
  * API for DXRAM
@@ -129,6 +132,8 @@ public final class Core {
 
 			m_nodesConfigurationHelper = new NodesConfigurationHelper(p_nodesConfiguration);
 
+			JNILock.load(m_configurationHelper.getStringValue(ConfigurationConstants.JNI_LOCK_DIRECTORY));
+			
 			CoreComponentFactory.getNetworkInterface();
 			m_chunk = CoreComponentFactory.getChunkInterface();
 
@@ -643,11 +648,13 @@ public final class Core {
 	 *            NodeID of failed peer
 	 * @param p_dest
 	 *            NodeID of destination node for this request
+	 * @param p_useLiveData
+	 *            whether the recover should use current logs or log files
 	 * @throws DXRAMException
 	 *             if the chunk could not be get
 	 */
-	public static void executeRecoveryCommand(final short p_nodeID, final short p_dest) throws DXRAMException {
-		m_recovery.recover(p_nodeID, p_dest);
+	public static void executeRecoveryCommand(final short p_nodeID, final short p_dest, final boolean p_useLiveData) throws DXRAMException {
+		m_recovery.recover(p_nodeID, p_dest, p_useLiveData);
 	}
 
 	/*
@@ -719,7 +726,7 @@ public final class Core {
 	 *             if the chunks could not be migrated
 	 */
 	public static boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) throws DXRAMException {
-		boolean ret = false;
+		boolean ret = true;
 		ChunkID.check(p_startChunkID);
 		ChunkID.check(p_endChunkID);
 		NodeID.check(p_target);
@@ -758,7 +765,7 @@ public final class Core {
 	public static void recover(final short p_owner, final short p_dest) throws DXRAMException {
 		try {
 			if (m_recovery != null) {
-				m_recovery.recover(p_owner, p_dest);
+				m_recovery.recover(p_owner, p_dest, true);
 			}
 		} catch (final DXRAMException e) {
 			handleException(e, ExceptionSource.DXRAM_RECOVER_FROM_LOG);

@@ -7,12 +7,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -91,7 +91,7 @@ public final class DefaultLockHandler implements LockInterface {
 				release(p_lock);
 			} else {
 				if (m_directResult) {
-					p_lock.setChunk(new Chunk(-1, 0));
+					p_lock.setChunk(Chunk.INVALID_CHUNKID);
 					p_lock.setReleased();
 				} else {
 					temp = lock.getNext();
@@ -189,8 +189,8 @@ public final class DefaultLockHandler implements LockInterface {
 	private void release(final DefaultLock p_lock) throws MemoryException {
 		Chunk chunk;
 
-		chunk = MemoryManager.get(p_lock.getChunkID());
-		p_lock.setChunk(chunk);
+//		chunk = MemoryManager.get(p_lock.getChunkID());
+//		p_lock.setChunk(chunk);
 		p_lock.setReleased();
 	}
 

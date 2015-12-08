@@ -17,7 +17,7 @@ public final class UnsafeArrayList extends AbstractUnsafeList {
 	private UnsafeArray m_array;
 
 	private int m_size;
-	private int m_capacity;;
+	private int m_capacity;
 
 	// Constructors
 	/**
@@ -132,7 +132,7 @@ public final class UnsafeArrayList extends AbstractUnsafeList {
 
 		if (m_size == m_array.getSize() / 2) {
 			m_capacity >>= 1;
-			m_array.resize(m_capacity);
+		m_array.resize(m_capacity);
 		}
 	}
 

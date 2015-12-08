@@ -9,13 +9,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.RawMemory;
+import de.uniduesseldorf.dxram.core.chunk.storage.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Tools;
 
 /*
@@ -73,7 +73,7 @@ public final class ThroughputTest {
 		/**
 		 * Creates an instance of Superpeer
 		 */
-		public Superpeer() {}
+		Superpeer() {}
 
 		// Methods
 		/**
@@ -118,7 +118,7 @@ public final class ThroughputTest {
 		 * @param p_threadCount
 		 *            the number of threads
 		 */
-		public Server(final int p_chunkCount, final int p_threadCount) {
+		Server(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
 			m_threadCount = p_threadCount;
 		}
@@ -191,8 +191,8 @@ public final class ThroughputTest {
 			data.putShort(NodeID.getLocalNodeID());
 			Core.put(chunk);
 
-			CIDTable.printDebugInfos();
-			RawMemory.printDebugInfos();
+//			CIDTable.printDebugInfos();
+//			RawMemory.printDebugInfos();
 		}
 
 		/**
@@ -275,7 +275,7 @@ public final class ThroughputTest {
 
 						for (int i = 1; i <= count; i++) {
 							try {
-								chunk = new Chunk(i + nodeID, new byte[40], 0);
+								chunk = new Chunk(i + nodeID, new byte[40]);
 								Core.put(chunk);
 							} catch (final DXRAMException e) {
 								e.printStackTrace();
@@ -589,7 +589,7 @@ public final class ThroughputTest {
 		 * @param p_threadCount
 		 *            the number of threads
 		 */
-		public Client(final int p_chunkCount, final int p_threadCount) {
+		Client(final int p_chunkCount, final int p_threadCount) {
 			m_chunkCount = p_chunkCount;
 			m_threadCount = p_threadCount;
 		}
@@ -888,7 +888,7 @@ public final class ThroughputTest {
 		 * @param p_time
 		 *            the test time
 		 */
-		public TestResult(final long p_time) {
+		TestResult(final long p_time) {
 			m_time = p_time;
 		}
 

@@ -20,7 +20,7 @@ public interface ConnectionLostListener extends EventListener<ConnectionLostEven
 	 * @author Florian Klein
 	 *         09.03.2012
 	 */
-	public static class ConnectionLostEvent extends AbstractEvent {
+	class ConnectionLostEvent extends AbstractEvent {
 
 		// Constructors
 		/**

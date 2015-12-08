@@ -1,8 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
-import de.uniduesseldorf.dxram.core.api.ChunkID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
  * Extends AbstractLogEntryHeader for a normal log entry header (primary log)
@@ -26,7 +25,8 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final Chunk p_chunk, final byte p_rangeID, final short p_source) {
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final int p_version,
+			final byte[] p_data, final byte p_rangeID, final short p_source) {
 		byte[] result;
 		byte lengthSize;
 		byte localIDSize;
@@ -34,9 +34,9 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 		byte checksumSize = 0;
 		byte type = 0;
 
-		localIDSize = getSizeForLocalIDField(ChunkID.getLocalID(p_chunk.getChunkID()));
-		lengthSize = getSizeForLengthField(p_chunk.getSize());
-		versionSize = getSizeForVersionField(p_chunk.getVersion());
+		localIDSize = getSizeForLocalIDField(ChunkID.getLocalID(p_chunkID));
+		lengthSize = getSizeForLengthField(p_size);
+		versionSize = getSizeForVersionField(p_version);
 
 		if (USE_CHECKSUM) {
 			checksumSize = LOG_ENTRY_CRC_SIZE;
@@ -48,26 +48,26 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 		putType(result, type, TYP_OFFSET);
 
-		putChunkID(result, p_chunk.getChunkID(), localIDSize, NID_OFFSET);
+		putChunkID(result, p_chunkID, localIDSize, NID_OFFSET);
 
 		if (lengthSize == 1) {
-			putLength(result, (byte) p_chunk.getSize(), getLENOffset(result, 0));
+			putLength(result, (byte) p_size, getLENOffset(result, 0));
 		} else if (lengthSize == 2) {
-			putLength(result, (short) p_chunk.getSize(), getLENOffset(result, 0));
+			putLength(result, (short) p_size, getLENOffset(result, 0));
 		} else {
-			putLength(result, p_chunk.getSize(), getLENOffset(result, 0));
+			putLength(result, p_size, getLENOffset(result, 0));
 		}
 
 		if (versionSize == 1) {
-			putVersion(result, (byte) p_chunk.getVersion(), getVEROffset(result, 0));
+			putVersion(result, (byte) p_version, getVEROffset(result, 0));
 		} else if (versionSize == 2) {
-			putVersion(result, (short) p_chunk.getVersion(), getVEROffset(result, 0));
+			putVersion(result, (short) p_version, getVEROffset(result, 0));
 		} else if (versionSize > 2) {
-			putVersion(result, p_chunk.getVersion(), getVEROffset(result, 0));
+			putVersion(result, p_version, getVEROffset(result, 0));
 		}
 
 		if (checksumSize > 0) {
-			putChecksum(result, calculateChecksumOfPayload(p_chunk.getData().array()), getCRCOffset(result, 0));
+			putChecksum(result, calculateChecksumOfPayload(p_data), getCRCOffset(result, 0));
 		}
 
 		return result;

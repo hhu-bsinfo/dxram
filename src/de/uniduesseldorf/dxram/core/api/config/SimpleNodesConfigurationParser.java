@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.NodesConfigurationEntry;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 
 /**
  * Parses the configured nodes
@@ -84,7 +84,7 @@ public final class SimpleNodesConfigurationParser extends AbstractNodesConfigura
 		/**
 		 * Creates an instance of DefaultNodesConfigurationComparator
 		 */
-		public DefaultNodesConfigurationComparator() {}
+		DefaultNodesConfigurationComparator() {}
 
 		// Methods
 		@Override

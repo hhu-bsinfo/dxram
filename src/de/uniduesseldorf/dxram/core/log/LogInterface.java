@@ -11,37 +11,6 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
  */
 public interface LogInterface extends CoreComponent {
 
-	/**
-	 * Initializes a backup range for Chunks created on this node
-	 * @Note: Test method to stress logging
-	 */
-	// TODO: Remove
-	void initBackupRangeLocallyTEST();
-
-	/**
-	 * Logs a Chunk locally (created on the very same node)
-	 * @param p_chunk
-	 *            the Chunk
-	 * @throws DXRAMException
-	 *             if the Chunks could not be logged
-	 * @Note: Test method to stress logging
-	 */
-	// TODO: Remove
-	void logChunkLocallyTEST(final Chunk p_chunk) throws DXRAMException;
-
-	/**
-	 * Removes a Chunk locally (created on the very same node)
-	 * @param p_chunkID
-	 *            the Chunk
-	 * @param p_version
-	 *            the version
-	 * @throws DXRAMException
-	 *             if the Chunks could not be removed
-	 * @Note: Test method to stress logging
-	 */
-	// TODO: Remove
-	void removeChunkLocallyTEST(final long p_chunkID, final int p_version) throws DXRAMException;
-
 	// Methods
 	/**
 	 * Initializes a new backup range
@@ -65,6 +34,18 @@ public interface LogInterface extends CoreComponent {
 	 *             if the Chunks could not be read
 	 */
 	Chunk[] recoverBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
+
+	/**
+	 * Recovers all Chunks of given backup range
+	 * @param p_fileName
+	 *            the file name
+	 * @param p_path
+	 *            the path of the folder the file is in
+	 * @return the recovered Chunks
+	 * @throws DXRAMException
+	 *             if the Chunks could not be read
+	 */
+	Chunk[] recoverBackupRangeFromFile(String p_fileName, String p_path) throws DXRAMException;
 
 	/**
 	 * Prints the metadata of one node's log

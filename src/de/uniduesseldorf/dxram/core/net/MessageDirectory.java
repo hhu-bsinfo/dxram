@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.net;
 
 import java.lang.reflect.Constructor;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 
@@ -20,6 +21,8 @@ public final class MessageDirectory {
 	// Attributes
 	private static Constructor<?>[][] m_constructors = new Constructor[0][0];
 
+	private static ReentrantLock m_lock = new ReentrantLock(false);
+
 	/**
 	 * MessageDirectory is not designated to be instantiable
 	 */
@@ -34,10 +37,11 @@ public final class MessageDirectory {
 	 * @param p_class
 	 *            Message class
 	 */
-	public static synchronized void register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
+	public static void register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		Constructor<?>[][] constructors = m_constructors;
 		Constructor<?> constructor;
 
+		m_lock.lock();
 		if (contains(p_type, p_subtype)) {
 			throw new IllegalArgumentException("Type " + p_type + " with subtype " + p_subtype + " is already registered");
 		}
@@ -69,6 +73,7 @@ public final class MessageDirectory {
 		}
 
 		constructors[p_type][p_subtype] = constructor;
+		m_lock.unlock();
 	}
 
 	/**

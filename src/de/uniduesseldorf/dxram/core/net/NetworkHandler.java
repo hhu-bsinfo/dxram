@@ -6,11 +6,11 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.NodeID;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
@@ -18,6 +18,7 @@ import de.uniduesseldorf.dxram.core.log.LogMessages;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages;
+import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 
 /**
@@ -37,6 +38,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	private final MessageHandler m_messageHandler;
 
 	private ConnectionManager m_manager;
+	private ReentrantLock m_receiversLock;
+
+	private ReentrantLock m_lock;
 
 	// Constructors
 	/**
@@ -45,12 +49,15 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	public NetworkHandler() {
 		m_executor = TaskExecutor.getDefaultExecutor();
 		m_receivers = new HashMap<>();
+		m_receiversLock = new ReentrantLock(false);
 		m_messageHandler = new MessageHandler();
+
+		m_lock = new ReentrantLock(false);
 	}
 
 	// Methods
 	@Override
-	public synchronized void initialize() throws NetworkException {
+	public void initialize() throws NetworkException {
 		final byte networkType;
 		final byte chunkType;
 		final byte logType;
@@ -59,6 +66,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		LOGGER.trace("Entering initialize");
 
+		m_lock.lock();
 		// Network Messages
 		networkType = NIOConnectionCreator.FlowControlMessage.TYPE;
 		MessageDirectory.register(networkType, NIOConnectionCreator.FlowControlMessage.SUBTYPE, NIOConnectionCreator.FlowControlMessage.class);
@@ -85,8 +93,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		// Log Messages
 		logType = LogMessages.TYPE;
-		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_REQUEST, LogMessages.LogRequest.class);
-		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_RESPONSE, LogMessages.LogResponse.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessages.LogMessage.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_REMOVE_MESSAGE, LogMessages.RemoveMessage.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_REQUEST, LogMessages.InitRequest.class);
@@ -152,26 +158,33 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_REQUEST)) {
 			StatisticsManager.registerStatistic("Request", RequestStatistic.getInstance());
 		}
+		m_lock.unlock();
 
 		LOGGER.trace("Exiting initialize");
 	}
 
 	@Override
-	public synchronized void activateConnectionManager() {
+	public void activateConnectionManager() {
+		m_lock.lock();
 		m_manager.activate();
+		m_lock.unlock();
 	}
 
 	@Override
-	public synchronized void deactivateConnectionManager() {
+	public void deactivateConnectionManager() {
+		m_lock.lock();
 		m_manager.deactivate();
+		m_lock.unlock();
 	}
 
 	@Override
-	public synchronized void close() {
+	public void close() {
 		LOGGER.trace("Entering close");
 
+		m_lock.lock();
 		m_executor.shutdown();
 		m_messageHandler.m_executor.shutdown();
+		m_lock.unlock();
 
 		LOGGER.trace("Exiting close");
 	}
@@ -181,16 +194,16 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		Entry entry;
 
 		if (p_receiver != null) {
-			synchronized (m_receivers) {
-				entry = m_receivers.get(p_message);
-				if (entry == null) {
-					entry = new Entry();
-					m_receivers.put(p_message, entry);
-				}
-				entry.add(p_receiver);
-
-				LOGGER.info("new MessageReceiver");
+			m_receiversLock.lock();
+			entry = m_receivers.get(p_message);
+			if (entry == null) {
+				entry = new Entry();
+				m_receivers.put(p_message, entry);
 			}
+			entry.add(p_receiver);
+
+			LOGGER.info("new MessageReceiver");
+			m_receiversLock.unlock();
 		}
 	}
 
@@ -199,14 +212,14 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		Entry entry;
 
 		if (p_receiver != null) {
-			synchronized (m_receivers) {
-				entry = m_receivers.get(p_message);
-				if (entry != null) {
-					entry.remove(p_receiver);
+			m_receiversLock.lock();
+			entry = m_receivers.get(p_message);
+			if (entry != null) {
+				entry.remove(p_receiver);
 
-					LOGGER.info("MessageReceiver removed");
-				}
+				LOGGER.info("MessageReceiver removed");
 			}
+			m_receiversLock.unlock();
 		}
 	}
 
@@ -272,14 +285,16 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		// Attributes
 		private final ArrayDeque<AbstractMessage> m_messages;
 		private final TaskExecutor m_executor;
+		private ReentrantLock m_messagesLock;
 
 		// Constructors
 		/**
 		 * Creates an instance of MessageHandler
 		 */
-		public MessageHandler() {
+		MessageHandler() {
 			m_executor = new TaskExecutor("MessageHandler", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MESSAGE_HANDLER_THREAD_COUNT));
 			m_messages = new ArrayDeque<>();
+			m_messagesLock = new ReentrantLock(false);
 		}
 
 		// Methods
@@ -289,9 +304,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			synchronized (m_messages) {
-				m_messages.offer(p_message);
-			}
+			m_messagesLock.lock();
+			m_messages.offer(p_message);
+			m_messagesLock.unlock();
 
 			m_executor.execute(this);
 		}
@@ -301,13 +316,13 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			AbstractMessage message;
 			Entry entry;
 
-			synchronized (m_messages) {
-				message = m_messages.poll();
-			}
+			m_messagesLock.lock();
+			message = m_messages.poll();
+			m_messagesLock.unlock();
 
-			synchronized (m_receivers) {
-				entry = m_receivers.get(message.getClass());
-			}
+			m_receiversLock.lock();
+			entry = m_receivers.get(message.getClass());
+			m_receiversLock.unlock();
 
 			if (entry != null) {
 				entry.newMessage(message);
@@ -329,7 +344,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		/**
 		 * Creates an instance of Entry
 		 */
-		public Entry() {
+		Entry() {
 			m_receivers = new CopyOnWriteArrayList<>();
 		}
 

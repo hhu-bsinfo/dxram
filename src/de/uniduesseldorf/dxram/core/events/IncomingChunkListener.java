@@ -22,7 +22,7 @@ public interface IncomingChunkListener extends EventListener<IncomingChunkEvent>
 	 * @author Florian Klein
 	 *         01.08.2012
 	 */
-	public static class IncomingChunkEvent extends AbstractEvent {
+	class IncomingChunkEvent extends AbstractEvent {
 
 		// Attributes
 		private Chunk m_chunk;

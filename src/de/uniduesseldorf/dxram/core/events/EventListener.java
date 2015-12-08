@@ -23,8 +23,10 @@ public interface EventListener<T extends AbstractEvent> {
 	 * Adapter for the EventListener
 	 * @author Florian Klein
 	 *         09.03.2012
+	 * @param <T>
+	 *            the abstract event
 	 */
-	public static class EventListenerAdapter<T extends AbstractEvent> implements EventListener<T> {
+	class EventListenerAdapter<T extends AbstractEvent> implements EventListener<T> {
 
 		// Constructors
 		/**
