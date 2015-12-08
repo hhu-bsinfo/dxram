@@ -8,6 +8,9 @@ import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
 
+import de.uniduesseldorf.soh.SmallObjectHeap;
+import de.uniduesseldorf.soh.StorageUnsafeMemory;
+
 /**
  * Interface to access the local heap. Features for migration
  * and other tasks are provided as well.
@@ -66,6 +69,8 @@ public final class MemoryManager {
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
+		
+		MemoryStatistic.getInstance().initMemory(p_size);
 
 		return ret;
 	}
@@ -143,6 +148,10 @@ public final class MemoryManager {
 				// register new chunk
 				chunkID = ((long) m_nodeID << 48) + lid;
 				m_cidTable.set(chunkID, address);
+				
+				// TODO switch to turn on/off
+				// TODO have free call for free
+				MemoryStatistic.getInstance().malloc(blockSize);
 			} else {
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
@@ -350,6 +359,7 @@ public final class MemoryManager {
 		}
 		
 		m_rawMemory.free(addressDeletedChunk);
+		MemoryStatistic.getInstance().malloc(blockSize);
 	}
 
 	/**

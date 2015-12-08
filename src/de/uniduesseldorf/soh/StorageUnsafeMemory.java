@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.soh;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,10 +7,10 @@ import java.io.RandomAccessFile;
 
 import sun.misc.Unsafe;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Endianness;
-import de.uniduesseldorf.dxram.utils.locks.JNILock;
 import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
+
+import de.uniduesseldorf.soh.exception.MemoryRuntimeException;
 
 /**
  * Implementation of a storage based on an unsafe allocated
@@ -33,24 +33,24 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void allocate(final long p_size) throws MemoryException {
+	public void allocate(final long p_size) {
 		assert p_size > 0;
 
 		try {
 			m_memoryBase = UNSAFE.allocateMemory(p_size);
 		} catch (final Throwable e) {
-			throw new MemoryException("Could not initialize memory", e);
+			throw new MemoryRuntimeException("Could not initialize memory", e);
 		}
 
 		m_memorySize = p_size;
 	}
 
 	@Override
-	public void free() throws MemoryException {
+	public void free() {
 		try {
 			UNSAFE.freeMemory(m_memoryBase);
 		} catch (final Throwable e) {
-			throw new MemoryException("Could not free memory", e);
+			throw new MemoryRuntimeException("Could not free memory", e);
 		}
 		m_memorySize = 0;
 	}
@@ -61,7 +61,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void dump(final File p_file, final long p_ptr, final long p_length) throws MemoryException {
+	public void dump(final File p_file, final long p_ptr, final long p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length <= m_memorySize;
@@ -76,7 +76,7 @@ public class StorageUnsafeMemory implements Storage {
 				offset++;
 			}
 		} catch (final IOException e) {
-			throw new MemoryException(e.getMessage());
+			throw new MemoryRuntimeException(e.getMessage());
 		} finally {
 			try {
 				if (outFile != null) {
@@ -92,7 +92,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void set(final long p_ptr, final long p_size, final byte p_value) throws MemoryException {
+	public void set(final long p_ptr, final long p_size, final byte p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_size <= m_memorySize;
@@ -101,7 +101,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public byte[] readBytes(final long p_ptr, final int p_length) throws MemoryException {
+	public byte[] readBytes(final long p_ptr, final int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length <= m_memorySize;
@@ -116,7 +116,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
+	public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length <= m_memorySize;
@@ -132,7 +132,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public byte readByte(final long p_ptr) throws MemoryException {
+	public byte readByte(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 
@@ -140,7 +140,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public short readShort(final long p_ptr) throws MemoryException {
+	public short readShort(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
 
@@ -148,7 +148,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public int readInt(final long p_ptr) throws MemoryException {
+	public int readInt(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 
@@ -156,7 +156,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public long readLong(final long p_ptr) throws MemoryException {
+	public long readLong(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
 
@@ -164,13 +164,12 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public int writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException {
+	public int writeBytes(final long p_ptr, final byte[] p_array) {
 		return writeBytes(p_ptr, p_array, 0, p_array.length);
 	}
 
 	@Override
-	public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length)
-			throws MemoryException {
+	public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_length <= m_memorySize;
 
@@ -185,7 +184,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void writeByte(final long p_ptr, final byte p_value) throws MemoryException {
+	public void writeByte(final long p_ptr, final byte p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 
@@ -193,7 +192,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void writeShort(final long p_ptr, final short p_value) throws MemoryException {
+	public void writeShort(final long p_ptr, final short p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
 
@@ -201,7 +200,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void writeInt(final long p_ptr, final int p_value) throws MemoryException {
+	public void writeInt(final long p_ptr, final int p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 
@@ -209,7 +208,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void writeLong(final long p_ptr, final long p_value) throws MemoryException {
+	public void writeLong(final long p_ptr, final long p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
 
@@ -217,7 +216,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public long readVal(final long p_ptr, final int p_count) throws MemoryException {
+	public long readVal(final long p_ptr, final int p_count) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_count <= m_memorySize;
 
@@ -242,7 +241,7 @@ public class StorageUnsafeMemory implements Storage {
 	}
 
 	@Override
-	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException {
+	public void writeVal(final long p_ptr, final long p_val, final int p_count) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_count <= m_memorySize;
 
@@ -256,25 +255,5 @@ public class StorageUnsafeMemory implements Storage {
 				UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> (8 * (7 - i)) & 0xFF));
 			}
 		}
-	}
-
-	@Override
-	public void readLock(final long p_address) {
-		JNILock.readLock(m_memoryBase + p_address);
-	}
-
-	@Override
-	public void readUnlock(final long p_address) {
-		JNILock.readUnlock(m_memoryBase + p_address);
-	}
-
-	@Override
-	public void writeLock(final long p_address) {
-		JNILock.writeLock(m_memoryBase + p_address);
-	}
-
-	@Override
-	public void writeUnlock(final long p_address) {
-		JNILock.writeUnlock(m_memoryBase + p_address);
 	}
 }

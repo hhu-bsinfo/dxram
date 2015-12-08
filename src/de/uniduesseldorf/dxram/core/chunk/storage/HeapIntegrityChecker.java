@@ -3,8 +3,9 @@ package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import java.util.Map.Entry;
 
-import de.uniduesseldorf.dxram.core.chunk.storage.HeapWalker.MemoryBlock;
-import de.uniduesseldorf.dxram.core.chunk.storage.HeapWalker.Results;
+import de.uniduesseldorf.soh.HeapWalker;
+import de.uniduesseldorf.soh.HeapWalker.MemoryBlock;
+import de.uniduesseldorf.soh.HeapWalker.Results;
 
 import java.util.Vector;
 

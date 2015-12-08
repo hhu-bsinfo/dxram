@@ -1637,37 +1637,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		return ret;
 	}
 
-	/**
-	 * Initializes the backup range for current locations
-	 * and determines new backup peers if necessary
-	 * @param p_localID
-	 *            the current LocalID
-	 * @param p_size
-	 *            the size of the new created chunk
-	 * @param p_version
-	 *            the version of the new created chunk
-	 * @throws LookupException
-	 *             if range could not be initialized
-	 */
-	private void initBackupRange(final long p_localID, final int p_size, final int p_version) throws LookupException {
-		if (LOG_ACTIVE) {
-			m_rangeSize += p_size + m_log.getHeaderSize(m_nodeID, p_localID, p_size, p_version);
-			if (p_localID == 1 && p_version == 0) {
-				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
-				determineBackupPeers(0);
-				m_lookup.initRange((long) m_nodeID << 48, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = 0;
-			} else if (m_rangeSize > SECONDARY_LOG_SIZE / 2) {
-				determineBackupPeers(p_localID);
-				m_lookup.initRange(((long) m_nodeID << 48) + p_localID, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange(((long) m_nodeID << 48) + p_localID, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = 0;
-			}
-		} else if (p_localID == 1 && p_version == 0) {
-			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, new Locations(m_nodeID, new short[] {-1, -1, -1}, null));
-		}
-	}
+
 
 	/**
 	 * Determines backup peers

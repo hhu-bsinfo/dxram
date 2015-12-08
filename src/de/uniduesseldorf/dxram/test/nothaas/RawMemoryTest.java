@@ -11,15 +11,15 @@ import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.storage.HeapIntegrityChecker;
-import de.uniduesseldorf.dxram.core.chunk.storage.HeapWalker;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
-import de.uniduesseldorf.dxram.core.chunk.storage.SmallObjectHeap;
-import de.uniduesseldorf.dxram.core.chunk.storage.StorageRandomAccessFile;
-import de.uniduesseldorf.dxram.core.chunk.storage.StorageUnsafeMemory;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
 import de.uniduesseldorf.dxram.utils.locks.JNILock;
 
+import de.uniduesseldorf.soh.HeapWalker;
+import de.uniduesseldorf.soh.SmallObjectHeap;
+import de.uniduesseldorf.soh.StorageRandomAccessFile;
+import de.uniduesseldorf.soh.StorageUnsafeMemory;
 import sun.misc.Lock;
 
 public class RawMemoryTest 

@@ -4,6 +4,8 @@ import de.uniduesseldorf.dxram.core.chunk.DataStructureReader;
 import de.uniduesseldorf.dxram.core.chunk.DataStructureWriter;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 
+import de.uniduesseldorf.soh.SmallObjectHeap;
+
 public class SmallObjectHeapDSReaderWriter implements DataStructureReader, DataStructureWriter
 {
 	private SmallObjectHeap m_heap;

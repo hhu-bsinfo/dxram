@@ -3,6 +3,8 @@ package de.uniduesseldorf.dxram.core.chunk.storage;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 
+import de.uniduesseldorf.soh.SmallObjectHeap;
+
 /**
  * Paging tables based on CIDTable, but with less features.
  * This can be used for any scenario that requires some kind
@@ -176,11 +178,7 @@ public final class PagingTable {
 	public long get(final long p_chunkID) throws MemoryException {
 		long ret;
 
-		m_rawMemory.readLock(m_nodeIDTableDirectory);
-
 		ret = getEntry(p_chunkID, m_nodeIDTableDirectory, LID_TABLE_LEVELS);
-
-		m_rawMemory.readUnlock(m_nodeIDTableDirectory);
 
 		return ret;
 	}
@@ -261,29 +259,20 @@ public final class PagingTable {
 			index = p_chunkID >> BITS_PER_LID_LEVEL * p_level & LID_LEVEL_BITMASK;
 		}
 		if (p_level > 0) {
-			m_rawMemory.writeLock(p_addressTable);
-
 			// Read table entry
 			entry = readEntry(p_addressTable, index);
 			if (entry == 0) {
 				entry = createLIDTable();
 				writeEntry(p_addressTable, index, entry);
 			}
-
-			m_rawMemory.writeUnlock(p_addressTable);
-
 			if (entry > 0) {
 				// move on to next table
 				setEntry(p_chunkID, p_addressChunk, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
-			m_rawMemory.writeLock(p_addressTable);
-
 			// Set the level 0 entry
 			// valid and active entry, delete flag 0
 			writeEntry(p_addressTable, index, p_addressChunk);
-
-			m_rawMemory.writeUnlock(p_addressTable);
 		}
 	}
 

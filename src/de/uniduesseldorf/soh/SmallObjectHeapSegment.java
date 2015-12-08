@@ -1,8 +1,8 @@
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.soh;
 
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.soh.exception.MemoryRuntimeException;
 
 /**
  * The memory is divided into segments to enable better concurrent access
@@ -53,7 +53,7 @@ public final class SmallObjectHeapSegment {
 	 * @param p_size The size of the segment in bytes.
 	 * @throws MemoryException If creating segement failed.
 	 */
-	public SmallObjectHeapSegment(final Storage p_memory, final int p_segmentID, final long p_base, final long p_size) throws MemoryException {
+	public SmallObjectHeapSegment(final Storage p_memory, final int p_segmentID, final long p_base, final long p_size) {
 		m_memory = p_memory;
 		m_segmentID = p_segmentID;
 		m_assignedThread = 0;
@@ -160,7 +160,7 @@ public final class SmallObjectHeapSegment {
 	 * @return the address of the block
 	 * @throws MemoryException If allocating memory in segment failed.
 	 */
-	public long malloc(final int p_size) throws MemoryException {
+	public long malloc(final int p_size) {
 		long ret = -1;
 		int list;
 		long address;
@@ -247,8 +247,6 @@ public final class SmallObjectHeapSegment {
 				// Write block size
 				write(address, p_size, lengthFieldSize);
 
-				MemoryStatistic.getInstance().malloc(blockSize);
-
 				ret = address;
 			}
 		}
@@ -264,7 +262,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             if the memory block could not be allocated
 	 */
-	public long[] malloc(final int... p_sizes) throws MemoryException {
+	public long[] malloc(final int... p_sizes) {
 		long[] ret;
 		long address;
 		int size;
@@ -278,56 +276,52 @@ public final class SmallObjectHeapSegment {
 		ret = new long[p_sizes.length];
 		Arrays.fill(ret, 0);
 
-		try {
-			size = getRequiredMemory(p_sizes);
-			if (size >= 1 << 16) {
-				lengthfieldSize = 3;
-				if (size - 3 < 1 << 16) {
-					oneByteOverhead = true;
-				}
-			} else if (size >= 1 << 8) {
-				lengthfieldSize = 2;
-				if (size - 2 < 1 << 8) {
-					oneByteOverhead = true;
-				}
-			} else {
-				lengthfieldSize = 1;
+		size = getRequiredMemory(p_sizes);
+		if (size >= 1 << 16) {
+			lengthfieldSize = 3;
+			if (size - 3 < 1 << 16) {
+				oneByteOverhead = true;
 			}
-			size -= lengthfieldSize;
-
-			address = malloc(size) - 1;
-
-			if (oneByteOverhead) {
-				writeRightPartOfMarker(address, SINGLE_BYTE_MARKER);
-				address++;
-				writeLeftPartOfMarker(address, SINGLE_BYTE_MARKER);
+		} else if (size >= 1 << 8) {
+			lengthfieldSize = 2;
+			if (size - 2 < 1 << 8) {
+				oneByteOverhead = true;
 			}
+		} else {
+			lengthfieldSize = 1;
+		}
+		size -= lengthfieldSize;
 
-			for (int i = 0; i < p_sizes.length; i++) {
-				if (p_sizes[i] > 0) {
-					if (p_sizes[i] >= 1 << 16) {
-						lengthfieldSize = 3;
-					} else if (p_sizes[i] >= 1 << 8) {
-						lengthfieldSize = 2;
-					} else {
-						lengthfieldSize = 1;
-					}
-					marker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthfieldSize);
+		address = malloc(size) - 1;
 
-					writeRightPartOfMarker(address, marker);
-					address += 1;
+		if (oneByteOverhead) {
+			writeRightPartOfMarker(address, SINGLE_BYTE_MARKER);
+			address++;
+			writeLeftPartOfMarker(address, SINGLE_BYTE_MARKER);
+		}
 
-					ret[i] = address;
-
-					write(address, p_sizes[i], lengthfieldSize);
-					address += lengthfieldSize;
-					address += p_sizes[i];
-
-					writeLeftPartOfMarker(address, marker);
+		for (int i = 0; i < p_sizes.length; i++) {
+			if (p_sizes[i] > 0) {
+				if (p_sizes[i] >= 1 << 16) {
+					lengthfieldSize = 3;
+				} else if (p_sizes[i] >= 1 << 8) {
+					lengthfieldSize = 2;
+				} else {
+					lengthfieldSize = 1;
 				}
+				marker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthfieldSize);
+
+				writeRightPartOfMarker(address, marker);
+				address += 1;
+
+				ret[i] = address;
+
+				write(address, p_sizes[i], lengthfieldSize);
+				address += lengthfieldSize;
+				address += p_sizes[i];
+
+				writeLeftPartOfMarker(address, marker);
 			}
-		} catch (final Throwable e) {
-			throw new MemoryException("could not allocate memory");
 		}
 
 		return ret;
@@ -339,7 +333,7 @@ public final class SmallObjectHeapSegment {
 	 *            the address of the block
 	 * @throws MemoryException If free'ing memory in segment failed.
 	 */
-	public void free(final long p_address) throws MemoryException {
+	public void free(final long p_address) {
 		long blockSize;
 		long freeSize;
 		long address;
@@ -477,8 +471,6 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		}
-
-		MemoryStatistic.getInstance().free(blockSize + lengthFieldSize);
 	}
 	
 	/**
@@ -487,7 +479,7 @@ public final class SmallObjectHeapSegment {
 	 * @return Size of the block in bytes (payload only).
 	 * @throws MemoryException If getting size failed.
 	 */
-	public int getSizeBlock(final long p_address) throws MemoryException {
+	public int getSizeBlock(final long p_address) {
 		int lengthFieldSize;
 		int size;
 		
@@ -511,21 +503,16 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             if the memory could not be set
 	 */
-	public void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
+	public void set(final long p_address, final long p_size, final byte p_value) {
 		assert assertSegmentBounds(p_address, p_size);
 		assert assertSegmentMaxBlocksize(p_size);
 
-		try {
-			int lengthFieldSize;
+		int lengthFieldSize;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
 
-			m_memory.set(p_address + lengthFieldSize, p_size, p_value);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not set memory, addr " + p_address +
-					", size " + p_size + ", value " + p_value + " of segment: " + this);
-		}
+		m_memory.set(p_address + lengthFieldSize, p_size, p_value);
 	}
 
 	/**
@@ -536,7 +523,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public byte readByte(final long p_address) throws MemoryException {
+	public byte readByte(final long p_address) {
 		return readByte(p_address, 0);
 	}
 
@@ -550,26 +537,22 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public byte readByte(final long p_address, final long p_offset) throws MemoryException {
+	public byte readByte(final long p_address, final long p_offset) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Byte.BYTES && p_offset + Byte.BYTES <= size;
-			if (!(p_offset < size) || !(size >= Byte.BYTES && p_offset + Byte.BYTES <= size))
-				return 0;
+		assert p_offset < size;
+		assert size >= Byte.BYTES && p_offset + Byte.BYTES <= size;
+		if (!(p_offset < size) || !(size >= Byte.BYTES && p_offset + Byte.BYTES <= size))
+			return 0;
 
-			return m_memory.readByte(p_address + lengthFieldSize + p_offset);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		return m_memory.readByte(p_address + lengthFieldSize + p_offset);
 	}
 
 	/**
@@ -580,7 +563,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public short readShort(final long p_address) throws MemoryException {
+	public short readShort(final long p_address) {
 		return readShort(p_address, 0);
 	}
 
@@ -594,26 +577,22 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public short readShort(final long p_address, final long p_offset) throws MemoryException {
+	public short readShort(final long p_address, final long p_offset) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
-			if (!(p_offset < size) || !(size >= Short.BYTES && p_offset + Short.BYTES <= size))
-				return 0;
+		assert p_offset < size;
+		assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
+		if (!(p_offset < size) || !(size >= Short.BYTES && p_offset + Short.BYTES <= size))
+			return 0;
 
-			return m_memory.readShort(p_address + lengthFieldSize + p_offset);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		return m_memory.readShort(p_address + lengthFieldSize + p_offset);
 	}
 
 	/**
@@ -624,7 +603,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int readInt(final long p_address) throws MemoryException {
+	public int readInt(final long p_address) {
 		return readInt(p_address, 0);
 	}
 
@@ -638,26 +617,22 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int readInt(final long p_address, final long p_offset) throws MemoryException {
+	public int readInt(final long p_address, final long p_offset) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Integer.BYTES && p_offset + Integer.BYTES <= size;
-			if (!(p_offset < size) || !(size >= Integer.BYTES && p_offset + Integer.BYTES <= size))
-				return 0;
+		assert p_offset < size;
+		assert size >= Integer.BYTES && p_offset + Integer.BYTES <= size;
+		if (!(p_offset < size) || !(size >= Integer.BYTES && p_offset + Integer.BYTES <= size))
+			return 0;
 
-			return m_memory.readInt(p_address + lengthFieldSize + p_offset);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		return m_memory.readInt(p_address + lengthFieldSize + p_offset);
 	}
 
 	/**
@@ -668,7 +643,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public long readLong(final long p_address) throws MemoryException {
+	public long readLong(final long p_address) {
 		return readLong(p_address, 0);
 	}
 
@@ -682,26 +657,22 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public long readLong(final long p_address, final long p_offset) throws MemoryException {
+	public long readLong(final long p_address, final long p_offset) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Long.BYTES || p_offset + Long.BYTES <= size;
-			if (!(p_offset < size) || !(size >= Long.BYTES || p_offset + Long.BYTES <= size))
-				return 0;
-			
-			return m_memory.readLong(p_address + lengthFieldSize + p_offset);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		assert p_offset < size;
+		assert size >= Long.BYTES || p_offset + Long.BYTES <= size;
+		if (!(p_offset < size) || !(size >= Long.BYTES || p_offset + Long.BYTES <= size))
+			return 0;
+		
+		return m_memory.readLong(p_address + lengthFieldSize + p_offset);
 	}
 
 	/**
@@ -712,7 +683,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             if the bytes could not be read
 	 */
-	public byte[] readBytes(final long p_address) throws MemoryException {
+	public byte[] readBytes(final long p_address) {
 		return readBytes(p_address, 0);
 	}
 
@@ -727,7 +698,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
+	public byte[] readBytes(final long p_address, final long p_offset) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		byte[] ret;
@@ -741,17 +712,13 @@ public final class SmallObjectHeapSegment {
 		assert p_offset < size;
 		readStartOffset = p_address + lengthFieldSize + p_offset;
 
-		try {
-			ret = new byte[(int) (size - p_offset)];
-			m_memory.readBytes(readStartOffset, ret, 0, ret.length);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		ret = new byte[(int) (size - p_offset)];
+		m_memory.readBytes(readStartOffset, ret, 0, ret.length);
 
 		return ret;
 	}
 	
-	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, int p_offsetArray, int p_length) throws MemoryException
+	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, int p_offsetArray, int p_length) 
 	{
 		assert assertSegmentBounds(p_address, p_offset);
 
@@ -766,11 +733,7 @@ public final class SmallObjectHeapSegment {
 		assert p_offset < size;
 		readStartOffset = p_address + lengthFieldSize + p_offset;
 
-		try {
-			bytesRead = m_memory.readBytes(readStartOffset, p_buffer, p_offsetArray, p_length);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		bytesRead = m_memory.readBytes(readStartOffset, p_buffer, p_offsetArray, p_length);
 
 		return bytesRead;
 	}
@@ -784,7 +747,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeByte(final long p_address, final byte p_value) throws MemoryException {
+	public void writeByte(final long p_address, final byte p_value) {
 		writeByte(p_address, 0, p_value);
 	}
 
@@ -799,25 +762,20 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeByte(final long p_address, final long p_offset, final byte p_value)
-			throws MemoryException {
+	public void writeByte(final long p_address, final long p_offset, final byte p_value) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Byte.BYTES && p_offset + Byte.BYTES <= size;
+		assert p_offset < size;
+		assert size >= Byte.BYTES && p_offset + Byte.BYTES <= size;
 
-			m_memory.writeByte(p_address + lengthFieldSize + p_offset, p_value);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		m_memory.writeByte(p_address + lengthFieldSize + p_offset, p_value);
 	}
 
 	/**
@@ -829,7 +787,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeShort(final long p_address, final short p_value) throws MemoryException {
+	public void writeShort(final long p_address, final short p_value) {
 		writeShort(p_address, 0, p_value);
 	}
 
@@ -844,25 +802,20 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeShort(final long p_address, final long p_offset, final short p_value)
-			throws MemoryException {
+	public void writeShort(final long p_address, final long p_offset, final short p_value) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
+		assert p_offset < size;
+		assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
 
-			m_memory.writeShort(p_address + lengthFieldSize + p_offset, p_value);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		m_memory.writeShort(p_address + lengthFieldSize + p_offset, p_value);
 	}
 
 	/**
@@ -874,7 +827,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeInt(final long p_address, final int p_value) throws MemoryException {
+	public void writeInt(final long p_address, final int p_value) {
 		writeInt(p_address, 0, p_value);
 	}
 
@@ -889,25 +842,20 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeInt(final long p_address, final long p_offset, final int p_value)
-			throws MemoryException {
+	public void writeInt(final long p_address, final long p_offset, final int p_value) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Integer.BYTES && p_offset + Integer.BYTES <= size;
+		assert p_offset < size;
+		assert size >= Integer.BYTES && p_offset + Integer.BYTES <= size;
 
-			m_memory.writeInt(p_address + lengthFieldSize + p_offset, p_value);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		m_memory.writeInt(p_address + lengthFieldSize + p_offset, p_value);
 	}
 
 	/**
@@ -919,7 +867,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeLong(final long p_address, final long p_value) throws MemoryException {
+	public void writeLong(final long p_address, final long p_value) {
 		writeLong(p_address, 0, p_value);
 	}
 
@@ -934,25 +882,20 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeLong(final long p_address, final long p_offset, final long p_value)
-			throws MemoryException {
+	public void writeLong(final long p_address, final long p_offset, final long p_value) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		try {
-			int lengthFieldSize;
-			int size;
+		int lengthFieldSize;
+		int size;
 
-			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			size = (int) read(p_address, lengthFieldSize);
+		// skip length byte(s)
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
 
-			assert p_offset < size;
-			assert size >= Long.BYTES && p_offset + Long.BYTES <= size;
+		assert p_offset < size;
+		assert size >= Long.BYTES && p_offset + Long.BYTES <= size;
 
-			m_memory.writeLong(p_address + lengthFieldSize + p_offset, p_value);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		m_memory.writeLong(p_address + lengthFieldSize + p_offset, p_value);
 	}
 
 	/**
@@ -964,7 +907,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
+	public int writeBytes(final long p_address, final byte[] p_value) {
 		return writeBytes(p_address, 0, p_value);
 	}
 
@@ -979,8 +922,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value)
-			throws MemoryException {
+	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value) {
 		return writeBytes(p_address, p_offset, p_value, 0, p_value.length);
 	}
 
@@ -997,8 +939,7 @@ public final class SmallObjectHeapSegment {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length)
-			throws MemoryException {
+	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int bytesWritten = -1;
@@ -1012,13 +953,9 @@ public final class SmallObjectHeapSegment {
 		assert p_offset < size;
 		assert p_offset + p_length <= size;
 
-		try {
-			offset = p_address + lengthFieldSize + p_offset;
+		offset = p_address + lengthFieldSize + p_offset;
 			
-			bytesWritten = m_memory.writeBytes(offset, p_value, p_offsetArray, p_length);
-		} catch (final Throwable e) {
-			throw new MemoryException("Could not access memory", e);
-		}
+		bytesWritten = m_memory.writeBytes(offset, p_value, p_offsetArray, p_length);
 		
 		return bytesWritten;
 	}
@@ -1031,7 +968,7 @@ public final class SmallObjectHeapSegment {
 	 * @return User definable state stored for that block (valid values: 0, 1, 2. invalid: -1)
 	 * @throws MemoryException If reading memory fails.
 	 */
-	public int getCustomState(final long p_address) throws MemoryException {
+	public int getCustomState(final long p_address) {
 		int marker;
 		int ret;
 
@@ -1058,7 +995,7 @@ public final class SmallObjectHeapSegment {
 	 *            all other values invalid).
 	 * @throws MemoryException If reading or writing memory fails.
 	 */
-	public void setCustomState(final long p_address, final int p_customState) throws MemoryException {
+	public void setCustomState(final long p_address, final int p_customState) {
 		int marker;
 		int lengthFieldSize;
 		int size;
@@ -1066,13 +1003,13 @@ public final class SmallObjectHeapSegment {
 		assert assertSegmentBounds(p_address);
 
 		if (!(p_customState >= 0 && p_customState < 3)) {
-			throw new MemoryException("Custom state (" + p_customState + ") out of range, addr: " + p_address);
+			throw new MemoryRuntimeException("Custom state (" + p_customState + ") out of range, addr: " + p_address);
 		}
 
 		marker = readRightPartOfMarker(p_address - SIZE_MARKER_BYTE);
 
 		if (!(marker != SINGLE_BYTE_MARKER && marker > OCCUPIED_FLAGS_OFFSET)) {
-			throw new MemoryException("Invalid marker " + marker + " at address " + p_address);
+			throw new MemoryRuntimeException("Invalid marker " + marker + " at address " + p_address);
 		}
 
 		lengthFieldSize = getSizeFromMarker(marker);
@@ -1091,7 +1028,7 @@ public final class SmallObjectHeapSegment {
 	 * @return Size of memory block at specified address.
 	 * @throws MemoryException If reading memory fails.
 	 */
-	public long getSizeMemoryBlock(final long p_address) throws MemoryException {
+	public long getSizeMemoryBlock(final long p_address) {
 		int lengthFieldSize;
 
 		assert assertSegmentBounds(p_address);
@@ -1151,9 +1088,9 @@ public final class SmallObjectHeapSegment {
 	 * @param p_address Address to check if within segment.
 	 * @throws MemoryException If address not within segment bounds.
 	 */
-	private boolean assertSegmentBounds(final long p_address) throws MemoryException {
+	private boolean assertSegmentBounds(final long p_address) {
 		if (p_address < m_base || p_address > m_base + m_fullSize) {
-			throw new MemoryException("Address " + p_address + " is not within segment: " + this);
+			throw new MemoryRuntimeException("Address " + p_address + " is not within segment: " + this);
 		}
 		
 		return true;
@@ -1165,10 +1102,10 @@ public final class SmallObjectHeapSegment {
 	 * @param p_length Number of bytes starting at address.
 	 * @throws MemoryException If address and specified length not within segment bounds.
 	 */
-	private boolean assertSegmentBounds(final long p_address, final long p_length) throws MemoryException {
+	private boolean assertSegmentBounds(final long p_address, final long p_length) {
 		if (p_address < m_base || p_address > m_base + m_fullSize
 			|| p_address + p_length < m_base || p_address + p_length > m_base + m_fullSize) {
-			throw new MemoryException("Address " + p_address
+			throw new MemoryRuntimeException("Address " + p_address
 					+ " with length " + p_length + "is not within segment: " + this);
 		}
 		
@@ -1180,9 +1117,9 @@ public final class SmallObjectHeapSegment {
 	 * @param p_size Size to check if not exceeding max blocksize.
 	 * @throws MemoryException If size exceeds max blocksize.
 	 */
-	public boolean assertSegmentMaxBlocksize(final long p_size) throws MemoryException {
+	public boolean assertSegmentMaxBlocksize(final long p_size) {
 		if (p_size > MAX_SIZE_MEMORY_BLOCK) {
-			throw new MemoryException("Size " + p_size
+			throw new MemoryRuntimeException("Size " + p_size
 					+ " exceeds max blocksize " + MAX_SIZE_MEMORY_BLOCK + " of segment: " + this);
 		}
 		
@@ -1197,7 +1134,7 @@ public final class SmallObjectHeapSegment {
 	 *            the size
 	 * @throws MemoryException If creating free block failed.
 	 */
-	private void createFreeBlock(final long p_address, final long p_size) throws MemoryException {
+	private void createFreeBlock(final long p_address, final long p_size) {
 		long listOffset;
 		int lengthFieldSize;
 		long anchor;
@@ -1254,7 +1191,7 @@ public final class SmallObjectHeapSegment {
 	 *            the address
 	 * @throws MemoryException If unhooking free block failed.
 	 */
-	private void unhookFreeBlock(final long p_address) throws MemoryException {
+	private void unhookFreeBlock(final long p_address) {
 		int lengthFieldSize;
 		long prevPointer;
 		long nextPointer;
@@ -1303,7 +1240,7 @@ public final class SmallObjectHeapSegment {
 	 * @return the right part of a marker byte
 	 * @throws MemoryException If reading fails.
 	 */
-	protected int readRightPartOfMarker(final long p_address) throws MemoryException {
+	protected int readRightPartOfMarker(final long p_address) {
 		return m_memory.readByte(p_address) & 0xF;
 	}
 
@@ -1314,7 +1251,7 @@ public final class SmallObjectHeapSegment {
 	 * @return the left part of a marker byte
 	 * @throws MemoryException If reading fails.
 	 */
-	protected int readLeftPartOfMarker(final long p_address) throws MemoryException {
+	protected int readLeftPartOfMarker(final long p_address) {
 		return (m_memory.readByte(p_address) & 0xF0) >> 4;
 	}
 
@@ -1346,7 +1283,7 @@ public final class SmallObjectHeapSegment {
 	 *            the right part
 	 * @throws MemoryException If reading fails.
 	 */
-	private void writeRightPartOfMarker(final long p_address, final int p_right) throws MemoryException {
+	private void writeRightPartOfMarker(final long p_address, final int p_right) {
 		byte marker;
 
 		marker = (byte) ((m_memory.readByte(p_address) & 0xF0) + (p_right & 0xF));
@@ -1361,7 +1298,7 @@ public final class SmallObjectHeapSegment {
 	 *            the left part
 	 * @throws MemoryException If reading fails.
 	 */
-	private void writeLeftPartOfMarker(final long p_address, final int p_left) throws MemoryException {
+	private void writeLeftPartOfMarker(final long p_address, final int p_left) {
 		byte marker;
 
 		marker = (byte) (((p_left & 0xF) << 4) + (m_memory.readByte(p_address) & 0xF));
@@ -1375,7 +1312,7 @@ public final class SmallObjectHeapSegment {
 	 * @return the pointer
 	 * @throws MemoryException If reading pointer failed.
 	 */
-	protected long readPointer(final long p_address) throws MemoryException {
+	protected long readPointer(final long p_address) {
 		return read(p_address, POINTER_SIZE);
 	}
 
@@ -1387,7 +1324,7 @@ public final class SmallObjectHeapSegment {
 	 *            the pointer
 	 * @throws MemoryException If writing pointer failed.
 	 */
-	private void writePointer(final long p_address, final long p_pointer) throws MemoryException {
+	private void writePointer(final long p_address, final long p_pointer) {
 		write(p_address, p_pointer, POINTER_SIZE);
 	}
 
@@ -1400,7 +1337,7 @@ public final class SmallObjectHeapSegment {
 	 * @return the combined bytes
 	 * @throws MemoryException If reading failed.
 	 */
-	protected long read(final long p_address, final int p_count) throws MemoryException {
+	protected long read(final long p_address, final int p_count) {
 		return m_memory.readVal(p_address, p_count);
 	}
 
@@ -1414,7 +1351,7 @@ public final class SmallObjectHeapSegment {
 	 *            the number of bytes
 	 * @throws MemoryException If writing failed.
 	 */
-	private void write(final long p_address, final long p_bytes, final int p_count) throws MemoryException {
+	private void write(final long p_address, final long p_bytes, final int p_count) {
 		m_memory.writeVal(p_address, p_bytes, p_count);
 	}
 

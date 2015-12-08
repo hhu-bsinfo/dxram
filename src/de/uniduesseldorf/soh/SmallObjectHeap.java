@@ -1,11 +1,7 @@
 
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.soh;
 
 import java.io.File;
-
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.Tools;
 
 /**
  * The raw memory is split into several segments to provide
@@ -47,42 +43,42 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             if the memory could not be initialized
 	 */
-	public long initialize(final long p_size, final long p_segmentSize) throws MemoryException {
+	public long initialize(final long p_size, final long p_segmentSize) {
 		long ret;
 		int segmentCount;
 		long base;
 		long remaining;
 		long size;
 
-		Contract.check(p_size >= 0, "invalid size given");
-		Contract.check(p_segmentSize >= 0, "invalid segment size given");
+		if (p_size < 0 || p_segmentSize < 0)
+			ret = -1;
+		else
+		{
+			m_segmentSize = p_segmentSize;
 
-		m_segmentSize = p_segmentSize;
+			segmentCount = (int) (p_size / p_segmentSize);
+			if (p_size % p_segmentSize > 0) {
+				segmentCount++;
+			}
 
-		segmentCount = (int) (p_size / p_segmentSize);
-		if (p_size % p_segmentSize > 0) {
-			segmentCount++;
+			m_memory.allocate(p_size);
+			m_memory.set(0, m_memory.getSize(), (byte) 0);
+			
+			// Initialize segments
+			base = 0;
+			remaining = p_size;
+			m_segments = new SmallObjectHeapSegment[segmentCount];
+			for (int i = 0; i < segmentCount; i++) {
+				size = Math.min(p_segmentSize, remaining);
+				m_segments[i] = new SmallObjectHeapSegment(m_memory, i, base, size);
+
+				base += p_segmentSize;
+				remaining -= p_segmentSize;
+			}
+			//m_arenaManager = new ArenaManager(m_segments);
+
+			ret = m_memory.getSize();	
 		}
-
-		m_memory.allocate(p_size);
-		m_memory.set(0, m_memory.getSize(), (byte) 0);
-
-		// Initialize segments
-		base = 0;
-		remaining = p_size;
-		m_segments = new SmallObjectHeapSegment[segmentCount];
-		for (int i = 0; i < segmentCount; i++) {
-			size = Math.min(p_segmentSize, remaining);
-			m_segments[i] = new SmallObjectHeapSegment(m_memory, i, base, size);
-
-			base += p_segmentSize;
-			remaining -= p_segmentSize;
-		}
-		//m_arenaManager = new ArenaManager(m_segments);
-
-		MemoryStatistic.getInstance().initMemory(p_size);
-
-		ret = m_memory.getSize();
 
 		return ret;
 	}
@@ -92,7 +88,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             if the memory could not be disengaged
 	 */
-	public void disengage() throws MemoryException {
+	public void disengage() {
 		m_memory.free();
 		m_memory = null;
 
@@ -111,7 +107,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If dumping memory failed.
 	 */
-	public void dump(final File p_file, final long p_addr, final long p_count) throws MemoryException {
+	public void dump(final File p_file, final long p_addr, final long p_count) {
 		m_memory.dump(p_file, p_addr, p_count);
 	}
 
@@ -123,7 +119,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             if the memory block could not be allocated
 	 */
-	public long malloc(final int p_size) throws MemoryException {
+	public long malloc(final int p_size) {
 		long ret = -1;
 
 		for (SmallObjectHeapSegment segment : m_segments)
@@ -143,7 +139,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             if the block could not be freed
 	 */
-	public void free(final long p_address) throws MemoryException {
+	public void free(final long p_address) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -156,7 +152,7 @@ public final class SmallObjectHeap {
 	 * @return Size of the block in bytes (payload only).
 	 * @throws MemoryException If getting size failed.
 	 */
-	public int getSizeBlock(final long p_address) throws MemoryException {
+	public int getSizeBlock(final long p_address) {
 		SmallObjectHeapSegment segment;
 		int size = -1;
 
@@ -177,7 +173,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             if the memory could not be set
 	 */
-	public void set(final long p_address, final long p_size, final byte p_value) throws MemoryException {
+	public void set(final long p_address, final long p_size, final byte p_value) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -192,7 +188,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public byte readByte(final long p_address) throws MemoryException {
+	public byte readByte(final long p_address) {
 		return readByte(p_address, 0);
 	}
 
@@ -206,7 +202,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public byte readByte(final long p_address, final long p_offset) throws MemoryException {
+	public byte readByte(final long p_address, final long p_offset) {
 		SmallObjectHeapSegment segment;
 		byte val;
 
@@ -224,7 +220,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public short readShort(final long p_address) throws MemoryException {
+	public short readShort(final long p_address) {
 		return readShort(p_address, 0);
 	}
 
@@ -238,7 +234,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public short readShort(final long p_address, final long p_offset) throws MemoryException {
+	public short readShort(final long p_address, final long p_offset) {
 		SmallObjectHeapSegment segment;
 		short val;
 
@@ -256,7 +252,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int readInt(final long p_address) throws MemoryException {
+	public int readInt(final long p_address) {
 		return readInt(p_address, 0);
 	}
 
@@ -270,7 +266,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int readInt(final long p_address, final long p_offset) throws MemoryException {
+	public int readInt(final long p_address, final long p_offset) {
 		SmallObjectHeapSegment segment;
 		int val;
 
@@ -288,7 +284,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public long readLong(final long p_address) throws MemoryException {
+	public long readLong(final long p_address) {
 		return readLong(p_address, 0);
 	}
 
@@ -302,7 +298,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public long readLong(final long p_address, final long p_offset) throws MemoryException {
+	public long readLong(final long p_address, final long p_offset) {
 		SmallObjectHeapSegment segment;
 		long val;
 
@@ -320,7 +316,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             if the bytes could not be read
 	 */
-	public byte[] readBytes(final long p_address) throws MemoryException {
+	public byte[] readBytes(final long p_address) {
 		return readBytes(p_address, 0);
 	}
 
@@ -335,7 +331,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public byte[] readBytes(final long p_address, final long p_offset) throws MemoryException {
+	public byte[] readBytes(final long p_address, final long p_offset) {
 		SmallObjectHeapSegment segment;
 		byte[] vals;
 
@@ -345,7 +341,7 @@ public final class SmallObjectHeap {
 		return vals;
 	}
 	
-	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, int p_offsetArray, int p_length) throws MemoryException
+	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, int p_offsetArray, int p_length)
 	{
 		SmallObjectHeapSegment segment;
 		int bytesRead = -1;
@@ -365,7 +361,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeByte(final long p_address, final byte p_value) throws MemoryException {
+	public void writeByte(final long p_address, final byte p_value) {
 		writeByte(p_address, 0, p_value);
 	}
 
@@ -380,8 +376,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeByte(final long p_address, final long p_offset, final byte p_value)
-			throws MemoryException {
+	public void writeByte(final long p_address, final long p_offset, final byte p_value) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -397,7 +392,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeShort(final long p_address, final short p_value) throws MemoryException {
+	public void writeShort(final long p_address, final short p_value) {
 		writeShort(p_address, 0, p_value);
 	}
 
@@ -412,8 +407,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeShort(final long p_address, final long p_offset, final short p_value)
-			throws MemoryException {
+	public void writeShort(final long p_address, final long p_offset, final short p_value) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -429,7 +423,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeInt(final long p_address, final int p_value) throws MemoryException {
+	public void writeInt(final long p_address, final int p_value) {
 		writeInt(p_address, 0, p_value);
 	}
 
@@ -444,8 +438,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeInt(final long p_address, final long p_offset, final int p_value)
-			throws MemoryException {
+	public void writeInt(final long p_address, final long p_offset, final int p_value) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -461,7 +454,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeLong(final long p_address, final long p_value) throws MemoryException {
+	public void writeLong(final long p_address, final long p_value) {
 		writeLong(p_address, 0, p_value);
 	}
 
@@ -476,8 +469,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public void writeLong(final long p_address, final long p_offset, final long p_value)
-			throws MemoryException {
+	public void writeLong(final long p_address, final long p_offset, final long p_value) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -493,7 +485,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int writeBytes(final long p_address, final byte[] p_value) throws MemoryException {
+	public int writeBytes(final long p_address, final byte[] p_value) {
 		return writeBytes(p_address, 0, p_value);
 	}
 
@@ -508,8 +500,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value)
-			throws MemoryException {
+	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value) {
 		return writeBytes(p_address, p_offset, p_value, 0, p_value.length);
 	}
 
@@ -526,8 +517,7 @@ public final class SmallObjectHeap {
 	 * @throws MemoryException
 	 *             If accessing memory failed.
 	 */
-	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length)
-			throws MemoryException {
+	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -542,7 +532,7 @@ public final class SmallObjectHeap {
 	 * @return User definable state stored for that block (valid values: 0, 1, 2. invalid: -1)
 	 * @throws MemoryException If reading memory fails.
 	 */
-	public int getCustomState(final long p_address) throws MemoryException {
+	public int getCustomState(final long p_address) {
 		SmallObjectHeapSegment segment;
 		int val;
 
@@ -562,7 +552,7 @@ public final class SmallObjectHeap {
 	 *            all other values invalid).
 	 * @throws MemoryException If reading or writing memory fails.
 	 */
-	public void setCustomState(final long p_address, final int p_customState) throws MemoryException {
+	public void setCustomState(final long p_address, final int p_customState) {
 		SmallObjectHeapSegment segment;
 
 		segment = m_segments[(int) (p_address / m_segmentSize)];
@@ -616,42 +606,6 @@ public final class SmallObjectHeap {
 		}
 
 		return ret;
-	}
-
-	/**
-	 * Locks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	public void readLock(final long p_address) {
-		m_memory.readLock(p_address);
-	}
-
-	/**
-	 * Unlocks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	public void readUnlock(final long p_address) {
-		m_memory.readUnlock(p_address);
-	}
-
-	/**
-	 * Locks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	public void writeLock(final long p_address) {
-		m_memory.writeLock(p_address);
-	}
-
-	/**
-	 * Unlocks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	public void writeUnlock(final long p_address) {
-		m_memory.writeUnlock(p_address);
 	}
 
 	// --------------------------------------------------------------------------------------------------------

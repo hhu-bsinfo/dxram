@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.soh;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -7,8 +7,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Endianness;
+
+import de.uniduesseldorf.soh.exception.MemoryRuntimeException;
 
 /**
  * Implementation of a storage based on a random access file.
@@ -34,7 +35,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public void allocate(final long p_size) throws MemoryException {
+	public void allocate(final long p_size) {
 		final byte[] buf = new byte[8192];
 		long size = p_size;
 
@@ -54,21 +55,21 @@ public class StorageRandomAccessFile implements Storage {
 
 			m_size = m_file.length();
 		} catch (final IOException e) {
-			throw new MemoryException("Could not initialize memory", e);
+			throw new MemoryRuntimeException("Could not initialize memory", e);
 		}
 	}
 
 	@Override
-	public void free() throws MemoryException {
+	public void free() {
 		try {
 			m_file.close();
 		} catch (final IOException e) {
-			throw new MemoryException("Could not free memory", e);
+			throw new MemoryRuntimeException("Could not free memory", e);
 		}
 	}
 
 	@Override
-	public void dump(final File p_file, final long p_ptr, final long p_length) throws MemoryException {
+	public void dump(final File p_file, final long p_ptr, final long p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		assert p_ptr + p_length <= m_size;
@@ -84,7 +85,7 @@ public class StorageRandomAccessFile implements Storage {
 				offset++;
 			}
 		} catch (final IOException e) {
-			throw new MemoryException(e.getMessage());
+			throw new MemoryRuntimeException(e.getMessage());
 		} finally {
 			try {
 				if (outFile != null) {
@@ -100,7 +101,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public void set(final long p_ptr, final long p_size, final byte p_value) throws MemoryException {
+	public void set(final long p_ptr, final long p_size, final byte p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		assert p_ptr + p_size <= m_size;
@@ -124,12 +125,12 @@ public class StorageRandomAccessFile implements Storage {
 
 			m_size = m_file.length();
 		} catch (final IOException e) {
-			throw new MemoryException("Could not initialize memory", e);
+			throw new MemoryRuntimeException("Could not set memory", e);
 		}
 	}
 
 	@Override
-	public byte[] readBytes(final long p_ptr, final int p_length) throws MemoryException {
+	public byte[] readBytes(final long p_ptr, final int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		assert p_ptr + p_length <= m_size;
@@ -140,14 +141,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			m_file.read(data);
 		} catch (final IOException e) {
-			throw new MemoryException("reading bytes failed " + e);
+			throw new MemoryRuntimeException("reading bytes failed " + e);
 		}
 
 		return data;
 	}
 
 	@Override
-	public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
+	public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		assert p_ptr + p_length <= m_size;
@@ -158,14 +159,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			bytesRead = m_file.read(p_array, p_arrayOffset, p_length);
 		} catch (final IOException e) {
-			throw new MemoryException("reading bytes failed " + e);
+			throw new MemoryRuntimeException("reading bytes failed " + e);
 		}
 		
 		return bytesRead;
 	}
 
 	@Override
-	public byte readByte(final long p_ptr) throws MemoryException {
+	public byte readByte(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 
@@ -175,14 +176,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			value = (byte) m_file.read();
 		} catch (final IOException e) {
-			throw new MemoryException("reading failed " + e);
+			throw new MemoryRuntimeException("reading failed " + e);
 		}
 
 		return value;
 	}
 
 	@Override
-	public short readShort(final long p_ptr) throws MemoryException {
+	public short readShort(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_size;
 
@@ -192,14 +193,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			value = m_file.readShort();
 		} catch (final IOException e) {
-			throw new MemoryException("reading failed " + e);
+			throw new MemoryRuntimeException("reading failed " + e);
 		}
 
 		return value;
 	}
 
 	@Override
-	public int readInt(final long p_ptr) throws MemoryException {
+	public int readInt(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_size;
 
@@ -209,14 +210,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			value = m_file.readInt();
 		} catch (final IOException e) {
-			throw new MemoryException("reading failed " + e);
+			throw new MemoryRuntimeException("reading failed " + e);
 		}
 
 		return value;
 	}
 
 	@Override
-	public long readLong(final long p_ptr) throws MemoryException {
+	public long readLong(final long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_size;
 
@@ -226,14 +227,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			value = m_file.readLong();
 		} catch (final IOException e) {
-			throw new MemoryException("reading failed " + e);
+			throw new MemoryRuntimeException("reading failed " + e);
 		}
 
 		return value;
 	}
 
 	@Override
-	public int writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException {
+	public int writeBytes(final long p_ptr, final byte[] p_array) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_array.length <= m_size;
 
@@ -244,14 +245,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.write(p_array);
 			bytesWritten = p_array.length;
 		} catch (final IOException e) {
-			throw new MemoryException("writing failed " + e);
+			throw new MemoryRuntimeException("writing failed " + e);
 		}
 		
 		return bytesWritten;
 	}
 
 	@Override
-	public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException {
+	public int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_array.length <= m_size;
 
@@ -262,14 +263,14 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.write(p_array, p_arrayOffset, p_length);
 			bytesWritten = p_array.length;
 		} catch (final IOException e) {
-			throw new MemoryException("writing failed " + e);
+			throw new MemoryRuntimeException("writing failed " + e);
 		}
 		
 		return bytesWritten;
 	}
 
 	@Override
-	public void writeByte(final long p_ptr, final byte p_value) throws MemoryException {
+	public void writeByte(final long p_ptr, final byte p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 
@@ -277,12 +278,12 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			m_file.writeByte(p_value);
 		} catch (final IOException e) {
-			throw new MemoryException("writing failed " + e);
+			throw new MemoryRuntimeException("writing failed " + e);
 		}
 	}
 
 	@Override
-	public void writeShort(final long p_ptr, final short p_value) throws MemoryException {
+	public void writeShort(final long p_ptr, final short p_value) {
 		assert p_ptr > 0;
 		assert p_ptr + 1 < m_size;
 
@@ -290,12 +291,12 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			m_file.writeShort(p_value);
 		} catch (final IOException e) {
-			throw new MemoryException("writing failed " + e);
+			throw new MemoryRuntimeException("writing failed " + e);
 		}
 	}
 
 	@Override
-	public void writeInt(final long p_ptr, final int p_value) throws MemoryException {
+	public void writeInt(final long p_ptr, final int p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_size;
 
@@ -303,12 +304,12 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			m_file.writeInt(p_value);
 		} catch (final IOException e) {
-			throw new MemoryException("writing failed " + e);
+			throw new MemoryRuntimeException("writing failed " + e);
 		}
 	}
 
 	@Override
-	public void writeLong(final long p_ptr, final long p_value) throws MemoryException {
+	public void writeLong(final long p_ptr, final long p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_size;
 
@@ -316,12 +317,12 @@ public class StorageRandomAccessFile implements Storage {
 			m_file.seek(p_ptr);
 			m_file.writeLong(p_value);
 		} catch (final IOException e) {
-			throw new MemoryException("writing failed " + e);
+			throw new MemoryRuntimeException("writing failed " + e);
 		}
 	}
 
 	@Override
-	public long readVal(final long p_ptr, final int p_count) throws MemoryException {
+	public long readVal(final long p_ptr, final int p_count) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_count <= m_size;
 
@@ -347,14 +348,14 @@ public class StorageRandomAccessFile implements Storage {
 				}
 			}
 		} catch (final IOException e) {
-			throw new MemoryException("reading failed " + e);
+			throw new MemoryRuntimeException("reading failed " + e);
 		}
 
 		return val;
 	}
 
 	@Override
-	public void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException {
+	public void writeVal(final long p_ptr, final long p_val, final int p_count) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_count <= m_size;
 
@@ -374,27 +375,7 @@ public class StorageRandomAccessFile implements Storage {
 				}
 			}
 		} catch (final IOException e) {
-			throw new MemoryException("writing failed " + e);
+			throw new MemoryRuntimeException("writing failed " + e);
 		}
-	}
-
-	@Override
-	public void readLock(final long p_address) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void readUnlock(final long p_address) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void writeLock(final long p_address) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void writeUnlock(final long p_address) {
-		// TODO Auto-generated method stub
 	}
 }

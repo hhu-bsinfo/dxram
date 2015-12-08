@@ -13,10 +13,11 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
-import de.uniduesseldorf.dxram.core.chunk.storage.SmallObjectHeap;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Tools;
+
+import de.uniduesseldorf.soh.SmallObjectHeap;
 
 /*
  * Start-up:

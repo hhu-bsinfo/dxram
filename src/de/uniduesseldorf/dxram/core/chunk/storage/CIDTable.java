@@ -11,6 +11,8 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
 
+import de.uniduesseldorf.soh.SmallObjectHeap;
+
 /**
  * Paging-like Tables for the ChunkID-VA mapping
  * @author Florian Klein

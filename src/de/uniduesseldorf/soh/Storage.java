@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.core.chunk.storage;
+package de.uniduesseldorf.soh;
 
 import java.io.File;
 
@@ -16,9 +16,8 @@ public interface Storage {
 	 * Make sure to call this before calling any other methods.
 	 *
 	 * @param p_size Size of the storage in bytes.
-	 * @throws MemoryException If allocation failed.
 	 */
-	void allocate(final long p_size) throws MemoryException;
+	void allocate(final long p_size);
 
 	/**
 	 * Free/Cleanup the storage.
@@ -26,7 +25,7 @@ public interface Storage {
 	 *
 	 * @throws MemoryException If free'ing failed.
 	 */
-	void free() throws MemoryException;
+	void free();
 
 	/**
 	 * Dump a range of the storage to a file.
@@ -39,7 +38,7 @@ public interface Storage {
 	 * @throws MemoryException
 	 *             If dumping memory failed.
 	 */
-	void dump(final File p_file, final long p_ptr, final long p_length) throws MemoryException;
+	void dump(final File p_file, final long p_ptr, final long p_length);
 
 	/**
 	 * Get the total allocated size of the storage.
@@ -55,7 +54,7 @@ public interface Storage {
 	 * @param p_value Value to set for specified range.
 	 * @throws MemoryException If setting value for specified range failed.
 	 */
-	void set(final long p_ptr, final long p_size, final byte p_value) throws MemoryException;
+	void set(final long p_ptr, final long p_size, final byte p_value);
 
 	/**
 	 * Read data from the storage into a byte array.
@@ -65,7 +64,7 @@ public interface Storage {
 	 * @return New byte array with read bytes.
 	 * @throws MemoryException If reading fails.
 	 */
-	byte[] readBytes(final long p_ptr, final int p_length) throws MemoryException;
+	byte[] readBytes(final long p_ptr, final int p_length);
 
 	/**
 	 * Read data from the storage into a byte array.
@@ -76,7 +75,7 @@ public interface Storage {
 	 * @param p_length Number of bytes to read from specified start.
 	 * @throws MemoryException If reading fails.
 	 */
-	int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException;
+	int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length);
 
 	/**
 	 * Read a single byte value.
@@ -85,7 +84,7 @@ public interface Storage {
 	 * @return Byte read.
 	 * @throws MemoryException If reading fails.
 	 */
-	byte readByte(final long p_ptr) throws MemoryException;
+	byte readByte(final long p_ptr);
 
 	/**
 	 * Read a single short value.
@@ -94,7 +93,7 @@ public interface Storage {
 	 * @return Short read.
 	 * @throws MemoryException If reading fails.
 	 */
-	short readShort(final long p_ptr) throws MemoryException;
+	short readShort(final long p_ptr);
 
 	/**
 	 * Read a single int value.
@@ -103,7 +102,7 @@ public interface Storage {
 	 * @return Int read.
 	 * @throws MemoryException If reading fails.
 	 */
-	int readInt(final long p_ptr) throws MemoryException;
+	int readInt(final long p_ptr);
 
 	/**
 	 * Read a single long value.
@@ -112,7 +111,7 @@ public interface Storage {
 	 * @return Long read.
 	 * @throws MemoryException If reading fails.
 	 */
-	long readLong(final long p_ptr) throws MemoryException;
+	long readLong(final long p_ptr);
 
 	/**
 	 * Write an array of bytes to the storage.
@@ -121,7 +120,7 @@ public interface Storage {
 	 * @param p_array Array with data to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	int writeBytes(final long p_ptr, final byte[] p_array) throws MemoryException;
+	int writeBytes(final long p_ptr, final byte[] p_array);
 
 	/**
 	 * Write an array of bytes to the storage.
@@ -132,7 +131,7 @@ public interface Storage {
 	 * @param p_length Number of bytes to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) throws MemoryException;
+	int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length);
 
 	/**
 	 * Write a single byte value to the storage.
@@ -141,7 +140,7 @@ public interface Storage {
 	 * @param p_value Value to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	void writeByte(final long p_ptr, final byte p_value) throws MemoryException;
+	void writeByte(final long p_ptr, final byte p_value);
 
 	/**
 	 * Write a single short value to the storage.
@@ -150,7 +149,7 @@ public interface Storage {
 	 * @param p_value Value to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	void writeShort(final long p_ptr, final short p_value) throws MemoryException;
+	void writeShort(final long p_ptr, final short p_value);
 
 	/**
 	 * Write a single int value to the storage.
@@ -159,7 +158,7 @@ public interface Storage {
 	 * @param p_value Value to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	void writeInt(final long p_ptr, final int p_value) throws MemoryException;
+	void writeInt(final long p_ptr, final int p_value);
 
 	/**
 	 * Write a single long value to the storage.
@@ -168,7 +167,7 @@ public interface Storage {
 	 * @param p_value Value to write.
 	 * @throws MemoryException If writing fails.
 	 */
-	void writeLong(final long p_ptr, final long p_value) throws MemoryException;
+	void writeLong(final long p_ptr, final long p_value);
 
 	/**
 	 * Read a value with specified number of bytes length from the storage.
@@ -178,7 +177,7 @@ public interface Storage {
 	 * @return Value read.
 	 * @throws MemoryException If reading fails.
 	 */
-	long readVal(final long p_ptr, final int p_count) throws MemoryException;
+	long readVal(final long p_ptr, final int p_count);
 
 	/**
 	 * Write a value with specified number of bytes length to the storage.
@@ -188,33 +187,5 @@ public interface Storage {
 	 * @param p_count Number of bytes the value should occupy.
 	 * @throws MemoryException If writing fails.
 	 */
-	void writeVal(final long p_ptr, final long p_val, final int p_count) throws MemoryException;
-
-	/**
-	 * Locks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void readLock(final long p_address);
-
-	/**
-	 * Unlocks the read lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void readUnlock(final long p_address);
-
-	/**
-	 * Locks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void writeLock(final long p_address);
-
-	/**
-	 * Unlocks the write lock
-	 * @param p_address
-	 *            the address of the lock
-	 */
-	void writeUnlock(final long p_address);
+	void writeVal(final long p_ptr, final long p_val, final int p_count);
 }
