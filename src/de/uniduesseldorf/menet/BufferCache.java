@@ -1,10 +1,7 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.nio.ByteBuffer;
-
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
 /**
  * A simple cache of direct buffers.
@@ -14,25 +11,36 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
 final class BufferCache {
 
 	// Constants
-	public static final int MAX_MEMORY_CACHED = Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MAX_CACHE_SIZE);
+	private final int M_MAX_MEMORY_CACHED;
 
 	// Attributes
-	private static FixBufferCache m_cache = new FixBufferCache();
+	private FixBufferCache m_cache = new FixBufferCache();
 
 	// Constructors
 	/**
 	 * Creates an instance of BufferCache
 	 */
-	private BufferCache() {}
+	public BufferCache(final int p_maxCacheSize) 
+	{
+		M_MAX_MEMORY_CACHED = p_maxCacheSize;
+	}
 
 	// Methods
+	/**
+	 * Get the maximum size of the cache.
+	 * @return Max size of the cache.
+	 */
+	public int getMaxCacheSize() {
+		return M_MAX_MEMORY_CACHED;
+	}
+	
 	/**
 	 * Offers a buffer
 	 * @param p_buffer
 	 *            the buffer
 	 * @return true if the operation was successful
 	 */
-	public static boolean offer(final ByteBuffer p_buffer) {
+	public boolean offer(final ByteBuffer p_buffer) {
 		synchronized (m_cache) {
 			return m_cache.offer(p_buffer);
 		}
@@ -43,7 +51,7 @@ final class BufferCache {
 	 * @param p_size
 	 *            the size of the buffer
 	 */
-	public static void free(final int p_size) {
+	public void free(final int p_size) {
 		// m_cache.free(p_size);
 	}
 
@@ -53,7 +61,7 @@ final class BufferCache {
 	 *            the size of the buffer
 	 * @return the buffer
 	 */
-	public static ByteBuffer getDirectBuffer(final int p_size) {
+	public ByteBuffer getDirectBuffer(final int p_size) {
 		synchronized (m_cache) {
 			return m_cache.getDirectBuffer(p_size);
 		}
@@ -64,7 +72,7 @@ final class BufferCache {
 	 * Cahe for the ByteBuffers
 	 * @author klein 26.03.2015
 	 */
-	private static class FixBufferCache {
+	private class FixBufferCache {
 
 		// Constants
 		// The number of temp buffers in our pool

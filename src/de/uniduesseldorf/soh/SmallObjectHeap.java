@@ -3,6 +3,8 @@ package de.uniduesseldorf.soh;
 
 import java.io.File;
 
+import de.uniduesseldorf.utils.Tools;
+
 /**
  * The raw memory is split into several segments to provide
  * non conflicting access for multiple threads. A arena manager

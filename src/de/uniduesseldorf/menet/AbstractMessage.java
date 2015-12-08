@@ -1,12 +1,8 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
-
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.utils.Contract;
 
@@ -308,7 +304,7 @@ public abstract class AbstractMessage {
 	 * @throws DXRAMException
 	 *             if the message could not be forwarded
 	 */
-	public final void forward(final short p_destination, final NetworkInterface p_network) throws DXRAMException {
+	public final void forward(final short p_destination, final NetworkInterface p_network) {
 		NodeID.check(p_destination);
 		Contract.checkNotNull(p_network, "no network given");
 

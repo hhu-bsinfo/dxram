@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.exceptions;
 
+import de.uniduesseldorf.menet.NetworkException;
+
 /**
  * Methods for reacting on exceptions
  * @author Florian Klein

@@ -1,15 +1,13 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
-import de.uniduesseldorf.dxram.core.CoreComponent;
-import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 
 /**
  * Methods for accessing the network
  * @author Florian Klein
  *         09.03.2012
  */
-public interface NetworkInterface extends CoreComponent {
+public interface NetworkInterface {
 
 	// Methods
 	/**

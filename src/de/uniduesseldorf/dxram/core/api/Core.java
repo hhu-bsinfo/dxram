@@ -24,20 +24,20 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMRuntimeException;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
-import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.PrimaryLogException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
+import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 
+import de.uniduesseldorf.menet.NetworkException;
+import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.utils.Contract;
-import de.uniduesseldorf.utils.NameServiceStringConverter;
 import de.uniduesseldorf.utils.StatisticsManager;
 import de.uniduesseldorf.utils.locks.JNILock;
 
@@ -152,7 +152,9 @@ public final class Core {
 
 			interval = Core.getConfiguration().getIntValue(ConfigurationConstants.STATISTIC_PRINT);
 			if (interval > 0) {
+				if (!NodeID.getRole().equals(Role.MONITOR)) {
 				StatisticsManager.setupOutput(interval);
+				}
 			}
 		} catch (final Exception e) {
 			LOGGER.fatal("FATAL::Could not instantiate DXRAM", e);

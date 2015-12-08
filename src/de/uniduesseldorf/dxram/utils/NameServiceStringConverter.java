@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.utils;
+package de.uniduesseldorf.dxram.utils;
 
 import java.util.HashMap;
 import java.util.Map;

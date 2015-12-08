@@ -43,7 +43,7 @@ public final class CIDTable {
 	protected static final long DELETED_FLAG = BIT_FLAG;
 
 	// Attributes
-	private long m_nodeID;
+	private boolean m_memoryStatisticsEnabled;
 	private long m_addressTableDirectory;
 	private SmallObjectHeap m_rawMemory;
 
@@ -56,8 +56,8 @@ public final class CIDTable {
 	/**
 	 * Creates an instance of CIDTable
 	 */
-	public CIDTable(final long p_nodeID) {
-		m_nodeID = p_nodeID;
+	public CIDTable(final boolean p_enableMemoryStastics) {
+		m_memoryStatisticsEnabled = p_enableMemoryStastics;
 	}
 
 	// Methods
@@ -68,7 +68,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be initialized
 	 */
-	public void initialize(final SmallObjectHeap p_rawMemory) throws MemoryException {
+	public void initialize(final SmallObjectHeap p_rawMemory) {
 		m_rawMemory = p_rawMemory;
 		m_addressTableDirectory = createNIDTable();
 
@@ -83,7 +83,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be disengaged
 	 */
-	public void disengage() throws MemoryException {
+	public void disengage() {
 		long entry;
 
 		m_store = null;
@@ -127,7 +127,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to read the entry failed
 	 */
-	public long get(final long p_chunkID) throws MemoryException {
+	public long get(final long p_chunkID) {
 		long ret;
 
 		ret = getEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS);
@@ -144,7 +144,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to write the entry failed
 	 */
-	public void set(final long p_chunkID, final long p_addressChunk) throws MemoryException {
+	public void set(final long p_chunkID, final long p_addressChunk) {
 		setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
 	}
 
@@ -160,7 +160,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be get
 	 */
-	public long delete(final long p_chunkID, final boolean p_flagZombie) throws MemoryException {
+	public long delete(final long p_chunkID, final boolean p_flagZombie) {
 		long ret;
 		ret = deleteEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
 		return ret;
@@ -187,7 +187,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the table could not be disengaged
 	 */
-	private void disengage(final long p_addressTable, final int p_level) throws MemoryException {
+	private void disengage(final long p_addressTable, final int p_level) {
 		long entry;
 
 		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
@@ -208,14 +208,16 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to either allocate or writing the table failed.
 	 */
-	private long createNIDTable() throws MemoryException {
+	private long createNIDTable() {
 		long ret;
 
 		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
 		m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
 
-		MemoryStatistic.getInstance().newCIDTable();
-
+		if (m_memoryStatisticsEnabled) {
+			MemoryStatistic.getInstance().newCIDTable();
+		}
+			
 		return ret;
 	}
 
@@ -225,14 +227,16 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to either allocate or writing the table failed.
 	 */
-	private long createLIDTable() throws MemoryException {
+	private long createLIDTable() {
 		long ret;
 
 		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
 		m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
 
-		MemoryStatistic.getInstance().newCIDTable();
-
+		if (m_memoryStatisticsEnabled) {
+			MemoryStatistic.getInstance().newCIDTable();
+		}
+		
 		return ret;
 	}
 
@@ -246,7 +250,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to read the entry failed
 	 */
-	private long readEntry(final long p_addressTable, final long p_index) throws MemoryException {
+	private long readEntry(final long p_addressTable, final long p_index) {
 		long ret;
 
 		if (p_addressTable == m_addressTableDirectory) {
@@ -269,7 +273,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to read the entry failed
 	 */
-	private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) throws MemoryException {
+	private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) {
 		long value;
 
 		value = m_rawMemory.readLong(p_addressTable, ENTRY_SIZE * p_index) & 0xFFFFFF0000000000L;
@@ -290,7 +294,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to read the entry failed
 	 */
-	private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) throws MemoryException {
+	private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) {
 		long ret = 0;
 		long index;
 		long entry;
@@ -326,7 +330,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             If accessing memory to write the entry failed
 	 */
-	private void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) throws MemoryException {
+	private void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) {
 		long index;
 		long entry;
 
@@ -369,7 +373,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the entry could not be deleted
 	 */
-	private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) throws MemoryException {
+	private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) {
 		long ret = -1;
 		long index;
 		long entry;
@@ -416,7 +420,7 @@ public final class CIDTable {
 	 *             if the CIDTable could not be completely accessed
 	 */
 	@SuppressWarnings("unused")
-	private ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
+	private ArrayList<Long> getCIDOfAllMigratedChunks() {
 		ArrayList<Long> ret = null;
 		long entry;
 
@@ -441,7 +445,7 @@ public final class CIDTable {
 	 *             if the CIDTable could not be completely accessed
 	 */
 	@SuppressWarnings("unused")
-	private ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
+	private ArrayList<Long> getCIDrangesOfAllLocalChunks() {
 		ArrayList<Long> ret = null;
 		long entry;
 		long intervalStart;
@@ -471,7 +475,7 @@ public final class CIDTable {
 
 		if (ret.size() >= 2) {
 			if (ret.size() % 2 != 0) {
-				throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
+				//throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
 				// System.out.println("error: in ChunkIDRange list");
 			} else {
 				for (int i = 0; i < ret.size() - 2; i += 2) {
@@ -511,7 +515,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	private ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
+	private ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) {
 		ArrayList<Long> ret;
 		long entry;
 		int range = 0;
@@ -556,7 +560,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	private ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) throws MemoryException {
+	private ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) {
 		ArrayList<Long> ret;
 		long entry;
 
@@ -613,11 +617,7 @@ public final class CIDTable {
 
 		if (p_level == LID_TABLE_LEVELS) {
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-				try {
-					entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
-				} catch (final MemoryException e) {
-					entry = 0;
-				}
+				entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
 
 				if (entry > 0) {
 					countTables(entry, p_level - 1, p_count);
@@ -625,11 +625,7 @@ public final class CIDTable {
 			}
 		} else {
 			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
-				try {
-					entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
-				} catch (final MemoryException e) {
-					entry = 0;
-				}
+				entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
 
 				if (entry > 0) {
 					if (p_level > 1) {
@@ -728,9 +724,7 @@ public final class CIDTable {
 		 * Fills the store
 		 */
 		private void fill() {
-			try {
-				findFreeLIDs();
-			} catch (final MemoryException e) {}
+			findFreeLIDs();
 		}
 
 		/**
@@ -738,7 +732,7 @@ public final class CIDTable {
 		 * @throws MemoryException
 		 *             if the CIDTable could not be accessed
 		 */
-		private void findFreeLIDs() throws MemoryException {
+		private void findFreeLIDs() {
 			findFreeLIDs(readEntry(m_addressTableDirectory, NodeID.getLocalNodeID() & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1, 0);
 		}
 
@@ -754,7 +748,7 @@ public final class CIDTable {
 		 * @throws MemoryException
 		 *             if the CIDTable could not be accessed
 		 */
-		private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) throws MemoryException {
+		private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) {
 			boolean ret = false;
 			long chunkID;
 			long nodeID;

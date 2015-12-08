@@ -1,12 +1,11 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
+import de.uniduesseldorf.menet.AbstractConnection.DataReceiver;
 
 /**
  * Creates new network connections
@@ -47,7 +46,7 @@ abstract class AbstractConnectionCreator {
 	 * @throws DXRAMException
 	 *             if the creator could not be initialized
 	 */
-	protected void initialize() throws DXRAMException {}
+	protected void initialize(final short p_nodeID) {}
 
 	/**
 	 * Closes the creator and frees unused resources
@@ -86,23 +85,6 @@ abstract class AbstractConnectionCreator {
 		if (m_listener != null) {
 			m_listener.connectionClosed(p_connection);
 		}
-	}
-
-	/**
-	 * Get the current AbstractConnectionCreator instance
-	 * @return the current AbstractConnectionCreator instance
-	 */
-	public static AbstractConnectionCreator getInstance() {
-		if (m_instance == null) {
-			try {
-				m_instance = new NIOConnectionCreator();
-				m_instance.initialize();
-			} catch (final Exception e) {
-				LOGGER.fatal("FATAL::Could not create connection creator", e);
-			}
-		}
-
-		return m_instance;
 	}
 
 	// Classes

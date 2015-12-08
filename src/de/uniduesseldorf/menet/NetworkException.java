@@ -1,12 +1,12 @@
 
-package de.uniduesseldorf.dxram.core.exceptions;
+package de.uniduesseldorf.menet;
 
 /**
  * Exception for failed network accesses
  * @author Florian Klein
  *         09.03.2012
  */
-public class NetworkException extends DXRAMException {
+public class NetworkException extends Exception {
 
 	// Constants
 	private static final long serialVersionUID = 4732144734226695683L;

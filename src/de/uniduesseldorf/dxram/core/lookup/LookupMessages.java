@@ -9,11 +9,11 @@ import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
-import de.uniduesseldorf.dxram.core.net.AbstractMessage;
-import de.uniduesseldorf.dxram.core.net.AbstractRequest;
-import de.uniduesseldorf.dxram.core.net.AbstractResponse;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
+import de.uniduesseldorf.menet.AbstractMessage;
+import de.uniduesseldorf.menet.AbstractRequest;
+import de.uniduesseldorf.menet.AbstractResponse;
 import de.uniduesseldorf.utils.Contract;
 
 /**

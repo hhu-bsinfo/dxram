@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,7 +21,6 @@ abstract class AbstractConnection {
 
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(AbstractConnection.class);
-	private static final TaskExecutor EXECUTOR = TaskExecutor.getDefaultExecutor();
 
 	// Attributes
 	private final DataHandler m_dataHandler;
@@ -29,6 +28,7 @@ abstract class AbstractConnection {
 	private final ByteStreamInterpreter m_streamInterpreter;
 
 	private short m_destination;
+	private final TaskExecutor m_taskExecutor;
 
 	private boolean m_connected;
 
@@ -45,8 +45,8 @@ abstract class AbstractConnection {
 	 * @param p_destination
 	 *            the destination
 	 */
-	AbstractConnection(final short p_destination) {
-		this(p_destination, null);
+	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor) {
+		this(p_destination, p_taskExecutor, null);
 	}
 
 	/**
@@ -56,7 +56,7 @@ abstract class AbstractConnection {
 	 * @param p_listener
 	 *            the ConnectionListener
 	 */
-	AbstractConnection(final short p_destination, final DataReceiver p_listener) {
+	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor, final DataReceiver p_listener) {
 		NodeID.check(p_destination);
 
 		m_dataHandler = new DataHandler();
@@ -64,7 +64,8 @@ abstract class AbstractConnection {
 		m_streamInterpreter = new ByteStreamInterpreter();
 
 		m_destination = p_destination;
-
+		m_taskExecutor = p_taskExecutor;
+		
 		m_connected = false;
 
 		m_listener = p_listener;
@@ -205,7 +206,7 @@ abstract class AbstractConnection {
 		if (m_connected) {
 			System.out.println("Connection to clean up is still connected");
 		} else {
-			EXECUTOR.purgeQueue(m_destination);
+			m_taskExecutor.purgeQueue(m_destination);
 		}
 	}
 
@@ -235,7 +236,7 @@ abstract class AbstractConnection {
 	 * Called when new data has received
 	 */
 	protected final void newData() {
-		EXECUTOR.execute(m_destination, m_dataHandler);
+		m_taskExecutor.execute(m_destination, m_dataHandler);
 	}
 
 	/**
@@ -336,7 +337,7 @@ abstract class AbstractConnection {
 			m_buffers.offer(p_buffer);
 			m_buffersLock.unlock();
 
-			EXECUTOR.execute(this);
+			m_taskExecutor.execute(this);
 		}
 
 		@Override

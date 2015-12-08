@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.util.ArrayList;
 import java.util.List;

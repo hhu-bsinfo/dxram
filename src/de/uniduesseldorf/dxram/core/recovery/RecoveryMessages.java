@@ -6,10 +6,10 @@ import java.nio.ByteBuffer;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
-import de.uniduesseldorf.dxram.core.net.AbstractMessage;
-import de.uniduesseldorf.dxram.core.net.AbstractRequest;
-import de.uniduesseldorf.dxram.core.net.AbstractResponse;
 
+import de.uniduesseldorf.menet.AbstractMessage;
+import de.uniduesseldorf.menet.AbstractRequest;
+import de.uniduesseldorf.menet.AbstractResponse;
 import de.uniduesseldorf.utils.Contract;
 
 /**

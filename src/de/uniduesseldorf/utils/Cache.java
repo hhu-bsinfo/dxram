@@ -8,9 +8,6 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-
 /**
  * Implements a Cache with an optional eviction policy and an optional timeout
  * @author Florian Klein
@@ -61,11 +58,11 @@ public class Cache<KeyType, ValueType> {
 	 * @param p_policyEnum
 	 *            the POLICY
 	 */
-	public Cache(final POLICY p_policyEnum) {
-		final int maxSize = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_CACHE_ENTRIES);
+	public Cache(final int p_maxSize, final POLICY p_policyEnum) {
+		
 		EvictionPolicy<KeyType, ValueType> policy = null;
 
-		Contract.check(maxSize > 0, "max size must be greater or equal 1");
+		Contract.check(p_maxSize > 0, "max size must be greater or equal 1");
 		Contract.checkNotNull(p_policyEnum, "policy unkown");
 
 		switch (p_policyEnum) {
@@ -80,7 +77,7 @@ public class Cache<KeyType, ValueType> {
 		}
 
 		m_map = new HashMap<KeyType, CacheEntry<KeyType, ValueType>>();
-		m_maxSize = maxSize;
+		m_maxSize = p_maxSize;
 		m_policy = policy;
 		m_ttlHandler = null;
 
@@ -215,17 +212,14 @@ public class Cache<KeyType, ValueType> {
 	/**
 	 * Enables TTL for cache entries
 	 */
-	public final synchronized void enableTTL() {
+	public final synchronized void enableTTL(final long p_ttl) {
 		Thread t;
-		long ttl;
-
-		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHE_TTL), 1000);
 
 		if (m_ttlHandler != null && m_ttlHandler.isRunning()) {
 			m_ttlHandler.stop();
 		}
 
-		m_ttlHandler = new TTLHandler(ttl);
+		m_ttlHandler = new TTLHandler(p_ttl);
 
 		t = new Thread(m_ttlHandler);
 		t.setName(TTLHandler.class.getSimpleName() + " for " + Cache.class.getSimpleName());

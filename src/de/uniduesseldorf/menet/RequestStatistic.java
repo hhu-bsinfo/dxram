@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;

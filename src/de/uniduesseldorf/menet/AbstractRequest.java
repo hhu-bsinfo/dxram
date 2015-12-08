@@ -1,12 +1,9 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
-
-import de.uniduesseldorf.utils.AbstractAction;
 import de.uniduesseldorf.utils.Contract;
 
 /**

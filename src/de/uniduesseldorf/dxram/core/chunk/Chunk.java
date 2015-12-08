@@ -66,14 +66,14 @@ public class Chunk implements Comparable<Chunk>, DataStructure
 	}
 
 	@Override
-	public void write(final long p_startAddress, final DataStructureWriter p_writer) throws DXRAMException 
+	public void write(final long p_startAddress, final DataStructureWriter p_writer) 
 	{
 		p_writer.putInt(p_startAddress, 0, m_data.capacity());
 		p_writer.putBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());
 	}
 
 	@Override
-	public void read(final long p_startAddress, final DataStructureReader p_reader) throws DXRAMException
+	public void read(final long p_startAddress, final DataStructureReader p_reader)
 	{
 		m_data = ByteBuffer.allocate(p_reader.getInt(p_startAddress, 0));
 		p_reader.getBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());

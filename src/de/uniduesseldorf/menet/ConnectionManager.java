@@ -1,14 +1,13 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
-import de.uniduesseldorf.dxram.core.net.AbstractConnectionCreator.ConnectionCreatorListener;
-
+import de.uniduesseldorf.menet.AbstractConnection.DataReceiver;
+import de.uniduesseldorf.menet.AbstractConnectionCreator.ConnectionCreatorListener;
 import de.uniduesseldorf.utils.Contract;
 
 /**
