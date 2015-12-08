@@ -1,6 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import de.uniduesseldorf.dxram.core.chunk.DataStructure;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
@@ -23,6 +24,7 @@ public final class MemoryManager {
 	// Attributes
 	private long m_nodeID;
 	private SmallObjectHeap m_rawMemory;
+	private SmallObjectHeapDSReaderWriter m_smallObjectHeapDSReaderWriter;
 	private CIDTable m_cidTable;
 	private JNIReadWriteSpinLock m_lock;
 
@@ -59,6 +61,7 @@ public final class MemoryManager {
 
 		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 		ret = m_rawMemory.initialize(p_size, p_segmentSize);
+		m_smallObjectHeapDSReaderWriter = new SmallObjectHeapDSReaderWriter(m_rawMemory);
 		m_cidTable = new CIDTable(m_nodeID);
 		m_cidTable.initialize(m_rawMemory);
 
@@ -77,6 +80,7 @@ public final class MemoryManager {
 		m_rawMemory.disengage();
 
 		m_cidTable = null;
+		m_smallObjectHeapDSReaderWriter = null;
 		m_rawMemory = null;
 		m_lock = null;
 	}
@@ -211,6 +215,20 @@ public final class MemoryManager {
 
 		return bytesRead;
 	}
+	
+	public boolean get(final DataStructure p_dataStructure) throws MemoryException
+	{
+		long address;
+		boolean ret = false;
+		
+		address = m_cidTable.get(p_dataStructure.getID());
+		if (address > 0) {
+			p_dataStructure.read(address, m_smallObjectHeapDSReaderWriter);
+			ret = true;
+		}
+		
+		return ret;
+	}
 
 	/**
 	 * Put some data into a chunk.
@@ -237,6 +255,20 @@ public final class MemoryManager {
 		}
 
 		return bytesWritten;
+	}
+	
+	public boolean put(final DataStructure p_dataStructure) throws MemoryException
+	{
+		long address;
+		boolean ret = false;
+		
+		address = m_cidTable.get(p_dataStructure.getID());
+		if (address > 0) {
+			p_dataStructure.write(address, m_smallObjectHeapDSReaderWriter);
+			ret = true;
+		}
+
+		return ret;
 	}
 
 	/**

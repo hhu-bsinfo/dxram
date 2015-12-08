@@ -13,31 +13,31 @@ public class ByteBufferDataStructureReaderWriter implements DataStructureReader,
 	}
 
 	@Override
-	public void putByte(int p_offset, byte p_value) {
+	public void putByte(final long p_startAddress, int p_offset, byte p_value) {
 		m_buffer.position(p_offset);
 		m_buffer.put(p_value);
 	}
 
 	@Override
-	public void putShort(int p_offset, short p_value) {
+	public void putShort(final long p_startAddress, int p_offset, short p_value) {
 		m_buffer.position(p_offset);
 		m_buffer.putShort(p_value);
 	}
 
 	@Override
-	public void putInt(int p_offset, int p_value) {
+	public void putInt(final long p_startAddress, int p_offset, int p_value) {
 		m_buffer.position(p_offset);
 		m_buffer.putInt(p_value);
 	}
 
 	@Override
-	public void putLong(int p_offset, long p_value) {
+	public void putLong(final long p_startAddress, int p_offset, long p_value) {
 		m_buffer.position(p_offset);
 		m_buffer.putLong(p_value);
 	}
 
 	@Override
-	public int putBytes(int p_offset, byte[] p_array, int p_arrayOffset, int p_length) {
+	public int putBytes(final long p_startAddress, int p_offset, byte[] p_array, int p_arrayOffset, int p_length) {
 		m_buffer.position(p_offset);
 		m_buffer.put(p_array, p_arrayOffset, p_length);
 		
@@ -45,31 +45,31 @@ public class ByteBufferDataStructureReaderWriter implements DataStructureReader,
 	}
 
 	@Override
-	public byte getByte(int p_offset) {
+	public byte getByte(final long p_startAddress, int p_offset) {
 		m_buffer.position(p_offset);
 		return m_buffer.get();
 	}
 
 	@Override
-	public short getShort(int p_offset) {
+	public short getShort(final long p_startAddress, int p_offset) {
 		m_buffer.position(p_offset);
 		return m_buffer.getShort();
 	}
 
 	@Override
-	public int getInt(int p_offset) {
+	public int getInt(final long p_startAddress, int p_offset) {
 		m_buffer.position(p_offset);
 		return m_buffer.getInt();
 	}
 
 	@Override
-	public long getLong(int p_offset) {
+	public long getLong(final long p_startAddress, int p_offset) {
 		m_buffer.position(p_offset);
 		return m_buffer.getLong();
 	}
 
 	@Override
-	public int getBytes(int p_offset, byte[] p_array, int p_arrayOffset, int p_length) {
+	public int getBytes(final long p_startAddress, int p_offset, byte[] p_array, int p_arrayOffset, int p_length) {
 		m_buffer.position(p_offset);
 		m_buffer.get(p_array, p_arrayOffset, p_length);
 		return p_length;

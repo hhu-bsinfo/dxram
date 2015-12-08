@@ -563,6 +563,8 @@ public final class SmallObjectHeapSegment {
 
 			assert p_offset < size;
 			assert size >= Byte.BYTES && p_offset + Byte.BYTES <= size;
+			if (!(p_offset < size) || !(size >= Byte.BYTES && p_offset + Byte.BYTES <= size))
+				return 0;
 
 			return m_memory.readByte(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
@@ -605,6 +607,8 @@ public final class SmallObjectHeapSegment {
 
 			assert p_offset < size;
 			assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
+			if (!(p_offset < size) || !(size >= Short.BYTES && p_offset + Short.BYTES <= size))
+				return 0;
 
 			return m_memory.readShort(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
@@ -647,6 +651,8 @@ public final class SmallObjectHeapSegment {
 
 			assert p_offset < size;
 			assert size >= Integer.BYTES && p_offset + Integer.BYTES <= size;
+			if (!(p_offset < size) || !(size >= Integer.BYTES && p_offset + Integer.BYTES <= size))
+				return 0;
 
 			return m_memory.readInt(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
@@ -689,7 +695,9 @@ public final class SmallObjectHeapSegment {
 
 			assert p_offset < size;
 			assert size >= Long.BYTES || p_offset + Long.BYTES <= size;
-
+			if (!(p_offset < size) || !(size >= Long.BYTES || p_offset + Long.BYTES <= size))
+				return 0;
+			
 			return m_memory.readLong(p_address + lengthFieldSize + p_offset);
 		} catch (final Throwable e) {
 			throw new MemoryException("Could not access memory", e);

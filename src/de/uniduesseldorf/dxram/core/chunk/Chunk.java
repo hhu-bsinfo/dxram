@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -64,17 +65,17 @@ public class Chunk implements Comparable<Chunk>, DataStructure
 	}
 
 	@Override
-	public void write(final DataStructureWriter p_writer) 
+	public void write(final long p_startAddress, final DataStructureWriter p_writer) throws DXRAMException 
 	{
-		p_writer.putInt(0, m_data.capacity());
-		p_writer.putBytes(4, m_data.array(), 0, m_data.capacity());
+		p_writer.putInt(p_startAddress, 0, m_data.capacity());
+		p_writer.putBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());
 	}
 
 	@Override
-	public void read(final DataStructureReader p_reader) 
+	public void read(final long p_startAddress, final DataStructureReader p_reader) throws DXRAMException
 	{
-		m_data = ByteBuffer.allocate(p_reader.getInt(0));
-		p_reader.getBytes(4, m_data.array(), 0, m_data.capacity());
+		m_data = ByteBuffer.allocate(p_reader.getInt(p_startAddress, 0));
+		p_reader.getBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());
 	}
 
 	@Override
