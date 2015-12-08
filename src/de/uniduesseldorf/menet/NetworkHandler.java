@@ -54,7 +54,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		networkType = NIOConnectionCreator.FlowControlMessage.TYPE;
 		m_messageDirectory.register(networkType, NIOConnectionCreator.FlowControlMessage.SUBTYPE, NIOConnectionCreator.FlowControlMessage.class);
 
-		m_manager = new ConnectionManager(new NIOConnectionCreator(m_executor), this);
+		m_manager = new ConnectionManager(new NIOConnectionCreator(m_executor, , this);
 		
 		m_lock = new ReentrantLock(false);
 		
