@@ -7,9 +7,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.utils.Endianness;
-
 import de.uniduesseldorf.soh.exception.MemoryRuntimeException;
+import de.uniduesseldorf.utils.Endianness;
 
 /**
  * Implementation of a storage based on a random access file.

@@ -8,10 +8,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import de.uniduesseldorf.dxram.utils.Pair;
-
 import de.uniduesseldorf.dxgraph.load.GraphEdgeReader;
 import de.uniduesseldorf.dxgraph.load.NodeMapping;
+import de.uniduesseldorf.utils.Pair;
 
 public class GraphLoader 
 {

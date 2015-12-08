@@ -5,9 +5,9 @@ import java.util.Vector;
 import de.uniduesseldorf.dxcompute.ComputeJob;
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
 import de.uniduesseldorf.dxgraph.data.SimpleVertex;
+import de.uniduesseldorf.utils.Pair;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.utils.Pair;
 
 public class JobLoadEdges extends ComputeJob
 {

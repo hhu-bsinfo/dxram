@@ -7,7 +7,8 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.ArrayTools;
+
+import de.uniduesseldorf.utils.ArrayTools;
 
 /*
  * Start-up:

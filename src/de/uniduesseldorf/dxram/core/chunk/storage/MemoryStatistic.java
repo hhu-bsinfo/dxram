@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.utils.StatisticsManager.Statistic;
-import de.uniduesseldorf.dxram.utils.StatisticsManager.StatisticEntry;
-import de.uniduesseldorf.dxram.utils.Tools;
+import de.uniduesseldorf.utils.Tools;
+import de.uniduesseldorf.utils.StatisticsManager.Statistic;
+import de.uniduesseldorf.utils.StatisticsManager.StatisticEntry;
 
 /**
  * Memory-Statistic

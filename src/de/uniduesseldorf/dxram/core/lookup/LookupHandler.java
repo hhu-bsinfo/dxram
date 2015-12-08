@@ -70,10 +70,11 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.CRC16;
-import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
+
+import de.uniduesseldorf.utils.CRC16;
+import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.ZooKeeperHandler;
+import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
  * Lookup for meta-data:

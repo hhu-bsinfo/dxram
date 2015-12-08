@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import de.uniduesseldorf.dxram.utils.JNIconsole;
+import de.uniduesseldorf.utils.JNIconsole;
 
 /**
  * Interactive shell

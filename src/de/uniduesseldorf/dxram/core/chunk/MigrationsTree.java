@@ -6,7 +6,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Btree to store backup ranges of migrated chunks.

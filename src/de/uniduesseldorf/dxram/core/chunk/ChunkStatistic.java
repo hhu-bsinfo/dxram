@@ -8,9 +8,9 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.utils.StatisticsManager.OperationStatistic;
-import de.uniduesseldorf.dxram.utils.StatisticsManager.Statistic;
-import de.uniduesseldorf.dxram.utils.StatisticsManager.StatisticEntry;
+import de.uniduesseldorf.utils.StatisticsManager.OperationStatistic;
+import de.uniduesseldorf.utils.StatisticsManager.Statistic;
+import de.uniduesseldorf.utils.StatisticsManager.StatisticEntry;
 
 /**
  * Chunk-Statistic

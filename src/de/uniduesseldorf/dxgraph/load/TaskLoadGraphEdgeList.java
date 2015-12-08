@@ -2,13 +2,12 @@ package de.uniduesseldorf.dxgraph.load;
 
 import de.uniduesseldorf.dxcompute.Task;
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
+import de.uniduesseldorf.utils.Pair;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-
-import de.uniduesseldorf.dxram.utils.Pair;
 
 public class TaskLoadGraphEdgeList extends Task
 {

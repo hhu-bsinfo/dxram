@@ -43,8 +43,9 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.Tools;
+
+import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.Tools;
 
 /**
  * Leads data accesses to a remote node

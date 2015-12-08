@@ -5,8 +5,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
-import de.uniduesseldorf.dxram.utils.AbstractAction;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.AbstractAction;
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Represents a Request

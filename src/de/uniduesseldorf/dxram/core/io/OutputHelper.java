@@ -13,7 +13,8 @@ import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Writes data types

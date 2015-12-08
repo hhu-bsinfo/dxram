@@ -12,10 +12,11 @@ import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.Cache;
-import de.uniduesseldorf.dxram.utils.Cache.EvictionPolicy;
-import de.uniduesseldorf.dxram.utils.Cache.POLICY;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Cache;
+import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.Cache.EvictionPolicy;
+import de.uniduesseldorf.utils.Cache.POLICY;
 
 /**
  * Access meta data through a cache

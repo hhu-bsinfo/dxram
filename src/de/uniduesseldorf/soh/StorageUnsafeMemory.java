@@ -6,11 +6,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import sun.misc.Unsafe;
-
-import de.uniduesseldorf.dxram.utils.Endianness;
-import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
-
 import de.uniduesseldorf.soh.exception.MemoryRuntimeException;
+import de.uniduesseldorf.utils.Endianness;
+import de.uniduesseldorf.utils.unsafe.UnsafeHandler;
 
 /**
  * Implementation of a storage based on an unsafe allocated

@@ -2,7 +2,7 @@ package de.uniduesseldorf.dxgraph.load;
 
 import java.util.Iterator;
 
-import de.uniduesseldorf.dxram.utils.Pair;
+import de.uniduesseldorf.utils.Pair;
 
 public interface NodeMapping {
 

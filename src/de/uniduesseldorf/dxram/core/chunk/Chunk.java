@@ -6,7 +6,8 @@ import java.nio.ByteBuffer;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Stores data

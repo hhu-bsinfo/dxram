@@ -15,8 +15,9 @@ import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.Cache;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Cache;
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Access meta data through a cache

@@ -1,6 +1,6 @@
 package de.uniduesseldorf.dxgraph.test;
 
-import de.uniduesseldorf.dxram.utils.Endianness;
+import de.uniduesseldorf.utils.Endianness;
 
 public class ByteArrayUtils 
 {

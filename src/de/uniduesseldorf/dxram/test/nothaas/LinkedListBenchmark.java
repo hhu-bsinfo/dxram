@@ -5,7 +5,8 @@ import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.utils.Stopwatch;
+
+import de.uniduesseldorf.utils.Stopwatch;
 
 public class LinkedListBenchmark 
 {

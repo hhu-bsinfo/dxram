@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import de.uniduesseldorf.dxram.utils.Tools;
+import de.uniduesseldorf.utils.Tools;
 
 /**
  * Represents a configuration for DXRAM

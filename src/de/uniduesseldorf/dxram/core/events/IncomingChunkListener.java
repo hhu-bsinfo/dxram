@@ -3,7 +3,8 @@ package de.uniduesseldorf.dxram.core.events;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener.IncomingChunkEvent;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Methods for reacting to IncomingChunkEvents

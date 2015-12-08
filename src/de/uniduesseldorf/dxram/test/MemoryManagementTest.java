@@ -11,8 +11,9 @@ import java.util.concurrent.Future;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Tools;
-import de.uniduesseldorf.dxram.utils.locks.JNILock;
+
+import de.uniduesseldorf.utils.Tools;
+import de.uniduesseldorf.utils.locks.JNILock;
 
 /**
  * Test cases for the evaluation of the memory management

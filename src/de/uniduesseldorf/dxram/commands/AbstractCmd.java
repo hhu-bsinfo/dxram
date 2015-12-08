@@ -3,8 +3,8 @@ package de.uniduesseldorf.dxram.commands;
 
 import java.io.UnsupportedEncodingException;
 
-import de.uniduesseldorf.dxram.utils.JNIconsole;
-import de.uniduesseldorf.dxram.utils.Tools;
+import de.uniduesseldorf.utils.JNIconsole;
+import de.uniduesseldorf.utils.Tools;
 
 /**
  * Base class for commands

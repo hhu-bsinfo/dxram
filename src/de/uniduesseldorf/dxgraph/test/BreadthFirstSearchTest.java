@@ -1,7 +1,6 @@
 package de.uniduesseldorf.dxgraph.test;
 
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.utils.Pair;
 
 import de.uniduesseldorf.dxcompute.DXCompute;
 import de.uniduesseldorf.dxcompute.StorageDXRAM;
@@ -9,6 +8,7 @@ import de.uniduesseldorf.dxcompute.TaskPipeline;
 import de.uniduesseldorf.dxcompute.test.LoggerTest;
 import de.uniduesseldorf.dxgraph.bfs.TaskBreadthFirstSearch;
 import de.uniduesseldorf.dxgraph.load.TaskLoadGraphEdgeList;
+import de.uniduesseldorf.utils.Pair;
 
 public class BreadthFirstSearchTest 
 {

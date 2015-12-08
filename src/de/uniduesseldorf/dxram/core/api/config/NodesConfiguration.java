@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.api.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Represents a nodes configuration for DXRAM

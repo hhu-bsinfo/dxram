@@ -10,7 +10,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Implements the Lock-Service using read-write locks

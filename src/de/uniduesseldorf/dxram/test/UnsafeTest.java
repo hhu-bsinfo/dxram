@@ -6,7 +6,8 @@ import java.nio.ByteBuffer;
 import sun.misc.Unsafe;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
+
+import de.uniduesseldorf.utils.unsafe.UnsafeHandler;
 
 /**
  * Test case for the use of the Unsafe class

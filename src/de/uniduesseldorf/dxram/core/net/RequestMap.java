@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Manages pending requests

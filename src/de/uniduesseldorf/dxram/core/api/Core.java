@@ -35,10 +35,11 @@ import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
-import de.uniduesseldorf.dxram.utils.StatisticsManager;
-import de.uniduesseldorf.dxram.utils.locks.JNILock;
+
+import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.NameServiceStringConverter;
+import de.uniduesseldorf.utils.StatisticsManager;
+import de.uniduesseldorf.utils.locks.JNILock;
 
 /**
  * API for DXRAM

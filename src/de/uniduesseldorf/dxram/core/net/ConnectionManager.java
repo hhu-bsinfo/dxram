@@ -8,7 +8,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 import de.uniduesseldorf.dxram.core.net.AbstractConnectionCreator.ConnectionCreatorListener;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Manages the network connections

@@ -1,7 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.util;
 
-import de.uniduesseldorf.dxram.utils.Contract;
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Wrapper class for a ChunkID

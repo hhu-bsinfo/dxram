@@ -5,11 +5,11 @@ import de.uniduesseldorf.dxram.core.chunk.DataStructure;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.StatisticsManager;
-import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
 
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
+import de.uniduesseldorf.utils.StatisticsManager;
+import de.uniduesseldorf.utils.locks.JNIReadWriteSpinLock;
 
 /**
  * Interface to access the local heap. Features for migration

@@ -2,7 +2,8 @@
 package de.uniduesseldorf.dxram.core.util;
 
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Wrapper class for a NodeID

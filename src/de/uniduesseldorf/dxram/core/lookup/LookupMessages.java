@@ -13,7 +13,8 @@ import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.AbstractRequest;
 import de.uniduesseldorf.dxram.core.net.AbstractResponse;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Encapsulates messages for the LookupHandler

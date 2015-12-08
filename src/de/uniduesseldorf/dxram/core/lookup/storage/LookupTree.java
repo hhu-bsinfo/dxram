@@ -5,7 +5,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.utils.Contract;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Btree to store ranges. Backup nodes are stored in an ArrayList<Long> to improve access times.

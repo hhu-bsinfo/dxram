@@ -9,10 +9,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.utils.Tools;
-import de.uniduesseldorf.dxram.utils.locks.JNISpinLock;
-import de.uniduesseldorf.dxram.utils.locks.NoLock;
-import de.uniduesseldorf.dxram.utils.locks.SpinLock;
+import de.uniduesseldorf.utils.Tools;
+import de.uniduesseldorf.utils.locks.JNISpinLock;
+import de.uniduesseldorf.utils.locks.NoLock;
+import de.uniduesseldorf.utils.locks.SpinLock;
 
 /**
  * Test cases for evaluating lock implementations

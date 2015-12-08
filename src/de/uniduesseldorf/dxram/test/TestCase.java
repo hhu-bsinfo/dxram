@@ -19,8 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.Tools;
+import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.Tools;
 
 /**
  * Controls the execution of a test case

@@ -7,8 +7,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.utils.Contract;
-import de.uniduesseldorf.dxram.utils.Tools;
+
+import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.Tools;
 
 /**
  * Btree to cache ranges

@@ -4,10 +4,10 @@ import java.util.Iterator;
 
 import de.uniduesseldorf.dxram.core.chunk.storage.PagingTable;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.utils.Pair;
 
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
+import de.uniduesseldorf.utils.Pair;
 
 public class NodeMappingPagingInMemory implements NodeMapping
 {

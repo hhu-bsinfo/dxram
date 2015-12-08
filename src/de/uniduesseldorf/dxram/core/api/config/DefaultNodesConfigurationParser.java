@@ -17,10 +17,11 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.NodesConfigura
 import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.BloomFilter;
-import de.uniduesseldorf.dxram.utils.CRC16;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
+
+import de.uniduesseldorf.utils.BloomFilter;
+import de.uniduesseldorf.utils.CRC16;
+import de.uniduesseldorf.utils.ZooKeeperHandler;
+import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
  * Parses the configured nodes

@@ -11,10 +11,10 @@ import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
 import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.utils.Pair;
 
 import de.uniduesseldorf.dxgraph.load.GraphEdgeReaderFile;
 import de.uniduesseldorf.dxgraph.load.NodeMappingHashMap;
+import de.uniduesseldorf.utils.Pair;
 
 public class GraphLoaderTool 
 {

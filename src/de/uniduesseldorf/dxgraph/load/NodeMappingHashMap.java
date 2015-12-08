@@ -5,7 +5,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import de.uniduesseldorf.dxram.utils.Pair;
+import de.uniduesseldorf.utils.Pair;
 
 public class NodeMappingHashMap implements NodeMapping
 {
