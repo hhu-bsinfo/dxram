@@ -200,8 +200,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public short getHeaderSize(final short p_nodeID, final long p_localID, final int p_size, final int p_version) {
-		return AbstractLogEntryHeader.getSecLogHeaderSize(NodeID.getLocalNodeID() != p_nodeID, p_localID, p_size, p_version);
+	public short getHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
+		return AbstractLogEntryHeader.getSecLogHeaderSize(NodeID.getLocalNodeID() != p_nodeID, p_localID, p_size);
 	}
 
 	@Override
@@ -615,7 +615,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private void incomingLogMessage(final LogMessage p_message) {
 		long chunkID;
 		int length;
-		int version;
 		int position;
 		byte[] logEntryHeader;
 		byte[] payload;
@@ -623,11 +622,12 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		final short source = p_message.getSource();
 		final byte rangeID = buffer.get();
 		final int size = buffer.getInt();
+		SecondaryLog secLog;
 
 		for (int i = 0; i < size; i++) {
 			chunkID = buffer.getLong();
 			length = buffer.getInt();
-			version = buffer.getInt();
+			secLog = getSecondaryLog(chunkID, source, rangeID);
 
 			assert length > 0;
 
@@ -639,23 +639,28 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				buffer.position(position);
 
 				if (rangeID == -1) {
-					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length, version, payload, (byte) -1, (short) -1);
+					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), payload, (byte) -1, (short) -1);
 				} else {
-					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length, version, payload, rangeID, source);
+					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), payload, rangeID, source);
 				}
 			} else {
 				if (rangeID == -1) {
-					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length, version, null, (byte) -1, (short) -1);
+					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), null, (byte) -1, (short) -1);
 				} else {
-					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length, version, null, rangeID, source);
+					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), null, rangeID, source);
 				}
 			}
 
 			try {
 				m_writeBuffer.putLogData(logEntryHeader, buffer, length);
-				if (version > 1) {
-					getSecondaryLog(chunkID, source, rangeID).incLogInvalidCounter();
-				}
+				// TODO: Increase invalid counter at the end of an epoch
+				/*-if (version > 1) {
+					secLog.incLogInvalidCounter();
+				}*/
 			} catch (final IOException | InterruptedException e) {
 				System.out.println("Error during logging (" + chunkID + ")!");
 			}
@@ -669,7 +674,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 */
 	private void incomingRemoveMessage(final RemoveMessage p_message) {
 		long chunkID;
-		int version;
 		byte[] tombstone;
 		final ByteBuffer buffer = p_message.getMessageBuffer();
 		final short source = p_message.getSource();
@@ -678,7 +682,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		for (int i = 0; i < size; i++) {
 			chunkID = buffer.getLong();
-			version = buffer.getInt();
 
 			if (rangeID == -1) {
 				tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createTombstone(chunkID, version, (byte) -1, (short) -1);

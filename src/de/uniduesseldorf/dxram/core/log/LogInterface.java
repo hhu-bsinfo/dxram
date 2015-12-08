@@ -69,9 +69,7 @@ public interface LogInterface extends CoreComponent {
 	 *            the LocalID
 	 * @param p_size
 	 *            the size of the Chunk
-	 * @param p_version
-	 *            the version of the Chunk
 	 * @return the header size
 	 */
-	short getHeaderSize(final short p_nodeID, final long p_localID, final int p_size, final int p_version);
+	short getHeaderSize(final short p_nodeID, final long p_localID, final int p_size);
 }

@@ -6,6 +6,7 @@ import java.util.zip.Checksum;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
@@ -36,6 +37,7 @@ public abstract class AbstractLogEntryHeader {
 	protected static final byte MAX_LOG_ENTRY_VER_SIZE = 3;
 	protected static final byte LOG_ENTRY_RID_SIZE = 1;
 	protected static final byte LOG_ENTRY_SRC_SIZE = 2;
+	protected static final byte LOG_ENTRY_EPO_SIZE = 2;
 	protected static final byte LOG_ENTRY_CRC_SIZE;
 	protected static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_CHECKSUM);
 	static {
@@ -50,13 +52,9 @@ public abstract class AbstractLogEntryHeader {
 	private static final Checksum CRC = new CRC32();
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
-	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_TOMBSTONE = new DefaultPrimLogTombstone();
-	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_TOMBSTONE = new MigrationPrimLogTombstone();
 
 	private static final AbstractLogEntryHeader DEFAULT_SEC_LOG_ENTRY_HEADER = new DefaultSecLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_SEC_LOG_ENTRY_HEADER = new MigrationSecLogEntryHeader();
-	private static final AbstractLogEntryHeader DEFAULT_SEC_LOG_TOMBSTONE = new DefaultSecLogTombstone();
-	private static final AbstractLogEntryHeader MIGRATION_SEC_LOG_TOMBSTONE = new MigrationSecLogTombstone();
 
 	// Constructors
 	/**
@@ -81,21 +79,7 @@ public abstract class AbstractLogEntryHeader {
 	 *            the source NodeID
 	 * @return the log entry
 	 */
-	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, int p_version, byte[] p_data, byte p_rangeID, short p_source);
-
-	/**
-	 * Generates a tombstone
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_version
-	 *            the version
-	 * @param p_rangeID
-	 *            the RangeID
-	 * @param p_source
-	 *            the source NodeID
-	 * @return the log entry
-	 */
-	public abstract byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source);
+	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, EpochVersion p_version, byte[] p_data, byte p_rangeID, short p_source);
 
 	/**
 	 * Returns the type of a log entry
@@ -192,22 +176,6 @@ public abstract class AbstractLogEntryHeader {
 	 * @return whether this log entry was migrated or not
 	 */
 	public abstract boolean wasMigrated();
-
-	/**
-	 * Checks whether this log entry is a tombstone or not
-	 * @return whether this log entry is a tombstone or not
-	 */
-	public abstract boolean isTombstone();
-
-	/**
-	 * Checks whether this log entry is invalid or not
-	 * @param p_buffer
-	 *            the buffer
-	 * @param p_offset
-	 *            the offset in buffer
-	 * @return whether this log entry is invalid or not
-	 */
-	public abstract boolean isInvalid(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the log entry header size
@@ -310,11 +278,7 @@ public abstract class AbstractLogEntryHeader {
 		if (type == 0) {
 			ret = DEFAULT_PRIM_LOG_ENTRY_HEADER;
 		} else if (type == 1) {
-			ret = DEFAULT_PRIM_LOG_TOMBSTONE;
-		} else if (type == 2) {
 			ret = MIGRATION_PRIM_LOG_ENTRY_HEADER;
-		} else if (type == 3) {
-			ret = MIGRATION_PRIM_LOG_TOMBSTONE;
 		} else {
 			System.out.println("Error: Type of log entry header unknown!");
 		}
@@ -342,12 +306,6 @@ public abstract class AbstractLogEntryHeader {
 				ret = DEFAULT_SEC_LOG_ENTRY_HEADER;
 			} else {
 				ret = MIGRATION_SEC_LOG_ENTRY_HEADER;
-			}
-		} else if (type == 1) {
-			if (!p_storesMigrations) {
-				ret = DEFAULT_SEC_LOG_TOMBSTONE;
-			} else {
-				ret = MIGRATION_SEC_LOG_TOMBSTONE;
 			}
 		}
 
@@ -421,11 +379,9 @@ public abstract class AbstractLogEntryHeader {
 	 *            the LocalID
 	 * @param p_size
 	 *            the size
-	 * @param p_version
-	 *            the version
 	 * @return the maximum log entry header size for secondary log
 	 */
-	public static short getSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size, final int p_version) {
+	public static short getSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
 		short ret = (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size)
 				+ getSizeForVersionField(p_version) + LOG_ENTRY_CRC_SIZE);
 
@@ -452,19 +408,6 @@ public abstract class AbstractLogEntryHeader {
 		}
 
 		return ret;
-	}
-
-	/**
-	 * Marks the log entry as invalid
-	 * @param p_buffer
-	 *            the buffer
-	 * @param p_offset
-	 *            the offset in buffer
-	 * @param p_logEntryHeader
-	 *            the log entry header
-	 */
-	public static void markAsInvalid(final byte[] p_buffer, final int p_offset, final AbstractLogEntryHeader p_logEntryHeader) {
-		p_buffer[p_offset] = (byte) (p_buffer[p_offset] | INVALIDATION_MASK);
 	}
 
 	/**
@@ -571,6 +514,21 @@ public abstract class AbstractLogEntryHeader {
 	protected static void putLength(final byte[] p_logEntry, final int p_length, final short p_offset) {
 		for (int i = 0; i < MAX_LOG_ENTRY_LEN_SIZE; i++) {
 			p_logEntry[p_offset + i] = (byte) (p_length >> i * 8 & 0xff);
+		}
+	}
+
+	/**
+	 * Puts epoch of log entry in log entry header
+	 * @param p_logEntry
+	 *            log entry
+	 * @param p_epoch
+	 *            the version
+	 * @param p_offset
+	 *            the type-specific offset
+	 */
+	protected static void putEpoch(final byte[] p_logEntry, final short p_epoch, final short p_offset) {
+		for (int i = 0; i < Short.BYTES; i++) {
+			p_logEntry[p_offset + i] = (byte) (p_epoch >> i * 8 & 0xff);
 		}
 	}
 

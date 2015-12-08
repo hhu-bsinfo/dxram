@@ -318,7 +318,6 @@ public final class ChunkMessages {
 
 		// Attributes
 		private long m_chunkID;
-		private int m_version;
 
 		// Constructors
 		/**
@@ -328,7 +327,6 @@ public final class ChunkMessages {
 			super();
 
 			m_chunkID = ChunkID.INVALID_ID;
-			m_version = -1;
 		}
 
 		/**
@@ -344,25 +342,6 @@ public final class ChunkMessages {
 			ChunkID.check(p_chunkID);
 
 			m_chunkID = p_chunkID;
-			m_version = -1;
-		}
-
-		/**
-		 * Creates an instance of RemoveRequest
-		 * @param p_destination
-		 *            the destination
-		 * @param p_chunkID
-		 *            the ChunkID for the Chunk
-		 * @param p_version
-		 *            the version of the migrated Chunk
-		 */
-		public RemoveRequest(final short p_destination, final long p_chunkID, final int p_version) {
-			super(p_destination, TYPE, SUBTYPE_REMOVE_REQUEST);
-
-			ChunkID.check(p_chunkID);
-
-			m_chunkID = p_chunkID;
-			m_version = p_version;
 		}
 
 		// Getters
@@ -374,30 +353,20 @@ public final class ChunkMessages {
 			return m_chunkID;
 		}
 
-		/**
-		 * Get the version for the Chunk
-		 * @return the version for the Chunk
-		 */
-		public final int getVersion() {
-			return m_version;
-		}
-
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunkID(p_buffer, m_chunkID);
-			OutputHelper.writeInt(p_buffer, m_version);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunkID = InputHelper.readChunkID(p_buffer);
-			m_version = InputHelper.readInt(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getIntWriteLength();
+			return OutputHelper.getChunkIDWriteLength();
 		}
 
 	}
@@ -676,7 +645,6 @@ public final class ChunkMessages {
 
 		// Attributes
 		private Chunk[] m_chunks;
-		private int[] m_versions;
 
 		// Constructors
 		/**
@@ -694,16 +662,13 @@ public final class ChunkMessages {
 		 *            the destination
 		 * @param p_chunk
 		 *            a single Chunk to store
-		 * @param p_version
-		 *            the version of the Chunk
 		 */
-		public DataRequest(final short p_destination, final Chunk p_chunk, final int p_version) {
+		public DataRequest(final short p_destination, final Chunk p_chunk) {
 			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
 
 			Contract.checkNotNull(p_chunk, "no chunk given");
 
 			m_chunks = new Chunk[] {p_chunk};
-			m_versions = new int[] {p_version};
 		}
 
 		/**
@@ -712,16 +677,13 @@ public final class ChunkMessages {
 		 *            the destination
 		 * @param p_chunks
 		 *            the Chunks to store
-		 * @param p_versions
-		 *            the versions of the Chunks
 		 */
-		public DataRequest(final short p_destination, final Chunk[] p_chunks, final int[] p_versions) {
+		public DataRequest(final short p_destination, final Chunk[] p_chunks) {
 			super(p_destination, TYPE, SUBTYPE_DATA_REQUEST);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
 			m_chunks = p_chunks;
-			m_versions = p_versions;
 		}
 
 		// Getters
@@ -733,30 +695,20 @@ public final class ChunkMessages {
 			return m_chunks;
 		}
 
-		/**
-		 * Get the versions
-		 * @return the versions
-		 */
-		public final int[] getVersions() {
-			return m_versions;
-		}
-
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunks(p_buffer, m_chunks);
-			OutputHelper.writeIntArray(p_buffer, m_versions);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunks = InputHelper.readChunks(p_buffer);
-			m_versions = InputHelper.readIntArray(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunksWriteLength(m_chunks) + OutputHelper.getIntArrayWriteLength(m_versions.length);
+			return OutputHelper.getChunksWriteLength(m_chunks);
 		}
 
 	}
@@ -794,7 +746,6 @@ public final class ChunkMessages {
 
 		// Attributes
 		private Chunk[] m_chunks;
-		private int[] m_versions;
 
 		// Constructors
 		/**
@@ -812,16 +763,13 @@ public final class ChunkMessages {
 		 *            the destination
 		 * @param p_chunks
 		 *            the Chunks to store
-		 * @param p_versions
-		 *            the versions of the Chunks
 		 */
-		public DataMessage(final short p_destination, final Chunk[] p_chunks, final int[] p_versions) {
+		public DataMessage(final short p_destination, final Chunk[] p_chunks) {
 			super(p_destination, TYPE, SUBTYPE_DATA_MESSAGE);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
 			m_chunks = p_chunks;
-			m_versions = p_versions;
 		}
 
 		// Getters
@@ -833,30 +781,20 @@ public final class ChunkMessages {
 			return m_chunks;
 		}
 
-		/**
-		 * Get the versions
-		 * @return the versions
-		 */
-		public final int[] getVersions() {
-			return m_versions;
-		}
-
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			OutputHelper.writeChunks(p_buffer, m_chunks);
-			OutputHelper.writeIntArray(p_buffer, m_versions);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			m_chunks = InputHelper.readChunks(p_buffer);
-			m_versions = InputHelper.readIntArray(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			return OutputHelper.getChunksWriteLength(m_chunks) + OutputHelper.getIntArrayWriteLength(m_versions.length);
+			return OutputHelper.getChunksWriteLength(m_chunks);
 		}
 
 	}
