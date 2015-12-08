@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,13 +17,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHelper;
-import de.uniduesseldorf.dxram.core.io.InputHelper;
-import de.uniduesseldorf.dxram.core.io.OutputHelper;
-import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
-import de.uniduesseldorf.dxram.core.util.NodeID;
+import de.uniduesseldorf.menet.AbstractConnection.DataReceiver;
 
 /**
  * Creates and manages new network connections using Java NIO
@@ -38,12 +32,12 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	private static final int SEND_BYTES = 1024 * 1024;
 	private static final int CONNECTION_TIMEOUT = 200;
 
-	private static final int MAX_OUTSTANDING_BYTES = BufferCache.MAX_MEMORY_CACHED;
-
-	private static final boolean HIGH_PERFORMANCE = Core.getConfiguration().getBooleanValue(ConfigurationConstants.NETWORK_HIGH_PERFORMANCE);
-
 	// Attributes
 	private Worker m_worker;
+	
+	private TaskExecutor m_taskExecutor;
+	private int m_maxOutstandingBytes;
+	private boolean m_highPerformance;
 
 	private NodesConfigurationHelper m_helper;
 
@@ -53,11 +47,15 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	/**
 	 * Creates an instance of NIOConnectionCreator
 	 */
-	protected NIOConnectionCreator() {
+	protected NIOConnectionCreator(final TaskExecutor p_taskExecutor, final int p_maxOutstandingBytes, final boolean p_highPerformance) {
 		super();
 
 		m_worker = null;
 
+		m_taskExecutor = p_taskExecutor;
+		m_maxOutstandingBytes = p_maxOutstandingBytes;
+		m_highPerformance = p_highPerformance;
+		
 		m_helper = null;
 
 		m_nodeID = NodeID.INVALID_ID;
@@ -68,8 +66,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Initializes the creator
 	 */
 	@Override
-	public void initialize() {
-		m_nodeID = NodeID.getLocalNodeID();
+	public void initialize(final short p_nodeID) {
+		m_nodeID = p_nodeID;
 
 		m_helper = Core.getNodesConfiguration();
 
@@ -106,7 +104,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		condLock = new ReentrantLock(false);
 		cond = condLock.newCondition();
-		ret = new NIOConnection(p_destination, p_listener, condLock, cond);
+		ret = new NIOConnection(p_destination, m_taskExecutor, p_listener, condLock, cond);
 
 		timeStart = System.currentTimeMillis();
 		condLock.lock();
@@ -168,10 +166,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @throws IOException
 		 *             if the connection could not be created
 		 */
-		protected NIOConnection(final short p_destination, final DataReceiver p_listener,
+		protected NIOConnection(final short p_destination, final TaskExecutor p_taskExecutor, final DataReceiver p_listener,
 				final ReentrantLock p_lock, final Condition p_cond) throws IOException {
-			super(p_destination, p_listener);
-
+			super(p_destination, p_taskExecutor, p_listener);
 			m_channel = SocketChannel.open();
 			m_channel.configureBlocking(false);
 			m_channel.socket().setSoTimeout(0);
@@ -204,8 +201,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @throws IOException
 		 *             if the connection could not be created
 		 */
-		protected NIOConnection(final short p_destination, final SocketChannel p_channel) throws IOException {
-			super(p_destination);
+		protected NIOConnection(final short p_destination, final TaskExecutor p_taskExecutor, final SocketChannel p_channel) throws IOException {
+			super(p_destination, p_taskExecutor);
 
 			m_channel = p_channel;
 			m_channel.configureBlocking(false);
@@ -243,7 +240,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_receivedBytes += ret.remaining();
 
 			m_flowControlCondLock.lock();
-			if (m_receivedBytes > MAX_OUTSTANDING_BYTES / 8) {
+			if (m_receivedBytes > m_maxOutstandingBytes / 8) {
 				sendFlowControlMessage();
 			}
 			m_flowControlCondLock.unlock();
@@ -278,7 +275,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			buffer = p_message.getBuffer();
 			m_flowControlCondLock.lock();
-			while (m_unconfirmedBytes > MAX_OUTSTANDING_BYTES) {
+			while (m_unconfirmedBytes > m_maxOutstandingBytes) {
 				try {
 					m_flowControlCond.await();
 				} catch (final InterruptedException e) { /* ignore */}
@@ -565,7 +562,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				m_executor.execute(this);
 			}
 
-			if (!HIGH_PERFORMANCE) {
+			if (!m_highPerformance) {
 				try {
 					Thread.sleep(1);
 				} catch (final InterruptedException e) {

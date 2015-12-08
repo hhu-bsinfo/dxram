@@ -10,11 +10,11 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.lock.LockInterface;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
-import de.uniduesseldorf.utils.ZooKeeperHandler;
-import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
+import de.uniduesseldorf.menet.NetworkInterface;
 
 /**
  * Creates the components for DXRAM

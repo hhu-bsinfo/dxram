@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.utils;
+package de.uniduesseldorf.dxram.utils;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,6 +18,8 @@ import org.apache.zookeeper.data.Stat;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+
+import de.uniduesseldorf.utils.Contract;
 
 /**
  * Class for accessing ZooKeeper

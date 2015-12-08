@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 /**
  * Represents a Response to a Request

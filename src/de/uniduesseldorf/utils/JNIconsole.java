@@ -1,9 +1,6 @@
 
 package de.uniduesseldorf.utils;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-
 /**
  * Wrapper for accessing GNU readline lib
  * @author Michael Schoettner 07.09.2015
@@ -16,8 +13,12 @@ public final class JNIconsole {
 	private JNIconsole() {}
 
 	// Statics
-	static {
-		System.load(Core.getConfiguration().getStringValue(ConfigurationConstants.JNI_CONSOLE_DIRECTORY));
+	/**
+	 * Provide the path to the native implementation.
+	 * @param p_pathNativeLibrary Path to the library with the native implementation.
+	 */
+	public static void load(final String p_pathNativeLibrary) {
+		System.load(p_pathNativeLibrary);
 	}
 
 	// Methods

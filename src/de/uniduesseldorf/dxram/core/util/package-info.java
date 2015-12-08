@@ -2,4 +2,4 @@
  * This package contains util classes
  */
 
-package de.uniduesseldorf.utils;
+package de.uniduesseldorf.dxram.core.util;

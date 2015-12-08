@@ -14,10 +14,10 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
 import de.uniduesseldorf.dxram.core.util.NodeID;
 
+import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.utils.StatisticsManager;
 import de.uniduesseldorf.utils.locks.JNILock;
 
@@ -74,7 +74,9 @@ public final class DXRAM
 
 			interval = Core.getConfiguration().getIntValue(ConfigurationConstants.STATISTIC_PRINT);
 			if (interval > 0) {
+				if (!NodeID.getRole().equals(Role.MONITOR)) {
 				StatisticsManager.setupOutput(interval);
+				}
 			}
 		} catch (final Exception e) {
 			LOGGER.fatal("FATAL::Could not instantiate DXRAM", e);

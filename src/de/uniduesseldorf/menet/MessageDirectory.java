@@ -1,10 +1,8 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.locks.ReentrantLock;
-
-import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 
 /**
  * Handles mapping from type and subtype to message class.
@@ -19,14 +17,14 @@ import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 public final class MessageDirectory {
 
 	// Attributes
-	private static Constructor<?>[][] m_constructors = new Constructor[0][0];
+	private Constructor<?>[][] m_constructors = new Constructor[0][0];
 
-	private static ReentrantLock m_lock = new ReentrantLock(false);
+	private ReentrantLock m_lock = new ReentrantLock(false);
 
 	/**
 	 * MessageDirectory is not designated to be instantiable
 	 */
-	private MessageDirectory() {}
+	public MessageDirectory() {}
 
 	/**
 	 * Registers a Message Type for receiving
@@ -37,7 +35,7 @@ public final class MessageDirectory {
 	 * @param p_class
 	 *            Message class
 	 */
-	public static void register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
+	public void register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		Constructor<?>[][] constructors = m_constructors;
 		Constructor<?> constructor;
 
@@ -84,7 +82,7 @@ public final class MessageDirectory {
 	 *            the subtype of the Message
 	 * @return true if registered
 	 */
-	public static boolean contains(final byte p_type, final byte p_subtype) {
+	public boolean contains(final byte p_type, final byte p_subtype) {
 		boolean result;
 		final Constructor<?>[][] constructors = m_constructors;
 
@@ -107,7 +105,7 @@ public final class MessageDirectory {
 	 *            the subtype of the Message
 	 * @return message class constructor
 	 */
-	private static Constructor<?> getConstructor(final byte p_type, final byte p_subtype) {
+	private Constructor<?> getConstructor(final byte p_type, final byte p_subtype) {
 		Constructor<?> result = null;
 
 		if (contains(p_type, p_subtype)) {
@@ -124,23 +122,23 @@ public final class MessageDirectory {
 	 * @param p_subtype
 	 *            the subtype of the Message
 	 * @return a new Message instance
-	 * @throws de.uniduesseldorf.dxram.core.exceptions.NetworkException
+	 * @throws de.uniduesseldorf.menet.NetworkException
 	 *             if the instance could not be created
 	 */
-	public static AbstractMessage getInstance(final byte p_type, final byte p_subtype) throws NetworkException {
+	public AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
 		AbstractMessage ret;
 		Constructor<?> constructor;
 
 		constructor = getConstructor(p_type, p_subtype);
 
 		if (constructor == null) {
-			throw new NetworkException("ERR::Could not create message instance: Message type (" + p_type + ":" + p_subtype + ") not registered");
+			throw new NetworkRuntimeException("Could not create message instance: Message type (" + p_type + ":" + p_subtype + ") not registered");
 		}
 
 		try {
 			ret = (AbstractMessage) constructor.newInstance();
 		} catch (final Exception e) {
-			throw new NetworkException("ERR::Could not create message instance", e);
+			throw new NetworkRuntimeException("Could not create message instance", e);
 		}
 
 		return ret;

@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.utils;
+package de.uniduesseldorf.menet;
 
 /**
  * Represents an Action

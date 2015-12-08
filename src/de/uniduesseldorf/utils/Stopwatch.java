@@ -9,33 +9,33 @@ package de.uniduesseldorf.utils;
 public final class Stopwatch {
 
 	// Attributes
-	private static long m_time;
+	private long m_time;
 
 	// Constructors
 	/**
 	 * Creates an instance of Stopwatch
 	 */
-	private Stopwatch() {}
+	public Stopwatch() {}
 
 	// Methods
 	/**
 	 * Starts the stop watch
 	 */
-	public static synchronized void start() {
+	public synchronized void start() {
 		m_time = System.nanoTime();
 	}
 
 	/**
 	 * Stops the stop watch
 	 */
-	public static synchronized void stop() {
+	public synchronized void stop() {
 		m_time = 0;
 	}
 
 	/**
 	 * Prints the current time
 	 */
-	public static synchronized void print() {
+	public synchronized void print() {
 		long time;
 		long nanoseconds;
 		long microseconds;
@@ -69,7 +69,7 @@ public final class Stopwatch {
 	/**
 	 * Prints the current time and stops the stop watch
 	 */
-	public static synchronized void printAndStop() {
+	public synchronized void printAndStop() {
 		print();
 		stop();
 	}

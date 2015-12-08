@@ -11,9 +11,10 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
-import de.uniduesseldorf.dxram.core.net.AbstractMessage;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.util.NodeID;
+
+import de.uniduesseldorf.menet.AbstractMessage;
+import de.uniduesseldorf.menet.NetworkInterface;
 
 /**
  * Test case for the network interface

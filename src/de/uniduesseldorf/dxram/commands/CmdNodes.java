@@ -1,8 +1,8 @@
 
 package de.uniduesseldorf.dxram.commands;
 
-import de.uniduesseldorf.utils.ZooKeeperHandler;
-import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
  * Info about nodes

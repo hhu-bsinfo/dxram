@@ -25,7 +25,8 @@ import de.uniduesseldorf.utils.locks.JNIReadWriteSpinLock;
 public final class MemoryManager {
 
 	// Attributes
-	private long m_nodeID;
+	private short m_nodeID;
+	private boolean m_enableMemoryStatistics;
 	private SmallObjectHeap m_rawMemory;
 	private SmallObjectHeapDSReaderWriter m_smallObjectHeapDSReaderWriter;
 	private CIDTable m_cidTable;
@@ -37,8 +38,9 @@ public final class MemoryManager {
 	 * @param p_nodeID
 	 *            ID of the node this manager is running on.
 	 */
-	public MemoryManager(final long p_nodeID) {
+	public MemoryManager(final short p_nodeID, final boolean p_enableMemoryStatistics) {
 		m_nodeID = p_nodeID;
+		m_enableMemoryStatistics = p_enableMemoryStatistics;
 	}
 
 	// Methods
@@ -54,18 +56,17 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the RawMemory or the CIDTable could not be initialized
 	 */
-	public long initialize(final long p_size, final long p_segmentSize, final boolean p_registerStatistics)
-			throws MemoryException {
+	public long initialize(final long p_size, final long p_segmentSize) {
 		long ret;
 
-		if (p_registerStatistics) {
+		if (m_enableMemoryStatistics) {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 		}
 
 		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 		ret = m_rawMemory.initialize(p_size, p_segmentSize);
 		m_smallObjectHeapDSReaderWriter = new SmallObjectHeapDSReaderWriter(m_rawMemory);
-		m_cidTable = new CIDTable(m_nodeID);
+		m_cidTable = new CIDTable(m_enableMemoryStatistics);
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
@@ -80,7 +81,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the RawMemory or the CIDTable could not be disengaged
 	 */
-	public void disengage() throws MemoryException {
+	public void disengage() {
 		m_cidTable.disengage();
 		m_rawMemory.disengage();
 
@@ -127,7 +128,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If allocation failed.
 	 */
-	public long create(final int p_size) throws MemoryException {
+	public long create(final int p_size) {
 		assert p_size > 0;
 
 		long address = -1;
@@ -149,9 +150,9 @@ public final class MemoryManager {
 				chunkID = ((long) m_nodeID << 48) + lid;
 				m_cidTable.set(chunkID, address);
 				
-				// TODO switch to turn on/off
-				// TODO have free call for free
-				MemoryStatistic.getInstance().malloc(blockSize);
+				if (m_enableMemoryStatistics) {
+					MemoryStatistic.getInstance().malloc(p_size);
+				}
 			} else {
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
@@ -170,7 +171,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If reading from CIDTable fails.
 	 */
-	public boolean exists(final long p_chunkID) throws MemoryException {
+	public boolean exists(final long p_chunkID) {
 		long address = -1;
 
 		address = m_cidTable.get(p_chunkID);
@@ -186,7 +187,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If getting the size of the chunk failed.
 	 */
-	public int getSize(final long p_chunkID) throws MemoryException {
+	public int getSize(final long p_chunkID) {
 		long address = -1;
 		int size = -1;
 
@@ -213,19 +214,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If reading chunk data failed.
 	 */
-	public int get(final long p_chunkID, final byte[] p_buffer, final int p_offset, final int p_length) throws MemoryException {
-		long address;
-		int bytesRead = -1;
-
-		address = m_cidTable.get(p_chunkID);
-		if (address > 0) {
-			bytesRead = m_rawMemory.readBytes(address, 0, p_buffer, p_offset, p_length);
-		}
-
-		return bytesRead;
-	}
-	
-	public boolean get(final DataStructure p_dataStructure) throws MemoryException
+	public boolean get(final DataStructure p_dataStructure)
 	{
 		long address;
 		boolean ret = false;
@@ -238,7 +227,7 @@ public final class MemoryManager {
 		
 		return ret;
 	}
-
+	
 	/**
 	 * Put some data into a chunk.
 	 * This is a management call and has to be locked using lockManage().
@@ -254,19 +243,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             If writing data failed.
 	 */
-	public int put(final long p_chunkID, final byte[] p_buffer, final int p_offset, final int p_length) throws MemoryException {
-		long address;
-		int bytesWritten = -1;
-		
-		address = m_cidTable.get(p_chunkID);
-		if (address > 0) {
-			bytesWritten = m_rawMemory.writeBytes(address, 0, p_buffer, p_offset, p_length);
-		}
-
-		return bytesWritten;
-	}
-	
-	public boolean put(final DataStructure p_dataStructure) throws MemoryException
+	public boolean put(final DataStructure p_dataStructure)
 	{
 		long address;
 		boolean ret = false;
@@ -281,25 +258,38 @@ public final class MemoryManager {
 	}
 
 	/**
-	 * Delete a chunk.
+	 * Removes a Chunk from the memory
 	 * This is a management call and has to be locked using lockManage().
 	 * @param p_chunkID
-	 *            ID of the chunk.
-	 * @return True if deleted, false if there was no chunk if the spcified ID to delete.
+	 *            the ChunkID of the Chunk
 	 * @throws MemoryException
-	 *             If deleting chunk failed.
+	 *             if the Chunk could not be get
 	 */
-	public boolean delete(final long p_chunkID) throws MemoryException {
-		long address;
-		boolean deleted = false;
+	public boolean remove(final long p_chunkID) {
+		long addressDeletedChunk;
+		int size;
+		boolean ret = false;
 
-		address = m_cidTable.get(p_chunkID);
-		if (address > 0) {
-			m_rawMemory.free(address);
-			deleted = true;
+		// Get and delete the address from the CIDTable, mark as zombie first
+		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
+		if (addressDeletedChunk != -1)
+		{
+			// more space for another zombie for reuse in LID store?
+			if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
+				// detach reference to zombie
+				m_cidTable.delete(p_chunkID, false);
+			} else {
+				// no space for zombie in LID store, keep him "alive" in table
+			}
+			
+			m_rawMemory.free(addressDeletedChunk);
+			if (m_enableMemoryStatistics) {
+				size = m_rawMemory.getSizeBlock(addressDeletedChunk);
+				MemoryStatistic.getInstance().free(size);
+			}
 		}
-
-		return deleted;
+		
+		return ret;
 	}
 
 	// TODO
@@ -317,7 +307,7 @@ public final class MemoryManager {
 	 * @throws MemoryException
 	 *             if the Chunk could not be checked
 	 */
-	public boolean isResponsible(final long p_chunkID) throws MemoryException {
+	public boolean isResponsible(final long p_chunkID) {
 		long address;
 
 		// Get the address from the CIDTable
@@ -338,38 +328,13 @@ public final class MemoryManager {
 	}
 
 	/**
-	 * Removes a Chunk from the memory
-	 * @param p_chunkID
-	 *            the ChunkID of the Chunk
-	 * @throws MemoryException
-	 *             if the Chunk could not be get
-	 */
-	public void remove(final long p_chunkID) throws MemoryException {
-		long addressDeletedChunk;
-
-		// Get and delete the address from the CIDTable, mark as zombie first
-		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
-
-		// more space for another zombie for reuse in LID store?
-		if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
-			// detach reference to zombie
-			m_cidTable.delete(p_chunkID, false);
-		} else {
-			// no space for zombie in LID store, keep him "alive" in table
-		}
-		
-		m_rawMemory.free(addressDeletedChunk);
-		MemoryStatistic.getInstance().malloc(blockSize);
-	}
-
-	/**
 	 * Removes the ChunkID of a deleted Chunk that was migrated
 	 * @param p_chunkID
 	 *            the ChunkID
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public void prepareChunkIDForReuse(final long p_chunkID) throws MemoryException {
+	public void prepareChunkIDForReuse(final long p_chunkID) {
 		m_cidTable.putChunkIDForReuse(p_chunkID);
 	}
 

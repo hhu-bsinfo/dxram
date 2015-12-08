@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.net;
+package de.uniduesseldorf.menet;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -11,9 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
-
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
 /**
  * Access to a singleton of an ExecutorService
@@ -29,17 +26,13 @@ public final class TaskExecutor {
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(TaskExecutor.class);
 
-	private static TaskExecutor m_defaultExecutor;
+	private TaskExecutor m_defaultExecutor;
 
 	private final ExecutorService m_executor;
 	private final HashMap<Short, TaskQueue> m_taskMap;
 	private final String m_name;
 
 	private ReentrantLock m_taskMapLock;
-
-	static {
-		m_defaultExecutor = new TaskExecutor("Default", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_TASK_HANDLER_THREAD_COUNT));
-	}
 
 	// Constructors
 	/**
@@ -130,14 +123,6 @@ public final class TaskExecutor {
 	public void shutdown() {
 		LOGGER.info("Shutdown TaskExecutor " + m_name);
 		m_executor.shutdown();
-	}
-
-	/**
-	 * Returns a pointer to the default TaskExecutor
-	 * @return Default TaskExecutor
-	 */
-	public static TaskExecutor getDefaultExecutor() {
-		return m_defaultExecutor;
 	}
 
 	// Classes

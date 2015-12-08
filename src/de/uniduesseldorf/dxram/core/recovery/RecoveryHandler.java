@@ -15,18 +15,19 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
-import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
-import de.uniduesseldorf.dxram.core.net.AbstractMessage;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeRequest;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeResponse;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverMessage;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
+
+import de.uniduesseldorf.menet.AbstractMessage;
+import de.uniduesseldorf.menet.NetworkException;
+import de.uniduesseldorf.menet.NetworkInterface;
+import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 
 /**
  * Implements the Recovery-Service

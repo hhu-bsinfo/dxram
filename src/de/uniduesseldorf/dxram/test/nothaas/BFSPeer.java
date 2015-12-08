@@ -15,9 +15,9 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.util.NodeID;
+import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
 
 import de.uniduesseldorf.soh.SmallObjectHeap;
-import de.uniduesseldorf.utils.NameServiceStringConverter;
 import de.uniduesseldorf.utils.Tools;
 
 public class BFSPeer 

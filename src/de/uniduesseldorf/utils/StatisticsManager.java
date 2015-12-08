@@ -17,9 +17,6 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
-import de.uniduesseldorf.dxram.core.util.NodeID;
-
 /**
  * Manages multiple statistics
  * @author klein 26.03.2015
@@ -181,15 +178,12 @@ public final class StatisticsManager {
 		Contract.check(p_period > 0, "invalid period");
 		Contract.checkNotNull(p_stream, "no stream given");
 
-		if (!NodeID.getRole().equals(Role.MONITOR)) {
-
-			if (m_timer != null) {
-				m_timer.cancel();
-			}
-
-			m_timer = new Timer(StatisticsManager.class.getSimpleName(), true);
-			m_timer.scheduleAtFixedRate(new StatisticsTask(p_stream), 0, p_period * 1000);
+		if (m_timer != null) {
+			m_timer.cancel();
 		}
+
+		m_timer = new Timer(StatisticsManager.class.getSimpleName(), true);
+		m_timer.scheduleAtFixedRate(new StatisticsTask(p_stream), 0, p_period * 1000);
 	}
 
 	/**

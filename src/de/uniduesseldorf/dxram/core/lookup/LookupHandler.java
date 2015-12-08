@@ -22,7 +22,6 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
-import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsResponse;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutSuccessorRequest;
@@ -65,16 +64,17 @@ import de.uniduesseldorf.dxram.core.lookup.LookupMessages.StartRecoveryMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.UpdateAllMessage;
 import de.uniduesseldorf.dxram.core.lookup.storage.AIDTableOptimized;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
-import de.uniduesseldorf.dxram.core.net.AbstractMessage;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface;
-import de.uniduesseldorf.dxram.core.net.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
+import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
+import de.uniduesseldorf.menet.AbstractMessage;
+import de.uniduesseldorf.menet.NetworkException;
+import de.uniduesseldorf.menet.NetworkInterface;
+import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.utils.CRC16;
 import de.uniduesseldorf.utils.Contract;
-import de.uniduesseldorf.utils.ZooKeeperHandler;
-import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
  * Lookup for meta-data:
