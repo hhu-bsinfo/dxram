@@ -1,6 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
+import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
@@ -28,7 +29,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final int p_version,
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final EpochVersion p_version,
 			final byte[] p_data, final byte p_rangeID, final short p_source) {
 		byte[] result;
 		byte lengthSize;
@@ -39,7 +40,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 		localIDSize = getSizeForLocalIDField(ChunkID.getLocalID(p_chunkID));
 		lengthSize = getSizeForLengthField(p_size);
-		versionSize = getSizeForVersionField(p_version);
+		versionSize = (byte) (getSizeForVersionField(p_version.getVersion()) + LOG_ENTRY_EPO_SIZE);
 
 		if (USE_CHECKSUM) {
 			checksumSize = LOG_ENTRY_CRC_SIZE;
@@ -63,12 +64,13 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 			putLength(result, p_size, getLENOffset(result, 0));
 		}
 
+		putEpoch(result, p_version.getEpoch(), getVEROffset(result, 0));
 		if (versionSize == 1) {
-			putVersion(result, (byte) p_version, getVEROffset(result, 0));
+			putVersion(result, (byte) p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
 		} else if (versionSize == 2) {
-			putVersion(result, (short) p_version, getVEROffset(result, 0));
+			putVersion(result, (short) p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
 		} else if (versionSize > 2) {
-			putVersion(result, p_version, getVEROffset(result, 0));
+			putVersion(result, p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
 		}
 
 		if (checksumSize > 0) {
@@ -76,12 +78,6 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		}
 
 		return result;
-	}
-
-	@Override
-	public byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source) {
-		System.out.println("This is not a tombstone!");
-		return null;
 	}
 
 	@Override
@@ -191,16 +187,6 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 	@Override
 	public boolean wasMigrated() {
 		return true;
-	}
-
-	@Override
-	public boolean isTombstone() {
-		return false;
-	}
-
-	@Override
-	public boolean isInvalid(final byte[] p_buffer, final int p_offset) {
-		return false;
 	}
 
 	@Override

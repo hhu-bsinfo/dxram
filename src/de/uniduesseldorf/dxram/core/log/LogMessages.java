@@ -42,7 +42,6 @@ public final class LogMessages {
 		// Attributes
 		private byte m_rangeID;
 		private Chunk[] m_chunks;
-		private int[] m_versions;
 		private ByteBuffer m_buffer;
 
 		// Constructors
@@ -54,7 +53,6 @@ public final class LogMessages {
 
 			m_rangeID = -1;
 			m_chunks = null;
-			m_versions = null;
 			m_buffer = null;
 		}
 
@@ -64,17 +62,14 @@ public final class LogMessages {
 		 *            the destination
 		 * @param p_chunks
 		 *            the Chunks to store
-		 * @param p_versions
-		 *            the versions
 		 */
-		public LogMessage(final short p_destination, final Chunk[] p_chunks, final int[] p_versions) {
+		public LogMessage(final short p_destination, final Chunk[] p_chunks) {
 			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
 			m_rangeID = -1;
 			m_chunks = p_chunks;
-			m_versions = p_versions;
 		}
 
 		/**
@@ -83,19 +78,16 @@ public final class LogMessages {
 		 *            the destination
 		 * @param p_chunks
 		 *            the Chunks to store
-		 * @param p_versions
-		 *            the versions
 		 * @param p_rangeID
 		 *            the RangeID
 		 */
-		public LogMessage(final short p_destination, final byte p_rangeID, final Chunk[] p_chunks, final int[] p_versions) {
+		public LogMessage(final short p_destination, final byte p_rangeID, final Chunk[] p_chunks) {
 			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
 			m_rangeID = p_rangeID;
 			m_chunks = p_chunks;
-			m_versions = p_versions;
 		}
 
 		// Getters
@@ -116,7 +108,6 @@ public final class LogMessages {
 			for (int i = 0; i < m_chunks.length; i++) {
 				p_buffer.putLong(m_chunks[i].getChunkID());
 				p_buffer.putInt(m_chunks[i].getSize());
-				p_buffer.putInt(m_versions[i]);
 				p_buffer.put(m_chunks[i].getData());
 			}
 		}
@@ -131,7 +122,7 @@ public final class LogMessages {
 			int ret = 5;
 
 			for (Chunk chunk : m_chunks) {
-				ret += 16 + chunk.getSize();
+				ret += 12 + chunk.getSize();
 			}
 
 			return ret;
@@ -146,7 +137,6 @@ public final class LogMessages {
 
 		// Attributes
 		private long[] m_chunkIDs;
-		private int[] m_versions;
 		private byte m_rangeID;
 		private ByteBuffer m_buffer;
 
@@ -158,7 +148,6 @@ public final class LogMessages {
 			super();
 
 			m_chunkIDs = null;
-			m_versions = null;
 			m_rangeID = -1;
 			m_buffer = null;
 		}
@@ -169,14 +158,11 @@ public final class LogMessages {
 		 *            the destination
 		 * @param p_chunkIDs
 		 *            the ChunkIDs of the Chunks to remove
-		 * @param p_versions
-		 *            the versions of the Chunks to remove
 		 */
-		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final int[] p_versions) {
+		public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
 			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
 
 			m_chunkIDs = p_chunkIDs;
-			m_versions = p_versions;
 			m_rangeID = -1;
 		}
 
@@ -186,16 +172,13 @@ public final class LogMessages {
 		 *            the destination
 		 * @param p_chunkIDs
 		 *            the ChunkIDs of the Chunks to remove
-		 * @param p_versions
-		 *            the versions of the Chunks to remove
 		 * @param p_rangeID
 		 *            the RangeID
 		 */
-		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final int[] p_versions, final byte p_rangeID) {
+		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final byte p_rangeID) {
 			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
 
 			m_chunkIDs = p_chunkIDs;
-			m_versions = p_versions;
 			m_rangeID = p_rangeID;
 		}
 
@@ -215,7 +198,6 @@ public final class LogMessages {
 			OutputHelper.writeInt(p_buffer, m_chunkIDs.length);
 			for (int i = 0; i < m_chunkIDs.length; i++) {
 				OutputHelper.writeChunkID(p_buffer, m_chunkIDs[i]);
-				OutputHelper.writeInt(p_buffer, m_versions[i]);
 			}
 		}
 
@@ -227,7 +209,7 @@ public final class LogMessages {
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getByteWriteLength() + OutputHelper.getIntWriteLength()
-					+ (OutputHelper.getChunkIDWriteLength() + OutputHelper.getIntWriteLength()) * m_chunkIDs.length;
+					+ (OutputHelper.getChunkIDWriteLength()) * m_chunkIDs.length;
 		}
 	}
 

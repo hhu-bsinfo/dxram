@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
+import de.uniduesseldorf.dxram.core.log.EpochVersion;
+
 /**
  * Extends AbstractLogEntryHeader for a normal log entry header (secondary log)
  * @author Kevin Beineke
@@ -21,15 +23,9 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final int p_version,
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final EpochVersion p_version,
 			final byte[] p_data, final byte p_rangeID, final short p_source) {
 		System.out.println("Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
-		return null;
-	}
-
-	@Override
-	public byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source) {
-		System.out.println("Do not call createTombstone() for secondary log entries. Convert instead.");
 		return null;
 	}
 
@@ -140,16 +136,6 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 	@Override
 	public boolean wasMigrated() {
 		return false;
-	}
-
-	@Override
-	public boolean isTombstone() {
-		return false;
-	}
-
-	@Override
-	public boolean isInvalid(final byte[] p_buffer, final int p_offset) {
-		return (p_buffer[p_offset] & INVALIDATION_MASK) == 2;
 	}
 
 	@Override

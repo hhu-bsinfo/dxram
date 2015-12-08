@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.util.NodeID;
@@ -36,6 +37,9 @@ public class SecondaryLog extends AbstractLog {
 	// Attributes
 	private short m_nodeID;
 	private long m_rangeIDOrFirstLocalID;
+
+	private VersionsHashTableRAM m_hashTable;
+	private ReentrantLock m_versionsLock;
 
 	private long m_numberOfBytes;
 	private int m_numberOfInvalidsInLog;
@@ -88,6 +92,9 @@ public class SecondaryLog extends AbstractLog {
 		m_numberOfBytes = 0;
 		m_numberOfInvalidsInLog = 0;
 
+		m_hashTable = new VersionsHashTableRAM(100000, 0.8f);
+		m_versionsLock = new ReentrantLock(false);
+
 		m_reorganizationThread = p_reorganizationThread;
 
 		m_secondaryLogReorgThreshold = (int) (SECLOG_SIZE * ((double) REORG_UTILIZATION_THRESHOLD / 100));
@@ -105,6 +112,22 @@ public class SecondaryLog extends AbstractLog {
 	 */
 	public final short getNodeID() {
 		return m_nodeID;
+	}
+
+	/**
+	 * Returns the current version for ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return the current version
+	 */
+	public final EpochVersion getNextVersion(final long p_chunkID) {
+		EpochVersion ret;
+
+		m_versionsLock.lock();
+		ret = m_hashTable.getNext(p_chunkID);
+		m_versionsLock.unlock();
+
+		return ret;
 	}
 
 	/**
