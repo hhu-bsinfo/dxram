@@ -123,24 +123,14 @@ public abstract class AbstractLogEntryHeader {
 	public abstract short getNodeID(final byte[] p_buffer, final int p_offset);
 
 	/**
-	 * Returns the LocalID of a log entry
+	 * Returns the ChunkID or the LocalID of a log entry
 	 * @param p_buffer
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
-	 * @return the LocalID
+	 * @return the ChunkID if secondary log stores migrations, the LocalID otherwise
 	 */
-	public abstract long getLID(final byte[] p_buffer, final int p_offset);
-
-	/**
-	 * Returns the ChunkID of a log entry
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the ChunkID
-	 */
-	public abstract long getChunkID(final byte[] p_buffer, final int p_offset);
+	public abstract long getCID(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns length of a log entry
@@ -153,14 +143,14 @@ public abstract class AbstractLogEntryHeader {
 	public abstract int getLength(final byte[] p_buffer, final int p_offset);
 
 	/**
-	 * Returns version of a log entry
+	 * Returns epoch and version of a log entry
 	 * @param p_buffer
 	 *            buffer with log entries
 	 * @param p_offset
 	 *            offset in buffer
-	 * @return the version
+	 * @return the epoch and version
 	 */
-	public abstract int getVersion(final byte[] p_buffer, final int p_offset);
+	public abstract EpochVersion getVersion(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the checksum of a log entry's payload
@@ -382,9 +372,11 @@ public abstract class AbstractLogEntryHeader {
 	 *            the size
 	 * @return the maximum log entry header size for secondary log
 	 */
-	public static short getSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
+	public static short getAproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
+		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation because the
+		// actual version is determined during logging on backup peer
 		short ret = (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size)
-				+ getSizeForVersionField(p_version) + LOG_ENTRY_CRC_SIZE);
+				+ LOG_ENTRY_EPO_SIZE + 1 + LOG_ENTRY_CRC_SIZE);
 
 		if (p_logStoresMigrations) {
 			ret += LOG_ENTRY_NID_SIZE;

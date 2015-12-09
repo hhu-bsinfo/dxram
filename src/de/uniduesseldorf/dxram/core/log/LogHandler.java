@@ -28,9 +28,7 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.header.DefaultPrimLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.DefaultPrimLogTombstone;
 import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogEntryHeader;
-import de.uniduesseldorf.dxram.core.log.header.MigrationPrimLogTombstone;
 import de.uniduesseldorf.dxram.core.log.storage.LogCatalog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.PrimaryWriteBuffer;
@@ -61,8 +59,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
-	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_TOMBSTONE = new DefaultPrimLogTombstone();
-	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_TOMBSTONE = new MigrationPrimLogTombstone();
 
 	private static final int PAYLOAD_PRINT_LENGTH = 128;
 
@@ -201,8 +197,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public short getHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
-		return AbstractLogEntryHeader.getSecLogHeaderSize(NodeID.getLocalNodeID() != p_nodeID, p_localID, p_size);
+	public short getAproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
+		return AbstractLogEntryHeader.getAproxSecLogHeaderSize(NodeID.getLocalNodeID() != p_nodeID, p_localID, p_size);
 	}
 
 	@Override
@@ -277,9 +273,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		int j = 1;
 		int readBytes;
 		int length;
-		int version;
 		int offset = 0;
-		long localID;
+		long chunkID;
+		EpochVersion version;
 		AbstractLogEntryHeader logEntryHeader;
 
 		segments = readBackupRange(p_owner, p_chunkID, p_rangeID);
@@ -292,10 +288,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				offset = 0;
 				while (readBytes < segments[i].length) {
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], readBytes, p_owner != ChunkID.getCreatorID(p_chunkID));
-					localID = logEntryHeader.getLID(segments[i], readBytes);
+					chunkID = logEntryHeader.getCID(segments[i], readBytes);
 					length = logEntryHeader.getLength(segments[i], readBytes);
 					version = logEntryHeader.getVersion(segments[i], readBytes);
-					printMetadata(ChunkID.getCreatorID(p_chunkID), localID, segments[i], readBytes, length, version, j++, logEntryHeader);
+					printMetadata(ChunkID.getCreatorID(p_chunkID), chunkID, segments[i], readBytes, length, version, j++, logEntryHeader);
 					readBytes += length + logEntryHeader.getHeaderSize(segments[i], readBytes);
 				}
 				i++;
@@ -322,31 +318,31 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 * @param p_logEntryHeader
 	 *            the log entry header
 	 */
-	private void printMetadata(final short p_nodeID, final long p_localID, final byte[] p_payload, final int p_offset, final int p_length, final int p_version,
-			final int p_index, final AbstractLogEntryHeader p_logEntryHeader) {
+	private void printMetadata(final short p_nodeID, final long p_localID, final byte[] p_payload, final int p_offset, final int p_length,
+			final EpochVersion p_version, final int p_index, final AbstractLogEntryHeader p_logEntryHeader) {
 		final long chunkID = ((long) p_nodeID << 48) + p_localID;
 		byte[] array;
 
 		try {
-			if (p_version != -1) {
+			if (p_version.getVersion() != -1) {
 				array =
 						new String(Arrays.copyOfRange(p_payload, p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset), p_offset
 								+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
 
 				if (Tools.looksLikeUTF8(array)) {
 					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - "
-							+ p_length + "\t Version - " + p_version + " \t Payload - " + new String(array, "UTF-8"));
+							+ p_length + "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload - " + new String(array, "UTF-8"));
 				} else {
 					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - "
-							+ p_length + "\t Version - " + p_version + " \t Payload is no String");
+							+ p_length + "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
 				}
 			} else {
 				System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
-						+ "\t Version - " + p_version + " \t Tombstones have no payload");
+						+ "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Tombstones have no payload");
 			}
 		} catch (final UnsupportedEncodingException | IllegalArgumentException e) {
 			System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
-					+ "\t Version - " + p_version + " \t Payload is no String");
+					+ "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
 		}
 		// p_localID: -1 can only be printed as an int
 	}
@@ -628,35 +624,35 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		for (int i = 0; i < size; i++) {
 			chunkID = buffer.getLong();
 			length = buffer.getInt();
-			secLog = getSecondaryLog(chunkID, source, rangeID);
 
 			assert length > 0;
 
-			if (USE_CHECKSUM) {
-				// Get the payload for calculating the checksum (position is not adjusted)
-				position = buffer.position();
-				payload = new byte[length];
-				buffer.get(payload, 0, length);
-				buffer.position(position);
-
-				if (rangeID == -1) {
-					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-							secLog.getNextVersion(chunkID), payload, (byte) -1, (short) -1);
-				} else {
-					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-							secLog.getNextVersion(chunkID), payload, rangeID, source);
-				}
-			} else {
-				if (rangeID == -1) {
-					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-							secLog.getNextVersion(chunkID), null, (byte) -1, (short) -1);
-				} else {
-					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-							secLog.getNextVersion(chunkID), null, rangeID, source);
-				}
-			}
-
 			try {
+				secLog = getSecondaryLog(chunkID, source, rangeID);
+				if (USE_CHECKSUM) {
+					// Get the payload for calculating the checksum (position is not adjusted)
+					position = buffer.position();
+					payload = new byte[length];
+					buffer.get(payload, 0, length);
+					buffer.position(position);
+
+					if (rangeID == -1) {
+						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), payload, (byte) -1, (short) -1);
+					} else {
+						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), payload, rangeID, source);
+					}
+				} else {
+					if (rangeID == -1) {
+						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), null, (byte) -1, (short) -1);
+					} else {
+						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), null, rangeID, source);
+					}
+				}
+
 				m_writeBuffer.putLogData(logEntryHeader, buffer, length);
 				// TODO: Increase invalid counter at the end of an epoch
 				/*-if (version > 1) {
@@ -675,7 +671,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	 */
 	private void incomingRemoveMessage(final RemoveMessage p_message) {
 		long chunkID;
-		byte[] tombstone;
 		final ByteBuffer buffer = p_message.getMessageBuffer();
 		final short source = p_message.getSource();
 		final byte rangeID = buffer.get();
@@ -684,15 +679,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		for (int i = 0; i < size; i++) {
 			chunkID = buffer.getLong();
 
-			if (rangeID == -1) {
-				tombstone = DEFAULT_PRIM_LOG_TOMBSTONE.createTombstone(chunkID, version, (byte) -1, (short) -1);
-			} else {
-				tombstone = MIGRATION_PRIM_LOG_TOMBSTONE.createTombstone(chunkID, version, rangeID, source);
-			}
-
 			try {
-				m_writeBuffer.putLogData(tombstone, null, 0);
-				getSecondaryLog(chunkID, source, rangeID).incLogInvalidCounter();
+				getSecondaryLog(chunkID, source, rangeID).invalidateChunk(chunkID);
 			} catch (final IOException | InterruptedException e) {
 				System.out.println("Error during deletion (" + chunkID + ")!");
 			}
@@ -924,7 +912,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					if (null != secondaryLog) {
 						getAccessToSecLog(secondaryLog);
 						if (secondaryLog.getLogInvalidCounter() != 0) {
-							secondaryLog.markInvalidObjects(m_versionsHT);
+							secondaryLog.getCurrentVersions(m_versionsHT);
 						}
 						for (int i = 0; i < 10; i++) {
 							// m_writeBuffer.printThroughput();
@@ -934,7 +922,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								}
 								// Reorganization thread was signaled -> process given log completely
 								getAccessToSecLog(m_secLog);
-								m_secLog.markInvalidObjects(new VersionsHashTable(6400000, 0.9f));
+								m_secLog.getCurrentVersions(new VersionsHashTable(6400000, 0.9f));
 								m_secLog.reorganizeAll();
 								leaveSecLog(m_secLog);
 								m_secLog = null;

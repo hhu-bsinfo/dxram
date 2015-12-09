@@ -116,16 +116,32 @@ public class SecondaryLog extends AbstractLog {
 	}
 
 	/**
-	 * Returns the current version for ChunkID
+	 * Returns the next version for ChunkID
 	 * @param p_chunkID
 	 *            the ChunkID
-	 * @return the current version
+	 * @return the next version
 	 */
 	public final EpochVersion getNextVersion(final long p_chunkID) {
 		EpochVersion ret;
 
 		m_versionsLock.lock();
 		ret = m_hashTable.getNext(p_chunkID);
+		m_versionsLock.unlock();
+
+		return ret;
+	}
+
+	/**
+	 * Returns the current version for ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @return the current version
+	 */
+	public final EpochVersion getCurrentVersion(final long p_chunkID) {
+		EpochVersion ret;
+
+		m_versionsLock.lock();
+		ret = m_hashTable.get(p_chunkID);
 		m_versionsLock.unlock();
 
 		return ret;
@@ -189,6 +205,18 @@ public class SecondaryLog extends AbstractLog {
 		/*-if (!p_flag) {
 			m_activeSegment = null;//
 		}*/
+	}
+
+	/**
+	 * Invalidates a Chunk
+	 * @param p_chunkID
+	 *            the ChunkID
+	 */
+	public final void invalidateChunk(final long p_chunkID) {
+		m_versionsLock.lock();
+		m_hashTable.put(p_chunkID, 0, -1);
+		incLogInvalidCounter();
+		m_versionsLock.unlock();
 	}
 
 	/**
@@ -518,7 +546,11 @@ public class SecondaryLog extends AbstractLog {
 				while (offset < segments[i].length) {
 					// Determine header of next log entry
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], offset, m_storesMigrations);
-					chunkID = ((long) m_nodeID << 48) + logEntryHeader.getLID(segments[i], offset);
+					if (m_storesMigrations) {
+						chunkID = logEntryHeader.getCID(segments[i], offset);
+					} else {
+						chunkID = ((long) m_nodeID << 48) + logEntryHeader.getCID(segments[i], offset);
+					}
 					payloadSize = logEntryHeader.getLength(segments[i], offset);
 					if (USE_CHECKSUM) {
 						checksum = logEntryHeader.getChecksum(segments[i], offset);
@@ -588,7 +620,11 @@ public class SecondaryLog extends AbstractLog {
 				while (offset < segments[i].length && segments[i][offset] != 0) {
 					// Determine header of next log entry
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], offset, storesMigrations);
-					chunkID = ((long) nodeID << 48) + logEntryHeader.getLID(segments[i], offset);
+					if (storesMigrations) {
+						chunkID = logEntryHeader.getCID(segments[i], offset);
+					} else {
+						chunkID = ((long) nodeID << 48) + logEntryHeader.getCID(segments[i], offset);
+					}
 					payloadSize = logEntryHeader.getLength(segments[i], offset);
 					if (USE_CHECKSUM) {
 						checksum = logEntryHeader.getChecksum(segments[i], offset);
@@ -701,25 +737,6 @@ public class SecondaryLog extends AbstractLog {
 	}
 
 	/**
-	 * Marks log segment
-	 * @param p_buffer
-	 *            the buffer
-	 * @param p_length
-	 *            the segment length
-	 * @param p_segmentIndex
-	 *            the segment index
-	 * @throws IOException
-	 *             if the secondary log could not be read
-	 * @throws InterruptedException
-	 *             if the caller was interrupted
-	 * @note executed only by reorganization thread
-	 */
-	private void markSegment(final byte[] p_buffer, final int p_length, final int p_segmentIndex) throws IOException, InterruptedException {
-		// Overwrite segment on log
-		writeToSecondaryLog(p_buffer, 0, p_segmentIndex * SECLOG_SEGMENT_SIZE, p_length, true);
-	}
-
-	/**
 	 * Updates log segment
 	 * @param p_buffer
 	 *            the buffer
@@ -765,33 +782,6 @@ public class SecondaryLog extends AbstractLog {
 		header = m_segmentHeaders[p_segment];
 		header.reset();
 		m_numberOfFreeSegments++;
-	}
-
-	/**
-	 * Invalidates log entry
-	 * @param p_buffer
-	 *            the buffer
-	 * @param p_bufferOffset
-	 *            the buffer offset
-	 * @param p_logOffset
-	 *            the log offset
-	 * @param p_logEntryHeader
-	 *            the log entry header
-	 * @param p_segmentIndex
-	 *            the segment index
-	 * @throws IOException
-	 *             if the secondary log could not be read
-	 * @throws InterruptedException
-	 *             if the caller was interrupted
-	 * @note executed only by reorganization thread
-	 */
-	private void invalidateLogEntry(final byte[] p_buffer, final int p_bufferOffset, final long p_logOffset,
-			final AbstractLogEntryHeader p_logEntryHeader, final int p_segmentIndex) throws IOException, InterruptedException {
-
-		AbstractLogEntryHeader.markAsInvalid(p_buffer, p_bufferOffset, p_logEntryHeader);
-
-		m_segmentHeaders[p_segmentIndex].updateDeletedBytes(p_logEntryHeader.getHeaderSize(p_buffer, p_bufferOffset)
-				+ p_logEntryHeader.getLength(p_buffer, p_bufferOffset));
 	}
 
 	@Override
@@ -861,7 +851,7 @@ public class SecondaryLog extends AbstractLog {
 		int readBytes = 0;
 		int writtenBytes = 0;
 		// int removedObjects = 0;
-		// int removedTombstones = 0;
+		long chunkID;
 		byte[] segmentData;
 		byte[] newData;
 		AbstractLogEntryHeader logEntryHeader;
@@ -876,17 +866,13 @@ public class SecondaryLog extends AbstractLog {
 				while (readBytes < segmentData.length) {
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segmentData, readBytes, m_storesMigrations);
 					length = logEntryHeader.getHeaderSize(segmentData, readBytes) + logEntryHeader.getLength(segmentData, readBytes);
+					chunkID = logEntryHeader.getCID(segmentData, readBytes);
 
-					// Note: Out-dated and deleted objects and tombstones are marked with (type == 3) by markInvalidObjects()
-					if (logEntryHeader.isInvalid(segmentData, readBytes)) {
-						/*-if (logEntryHeader.isTombstone()) {
-							removedTombstones++;
-						} else {
-							removedObjects++;
-						}*/
-					} else {
+					if (m_hashTable.get(chunkID).equals(logEntryHeader.getVersion(segmentData, readBytes))) {
 						System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
 						writtenBytes += length;
+					} else {
+						// removedObjects++;
 					}
 					readBytes += length;
 				}
@@ -909,11 +895,10 @@ public class SecondaryLog extends AbstractLog {
 				System.out.println("Reorganization failed!");
 			}
 
-			/*-if (removedObjects != 0 || removedTombstones != 0) {
+			/*-if (removedObjects != 0) {
 				System.out.println("\n- Reorganization of Segment: " + p_segmentIndex
 						+ "(Peer: " + m_nodeID + ", Range: " + getRangeIDOrFirstLocalID() + ") finished:");
-				System.out.println("-- " + removedObjects + " entries removed");
-				System.out.println("-- " + removedTombstones + " tombstones removed\n");
+				System.out.println("-- " + removedObjects + " entries removed\n");
 			}*/
 		}
 	}
@@ -945,86 +930,12 @@ public class SecondaryLog extends AbstractLog {
 	}
 
 	/**
-	 * Marks invalid (old or deleted) objects in complete log
+	 * Gets current versions from log
 	 * @param p_hashtable
-	 *            a hash table to note version numbers in
+	 *            a hash table to store version numbers in
 	 */
-	public final void markInvalidObjects(final VersionsHashTable p_hashtable) {
-		// long timeStart;
-		int readBytes = 0;
-		int hashVersion;
-		int logVersion;
-		int deleteCounter = 0;
-		// int allDeleteCounter = 0;
-		long localID;
-		byte[][] segments;
-		byte[] segment;
-		AbstractLogEntryHeader logEntryHeader;
+	public final void getCurrentVersions(final VersionsHashTable p_hashtable) {
 
-		// timeStart = System.currentTimeMillis();
-		p_hashtable.clear();
-		try {
-			segments = readAllSegments();
-
-			// Gather versions and tombstones
-			for (int i = 0; i < segments.length; i++) {
-				readBytes = 0;
-				if (segments[i] != null) {
-					segment = segments[i];
-					while (readBytes < segment.length) {
-						// Put object versions to hashtable. Collision: Store the higher version number or tombstone version (higher priority)
-						logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segment, readBytes, m_storesMigrations);
-
-						p_hashtable.putMax(logEntryHeader.getLID(segment, readBytes),
-								logEntryHeader.getVersion(segment, readBytes));
-
-						readBytes += logEntryHeader.getHeaderSize(segment, readBytes) + logEntryHeader.getLength(segment, readBytes);
-					}
-				}
-			}
-			readBytes = 0;
-
-			// Mark out-dated and deleted entries
-			for (int i = 0; i < segments.length; i++) {
-				readBytes = 0;
-				if (segments[i] != null) {
-					segment = segments[i];
-					while (readBytes < segment.length) {
-						logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segment, readBytes, m_storesMigrations);
-						localID = logEntryHeader.getLID(segment, readBytes);
-						hashVersion = p_hashtable.get(localID);
-						logVersion = logEntryHeader.getVersion(segment, readBytes);
-
-						if (!logEntryHeader.isInvalid(segment, readBytes)
-								&& (hashVersion < 0 && !(-hashVersion < logVersion) || hashVersion > logVersion)) {
-							// Set type of out-dated and deleted objects and tombstones to 3
-							invalidateLogEntry(segment, readBytes, i * SECLOG_SEGMENT_SIZE + readBytes, logEntryHeader, i);
-							deleteCounter++;
-						}
-						readBytes += logEntryHeader.getHeaderSize(segment, readBytes) + logEntryHeader.getLength(segment, readBytes);
-					}
-					if (deleteCounter > 0) {
-						m_lock.lock();
-						if (m_activeSegment == null || m_activeSegment.getIndex() != i) {
-							markSegment(segment, readBytes, i);
-							// allDeleteCounter += deleteCounter;
-						}
-						m_lock.unlock();
-						deleteCounter = 0;
-					}
-				}
-			}
-			resetLogInvalidCounter();
-		} catch (final IOException | InterruptedException e) {
-			System.out.println("Removing tombstones failed!");
-		}
-
-		/*-if (allDeleteCounter > 0) {
-			System.out.println("\n+ Marking invalid objects(Peer: " + getNodeID() + ", Range: " + getRangeIDOrFirstLocalID() + ")");
-			System.out.println("++ Entries in hashtable: " + p_hashtable.size());
-			System.out.println("++ " + allDeleteCounter + " entries invalidated");
-			System.out.println("++ All log entries processed in " + (System.currentTimeMillis() - timeStart) + "ms\n");
-		}*/
 	}
 
 	// Classes

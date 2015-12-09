@@ -62,6 +62,9 @@ public class PrimaryWriteBuffer {
 	private boolean m_dataAvailable;
 	private boolean m_flushingComplete;
 
+	private boolean m_accessRequested = false;
+	private boolean m_accessGranted = false;
+
 	private Semaphore m_metaDataLock;
 	private int m_writingNetworkThreads;
 	private boolean m_writerThreadWantsToFlush;
@@ -158,7 +161,7 @@ public class PrimaryWriteBuffer {
 			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		} else {
-			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0));
+			rangeID = m_logHandler.getBackupRange(logEntryHeader.getCID(p_header, 0));
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		}
 
@@ -166,7 +169,7 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException("Data to write exceeds buffer size!");
 		}
 		if (!m_isShuttingDown) {
-			if (PARALLEL_BUFFERING) {
+			/*-if (PARALLEL_BUFFERING) {
 				while (true) {
 					m_metaDataLock.acquire();
 					if (!m_writerThreadWantsToFlush && m_bytesInWriteBuffer + bytesToWrite <= MAX_BYTE_COUNT) {
@@ -181,6 +184,9 @@ public class PrimaryWriteBuffer {
 					Thread.yield();
 				}
 				m_metaDataLock.acquire();
+			}*/
+			while (m_accessGranted) {
+				Thread.yield();
 			}
 
 			// Set buffer write pointer and byte counter before writing to
@@ -250,17 +256,21 @@ public class PrimaryWriteBuffer {
 				}
 			}
 
-			if (PARALLEL_BUFFERING) {
+			/*-if (PARALLEL_BUFFERING) {
 				m_metaDataLock.acquire();
 				m_writingNetworkThreads--;
-			}
+			}*/
 
 			if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
 				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is
 				// written
 				m_dataAvailable = true;
 			}
-			m_metaDataLock.release();
+
+			if (m_accessRequested) {
+				m_accessGranted = true;
+			}
+			// m_metaDataLock.release();
 		}
 		return bytesToWrite;
 	}
@@ -368,7 +378,7 @@ public class PrimaryWriteBuffer {
 			// 4. Release lock
 			// 5. Write buffer to hard drive
 			// -> During writing to hard drive the next slot in Write Buffer can be filled
-			if (PARALLEL_BUFFERING) {
+			/*-if (PARALLEL_BUFFERING) {
 				while (true) {
 					m_metaDataLock.acquire();
 					if (m_writingNetworkThreads == 0) {
@@ -380,6 +390,10 @@ public class PrimaryWriteBuffer {
 				}
 			} else {
 				m_metaDataLock.acquire();
+			}*/
+			m_accessRequested = true;
+			while (!m_accessGranted) {
+				Thread.yield();
 			}
 
 			readPointer = m_bufferReadPointer;
@@ -393,8 +407,9 @@ public class PrimaryWriteBuffer {
 			m_dataAvailable = false;
 			m_flushingComplete = false;
 
-			m_writerThreadWantsToFlush = false;
-			m_metaDataLock.release();
+			m_accessGranted = false;
+			// m_writerThreadWantsToFlush = false;
+			// m_metaDataLock.release();
 
 			if (bytesInWriteBuffer > 0) {
 				// Write data to secondary logs or primary log
@@ -498,7 +513,7 @@ public class PrimaryWriteBuffer {
 						if (logEntryHeader.wasMigrated()) {
 							rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, offset);
 						} else {
-							rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, offset));
+							rangeID = m_logHandler.getBackupRange(logEntryHeader.getCID(p_buffer, offset));
 						}
 
 						bufferNode = map.get(rangeID);
@@ -518,7 +533,7 @@ public class PrimaryWriteBuffer {
 						if (logEntryHeader.wasMigrated()) {
 							rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(header, 0);
 						} else {
-							rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(header, 0));
+							rangeID = m_logHandler.getBackupRange(logEntryHeader.getCID(header, 0));
 						}
 
 						bufferNode = map.get(rangeID);
