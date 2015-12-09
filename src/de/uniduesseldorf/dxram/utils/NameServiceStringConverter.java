@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Methods for converting Strings into integers
@@ -15,8 +16,8 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
 public final class NameServiceStringConverter {
 
 	// Constants
-	private static final String NAMESERVICE_TYPE = Core.getConfiguration().getStringValue(ConfigurationConstants.NAMESERVICE_TYPE);
-	private static final int KEY_LENGTH = Core.getConfiguration().getIntValue(ConfigurationConstants.NAMESERVICE_KEY_LENGTH);
+	private static final String NAMESERVICE_TYPE = Core.getConfiguration().getStringValue(DXRAMConfigurationConstants.NAMESERVICE_TYPE);
+	private static final int KEY_LENGTH = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.NAMESERVICE_KEY_LENGTH);
 
 	// Attributes
 	private static Map<Character, Integer> m_charMap;

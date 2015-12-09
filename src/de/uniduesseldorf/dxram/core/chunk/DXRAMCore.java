@@ -3,17 +3,17 @@ package de.uniduesseldorf.dxram.core.chunk;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.api.DXRAMCoreInterface;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.ChunkMessages;

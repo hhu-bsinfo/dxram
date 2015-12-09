@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.exceptions;
+package de.uniduesseldorf.dxram.core.engine;
 
 /**
  * Exception for failed DXRAM accesses

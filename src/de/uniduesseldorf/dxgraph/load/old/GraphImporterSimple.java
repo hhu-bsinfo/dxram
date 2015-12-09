@@ -2,7 +2,7 @@ package de.uniduesseldorf.dxgraph.load.old;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 import de.uniduesseldorf.dxgraph.load.NodeMapping;
 

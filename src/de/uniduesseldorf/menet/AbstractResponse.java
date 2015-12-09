@@ -22,7 +22,7 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 *            the corresponding Request
 	 */
 	public AbstractResponse(final AbstractRequest p_request) {
-		super(p_request.getMessageID(), p_request.getSource(), p_request.getType(), DEFAULT_SUBTYPE);
+		super(p_request.getMessageID(), p_request.getDestination(), p_request.getSource(), p_request.getType(), DEFAULT_SUBTYPE);
 	}
 
 	/**
@@ -33,7 +33,7 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 *            the message subtype
 	 */
 	public AbstractResponse(final AbstractRequest p_request, final byte p_subtype) {
-		super(p_request.getMessageID(), p_request.getSource(), p_request.getType(), p_subtype);
+		super(p_request.getMessageID(), p_request.getDestination(), p_request.getSource(), p_request.getType(), p_subtype);
 	}
 
 	// Getters

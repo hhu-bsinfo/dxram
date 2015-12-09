@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.chunk.storage.HeapIntegrityChecker;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryStatistic;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
@@ -19,6 +18,7 @@ import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageRandomAccessFile;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
 import de.uniduesseldorf.utils.StatisticsManager;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.utils.locks.JNILock;
 import sun.misc.Lock;
 

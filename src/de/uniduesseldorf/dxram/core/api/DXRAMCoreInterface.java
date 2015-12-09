@@ -1,7 +1,7 @@
 package de.uniduesseldorf.dxram.core.api;
 
 import de.uniduesseldorf.dxram.core.chunk.DataStructure;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 public interface DXRAMCoreInterface 
 {

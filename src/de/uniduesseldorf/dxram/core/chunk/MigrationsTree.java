@@ -5,9 +5,9 @@ import java.io.Serializable;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
 import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Btree to store backup ranges of migrated chunks.
@@ -17,7 +17,7 @@ import de.uniduesseldorf.utils.Contract;
 public final class MigrationsTree implements Serializable {
 
 	// Constants
-	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
+	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.SECONDARY_LOG_SIZE);
 	private static final long serialVersionUID = 7565597467331239020L;
 	private static final byte INVALID = -1;
 

@@ -4,10 +4,10 @@ package de.uniduesseldorf.dxram.core.chunk;
 import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Stores data

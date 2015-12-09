@@ -2,13 +2,13 @@
 package de.uniduesseldorf.dxram.test;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.util.NodeID;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
 
 import de.uniduesseldorf.utils.ArrayTools;
+import de.uniduesseldorf.utils.config.ConfigurationHandler;
 
 /*
  * Start-up:

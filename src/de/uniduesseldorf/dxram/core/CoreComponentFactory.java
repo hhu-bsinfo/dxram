@@ -2,19 +2,19 @@
 package de.uniduesseldorf.dxram.core;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationEntry;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.ComponentCreationException;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.lock.LockInterface;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
 import de.uniduesseldorf.menet.NetworkInterface;
+import de.uniduesseldorf.utils.ZooKeeperHandler;
+import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationEntry;
 
 /**
  * Creates the components for DXRAM
@@ -46,7 +46,7 @@ public final class CoreComponentFactory {
 	 */
 	public static synchronized ChunkInterface getChunkInterface() throws DXRAMException {
 		if (m_chunk == null) {
-			m_chunk = newInstance(ConfigurationConstants.INTERFACE_CHUNK, ChunkInterface.class);
+			m_chunk = newInstance(DXRAMConfigurationConstants.INTERFACE_CHUNK, ChunkInterface.class);
 			m_chunk.initialize();
 		}
 
@@ -71,7 +71,7 @@ public final class CoreComponentFactory {
 	 */
 	public static synchronized LogInterface getLogInterface() throws DXRAMException {
 		if (m_log == null) {
-			m_log = newInstance(ConfigurationConstants.INTERFACE_LOG, LogInterface.class);
+			m_log = newInstance(DXRAMConfigurationConstants.INTERFACE_LOG, LogInterface.class);
 			m_log.initialize();
 		}
 
@@ -96,7 +96,7 @@ public final class CoreComponentFactory {
 	 */
 	public static synchronized LookupInterface getLookupInterface() throws DXRAMException {
 		if (m_lookup == null) {
-			m_lookup = newInstance(ConfigurationConstants.INTERFACE_LOOKUP, LookupInterface.class);
+			m_lookup = newInstance(DXRAMConfigurationConstants.INTERFACE_LOOKUP, LookupInterface.class);
 			m_lookup.initialize();
 		}
 
@@ -121,7 +121,7 @@ public final class CoreComponentFactory {
 	 */
 	public static synchronized NetworkInterface getNetworkInterface() throws DXRAMException {
 		if (m_network == null) {
-			m_network = newInstance(ConfigurationConstants.INTERFACE_NETWORK, NetworkInterface.class);
+			m_network = newInstance(DXRAMConfigurationConstants.INTERFACE_NETWORK, NetworkInterface.class);
 			m_network.initialize();
 		}
 
@@ -146,7 +146,7 @@ public final class CoreComponentFactory {
 	 */
 	public static synchronized LockInterface getLockInterface() throws DXRAMException {
 		if (m_lock == null) {
-			m_lock = newInstance(ConfigurationConstants.INTERFACE_LOCK, LockInterface.class);
+			m_lock = newInstance(DXRAMConfigurationConstants.INTERFACE_LOCK, LockInterface.class);
 			m_lock.initialize();
 		}
 
@@ -171,7 +171,7 @@ public final class CoreComponentFactory {
 	 */
 	public static synchronized RecoveryInterface getRecoveryInterface() throws DXRAMException {
 		if (m_recovery == null) {
-			m_recovery = newInstance(ConfigurationConstants.INTERFACE_RECOVERY, RecoveryInterface.class);
+			m_recovery = newInstance(DXRAMConfigurationConstants.INTERFACE_RECOVERY, RecoveryInterface.class);
 			m_recovery.initialize();
 		}
 

@@ -5,11 +5,11 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 
 import de.uniduesseldorf.utils.Contract;
 import de.uniduesseldorf.utils.Tools;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Btree to cache ranges
@@ -42,7 +42,7 @@ public final class CacheTree {
 		Thread thread;
 		long ttl;
 
-		ttl = Math.max(Core.getConfiguration().getLongValue(ConfigurationConstants.LOOKUP_CACHE_TTL), 1000);
+		ttl = Math.max(Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.LOOKUP_CACHE_TTL), 1000);
 
 		Contract.checkNotNull(p_order);
 		Contract.check(1 < p_order, "too small order for BTree");

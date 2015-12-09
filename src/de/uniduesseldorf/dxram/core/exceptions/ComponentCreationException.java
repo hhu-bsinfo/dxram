@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.exceptions;
 
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+
 /**
  * Exception for failed component creations
  * @author Florian Klein

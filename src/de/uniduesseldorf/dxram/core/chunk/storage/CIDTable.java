@@ -7,9 +7,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.commands.CmdUtils;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.soh.SmallObjectHeap;
 

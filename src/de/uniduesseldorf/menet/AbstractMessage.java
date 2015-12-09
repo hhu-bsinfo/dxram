@@ -56,8 +56,8 @@ public abstract class AbstractMessage {
 	 * @param p_type
 	 *            the message type
 	 */
-	public AbstractMessage(final short p_destination, final byte p_type) {
-		this(getNextMessageID(), p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_RATING_VALUE);
+	public AbstractMessage(final short p_source, final short p_destination, final byte p_type) {
+		this(getNextMessageID(), p_source, p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_RATING_VALUE);
 	}
 
 	/**
@@ -69,8 +69,8 @@ public abstract class AbstractMessage {
 	 * @param p_subtype
 	 *            the message subtype
 	 */
-	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype) {
-		this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
+	public AbstractMessage(final short p_source, final short p_destination, final byte p_type, final byte p_subtype) {
+		this(getNextMessageID(), p_source, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
 	}
 
 	/**
@@ -84,8 +84,8 @@ public abstract class AbstractMessage {
 	 * @param p_ratingValue
 	 *            the rating value of the message
 	 */
-	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
-		this(getNextMessageID(), p_destination, p_type, p_subtype, p_ratingValue);
+	public AbstractMessage(final short p_source, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
+		this(getNextMessageID(), p_source, p_destination, p_type, p_subtype, p_ratingValue);
 	}
 
 	/**
@@ -99,8 +99,8 @@ public abstract class AbstractMessage {
 	 * @param p_subtype
 	 *            the message subtype
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
-		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
+	protected AbstractMessage(final long p_messageID, final short p_source, final short p_destination, final byte p_type, final byte p_subtype) {
+		this(p_messageID, p_source, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
 	}
 
 	/**
@@ -116,11 +116,11 @@ public abstract class AbstractMessage {
 	 * @param p_ratingValue
 	 *            the rating value of the message
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
+	protected AbstractMessage(final long p_messageID, final short p_source, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
 		NodeID.check(p_destination);
 
 		m_messageID = p_messageID;
-		m_source = NodeID.getLocalNodeID();
+		m_source = p_source;
 		m_destination = p_destination;
 		m_type = p_type;
 		m_subtype = p_subtype;
@@ -300,11 +300,11 @@ public abstract class AbstractMessage {
 	 * @param p_destination
 	 *            the destination
 	 * @param p_network
-	 *            the NetworkInterface
-	 * @throws DXRAMException
+	 *            the NetworkInterface 
+	 * @throws NetworkException
 	 *             if the message could not be forwarded
 	 */
-	public final void forward(final short p_destination, final NetworkInterface p_network) {
+	public final void forward(final short p_destination, final NetworkInterface p_network) throws NetworkException {
 		NodeID.check(p_destination);
 		Contract.checkNotNull(p_network, "no network given");
 
@@ -333,7 +333,7 @@ public abstract class AbstractMessage {
 	 * @throws NetworkException
 	 *             if the message header could not be created
 	 */
-	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer) throws NetworkException {
+	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer, final MessageDirectory p_messageDirectory) throws NetworkException {
 		AbstractMessage ret = null;
 		long messageID;
 		byte type;
@@ -352,7 +352,7 @@ public abstract class AbstractMessage {
 		ratingValue = p_buffer.get();
 
 		try {
-			ret = MessageDirectory.getInstance(type, subtype);
+			ret = p_messageDirectory.getInstance(type, subtype);
 		} catch (final Exception e) {
 			throw new NetworkException("Unable to create message", e);
 		}

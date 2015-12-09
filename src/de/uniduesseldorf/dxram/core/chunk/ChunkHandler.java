@@ -19,8 +19,7 @@ import org.apache.log4j.Logger;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandResponse;
@@ -40,10 +39,11 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.UnlockMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener.IncomingChunkEvent;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
@@ -55,9 +55,6 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
 import de.uniduesseldorf.menet.AbstractAction;
 import de.uniduesseldorf.menet.AbstractMessage;
@@ -68,6 +65,9 @@ import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.utils.Contract;
 import de.uniduesseldorf.utils.Pair;
 import de.uniduesseldorf.utils.StatisticsManager;
+import de.uniduesseldorf.utils.ZooKeeperHandler;
+import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.utils.unsafe.IntegerLongList;
 import de.uniduesseldorf.utils.unsafe.AbstractKeyValueList.KeyValuePair;
 
@@ -82,9 +82,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	private static final int INDEX_SIZE = 12016;
 
-	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE);
-	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
-	private static final int REPLICATION_FACTOR = Core.getConfiguration().getIntValue(ConfigurationConstants.REPLICATION_FACTOR);
+	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.LOG_ACTIVE);
+	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.SECONDARY_LOG_SIZE);
+	private static final int REPLICATION_FACTOR = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.REPLICATION_FACTOR);
 
 	// Attributes
 	private short m_nodeID;
@@ -174,16 +174,16 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			m_lock = CoreComponentFactory.getLockInterface();
 
 			m_memoryManager = new MemoryManager(NodeID.getLocalNodeID());
-			m_memoryManager.initialize(Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SIZE),
-					Core.getConfiguration().getLongValue(ConfigurationConstants.RAM_SEGMENT_SIZE),
-					Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_MEMORY));
+			m_memoryManager.initialize(Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.RAM_SIZE),
+					Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.RAM_SEGMENT_SIZE),
+					Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.STATISTIC_MEMORY));
 
 			m_migrationLock = new ReentrantLock(false);
 			registerPeer();
 			m_mappingLock = new ReentrantLock(false);
 		}
 
-		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_CHUNK)) {
+		if (Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.STATISTIC_CHUNK)) {
 			StatisticsManager.registerStatistic("Chunk", ChunkStatistic.getInstance());
 		}
 	}

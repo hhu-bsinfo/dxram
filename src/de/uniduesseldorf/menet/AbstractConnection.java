@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.util.NodeID;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 
 import de.uniduesseldorf.utils.Contract;
 
@@ -45,8 +45,8 @@ abstract class AbstractConnection {
 	 * @param p_destination
 	 *            the destination
 	 */
-	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor) {
-		this(p_destination, p_taskExecutor, null);
+	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory) {
+		this(p_destination, p_taskExecutor, p_messageDirectory, null);
 	}
 
 	/**
@@ -56,11 +56,11 @@ abstract class AbstractConnection {
 	 * @param p_listener
 	 *            the ConnectionListener
 	 */
-	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor, final DataReceiver p_listener) {
+	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final DataReceiver p_listener) {
 		NodeID.check(p_destination);
 
 		m_dataHandler = new DataHandler();
-		m_messageCreator = new MessageCreator();
+		m_messageCreator = new MessageCreator(p_messageDirectory);
 		m_streamInterpreter = new ByteStreamInterpreter();
 
 		m_destination = p_destination;
@@ -316,13 +316,15 @@ abstract class AbstractConnection {
 	private class MessageCreator implements Runnable {
 
 		// Attributes
+		private MessageDirectory m_messageDirectory;
 		private final ArrayDeque<ByteBuffer> m_buffers;
 		private ReentrantLock m_buffersLock;
 
 		/**
 		 * Default constructor
 		 */
-		MessageCreator() {
+		MessageCreator(final MessageDirectory p_messageDirectory) {
+			m_messageDirectory = p_messageDirectory;
 			m_buffers = new ArrayDeque<>();
 			m_buffersLock = new ReentrantLock(false);
 		}
@@ -374,7 +376,7 @@ abstract class AbstractConnection {
 			buffer = p_buffer.asReadOnlyBuffer();
 
 			try {
-				message = AbstractMessage.createMessageHeader(buffer);
+				message = AbstractMessage.createMessageHeader(buffer, m_messageDirectory);
 				message.readPayload(buffer);
 			} catch (final Exception e) {
 				LOGGER.error("ERROR::Unable to create message", e);

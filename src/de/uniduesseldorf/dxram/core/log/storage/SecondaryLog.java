@@ -9,12 +9,13 @@ import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
-import de.uniduesseldorf.dxram.core.util.NodeID;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * This class implements the secondary log
@@ -23,16 +24,16 @@ import de.uniduesseldorf.dxram.core.util.NodeID;
 public class SecondaryLog extends AbstractLog {
 
 	// Constants
-	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
+	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(DXRAMConfigurationConstants.LOG_DIRECTORY);
 	private static final String SECLOG_PREFIX_FILENAME = "sec";
 	private static final String SECLOG_POSTFIX_FILENAME = ".log";
-	private static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_CHECKSUM);
+	private static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.LOG_CHECKSUM);
 	private static final byte[] SECLOG_HEADER = "DXRAMSecLogv1".getBytes(Charset.forName("UTF-8"));
 
-	private static final long SECLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
+	private static final long SECLOG_SIZE = Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.SECONDARY_LOG_SIZE);
 	private static final int SECLOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
-	private static final int REORG_UTILIZATION_THRESHOLD = Core.getConfiguration().getIntValue(ConfigurationConstants.REORG_UTILIZATION_THRESHOLD);
-	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
+	private static final int REORG_UTILIZATION_THRESHOLD = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.REORG_UTILIZATION_THRESHOLD);
+	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.LOG_SEGMENT_SIZE);
 
 	// Attributes
 	private short m_nodeID;

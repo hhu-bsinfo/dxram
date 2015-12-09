@@ -7,7 +7,8 @@ import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Skeleton for a log
@@ -17,7 +18,7 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
 public abstract class AbstractLog {
 
 	// Constants
-	protected static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
+	protected static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.FLASHPAGE_SIZE);
 
 	// Attributes
 	// m_logFileSize must be a multiple of a flash page!

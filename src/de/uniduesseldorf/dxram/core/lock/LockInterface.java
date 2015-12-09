@@ -2,7 +2,7 @@
 package de.uniduesseldorf.dxram.core.lock;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 /**
  * Methods for accessing the Lock-Service

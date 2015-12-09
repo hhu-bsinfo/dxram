@@ -5,9 +5,10 @@ import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * A helper class for the LogEntryHeaderInterface.
@@ -39,7 +40,7 @@ public abstract class AbstractLogEntryHeader {
 	protected static final byte LOG_ENTRY_SRC_SIZE = 2;
 	protected static final byte LOG_ENTRY_EPO_SIZE = 2;
 	protected static final byte LOG_ENTRY_CRC_SIZE;
-	protected static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_CHECKSUM);
+	protected static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.LOG_CHECKSUM);
 	static {
 		if (USE_CHECKSUM) {
 			LOG_ENTRY_CRC_SIZE = (byte) 4;

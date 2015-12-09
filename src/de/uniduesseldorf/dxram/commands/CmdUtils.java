@@ -4,8 +4,8 @@ package de.uniduesseldorf.dxram.commands;
 import java.util.Iterator;
 import java.util.List;
 
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
+import de.uniduesseldorf.utils.ZooKeeperHandler;
+import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
 
 /**
  * Help methods for parsing and handling command strings.

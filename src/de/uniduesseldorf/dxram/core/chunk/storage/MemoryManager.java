@@ -1,10 +1,10 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.DataStructure;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
@@ -313,7 +313,7 @@ public final class MemoryManager {
 		// Get the address from the CIDTable
 		address = m_cidTable.get(p_chunkID);
 
-		// If address <= 0, the Chunk does not exists in the memory
+		// If address <= 0, the Chunk does not exists in memory
 		return address > 0;
 	}
 

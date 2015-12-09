@@ -1,6 +1,6 @@
 package de.uniduesseldorf.dxgraph.test;
 
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 import de.uniduesseldorf.dxcompute.DXCompute;
 import de.uniduesseldorf.dxcompute.StorageDXRAM;

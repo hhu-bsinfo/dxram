@@ -7,13 +7,13 @@ import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
@@ -22,12 +22,12 @@ import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRange
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeResponse;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverMessage;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Implements the Recovery-Service
@@ -37,8 +37,8 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(RecoveryHandler.class);
-	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE);
-	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
+	private static final boolean LOG_ACTIVE = Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.LOG_ACTIVE);
+	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(DXRAMConfigurationConstants.LOG_DIRECTORY);
 
 	// Attributes
 	private NetworkInterface m_network;

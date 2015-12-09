@@ -46,7 +46,7 @@ abstract class AbstractConnectionCreator {
 	 * @throws DXRAMException
 	 *             if the creator could not be initialized
 	 */
-	protected void initialize(final short p_nodeID) {}
+	protected void initialize(final short p_nodeID, final int p_listenPort) {}
 
 	/**
 	 * Closes the creator and frees unused resources

@@ -15,10 +15,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.InitResponse;
@@ -38,7 +38,6 @@ import de.uniduesseldorf.dxram.core.log.storage.SecondaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogBuffer;
 import de.uniduesseldorf.dxram.core.log.storage.VersionsHashTable;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
@@ -46,6 +45,7 @@ import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.utils.Contract;
 import de.uniduesseldorf.utils.Tools;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Leads data accesses to a remote node
@@ -54,7 +54,7 @@ import de.uniduesseldorf.utils.Tools;
 public final class LogHandler implements LogInterface, MessageReceiver, ConnectionLostListener {
 
 	// Constants
-	private static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_CHECKSUM);
+	private static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.LOG_CHECKSUM);
 	private static final int MAX_NODE_CNT = 65535;
 	private static final long FLUSHING_WAITTIME = 1000L;
 	private static final long REORGTHREAD_TIMEOUT = 50L;

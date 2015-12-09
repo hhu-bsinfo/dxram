@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * This class implements the secondary log buffer
@@ -16,7 +17,7 @@ import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 public final class SecondaryLogBuffer {
 
 	// Constants
-	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
+	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.FLASHPAGE_SIZE);
 
 	// Attributes
 	private byte[] m_buffer;

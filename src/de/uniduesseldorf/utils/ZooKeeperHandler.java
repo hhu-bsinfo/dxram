@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.utils;
+package de.uniduesseldorf.utils;
 
 import java.io.IOException;
 import java.util.List;
@@ -17,9 +17,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 
-import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Class for accessing ZooKeeper
@@ -31,14 +30,17 @@ public final class ZooKeeperHandler {
 	private static final Logger LOGGER = Logger.getLogger(ZooKeeperHandler.class);
 
 	// Attributes
-	private static ZooKeeper m_zookeeper;
-	private static String m_path = Core.getConfiguration().getStringValue(ConfigurationConstants.ZOOKEEPER_PATH);
+	private ZooKeeper m_zookeeper;
+	private String m_path;
 
 	// Constructors
 	/**
 	 * Creates an instance of ZooKeeperHandler
 	 */
-	private ZooKeeperHandler() {}
+	public ZooKeeperHandler(final String p_path) 
+	{
+		m_path = p_path;
+	}
 
 	// Methods
 	/**
@@ -46,7 +48,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static synchronized void connect() throws ZooKeeperException {
+	public synchronized void connect() throws ZooKeeperException {
 		String connection;
 		int timeout;
 
@@ -54,8 +56,8 @@ public final class ZooKeeperHandler {
 
 		if (m_zookeeper == null) {
 			try {
-				connection = Core.getConfiguration().getStringValue(ConfigurationConstants.ZOOKEEPER_CONNECTION_STRING);
-				timeout = Core.getConfiguration().getIntValue(ConfigurationConstants.ZOOKEEPER_TIMEOUT);
+				connection = Core.getConfiguration().getStringValue(DXRAMConfigurationConstants.ZOOKEEPER_CONNECTION_STRING);
+				timeout = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.ZOOKEEPER_TIMEOUT);
 
 				m_zookeeper = new ZooKeeper(connection, timeout, new ZooKeeperWatcher());
 
@@ -87,7 +89,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void close() throws ZooKeeperException {
+	public void close() throws ZooKeeperException {
 		close(false);
 	}
 
@@ -98,7 +100,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static synchronized void close(final boolean p_delete) throws ZooKeeperException {
+	public synchronized void close(final boolean p_delete) throws ZooKeeperException {
 		LOGGER.trace("Entering close");
 
 		if (m_zookeeper != null) {
@@ -122,7 +124,7 @@ public final class ZooKeeperHandler {
 	 * Returns the path
 	 * @return the path
 	 */
-	public static String getPath() {
+	public String getPath() {
 		return m_path;
 	}
 
@@ -134,7 +136,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static boolean exists(final String p_path) throws ZooKeeperException {
+	public boolean exists(final String p_path) throws ZooKeeperException {
 		return getStatus(p_path, null) != null;
 	}
 
@@ -148,7 +150,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static boolean exists(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public boolean exists(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		return getStatus(p_path, p_watcher) != null;
 	}
 
@@ -160,7 +162,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static Stat getStatus(final String p_path) throws ZooKeeperException {
+	public Stat getStatus(final String p_path) throws ZooKeeperException {
 		return getStatus(p_path, null);
 	}
 
@@ -174,7 +176,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static Stat getStatus(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public Stat getStatus(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		Stat ret;
 
 		Contract.checkNotNull(p_path, "no path given");
@@ -209,7 +211,7 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	public static void create(final String p_path) throws ZooKeeperException, KeeperException, InterruptedException {
+	public void create(final String p_path) throws ZooKeeperException, KeeperException, InterruptedException {
 		create(p_path, new byte[0], CreateMode.PERSISTENT);
 	}
 
@@ -226,7 +228,7 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	public static void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException, InterruptedException {
+	public void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException, InterruptedException {
 		create(p_path, p_data, CreateMode.PERSISTENT);
 	}
 
@@ -245,7 +247,7 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	private static void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException,
+	private void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException,
 	InterruptedException {
 		Contract.checkNotNull(p_path, "no path given");
 		Contract.checkNotNull(p_data, "no data given");
@@ -265,7 +267,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void delete(final String p_path) throws ZooKeeperException {
+	public void delete(final String p_path) throws ZooKeeperException {
 		delete(p_path, -1);
 	}
 
@@ -278,7 +280,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void delete(final String p_path, final int p_version) throws ZooKeeperException {
+	public void delete(final String p_path, final int p_version) throws ZooKeeperException {
 		Contract.checkNotNull(p_path, "no path given");
 
 		try {
@@ -304,7 +306,7 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	public static void createBarrier(final String p_path) throws ZooKeeperException, KeeperException, InterruptedException {
+	public void createBarrier(final String p_path) throws ZooKeeperException, KeeperException, InterruptedException {
 		create(p_path);
 	}
 
@@ -315,7 +317,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void deleteBarrier(final String p_path) throws ZooKeeperException {
+	public void deleteBarrier(final String p_path) throws ZooKeeperException {
 		delete(p_path);
 	}
 
@@ -328,7 +330,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void waitForBarrier(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public void waitForBarrier(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		while (exists(p_path, p_watcher)) {
 			try {
 				Thread.sleep(1000);
@@ -344,7 +346,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static List<String> getChildren(final String p_path) throws ZooKeeperException {
+	public List<String> getChildren(final String p_path) throws ZooKeeperException {
 		return getChildren(p_path, null);
 	}
 
@@ -358,7 +360,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static List<String> getChildren(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public List<String> getChildren(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		List<String> ret;
 
 		try {
@@ -384,7 +386,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static byte[] getData(final String p_path) throws ZooKeeperException {
+	public byte[] getData(final String p_path) throws ZooKeeperException {
 		return getData(p_path, null, null);
 	}
 
@@ -398,7 +400,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static byte[] getData(final String p_path, final Stat p_status) throws ZooKeeperException {
+	public byte[] getData(final String p_path, final Stat p_status) throws ZooKeeperException {
 		return getData(p_path, null, p_status);
 	}
 
@@ -412,7 +414,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static byte[] getData(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public byte[] getData(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		return getData(p_path, p_watcher, null);
 	}
 
@@ -428,7 +430,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static byte[] getData(final String p_path, final Watcher p_watcher, final Stat p_status) throws ZooKeeperException {
+	public byte[] getData(final String p_path, final Watcher p_watcher, final Stat p_status) throws ZooKeeperException {
 		byte[] ret;
 
 		try {
@@ -455,7 +457,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void setData(final String p_path, final byte[] p_data) throws ZooKeeperException {
+	public void setData(final String p_path, final byte[] p_data) throws ZooKeeperException {
 		setData(p_path, p_data, -1);
 	}
 
@@ -470,7 +472,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void setData(final String p_path, final byte[] p_data, final int p_version) throws ZooKeeperException {
+	public void setData(final String p_path, final byte[] p_data, final int p_version) throws ZooKeeperException {
 		Contract.checkNotNull(p_path, "no path given");
 		Contract.checkNotNull(p_data, "no data given");
 
@@ -496,7 +498,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void setExistsWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public void setExistsWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		try {
 			if (m_zookeeper == null) {
 				connect();
@@ -519,7 +521,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void setDataWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public void setDataWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		try {
 			if (m_zookeeper == null) {
 				connect();
@@ -542,7 +544,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void setChildrenWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
+	public void setChildrenWatch(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		try {
 			if (m_zookeeper == null) {
 				connect();
@@ -563,7 +565,7 @@ public final class ZooKeeperHandler {
 	 * @throws ZooKeeperException
 	 *             if ZooKeeper could not accessed
 	 */
-	public static void executeOperations(final Iterable<Op> p_operations) throws ZooKeeperException {
+	public void executeOperations(final Iterable<Op> p_operations) throws ZooKeeperException {
 		try {
 			if (m_zookeeper == null) {
 				connect();
@@ -582,7 +584,7 @@ public final class ZooKeeperHandler {
 	 * Watcher class for ZooKeeper
 	 * @author Florian Klein 06.12.2013
 	 */
-	private static final class ZooKeeperWatcher implements Watcher {
+	private final class ZooKeeperWatcher implements Watcher {
 
 		// Constructors
 		/**
@@ -604,7 +606,7 @@ public final class ZooKeeperHandler {
 	 * Exception for failed zookeeper accesses
 	 * @author Florian Klein 09.03.2012
 	 */
-	public static class ZooKeeperException extends Exception {
+	public class ZooKeeperException extends Exception {
 
 		// Constants
 		private static final long serialVersionUID = 5917319024322071829L;

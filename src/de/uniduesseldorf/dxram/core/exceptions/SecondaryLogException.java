@@ -1,7 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.exceptions;
 
-import de.uniduesseldorf.dxram.core.util.NodeID;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 /**
  * Exception for failed logging accesses

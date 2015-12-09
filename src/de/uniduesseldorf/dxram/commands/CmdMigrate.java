@@ -2,7 +2,7 @@
 package de.uniduesseldorf.dxram.commands;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 /**
  * Migrate a chunk.

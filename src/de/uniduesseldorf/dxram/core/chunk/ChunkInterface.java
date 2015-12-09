@@ -2,8 +2,8 @@
 package de.uniduesseldorf.dxram.core.chunk;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
 /**
  * Methods for accessing the data

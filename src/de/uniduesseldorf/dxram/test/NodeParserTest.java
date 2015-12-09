@@ -2,14 +2,15 @@
 package de.uniduesseldorf.dxram.test;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.DefaultNodesConfigurationParser;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.NodesConfigurationEntry;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.SimpleNodesConfigurationParser;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.SimpleNodesConfigurationParser;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.NodeEntry;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.Role;
+
+import de.uniduesseldorf.utils.config.ConfigurationHandler;
 
 /**
  * Test case for the node configuration parser
@@ -77,7 +78,7 @@ public final class NodeParserTest {
 			try {
 				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
 						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-				parsedNodes = new DefaultNodesConfigurationParser().parseNodes(configuration);
+				parsedNodes = new NodesWatcher().parseNodes(configuration);
 			} catch (final DXRAMException e) {
 				e.printStackTrace();
 			}
@@ -116,7 +117,7 @@ public final class NodeParserTest {
 			ip = "10." + (s + 1) + "." + (r + 1) + "." + (n + 1);
 			port = (int) (Math.random() * 65534) + 1;
 
-			p_configuration.addNode(new NodesConfigurationEntry(ip, port, r, s, Role.PEER));
+			p_configuration.addNode(new NodeEntry(ip, port, r, s, Role.PEER));
 		}
 	}
 }

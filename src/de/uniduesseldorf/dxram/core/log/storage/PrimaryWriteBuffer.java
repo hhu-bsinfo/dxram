@@ -11,10 +11,11 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
@@ -32,14 +33,14 @@ import de.uniduesseldorf.dxram.core.util.ChunkID;
 public class PrimaryWriteBuffer {
 
 	// Constants
-	private static final int WRITE_BUFFER_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.WRITE_BUFFER_SIZE);
+	private static final int WRITE_BUFFER_SIZE = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.WRITE_BUFFER_SIZE);
 	private static final int WRITE_BUFFER_MAX_SIZE = Integer.MAX_VALUE;
-	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
+	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.FLASHPAGE_SIZE);
 	// Must be smaller than 1/2 of WRITE_BUFFER_SIZE
 	private static final int SIGNAL_ON_BYTE_COUNT = 64 * 1024 * 1024;
 	private static final int MAX_BYTE_COUNT = 80 * 1024 * 1024;
-	private static final boolean PARALLEL_BUFFERING = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_PARALLEL_BUFFERING);
-	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
+	private static final boolean PARALLEL_BUFFERING = Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.LOG_PARALLEL_BUFFERING);
+	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.LOG_SEGMENT_SIZE);
 
 	// Attributes
 	private LogHandler m_logHandler;

@@ -5,20 +5,20 @@ import org.apache.log4j.Logger;
 import de.uniduesseldorf.dxram.commands.CommandHandler;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core.ShutdownThread;
-import de.uniduesseldorf.dxram.core.api.config.Configuration;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHelper;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHelper;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHelper;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.utils.StatisticsManager;
+import de.uniduesseldorf.utils.config.Configuration;
+import de.uniduesseldorf.utils.config.ConfigurationHelper;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.utils.locks.JNILock;
 
 public final class DXRAM 
@@ -55,14 +55,14 @@ public final class DXRAM
 
 			m_nodesConfigurationHelper = new NodesConfigurationHelper(p_nodesConfiguration);
 
-			JNILock.load(m_configurationHelper.getStringValue(ConfigurationConstants.JNI_LOCK_DIRECTORY));
+			JNILock.load(m_configurationHelper.getStringValue(DXRAMConfigurationConstants.JNI_LOCK_DIRECTORY));
 			
 			CoreComponentFactory.getNetworkInterface();
 			m_chunk = CoreComponentFactory.getChunkInterface();
 
 			m_network = CoreComponentFactory.getNetworkInterface();
 
-			if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_ACTIVE) && NodeID.getRole().equals(Role.PEER)) {
+			if (Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.LOG_ACTIVE) && NodeID.getRole().equals(Role.PEER)) {
 				CoreComponentFactory.getLogInterface();
 			}
 			m_recovery = CoreComponentFactory.getRecoveryInterface();
@@ -72,7 +72,7 @@ public final class DXRAM
 			// Register shutdown thread
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread());
 
-			interval = Core.getConfiguration().getIntValue(ConfigurationConstants.STATISTIC_PRINT);
+			interval = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.STATISTIC_PRINT);
 			if (interval > 0) {
 				if (!NodeID.getRole().equals(Role.MONITOR)) {
 				StatisticsManager.setupOutput(interval);

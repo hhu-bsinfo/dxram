@@ -2,9 +2,10 @@
 package de.uniduesseldorf.dxram.run;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
+
+import de.uniduesseldorf.utils.config.ConfigurationHandler;
 
 /**
  * Superpeer

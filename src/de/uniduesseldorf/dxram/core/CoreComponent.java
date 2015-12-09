@@ -1,7 +1,7 @@
 
 package de.uniduesseldorf.dxram.core;
 
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 /**
  * Methods for an DXRAM-Component

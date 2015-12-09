@@ -15,12 +15,12 @@ import org.apache.zookeeper.data.Stat;
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsRequest;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.AskAboutBackupsResponse;
@@ -65,9 +65,6 @@ import de.uniduesseldorf.dxram.core.lookup.LookupMessages.UpdateAllMessage;
 import de.uniduesseldorf.dxram.core.lookup.storage.AIDTableOptimized;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.NodeID;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler;
-import de.uniduesseldorf.dxram.utils.ZooKeeperHandler.ZooKeeperException;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
@@ -75,6 +72,9 @@ import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.utils.CRC16;
 import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.ZooKeeperHandler;
+import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Lookup for meta-data:
@@ -175,7 +175,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			throw new LookupException("Could not access ZooKeeper", e);
 		}
 
-		m_sleepInterval = Core.getConfiguration().getIntValue(ConfigurationConstants.LOOKUP_SLEEP);
+		m_sleepInterval = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.LOOKUP_SLEEP);
 
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(JoinRequest.class, this);

@@ -3,7 +3,7 @@ package de.uniduesseldorf.dxram.core.monitoring;
 
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 /**
  * Implements the Monitoring-Service

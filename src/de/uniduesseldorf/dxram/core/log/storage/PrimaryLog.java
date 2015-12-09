@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
-import de.uniduesseldorf.dxram.core.util.NodeID;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * This class implements the primary log. Furthermore this class manages all
@@ -18,10 +19,10 @@ import de.uniduesseldorf.dxram.core.util.NodeID;
 public final class PrimaryLog extends AbstractLog {
 
 	// Constants
-	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(ConfigurationConstants.LOG_DIRECTORY);
+	private static final String BACKUP_DIRECTORY = Core.getConfiguration().getStringValue(DXRAMConfigurationConstants.LOG_DIRECTORY);
 	private static final String PRIMLOG_SUFFIX_FILENAME = "prim.log";
 	private static final byte[] PRIMLOG_HEADER = "DXRAMPrimLogv1".getBytes(Charset.forName("UTF-8"));
-	private static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
+	private static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.PRIMARY_LOG_SIZE);
 	private static final int PRIMLOG_MIN_SIZE = 65535 * FLASHPAGE_SIZE;
 
 	// Attributes

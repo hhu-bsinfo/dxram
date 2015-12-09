@@ -34,6 +34,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	private ReentrantLock m_receiversLock;
 
 	private ReentrantLock m_lock;
+	
+	private short m_ownNodeID;
 
 	// Constructors
 	/**
@@ -54,9 +56,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		networkType = NIOConnectionCreator.FlowControlMessage.TYPE;
 		m_messageDirectory.register(networkType, NIOConnectionCreator.FlowControlMessage.SUBTYPE, NIOConnectionCreator.FlowControlMessage.class);
 
-		m_manager = new ConnectionManager(new NIOConnectionCreator(m_executor, , this);
-		
 		m_lock = new ReentrantLock(false);
+		
+		m_ownNodeID = NodeID.INVALID_ID;
 		
 		if (p_enableStatisticsThroughput) {
 			StatisticsManager.registerStatistic("Throughput", ThroughputStatistic.getInstance());
@@ -74,12 +76,12 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	}
 
 	// Methods
-	public void initialize() {
+	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes) {
 		LOGGER.trace("Entering initialize");
 
 		m_lock.lock();
 		
-		
+		m_manager = new ConnectionManager(new NIOConnectionCreator(m_executor, m_messageDirectory, p_nodeMap, p_maxOutstandingBytes));
 
 		m_lock.unlock();
 
@@ -164,7 +166,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			 * the incoming connection will be discarded. Further, the incoming Messages
 			 * can never be delivered.
 			 */
-			if (p_message.getDestination() == NodeID.getLocalNodeID()) {
+			if (p_message.getDestination() == m_ownNodeID) {
 				newMessage(p_message);
 			} else {
 				try {

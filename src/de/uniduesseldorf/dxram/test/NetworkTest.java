@@ -5,16 +5,16 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
-import de.uniduesseldorf.dxram.core.util.NodeID;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkInterface;
+import de.uniduesseldorf.utils.config.ConfigurationHandler;
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Test case for the network interface
@@ -24,7 +24,7 @@ import de.uniduesseldorf.menet.NetworkInterface;
 public final class NetworkTest {
 
 	// Constants
-	private static final int MESSAGE_SIZE = ConfigurationConstants.NETWORK_BUFFER_SIZE.getDefaultValue() * 3;
+	private static final int MESSAGE_SIZE = DXRAMConfigurationConstants.NETWORK_BUFFER_SIZE.getDefaultValue() * 3;
 
 	// Constructors
 	/**

@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.exceptions;
 
+import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+
 /**
  * Exception for failed meta data accesses
  * @author Florian Klein
