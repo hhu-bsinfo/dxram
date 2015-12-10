@@ -14,7 +14,7 @@ import de.uniduesseldorf.utils.Contract;
  * Manages the network connections
  * @author Florian Klein 18.03.2012
  */
-final class ConnectionManager implements ConnectionCreatorListener {
+public final class ConnectionManager implements ConnectionCreatorListener {
 
 	// Constants
 	private static final int MAX_CONNECTIONS = 100;

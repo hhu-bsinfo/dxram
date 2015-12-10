@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.utils;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 
 import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 

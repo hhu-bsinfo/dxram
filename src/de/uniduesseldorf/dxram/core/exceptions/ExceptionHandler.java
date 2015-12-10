@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.exceptions;
 
+import de.uniduesseldorf.dxram.core.lookup.LookupException;
+
 import de.uniduesseldorf.menet.NetworkException;
 
 /**

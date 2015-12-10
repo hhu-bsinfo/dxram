@@ -8,10 +8,10 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
+import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 import de.uniduesseldorf.utils.Contract;
 

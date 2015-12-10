@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.log.storage;
 import java.io.IOException;
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 
 import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;

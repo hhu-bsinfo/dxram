@@ -4,11 +4,11 @@ package de.uniduesseldorf.dxram.test;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.dxram.Core;
+import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
+import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 import de.uniduesseldorf.utils.Tools;
 import de.uniduesseldorf.utils.config.ConfigurationHandler;

@@ -4,10 +4,8 @@ package de.uniduesseldorf.dxram.core.lookup;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 

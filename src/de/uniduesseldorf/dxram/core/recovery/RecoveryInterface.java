@@ -2,8 +2,8 @@
 package de.uniduesseldorf.dxram.core.recovery;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
-import de.uniduesseldorf.dxram.core.exceptions.LookupException;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
+import de.uniduesseldorf.dxram.core.lookup.LookupException;
 
 /**
  * Methods for accessing the Recovery-Service

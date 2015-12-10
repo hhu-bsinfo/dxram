@@ -390,7 +390,7 @@ public final class Configuration {
 	 * @param <ValueType>
 	 *            the value class
 	 */
-	public final class ConfigurationEntry<ValueType> {
+	public static final class ConfigurationEntry<ValueType> {
 
 		// Attributes
 		private String m_key;

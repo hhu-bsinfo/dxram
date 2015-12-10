@@ -8,8 +8,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
-
 import de.uniduesseldorf.utils.Contract;
 
 /**
@@ -17,7 +15,7 @@ import de.uniduesseldorf.utils.Contract;
  * @author Florian Klein 18.03.2012
  * @author Marc Ewert 14.10.2014
  */
-abstract class AbstractConnection {
+public abstract class AbstractConnection {
 
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(AbstractConnection.class);

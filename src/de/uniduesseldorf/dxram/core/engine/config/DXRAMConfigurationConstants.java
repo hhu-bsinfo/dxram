@@ -66,10 +66,13 @@ public final class DXRAMConfigurationConstants {
 	//
 	public static final ConfigurationEntry<Integer> NETWORK_MAX_CACHE_SIZE = new ConfigurationEntry<Integer>("network.max_cache_size", Integer.class,
 			128 * 1024 * 1024);
-	// Performance optimization vs. cpu usage reduction
-	public static final ConfigurationEntry<Boolean> NETWORK_HIGH_PERFORMANCE = new ConfigurationEntry<Boolean>("network.high_performance", Boolean.class,
+	//
+	public static final ConfigurationEntry<Boolean> NETWORK_STATISTICS_THROUGHPUT = new ConfigurationEntry<Boolean>("network.statistics.throughput", Boolean.class,
 			true);
-
+	//
+	public static final ConfigurationEntry<Boolean> NETWORK_STATISTICS_REQUESTS = new ConfigurationEntry<Boolean>("network..statistics.requests", Boolean.class,
+			true);
+	
 	// Size of the RAM
 	public static final ConfigurationEntry<Long> RAM_SIZE = new ConfigurationEntry<Long>("ram.size", Long.class, 1073741824L);
 	// Size of the RAM
@@ -173,7 +176,6 @@ public final class DXRAMConfigurationConstants {
 		CONFIGURATION_ENTRIES.add(NETWORK_MESSAGE_HANDLER_THREAD_COUNT);
 		CONFIGURATION_ENTRIES.add(NETWORK_TASK_HANDLER_THREAD_COUNT);
 		CONFIGURATION_ENTRIES.add(NETWORK_MAX_CACHE_SIZE);
-		CONFIGURATION_ENTRIES.add(NETWORK_HIGH_PERFORMANCE);
 		CONFIGURATION_ENTRIES.add(RAM_SIZE);
 		CONFIGURATION_ENTRIES.add(RAM_MANAGEMENT);
 		CONFIGURATION_ENTRIES.add(LOG_ACTIVE);

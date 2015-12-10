@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 
 import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 

@@ -8,9 +8,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
 
 import de.uniduesseldorf.utils.Tools;
 import de.uniduesseldorf.utils.locks.JNILock;
@@ -36,7 +36,7 @@ public final class MemoryManagementTest {
 	private static final int DEFAULT_MAX_CHUNK_SIZE = 64;
 	private static final int DEFAULT_RANDOM_CHUNK_SIZES = 0;
 	
-	private static MemoryManager m_memoryManager;
+	private static MemoryManagerComponent m_memoryManager;
 
 	// Constructors
 	/**
@@ -131,7 +131,7 @@ public final class MemoryManagementTest {
 	 */
 	private static void init(final int p_chunkCount, final int p_threadCount) throws MemoryException {
 
-		m_memoryManager = new MemoryManager(0);
+		m_memoryManager = new MemoryManagerComponent(0);
 		m_memoryManager.initialize(1073741824L * 8, 1073741824L * 8, false);
 	}
 

@@ -5,8 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
+import de.uniduesseldorf.dxram.core.dxram.Core;
+import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 
 import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;

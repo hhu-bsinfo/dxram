@@ -8,12 +8,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable;
+import de.uniduesseldorf.dxram.core.dxram.Core;
+import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
+import de.uniduesseldorf.dxram.core.mem.Chunk;
+import de.uniduesseldorf.dxram.core.mem.storage.CIDTable;
 
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.utils.Tools;

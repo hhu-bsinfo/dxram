@@ -4,12 +4,10 @@ package de.uniduesseldorf.dxram.core.lookup.storage;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
+import de.uniduesseldorf.dxram.core.lookup.Locations;
 
 import de.uniduesseldorf.utils.Contract;
 import de.uniduesseldorf.utils.Tools;
-import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 
 /**
  * Btree to cache ranges
@@ -38,11 +36,11 @@ public final class CacheTree {
 	 * @param p_order
 	 *            order of the btree
 	 */
-	public CacheTree(final short p_order) {
+	public CacheTree(final long p_cacheMaxSize, final short p_order) {
 		Thread thread;
 		long ttl;
 
-		ttl = Math.max(Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.LOOKUP_CACHE_TTL), 1000);
+		ttl = Math.max(p_cacheMaxSize, 1000);
 
 		Contract.checkNotNull(p_order);
 		Contract.check(1 < p_order, "too small order for BTree");

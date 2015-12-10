@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.log.header;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
-import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 

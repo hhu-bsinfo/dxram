@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.TreeSet;
 
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler;
+import de.uniduesseldorf.dxram.core.lookup.DefaultLookupComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
@@ -398,7 +398,7 @@ public class AIDTableOptimized {
 			iter = getKey(i);
 			value = getValue(i);
 			if (iter != 0) {
-				if (p_isOnlySuperpeer || LookupHandler.isNodeInRange(ChunkID.getCreatorID(value), p_bound1, p_bound2, p_interval)) {
+				if (p_isOnlySuperpeer || DefaultLookupComponent.isNodeInRange(ChunkID.getCreatorID(value), p_bound1, p_bound2, p_interval)) {
 					data.putInt(iter);
 					data.putLong(getValue(i));
 					count++;

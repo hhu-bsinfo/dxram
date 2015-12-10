@@ -8,12 +8,12 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.dxram.Core;
+import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.log.LogHandler.SecondaryLogsReorgThread;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
+import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
 

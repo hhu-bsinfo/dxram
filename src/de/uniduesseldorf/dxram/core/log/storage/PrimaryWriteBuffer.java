@@ -10,7 +10,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
-import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.util.ChunkID;

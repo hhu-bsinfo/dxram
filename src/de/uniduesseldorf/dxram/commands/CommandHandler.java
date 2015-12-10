@@ -1,7 +1,7 @@
 
 package de.uniduesseldorf.dxram.commands;
 
-import de.uniduesseldorf.dxram.core.api.CommandListener;
+import de.uniduesseldorf.dxram.core.dxram.CommandListener;
 
 /**
  * Handling command request from remote nodes.

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 import sun.misc.Unsafe;
 
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 import de.uniduesseldorf.utils.unsafe.UnsafeHandler;
 

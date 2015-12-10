@@ -3,9 +3,9 @@ package de.uniduesseldorf.dxram.core.log;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
+import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.AbstractRequest;

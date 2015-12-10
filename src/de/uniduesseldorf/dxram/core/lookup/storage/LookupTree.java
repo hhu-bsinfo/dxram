@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.lookup.storage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
+import de.uniduesseldorf.dxram.core.lookup.Locations;
 
 import de.uniduesseldorf.utils.Contract;
 

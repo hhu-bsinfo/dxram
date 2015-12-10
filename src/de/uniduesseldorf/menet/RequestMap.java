@@ -13,7 +13,7 @@ import de.uniduesseldorf.utils.Contract;
  * @author Florian Klein
  *         09.03.2012
  */
-final class RequestMap {
+public final class RequestMap {
 
 	// Attributes
 	private static Map<Long, AbstractRequest> m_pendingRequests = new HashMap<>();
@@ -65,7 +65,7 @@ final class RequestMap {
 	 * @param p_response
 	 *            the Response
 	 */
-	static void fulfill(final AbstractResponse p_response) {
+	public static void fulfill(final AbstractResponse p_response) {
 		AbstractRequest request;
 
 		if (p_response != null) {

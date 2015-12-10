@@ -4,8 +4,8 @@ package de.uniduesseldorf.dxram.test;
 import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
+import de.uniduesseldorf.dxram.core.dxram.Core;
+import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.io.InputHelper;

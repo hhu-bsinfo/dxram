@@ -7,7 +7,7 @@ import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.Vector;
 
-import de.uniduesseldorf.dxram.core.api.Core;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
 

@@ -64,6 +64,19 @@ public final class NodesWatcher implements Watcher {
 		return m_nodesConfiguration;
 	}
 	
+	public byte[] getZookeeperData(final String p_path)
+	{
+		byte[] data = null;
+		
+		try {
+			data = m_zookeeper.getData(p_path);
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Getting data from zookeeper failed.", e);
+		}
+		
+		return data;
+	}
+	
 	/** 
 	 * Setup the watcher by parsing the configuration (file) provided with the parser interface
 	 * and setup zookeeper with initial information.
@@ -76,6 +89,15 @@ public final class NodesWatcher implements Watcher {
 		
 		nodeEntries = p_parser.readConfiguration();
 		parseNodes(nodeEntries);
+	}
+	
+	public void close(final boolean p_cleanup)
+	{
+		try {
+			m_zookeeper.close(p_cleanup);
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Closing zookeeper failed.", e);
+		}
 	}
 
 	// Methods

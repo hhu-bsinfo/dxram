@@ -3,8 +3,6 @@ package de.uniduesseldorf.dxram.core.lock;
 
 import java.util.concurrent.Semaphore;
 
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
-
 /**
  * Represents a Lock
  * @author klein 26.03.2015

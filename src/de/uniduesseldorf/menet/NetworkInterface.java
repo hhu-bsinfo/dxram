@@ -1,7 +1,6 @@
 
 package de.uniduesseldorf.menet;
 
-
 /**
  * Methods for accessing the network
  * @author Florian Klein
@@ -19,6 +18,14 @@ public interface NetworkInterface {
 	 * Deactivates the ConnectionManager
 	 */
 	void deactivateConnectionManager();
+	
+	/**
+	 * Register a new type of message with the network.
+	 * @param p_type Type identifier.
+	 * @param p_subtype Subtype identifier.
+	 * @param p_class Class to register for this type.
+	 */
+	void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class);
 
 	/**
 	 * Sends a Message

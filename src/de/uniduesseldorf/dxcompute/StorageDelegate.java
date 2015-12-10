@@ -1,6 +1,6 @@
 package de.uniduesseldorf.dxcompute;
 
-import de.uniduesseldorf.dxram.core.chunk.DataStructure;
+import de.uniduesseldorf.dxram.core.mem.DataStructure;
 
 public interface StorageDelegate 
 {

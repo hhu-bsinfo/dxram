@@ -11,12 +11,9 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationFileParser;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationParser;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.NodeEntry;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationException;
 
 import de.uniduesseldorf.utils.config.Configuration;
@@ -34,14 +31,18 @@ public class DXRAMEngine
 	
 	private boolean m_isInitilized;
 	
+	private DXRAMComponentSetupHandler m_componentSetupHandler;
+	
 	private Configuration m_configuration;
 	private NodesWatcher m_nodesWatcher;
+	private DXRAMSystemData m_systemData;
 	
 	private HashMap<String, DXRAMComponent> m_components = new HashMap<String, DXRAMComponent>();
+	private HashMap<String, DXRAMService> m_services = new HashMap<String, DXRAMService>();
 	
-	public DXRAMEngine()
+	public DXRAMEngine(final DXRAMComponentSetupHandler p_componentSetupHandler)
 	{
-		
+		m_componentSetupHandler = p_componentSetupHandler;
 	}
 	
 	public boolean addComponent(final DXRAMComponent p_component)
@@ -64,6 +65,26 @@ public class DXRAMEngine
 		return ret;
 	}
 	
+	public boolean addService(final DXRAMService p_service)
+	{
+		boolean ret = false;
+		
+		if (!m_isInitilized)
+		{
+			// no duplicated components
+			if (!m_services.containsKey(p_service.getServiceName())) {
+				m_services.put(p_service.getServiceName(), p_service);
+				ret = true;
+			}
+			else
+			{
+				m_logger.error("Service '" + p_service.getServiceName() + "' is already registered.");
+			}
+		}
+			
+		return ret;
+	}
+	
 	public boolean clearComponents() {
 		boolean ret = false;
 		
@@ -76,7 +97,31 @@ public class DXRAMEngine
 		return ret;
 	}
 	
-	public DXRAMComponent getComponent(final String p_identifier)
+	public boolean clearServices() {
+		boolean ret = false;
+		
+		if (!m_isInitilized)
+		{
+			m_services.clear();
+			ret = true;
+		}
+		
+		return ret;
+	}
+	
+	public DXRAMService getService(final String p_name)
+	{
+		DXRAMService service = null;
+		
+		if (m_isInitilized)
+		{
+			service = m_services.get(p_name);
+		}
+		
+		return service;
+	}
+	
+	DXRAMComponent getComponent(final String p_identifier)
 	{
 		DXRAMComponent component = null;
 		
@@ -88,7 +133,7 @@ public class DXRAMEngine
 		return component;
 	}
 	
-	public Configuration getConfiguration()
+	Configuration getConfiguration()
 	{
 		if (m_isInitilized)
 			return m_configuration;
@@ -96,7 +141,7 @@ public class DXRAMEngine
 			return null;
 	}
 	
-	public NodesConfiguration getNodesConfiguration()
+	NodesConfiguration getNodesConfiguration()
 	{
 		if (m_isInitilized)
 			return m_nodesWatcher.getNodesConfiguration();
@@ -104,7 +149,20 @@ public class DXRAMEngine
 			return null;
 	}
 	
-	public boolean init(final String p_configurationFolder)
+	DXRAMSystemData getSystemData()
+	{
+		if (m_isInitilized)
+			return m_systemData;
+		else
+			return null;
+	}
+	
+	Logger getLogger()
+	{
+		return m_logger;
+	}
+	
+	public boolean init(final String p_configurationFolder) throws ConfigurationException, NodesConfigurationException
 	{
 		assert !m_isInitilized;
 		
@@ -114,6 +172,12 @@ public class DXRAMEngine
 		m_logger.info("Initializing engine...");
 		
 		bootstrap(p_configurationFolder);
+		
+		if (m_componentSetupHandler != null)
+		{
+			m_logger.debug("Setting up components with external handler...");
+			m_componentSetupHandler.setupComponents(m_configuration);
+		}
 		
         list = new ArrayList<DXRAMComponent>(m_components.values());
 
@@ -170,6 +234,8 @@ public class DXRAMEngine
         }
         
         m_logger.info("Shutting down components done.");
+        
+        closeNodesRouting();
 
         m_logger.info("Shutting down engine done.");
 
@@ -192,6 +258,8 @@ public class DXRAMEngine
 		overrideConfigurationWithVMArguments();
 		
 		setupNodesRouting(configurationFolder);
+		
+		initializeSystemData();
 	}
 	
 	private void loadConfiguration(final String p_configurationFolder) throws ConfigurationException
@@ -245,6 +313,11 @@ public class DXRAMEngine
 		m_nodesWatcher.setupNodeRouting(new NodesConfigurationFileParser(file));
 	}
 	
+	private void initializeSystemData()
+	{
+		m_systemData = new DXRAMSystemData(m_nodesWatcher);
+	}
+	
 	private void overrideConfigurationWithVMArguments()
 	{
 		String[] keyValue;
@@ -270,5 +343,12 @@ public class DXRAMEngine
 			m_logger.debug("Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
 			m_configuration.setValue(keyValue[0], keyValue[1]);
 		}
+	}
+	
+	private void closeNodesRouting()
+	{
+		// TODO last node has to set this to true ->
+		// get information from superpeer overlay
+		m_nodesWatcher.close(false);
 	}
 }

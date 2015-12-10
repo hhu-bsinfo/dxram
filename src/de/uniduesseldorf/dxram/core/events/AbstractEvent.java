@@ -1,8 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.events;
 
-import de.uniduesseldorf.dxram.core.api.nodeconfig.NodeID;
-
 /**
  * Respresents an Event, which can be triggered
  * @author Florian Klein
@@ -20,8 +18,6 @@ public abstract class AbstractEvent {
 	 *            the NodeID of the event source
 	 */
 	public AbstractEvent(final short p_source) {
-		NodeID.check(p_source);
-
 		m_source = p_source;
 	}
 
