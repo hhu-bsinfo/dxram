@@ -1,3 +1,0 @@
-#Classes
-InputHelper - Methods for reading DXRAM data types (ID, NodeID, Chunk)
-OutputHelper - Methods for writing DXRAM data types (ID, NodeID, Chunk)

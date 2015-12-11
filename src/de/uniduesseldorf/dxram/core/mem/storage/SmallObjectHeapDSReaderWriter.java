@@ -1,6 +1,5 @@
 package de.uniduesseldorf.dxram.core.mem.storage;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.mem.DataStructureReader;
 import de.uniduesseldorf.dxram.core.mem.DataStructureWriter;
 

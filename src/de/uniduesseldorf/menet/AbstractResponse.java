@@ -8,6 +8,8 @@ package de.uniduesseldorf.menet;
  */
 public abstract class AbstractResponse extends AbstractMessage {
 
+	private AbstractRequest m_correspondingRequest = null;
+	
 	// Constructors
 	/**
 	 * Creates an instance of Response
@@ -23,6 +25,8 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 */
 	public AbstractResponse(final AbstractRequest p_request) {
 		super(p_request.getMessageID(), p_request.getDestination(), p_request.getSource(), p_request.getType(), DEFAULT_SUBTYPE);
+	
+		m_correspondingRequest = p_request;
 	}
 
 	/**
@@ -34,6 +38,8 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 */
 	public AbstractResponse(final AbstractRequest p_request, final byte p_subtype) {
 		super(p_request.getMessageID(), p_request.getDestination(), p_request.getSource(), p_request.getType(), p_subtype);
+	
+		m_correspondingRequest = p_request;
 	}
 
 	// Getters
@@ -53,4 +59,7 @@ public abstract class AbstractResponse extends AbstractMessage {
 		return getMessageID();
 	}
 
+	protected AbstractRequest getCorrespondingRequest() {
+		return m_correspondingRequest;
+	}
 }

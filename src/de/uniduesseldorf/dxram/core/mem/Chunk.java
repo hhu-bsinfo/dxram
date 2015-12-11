@@ -13,13 +13,12 @@ public class Chunk implements Comparable<Chunk>, DataStructure
 	public static final long INVALID_CHUNKID = -1;
 
 	// Attributes
-	private long m_chunkID;
-	private ByteBuffer m_data;
+	private long m_chunkID = INVALID_CHUNKID;
+	private ByteBuffer m_data = null;
 
 	// Constructors
-	public Chunk() {
-		m_chunkID = INVALID_CHUNKID;
-		m_data = null;
+	public Chunk(final long p_id) {
+		m_chunkID = p_id;
 	}
 
 	// Getters
@@ -60,29 +59,28 @@ public class Chunk implements Comparable<Chunk>, DataStructure
 	}
 
 	@Override
-	public void write(final long p_startAddress, final DataStructureWriter p_writer) 
+	public void writePayload(final long p_startAddress, final DataStructureWriter p_writer) 
 	{
 		p_writer.putInt(p_startAddress, 0, m_data.capacity());
 		p_writer.putBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());
 	}
 
 	@Override
-	public void read(final long p_startAddress, final DataStructureReader p_reader)
+	public void readPayload(final long p_startAddress, final DataStructureReader p_reader)
 	{
 		m_data = ByteBuffer.allocate(p_reader.getInt(p_startAddress, 0));
 		p_reader.getBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());
 	}
 
 	@Override
-	public int sizeof() 
+	public int sizeofPayload() 
 	{
-		return 	8
-			+	4
+		return 	4
 			+ 	m_data.capacity();
 	}
 
 	@Override
-	public boolean hasDynamicSize() {
+	public boolean hasDynamicPayloadSize() {
 		return true;
 	}
 

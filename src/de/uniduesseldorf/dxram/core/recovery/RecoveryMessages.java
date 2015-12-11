@@ -100,7 +100,7 @@ public final class RecoveryMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -178,7 +178,7 @@ public final class RecoveryMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength() + OutputHelper.getChunkIDWriteLength();
 		}
 
@@ -239,7 +239,7 @@ public final class RecoveryMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunksWriteLength(m_chunks);
 		}
 

@@ -144,7 +144,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -349,7 +349,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			if (m_newContactSuperpeer == -1) {
@@ -438,7 +438,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunkIDWriteLength();
 		}
 
@@ -505,7 +505,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			if (m_locations == null) {
@@ -573,7 +573,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength();
 		}
 
@@ -642,7 +642,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getIntWriteLength() + OutputHelper.getBackupRangeWriteLength() * m_backupRanges.length;
 		}
 
@@ -702,7 +702,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength();
 		}
 
@@ -792,7 +792,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -852,7 +852,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getBooleanWriteLength();
 		}
 
@@ -942,7 +942,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -1048,7 +1048,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunkIDWriteLength() * 2 + OutputHelper.getNodeIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -1108,7 +1108,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getBooleanWriteLength();
 		}
 
@@ -1198,7 +1198,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunkIDWriteLength() + OutputHelper.getLongWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -1258,7 +1258,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getBooleanWriteLength();
 		}
 
@@ -1335,7 +1335,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunkIDsWriteLength(m_chunkIDs.length) + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -1402,7 +1402,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			if (m_backupSuperpeers == null) {
@@ -1483,7 +1483,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			ret = OutputHelper.getIntWriteLength();
@@ -1587,7 +1587,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			ret = OutputHelper.getBooleanWriteLength();
@@ -1689,7 +1689,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength();
 		}
 
@@ -1751,7 +1751,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength();
 		}
 
@@ -1813,7 +1813,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength();
 		}
 
@@ -1910,7 +1910,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			ret = OutputHelper.getBooleanWriteLength();
@@ -1999,7 +1999,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			ret = OutputHelper.getIntWriteLength();
@@ -2229,7 +2229,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			ret = OutputHelper.getNodeIDWriteLength() * 3;
@@ -2312,7 +2312,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getBooleanWriteLength();
 		}
 
@@ -2372,7 +2372,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getShortWriteLength();
 		}
 
@@ -2458,7 +2458,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength();
 		}
 
@@ -2520,7 +2520,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength();
 		}
 
@@ -2597,7 +2597,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getNodeIDWriteLength() + OutputHelper.getChunkIDWriteLength();
 		}
 
@@ -2687,7 +2687,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getIntWriteLength() + OutputHelper.getChunkIDWriteLength() + OutputHelper.getBooleanWriteLength();
 		}
 
@@ -2754,7 +2754,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret;
 
 			if (m_backupSuperpeers == null) {
@@ -2822,7 +2822,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getIntWriteLength();
 		}
 
@@ -2882,7 +2882,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getChunkIDWriteLength();
 		}
 
@@ -2966,7 +2966,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getLongWriteLength();
 		}
 
@@ -3023,7 +3023,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getStringsWriteLength(m_cmd);
 		}
 
@@ -3082,7 +3082,7 @@ public final class LookupMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getStringsWriteLength(m_answer);
 		}
 

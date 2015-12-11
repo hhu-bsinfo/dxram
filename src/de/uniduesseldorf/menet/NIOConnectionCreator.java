@@ -997,7 +997,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		}
 
 		@Override
-		protected int getPayloadLength() {
+		protected int getPayloadLengthForWrite() {
 			return 4;
 		}
 	}

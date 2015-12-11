@@ -221,10 +221,10 @@ public abstract class AbstractMessage {
 	protected void writePayload(final ByteBuffer p_buffer) {}
 
 	/**
-	 * Get the total number of bytes the payload requires
+	 * Get the total number of bytes the payload requires to create a buffer.
 	 * @return Number of bytes of the payload
 	 */
-	protected int getPayloadLength() {
+	protected int getPayloadLengthForWrite() {
 		return 0;
 	}
 
@@ -236,7 +236,7 @@ public abstract class AbstractMessage {
 		int payloadSize;
 		ByteBuffer buffer;
 
-		payloadSize = getPayloadLength();
+		payloadSize = getPayloadLengthForWrite();
 		buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
 		buffer = fillBuffer(buffer, payloadSize);
 		buffer.flip();

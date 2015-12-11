@@ -79,7 +79,7 @@ public class SimpleVertex implements DataStructure
 	}
 
 	@Override
-	public int sizeof() 
+	public int sizeofPayload() 
 	{
 		return 	4
 			+ 	4
@@ -87,7 +87,7 @@ public class SimpleVertex implements DataStructure
 	}
 
 	@Override
-	public boolean hasDynamicSize() {
+	public boolean hasDynamicPayloadSize() {
 		return true;
 	}
 	

@@ -1,30 +1,24 @@
 package de.uniduesseldorf.dxram.core.chunk;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.Vector;
+import java.util.Map.Entry;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandMessage;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.DataMessage;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.DataRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.DataResponse;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.GetResponse;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LockRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetResponse;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.PutRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.PutResponse;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveRequest;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveResponse;
-import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.UnlockMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
+import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
+import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.lock.DefaultLock;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
@@ -33,6 +27,7 @@ import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
 import de.uniduesseldorf.dxram.core.mem.Chunk;
 import de.uniduesseldorf.dxram.core.mem.DataStructure;
+import de.uniduesseldorf.dxram.core.mem.MigrationsTree;
 import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
@@ -43,7 +38,11 @@ import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.Pair;
+import de.uniduesseldorf.utils.StatisticsManager;
 import de.uniduesseldorf.utils.config.Configuration;
+import de.uniduesseldorf.utils.unsafe.IntegerLongList;
+import de.uniduesseldorf.utils.unsafe.AbstractKeyValueList.KeyValuePair;
 
 public class ChunkService extends DXRAMService implements MessageReceiver, ConnectionLostListener
 {
@@ -64,6 +63,35 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	public ChunkService()
 	{
 		super(SERVICE_NAME);
+		
+		m_nodeID = NodeID.INVALID_ID;
+
+		m_memoryManager = null;
+
+		if (LOG_ACTIVE && NodeID.getRole().equals(Role.PEER)) {
+			m_ownBackupRanges = new ArrayList<BackupRange>();
+			m_migrationBackupRanges = new ArrayList<BackupRange>();
+			m_migrationsTree = new MigrationsTree((short) 10);
+			m_currentBackupRange = null;
+			m_currentMigrationBackupRange = new BackupRange(-1, null);
+			m_rangeSize = 0;
+		}
+		m_firstRangeInitialized = false;
+
+		m_network = null;
+		m_lookup = null;
+		m_log = null;
+		m_lock = null;
+
+		m_listener = null;
+
+		m_migrationLock = null;
+		m_mappingLock = null;
+	}
+	
+	@Override
+	public void setListener(final IncomingChunkListener p_listener) {
+		m_listener = p_listener;
 	}
 	
 	@Override
@@ -71,7 +99,42 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	{
 		final boolean p_statisticsEnabled, final boolean p_logActive, final long p_secondaryLogSize, final int p_replicationFactor
 		
-		registerNetworkMessages
+		m_nodeID = NodeID.getLocalNodeID();
+
+		m_network = CoreComponentFactory.getNetworkInterface();
+		m_network.register(GetRequest.class, this);
+		m_network.register(PutRequest.class, this);
+		m_network.register(RemoveRequest.class, this);
+		m_network.register(LockRequest.class, this);
+		m_network.register(UnlockMessage.class, this);
+		m_network.register(DataRequest.class, this);
+		m_network.register(DataMessage.class, this);
+		m_network.register(MultiGetRequest.class, this);
+		m_network.register(ChunkCommandMessage.class, this);
+		m_network.register(ChunkCommandRequest.class, this);
+
+		if (LOG_ACTIVE && NodeID.getRole().equals(Role.PEER)) {
+			m_log = CoreComponentFactory.getLogInterface();
+		}
+
+		m_lookup = CoreComponentFactory.getLookupInterface();
+		if (NodeID.getRole().equals(Role.PEER)) {
+
+			m_lock = CoreComponentFactory.getLockInterface();
+
+			m_memoryManager = new MemoryManagerComponent(NodeID.getLocalNodeID());
+			m_memoryManager.initialize(Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.RAM_SIZE),
+					Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.RAM_SEGMENT_SIZE),
+					Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.STATISTIC_MEMORY));
+
+			m_migrationLock = new ReentrantLock(false);
+			registerPeer();
+			m_mappingLock = new ReentrantLock(false);
+		}
+
+		if (Core.getConfiguration().getBooleanValue(DXRAMConfigurationConstants.STATISTIC_CHUNK)) {
+			StatisticsManager.registerStatistic("Chunk", ChunkStatistic.getInstance());
+		}
 		
 		// TODO Auto-generated method stub
 		return false;
@@ -80,7 +143,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	@Override
 	protected boolean shutdownService() 
 	{
-		// TODO Auto-generated method stub
+		try {
+			if (NodeID.getRole().equals(Role.PEER)) {
+				m_memoryManager.disengage();
+			}
+		} catch (final MemoryException e) {}
 		return false;
 	}
 	
@@ -187,7 +254,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 					// busy loop, sync get 
 					while (true) {
 						// Remote get
-						request = new GetRequest(primaryPeer, p_dataStructure.getID());
+						request = new GetRequest(primaryPeer, p_dataStructure);
 						try {
 							request.sendSync(m_network);
 						} catch (final NetworkException e) {
@@ -214,8 +281,121 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	}
 
 	public int get(DataStructure[] p_dataStructures) {
-		// TODO Auto-generated method stub
-		return 0;
+		Map<Short, Vector<DataStructure>> remoteChunksByPeers;
+		Vector<DataStructure> remoteChunksOfPeer;
+		MultiGetRequest request;
+		MultiGetResponse response;
+		Vector<DataStructure> localChunks;
+		int totalChunksGot;
+
+		if (m_statisticsEnabled)
+			Operation.MULTI_GET.enter();
+
+		Contract.checkNotNull(p_chunkIDs, "no IDs given");
+		ChunkID.check(p_chunkIDs);
+
+		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+			LOGGER.error("a superpeer must not use chunks");
+		} else {
+			// sort by local and remote data first
+			remoteChunksByPeers = new TreeMap<>();
+			localChunks = new Vector<DataStructure>();
+			for (int i = 0; i < p_dataStructures.length; i++) {
+				if (m_memoryManager.isResponsible(p_dataStructures[i].getID())) {
+					// local
+					localChunks.add(p_dataStructures[i]);
+				} else {
+					// remote, figure out location and sort by peers
+					Locations locations;
+					locations = m_lookup.get(p_dataStructures[i].getID());
+					if (locations == null) {
+						continue;
+					} else {
+						short peer = locations.getPrimaryPeer();
+
+						remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+						if (remoteChunksOfPeer == null) {
+							remoteChunksOfPeer = new Vector<DataStructure>();
+							remoteChunksByPeers.put(peer, remoteChunksOfPeer);
+						}
+						remoteChunksOfPeer.add(p_dataStructures[i]);
+					}
+				}
+			}
+
+			// get local chunkIDs in a tight loop
+			m_memoryManager.lockAccess();
+			for (final DataStructure chunk : localChunks) {
+				if (m_memoryManager.get(chunk))
+					totalChunksGot++;
+			}
+			m_memoryManager.unlockAccess();
+
+			// go for remote ones by each peer
+			for (final Entry<Short, Vector<DataStructure>> peerWithChunks : remoteChunksByPeers.entrySet()) {
+				short peer = peerWithChunks.getKey();
+				Vector<DataStructure> remoteChunks = peerWithChunks.getValue();
+
+				if (peer == getSystemData().getNodeID()) {
+					// local get
+					m_memoryManager.lockAccess();
+					for (final DataStructure chunk : remoteChunks) {
+						if (m_memoryManager.get(chunk))
+							totalChunksGot++;
+					}
+					m_memoryManager.unlockAccess();
+				} else {
+					// gather chunk ids for message
+					long[] ids = new long[remoteChunks.size()];
+					for (int i = 0; i < ids.length; i++) {
+						ids[i] = remoteChunks.get(i).getID();
+					}
+
+					// Remote get
+					request = new MultiGetRequest(peer, ids);
+					try {
+						request.sendSync(m_network);
+					} catch (final NetworkException e) {
+						m_lookup.invalidate(ids);
+						if (m_logActive) {
+							// TODO: Start Recovery
+						}
+						continue;
+					}
+					response = request.getResponse(MultiGetResponse.class);
+					if (response != null) {
+						chunks = response.getChunks();
+						for (int i = 0; i < list.size(); i++) {
+							ret[list.get(i).getKey()] = chunks[i];
+						}
+					}
+				}
+			}
+
+			// check if some chunks are null
+			list = new IntegerLongList();
+			for (int i = 0; i < ret.length; i++) {
+				if (ret[i] == null) {
+					list.add(i, p_chunkIDs[i]);
+				}
+			}
+			if (!list.isEmpty()) {
+				ids = new long[list.size()];
+				for (int i = 0; i < list.size(); i++) {
+					ids[i] = list.get(i).getValue();
+				}
+
+				chunks = get(ids);
+
+				for (int i = 0; i < list.size(); i++) {
+					ret[list.get(i).getKey()] = chunks[i];
+				}
+			}
+		}
+
+		Operation.MULTI_GET.leave();
+
+		return ret;
 	}
 
 	public int put(DataStructure p_dataStrucutre) {
@@ -388,14 +568,19 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	 *            the GetRequest
 	 */
 	private void incomingGetRequest(final GetRequest p_request) {
-		Chunk chunk;
 
-		Operation.INCOMING_GET.enter();
+		if (m_statisticsEnabled)
+			Operation.INCOMING_GET.enter();
 
 		try {
-			// TODO
-			chunk = null;
-			// chunk = m_memoryManager.get(p_request.getChunkID());
+			boolean res = false;
+			Chunk chunk = new Chunk();
+			
+			m_memoryManager.lockAccess();
+			res = m_memoryManager.get(chunk);
+			m_memoryManager.unlockAccess();
+			
+			
 
 			new GetResponse(p_request, chunk).send(m_network);
 		} catch (final DXRAMException e) {
@@ -404,7 +589,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
 
-		Operation.INCOMING_GET.leave();
+		if (m_statisticsEnabled)
+			Operation.INCOMING_GET.leave();
 	}
 
 	/**

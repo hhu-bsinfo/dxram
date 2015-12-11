@@ -88,7 +88,7 @@ public final class NetworkTest {
 		}
 
 		@Override
-		protected int getPayloadLength() {
+		protected int getPayloadLengthForWrite() {
 			return OutputHelper.getByteArrayWriteLength(m_size);
 		}
 

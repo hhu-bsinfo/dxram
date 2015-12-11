@@ -96,7 +96,7 @@ public class StorageDXRAM implements StorageDelegate
 
 	@Override
 	public int put(DataStructure p_dataStrucutre) {
-		Chunk chunk = new Chunk(p_dataStrucutre.getID(), p_dataStrucutre.sizeof());
+		Chunk chunk = new Chunk(p_dataStrucutre.getID(), p_dataStrucutre.sizeofPayload());
 		
 		p_dataStrucutre.read(new ByteBufferDataStructureReaderWriter(chunk.getData()));
 		try {
@@ -115,7 +115,7 @@ public class StorageDXRAM implements StorageDelegate
 		
 		for (int i = 0; i < chunks.length; i++)
 		{
-			chunks[i] = new Chunk(p_dataStructure[i].getID(), p_dataStructure[i].sizeof());
+			chunks[i] = new Chunk(p_dataStructure[i].getID(), p_dataStructure[i].sizeofPayload());
 			p_dataStructure[i].read(new ByteBufferDataStructureReaderWriter(chunks[i].getData()));
 		}
 		

@@ -214,7 +214,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
-			p_dataStructure.read(address, m_smallObjectHeapDSReaderWriter);
+			p_dataStructure.readPayload(address, m_smallObjectHeapDSReaderWriter);
 			ret = true;
 		}
 		
@@ -245,7 +245,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
-			p_dataStructure.write(address, m_smallObjectHeapDSReaderWriter);
+			p_dataStructure.writePayload(address, m_smallObjectHeapDSReaderWriter);
 			ret = true;
 		}
 

@@ -119,7 +119,7 @@ public final class LogMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			int ret = 5;
 
 			for (Chunk chunk : m_chunks) {
@@ -208,7 +208,7 @@ public final class LogMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getByteWriteLength() + OutputHelper.getIntWriteLength()
 					+ (OutputHelper.getChunkIDWriteLength()) * m_chunkIDs.length;
 		}
@@ -282,7 +282,7 @@ public final class LogMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getLongWriteLength() + OutputHelper.getShortWriteLength();
 		}
 	}
@@ -340,7 +340,7 @@ public final class LogMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getBooleanWriteLength();
 		}
 
@@ -397,7 +397,7 @@ public final class LogMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getStringsWriteLength(m_cmd);
 		}
 
@@ -456,7 +456,7 @@ public final class LogMessages {
 		}
 
 		@Override
-		protected final int getPayloadLength() {
+		protected final int getPayloadLengthForWrite() {
 			return OutputHelper.getStringsWriteLength(m_answer);
 		}
 
