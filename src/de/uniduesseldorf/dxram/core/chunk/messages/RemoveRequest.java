@@ -9,15 +9,15 @@ import de.uniduesseldorf.menet.AbstractRequest;
 /**
  * Request for removing a Chunk on a remote node
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class RemoveRequest extends AbstractRequest {
 
-	// Attributes
 	private long m_chunkID;
 
-	// Constructors
 	/**
-	 * Creates an instance of RemoveRequest
+	 * Creates an instance of RemoveRequest.
+	 * This constructor is used when receiving this message.
 	 */
 	public RemoveRequest() {
 		super();
@@ -26,7 +26,8 @@ public class RemoveRequest extends AbstractRequest {
 	}
 
 	/**
-	 * Creates an instance of RemoveRequest
+	 * Creates an instance of RemoveRequest.
+	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination
 	 * @param p_chunkID
@@ -40,7 +41,6 @@ public class RemoveRequest extends AbstractRequest {
 		m_chunkID = p_chunkID;
 	}
 
-	// Getters
 	/**
 	 * Get the ID for the Chunk to remove
 	 * @return the ID for the Chunk to remove
@@ -49,7 +49,6 @@ public class RemoveRequest extends AbstractRequest {
 		return m_chunkID;
 	}
 
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putLong(m_chunkID);

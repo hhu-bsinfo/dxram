@@ -11,30 +11,31 @@ import de.uniduesseldorf.menet.AbstractRequest;
 /**
  * Request for updating a Chunk on a remote node
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class PutRequest extends AbstractRequest {
 
-	// Attributes
 	// DataStructure is used when sending the put request
 	private DataStructure m_dataStructure = null;
 	// Chunk is created and used when receiving a put request
 	private Chunk m_chunk = null;
 	private boolean m_releaseLock = false;
 
-	// Constructors
 	/**
-	 * Creates an instance of PutRequest
+	 * Creates an instance of PutRequest.
+	 * This constructor is used when receiving this message.
 	 */
 	public PutRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of PutRequest
+	 * Creates an instance of PutRequest.
+	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination
-	 * @param p_chunk
-	 *            the Chunk to put
+	 * @param p_dataStructure
+	 *            Data structure with the data to put.
 	 */
 	public PutRequest(final short p_destination, final DataStructure p_dataStructure) {
 		this(p_destination, p_dataStructure, false);
@@ -44,8 +45,8 @@ public class PutRequest extends AbstractRequest {
 	 * Creates an instance of PutRequest
 	 * @param p_destination
 	 *            the destination
-	 * @param p_chunk
-	 *            the Chunk to put
+	 * @param p_dataStructure
+	 *            Data structure with the data to put.
 	 * @param p_releaseLock
 	 *            if true a potential lock will be released
 	 */
@@ -56,7 +57,6 @@ public class PutRequest extends AbstractRequest {
 		m_releaseLock = p_releaseLock;
 	}
 
-	// Getters
 	/**
 	 * Get the Chunk to put
 	 * @return the Chunk to put
@@ -66,7 +66,7 @@ public class PutRequest extends AbstractRequest {
 	}
 
 	/**
-	 * Checks if a potential lock should be realeased
+	 * Checks if a potential lock should be released
 	 * @return true if a potential lock should be released, false otherwise
 	 */
 	public final boolean isReleaseLock() {

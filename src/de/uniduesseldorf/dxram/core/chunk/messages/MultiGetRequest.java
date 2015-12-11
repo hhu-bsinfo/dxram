@@ -9,30 +9,31 @@ import de.uniduesseldorf.menet.AbstractRequest;
 /**
  * Request for getting multiple Chunks from a remote node
  * @author Florian Klein 05.07.2014
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class MultiGetRequest extends AbstractRequest {
 
-	// Attributes
 	// data structures affected by the request are stored, so the
 	// response can write directly to them
 	private DataStructure[] m_dataStructures = null;
 	// this is only used when receiving the request
 	private long[] m_chunkIDs = null;
 
-	// Constructors
 	/**
-	 * Creates an instance of MultiGetRequest
+	 * Creates an instance of MultiGetRequest.
+	 * This constructor is used when receiving this message.
 	 */
 	public MultiGetRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of MultiGetRequest
+	 * Creates an instance of MultiGetRequest.
+	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination
-	 * @param p_chunkIDs
-	 *            The IDs of the Chunk to get
+	 * @param p_dataStructures
+	 *            The data structures with IDs to get the data for.
 	 */
 	public MultiGetRequest(final short p_destination, final DataStructure[] p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_MULTIGET_REQUEST);
@@ -43,8 +44,7 @@ public class MultiGetRequest extends AbstractRequest {
 			m_chunkIDs[i] = m_dataStructures[i].getID();
 		}
 	}
-
-	// Getters
+	
 	/**
 	 * Get the IDs of the Chunks to get
 	 * @return the IDs of the Chunks to get
@@ -53,12 +53,17 @@ public class MultiGetRequest extends AbstractRequest {
 		return m_chunkIDs;
 	}
 	
+	/**
+	 * Get the data structures of this request. This is used by the initial sender
+	 * when receiving the response to write the received data directly to the
+	 * data structures instead of buffering it again.
+	 * @return The data structures to write the resulting data to.
+	 */
 	DataStructure[] getDataStructures()
 	{
 		return m_dataStructures;
 	}
 
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_chunkIDs.length);

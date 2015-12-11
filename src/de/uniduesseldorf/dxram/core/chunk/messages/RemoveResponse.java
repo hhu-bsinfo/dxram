@@ -7,15 +7,15 @@ import de.uniduesseldorf.menet.AbstractResponse;
 /**
  * Response to a RemoveRequest
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class RemoveResponse extends AbstractResponse {
 
-	// Attributes
 	private boolean m_success;
 
-	// Constructors
 	/**
-	 * Creates an instance of RemoveResponse
+	 * Creates an instance of RemoveResponse.
+	 * This constructor is used when receiving this message.
 	 */
 	public RemoveResponse() {
 		super();
@@ -24,7 +24,8 @@ public class RemoveResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Creates an instance of RemoveResponse
+	 * Creates an instance of RemoveResponse.
+	 * This constructor is used when sending this message.
 	 * @param p_request
 	 *            the request
 	 * @param p_success
@@ -36,7 +37,6 @@ public class RemoveResponse extends AbstractResponse {
 		m_success = p_success;
 	}
 
-	// Getters
 	/**
 	 * Get the status
 	 * @return true if remove was successful
@@ -45,7 +45,6 @@ public class RemoveResponse extends AbstractResponse {
 		return m_success;
 	}
 
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.put((byte) (m_success ? 1 : 0));

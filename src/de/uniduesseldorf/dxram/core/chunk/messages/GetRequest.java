@@ -14,27 +14,27 @@ import de.uniduesseldorf.menet.AbstractRequest;
  */
 public class GetRequest extends AbstractRequest {
 
-	// Attributes
 	// the data structure is stored for the sender of the request
 	// to write the incoming data of the response to it
 	private DataStructure m_dataStructure = null;
 	// id is used when the message is sent and received
 	private long m_id = ChunkID.INVALID_ID;
 
-	// Constructors
 	/**
-	 * Creates an instance of GetRequest
+	 * Creates an instance of GetRequest.
+	 * This constructor is used when receiving this message.
 	 */
 	public GetRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of GetRequest
+	 * Creates an instance of GetRequest.
+	 * This constructor is used when sending this message.
 	 * @param p_destination
-	 *            the destination
-	 * @param p_chunkID
-	 *            The ID of the Chunk to get
+	 *            the destination node id.
+	 * @param p_dataStructure
+	 *            Data structure with the ID of the chunk to get.
 	 */
 	public GetRequest(final short p_destination, final DataStructure p_dataStructure) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
@@ -43,11 +43,24 @@ public class GetRequest extends AbstractRequest {
 		m_id = p_dataStructure.getID();
 	}
 	
+	/**
+	 * Get the chunk ID of this request.
+	 * @return Chunk ID.
+	 */
+	public long getChunkID() {
+		return m_id;
+	}
+	
+	/**
+	 * Get the data structure stored with this request.
+	 * This is used to write the received data to the provided object to avoid
+	 * using multiple buffers.
+	 * @return Data structure to store data to when the response arrived.
+	 */
 	DataStructure getDataStructure() {
 		return m_dataStructure;
 	}
 
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putLong(m_id);

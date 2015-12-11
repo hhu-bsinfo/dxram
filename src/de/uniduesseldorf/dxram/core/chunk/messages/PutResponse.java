@@ -7,15 +7,15 @@ import de.uniduesseldorf.menet.AbstractResponse;
 /**
  * Response to a PutRequest
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class PutResponse extends AbstractResponse {
 
-	// Attributes
 	private boolean m_success;
 
-	// Constructors
 	/**
-	 * Creates an instance of PutResponse
+	 * Creates an instance of PutResponse.
+	 * This constructor is used when receiving this message.
 	 */
 	public PutResponse() {
 		super();
@@ -24,7 +24,8 @@ public class PutResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Creates an instance of DataResponse
+	 * Creates an instance of DataResponse.
+	 * This constructor is used when sending this message.
 	 * @param p_request
 	 *            the request
 	 * @param p_success
@@ -36,7 +37,6 @@ public class PutResponse extends AbstractResponse {
 		m_success = p_success;
 	}
 
-	// Getters
 	/**
 	 * Get the status
 	 * @return true if put was successful
@@ -45,7 +45,6 @@ public class PutResponse extends AbstractResponse {
 		return m_success;
 	}
 
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.put((byte) (m_success ? 1 : 0));

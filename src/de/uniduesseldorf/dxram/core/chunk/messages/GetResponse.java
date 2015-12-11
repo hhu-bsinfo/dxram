@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.mem.ByteBufferDataStructureReaderWriter;
 import de.uniduesseldorf.dxram.core.mem.Chunk;
-import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 import de.uniduesseldorf.menet.AbstractResponse;
 
@@ -15,25 +14,22 @@ import de.uniduesseldorf.menet.AbstractResponse;
  */
 public class GetResponse extends AbstractResponse {
 
-	// Attributes
 	// The chunk object here is only used when sending the response
 	// when the response is received, the data structure from the request is
 	// used to directly write the data to it and avoiding further copying
 	private Chunk m_chunk = null;
-	// for receiver only: indicates if valid data arrived and was stored in the
-	// data structure
-	private boolean m_successful = false;
 
-	// Constructors
 	/**
-	 * Creates an instance of GetResponse
+	 * Creates an instance of GetResponse.
+	 * This constructor is used when receiving this message.
 	 */
 	public GetResponse() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of GetResponse
+	 * Creates an instance of GetResponse.
+	 * This constructor is used when sending this message.
 	 * @param p_request
 	 *            the corresponding GetRequest
 	 * @param p_chunk
@@ -44,40 +40,22 @@ public class GetResponse extends AbstractResponse {
 
 		m_chunk = p_chunk;
 	}
-	
-	public boolean receivedValidData() {
-		return m_successful;
-	}
 
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		if (m_chunk != null) {
-			// read the data to be sent to the remote from the chunk set for this message
-			ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
-			p_buffer.putLong(m_chunk.getID());
-			m_chunk.writePayload(0, dataStructureWriter);
-		} else {
-			// send an invalid id to indicate the chunk does not exist or an error happened
-			p_buffer.putLong(ChunkID.INVALID_ID);
-		}
+		// read the data to be sent to the remote from the chunk set for this message
+		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
+		p_buffer.putLong(m_chunk.getID());
+		m_chunk.writePayload(0, dataStructureWriter);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		// verify if we got any data (failed request)
-		long id = p_buffer.getLong();
-		
-		if (id != ChunkID.INVALID_ID) {
-			// read the payload from the buffer and write it directly into
-			// the data structure provided by the request to avoid further copying of data
-			ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
-			GetRequest request = (GetRequest) getCorrespondingRequest();
-			request.getDataStructure().writePayload(0, dataStructureWriter);
-			m_successful = true;
-		} else {
-			m_successful = false;
-		}
+		// read the payload from the buffer and write it directly into
+		// the data structure provided by the request to avoid further copying of data
+		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
+		GetRequest request = (GetRequest) getCorrespondingRequest();
+		request.getDataStructure().writePayload(0, dataStructureWriter);
 	}
 
 	@Override

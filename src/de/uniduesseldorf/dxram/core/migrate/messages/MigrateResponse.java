@@ -5,23 +5,25 @@ import java.nio.ByteBuffer;
 import de.uniduesseldorf.menet.AbstractResponse;
 
 /**
- * Response to a DataRequest
+ * Response to a migration request.
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class MigrateResponse extends AbstractResponse {
 
 	private long[] m_failedMigrationIDs = null;
 	
-	// Constructors
 	/**
-	 * Creates an instance of DataResponse
+	 * Creates an instance of DataResponse.
+	 * This constructor is used when receiving this message.
 	 */
 	public MigrateResponse() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of DataResponse
+	 * Creates an instance of DataResponse.
+	 * This constructor is used when sending this message.
 	 * @param p_request
 	 *            the request
 	 */
@@ -31,6 +33,10 @@ public class MigrateResponse extends AbstractResponse {
 		m_failedMigrationIDs = p_failedMigrationIDs;
 	}
 	
+	/**
+	 * Get the IDs of the chunks, which failed to migrate.
+	 * @return Array with IDs that failed to migrate or null if migration was successful.
+	 */
 	public long[] getFailedMigrationIDs()
 	{
 		return m_failedMigrationIDs;

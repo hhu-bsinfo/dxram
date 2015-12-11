@@ -11,29 +11,30 @@ import de.uniduesseldorf.menet.AbstractRequest;
 /**
  * Request for storing a Chunk on a remote node after migration
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class MigrateRequest extends AbstractRequest {
 
-	// Attributes
 	// data structure is used when request is sent
 	private DataStructure[] m_dataStructures = null;
 	// chunks are used when request is received
 	private Chunk[] m_chunks = null;
 
-	// Constructors
 	/**
-	 * Creates an instance of DataRequest
+	 * Creates an instance of DataRequest.
+	 * This constructor is used when receiving this message.
 	 */
 	public MigrateRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of DataRequest
+	 * Creates an instance of DataRequest.
+	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination
-	 * @param p_chunk
-	 *            a single Chunk to store
+	 * @param p_dataStructure
+	 *            The data structure to migrate.
 	 */
 	public MigrateRequest(final short p_destination, final DataStructure p_dataStructure) {
 		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATE_REQUEST);
@@ -45,8 +46,8 @@ public class MigrateRequest extends AbstractRequest {
 	 * Creates an instance of DataRequest
 	 * @param p_destination
 	 *            the destination
-	 * @param p_chunks
-	 *            the Chunks to store
+	 * @param p_dataStructures
+	 *            Multiple data structures to migrate
 	 */
 	public MigrateRequest(final short p_destination, final DataStructure[] p_dataStructures) {
 		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATE_REQUEST);
@@ -54,7 +55,6 @@ public class MigrateRequest extends AbstractRequest {
 		m_dataStructures = p_dataStructures;
 	}
 
-	// Getters
 	/**
 	 * Get the Chunks to store
 	 * @return the Chunks to store
@@ -63,7 +63,6 @@ public class MigrateRequest extends AbstractRequest {
 		return m_chunks;
 	}
 
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
