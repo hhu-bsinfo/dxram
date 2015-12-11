@@ -1,6 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
+import de.uniduesseldorf.dxram.core.log.EpochVersion;
+
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (secondary log)
  * @author Kevin Beineke
@@ -10,7 +12,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Attributes
 	private static final short MAX_SIZE = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_CID_SIZE + MAX_LOG_ENTRY_LEN_SIZE
-			+ MAX_LOG_ENTRY_VER_SIZE + LOG_ENTRY_CRC_SIZE);
+			+ LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_VER_SIZE + LOG_ENTRY_CRC_SIZE);
 	private static final byte NID_OFFSET = LOG_ENTRY_TYP_SIZE;
 	private static final byte LID_OFFSET = NID_OFFSET + LOG_ENTRY_NID_SIZE;
 
@@ -22,15 +24,9 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final int p_version,
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final EpochVersion p_version,
 			final byte[] p_data, final byte p_rangeID, final short p_source) {
 		System.out.println("Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
-		return null;
-	}
-
-	@Override
-	public byte[] createTombstone(final long p_chunkID, final int p_version, final byte p_rangeID, final short p_source) {
-		System.out.println("Do not call createTombstone() for secondary log entries. Convert instead.");
 		return null;
 	}
 
@@ -58,7 +54,14 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 		return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 	}
 
-	@Override
+	/**
+	 * Returns the LocalID
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @return the LocalID
+	 */
 	public long getLID(final byte[] p_buffer, final int p_offset) {
 		long ret = -1;
 		final int offset = p_offset + LID_OFFSET;
@@ -81,7 +84,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 	}
 
 	@Override
-	public long getChunkID(final byte[] p_buffer, final int p_offset) {
+	public long getCID(final byte[] p_buffer, final int p_offset) {
 		return ((long) getNodeID(p_buffer, p_offset) << 48) + getLID(p_buffer, p_offset);
 	}
 
@@ -104,21 +107,23 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 	}
 
 	@Override
-	public int getVersion(final byte[] p_buffer, final int p_offset) {
-		int ret = 1;
+	public EpochVersion getVersion(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + getVEROffset(p_buffer, p_offset);
 		final byte length = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
+		short epoch;
+		int version = 1;
 
+		epoch = (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 		if (length == 1) {
-			ret = p_buffer[offset] & 0xff;
+			version = p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff;
 		} else if (length == 2) {
-			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8);
+			version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8);
 		} else if (length == 3) {
-			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8)
-					+ ((p_buffer[offset + 2] & 0xff) << 16);
+			version = (p_buffer[offset + LOG_ENTRY_EPO_SIZE] & 0xff) + ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 1] & 0xff) << 8)
+					+ ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 2] & 0xff) << 16);
 		}
 
-		return ret;
+		return new EpochVersion(epoch, version);
 	}
 
 	@Override
@@ -144,24 +149,14 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 	}
 
 	@Override
-	public boolean isTombstone() {
-		return false;
-	}
-
-	@Override
-	public boolean isInvalid(final byte[] p_buffer, final int p_offset) {
-		return (p_buffer[p_offset] & INVALIDATION_MASK) == 2;
-	}
-
-	@Override
 	public short getHeaderSize(final byte[] p_buffer, final int p_offset) {
 		short ret;
 		byte versionSize;
 
 		if (USE_CHECKSUM) {
-			ret = (short) (getCRCOffset(p_buffer, p_offset) + LOG_ENTRY_CRC_SIZE);
+			ret = (short) (getCRCOffset(p_buffer, p_offset) + LOG_ENTRY_CRC_SIZE + LOG_ENTRY_EPO_SIZE);
 		} else {
-			versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
+			versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
 			ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
 		}
 
@@ -231,7 +226,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 	@Override
 	protected short getCRCOffset(final byte[] p_buffer, final int p_offset) {
 		short ret = getVEROffset(p_buffer, p_offset);
-		final byte versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
+		final byte versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
 
 		if (USE_CHECKSUM) {
 			ret += versionSize;
@@ -245,10 +240,12 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public void print(final byte[] p_buffer, final int p_offset) {
+		final EpochVersion version = getVersion(p_buffer, p_offset);
+
 		System.out.println("********************Secondary Log Entry Header (Normal)********************");
 		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
 		System.out.println("* Length: " + getLength(p_buffer, p_offset));
-		System.out.println("* Version: " + getVersion(p_buffer, p_offset));
+		System.out.println("* Version: " + version.getEpoch() + ", " + version.getVersion());
 		if (USE_CHECKSUM) {
 			System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
 		}

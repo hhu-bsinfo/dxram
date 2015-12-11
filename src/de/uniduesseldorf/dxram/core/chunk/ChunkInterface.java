@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.chunk;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
+import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 
@@ -235,5 +236,7 @@ public interface ChunkInterface extends CoreComponent {
 	 *             if the Chunks could not be migrated
 	 */
 	void migrateAll(short p_target) throws DXRAMException;
+
+	MemoryManager getMemoryManager();
 
 }

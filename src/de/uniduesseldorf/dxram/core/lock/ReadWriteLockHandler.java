@@ -7,8 +7,11 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
+import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.utils.Contract;
 
@@ -20,6 +23,7 @@ public final class ReadWriteLockHandler implements LockInterface {
 
 	// Attributes
 	private Map<Long, DefaultLock> m_locks;
+	private ChunkInterface m_chunk;
 
 	private Lock m_lock;
 
@@ -31,6 +35,12 @@ public final class ReadWriteLockHandler implements LockInterface {
 		m_locks = null;
 
 		m_lock = null;
+		try {
+			m_chunk = CoreComponentFactory.getChunkInterface();
+		} catch (final DXRAMException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	// Methods
@@ -200,9 +210,17 @@ public final class ReadWriteLockHandler implements LockInterface {
 	 */
 	private void release(final DefaultLock p_lock) throws MemoryException {
 		Chunk chunk;
+		int size;
+		int bytesRead;
+		MemoryManager memMan;
 
-//		chunk = MemoryManager.get(p_lock.getChunkID());
-//		p_lock.setChunk(chunk);
+		memMan = m_chunk.getMemoryManager();
+
+		size = memMan.getSize(p_lock.getChunkID());
+		chunk = new Chunk(p_lock.getChunkID(), size);
+		bytesRead = memMan.get(p_lock.getChunkID(), chunk.getData().array(), 0, size);
+
+		p_lock.setChunk(chunk);
 		p_lock.setReleased();
 	}
 

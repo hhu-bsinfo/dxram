@@ -61,6 +61,9 @@ public class PrimaryWriteBuffer {
 	private boolean m_dataAvailable;
 	private boolean m_flushingComplete;
 
+	private boolean m_accessRequested = false;
+	private boolean m_accessGranted = false;
+
 	private Semaphore m_metaDataLock;
 	private int m_writingNetworkThreads;
 	private boolean m_writerThreadWantsToFlush;
@@ -157,7 +160,7 @@ public class PrimaryWriteBuffer {
 			rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_header, 0);
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		} else {
-			rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_header, 0));
+			rangeID = m_logHandler.getBackupRange(logEntryHeader.getCID(p_header, 0));
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		}
 
@@ -165,7 +168,7 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException("Data to write exceeds buffer size!");
 		}
 		if (!m_isShuttingDown) {
-			if (PARALLEL_BUFFERING) {
+			/*-if (PARALLEL_BUFFERING) {
 				while (true) {
 					m_metaDataLock.acquire();
 					if (!m_writerThreadWantsToFlush && m_bytesInWriteBuffer + bytesToWrite <= MAX_BYTE_COUNT) {
@@ -180,6 +183,9 @@ public class PrimaryWriteBuffer {
 					Thread.yield();
 				}
 				m_metaDataLock.acquire();
+			}*/
+			while (m_accessGranted) {
+				Thread.yield();
 			}
 
 			// Set buffer write pointer and byte counter before writing to
@@ -198,9 +204,9 @@ public class PrimaryWriteBuffer {
 			} else {
 				m_lengthByBackupRange.put(rangeID, counter + bytesToWrite);
 			}
-			if (PARALLEL_BUFFERING) {
+			/*-if (PARALLEL_BUFFERING) {
 				m_metaDataLock.release();
-			}
+			}*/
 
 			// Determine free space from end of log to end of array
 			if (writePointer >= m_bufferReadPointer) {
@@ -249,17 +255,21 @@ public class PrimaryWriteBuffer {
 				}
 			}
 
-			if (PARALLEL_BUFFERING) {
+			/*-if (PARALLEL_BUFFERING) {
 				m_metaDataLock.acquire();
 				m_writingNetworkThreads--;
-			}
+			}*/
 
 			if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
 				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is
 				// written
 				m_dataAvailable = true;
 			}
-			m_metaDataLock.release();
+
+			if (m_accessRequested) {
+				m_accessGranted = true;
+			}
+			// m_metaDataLock.release();
 		}
 		return bytesToWrite;
 	}
@@ -367,7 +377,7 @@ public class PrimaryWriteBuffer {
 			// 4. Release lock
 			// 5. Write buffer to hard drive
 			// -> During writing to hard drive the next slot in Write Buffer can be filled
-			if (PARALLEL_BUFFERING) {
+			/*-if (PARALLEL_BUFFERING) {
 				while (true) {
 					m_metaDataLock.acquire();
 					if (m_writingNetworkThreads == 0) {
@@ -379,6 +389,14 @@ public class PrimaryWriteBuffer {
 				}
 			} else {
 				m_metaDataLock.acquire();
+			}*/
+			long timestamp = System.currentTimeMillis();
+			m_accessRequested = true;
+			while (!m_accessGranted) {
+				if (System.currentTimeMillis() - timestamp > 500) {// TODO
+					m_accessGranted = true;
+				}
+				Thread.yield();
 			}
 
 			readPointer = m_bufferReadPointer;
@@ -392,8 +410,9 @@ public class PrimaryWriteBuffer {
 			m_dataAvailable = false;
 			m_flushingComplete = false;
 
-			m_writerThreadWantsToFlush = false;
-			m_metaDataLock.release();
+			m_accessGranted = false;
+			// m_writerThreadWantsToFlush = false;
+			// m_metaDataLock.release();
 
 			if (bytesInWriteBuffer > 0) {
 				// Write data to secondary logs or primary log
@@ -438,7 +457,7 @@ public class PrimaryWriteBuffer {
 			int logEntrySize;
 			int bytesUntilEnd;
 			int segmentLength;
-			int size;
+			int bufferLength;
 			short headerSize;
 			short source;
 			long rangeID;
@@ -473,8 +492,7 @@ public class PrimaryWriteBuffer {
 					rangeID = entry.getKey();
 					segmentLength = entry.getValue();
 					if (segmentLength < FLASHPAGE_SIZE) {
-						// There is less than 4096KB data from this node ->
-						// store buffer in primary log (later)
+						// There is less than 4 KB data from this node -> store buffer in primary log (later)
 						primaryLogBufferSize += segmentLength;
 						bufferNode = new BufferNode(segmentLength, false);
 					} else {
@@ -497,7 +515,7 @@ public class PrimaryWriteBuffer {
 						if (logEntryHeader.wasMigrated()) {
 							rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(p_buffer, offset);
 						} else {
-							rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(p_buffer, offset));
+							rangeID = m_logHandler.getBackupRange(logEntryHeader.getCID(p_buffer, offset));
 						}
 
 						bufferNode = map.get(rangeID);
@@ -517,7 +535,7 @@ public class PrimaryWriteBuffer {
 						if (logEntryHeader.wasMigrated()) {
 							rangeID = ((long) -1 << 48) + logEntryHeader.getRangeID(header, 0);
 						} else {
-							rangeID = m_logHandler.getBackupRange(logEntryHeader.getChunkID(header, 0));
+							rangeID = m_logHandler.getBackupRange(logEntryHeader.getCID(header, 0));
 						}
 
 						bufferNode = map.get(rangeID);
@@ -539,13 +557,13 @@ public class PrimaryWriteBuffer {
 					rangeID = entry2.getKey();
 					bufferNode = entry2.getValue();
 					bufferNode.trimLastSegment();
-					size = bufferNode.getSize();
+					bufferLength = bufferNode.getBufferLength();
 					source = bufferNode.getSource();
 
 					segment = bufferNode.getData(i);
 					segmentLength = bufferNode.getSegmentLength(i);
 					while (segment != null) {
-						if (size < FLASHPAGE_SIZE) {
+						if (bufferLength < FLASHPAGE_SIZE) {
 							// 1. Buffer in secondary log buffer
 							bufferLogEntryInSecondaryLogBuffer(segment, 0, segmentLength, rangeID, source);
 							// 2. Copy log entry/range to write it in primary log subsequently
@@ -639,6 +657,7 @@ public class PrimaryWriteBuffer {
 		private short m_source;
 		private int m_numberOfSegments;
 		private int m_currentSegment;
+		private int m_bufferLength;
 		private boolean m_convert;
 		private int[] m_writtenBytesPerSegment;
 		private byte[][] m_segments;
@@ -647,7 +666,7 @@ public class PrimaryWriteBuffer {
 		/**
 		 * Creates an instance of BufferNode
 		 * @param p_length
-		 *            the buffer length
+		 *            the buffer length (the length might change after converting the headers and fitting the data into segments)
 		 * @param p_convert
 		 *            wether the log entry headers have to be converted or not
 		 */
@@ -657,6 +676,7 @@ public class PrimaryWriteBuffer {
 			m_numberOfSegments = (int) Math.ceil((double) p_length / SECLOG_SEGMENT_SIZE);
 
 			m_currentSegment = 0;
+			m_bufferLength = p_length;
 			m_convert = p_convert;
 
 			m_writtenBytesPerSegment = new int[m_numberOfSegments];
@@ -668,6 +688,14 @@ public class PrimaryWriteBuffer {
 		}
 
 		// Getter
+		/**
+		 * Returns the size of the unprocessed data
+		 * @return the size of the unprocessed data
+		 */
+		private int getBufferLength() {
+			return m_bufferLength;
+		}
+
 		/**
 		 * Returns the number of written bytes in all segments
 		 * @return the number of written bytes in all segments
@@ -752,7 +780,7 @@ public class PrimaryWriteBuffer {
 			int futureLogEntrySize;
 
 			if (m_convert) {
-				futureLogEntrySize = p_logEntrySize - p_conversionOffset + 1;
+				futureLogEntrySize = p_logEntrySize - (p_conversionOffset - 1);
 			} else {
 				futureLogEntrySize = p_logEntrySize;
 			}
@@ -780,8 +808,7 @@ public class PrimaryWriteBuffer {
 				m_writtenBytesPerSegment[index] += AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
 						m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
 			} else {
-				// Less than one page for this node: Just append entry to node buffer without converting the log entry
-				// header
+				// Less than one page for this node: Just append entry to node buffer without converting the log entry header
 				if (p_logEntrySize <= p_bytesUntilEnd) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
 				} else {

@@ -281,6 +281,7 @@ abstract class AbstractConnection {
 			ByteBuffer buffer;
 			ByteBuffer messageBuffer;
 
+			System.out.println(Thread.currentThread().getName());
 			try {
 				streamInterpreter = m_streamInterpreter;
 				buffer = read();

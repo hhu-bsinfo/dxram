@@ -146,7 +146,7 @@ public final class MemoryManager {
 			// put lid back
 			// TODO is that ok? that's a protected call...
 			// check CID table impl
-			m_cidTable.putChunkIDForReuse(lid.getLocalID(), lid.getVersion());
+			m_cidTable.putChunkIDForReuse(lid.getLocalID());
 		}
 
 		return chunkID;
@@ -370,7 +370,7 @@ public final class MemoryManager {
 		version = readVersion(addressDeletedChunk);
 
 		// more space for another zombie for reuse in LID store?
-		if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID), version)) {
+		if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
 			// detach reference to zombie and free memory
 			m_cidTable.delete(p_chunkID, false);
 			m_rawMemory.free(addressDeletedChunk);
@@ -383,13 +383,11 @@ public final class MemoryManager {
 	 * Removes the ChunkID of a deleted Chunk that was migrated
 	 * @param p_chunkID
 	 *            the ChunkID
-	 * @param p_version
-	 *            the version
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public void prepareChunkIDForReuse(final long p_chunkID, final int p_version) throws MemoryException {
-		m_cidTable.putChunkIDForReuse(p_chunkID, p_version);
+	public void prepareChunkIDForReuse(final long p_chunkID) throws MemoryException {
+		m_cidTable.putChunkIDForReuse(p_chunkID);
 	}
 
 	// FIXME take back in

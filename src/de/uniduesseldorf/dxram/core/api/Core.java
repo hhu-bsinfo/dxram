@@ -33,7 +33,6 @@ import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionReques
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages.LookupReflectionResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkInterface;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryInterface;
-import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.Contract;
 import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
@@ -133,7 +132,7 @@ public final class Core {
 			m_nodesConfigurationHelper = new NodesConfigurationHelper(p_nodesConfiguration);
 
 			JNILock.load(m_configurationHelper.getStringValue(ConfigurationConstants.JNI_LOCK_DIRECTORY));
-			
+
 			CoreComponentFactory.getNetworkInterface();
 			m_chunk = CoreComponentFactory.getChunkInterface();
 

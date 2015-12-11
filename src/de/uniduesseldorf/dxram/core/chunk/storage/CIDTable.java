@@ -168,12 +168,10 @@ public final class CIDTable {
 	 * Puts the LocalID of a deleted migrated Chunk to LIDStore
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
-	 * @param p_version
-	 *            the version of the entry
 	 * @return m_cidTable
 	 */
-	public boolean putChunkIDForReuse(final long p_chunkID, final int p_version) {
-		return m_store.put(ChunkID.getLocalID(p_chunkID), p_version);
+	public boolean putChunkIDForReuse(final long p_chunkID) {
+		return m_store.put(ChunkID.getLocalID(p_chunkID), -1); // TODO
 	}
 
 	// -----------------------------------------------------------------------------------------

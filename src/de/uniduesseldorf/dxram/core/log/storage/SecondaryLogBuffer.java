@@ -115,6 +115,7 @@ public final class SecondaryLogBuffer {
 		int logEntrySize;
 		AbstractLogEntryHeader logEntryHeader;
 
+		System.out.println("process buffer");
 		buffer = new byte[p_entryOrRangeSize];
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry

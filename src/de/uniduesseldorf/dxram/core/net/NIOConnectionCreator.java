@@ -261,6 +261,14 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_incoming.offer(p_buffer);
 			m_incomingLock.unlock();
 
+			/*-m_receivedBytes += p_buffer.remaining();
+
+			m_flowControlCondLock.lock();
+			if (m_receivedBytes > MAX_OUTSTANDING_BYTES / 8) {
+				sendFlowControlMessage();
+			}
+			m_flowControlCondLock.unlock();*/
+
 			// fireNewData();
 			newData();
 		}
@@ -465,7 +473,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_channel = null;
 			m_selector = null;
 
-			m_executor = new TaskExecutor("NIO");
+			m_executor = new TaskExecutor("NIO", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_NIO_THREAD_COUNT));
 
 			m_changeRequests = new ArrayDeque<>();
 			m_closeRequests = new ArrayDeque<>();

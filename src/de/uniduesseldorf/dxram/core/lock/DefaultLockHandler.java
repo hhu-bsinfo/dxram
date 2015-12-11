@@ -7,7 +7,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
+import de.uniduesseldorf.dxram.core.chunk.ChunkInterface;
 import de.uniduesseldorf.dxram.core.chunk.storage.MemoryManager;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
@@ -24,6 +26,7 @@ public final class DefaultLockHandler implements LockInterface {
 	// Attributes
 	private Map<Long, DefaultLock> m_locks;
 	private boolean m_directResult;
+	private ChunkInterface m_chunk;
 
 	private Lock m_lock;
 
@@ -36,6 +39,12 @@ public final class DefaultLockHandler implements LockInterface {
 		m_directResult = false;
 
 		m_lock = null;
+		try {
+			m_chunk = CoreComponentFactory.getChunkInterface();
+		} catch (final DXRAMException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	// Getters
@@ -91,7 +100,7 @@ public final class DefaultLockHandler implements LockInterface {
 				release(p_lock);
 			} else {
 				if (m_directResult) {
-					p_lock.setChunk(Chunk.INVALID_CHUNKID);
+					p_lock.setChunk(new Chunk(-1, 0));
 					p_lock.setReleased();
 				} else {
 					temp = lock.getNext();
@@ -188,9 +197,17 @@ public final class DefaultLockHandler implements LockInterface {
 	 */
 	private void release(final DefaultLock p_lock) throws MemoryException {
 		Chunk chunk;
+		int size;
+		int bytesRead;
+		MemoryManager memMan;
 
-//		chunk = MemoryManager.get(p_lock.getChunkID());
-//		p_lock.setChunk(chunk);
+		memMan = m_chunk.getMemoryManager();
+
+		size = memMan.getSize(p_lock.getChunkID());
+		chunk = new Chunk(p_lock.getChunkID(), size);
+		bytesRead = memMan.get(p_lock.getChunkID(), chunk.getData().array(), 0, size);
+
+		p_lock.setChunk(chunk);
 		p_lock.setReleased();
 	}
 

@@ -140,8 +140,9 @@ public final class MailboxTest {
 			chunkIDs = new long[m_amount];
 			for (int i = 0; i < m_amount; i++) {
 				try {
-					chunk = Core.createNewChunk(1024, "" + i);
-					chunk.getData().put(("Mail " + i).getBytes());
+					chunk = Core.createNewChunk(4);// 1024, "" + i);
+					chunk.getData().putInt(i);
+					// chunk.getData().put(("Mail " + i).getBytes());
 
 					Core.put(chunk);
 
