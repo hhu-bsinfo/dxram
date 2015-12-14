@@ -893,7 +893,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 * @throws DXRAMException
 	 *             if the node could not join the superpeer overlay
 	 */
-	private void createOrJoinSuperpeerOverlay(final short p_contactSuperpeer) throws DXRAMException {
+	private void createOrJoinSuperpeerOverlay(final short p_contactSuperpeer) {
 		short contactSuperpeer;
 		JoinRequest joinRequest = null;
 		JoinResponse joinResponse = null;
@@ -910,7 +910,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				setSuccessor(m_me);
 			} else {
 				LOGGER.error("Bootstrap has to be a superpeer, exiting now.");
-				Core.close();
 				System.exit(-1);
 			}
 		} else {

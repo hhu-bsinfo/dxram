@@ -53,6 +53,12 @@ public abstract class DXRAMService
 		return m_parentEngine.getSystemData();
 	}
 	
+	@SuppressWarnings("unchecked")
+	protected <T extends DXRAMComponent> T getComponent(final String p_componentName)
+	{		   
+		return (T) m_parentEngine.getComponent(p_componentName);
+	}
+	
 	protected abstract boolean startService(final Configuration p_configuration);
 	
 	protected abstract boolean shutdownService();

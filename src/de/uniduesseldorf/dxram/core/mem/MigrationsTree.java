@@ -14,12 +14,12 @@ import de.uniduesseldorf.utils.Contract;
 public final class MigrationsTree implements Serializable {
 
 	// Constants
-	private static final long SECONDARY_LOG_SIZE = Core.getConfiguration().getLongValue(DXRAMConfigurationConstants.SECONDARY_LOG_SIZE);
 	private static final long serialVersionUID = 7565597467331239020L;
 	private static final byte INVALID = -1;
 
 	// Attributes
 	private short m_minEntries;
+	private long m_secondaryLogSize;
 	private short m_minChildren;
 	private short m_maxEntries;
 	private short m_maxChildren;
@@ -38,10 +38,11 @@ public final class MigrationsTree implements Serializable {
 	 * @param p_order
 	 *            order of the btree
 	 */
-	public MigrationsTree(final short p_order) {
+	public MigrationsTree(final short p_order, final long p_secondaryLogSize) {
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;
+		m_secondaryLogSize = p_secondaryLogSize;
 		m_minChildren = (short) (m_minEntries + 1);
 		m_maxEntries = (short) (2 * m_minEntries);
 		m_maxChildren = (short) (m_maxEntries + 1);
@@ -68,7 +69,7 @@ public final class MigrationsTree implements Serializable {
 		boolean ret;
 
 		m_lock.lock();
-		ret = p_size + m_currentSecLogSize <= SECONDARY_LOG_SIZE;
+		ret = p_size + m_currentSecLogSize <= m_secondaryLogSize;
 		m_lock.unlock();
 
 		return ret;
