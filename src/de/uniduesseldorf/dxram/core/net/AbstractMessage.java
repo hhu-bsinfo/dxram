@@ -22,9 +22,10 @@ public abstract class AbstractMessage {
 	public static final long INVALID_MESSAGE_ID = -1;
 	public static final byte DEFAULT_TYPE = 0;
 	public static final byte DEFAULT_SUBTYPE = 0;
+	public static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
 	public static final byte DEFAULT_RATING_VALUE = 1;
 
-	public static final byte HEADER_SIZE = 15;
+	public static final byte HEADER_SIZE = 16;
 
 	// Attributes
 	private long m_messageID;
@@ -32,6 +33,7 @@ public abstract class AbstractMessage {
 	private short m_destination;
 	private byte m_type;
 	private byte m_subtype;
+	private boolean m_exclusivity;
 
 	private byte m_ratingValue;
 
@@ -48,6 +50,7 @@ public abstract class AbstractMessage {
 		m_destination = NodeID.INVALID_ID;
 		m_type = DEFAULT_TYPE;
 		m_subtype = DEFAULT_SUBTYPE;
+		m_exclusivity = DEFAULT_EXCLUSIVITY_VALUE;
 
 		m_ratingValue = DEFAULT_RATING_VALUE;
 	}
@@ -60,7 +63,7 @@ public abstract class AbstractMessage {
 	 *            the message type
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type) {
-		this(getNextMessageID(), p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_RATING_VALUE);
+		this(getNextMessageID(), p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_RATING_VALUE, DEFAULT_EXCLUSIVITY_VALUE);
 	}
 
 	/**
@@ -73,7 +76,22 @@ public abstract class AbstractMessage {
 	 *            the message subtype
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype) {
-		this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
+		this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE, DEFAULT_EXCLUSIVITY_VALUE);
+	}
+
+	/**
+	 * Creates an instance of Message
+	 * @param p_destination
+	 *            the destination
+	 * @param p_type
+	 *            the message type
+	 * @param p_subtype
+	 *            the message subtype
+	 * @param p_exclusivity
+	 *            whether this message type allows parallel execution
+	 */
+	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+		this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE, p_exclusivity);
 	}
 
 	/**
@@ -88,7 +106,7 @@ public abstract class AbstractMessage {
 	 *            the rating value of the message
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
-		this(getNextMessageID(), p_destination, p_type, p_subtype, p_ratingValue);
+		this(getNextMessageID(), p_destination, p_type, p_subtype, p_ratingValue, DEFAULT_EXCLUSIVITY_VALUE);
 	}
 
 	/**
@@ -103,7 +121,7 @@ public abstract class AbstractMessage {
 	 *            the message subtype
 	 */
 	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
-		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
+		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE, DEFAULT_EXCLUSIVITY_VALUE);
 	}
 
 	/**
@@ -118,8 +136,11 @@ public abstract class AbstractMessage {
 	 *            the message subtype
 	 * @param p_ratingValue
 	 *            the rating value of the message
+	 * @param p_exclusivity
+	 *            whether this message type allows parallel execution
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
+	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type,
+			final byte p_subtype, final byte p_ratingValue, final boolean p_exclusivity) {
 		NodeID.check(p_destination);
 
 		m_messageID = p_messageID;
@@ -127,6 +148,7 @@ public abstract class AbstractMessage {
 		m_destination = p_destination;
 		m_type = p_type;
 		m_subtype = p_subtype;
+		m_exclusivity = p_exclusivity;
 
 		m_ratingValue = p_ratingValue;
 	}
@@ -170,6 +192,14 @@ public abstract class AbstractMessage {
 	 */
 	public final byte getSubtype() {
 		return m_subtype;
+	}
+
+	/**
+	 * Returns whether this message type allows parallel execution
+	 * @return the exclusivity
+	 */
+	public final boolean isExclusive() {
+		return m_exclusivity;
 	}
 
 	/**
@@ -259,6 +289,11 @@ public abstract class AbstractMessage {
 		p_buffer.putLong(m_messageID);
 		p_buffer.put(m_type);
 		p_buffer.put(m_subtype);
+		if (m_exclusivity) {
+			p_buffer.put((byte) 1);
+		} else {
+			p_buffer.put((byte) 0);
+		}
 		p_buffer.put(m_ratingValue);
 		p_buffer.putInt(p_payloadSize);
 
@@ -341,6 +376,7 @@ public abstract class AbstractMessage {
 		long messageID;
 		byte type;
 		byte subtype;
+		boolean exclusivity;
 		byte ratingValue;
 
 		Contract.checkNotNull(p_buffer, "no bytes given");
@@ -352,6 +388,7 @@ public abstract class AbstractMessage {
 		messageID = p_buffer.getLong();
 		type = p_buffer.get();
 		subtype = p_buffer.get();
+		exclusivity = p_buffer.get() == 1;
 		ratingValue = p_buffer.get();
 
 		try {
@@ -363,6 +400,7 @@ public abstract class AbstractMessage {
 		ret.m_messageID = messageID;
 		ret.m_type = type;
 		ret.m_subtype = subtype;
+		ret.m_exclusivity = exclusivity;
 		ret.m_ratingValue = ratingValue;
 
 		return ret;

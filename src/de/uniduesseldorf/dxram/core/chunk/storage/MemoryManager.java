@@ -288,7 +288,7 @@ public final class MemoryManager {
 				}
 			}
 
-			writeVersion(address, curVersion + 1);
+			// writeVersion(address, curVersion + 1);
 			bytesWritten = m_rawMemory.writeBytes(address, sizeVersion, p_buffer, p_offset, p_length);
 		}
 

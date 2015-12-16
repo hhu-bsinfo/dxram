@@ -184,9 +184,10 @@ public class PrimaryWriteBuffer {
 				}
 				m_metaDataLock.acquire();
 			}*/
-			while (m_accessGranted) {
+			/*-while (m_accessGranted) {
 				Thread.yield();
-			}
+			}*/
+			m_metaDataLock.acquire();
 
 			// Set buffer write pointer and byte counter before writing to
 			// enable multi-threading
@@ -266,9 +267,10 @@ public class PrimaryWriteBuffer {
 				m_dataAvailable = true;
 			}
 
-			if (m_accessRequested) {
+			/*-if (m_accessRequested) {
 				m_accessGranted = true;
-			}
+			}*/
+			m_metaDataLock.release();
 			// m_metaDataLock.release();
 		}
 		return bytesToWrite;
@@ -390,14 +392,15 @@ public class PrimaryWriteBuffer {
 			} else {
 				m_metaDataLock.acquire();
 			}*/
-			long timestamp = System.currentTimeMillis();
+			/*-long timestamp = System.currentTimeMillis();
 			m_accessRequested = true;
 			while (!m_accessGranted) {
 				if (System.currentTimeMillis() - timestamp > 500) {// TODO
 					m_accessGranted = true;
 				}
 				Thread.yield();
-			}
+			}*/
+			m_metaDataLock.acquire();
 
 			readPointer = m_bufferReadPointer;
 			bytesInWriteBuffer = m_bytesInWriteBuffer;
@@ -413,6 +416,7 @@ public class PrimaryWriteBuffer {
 			m_accessGranted = false;
 			// m_writerThreadWantsToFlush = false;
 			// m_metaDataLock.release();
+			m_metaDataLock.release();
 
 			if (bytesInWriteBuffer > 0) {
 				// Write data to secondary logs or primary log

@@ -1,12 +1,8 @@
 
 package de.uniduesseldorf.dxram.core.log;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,11 +107,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	// Methods
 	@Override
 	public void initialize() throws DXRAMException {
-		try {
-			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("/home/beineke/test"), "utf-8"));
-		} catch (final IOException e) {
-
-		}
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(LogMessage.class, this);
 		m_network.register(RemoveMessage.class, this);
@@ -154,9 +145,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	@Override
 	public void close() {
 		LogCatalog cat;
-		try {
-			writer.close();
-		} catch (IOException e2) {}
 		m_isShuttingDown = true;
 
 		// Stop reorganization thread
@@ -613,8 +601,6 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		return ret;
 	}
 
-	Writer writer;
-
 	/**
 	 * Handles an incoming LogMessage
 	 * @param p_message
@@ -664,10 +650,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					}
 				}
 
-				writer.write(buffer.getInt() + "\n");
-				// buffer.position(buffer.position() + length - 4);
-
-				// m_writeBuffer.putLogData(logEntryHeader, buffer, length);
+				m_writeBuffer.putLogData(logEntryHeader, buffer, length);
 				// TODO: Increase invalid counter at the end of an epoch
 				/*-if (version > 1) {
 					secLog.incLogInvalidCounter();

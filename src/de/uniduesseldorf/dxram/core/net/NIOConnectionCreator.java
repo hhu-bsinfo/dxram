@@ -11,7 +11,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.locks.Condition;
@@ -257,17 +256,23 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            the ByteBuffer
 		 */
 		protected void addIncoming(final ByteBuffer p_buffer) {
-			m_incomingLock.lock();
-			m_incoming.offer(p_buffer);
-			m_incomingLock.unlock();
-
 			/*-m_receivedBytes += p_buffer.remaining();
 
 			m_flowControlCondLock.lock();
 			if (m_receivedBytes > MAX_OUTSTANDING_BYTES / 8) {
 				sendFlowControlMessage();
 			}
-			m_flowControlCondLock.unlock();*/
+			m_flowControlCondLock.unlock();
+
+			execute(p_buffer);*/
+
+			// Avoid congestion by not allowing more than 1000 buffers to be cached for reading
+			while (m_incoming.size() > 1000) {
+				Thread.yield();
+			}
+			m_incomingLock.lock();
+			m_incoming.offer(p_buffer);
+			m_incomingLock.unlock();
 
 			// fireNewData();
 			newData();
@@ -304,6 +309,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            Buffer
 		 */
 		private void writeToChannel(final ByteBuffer p_buffer) {
+			// Avoid congestion by not allowing more than 1000 messages to be buffered for writing
+			while (m_outgoing.size() > 1000) {
+				Thread.yield();
+			}
+
 			m_outgoingLock.lock();
 			if (m_outgoing.isEmpty()) {
 				m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
@@ -315,17 +325,17 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		/**
 		 * Get the next buffers to be sent
+		 * @param p_buffer
+		 *            buffer to gather in data
 		 * @param p_bytes
 		 *            number of bytes to be sent
 		 * @return Buffer array
 		 */
-		protected ByteBuffer[] getOutgoingBytes(final int p_bytes) {
-			LinkedList<ByteBuffer> buffers;
+		protected ByteBuffer getOutgoingBytes(final ByteBuffer p_buffer, final int p_bytes) {
 			ByteBuffer buffer;
-			ByteBuffer[] ret = null;
+			ByteBuffer ret = null;
 			int length = 0;
 
-			buffers = new LinkedList<>();
 			while (!m_outgoing.isEmpty()) {
 				m_outgoingLock.lock();
 				buffer = m_outgoing.poll();
@@ -339,25 +349,32 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				// Append when limit will not be reached
 				if (length + buffer.remaining() <= p_bytes) {
 					length += buffer.remaining();
-					buffers.add(buffer);
+
+					if (ret == null) {
+						p_buffer.clear();
+						ret = p_buffer;
+					}
+					ret.put(buffer);
 				} else {
 					// Append when limit has exceeded but buffer is still empty
-					if (buffers.isEmpty()) {
+					if (ret == null) {
 						length += buffer.remaining();
-						buffers.add(buffer);
+						ret = buffer;
 					} else {
 						// Write back buffer for next sending call
 						m_outgoingLock.lock();
 						m_outgoing.addFirst(buffer);
 						m_outgoingLock.unlock();
 					}
-
 					break;
 				}
 			}
 
-			if (length > 0) {
-				ret = buffers.toArray(new ByteBuffer[buffers.size()]);
+			if (ret != null) {
+				ret.position(0);
+				if (length < ret.capacity()) {
+					ret.limit(length);
+				}
 			}
 
 			return ret;
@@ -597,6 +614,21 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				}
 
 				// dispatch event when the connection is known
+				/*-if (p_key.isValid()) {
+					try {
+						connection = (NIOConnection) p_key.attachment();
+
+						if (p_key.isReadable()) {
+							connection.m_handler.read((NIOConnection) connection.m_handler.m_key.attachment());
+						} else if (p_key.isWritable()) {
+							connection.m_handler.write((NIOConnection) connection.m_handler.m_key.attachment());
+						} else if (p_key.isConnectable()) {
+							connection.m_handler.connect((NIOConnection) connection.m_handler.m_key.attachment());
+						}
+					} catch (final IOException e) {
+						LOGGER.debug("WARN::Accessing the channel");
+					}
+				}*/
 				m_executor.execute(connection.m_handler);
 			} else {
 				// handle unknown events by itself
@@ -753,7 +785,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	private class SelectionKeyHandler implements Runnable {
 
 		private final SelectionKey m_key;
-		private final ByteBuffer m_buffer;
+		private final ByteBuffer m_readBuffer;
+		private final ByteBuffer m_writeBuffer;
 
 		private ReentrantLock m_connectionLock;
 		private ReentrantLock m_bufferLock;
@@ -765,7 +798,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            SelectionKey
 		 */
 		SelectionKeyHandler(final SelectionKey p_key) {
-			m_buffer = ByteBuffer.allocateDirect(SEND_BYTES);
+			m_readBuffer = ByteBuffer.allocateDirect(SEND_BYTES);
+			m_writeBuffer = ByteBuffer.allocateDirect(SEND_BYTES);
 			m_key = p_key;
 			m_connectionLock = new ReentrantLock(false);
 			m_bufferLock = new ReentrantLock(false);
@@ -811,22 +845,22 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			m_connectionLock.lock();
 			try {
-				m_buffer.clear();
+				m_readBuffer.clear();
 
-				if (p_channel.read(m_buffer) == -1) {
+				if (p_channel.read(m_readBuffer) == -1) {
 					p_channel.keyFor(m_worker.m_selector).cancel();
 					p_channel.close();
 				} else {
-					m_buffer.flip();
+					m_readBuffer.flip();
 
-					connection = new NIOConnection(InputHelper.readNodeID(m_buffer), p_channel);
+					connection = new NIOConnection(InputHelper.readNodeID(m_readBuffer), p_channel);
 					p_channel.register(m_worker.m_selector, SelectionKey.OP_READ, connection);
 
 					fireConnectionCreated(connection);
 
-					if (m_buffer.hasRemaining()) {
-						buffer = ByteBuffer.allocate(m_buffer.remaining());
-						buffer.put(m_buffer);
+					if (m_readBuffer.hasRemaining()) {
+						buffer = ByteBuffer.allocate(m_readBuffer.remaining());
+						buffer.put(m_readBuffer);
 						buffer.flip();
 
 						connection.addIncoming(buffer);
@@ -854,12 +888,12 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			m_bufferLock.lock();
 			try {
-				m_buffer.clear();
-				while (m_buffer.position() + INCOMING_BUFFER_SIZE <= m_buffer.capacity()) {
-					m_buffer.limit(m_buffer.position() + INCOMING_BUFFER_SIZE);
+				m_readBuffer.clear();
+				while (m_readBuffer.position() + INCOMING_BUFFER_SIZE <= m_readBuffer.capacity()) {
+					m_readBuffer.limit(m_readBuffer.position() + INCOMING_BUFFER_SIZE);
 
 					try {
-						readBytes = p_connection.m_channel.read(m_buffer);
+						readBytes = p_connection.m_channel.read(m_readBuffer);
 					} catch (final ClosedChannelException e) {
 						// Channel is closed -> ignore
 						break;
@@ -867,12 +901,12 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					if (readBytes == -1) {
 						m_worker.closeConnection(p_connection);
 						break;
-					} else if (readBytes == 0) {
-						m_buffer.limit(m_buffer.position());
-						m_buffer.position(0);
+					} else if (readBytes == 0 && m_readBuffer.position() != 0) {
+						m_readBuffer.limit(m_readBuffer.position());
+						m_readBuffer.position(0);
 
-						buffer = ByteBuffer.allocate(m_buffer.limit());
-						buffer.put(m_buffer);
+						buffer = ByteBuffer.allocate(m_readBuffer.limit());
+						buffer.put(m_readBuffer);
 						buffer.flip();
 						p_connection.addIncoming(buffer);
 						break;
@@ -893,50 +927,48 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 * @throws IOException
 		 *             if the data could not be written
 		 */
-		private void write(final NIOConnection p_connection) throws IOException {
-			int sum = 0;
+		public void write(final NIOConnection p_connection) throws IOException {
+			int writtenBytes = 0;
 			int size;
 			ByteBuffer view;
-			ByteBuffer[] buffers;
+			ByteBuffer buffers;
 
-			buffers = p_connection.getOutgoingBytes(SEND_BYTES);
 			m_writeLock.lock();
+			buffers = p_connection.getOutgoingBytes(m_writeBuffer, SEND_BYTES);
 			try {
 				if (buffers != null) {
-					outerloop: for (ByteBuffer buffer : buffers) {
-						sum += buffer.remaining();
-						if (buffer.remaining() > SEND_BYTES) {
-							// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
-							// the length of the actual written data -> simulate a smaller buffer by slicing it
-							while (buffer.remaining() > 0) {
-								size = Math.min(buffer.remaining(), SEND_BYTES);
-								view = buffer.slice();
-								view.limit(size);
+					writtenBytes += buffers.remaining();
+					if (buffers.remaining() > SEND_BYTES) {
+						// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
+						// the length of the actual written data -> simulate a smaller buffer by slicing it
+						while (buffers.remaining() > 0) {
+							size = Math.min(buffers.remaining(), SEND_BYTES);
+							view = buffers.slice();
+							view.limit(size);
 
-								int length = view.remaining();
-								while (length > 0) {
-									try {
-										length -= p_connection.m_channel.write(view);
-									} catch (final ClosedChannelException e) {
-										// Channel is closed -> ignore
-										break outerloop;
-									}
-								}
-								buffer.position(buffer.position() + size);
-							}
-						} else {
-							int length = buffer.remaining();
+							int length = view.remaining();
 							while (length > 0) {
 								try {
-									length -= p_connection.m_channel.write(buffer);
+									length -= p_connection.m_channel.write(view);
 								} catch (final ClosedChannelException e) {
 									// Channel is closed -> ignore
-									break outerloop;
+									break;
 								}
 							}
+							buffers.position(buffers.position() + size);
 						}
-						ThroughputStatistic.getInstance().outgoingExtern(sum);
+					} else {
+						int length = buffers.remaining();
+						while (length > 0) {
+							try {
+								length -= p_connection.m_channel.write(buffers);
+							} catch (final ClosedChannelException e) {
+								// Channel is closed -> ignore
+								break;
+							}
+						}
 					}
+					ThroughputStatistic.getInstance().outgoingExtern(writtenBytes);
 				}
 			} catch (final IOException e) {
 				LOGGER.debug("WARN::Could not write to channel (" + p_connection.getDestination() + ")", e);
@@ -988,7 +1020,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            number of received bytes
 		 */
 		FlowControlMessage(final int p_confirmedBytes) {
-			super((short) 0, TYPE, SUBTYPE);
+			super((short) 0, TYPE, SUBTYPE, true);
 			m_confirmedBytes = p_confirmedBytes;
 		}
 

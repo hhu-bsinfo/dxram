@@ -246,6 +246,30 @@ abstract class AbstractConnection {
 		return this.getClass().getSimpleName() + "[" + m_destination + ", " + m_connected + "]";
 	}
 
+	/*-public void execute(final ByteBuffer p_buffer) {
+		ByteStreamInterpreter streamInterpreter;
+		ByteBuffer messageBuffer;
+
+		streamInterpreter = m_streamInterpreter;
+
+		// could be null when an other thread has read the buffer before
+		if (p_buffer != null) {
+			while (p_buffer.hasRemaining()) {
+				// Update the MessageCreator
+				streamInterpreter.update(p_buffer);
+
+				if (streamInterpreter.isMessageComplete()) {
+					if (!streamInterpreter.isExceptionOccurred()) {
+						messageBuffer = streamInterpreter.getMessageBuffer();
+						m_messageCreator.newData(messageBuffer);
+					}
+
+					streamInterpreter.clear();
+				}
+			}
+		}
+	}*/
+
 	// Classes
 	/**
 	 * Manages for reacting to connections
@@ -281,7 +305,6 @@ abstract class AbstractConnection {
 			ByteBuffer buffer;
 			ByteBuffer messageBuffer;
 
-			System.out.println(Thread.currentThread().getName());
 			try {
 				streamInterpreter = m_streamInterpreter;
 				buffer = read();
@@ -332,6 +355,10 @@ abstract class AbstractConnection {
 		 *            new buffer
 		 */
 		public void newData(final ByteBuffer p_buffer) {
+			while (m_buffers.size() > 1000) {
+				Thread.yield();
+			}
+
 			m_buffersLock.lock();
 			m_buffers.offer(p_buffer);
 			m_buffersLock.unlock();
@@ -346,7 +373,6 @@ abstract class AbstractConnection {
 
 			m_buffersLock.lock();
 			buffer = m_buffers.poll();
-			m_buffersLock.unlock();
 
 			message = createMessage(buffer);
 
@@ -357,6 +383,7 @@ abstract class AbstractConnection {
 				incRating(message.getRatingValue());
 				deliverMessage(message);
 			}
+			m_buffersLock.unlock();
 		}
 
 		/**

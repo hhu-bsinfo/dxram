@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.log.EpochVersion;
 
@@ -19,6 +20,8 @@ public class VersionsHashTableRAM {
 	private int m_elementCapacity;
 	private int m_threshold;
 	private float m_loadFactor;
+
+	private ReentrantLock m_lock;
 
 	// Constructors
 	/**
@@ -43,6 +46,8 @@ public class VersionsHashTableRAM {
 			m_table = new int[m_intCapacity];
 			m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		}
+
+		m_lock = new ReentrantLock(false);
 	}
 
 	// Getter
@@ -77,6 +82,7 @@ public class VersionsHashTableRAM {
 
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -85,14 +91,20 @@ public class VersionsHashTableRAM {
 			}
 			iter = getKey(++index);
 		}
+		m_lock.unlock();
+
+		if (ret == null) {
+			System.out.println("ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		}
+
 		return ret;
 	}
 
 	/**
-	 * Returns the value to which the specified key is mapped in VersionsHashTable
+	 * Returns the next value to which the specified key is mapped in VersionsHashTable
 	 * @param p_key
 	 *            the searched key (is incremented before insertion to avoid 0)
-	 * @return the value to which the key is mapped in VersionsHashTable
+	 * @return the 1 + value to which the key is mapped in VersionsHashTable
 	 */
 	public final EpochVersion getNext(final long p_key) {
 		EpochVersion ret = null;
@@ -102,6 +114,7 @@ public class VersionsHashTableRAM {
 
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -117,6 +130,12 @@ public class VersionsHashTableRAM {
 			set(index, key, ret.getEpoch(), ret.getVersion());
 			m_count++;
 		}
+
+		if (m_count >= m_threshold) {
+			rehash();
+		}
+		m_lock.unlock();
+
 		return ret;
 	}
 
@@ -136,6 +155,7 @@ public class VersionsHashTableRAM {
 
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -153,6 +173,7 @@ public class VersionsHashTableRAM {
 		if (m_count >= m_threshold) {
 			rehash();
 		}
+		m_lock.unlock();
 	}
 
 	/**
@@ -235,12 +256,11 @@ public class VersionsHashTableRAM {
 	 */
 	private void rehash() {
 		int index = 0;
-		int oldCount;
-		int oldThreshold;
+		int oldCapacity;
 		int[] oldMap;
 		int[] newMap;
 
-		oldThreshold = m_threshold;
+		oldCapacity = m_intCapacity;
 		oldMap = m_table;
 
 		m_elementCapacity = m_elementCapacity * 2 + 1;
@@ -249,17 +269,13 @@ public class VersionsHashTableRAM {
 		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newMap;
 
-		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
-
-		oldCount = m_count;
-		while (index < oldThreshold) {
-			if (oldMap[index * 4] != 0) {
-				put(((long) oldMap[index * 4] << 32 | oldMap[index * 4 + 1] & 0xFFFFFFFFL) - 1, oldMap[index * 4 + 2], oldMap[index * 4 + 3]);
+		m_count = 0;
+		while (index < oldCapacity) {
+			if (((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) != 0) {
+				put(((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) - 1, oldMap[index + 2], oldMap[index + 3]);
 			}
-			index = (index + 1) % m_elementCapacity;
+			index += 4;
 		}
-		m_count = oldCount;
-		System.out.println("done");
 	}
 
 }

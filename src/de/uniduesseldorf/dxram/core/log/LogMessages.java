@@ -64,7 +64,7 @@ public final class LogMessages {
 		 *            the Chunks to store
 		 */
 		public LogMessage(final short p_destination, final Chunk[] p_chunks) {
-			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
+			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE, true);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
@@ -82,7 +82,7 @@ public final class LogMessages {
 		 *            the RangeID
 		 */
 		public LogMessage(final short p_destination, final byte p_rangeID, final Chunk[] p_chunks) {
-			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
+			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE, true);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
@@ -160,7 +160,7 @@ public final class LogMessages {
 		 *            the ChunkIDs of the Chunks to remove
 		 */
 		public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
-			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
+			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE, true);
 
 			m_chunkIDs = p_chunkIDs;
 			m_rangeID = -1;
@@ -176,7 +176,7 @@ public final class LogMessages {
 		 *            the RangeID
 		 */
 		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final byte p_rangeID) {
-			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
+			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE, true);
 
 			m_chunkIDs = p_chunkIDs;
 			m_rangeID = p_rangeID;
@@ -244,7 +244,7 @@ public final class LogMessages {
 		 *            the current owner
 		 */
 		public InitRequest(final short p_destination, final long p_firstChunkIDOrRangeID, final short p_owner) {
-			super(p_destination, TYPE, SUBTYPE_INIT_REQUEST);
+			super(p_destination, TYPE, SUBTYPE_INIT_REQUEST, true);
 
 			m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
 			m_owner = p_owner;

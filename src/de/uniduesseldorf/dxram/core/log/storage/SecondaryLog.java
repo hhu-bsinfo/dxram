@@ -40,7 +40,6 @@ public class SecondaryLog extends AbstractLog {
 	private long m_rangeIDOrFirstLocalID;
 
 	private VersionsHashTableRAM m_hashTable;
-	private ReentrantLock m_versionsLock;
 
 	private long m_numberOfBytes;
 	private int m_numberOfInvalidsInLog;
@@ -93,8 +92,7 @@ public class SecondaryLog extends AbstractLog {
 		m_numberOfBytes = 0;
 		m_numberOfInvalidsInLog = 0;
 
-		m_hashTable = new VersionsHashTableRAM(1500000, 0.8f);
-		m_versionsLock = new ReentrantLock(false);
+		m_hashTable = new VersionsHashTableRAM(4000000, 0.9f);
 
 		m_reorganizationThread = p_reorganizationThread;
 
@@ -124,13 +122,11 @@ public class SecondaryLog extends AbstractLog {
 	public final EpochVersion getNextVersion(final long p_chunkID) {
 		EpochVersion ret;
 
-		m_versionsLock.lock();
 		if (m_storesMigrations) {
 			ret = m_hashTable.getNext(p_chunkID);
 		} else {
 			ret = m_hashTable.getNext(ChunkID.getLocalID(p_chunkID));
 		}
-		m_versionsLock.unlock();
 
 		return ret;
 	}
@@ -142,13 +138,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @return the current version
 	 */
 	public final EpochVersion getCurrentVersion(final long p_chunkID) {
-		EpochVersion ret;
-
-		m_versionsLock.lock();
-		ret = m_hashTable.get(p_chunkID);
-		m_versionsLock.unlock();
-
-		return ret;
+		return m_hashTable.get(p_chunkID);
 	}
 
 	/**
@@ -217,10 +207,12 @@ public class SecondaryLog extends AbstractLog {
 	 *            the ChunkID
 	 */
 	public final void invalidateChunk(final long p_chunkID) {
-		m_versionsLock.lock();
-		m_hashTable.put(p_chunkID, 0, -1);
+		if (m_storesMigrations) {
+			m_hashTable.put(p_chunkID, 0, -1);
+		} else {
+			m_hashTable.put(ChunkID.getLocalID(p_chunkID), 0, -1);
+		}
 		incLogInvalidCounter();
-		m_versionsLock.unlock();
 	}
 
 	/**
@@ -245,12 +237,6 @@ public class SecondaryLog extends AbstractLog {
 		int rangeSize = 0;
 		SegmentHeader header;
 		AbstractLogEntryHeader logEntryHeader;
-
-		if (p_data[p_offset + 1] == -64) {
-			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-				System.out.println(ste);
-			}
-		}
 
 		if (length <= 0 || length > SECLOG_SIZE) {
 			throw new IllegalArgumentException("Error: Invalid data size");
@@ -867,7 +853,7 @@ public class SecondaryLog extends AbstractLog {
 		AbstractLogEntryHeader logEntryHeader;
 
 		if (-1 != p_segmentIndex) {
-			System.out.println("\n\n\n\nStarting reorganisation!");
+			// System.out.println("\n\n\n\nStarting reorganisation!");
 			try {
 				segmentData = readSegment(p_segmentIndex);
 				newData = new byte[SECLOG_SEGMENT_SIZE];
@@ -878,7 +864,7 @@ public class SecondaryLog extends AbstractLog {
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segmentData, readBytes, m_storesMigrations);
 					length = logEntryHeader.getHeaderSize(segmentData, readBytes) + logEntryHeader.getLength(segmentData, readBytes);
 					chunkID = logEntryHeader.getCID(segmentData, readBytes);
-					logEntryHeader.print(segmentData, readBytes);
+					// logEntryHeader.print(segmentData, readBytes);
 
 					if (m_hashTable.get(chunkID).equals(logEntryHeader.getVersion(segmentData, readBytes))) {
 						System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);

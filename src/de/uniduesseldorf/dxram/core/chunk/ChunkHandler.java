@@ -724,8 +724,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						if (backupPeers != null) {
 							for (int i = 0; i < backupPeers.length; i++) {
 								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-									new LogMessage(backupPeers[i], new Chunk[] {chunk},
-											new int[] {m_memoryManager.getVersion(chunk.getChunkID())}).send(m_network);
+									new LogMessage(backupPeers[i], new Chunk[] {chunk}).send(m_network);
 								}
 							}
 						}
@@ -760,8 +759,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 							if (backupPeers != null) {
 								for (int i = 0; i < backupPeers.length; i++) {
 									if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-										new LogMessage(backupPeers[i], new Chunk[] {chunk},
-												new int[] {m_memoryManager.getVersion(chunk.getChunkID())}).send(m_network);
+										new LogMessage(backupPeers[i], new Chunk[] {chunk}).send(m_network);
 									}
 								}
 							}
@@ -1989,13 +1987,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		chunk = p_request.getChunk();
 
 		try {
-			m_migrationLock.lock();
 			if (m_memoryManager.isResponsible(chunk.getChunkID())) {
 				// TODO
 				// m_memoryManager.put(chunk);
 				success = true;
 			}
-			m_migrationLock.unlock();
 
 			new PutResponse(p_request, success).send(m_network);
 		} catch (final DXRAMException e) {

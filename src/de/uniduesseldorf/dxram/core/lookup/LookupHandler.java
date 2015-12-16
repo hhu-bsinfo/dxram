@@ -264,7 +264,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		}
 		nodeID = ChunkID.getCreatorID(p_chunkID);
 		// FIXME will not terminate if chunk id requested does not exist
-		//while (null == ret) {
+		while (null == ret) {
 			responsibleSuperpeer = getResponsibleSuperpeer(nodeID, check);
 
 			if (-1 != responsibleSuperpeer) {
@@ -275,13 +275,13 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				} catch (final NetworkException e) {
 					// Responsible superpeer is not available, try again and check responsible superpeer
 					check = true;
-		//continue;
+					continue;
 				}
 				response = request.getResponse(LookupResponse.class);
 
 				ret = response.getLocations();
 			}
-		//}
+		}
 
 		LOGGER.trace("Exiting get");
 		return ret;
