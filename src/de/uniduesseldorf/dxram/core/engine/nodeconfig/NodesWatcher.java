@@ -64,7 +64,19 @@ public final class NodesWatcher implements Watcher {
 		return m_nodesConfiguration;
 	}
 	
-	public byte[] getZookeeperData(final String p_path)
+	public List<String> zookeeperGetChildren(final String p_path) {
+		List<String> children = null;
+		
+		try {
+			children = m_zookeeper.getChildren(p_path);
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Getting children of " + p_path + " from zookeeper failed.", e);
+		}
+		
+		return children;
+	}
+	
+	public byte[] zookeeperGetData(final String p_path)
 	{
 		byte[] data = null;
 		

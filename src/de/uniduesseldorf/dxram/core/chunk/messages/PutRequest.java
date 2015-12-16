@@ -15,11 +15,12 @@ import de.uniduesseldorf.menet.AbstractRequest;
  */
 public class PutRequest extends AbstractRequest {
 
-	// DataStructure is used when sending the put request
-	private DataStructure m_dataStructure = null;
-	// Chunk is created and used when receiving a put request
-	private Chunk m_chunk = null;
-	private boolean m_releaseLock = false;
+	// DataStructures used when sending the put request.
+	// These are also used by the response to directly write the
+	// receiving data to the structures
+	private DataStructure[] m_dataStructures = null;
+	// Chunks are created and used when receiving a put request
+	private Chunk[] m_chunks = null;
 
 	/**
 	 * Creates an instance of PutRequest.
@@ -37,8 +38,8 @@ public class PutRequest extends AbstractRequest {
 	 * @param p_dataStructure
 	 *            Data structure with the data to put.
 	 */
-	public PutRequest(final short p_destination, final DataStructure p_dataStructure) {
-		this(p_destination, p_dataStructure, false);
+	public PutRequest(final short p_destination, final DataStructure... p_dataStructures) {
+		this(p_destination, false, p_dataStructures);
 	}
 
 	/**
@@ -50,19 +51,22 @@ public class PutRequest extends AbstractRequest {
 	 * @param p_releaseLock
 	 *            if true a potential lock will be released
 	 */
-	public PutRequest(final short p_destination, final DataStructure p_dataStructure, final boolean p_releaseLock) {
+	public PutRequest(final short p_destination, final boolean p_releaseLock, final DataStructure... p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
 
-		m_dataStructure = p_dataStructure;
-		m_releaseLock = p_releaseLock;
+		m_dataStructures = p_dataStructures;
+		
+		byte tmpCode = ChunkMessagesUtils.setLockFlag(getStatusCode(), p_releaseLock);
+		ChunkMessagesUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length);
+		setStatusCode(tmpCode);
 	}
 
 	/**
-	 * Get the Chunk to put
+	 * Get the Chunk to put when this mesasge is received.
 	 * @return the Chunk to put
 	 */
-	public final Chunk getChunk() {
-		return m_chunk;
+	public final Chunk[] getChunks() {
+		return m_chunks;
 	}
 
 	/**
@@ -70,29 +74,50 @@ public class PutRequest extends AbstractRequest {
 	 * @return true if a potential lock should be released, false otherwise
 	 */
 	public final boolean isReleaseLock() {
-		return m_releaseLock;
+		return ChunkMessagesUtils.getLockFlag(getStatusCode());
 	}
 
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
+		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
+		
 		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
-		p_buffer.putLong(m_dataStructure.getID());
-		m_dataStructure.writePayload(0, dataStructureWriter);
-		p_buffer.put((byte) (m_releaseLock ? 1 : 0));
+		for (DataStructure dataStructure : m_dataStructures) {
+			p_buffer.putLong(dataStructure.getID());
+			p_buffer.putInt(dataStructure.sizeofPayload());
+			dataStructure.writePayload(0, dataStructureWriter);
+		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_chunk = new Chunk(p_buffer.getLong());
 		ByteBufferDataStructureReaderWriter dataStructureReader = new ByteBufferDataStructureReaderWriter(p_buffer);
-		m_chunk.readPayload(0, dataStructureReader);
-		m_releaseLock = p_buffer.get() != 0 ? true : false;
+		int numChunks = ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode());
+		
+		m_chunks = new Chunk[numChunks];
+		
+		for (int i = 0; i < m_chunks.length; i++) {
+			long id = p_buffer.getLong();
+			int size = p_buffer.getInt();
+			
+			m_chunks[i] = new Chunk(id, size);
+			m_chunks[i].readPayload(0, size, dataStructureReader);
+		}
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {		
-		return Long.BYTES + m_dataStructure.sizeofPayload() + Byte.BYTES;
+	protected final int getPayloadLengthForWrite() {	
+		int size = ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode());
+		
+		size += m_dataStructures.length * Long.BYTES;
+		size += m_dataStructures.length * Integer.BYTES;
+		
+		for (DataStructure dataStructure : m_dataStructures) {
+			size += dataStructure.sizeofPayload();
+		}
+		
+		return size;
 	}
 
 }

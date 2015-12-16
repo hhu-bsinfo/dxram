@@ -8,7 +8,8 @@ import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 public class LogComponent extends DXRAMComponent implements LogInterface
 {
-
+	public static final String COMPONENT_IDENTIFIER = "Log";
+	
 	public LogComponent(String p_componentIdentifier, int p_priorityInit, int p_priorityShutdown) {
 		super("Log", p_priorityInit, p_priorityShutdown);
 

@@ -11,7 +11,7 @@ import de.uniduesseldorf.menet.AbstractResponse;
  */
 public class RemoveResponse extends AbstractResponse {
 
-	private boolean m_success;
+	private byte[] m_chunkStatusCodes = null;
 
 	/**
 	 * Creates an instance of RemoveResponse.
@@ -19,8 +19,6 @@ public class RemoveResponse extends AbstractResponse {
 	 */
 	public RemoveResponse() {
 		super();
-
-		m_success = false;
 	}
 
 	/**
@@ -31,33 +29,37 @@ public class RemoveResponse extends AbstractResponse {
 	 * @param p_success
 	 *            true if remove was successful
 	 */
-	public RemoveResponse(final RemoveRequest p_request, final boolean p_success) {
+	public RemoveResponse(final RemoveRequest p_request, final byte... p_statusCodes) {
 		super(p_request, ChunkMessages.SUBTYPE_REMOVE_RESPONSE);
 
-		m_success = p_success;
+		m_chunkStatusCodes = p_statusCodes;
+		
+		setStatusCode(ChunkMessagesUtils.setNumberOfItemsToSend(getStatusCode(), p_statusCodes.length));
 	}
 
-	/**
-	 * Get the status
-	 * @return true if remove was successful
-	 */
-	public final boolean getStatus() {
-		return m_success;
+	public final byte[] getStatusCodes() {
+		return m_chunkStatusCodes;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.put((byte) (m_success ? 1 : 0));
+		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkStatusCodes.length);
+		
+		p_buffer.put(m_chunkStatusCodes);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_success = p_buffer.get() != 0 ? true : false;
+		int numChunks = ChunkMessagesUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		
+		m_chunkStatusCodes = new byte[numChunks];
+		
+		p_buffer.get(m_chunkStatusCodes);
 	}
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return Byte.BYTES;
+		return ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode()) + m_chunkStatusCodes.length * Byte.BYTES;
 	}
 
 }

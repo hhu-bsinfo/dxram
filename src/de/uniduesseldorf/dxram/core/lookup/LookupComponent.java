@@ -2,6 +2,7 @@ package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.List;
 
+import de.uniduesseldorf.dxram.core.backup.BackupRange;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
 
 public abstract class LookupComponent extends DXRAMComponent {

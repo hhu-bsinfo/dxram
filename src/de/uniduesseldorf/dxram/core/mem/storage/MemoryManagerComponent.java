@@ -211,10 +211,12 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	{
 		long address;
 		boolean ret = false;
+		int size = 0;
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
-			p_dataStructure.readPayload(address, m_smallObjectHeapDSReaderWriter);
+			size = m_rawMemory.getSizeBlock(address);
+			p_dataStructure.readPayload(address, size, m_smallObjectHeapDSReaderWriter);
 			ret = true;
 		}
 		

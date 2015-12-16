@@ -1,4 +1,4 @@
-package de.uniduesseldorf.dxram.core.lookup;
+package de.uniduesseldorf.dxram.core.backup;
 
 /**
  * Stores a backup range

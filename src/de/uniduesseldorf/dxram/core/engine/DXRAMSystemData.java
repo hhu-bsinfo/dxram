@@ -1,5 +1,7 @@
 package de.uniduesseldorf.dxram.core.engine;
 
+import java.util.List;
+
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
 
@@ -22,8 +24,12 @@ public class DXRAMSystemData
 		return m_nodesWatcher.getNodesConfiguration().getOwnNodeEntry().getRole();
 	}
 	
-	public byte[] getZookeeperData(final String p_path)
+	public byte[] zookeeperGetData(final String p_path)
 	{
-		return m_nodesWatcher.getZookeeperData(p_path);
+		return m_nodesWatcher.zookeeperGetData(p_path);
+	}
+	
+	public List<String> zookeeperGetChildren(final String p_path) {
+		return m_nodesWatcher.zookeeperGetChildren(p_path);
 	}
 }

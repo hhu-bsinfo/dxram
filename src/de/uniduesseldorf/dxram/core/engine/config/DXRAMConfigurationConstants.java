@@ -14,6 +14,7 @@ import de.uniduesseldorf.utils.config.Configuration.ConfigurationEntry;
  * @author Florian Klein
  *         03.09.2013
  */
+// TODO split everything and have separate classes for each component/service with configuration values
 public final class DXRAMConfigurationConstants {
 
 	// Constants

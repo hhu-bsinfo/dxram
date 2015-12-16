@@ -12,6 +12,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
 import de.uniduesseldorf.dxram.commands.CmdUtils;
+import de.uniduesseldorf.dxram.core.backup.BackupRange;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
@@ -811,8 +812,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	
 	@Override
 	protected boolean initComponent(final Configuration p_configuration) {
-		m_bootstrap = Short.parseShort(new String(getSystemData().getZookeeperData("nodes/bootstrap")));
-		m_numberOfSuperpeers = Integer.parseInt(new String(getSystemData().getZookeeperData("nodes/superpeers")));
+		m_bootstrap = Short.parseShort(new String(getSystemData().zookeeperGetData("nodes/bootstrap")));
+		m_numberOfSuperpeers = Integer.parseInt(new String(getSystemData().zookeeperGetData("nodes/superpeers")));
 
 		m_sleepInterval = p_configuration.getIntValue(DXRAMConfigurationConstants.LOOKUP_SLEEP);
 

@@ -19,7 +19,7 @@ public abstract class AbstractMessage {
 	public static final long INVALID_MESSAGE_ID = -1;
 	public static final byte DEFAULT_TYPE = 0;
 	public static final byte DEFAULT_SUBTYPE = 0;
-	public static final byte DEFAULT_RATING_VALUE = 1;
+	public static final byte DEFAULT_STATUS_CODE = 0;
 
 	public static final byte HEADER_SIZE = 15;
 
@@ -30,7 +30,8 @@ public abstract class AbstractMessage {
 	private byte m_type;
 	private byte m_subtype;
 
-	private byte m_ratingValue;
+	// status code for all messages to indicate success, errors etc.
+	private byte m_statusCode;
 
 	private static long m_nextMessageID = 1;
 	private static ReentrantLock m_lock = new ReentrantLock(false);
@@ -46,7 +47,7 @@ public abstract class AbstractMessage {
 		m_type = DEFAULT_TYPE;
 		m_subtype = DEFAULT_SUBTYPE;
 
-		m_ratingValue = DEFAULT_RATING_VALUE;
+		m_statusCode = 0;
 	}
 
 	/**
@@ -57,7 +58,7 @@ public abstract class AbstractMessage {
 	 *            the message type
 	 */
 	public AbstractMessage(final short p_source, final short p_destination, final byte p_type) {
-		this(getNextMessageID(), p_source, p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_RATING_VALUE);
+		this(getNextMessageID(), p_source, p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_STATUS_CODE);
 	}
 
 	/**
@@ -70,7 +71,7 @@ public abstract class AbstractMessage {
 	 *            the message subtype
 	 */
 	public AbstractMessage(final short p_source, final short p_destination, final byte p_type, final byte p_subtype) {
-		this(getNextMessageID(), p_source, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
+		this(getNextMessageID(), p_source, p_destination, p_type, p_subtype, DEFAULT_STATUS_CODE);
 	}
 
 	/**
@@ -100,7 +101,7 @@ public abstract class AbstractMessage {
 	 *            the message subtype
 	 */
 	protected AbstractMessage(final long p_messageID, final short p_source, final short p_destination, final byte p_type, final byte p_subtype) {
-		this(p_messageID, p_source, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE);
+		this(p_messageID, p_source, p_destination, p_type, p_subtype, DEFAULT_STATUS_CODE);
 	}
 
 	/**
@@ -116,7 +117,7 @@ public abstract class AbstractMessage {
 	 * @param p_ratingValue
 	 *            the rating value of the message
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_source, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue) {
+	protected AbstractMessage(final long p_messageID, final short p_source, final short p_destination, final byte p_type, final byte p_subtype, final byte p_statusCode) {
 		NodeID.check(p_destination);
 
 		m_messageID = p_messageID;
@@ -125,7 +126,7 @@ public abstract class AbstractMessage {
 		m_type = p_type;
 		m_subtype = p_subtype;
 
-		m_ratingValue = p_ratingValue;
+		m_statusCode = p_statusCode;
 	}
 
 	// Getters
@@ -170,21 +171,21 @@ public abstract class AbstractMessage {
 	}
 
 	/**
-	 * Get the rating value
-	 * @return the rating value
+	 * Get the status code (definable error, success,...)
+	 * @return Status code.
 	 */
-	public final byte getRatingValue() {
-		return m_ratingValue;
+	public final byte getStatusCode() {
+		return m_statusCode;
 	}
 
 	// Setters
 	/**
-	 * Set the rating value
-	 * @param p_ratingValue
-	 *            the rating value
+	 * Set the status code (definable error, success,...)
+	 * @param p_statusCode
+	 *            the status code
 	 */
-	public final void setRatingValue(final byte p_ratingValue) {
-		m_ratingValue = p_ratingValue;
+	public final void setStatusCode(final byte p_statusCode) {
+		m_statusCode = p_statusCode;
 	}
 
 	/**
@@ -256,7 +257,7 @@ public abstract class AbstractMessage {
 		p_buffer.putLong(m_messageID);
 		p_buffer.put(m_type);
 		p_buffer.put(m_subtype);
-		p_buffer.put(m_ratingValue);
+		p_buffer.put(m_statusCode);
 		p_buffer.putInt(p_payloadSize);
 
 		writePayload(p_buffer);
@@ -338,7 +339,7 @@ public abstract class AbstractMessage {
 		long messageID;
 		byte type;
 		byte subtype;
-		byte ratingValue;
+		byte statusCode;
 
 		Contract.checkNotNull(p_buffer, "no bytes given");
 
@@ -349,7 +350,7 @@ public abstract class AbstractMessage {
 		messageID = p_buffer.getLong();
 		type = p_buffer.get();
 		subtype = p_buffer.get();
-		ratingValue = p_buffer.get();
+		statusCode = p_buffer.get();
 
 		try {
 			ret = p_messageDirectory.getInstance(type, subtype);
@@ -360,7 +361,7 @@ public abstract class AbstractMessage {
 		ret.m_messageID = messageID;
 		ret.m_type = type;
 		ret.m_subtype = subtype;
-		ret.m_ratingValue = ratingValue;
+		ret.m_statusCode = statusCode;
 
 		return ret;
 	}

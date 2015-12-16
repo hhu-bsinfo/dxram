@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.mem;
+package de.uniduesseldorf.dxram.core.backup;
 
 import java.io.Serializable;
 import java.util.concurrent.locks.ReentrantLock;
@@ -11,7 +11,7 @@ import de.uniduesseldorf.utils.Contract;
  * @author Kevin Beineke
  *         03.06.2015
  */
-public final class MigrationsTree implements Serializable {
+public final class MigratedBackupsTree implements Serializable {
 
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
@@ -38,7 +38,7 @@ public final class MigrationsTree implements Serializable {
 	 * @param p_order
 	 *            order of the btree
 	 */
-	public MigrationsTree(final short p_order, final long p_secondaryLogSize) {
+	public MigratedBackupsTree(final short p_order, final long p_secondaryLogSize) {
 		Contract.check(1 < p_order, "too small order for BTree");
 
 		m_minEntries = p_order;

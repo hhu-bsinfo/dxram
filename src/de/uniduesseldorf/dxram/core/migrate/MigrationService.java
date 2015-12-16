@@ -2,11 +2,13 @@ package de.uniduesseldorf.dxram.core.migrate;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.chunk.ChunkCommandMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkCommandRequest;
 import de.uniduesseldorf.dxram.core.chunk.DataMessage;
 import de.uniduesseldorf.dxram.core.chunk.DataRequest;
+import de.uniduesseldorf.dxram.core.chunk.DataResponse;
 import de.uniduesseldorf.dxram.core.chunk.GetRequest;
 import de.uniduesseldorf.dxram.core.chunk.Locations;
 import de.uniduesseldorf.dxram.core.chunk.LockRequest;
@@ -15,8 +17,10 @@ import de.uniduesseldorf.dxram.core.chunk.PutRequest;
 import de.uniduesseldorf.dxram.core.chunk.RemoveRequest;
 import de.uniduesseldorf.dxram.core.chunk.UnlockMessage;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
@@ -30,6 +34,8 @@ public class MigrationService {
 	m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_DATA_REQUEST, ChunkMessages.DataRequest.class);
 	m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_DATA_RESPONSE, ChunkMessages.DataResponse.class);
 	m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_DATA_MESSAGE, ChunkMessages.DataMessage.class);
+	
+	m_migrationLock = new ReentrantLock(false);
 	
 	/**
 	 * Puts migrated or recovered Chunks
@@ -457,5 +463,37 @@ public class MigrationService {
 		}
 
 		LOGGER.trace("Exiting incomingMessage");
+	}
+	
+	/**
+	 * Handles an incoming DataRequest
+	 * @param p_request
+	 *            the DataRequest
+	 */
+	private void incomingDataRequest(final DataRequest p_request) {
+		try {
+			putForeignChunks(p_request.getChunks());
+
+			new DataResponse(p_request).send(m_network);
+		} catch (final DXRAMException e) {
+			LOGGER.error("ERR::Could not handle request", e);
+
+			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
+		}
+	}
+
+	/**
+	 * Handles an incoming DataMessage
+	 * @param p_message
+	 *            the DataMessage
+	 */
+	private void incomingDataMessage(final DataMessage p_message) {
+		try {
+			putForeignChunks(p_message.getChunks());
+		} catch (final DXRAMException e) {
+			LOGGER.error("ERR::Could not handle message", e);
+
+			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
+		}
 	}
 }

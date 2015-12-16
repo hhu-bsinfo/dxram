@@ -63,6 +63,4 @@ public class SmallObjectHeapDSReaderWriter implements DataStructureReader, DataS
 	public int putBytes(long p_startAddress, int p_offset, byte[] p_array, int p_arrayOffset, int p_length) {
 		return m_heap.writeBytes(p_startAddress, p_offset, p_array, p_arrayOffset, p_length);
 	}
-	
-
 }

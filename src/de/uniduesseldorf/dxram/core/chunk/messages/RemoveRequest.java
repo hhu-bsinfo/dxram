@@ -2,7 +2,7 @@ package de.uniduesseldorf.dxram.core.chunk.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.mem.DataStructure;
 
 import de.uniduesseldorf.menet.AbstractRequest;
 
@@ -13,16 +13,18 @@ import de.uniduesseldorf.menet.AbstractRequest;
  */
 public class RemoveRequest extends AbstractRequest {
 
-	private long m_chunkID;
-
+	// used when sending the remove request, only chunk id
+	// is transfered
+	private DataStructure[] m_dataStructures = null;
+	// used when receiving the message
+	private long[] m_chunkIDs = null;
+	
 	/**
 	 * Creates an instance of RemoveRequest.
 	 * This constructor is used when receiving this message.
 	 */
 	public RemoveRequest() {
 		super();
-
-		m_chunkID = ChunkID.INVALID_ID;
 	}
 
 	/**
@@ -33,35 +35,45 @@ public class RemoveRequest extends AbstractRequest {
 	 * @param p_chunkID
 	 *            the ID for the Chunk to remove
 	 */
-	public RemoveRequest(final short p_destination, final long p_chunkID) {
+	public RemoveRequest(final short p_destination, final DataStructure... p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST);
 
-		ChunkID.check(p_chunkID);
-
-		m_chunkID = p_chunkID;
+		m_dataStructures = p_dataStructures;
+		
+		setStatusCode(ChunkMessagesUtils.setNumberOfItemsToSend(getStatusCode(), p_dataStructures.length));
 	}
 
 	/**
 	 * Get the ID for the Chunk to remove
 	 * @return the ID for the Chunk to remove
 	 */
-	public final long getChunkID() {
-		return m_chunkID;
+	public final long[] getChunkIDs() {
+		return m_chunkIDs;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putLong(m_chunkID);
+		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
+		
+		for (DataStructure dataStructure : m_dataStructures) {
+			p_buffer.putLong(dataStructure.getID());
+		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_chunkID = p_buffer.getLong();
+		int numChunks = ChunkMessagesUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		
+		m_chunkIDs = new long[numChunks];
+		
+		p_buffer.asLongBuffer().get(m_chunkIDs);
+		// we have to manually advance the original buffer
+		p_buffer.position(p_buffer.position() + numChunks * Long.BYTES);
 	}
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return Long.BYTES;
+		return ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructures.length;
 	}
 
 }

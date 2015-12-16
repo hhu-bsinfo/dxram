@@ -3,11 +3,14 @@ package de.uniduesseldorf.dxram.core.lock;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.chunk.ChunkService;
+import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
+import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
+import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.lock.messages.LockMessages;
 import de.uniduesseldorf.dxram.core.lock.messages.LockRequest;
 import de.uniduesseldorf.dxram.core.lock.messages.LockResponse;
@@ -233,5 +236,50 @@ public class LockService extends DXRAMService {
 		}
 
 		LOGGER.trace("Exiting incomingMessage");
+	}
+	
+	/**
+	 * Handles an incoming LockRequest
+	 * @param p_request
+	 *            the LockRequest
+	 */
+	private void incomingLockRequest(final LockRequest p_request) {
+		DefaultLock lock;
+
+		Operation.INCOMING_LOCK.enter();
+
+		try {
+			lock = new DefaultLock(p_request.getChunkID(), p_request.getSource(), p_request.isReadLock());
+			m_lock.lock(lock);
+
+			// TODO
+			// object without variable to store it?
+			// new LockResponse(p_request, m_memoryManager.get(lock.getChunk())).send(m_network);
+		} catch (final DXRAMException e) {
+			LOGGER.error("ERR::Could not handle message", e);
+
+			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
+		}
+
+		Operation.INCOMING_LOCK.leave();
+	}
+
+	/**
+	 * Handles an incoming UnlockMessage
+	 * @param p_message
+	 *            the UnlockMessage
+	 */
+	private void incomingUnlockMessage(final UnlockMessage p_message) {
+		Operation.INCOMING_UNLOCK.enter();
+
+		try {
+			m_lock.unlock(p_message.getChunkID(), p_message.getSource());
+		} catch (final DXRAMException e) {
+			LOGGER.error("ERR::Could not handle message", e);
+
+			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
+		}
+
+		Operation.INCOMING_UNLOCK.leave();
 	}
 }

@@ -16,10 +16,6 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
-import de.uniduesseldorf.dxram.core.dxram.Core;
-
-import de.uniduesseldorf.utils.config.Configuration.ConfigurationConstants;
-
 /**
  * Class for accessing ZooKeeper
  * @author Florian Klein 02.12.2013

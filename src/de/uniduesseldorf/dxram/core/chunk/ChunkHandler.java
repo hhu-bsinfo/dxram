@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
+import de.uniduesseldorf.dxram.core.backup.MigratedBackupsTree;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.ChunkCommandResponse;
@@ -52,7 +53,6 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.mem.Chunk;
-import de.uniduesseldorf.dxram.core.mem.MigrationsTree;
 import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
@@ -90,25 +90,16 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	// Attributes
 	private short m_nodeID;
-	private long m_rangeSize;
-	private boolean m_firstRangeInitialized;
+
 
 	private MemoryManagerComponent m_memoryManager;
-
-	private BackupRange m_currentBackupRange;
-	private ArrayList<BackupRange> m_ownBackupRanges;
-
-	private BackupRange m_currentMigrationBackupRange;
-	private ArrayList<BackupRange> m_migrationBackupRanges;
-	// ChunkID -> migration backup range
-	private MigrationsTree m_migrationsTree;
 
 	private NetworkInterface m_network;
 	private LookupInterface m_lookup;
 	private LogInterface m_log;
 	private LockInterface m_lock;
 
-	private IncomingChunkListener m_listener;
+
 
 	private Lock m_migrationLock;
 	private Lock m_mappingLock;
@@ -125,7 +116,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (LOG_ACTIVE && NodeID.getRole().equals(Role.PEER)) {
 			m_ownBackupRanges = new ArrayList<BackupRange>();
 			m_migrationBackupRanges = new ArrayList<BackupRange>();
-			m_migrationsTree = new MigrationsTree((short) 10);
+			m_migrationsTree = new MigratedBackupsTree((short) 10);
 			m_currentBackupRange = null;
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
@@ -336,413 +327,19 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 
 
-	@Override
-	public void putRecoveredChunks(final Chunk[] p_chunks) throws DXRAMException {
-		Contract.checkNotNull(p_chunks, "no chunks given");
-
-		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
-		} else {
-			putForeignChunks(p_chunks);
-		}
-	}
 
 
 
-	/**
-	 * Registers peer in superpeer overlay
-	 * @throws LookupException
-	 *             if range could not be initialized
-	 */
-	private void registerPeer() throws LookupException {
-		m_lookup.initRange(0, new Locations(m_nodeID, null, null));
-	}
 
-	/**
-	 * Returns the corresponding backup peers
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @return the backup peers
-	 */
-	private short[] getBackupPeersForLocalChunks(final long p_chunkID) {
-		short[] ret = null;
 
-		if (ChunkID.getCreatorID(p_chunkID) == NodeID.getLocalNodeID()) {
-			for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
-				if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
-					ret = m_ownBackupRanges.get(i).getBackupPeers();
-					break;
-				}
-			}
-		} else {
-			ret = m_migrationBackupRanges.get(m_migrationsTree.getBackupRange(p_chunkID)).getBackupPeers();
-		}
 
-		return ret;
-	}
 
-	/**
-	 * Returns the corresponding backup peers
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @return the backup peers
-	 */
-	private long getBackupPeersForLocalChunksAsLong(final long p_chunkID) {
-		long ret = -1;
 
-		if (ChunkID.getCreatorID(p_chunkID) == NodeID.getLocalNodeID()) {
-			for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
-				if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
-					ret = m_ownBackupRanges.get(i).getBackupPeersAsLong();
-					break;
-				}
-			}
-		} else {
-			ret = m_migrationBackupRanges.get(m_migrationsTree.getBackupRange(p_chunkID)).getBackupPeersAsLong();
-		}
 
-		return ret;
-	}
 
-	/**
-	 * Initializes the backup range for current locations
-	 * and determines new backup peers if necessary
-	 * @param p_localID
-	 *            the current LocalID
-	 * @param p_size
-	 *            the size of the new created chunk
-	 * @throws LookupException
-	 *             if range could not be initialized
-	 */
-	private void initBackupRange(final long p_localID, final int p_size) throws LookupException {
-		if (LOG_ACTIVE) {
-			m_rangeSize += p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
-			if (!m_firstRangeInitialized && p_localID == 1) {
-				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
-				// This is the first put and p_localID is not reused
-				determineBackupPeers(0);
-				m_lookup.initRange((long) m_nodeID << 48, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = 0;
-				m_firstRangeInitialized = true;
-			} else if (m_rangeSize > SECONDARY_LOG_SIZE / 2) {
-				determineBackupPeers(p_localID);
-				m_lookup.initRange(((long) m_nodeID << 48) + p_localID, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange(((long) m_nodeID << 48) + p_localID, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = 0;
-			}
-		} else if (!m_firstRangeInitialized && p_localID == 1) {
-			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, new Locations(m_nodeID, new short[] {-1, -1, -1}, null));
-			m_firstRangeInitialized = true;
-		}
-	}
 
-	/**
-	 * Determines backup peers
-	 * @param p_localID
-	 *            the current LocalID
-	 */
-	private void determineBackupPeers(final long p_localID) {
-		boolean ready = false;
-		boolean insufficientPeers = false;
-		short index = 0;
-		short peer;
-		short[] oldBackupPeers = null;
-		short[] newBackupPeers = null;
-		short[] allPeers;
-		short numberOfPeers = 0;
-		List<String> peers = null;
 
-		// Get all other online peers
-		try {
-			peers = ZooKeeperHandler.getChildren("nodes/peers");
-		} catch (final ZooKeeperException e) {
-			System.out.println("Could not access ZooKeeper!");
-		}
-		allPeers = new short[peers.size() - 1];
-		for (int i = 0; i < peers.size(); i++) {
-			peer = Short.parseShort(peers.get(i));
-			if (peer != NodeID.getLocalNodeID()) {
-				allPeers[numberOfPeers++] = peer;
-			}
-		}
 
-		if (3 > numberOfPeers) {
-			LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
-
-			newBackupPeers = new short[numberOfPeers];
-			Arrays.fill(newBackupPeers, (short) -1);
-
-			insufficientPeers = true;
-		} else if (6 > numberOfPeers) {
-			LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
-
-			oldBackupPeers = new short[REPLICATION_FACTOR];
-			Arrays.fill(oldBackupPeers, (short) -1);
-
-			newBackupPeers = new short[REPLICATION_FACTOR];
-			Arrays.fill(newBackupPeers, (short) -1);
-		} else if (null != m_currentBackupRange.getBackupPeers()) {
-			oldBackupPeers = new short[REPLICATION_FACTOR];
-			for (int i = 0; i < REPLICATION_FACTOR; i++) {
-				if (p_localID > -1) {
-					oldBackupPeers[i] = m_currentBackupRange.getBackupPeers()[i];
-				} else {
-					oldBackupPeers[i] = m_currentMigrationBackupRange.getBackupPeers()[i];
-				}
-			}
-
-			newBackupPeers = new short[REPLICATION_FACTOR];
-			Arrays.fill(newBackupPeers, (short) -1);
-		}
-
-		if (insufficientPeers) {
-			if (numberOfPeers > 0) {
-				// Determine backup peers
-				for (int i = 0; i < numberOfPeers; i++) {
-					while (!ready) {
-						index = (short) (Math.random() * numberOfPeers);
-						ready = true;
-						for (int j = 0; j < i; j++) {
-							if (allPeers[index] == newBackupPeers[j]) {
-								ready = false;
-								break;
-							}
-						}
-					}
-					System.out.println(i + 1 + ". backup peer: " + allPeers[index]);
-					newBackupPeers[i] = allPeers[index];
-					ready = false;
-				}
-				if (p_localID > -1) {
-					m_currentBackupRange = new BackupRange(p_localID, newBackupPeers);
-				} else {
-					m_currentMigrationBackupRange = new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
-				}
-			} else {
-				if (p_localID > -1) {
-					m_currentBackupRange = new BackupRange(p_localID, null);
-				} else {
-					m_currentMigrationBackupRange = new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, null);
-				}
-			}
-		} else {
-			// Determine backup peers
-			for (int i = 0; i < 3; i++) {
-				while (!ready) {
-					index = (short) (Math.random() * numberOfPeers);
-					ready = true;
-					for (int j = 0; j < i; j++) {
-						if (allPeers[index] == oldBackupPeers[j] || allPeers[index] == newBackupPeers[j]) {
-							ready = false;
-							break;
-						}
-					}
-				}
-				System.out.println(i + 1 + ". backup peer: " + allPeers[index]);
-				newBackupPeers[i] = allPeers[index];
-				ready = false;
-			}
-			if (p_localID > -1) {
-				m_currentBackupRange = new BackupRange(p_localID, newBackupPeers);
-			} else {
-				m_currentMigrationBackupRange = new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
-			}
-		}
-
-		if (numberOfPeers > 0) {
-			if (p_localID > -1) {
-				m_ownBackupRanges.add(m_currentBackupRange);
-			} else {
-				m_migrationBackupRanges.add(m_currentMigrationBackupRange);
-			}
-		}
-	}
-
-	/**
-	 * Inserts given ChunkID with key in index chunk
-	 * @param p_key
-	 *            the key to be inserted
-	 * @param p_chunkID
-	 *            the ChunkID to be inserted
-	 * @param p_chunk
-	 *            the index chunk
-	 * @throws DXRAMException
-	 *             if there is no fitting chunk
-	 */
-	private void insertMapping(final int p_key, final long p_chunkID, final Chunk p_chunk) throws DXRAMException {
-		int size;
-		ByteBuffer indexData;
-		ByteBuffer appendixData;
-		Chunk indexChunk = p_chunk;
-		Chunk appendix;
-
-		// Iterate over index chunks to get to the last one
-		while (true) {
-			// Get data and number of written bytes of current index chunk
-			indexData = indexChunk.getData();
-			size = indexData.getInt(0);
-
-			if (-1 != indexData.getInt(indexData.capacity() - 12)) {
-				// This is the last index chunk
-				if (24 <= indexData.capacity() - size) {
-					// If there is at least 24 Bytes (= two entries; the last one of every index file is needed
-					// to address the next index chunk) left in this index chunk, the new entry will be appended
-
-					// Set position on first unwritten byte and add <ID, ChunkID>
-					indexData.position(size);
-					indexData.putInt(p_key);
-					indexData.putLong(p_chunkID);
-					indexData.putInt(0, size + 12);
-					put(indexChunk);
-				} else {
-					// The last index chunk is full -> create new chunk and add its address to the old one
-					appendix = create(INDEX_SIZE);
-					appendixData = appendix.getData();
-					appendixData.putInt(4 + 12);
-					appendixData.putInt(p_key);
-					appendixData.putLong(p_chunkID);
-					put(appendix);
-
-					indexData.position(indexData.capacity() - 12);
-					indexData.putInt(-1);
-					indexData.putLong(appendix.getChunkID());
-					put(indexChunk);
-				}
-				break;
-			}
-			// Get next index file and repeat
-			indexChunk = get(indexData.getLong(indexData.capacity() - 8));
-		}
-	}
-
-	/**
-	 * Removes given key in index chunk
-	 * @param p_key
-	 *            the key to be removed
-	 * @param p_chunk
-	 *            the index chunk
-	 * @throws DXRAMException
-	 *             if there is no fitting chunk
-	 */
-	@SuppressWarnings("unused")
-	private void removeMapping(final int p_key, final Chunk p_chunk) throws DXRAMException {
-		int j = 0;
-		int id;
-		int size;
-		ByteBuffer indexData;
-		ByteBuffer lastIndexData;
-		Chunk indexChunk;
-		Chunk lastIndexChunk;
-		Chunk predecessorChunk = null;
-
-		indexChunk = p_chunk;
-		indexData = indexChunk.getData();
-
-		while (true) {
-			// Get j-th ID from index chunk
-			id = indexData.getInt(j * 12 + 4);
-			if (id == p_key) {
-				// ID is found -> remove entry
-				if (-1 != indexData.getInt(indexData.capacity() - 12)) {
-					// Deletion in last index chunk
-					deleteEntryInLastIndexFile(indexChunk, predecessorChunk, j);
-				} else {
-					// Deletion in index file with successor -> replace entry with last entry in whole list
-					// Find last index chunk
-					lastIndexChunk = indexChunk;
-					lastIndexData = indexData;
-					while (-1 == lastIndexData.getInt(lastIndexData.capacity() - 12)) {
-						predecessorChunk = lastIndexChunk;
-						lastIndexChunk = get(lastIndexData.getLong(lastIndexData.capacity() - 8));
-						lastIndexData = lastIndexChunk.getData();
-					}
-					// Replace entry that should be removed with last entry from last index file
-					size = lastIndexData.getInt(0);
-					indexData.putInt(j * 12 + 4, lastIndexData.getInt(size - 12));
-					indexData.putLong(j * 12 + 4 + 4, lastIndexData.getLong(size - 8));
-					put(indexChunk);
-					// Remove last entry from last index file
-					deleteEntryInLastIndexFile(lastIndexChunk, predecessorChunk, (size - 4) / 12 - 1);
-				}
-				break;
-			} else if (id == -1) {
-				// Get next user index and remember current chunk (may be needed for deletion)
-				predecessorChunk = indexChunk;
-				indexChunk = get(indexData.getLong(indexData.capacity() - 8));
-				indexData = indexChunk.getData();
-				j = 0;
-				continue;
-			}
-			j++;
-		}
-	}
-
-	/**
-	 * Deletes the entry with given index in index chunk
-	 * @param p_indexChunk
-	 *            the index chunk
-	 * @param p_predecessorChunk
-	 *            the parent index chunk
-	 * @param p_index
-	 *            the index
-	 * @throws DXRAMException
-	 *             if there is no fitting chunk
-	 */
-	private void deleteEntryInLastIndexFile(final Chunk p_indexChunk, final Chunk p_predecessorChunk, final int p_index) throws DXRAMException {
-		int size;
-		byte[] data1;
-		byte[] data2;
-		byte[] allData;
-		ByteBuffer indexData;
-
-		// Get data and size of last index file
-		indexData = p_indexChunk.getData();
-		size = indexData.getInt(0);
-
-		if (size > 16) {
-			// If there is more than one entry -> shift all entries 12 Bytes to the left beginning
-			// at p_index to overwrite entry
-			data1 = new byte[p_index * 12 + 4];
-			data2 = new byte[size - (p_index * 12 + 4 + 12)];
-			allData = new byte[size];
-
-			indexData.get(data1, 0, p_index * 12 + 4);
-			indexData.position(p_index * 12 + 4 + 12);
-			indexData.get(data2, 0, size - (p_index * 12 + 4 + 12));
-
-			System.arraycopy(data1, 0, allData, 0, data1.length);
-			System.arraycopy(data2, 0, allData, data1.length, data2.length);
-
-			indexData.position(0);
-			indexData.put(allData);
-			indexData.putInt(0, size - 12);
-			put(p_indexChunk);
-		} else {
-			// There is only one entry in index file
-			if (null != p_predecessorChunk) {
-				// If there is a predecessor, remove current index file and update predecessor
-				remove(p_indexChunk.getChunkID());
-
-				indexData = p_predecessorChunk.getData();
-				indexData.position(indexData.getInt(0));
-				// Overwrite the addressing to predecessor's successor with zeros
-				for (int i = 0; i < 12; i++) {
-					indexData.put((byte) 0);
-				}
-				put(p_predecessorChunk);
-			} else {
-				// If there is no predecessor, the entry to remove is the last entry in list
-				// -> overwrite <ID, ChunkID> with zeros and update size
-				indexData.position(0);
-				indexData.putInt(4);
-				for (int i = 0; i < 12; i++) {
-					indexData.put((byte) 0);
-				}
-				put(p_indexChunk);
-			}
-		}
-	}
 
 
 
