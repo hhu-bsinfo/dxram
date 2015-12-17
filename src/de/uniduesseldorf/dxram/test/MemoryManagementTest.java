@@ -10,8 +10,7 @@ import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
-
+import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.utils.Tools;
 import de.uniduesseldorf.utils.locks.JNILock;
 

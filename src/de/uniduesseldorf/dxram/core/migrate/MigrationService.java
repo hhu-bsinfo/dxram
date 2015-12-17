@@ -24,9 +24,8 @@ import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-
+import de.uniduesseldorf.dxram.data.Chunk;
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
 

@@ -14,6 +14,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
@@ -34,9 +35,7 @@ import de.uniduesseldorf.dxram.core.log.storage.PrimaryWriteBuffer;
 import de.uniduesseldorf.dxram.core.log.storage.SecondaryLog;
 import de.uniduesseldorf.dxram.core.log.storage.SecondaryLogBuffer;
 import de.uniduesseldorf.dxram.core.log.storage.VersionsHashTable;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.menet.NetworkInterface;

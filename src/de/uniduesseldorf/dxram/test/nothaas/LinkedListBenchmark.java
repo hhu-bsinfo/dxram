@@ -1,10 +1,9 @@
 package de.uniduesseldorf.dxram.test.nothaas;
 
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-
 import de.uniduesseldorf.utils.Stopwatch;
 import de.uniduesseldorf.utils.config.ConfigurationHandler;
 

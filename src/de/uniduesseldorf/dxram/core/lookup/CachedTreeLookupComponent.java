@@ -5,7 +5,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
-import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
@@ -35,7 +34,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	// ------------------------------------------------------------------------------------------
 	
 	@Override
-	public Locations get(final long p_chunkID) throws LookupException {
+	public Locations get(final long p_chunkID) {
 		Locations ret;
 		short nodeID;
 
@@ -53,17 +52,17 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	}
 
 	@Override
-	public BackupRange[] getAllBackupRanges(final short p_nodeID) throws LookupException {
+	public BackupRange[] getAllBackupRanges(final short p_nodeID) {
 		return m_lookup.getAllBackupRanges(p_nodeID);
 	}
 
 	@Override
-	public void updateAllAfterRecovery(final short p_owner) throws LookupException {
+	public void updateAllAfterRecovery(final short p_owner) {
 		m_lookup.updateAllAfterRecovery(p_owner);
 	}
 
 	@Override
-	public void migrate(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrate(final long p_chunkID, final short p_nodeID) {
 		ChunkID.check(p_chunkID);
 
 		invalidate(p_chunkID);
@@ -72,7 +71,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	}
 
 	@Override
-	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) throws LookupException {
+	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 		ChunkID.check(p_startCID);
 		ChunkID.check(p_endCID);
 
@@ -82,7 +81,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	}
 
 	@Override
-	public void migrateNotCreatedChunk(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrateNotCreatedChunk(final long p_chunkID, final short p_nodeID) {
 		ChunkID.check(p_chunkID);
 
 		invalidate(p_chunkID);
@@ -91,7 +90,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	}
 
 	@Override
-	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) {
 		ChunkID.check(p_chunkID);
 
 		invalidate(p_chunkID);
@@ -100,20 +99,20 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	}
 
 	@Override
-	public void initRange(final long p_firstChunkID, final Locations p_locations) throws LookupException {
+	public void initRange(final long p_firstChunkID, final Locations p_locations) {
 		ChunkID.check(p_firstChunkID);
 
 		m_lookup.initRange(p_firstChunkID, p_locations);
 	}
 
 	@Override
-	public void insertID(final int p_id, final long p_chunkID) throws LookupException {
+	public void insertID(final int p_id, final long p_chunkID) {
 		m_applicationIDCache.put(p_id, p_chunkID);
 		m_lookup.insertID(p_id, p_chunkID);
 	}
 
 	@Override
-	public long getChunkID(final int p_id) throws LookupException {
+	public long getChunkID(final int p_id) {
 		long ret;
 		Long chunkID;
 
@@ -132,12 +131,12 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	}
 
 	@Override
-	public long getMappingCount() throws LookupException {
+	public long getMappingCount() {
 		return m_lookup.getMappingCount();
 	}
 
 	@Override
-	public void remove(final long p_chunkID) throws LookupException {
+	public void remove(final long p_chunkID) {
 		ChunkID.check(p_chunkID);
 
 		invalidate(p_chunkID);
@@ -146,7 +145,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	}
 
 	@Override
-	public void remove(final long[] p_chunkIDs) throws LookupException {
+	public void remove(final long[] p_chunkIDs) {
 		ChunkID.check(p_chunkIDs);
 
 		invalidate(p_chunkIDs);

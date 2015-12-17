@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.mem.storage;
+package de.uniduesseldorf.dxram.core.mem;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
+import de.uniduesseldorf.dxram.data.Chunk;
 
 public class NameserviceComponent {
 	m_mappingLock = new ReentrantLock(false);

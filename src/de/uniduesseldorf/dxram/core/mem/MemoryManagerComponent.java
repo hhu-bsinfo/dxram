@@ -1,12 +1,11 @@
 
-package de.uniduesseldorf.dxram.core.mem.storage;
+package de.uniduesseldorf.dxram.core.mem;
 
+import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
 import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
 import de.uniduesseldorf.utils.StatisticsManager;
@@ -31,7 +30,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	// Attributes
 	private boolean m_enableMemoryStatistics;
 	private SmallObjectHeap m_rawMemory;
-	private SmallObjectHeapDSReaderWriter m_smallObjectHeapDSReaderWriter;
 	private CIDTable m_cidTable;
 	private JNIReadWriteSpinLock m_lock;
 
@@ -60,7 +58,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_rawMemory.initialize(
 				p_configuration.getLongValue(DXRAMConfigurationConstants.RAM_SIZE), 
 				p_configuration.getLongValue(DXRAMConfigurationConstants.RAM_SEGMENT_SIZE));
-		m_smallObjectHeapDSReaderWriter = new SmallObjectHeapDSReaderWriter(m_rawMemory);
 		m_cidTable = new CIDTable(getSystemData().getNodeID(), m_enableMemoryStatistics);
 		m_cidTable.initialize(m_rawMemory);
 
@@ -77,7 +74,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_rawMemory.disengage();
 
 		m_cidTable = null;
-		m_smallObjectHeapDSReaderWriter = null;
 		m_rawMemory = null;
 		m_lock = null;
 		
@@ -156,22 +152,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	}
 
 	/**
-	 * Check if a specific chunkID exists.
-	 * This is an access call and has to be locked using lockAccess().
-	 * @param p_chunkID
-	 *            ChunkID to check.
-	 * @return True if a chunk with that ID exists, false otherwise.
-	 * @throws MemoryException
-	 *             If reading from CIDTable fails.
-	 */
-	public boolean exists(final long p_chunkID) {
-		long address = -1;
-
-		address = m_cidTable.get(p_chunkID);
-		return address != 0;
-	}
-
-	/**
 	 * Get the size of a chunk (payload only, i.e. minus size for version).
 	 * This is an access call and has to be locked using lockAccess().
 	 * @param p_chunkID
@@ -211,13 +191,14 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	{
 		long address;
 		boolean ret = false;
-		int size = 0;
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
-			size = m_rawMemory.getSizeBlock(address);
-			p_dataStructure.readPayload(address, size, m_smallObjectHeapDSReaderWriter);
-			ret = true;
+			int chunkSize = m_rawMemory.getSizeBlock(address);
+			SmallObjectHeapDataStructureImExporter importer = new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			if (importer.importObject(p_dataStructure) >= 0) {
+				ret = true;
+			}
 		}
 		
 		return ret;
@@ -247,8 +228,11 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
-			p_dataStructure.writePayload(address, m_smallObjectHeapDSReaderWriter);
-			ret = true;
+			int chunkSize = m_rawMemory.getSizeBlock(address);
+			SmallObjectHeapDataStructureImExporter exporter = new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			if (exporter.exportObject(p_dataStructure) >= 0) {
+				ret = true;
+			}
 		}
 
 		return ret;
@@ -304,7 +288,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @throws MemoryException
 	 *             if the Chunk could not be checked
 	 */
-	public boolean isResponsible(final long p_chunkID) {
+	public boolean exists(final long p_chunkID) {
 		long address;
 
 		// Get the address from the CIDTable
@@ -320,7 +304,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 *            the ChunkID
 	 * @return whether this Chunk was migrated here or not
 	 */
-	public boolean wasMigrated(final long p_chunkID) {
+	public boolean dataWasMigrated(final long p_chunkID) {
 		return ChunkID.getCreatorID(p_chunkID) != getSystemData().getNodeID();
 	}
 

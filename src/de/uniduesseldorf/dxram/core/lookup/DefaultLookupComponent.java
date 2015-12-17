@@ -127,7 +127,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	// --------------------------------------------------------------------------------
 	
 	@Override
-	public Locations get(final long p_chunkID) throws LookupException {
+	public Locations get(final long p_chunkID) {
 		Locations ret = null;
 		short nodeID;
 		short responsibleSuperpeer;
@@ -167,7 +167,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public BackupRange[] getAllBackupRanges(final short p_nodeID) throws LookupException {
+	public BackupRange[] getAllBackupRanges(final short p_nodeID) {
 		BackupRange[] ret = null;
 		short responsibleSuperpeer;
 		boolean check = false;
@@ -203,7 +203,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void updateAllAfterRecovery(final short p_owner) throws LookupException {
+	public void updateAllAfterRecovery(final short p_owner) {
 		short responsibleSuperpeer;
 		boolean check = false;
 
@@ -232,7 +232,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void initRange(final long p_firstChunkIDOrRangeID, final Locations p_primaryAndBackupPeers) throws LookupException {
+	public void initRange(final long p_firstChunkIDOrRangeID, final Locations p_primaryAndBackupPeers) {
 		short responsibleSuperpeer;
 		boolean finished = false;
 
@@ -264,7 +264,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrate(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrate(final long p_chunkID, final short p_nodeID) {
 		short responsibleSuperpeer;
 		boolean finished = false;
 
@@ -294,7 +294,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) throws LookupException {
+	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 		short creator;
 		short responsibleSuperpeer;
 		boolean finished = false;
@@ -330,7 +330,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrateNotCreatedChunk(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrateNotCreatedChunk(final long p_chunkID, final short p_nodeID) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 
@@ -382,7 +382,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) {
 		short[] backupSuperpeers;
 
 		LookupTree tree;
@@ -415,7 +415,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void insertID(final int p_id, final long p_chunkID) throws LookupException {
+	public void insertID(final int p_id, final long p_chunkID) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 		boolean check = false;
@@ -471,7 +471,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public long getChunkID(final int p_id) throws LookupException {
+	public long getChunkID(final int p_id) {
 		long ret = -1;
 		short responsibleSuperpeer;
 		boolean check = false;
@@ -509,7 +509,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public long getMappingCount() throws LookupException {
+	public long getMappingCount() {
 		long ret = 0;
 		Short[] superpeers;
 		GetMappingCountRequest request;
@@ -534,7 +534,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void remove(final long p_chunkID) throws LookupException {
+	public void remove(final long p_chunkID) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 
@@ -585,7 +585,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void remove(final long[] p_chunkIDs) throws LookupException {
+	public void remove(final long[] p_chunkIDs) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 
@@ -3044,12 +3044,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				m_failureLock.unlock();
 			} else if (0 <= Collections.binarySearch(m_peers, p_failedNode)) {
 				m_overlayLock.unlock();
-				try {
-					existsInZooKeeper = ZooKeeperHandler.exists("nodes/peers/" + p_failedNode);
-				} catch (final ZooKeeperException e) {
-					System.out.println("Could not access ZooKeeper! Assume failed node was a peer.");
-					e.printStackTrace();
-				}
+				existsInZooKeeper = getSystemData().zookeeperExists("nodes/peers/" + p_failedNode);
 
 				if (!existsInZooKeeper) {
 					// Failed node was a monitor
@@ -3158,15 +3153,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 * @return the current bootstrap
 	 */
 	public short getCurrentBootstrap() {
-		short ret = -1;
-
-		try {
-			ret = Short.parseShort(new String(ZooKeeperHandler.getData("nodes/bootstrap")));
-		} catch (final ZooKeeperException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
-		}
-
-		return ret;
+		return Short.parseShort(new String(getSystemData().zookeeperGetData("nodes/bootstrap")));
 	}
 
 	/**
@@ -3182,7 +3169,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		try {
 			status = ZooKeeperHandler.getStatus("nodes/bootstrap");
-			entry = new String(ZooKeeperHandler.getData("nodes/bootstrap", status));
+			entry = new String(getSystemData().zookeeperGetData("nodes/bootstrap", status));
 			ret = Short.parseShort(entry);
 			if (ret == m_bootstrap) {
 				ZooKeeperHandler.setData("nodes/bootstrap", ("" + p_nodeID).getBytes(), status.getVersion());
@@ -3213,30 +3200,26 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		boolean ret = false;
 		Stat status;
 
-		try {
-			if (ZooKeeperHandler.exists("nodes/peers/" + p_failedNode)) {
-				ZooKeeperHandler.create("nodes/free/" + p_failedNode);
+		if (getSystemData().zookeeperExists("nodes/peers/" + p_failedNode)) {
+			getSystemData().zookeeperCreate("nodes/free/" + p_failedNode);
 
-				status = ZooKeeperHandler.getStatus("nodes/new/" + p_failedNode);
-				if (null != status) {
-					ZooKeeperHandler.delete("nodes/new/" + p_failedNode, status.getVersion());
-				}
-				if (p_isSuperpeer) {
-					status = ZooKeeperHandler.getStatus("nodes/superpeers/" + p_failedNode);
-					if (null != status) {
-						ZooKeeperHandler.delete("nodes/superpeers/" + p_failedNode, status.getVersion());
-					}
-				} else {
-					status = ZooKeeperHandler.getStatus("nodes/peers/" + p_failedNode);
-					if (null != status) {
-						ZooKeeperHandler.delete("nodes/peers/" + p_failedNode, status.getVersion());
-					}
-				}
-
-				ret = true;
+			status = getSystemData().zookeeperGetStatus("nodes/new/" + p_failedNode);
+			if (null != status) {
+				getSystemData().zookeeperDelete("nodes/new/" + p_failedNode, status.getVersion());
 			}
-		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			if (p_isSuperpeer) {
+				status = getSystemData().zookeeperGetStatus("nodes/superpeers/" + p_failedNode);
+				if (null != status) {
+					getSystemData().zookeeperDelete("nodes/superpeers/" + p_failedNode, status.getVersion());
+				}
+			} else {
+				status = getSystemData().zookeeperGetStatus("nodes/peers/" + p_failedNode);
+				if (null != status) {
+					getSystemData().zookeeperDelete("nodes/peers/" + p_failedNode, status.getVersion());
+				}
+			}
+
+			ret = true;
 		}
 
 		return ret;
@@ -3251,7 +3234,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short superpeer;
 		short peer;
 
-		printMe = NodeID.getRole().equals(Role.SUPERPEER);
+		printMe = getSystemData().getNodeRole().equals(NodeRole.SUPERPEER);
 		str = "Superpeer overlay:";
 
 		m_overlayLock.lock();

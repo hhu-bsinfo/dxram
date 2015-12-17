@@ -2,8 +2,8 @@
 package de.uniduesseldorf.dxram.core.log;
 
 import de.uniduesseldorf.dxram.core.CoreComponent;
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 /**
  * Methods for logging the data

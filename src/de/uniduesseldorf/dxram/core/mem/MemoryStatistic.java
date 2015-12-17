@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.mem.storage;
+package de.uniduesseldorf.dxram.core.mem;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;

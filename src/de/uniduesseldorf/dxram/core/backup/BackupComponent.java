@@ -3,7 +3,6 @@ package de.uniduesseldorf.dxram.core.backup;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -54,15 +53,34 @@ public class BackupComponent extends DXRAMComponent {
 		m_secondaryLogSize = p_configuration.getLongValue(DXRAMConfigurationConstants.SECONDARY_LOG_SIZE);
 		m_replicationFactor = p_configuration.getIntValue(DXRAMConfigurationConstants.REPLICATION_FACTOR);
 		
-		// TODO initialize other variables
+		m_migrationsTree = new MigratedBackupsTree((short) 10, m_secondaryLogSize);
+		
+		m_rangeSize = 0;
+		m_firstRangeInitialized = false;
+		
+		m_currentBackupRange = null;
+		m_ownBackupRanges = new ArrayList<BackupRange>();
+		
+		m_currentMigrationBackupRange = new BackupRange(-1, null);
+		m_migrationBackupRanges = new ArrayList<BackupRange>();
 		
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownComponent() {
-		// TODO Auto-generated method stub
-		return false;
+		m_lookup = null;
+		m_logging = null;
+		
+		m_migrationsTree = null;
+		
+		m_currentBackupRange = null;
+		m_ownBackupRanges = null;
+		
+		m_currentMigrationBackupRange = null;
+		m_migrationBackupRanges = null;
+		
+		return true;
 	}
 	
 	/**

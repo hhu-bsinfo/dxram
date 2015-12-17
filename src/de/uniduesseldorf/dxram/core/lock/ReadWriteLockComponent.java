@@ -25,7 +25,7 @@ public class ReadWriteLockComponent extends LockComponent {
 	// --------------------------------------------------------------------------
 
 	@Override
-	public void lock(final DefaultLock p_lock) throws MemoryException {
+	public void lock(final DefaultLock p_lock) {
 		DefaultLock lock;
 		DefaultLock temp;
 		boolean release;
@@ -65,7 +65,7 @@ public class ReadWriteLockComponent extends LockComponent {
 	}
 
 	@Override
-	public void unlock(final long p_chunkID, final short p_nodeID) throws MemoryException {
+	public void unlock(final long p_chunkID, final short p_nodeID) {
 		DefaultLock lock;
 		DefaultLock previous;
 		DefaultLock next;
@@ -142,7 +142,7 @@ public class ReadWriteLockComponent extends LockComponent {
 	}
 
 	@Override
-	public void unlockAll(final short p_nodeID) throws MemoryException {
+	public void unlockAll(final short p_nodeID) {
 		try {
 			m_lock.lock();
 
@@ -194,8 +194,8 @@ public class ReadWriteLockComponent extends LockComponent {
 	 * @throws MemoryException
 	 *             if the chunk could not be get
 	 */
-	private void release(final DefaultLock p_lock) throws MemoryException {
-		// TODO Stefan: get dependent component memory manager and execute
+	private void release(final DefaultLock p_lock) {
+		// TODO Stefan: I don't understand why the memory manager is needed here
 //		chunk = MemoryManager.get(p_lock.getChunkID());
 //		p_lock.setChunk(chunk);
 		p_lock.setReleased();

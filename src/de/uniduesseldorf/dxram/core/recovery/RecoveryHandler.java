@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
@@ -17,12 +18,10 @@ import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeRequest;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverBackupRangeResponse;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages.RecoverMessage;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.menet.NetworkInterface;

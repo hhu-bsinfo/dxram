@@ -1,6 +1,6 @@
 package de.uniduesseldorf.dxcompute;
 
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
+import de.uniduesseldorf.dxram.core.data.DataStructure;
 
 public class StorageDummy implements StorageDelegate
 {

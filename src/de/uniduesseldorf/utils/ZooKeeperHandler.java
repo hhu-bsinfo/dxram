@@ -28,14 +28,18 @@ public final class ZooKeeperHandler {
 	// Attributes
 	private ZooKeeper m_zookeeper;
 	private String m_path;
+	private String m_connection;
+	private int m_timeout;
 
 	// Constructors
 	/**
 	 * Creates an instance of ZooKeeperHandler
 	 */
-	public ZooKeeperHandler(final String p_path) 
+	public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout) 
 	{
 		m_path = p_path;
+		m_connection = p_connection;
+		m_timeout = p_timeout;
 	}
 
 	// Methods
@@ -45,17 +49,11 @@ public final class ZooKeeperHandler {
 	 *             if ZooKeeper could not accessed
 	 */
 	public synchronized void connect() throws ZooKeeperException {
-		String connection;
-		int timeout;
-
 		LOGGER.trace("Entering connect");
 
 		if (m_zookeeper == null) {
 			try {
-				connection = Core.getConfiguration().getStringValue(DXRAMConfigurationConstants.ZOOKEEPER_CONNECTION_STRING);
-				timeout = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.ZOOKEEPER_TIMEOUT);
-
-				m_zookeeper = new ZooKeeper(connection, timeout, new ZooKeeperWatcher());
+				m_zookeeper = new ZooKeeper(m_connection, m_timeout, new ZooKeeperWatcher());
 
 				if (!exists("")) {
 					m_zookeeper.create(m_path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);

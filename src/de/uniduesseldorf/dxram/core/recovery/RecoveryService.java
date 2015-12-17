@@ -2,8 +2,7 @@ package de.uniduesseldorf.dxram.core.recovery;
 
 import de.uniduesseldorf.dxram.core.chunk.RecoveryMessages;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-
+import de.uniduesseldorf.dxram.data.Chunk;
 import de.uniduesseldorf.utils.Contract;
 
 public class RecoveryService {

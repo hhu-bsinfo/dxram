@@ -1,12 +1,11 @@
 package de.uniduesseldorf.dxcompute;
 
+import de.uniduesseldorf.dxram.core.data.ByteBufferDataStructureReaderWriter;
+import de.uniduesseldorf.dxram.core.data.Chunk;
+import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.core.mem.ByteBufferDataStructureReaderWriter;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
-
 import de.uniduesseldorf.utils.config.ConfigurationHandler;
 
 public class StorageDXRAM implements StorageDelegate

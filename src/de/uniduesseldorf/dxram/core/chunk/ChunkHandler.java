@@ -37,6 +37,7 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.UnlockMessage;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
@@ -52,12 +53,10 @@ import de.uniduesseldorf.dxram.core.log.LogInterface;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
+import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
 import de.uniduesseldorf.dxram.core.lookup.LookupInterface;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-
 import de.uniduesseldorf.menet.AbstractAction;
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.AbstractRequest;
@@ -294,7 +293,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (m_memoryManager.isResponsible(p_chunkID)) {
+			if (m_memoryManager.exists(p_chunkID)) {
 				// Local get
 				int size;
 				int bytesRead;

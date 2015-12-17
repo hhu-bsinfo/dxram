@@ -1,7 +1,10 @@
 
-package de.uniduesseldorf.dxram.core.mem;
+package de.uniduesseldorf.dxram.core.data;
 
 import java.nio.ByteBuffer;
+
+import de.uniduesseldorf.utils.serialization.Exporter;
+import de.uniduesseldorf.utils.serialization.Importer;
 
 /**
  * Stores data
@@ -58,23 +61,29 @@ public class Chunk implements Comparable<Chunk>, DataStructure
 	}
 
 	@Override
-	public int writePayload(final long p_startAddress, final DataStructureWriter p_writer) 
-	{
-		p_writer.putBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());
+	public int importObject(final Importer p_importer, final int p_size) {
+		m_data = ByteBuffer.allocate(p_size);
+		return p_importer.readBytes(m_data.array());
+	}
+	
+	@Override
+	public int exportObject(final Exporter p_exporter, final int p_size) {
+		int size = p_size;
+		
+		if (size > m_data.capacity()) {
+			size = m_data.capacity();
+		} 
+		
+		return p_exporter.writeBytes(m_data.array(), 0, size);
+	}
+
+	@Override
+	public int sizeofObject() {
 		return m_data.capacity();
 	}
 
 	@Override
-	public int readPayload(final long p_startAddress, final int p_dataLength, final DataStructureReader p_reader)
-	{
-		m_data = ByteBuffer.allocate(p_dataLength);
-		p_reader.getBytes(p_startAddress, 4, m_data.array(), 0, m_data.capacity());
-		return m_data.capacity();
-	}
-
-	@Override
-	public int sizeofPayload() 
-	{
-		return m_data.capacity();
+	public boolean hasDynamicObjectSize() {
+		return true;
 	}
 }

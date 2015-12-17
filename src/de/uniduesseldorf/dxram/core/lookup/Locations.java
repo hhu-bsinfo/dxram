@@ -1,17 +1,31 @@
 package de.uniduesseldorf.dxram.core.lookup;
 
+import de.uniduesseldorf.utils.serialization.Exportable;
+import de.uniduesseldorf.utils.serialization.Exporter;
+import de.uniduesseldorf.utils.serialization.Importable;
+import de.uniduesseldorf.utils.serialization.Importer;
+
 /**
  * Stores locations
  * @author Kevin Beineke
  *         03.09.2013
  */
-public final class Locations {
+public final class Locations implements Importable, Exportable {
 
 	// Attributes
 	private short m_primaryPeer;
 	private short[] m_backupPeers;
 	private long[] m_range;
 
+	/**
+	 * Default constructor
+	 */
+	public Locations() {
+		m_primaryPeer = -1;
+		m_backupPeers = null;
+		m_range = null;
+	}
+	
 	// Constructors
 	/**
 	 * Creates an instance of Locations
@@ -49,6 +63,38 @@ public final class Locations {
 	public Locations(final long p_primaryAndBackupPeers, final long[] p_range) {
 		this((short) p_primaryAndBackupPeers, new short[] {(short) ((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
 				(short) ((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32), (short) ((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
+	}
+	
+	@Override
+	public int importObject(Importer p_importer, int p_size) {
+		
+		long primaryAndBackupPeers = p_importer.readLong();
+		
+		m_primaryPeer = (short) primaryAndBackupPeers;
+		m_backupPeers = new short[] {(short) ((primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
+				(short) ((primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32), (short) ((primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)};
+		m_range = new long[] {p_importer.readLong(), p_importer.readLong()};
+		
+		return 3 * Long.BYTES;
+	}
+	
+	@Override
+	public int exportObject(Exporter p_exporter, int p_size) {
+		p_exporter.writeLong(convertToLong());
+		p_exporter.writeLong(getStartID());
+		p_exporter.writeLong(getEndID());
+		
+		return 3 * Long.BYTES;
+	}
+	
+	@Override
+	public int sizeofObject() {
+		return 3 * Long.BYTES;
+	}
+
+	@Override
+	public boolean hasDynamicObjectSize() {
+		return false;
 	}
 
 	// Getter

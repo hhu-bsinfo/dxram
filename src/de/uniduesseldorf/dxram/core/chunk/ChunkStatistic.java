@@ -16,7 +16,7 @@ import de.uniduesseldorf.utils.StatisticsManager.StatisticEntry;
  * Chunk-Statistic
  * @author klein 26.03.2015
  */
-final class ChunkStatistic implements Statistic {
+public final class ChunkStatistic implements Statistic {
 
 	// Constants
 	private static final String PREFIX_CREATE = "Create";
@@ -90,7 +90,7 @@ final class ChunkStatistic implements Statistic {
 	 * Represents the Chunk Operations
 	 * @author klein 26.03.2015
 	 */
-	enum Operation {
+	public enum Operation {
 		CREATE(PREFIX_CREATE, POSITION_CREATE), MULTI_CREATE(PREFIX_MULTI_CREATE, POSITION_MULTI_CREATE), GET(PREFIX_GET, POSITION_GET), MULTI_GET(
 				PREFIX_MULTI_GET, POSITION_MULTI_GET), GET_ASYNC(PREFIX_GET_ASYNC, POSITION_GET_ASYNC), PUT(PREFIX_PUT, POSITION_PUT), REMOVE(PREFIX_REMOVE,
 				POSITION_REMOVE), LOCK(PREFIX_LOCK, POSITION_LOCK), UNLOCK(PREFIX_UNLOCK, POSITION_UNLOCK), INCOMING_GET(PREFIX_INCOMING_GET,

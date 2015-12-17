@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.mem.storage;
+package de.uniduesseldorf.dxram.core.mem;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;

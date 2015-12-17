@@ -10,9 +10,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.core.mem.storage.HeapIntegrityChecker;
-import de.uniduesseldorf.dxram.core.mem.storage.MemoryStatistic;
-
+import de.uniduesseldorf.dxram.core.mem.HeapIntegrityChecker;
+import de.uniduesseldorf.dxram.core.mem.MemoryStatistic;
 import de.uniduesseldorf.soh.HeapWalker;
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageRandomAccessFile;
