@@ -124,24 +124,17 @@ public final class MemoryManager {
 
 		long address = -1;
 		long chunkID = -1;
-		int chunkSize = -1;
 		LIDElement lid = null;
 
 		// get new LID from CIDTable
 		lid = m_cidTable.getFreeLID();
 
-		assert lid.getVersion() >= 0;
-
-		chunkSize = p_size + getSizeVersion(lid.getVersion());
-
 		// first, try to allocate. maybe early return
-		address = m_rawMemory.malloc(chunkSize);
+		address = m_rawMemory.malloc(p_size);
 		if (address >= 0) {
 			// register new chunk
 			chunkID = ((long) m_nodeID << 48) + lid.getLocalID();
 			m_cidTable.set(chunkID, address);
-
-			writeVersion(address, lid.getVersion());
 		} else {
 			// put lid back
 			// TODO is that ok? that's a protected call...
@@ -183,7 +176,7 @@ public final class MemoryManager {
 
 		address = m_cidTable.get(p_chunkID);
 		if (address > 0) {
-			size = m_rawMemory.getSizeBlock(address) - getSizeVersion(readVersion(address));
+			size = m_rawMemory.getSizeBlock(address);
 		}
 
 		return size;
@@ -210,34 +203,10 @@ public final class MemoryManager {
 
 		address = m_cidTable.get(p_chunkID);
 		if (address > 0) {
-			int sizeVersion;
-
-			sizeVersion = getSizeVersion(readVersion(address));
-			bytesRead = m_rawMemory.readBytes(address, sizeVersion, p_buffer, p_offset, p_length);
+			bytesRead = m_rawMemory.readBytes(address, 0, p_buffer, p_offset, p_length);
 		}
 
 		return bytesRead;
-	}
-
-	/**
-	 * Get the version of a chunk.
-	 * This is an access call and has to be locked using lockAccess().
-	 * @param p_chunkID
-	 *            ChunkID of the chunk.
-	 * @return -1 if chunkID was invalid, otherwise version of the chunk.
-	 * @throws MemoryException
-	 *             If reading version failed.
-	 */
-	public int getVersion(final long p_chunkID) throws MemoryException {
-		long address = 0;
-		int version = -1;
-
-		address = m_cidTable.get(p_chunkID);
-		if (address > 0) {
-			version = readVersion(address);
-		}
-
-		return version;
 	}
 
 	/**
@@ -261,35 +230,7 @@ public final class MemoryManager {
 
 		address = m_cidTable.get(p_chunkID);
 		if (address > 0) {
-			int curVersion = -1;
-			int sizeVersion = -1;
-			int sizeVersionNext = -1;
-
-			curVersion = readVersion(address);
-			sizeVersion = getSizeVersion(curVersion);
-			sizeVersionNext = getSizeVersion(curVersion + 1);
-
-			// check if we have to reallocate due to version growth
-			if (sizeVersion != sizeVersionNext) {
-				int newTotalSizePayload;
-				long newAddress = -1;
-
-				// skip version and read payload
-				newTotalSizePayload = m_rawMemory.getSizeBlock(address) - sizeVersion;
-				newTotalSizePayload += sizeVersionNext;
-				sizeVersion = sizeVersionNext;
-
-				// try to allocate first
-				newAddress = m_rawMemory.malloc(newTotalSizePayload);
-				if (newAddress != -1) {
-					m_rawMemory.free(address);
-					m_cidTable.set(p_chunkID, newAddress);
-					address = newAddress;
-				}
-			}
-
-			// writeVersion(address, curVersion + 1);
-			bytesWritten = m_rawMemory.writeBytes(address, sizeVersion, p_buffer, p_offset, p_length);
+			bytesWritten = m_rawMemory.writeBytes(address, 0, p_buffer, p_offset, p_length);
 		}
 
 		return bytesWritten;
@@ -360,23 +301,18 @@ public final class MemoryManager {
 	 *             if the Chunk could not be get
 	 */
 	public void remove(final long p_chunkID) throws MemoryException {
-		int version;
 		long addressDeletedChunk;
 
 		// Get and delete the address from the CIDTable, mark as zombie first
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
 
-		// read version
-		version = readVersion(addressDeletedChunk);
-
 		// more space for another zombie for reuse in LID store?
 		if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
-			// detach reference to zombie and free memory
+			// detach reference to zombie
 			m_cidTable.delete(p_chunkID, false);
-			m_rawMemory.free(addressDeletedChunk);
-		} else {
-			// no space for zombie in LID store, keep him "alive" in memory
-		}
+		} 
+		
+		m_rawMemory.free(addressDeletedChunk);
 	}
 
 	/**
@@ -410,172 +346,4 @@ public final class MemoryManager {
 	// public ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
 	// return m_cidTable.getCIDrangesOfAllLocalChunks();
 	// }
-
-	// ----------------------------------------------------------------------------------------
-
-	/**
-	 * Write the version of a chunk to the specified address.
-	 * Make sure the block at the address is big enough to also fit the address
-	 * at the beginning of the chunk's payload!
-	 * @param p_address
-	 *            Address to write the version to.
-	 * @param p_version
-	 *            Version number to write.
-	 * @throws MemoryException
-	 *             If writing the version failed.
-	 */
-	private void writeVersion(final long p_address, final int p_version) throws MemoryException {
-		int versionSize = -1;
-		int versionToWrite = -1;
-
-		versionToWrite = p_version;
-		versionSize = getSizeVersion(p_version);
-		// overflow, reset version
-		if (versionSize == -1) {
-			versionToWrite = 0;
-			versionSize = 0;
-		}
-
-		switch (versionSize) {
-		case 0:
-			m_rawMemory.setCustomState(p_address, versionToWrite);
-			break;
-		case 1:
-			byte b0;
-
-			b0 = (byte) (versionToWrite & 0x7F);
-
-			m_rawMemory.setCustomState(p_address, 2);
-			m_rawMemory.writeByte(p_address, 0, b0);
-			break;
-		case 2:
-			byte b1;
-
-			b0 = (byte) ((versionToWrite & 0x7F) | 0x80);
-			b1 = (byte) ((versionToWrite >> 7) & 0x7F);
-
-			m_rawMemory.setCustomState(p_address, 2);
-
-			m_rawMemory.writeByte(p_address, 0, b0);
-			m_rawMemory.writeByte(p_address, 1, b1);
-			break;
-		case 3:
-			byte b2;
-
-			b0 = (byte) ((versionToWrite & 0x7F) | 0x80);
-			b1 = (byte) (((versionToWrite >> 7) & 0x7F) | 0x80);
-			b2 = (byte) (((versionToWrite >> 14) & 0x7F));
-
-			m_rawMemory.setCustomState(p_address, 2);
-
-			m_rawMemory.writeByte(p_address, 0, b0);
-			m_rawMemory.writeByte(p_address, 1, b1);
-			m_rawMemory.writeByte(p_address, 2, b2);
-			break;
-		case 4:
-			byte b3;
-
-			b0 = (byte) ((versionToWrite & 0x7F) | 0x80);
-			b1 = (byte) (((versionToWrite >> 7) & 0x7F) | 0x80);
-			b2 = (byte) (((versionToWrite >> 14) & 0x7F) | 0x80);
-			b3 = (byte) (((versionToWrite >> 21) & 0x7F));
-
-			m_rawMemory.setCustomState(p_address, 2);
-
-			m_rawMemory.writeByte(p_address, 0, b0);
-			m_rawMemory.writeByte(p_address, 1, b1);
-			m_rawMemory.writeByte(p_address, 2, b2);
-			m_rawMemory.writeByte(p_address, 3, b3);
-			break;
-		default:
-			assert 1 == 2;
-			break;
-		}
-	}
-
-	/**
-	 * Read the version from the specified address.
-	 * Make sure the address points to the start of a chunk
-	 * i.e. a valid position that has an address.
-	 * @param p_address
-	 *            Address to read version from.
-	 * @return Version read or -1 if reading version failed or invalid version.
-	 * @throws MemoryException
-	 *             If reading version from memory failed.
-	 */
-	private int readVersion(final long p_address) throws MemoryException {
-		int version = -1;
-		int customState = -1;
-
-		customState = m_rawMemory.getCustomState(p_address);
-
-		switch (customState) {
-		case 0:
-			version = 0;
-			break;
-		case 1:
-			version = 1;
-			break;
-		case 2:
-			byte b0 = 0;
-			byte b1 = 0;
-			byte b2 = 0;
-			byte b3 = 0;
-
-			b0 = m_rawMemory.readByte(p_address, 0);
-			if ((b0 & 0x80) == 1) {
-				b1 = m_rawMemory.readByte(p_address, 1);
-				if ((b1 & 0x80) == 1) {
-					b2 = m_rawMemory.readByte(p_address, 2);
-					if ((b2 & 0x80) == 1) {
-						b3 = m_rawMemory.readByte(p_address, 3);
-					}
-				}
-			}
-
-			version = ((b3 & 0x7F) << 21)
-					| ((b2 & 0x7F) << 14)
-					| ((b1 & 0x7F) << 7)
-					| (b0 & 0x7F);
-			break;
-		default:
-			assert 1 == 2;
-			break;
-		}
-
-		return version;
-	}
-
-	/**
-	 * Get the amount of bytes required to store the spcified version.
-	 * @param p_version
-	 *            Version to store.
-	 * @return Number of bytes required.
-	 */
-	private int getSizeVersion(final int p_version) {
-		assert p_version >= 0;
-
-		int versionSize = -1;
-
-		// max supported 2^28
-		// versions 0 and 1 are stored using custom
-		// state
-		if (p_version <= 1) {
-			versionSize = 0;
-			// 2^7
-		} else if (p_version <= 0x7F) {
-			versionSize = 1;
-			// 2^14
-		} else if (p_version <= 0x4000) {
-			versionSize = 2;
-			// 2^21
-		} else if (p_version <= 0x200000) {
-			versionSize = 3;
-			// 2^28
-		} else if (p_version <= 10000000) {
-			versionSize = 4;
-		}
-
-		return versionSize;
-	}
 }

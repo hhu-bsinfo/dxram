@@ -640,43 +640,6 @@ public final class CIDTable {
 		}
 	}
 
-	/**
-	 * Read the version number from the specified location.
-	 * @param p_address
-	 *            Address to read the version number from.
-	 * @param p_size
-	 *            Storage size of the version number to read.
-	 * @return Version number read.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	protected int readVersion(final long p_address, final int p_size) throws MemoryException {
-		int ret;
-
-		switch (p_size) {
-		case 1:
-			ret = (int) m_rawMemory.readByte(p_address) & 0xFF;
-			break;
-		case 2:
-			ret = (int) m_rawMemory.readShort(p_address) & 0xFF;
-			break;
-		case 3:
-			int tmp;
-
-			tmp = 0;
-			tmp |= (m_rawMemory.readByte(p_address) << 16) & 0xFF;
-			tmp |= m_rawMemory.readShort(p_address, 2) & 0xFF;
-			ret = tmp;
-			break;
-		default:
-			assert 1 == 2;
-			ret = -1;
-			break;
-		}
-
-		return ret;
-	}
-
 	// Classes
 	/**
 	 * Stores free LocalIDs
@@ -793,13 +756,10 @@ public final class CIDTable {
 		 */
 		private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) throws MemoryException {
 			boolean ret = false;
-			int version;
-			int sizeVersion;
 			long chunkID;
 			long nodeID;
 			long localID;
 			long entry;
-			long chunkAddress;
 
 			for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
 				// Read table entry
@@ -825,17 +785,10 @@ public final class CIDTable {
 						chunkID = nodeID << 48;
 						chunkID = chunkID + localID;
 
-						// get zombie chunk that is still allocated
-						// to preserve the version data
-						chunkAddress = CIDTable.this.get(chunkID);
-
-						sizeVersion = m_rawMemory.getCustomState(chunkAddress) + 1;
-						version = CIDTable.this.readVersion(chunkAddress, sizeVersion);
-
 						// cleanup zombie in table
 						writeEntry(p_addressTable, i, 0);
 
-						m_localIDs[m_position + m_count] = new LIDElement(localID, version);
+						m_localIDs[m_position + m_count] = new LIDElement(localID, 0);
 						m_count++;
 
 						// cleanup zombie in raw memory
