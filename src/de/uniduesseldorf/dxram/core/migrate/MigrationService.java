@@ -4,39 +4,84 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.chunk.ChunkCommandMessage;
-import de.uniduesseldorf.dxram.core.chunk.ChunkCommandRequest;
-import de.uniduesseldorf.dxram.core.chunk.DataMessage;
-import de.uniduesseldorf.dxram.core.chunk.DataRequest;
-import de.uniduesseldorf.dxram.core.chunk.DataResponse;
-import de.uniduesseldorf.dxram.core.chunk.GetRequest;
-import de.uniduesseldorf.dxram.core.chunk.Locations;
-import de.uniduesseldorf.dxram.core.chunk.LockRequest;
-import de.uniduesseldorf.dxram.core.chunk.MultiGetRequest;
-import de.uniduesseldorf.dxram.core.chunk.PutRequest;
-import de.uniduesseldorf.dxram.core.chunk.RemoveRequest;
-import de.uniduesseldorf.dxram.core.chunk.UnlockMessage;
+import org.apache.log4j.Logger;
+
+import de.uniduesseldorf.dxram.core.backup.BackupComponent;
+import de.uniduesseldorf.dxram.core.chunk.ChunkService;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
+import de.uniduesseldorf.dxram.core.engine.DXRAMService;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.core.lock.LockComponent;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
+import de.uniduesseldorf.dxram.core.log.LogComponent;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
+import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
 import de.uniduesseldorf.dxram.core.mem.Chunk;
+import de.uniduesseldorf.dxram.core.mem.DataStructure;
+import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
+import de.uniduesseldorf.dxram.core.migrate.messages.MigrationMessage;
+import de.uniduesseldorf.dxram.core.migrate.messages.MigrationMessages;
+import de.uniduesseldorf.dxram.core.migrate.messages.MigrationRequest;
+import de.uniduesseldorf.dxram.core.migrate.messages.MigrationResponse;
+import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
+import de.uniduesseldorf.menet.NodeID;
+import de.uniduesseldorf.utils.config.Configuration;
 
-public class MigrationService {
-	m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_DATA_REQUEST, ChunkMessages.DataRequest.class);
-	m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_DATA_RESPONSE, ChunkMessages.DataResponse.class);
-	m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_DATA_MESSAGE, ChunkMessages.DataMessage.class);
+public class MigrationService extends DXRAMService {
 	
-	m_migrationLock = new ReentrantLock(false);
+	private static final String SERVICE_NAME = "Migration";
 	
+	private final Logger LOGGER = Logger.getLogger(MigrationService.class);
+	
+	private NetworkComponent m_network = null;
+	private MemoryManagerComponent m_memoryManager = null;
+	private LookupComponent m_lookup = null;
+	private LockComponent m_lock = null;
+	private BackupComponent m_backup = null;
+	
+	private ReentrantLock m_migrationLock = null;
+	
+	private boolean m_logActive = false;
+	
+	public MigrationService() {
+		super(SERVICE_NAME);
+	}
+	
+	@Override
+	protected boolean startService(Configuration p_configuration) {
+		m_network = getComponent(NetworkComponent.COMPONENT_IDENTIFIER);
+		m_memoryManager = getComponent(MemoryManagerComponent.COMPONENT_IDENTIFIER);
+		m_lookup = getComponent(LookupComponent.COMPONENT_IDENTIFIER);
+		m_lock = getComponent(LockComponent.COMPONENT_IDENTIFIER);
+		m_backup = getComponent(BackupComponent.COMPONENT_IDENTIFIER);
+		
+		// TODO get config values
+		
+		m_migrationLock = new ReentrantLock(false);
+		
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE, MigrationResponse.class);
+		return false;
+	}
+
+	@Override
+	protected boolean shutdownService() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	// TODO have this split into migrated and recovered chunks?
 	/**
 	 * Puts migrated or recovered Chunks
 	 * @param p_chunks
@@ -48,7 +93,7 @@ public class MigrationService {
 	 * @throws MemoryException
 	 *             if the Chunks could not be put properly
 	 */
-	public void putForeignChunks(final Chunk[] p_chunks) throws LookupException, NetworkException, MemoryException {
+	public void putForeignChunks(final Chunk[] p_chunks) {
 		int logEntrySize;
 		long size = 0;
 		long cutChunkID = -1;
@@ -68,7 +113,7 @@ public class MigrationService {
 		for (int i = 0; i < p_chunks.length; i++) {
 			chunk = p_chunks[i];
 
-			if (LOG_ACTIVE) {
+			if (m_logActive) {
 				logEntrySize = chunk.getSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()), ChunkID.getLocalID(chunk.getChunkID()),
 						chunk.getSize());
 				if (m_migrationsTree.fits(size + logEntrySize) && (m_migrationsTree.size() != 0 || size > 0)) {
@@ -112,8 +157,7 @@ public class MigrationService {
 		}
 	}
 
-	@Override
-	public boolean migrate(final long p_chunkID, final short p_target) throws DXRAMException, NetworkException {
+	public boolean migrate(final long p_chunkID, final short p_target) {
 		short[] backupPeers;
 		Chunk chunk;
 		boolean ret = false;
@@ -121,7 +165,7 @@ public class MigrationService {
 		ChunkID.check(p_chunkID);
 		NodeID.check(p_target);
 
-		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
 			LOGGER.error("a superpeer must not store chunks");
 		} else {
 			m_migrationLock.lock();
@@ -170,8 +214,7 @@ public class MigrationService {
 		return ret;
 	}
 
-	@Override
-	public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) throws DXRAMException {
+	public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
 		long[] chunkIDs = null;
 		short[] backupPeers;
 		int counter = 0;
@@ -267,6 +310,36 @@ public class MigrationService {
 		}
 		return ret;
 	}
+	
+	public void migrateAll(final short p_target) throws DXRAMException {
+		long localID;
+		long chunkID;
+		Iterator<Long> iter;
+
+		// TODO
+		localID = -1;
+		// localID = m_memoryManager.getCurrentLocalID();
+
+		// Migrate own chunks to p_target
+		if (1 != localID) {
+			for (int i = 1; i <= localID; i++) {
+				chunkID = ((long) m_nodeID << 48) + i;
+				if (m_memoryManager.isResponsible(chunkID)) {
+					migrateOwnChunk(chunkID, p_target);
+				}
+			}
+		}
+
+		// TODO
+		iter = null;
+		// iter = m_memoryManager.getCIDOfAllMigratedChunks().iterator();
+		while (iter.hasNext()) {
+			chunkID = iter.next();
+			migrateNotCreatedChunk(chunkID, p_target);
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------------------
 
 	/**
 	 * Migrates a Chunk that was not created on this node; is called during promotion
@@ -277,8 +350,8 @@ public class MigrationService {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be migrated
 	 */
-	private void migrateNotCreatedChunk(final long p_chunkID, final short p_target) throws DXRAMException {
-		Chunk chunk;
+	private void migrateNotCreatedChunk(final long p_chunkID, final short p_target) {
+		DataStructure chunk;
 		short creator;
 		short target;
 		short[] backupPeers;
@@ -288,12 +361,16 @@ public class MigrationService {
 		creator = ChunkID.getCreatorID(p_chunkID);
 
 		m_migrationLock.lock();
-		if (p_target != m_nodeID && m_memoryManager.isResponsible(p_chunkID) && m_memoryManager.wasMigrated(p_chunkID)) {
-			chunk = null;
-			// TODO: enable
-			m_memoryManager.lockAccess();
-			// chunk = m_memoryManager.get(p_chunkID);
-			m_memoryManager.unlockAccess();
+		if (p_target != getSystemData().getNodeID() && m_memoryManager.isResponsible(p_chunkID) 
+				&& m_memoryManager.wasMigrated(p_chunkID)) {
+			
+			m_memoryManager.lockManage();
+			chunk = new Chunk(p_chunkID, m_memoryManager.getSize(p_chunkID));
+			// TODO error handling
+			m_memoryManager.get(chunk);
+			m_memoryManager.remove(p_chunkID);
+			m_memoryManager.lockManage();
+			
 			LOGGER.trace("Send request to " + p_target);
 
 			if (m_lookup.creatorAvailable(creator)) {
@@ -308,20 +385,18 @@ public class MigrationService {
 
 			// This is not safe, but there is no other possibility unless
 			// the number of network threads is increased
-			new DataMessage(target, new Chunk[] {chunk}).send(m_network);
+			new MigrationMessage(target, new DataStructure[] {chunk}).send(m_network);
 
 			// Update superpeers
 			m_lookup.migrateNotCreatedChunk(p_chunkID, target);
 			// Remove all locks
 			m_lock.unlockAll(p_chunkID);
-			// Update local memory management
-			m_memoryManager.remove(p_chunkID);
-			if (LOG_ACTIVE) {
+			if (m_logActive) {
 				// Update logging
-				backupPeers = getBackupPeersForLocalChunks(p_chunkID);
+				backupPeers = m_backup.getBackupPeersForLocalChunks(p_chunkID);
 				if (backupPeers != null) {
 					for (int i = 0; i < backupPeers.length; i++) {
-						if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
+						if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
 							new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
 						}
 					}
@@ -340,7 +415,7 @@ public class MigrationService {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be migrated
 	 */
-	private void migrateOwnChunk(final long p_chunkID, final short p_target) throws DXRAMException {
+	private void migrateOwnChunk(final long p_chunkID, final short p_target) {
 		short[] backupPeers;
 		Chunk chunk;
 
@@ -389,35 +464,6 @@ public class MigrationService {
 		}
 		m_migrationLock.unlock();
 	}
-
-	@Override
-	public void migrateAll(final short p_target) throws DXRAMException {
-		long localID;
-		long chunkID;
-		Iterator<Long> iter;
-
-		// TODO
-		localID = -1;
-		// localID = m_memoryManager.getCurrentLocalID();
-
-		// Migrate own chunks to p_target
-		if (1 != localID) {
-			for (int i = 1; i <= localID; i++) {
-				chunkID = ((long) m_nodeID << 48) + i;
-				if (m_memoryManager.isResponsible(chunkID)) {
-					migrateOwnChunk(chunkID, p_target);
-				}
-			}
-		}
-
-		// TODO
-		iter = null;
-		// iter = m_memoryManager.getCIDOfAllMigratedChunks().iterator();
-		while (iter.hasNext()) {
-			chunkID = iter.next();
-			migrateNotCreatedChunk(chunkID, p_target);
-		}
-	}
 	
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
@@ -426,35 +472,11 @@ public class MigrationService {
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case ChunkMessages.SUBTYPE_GET_REQUEST:
-					incomingGetRequest((GetRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_PUT_REQUEST:
-					incomingPutRequest((PutRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
-					incomingRemoveRequest((RemoveRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_LOCK_REQUEST:
-					incomingLockRequest((LockRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_UNLOCK_MESSAGE:
-					incomingUnlockMessage((UnlockMessage) p_message);
-					break;
 				case ChunkMessages.SUBTYPE_DATA_REQUEST:
 					incomingDataRequest((DataRequest) p_message);
 					break;
 				case ChunkMessages.SUBTYPE_DATA_MESSAGE:
 					incomingDataMessage((DataMessage) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_MULTIGET_REQUEST:
-					incomingMultiGetRequest((MultiGetRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_CHUNK_COMMAND_MESSAGE:
-					incomingCommandMessage((ChunkCommandMessage) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_CHUNK_COMMAND_REQUEST:
-					incomingCommandRequest((ChunkCommandRequest) p_message);
 					break;
 				default:
 					break;
@@ -496,4 +518,8 @@ public class MigrationService {
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
 		}
 	}
+
+
+
+
 }

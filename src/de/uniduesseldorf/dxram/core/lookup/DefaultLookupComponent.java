@@ -127,7 +127,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	// --------------------------------------------------------------------------------
 	
 	@Override
-	public Locations get(final long p_chunkID) throws LookupException {
+	public Locations get(final long p_chunkID) {
 		Locations ret = null;
 		short nodeID;
 		short responsibleSuperpeer;
@@ -167,7 +167,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public BackupRange[] getAllBackupRanges(final short p_nodeID) throws LookupException {
+	public BackupRange[] getAllBackupRanges(final short p_nodeID) {
 		BackupRange[] ret = null;
 		short responsibleSuperpeer;
 		boolean check = false;
@@ -203,7 +203,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void updateAllAfterRecovery(final short p_owner) throws LookupException {
+	public void updateAllAfterRecovery(final short p_owner) {
 		short responsibleSuperpeer;
 		boolean check = false;
 
@@ -232,7 +232,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void initRange(final long p_firstChunkIDOrRangeID, final Locations p_primaryAndBackupPeers) throws LookupException {
+	public void initRange(final long p_firstChunkIDOrRangeID, final Locations p_primaryAndBackupPeers) {
 		short responsibleSuperpeer;
 		boolean finished = false;
 
@@ -264,7 +264,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrate(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrate(final long p_chunkID, final short p_nodeID) {
 		short responsibleSuperpeer;
 		boolean finished = false;
 
@@ -294,7 +294,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) throws LookupException {
+	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 		short creator;
 		short responsibleSuperpeer;
 		boolean finished = false;
@@ -330,7 +330,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrateNotCreatedChunk(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrateNotCreatedChunk(final long p_chunkID, final short p_nodeID) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 
@@ -382,7 +382,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) throws LookupException {
+	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) {
 		short[] backupSuperpeers;
 
 		LookupTree tree;
@@ -415,7 +415,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void insertID(final int p_id, final long p_chunkID) throws LookupException {
+	public void insertID(final int p_id, final long p_chunkID) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 		boolean check = false;
@@ -471,7 +471,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public long getChunkID(final int p_id) throws LookupException {
+	public long getChunkID(final int p_id) {
 		long ret = -1;
 		short responsibleSuperpeer;
 		boolean check = false;
@@ -509,7 +509,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public long getMappingCount() throws LookupException {
+	public long getMappingCount() {
 		long ret = 0;
 		Short[] superpeers;
 		GetMappingCountRequest request;
@@ -534,7 +534,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void remove(final long p_chunkID) throws LookupException {
+	public void remove(final long p_chunkID) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 
@@ -585,7 +585,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 
 	@Override
-	public void remove(final long[] p_chunkIDs) throws LookupException {
+	public void remove(final long[] p_chunkIDs) {
 		short responsibleSuperpeer;
 		short[] backupSuperpeers;
 

@@ -18,9 +18,8 @@ public class PutRequest extends AbstractRequest {
 	// DataStructures used when sending the put request.
 	// These are also used by the response to directly write the
 	// receiving data to the structures
-	private DataStructure[] m_dataStructures = null;
 	// Chunks are created and used when receiving a put request
-	private Chunk[] m_chunks = null;
+	private DataStructure[] m_dataStructures = null;
 
 	/**
 	 * Creates an instance of PutRequest.
@@ -62,11 +61,11 @@ public class PutRequest extends AbstractRequest {
 	}
 
 	/**
-	 * Get the Chunk to put when this mesasge is received.
+	 * Get the DataStructures to put when this message is received.
 	 * @return the Chunk to put
 	 */
-	public final Chunk[] getChunks() {
-		return m_chunks;
+	public final DataStructure[] getDataStructures() {
+		return m_dataStructures;
 	}
 
 	/**
@@ -95,14 +94,14 @@ public class PutRequest extends AbstractRequest {
 		ByteBufferDataStructureReaderWriter dataStructureReader = new ByteBufferDataStructureReaderWriter(p_buffer);
 		int numChunks = ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode());
 		
-		m_chunks = new Chunk[numChunks];
+		m_dataStructures = new Chunk[numChunks];
 		
-		for (int i = 0; i < m_chunks.length; i++) {
+		for (int i = 0; i < m_dataStructures.length; i++) {
 			long id = p_buffer.getLong();
 			int size = p_buffer.getInt();
 			
-			m_chunks[i] = new Chunk(id, size);
-			m_chunks[i].readPayload(0, size, dataStructureReader);
+			m_dataStructures[i] = new Chunk(id, size);
+			m_dataStructures[i].readPayload(0, size, dataStructureReader);
 		}
 	}
 

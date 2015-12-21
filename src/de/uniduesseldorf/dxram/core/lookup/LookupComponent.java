@@ -21,7 +21,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the NodeID could not be get
 	 */
-	public abstract Locations get(long p_chunkID) throws LookupException;
+	public abstract Locations get(long p_chunkID);
 
 	/**
 	 * Returns all backup ranges (RangeID + backup peers) for given node
@@ -31,7 +31,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the NodeID could not be get
 	 */
-	public abstract BackupRange[] getAllBackupRanges(short p_nodeID) throws LookupException;
+	public abstract BackupRange[] getAllBackupRanges(short p_nodeID);
 
 	/**
 	 * Returns all backup ranges (RangeID + backup peers) for given node
@@ -40,7 +40,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the NodeID could not be get
 	 */
-	public abstract void updateAllAfterRecovery(short p_owner) throws LookupException;
+	public abstract void updateAllAfterRecovery(short p_owner);
 
 	/**
 	 * Store migration in meta-data management
@@ -51,7 +51,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the migration could not be executed
 	 */
-	public abstract void migrate(long p_chunkID, short p_nodeID) throws LookupException;
+	public abstract void migrate(long p_chunkID, short p_nodeID);
 
 	/**
 	 * Store migration of ID range in meta-data management
@@ -64,7 +64,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the migration could not be executed
 	 */
-	public abstract void migrateRange(long p_startCID, long p_endCID, short p_nodeID) throws LookupException;
+	public abstract void migrateRange(long p_startCID, long p_endCID, short p_nodeID);
 
 	/**
 	 * Store migration in meta-data management; Concerns not created chunks during promotion
@@ -76,7 +76,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 *             if the migration could not be executed
 	 * @note is called during promotion and is unsafe (no requests possible!)
 	 */
-	public abstract void migrateNotCreatedChunk(long p_chunkID, short p_nodeID) throws LookupException;
+	public abstract void migrateNotCreatedChunk(long p_chunkID, short p_nodeID);
 
 	/**
 	 * Store migration in meta-data management; Concerns own chunks during promotion
@@ -88,7 +88,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 *             if the migration could not be executed
 	 * @note is called during promotion and is unsafe (no requests possible!)
 	 */
-	public abstract void migrateOwnChunk(long p_chunkID, short p_nodeID) throws LookupException;
+	public abstract void migrateOwnChunk(long p_chunkID, short p_nodeID);
 
 	/**
 	 * Initializes the given ID range in CIDTree
@@ -99,7 +99,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the initialization could not be executed
 	 */
-	public abstract void initRange(long p_firstChunkIDOrRangeID, Locations p_locations) throws LookupException;
+	public abstract void initRange(long p_firstChunkIDOrRangeID, Locations p_locations);
 
 	/**
 	 * Remove the corresponding NodeID for the given ID
@@ -108,7 +108,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the NodeID could not be removed
 	 */
-	public abstract void remove(long p_chunkID) throws LookupException;
+	public abstract void remove(long p_chunkID);
 
 	/**
 	 * Remove the corresponding NodeIDs for the given IDs
@@ -117,7 +117,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the NodeIDs could not be removed
 	 */
-	public abstract void remove(long[] p_chunkIDs) throws LookupException;
+	public abstract void remove(long[] p_chunkIDs);
 
 	/**
 	 * Insert identifier to ChunkID mapping
@@ -128,7 +128,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if the id could not be inserted
 	 */
-	public abstract void insertID(int p_id, long p_chunkID) throws LookupException;
+	public abstract void insertID(int p_id, long p_chunkID);
 
 	/**
 	 * Insert identifier to ChunkID mapping
@@ -138,7 +138,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 *             if the id could not be found
 	 * @return the ChunkID
 	 */
-	public abstract long getChunkID(int p_id) throws LookupException;
+	public abstract long getChunkID(int p_id);
 
 	/**
 	 * Return the number of identifier mappings
@@ -146,7 +146,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @throws LookupException
 	 *             if mapping count could not be gotten
 	 */
-	public abstract long getMappingCount() throws LookupException;
+	public abstract long getMappingCount();
 
 	/**
 	 * Invalidates the cache entry for given ChunkIDs

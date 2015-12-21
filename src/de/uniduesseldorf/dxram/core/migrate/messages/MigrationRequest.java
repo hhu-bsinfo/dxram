@@ -13,7 +13,7 @@ import de.uniduesseldorf.menet.AbstractRequest;
  * @author Florian Klein 09.03.2012
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
-public class MigrateRequest extends AbstractRequest {
+public class MigrationRequest extends AbstractRequest {
 
 	// data structure is used when request is sent
 	private DataStructure[] m_dataStructures = null;
@@ -24,7 +24,7 @@ public class MigrateRequest extends AbstractRequest {
 	 * Creates an instance of DataRequest.
 	 * This constructor is used when receiving this message.
 	 */
-	public MigrateRequest() {
+	public MigrationRequest() {
 		super();
 	}
 
@@ -36,8 +36,8 @@ public class MigrateRequest extends AbstractRequest {
 	 * @param p_dataStructure
 	 *            The data structure to migrate.
 	 */
-	public MigrateRequest(final short p_destination, final DataStructure p_dataStructure) {
-		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATE_REQUEST);
+	public MigrationRequest(final short p_destination, final DataStructure p_dataStructure) {
+		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
 
 		m_dataStructures = new DataStructure[] {p_dataStructure};
 	}
@@ -49,8 +49,8 @@ public class MigrateRequest extends AbstractRequest {
 	 * @param p_dataStructures
 	 *            Multiple data structures to migrate
 	 */
-	public MigrateRequest(final short p_destination, final DataStructure[] p_dataStructures) {
-		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATE_REQUEST);
+	public MigrationRequest(final short p_destination, final DataStructure[] p_dataStructures) {
+		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
 
 		m_dataStructures = p_dataStructures;
 	}
@@ -71,6 +71,7 @@ public class MigrateRequest extends AbstractRequest {
 		for (DataStructure dataStructure : m_dataStructures)
 		{
 			p_buffer.putLong(dataStructure.getID());
+			p_buffer.putInt(dataStructure.sizeofPayload());
 			dataStructure.writePayload(0, dataStructureWriter);
 		}
 	}
@@ -83,8 +84,11 @@ public class MigrateRequest extends AbstractRequest {
 		
 		for (int i = 0; i < m_chunks.length; i++)
 		{
-			m_chunks[i] = new Chunk(p_buffer.getLong());
-			m_chunks[i].readPayload(0, dataStructureReader);
+			long id = p_buffer.getLong();
+			int size = p_buffer.getInt();
+			
+			m_chunks[i] = new Chunk(id, size);
+			m_chunks[i].readPayload(0, size, dataStructureReader);
 		}
 	}
 

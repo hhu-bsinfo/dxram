@@ -9,7 +9,7 @@ import de.uniduesseldorf.menet.AbstractResponse;
  * @author Florian Klein 09.03.2012
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
-public class MigrateResponse extends AbstractResponse {
+public class MigrationResponse extends AbstractResponse {
 
 	private long[] m_failedMigrationIDs = null;
 	
@@ -17,7 +17,7 @@ public class MigrateResponse extends AbstractResponse {
 	 * Creates an instance of DataResponse.
 	 * This constructor is used when receiving this message.
 	 */
-	public MigrateResponse() {
+	public MigrationResponse() {
 		super();
 	}
 
@@ -27,8 +27,8 @@ public class MigrateResponse extends AbstractResponse {
 	 * @param p_request
 	 *            the request
 	 */
-	public MigrateResponse(final MigrateRequest p_request, final long[] p_failedMigrationIDs) {
-		super(p_request, MigrationMessages.SUBTYPE_MIGRATE_RESPONSE);
+	public MigrationResponse(final MigrationRequest p_request, final long[] p_failedMigrationIDs) {
+		super(p_request, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE);
 		
 		m_failedMigrationIDs = p_failedMigrationIDs;
 	}
