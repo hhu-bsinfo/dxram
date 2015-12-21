@@ -55,18 +55,23 @@ public class NetworkComponent extends DXRAMComponent implements NetworkInterface
 	// --------------------------------------------------------------------------------------
 
 	@Override
+	protected void registerConfigurationValuesComponent(final Configuration p_configuration) {
+		p_configuration.registerConfigurationEntries(NetworkConfigurationValues.CONFIGURATION_ENTRIES);
+	}
+	
+	@Override
 	protected boolean initComponent(final Configuration p_configuration) 
 	{
 		m_networkHandler = new NetworkHandler(
-				p_configuration.getIntValue(DXRAMConfigurationConstants.NETWORK_TASK_HANDLER_THREAD_COUNT),
-				p_configuration.getIntValue(DXRAMConfigurationConstants.NETWORK_MESSAGE_HANDLER_THREAD_COUNT),
-				p_configuration.getBooleanValue(DXRAMConfigurationConstants.NETWORK_STATISTICS_THROUGHPUT),
-				p_configuration.getBooleanValue(DXRAMConfigurationConstants.NETWORK_STATISTICS_REQUESTS));
+				p_configuration.getIntValue(NetworkConfigurationValues.NETWORK_TASK_HANDLER_THREAD_COUNT),
+				p_configuration.getIntValue(NetworkConfigurationValues.NETWORK_MESSAGE_HANDLER_THREAD_COUNT),
+				p_configuration.getBooleanValue(NetworkConfigurationValues.NETWORK_STATISTICS_THROUGHPUT),
+				p_configuration.getBooleanValue(NetworkConfigurationValues.NETWORK_STATISTICS_REQUESTS));
 		
 		m_networkHandler.initialize(
 				getSystemData().getNodeID(), 
-				new NodeMappings(getNodesConfiguration()), 
-				p_configuration.getIntValue(DXRAMConfigurationConstants.NETWORK_BUFFER_SIZE));
+				new NodeMappings(getSystemData()), 
+				p_configuration.getIntValue(NetworkConfigurationValues.NETWORK_BUFFER_SIZE));
 		
 		return true;
 	}

@@ -22,10 +22,8 @@ import de.uniduesseldorf.dxram.core.chunk.messages.RemoveRequest;
 import de.uniduesseldorf.dxram.core.chunk.messages.RemoveResponse;
 import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
-import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
@@ -34,6 +32,7 @@ import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.lock.DefaultLock;
 import de.uniduesseldorf.dxram.core.lock.LockComponent;
+import de.uniduesseldorf.dxram.core.log.LogConfigurationValues;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.Locations;
@@ -41,6 +40,7 @@ import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
 import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
+import de.uniduesseldorf.dxram.core.statistics.StatisticsConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.MessageDirectory;
@@ -91,10 +91,10 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		m_lock = getComponent(LockComponent.COMPONENT_IDENTIFIER);
 		m_backup = getComponent(BackupComponent.COMPONENT_IDENTIFIER);
 		
-		m_statisticsEnabled = p_configuration.getBooleanValue(DXRAMConfigurationConstants.STATISTIC_CHUNK);
-		m_logActive = p_configuration.getBooleanValue(DXRAMConfigurationConstants.LOG_ACTIVE);
-		m_secondaryLogSize = p_configuration.getLongValue(DXRAMConfigurationConstants.SECONDARY_LOG_SIZE);
-		m_replicationFactor = p_configuration.getIntValue(DXRAMConfigurationConstants.REPLICATION_FACTOR);
+		m_statisticsEnabled = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_CHUNK);
+		m_logActive = p_configuration.getBooleanValue(LogConfigurationValues.LOG_ACTIVE);
+		m_secondaryLogSize = p_configuration.getLongValue(LogConfigurationValues.SECONDARY_LOG_SIZE);
+		m_replicationFactor = p_configuration.getIntValue(LogConfigurationValues.REPLICATION_FACTOR);
 
 		registerNetworkMessages();
 
@@ -112,7 +112,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	@Override
 	protected boolean shutdownService() 
 	{
-		// TODO
+		m_memoryManager = null;
+		m_network = null;
+		m_lookup = null;
+		m_lock = null;
+		m_backup = null;
 		
 		return true;
 	}
@@ -180,12 +184,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				} else {
 					// remote, figure out location and sort by peers
 					Locations locations;
-					try {
-						locations = m_lookup.get(p_dataStructures[i].getID());
-					} catch (LookupException e) {
-						LOGGER.error("Lookup for chunk " + p_dataStructures[i] + " failed: " + e.getMessage());
-						locations = null;
-					}
+					
+					locations = m_lookup.get(p_dataStructures[i].getID());
 					if (locations == null) {
 						continue;
 					} else {
@@ -274,7 +274,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 			HashMap<Long, ArrayList<DataStructure>> backupMap = new HashMap<Long, ArrayList<DataStructure>>();
 			ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
 			Map<Short, Vector<DataStructure>> remoteChunksByPeers = new HashMap<Short, Vector<DataStructure>>();
-			Vector<DataStructure> remoteChunksOfPeer;
+			Vector<DataStructure> remoteChunksOfPeer = new Vector<DataStructure>();
 			
 			// first loop: sort by local/remote chunks and backup peers
 			m_memoryManager.lockAccess();
@@ -296,12 +296,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 					}
 				} else {
 					// remote, figure out location and sort by peers
-					try {
-						locations = m_lookup.get(dataStructure.getID());
-					} catch (LookupException e) {
-						LOGGER.error("Lookup for chunk " + dataStructure + " failed: " + e.getMessage());
-						locations = null;
-					}
+					locations = m_lookup.get(dataStructure.getID());
 					if (locations == null) {
 						continue;
 					} else {

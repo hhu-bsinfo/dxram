@@ -170,6 +170,10 @@ public class ReadWriteLockComponent extends LockComponent {
 	// --------------------------------------------------------------------------
 
 	@Override
+	protected void registerConfigurationValuesComponent(Configuration p_configuration) {
+	}
+	
+	@Override
 	protected boolean initComponent(final Configuration p_configuration) {
 		m_locks = new HashMap<>();
 

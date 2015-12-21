@@ -45,12 +45,12 @@ public final class NodesWatcher implements Watcher {
 	/**
 	 * Creates an instance of DefaultNodesConfigurationParser
 	 */
-	public NodesWatcher(final String p_ownIP, final int p_ownPort, final String p_zooKeeperPath, final int p_zookeeperBitfieldSize) 
+	public NodesWatcher(final String p_ownIP, final int p_ownPort, final String p_zooKeeperPath, final String p_zookeeperConnection, final int p_zookeeperTimeout, final int p_zookeeperBitfieldSize) 
 	{
 		m_ownIP = p_ownIP;
 		m_ownPort = p_ownPort;
 		m_nodesConfiguration = new NodesConfiguration();
-		m_zookeeper = new ZooKeeperHandler(p_zooKeeperPath);
+		m_zookeeper = new ZooKeeperHandler(p_zooKeeperPath, p_zookeeperConnection, p_zookeeperTimeout);
 		m_isStarting = true;
 		m_zookeeperBitfieldSize = p_zookeeperBitfieldSize;
 	}

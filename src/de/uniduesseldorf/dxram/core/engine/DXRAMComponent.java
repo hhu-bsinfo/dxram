@@ -36,6 +36,10 @@ public abstract class DXRAMComponent
 		return m_priorityShutdown;
 	}
 	
+	public void registerConfigurationValues(final Configuration p_configuration) {
+		registerConfigurationValuesComponent(p_configuration);
+	}
+	
 	public boolean init(final DXRAMEngine p_engine)
 	{
 		boolean ret = false;
@@ -77,6 +81,8 @@ public abstract class DXRAMComponent
    {		   
 	   return (T) m_parentEngine.getComponent(p_componentName);
    }
+   
+   protected abstract void registerConfigurationValuesComponent(final Configuration p_configuration);
    
    protected abstract boolean initComponent(final Configuration p_configuration);
    

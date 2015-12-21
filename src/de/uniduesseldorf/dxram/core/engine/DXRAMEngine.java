@@ -10,16 +10,15 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationFileParser;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
+import de.uniduesseldorf.dxram.core.net.NetworkConfigurationValues;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationException;
 
 import de.uniduesseldorf.utils.config.Configuration;
 import de.uniduesseldorf.utils.config.ConfigurationFileParser;
 import de.uniduesseldorf.utils.config.ConfigurationParser;
-import de.uniduesseldorf.utils.config.Configuration.ConfigurationEntry;
 import de.uniduesseldorf.utils.config.ConfigurationException;
 
 public class DXRAMEngine 
@@ -31,7 +30,7 @@ public class DXRAMEngine
 	
 	private boolean m_isInitilized;
 	
-	private DXRAMComponentSetupHandler m_componentSetupHandler;
+	private DXRAMEngineSetupHandler m_setupHandler;
 	
 	private Configuration m_configuration;
 	private NodesWatcher m_nodesWatcher;
@@ -40,9 +39,9 @@ public class DXRAMEngine
 	private HashMap<String, DXRAMComponent> m_components = new HashMap<String, DXRAMComponent>();
 	private HashMap<String, DXRAMService> m_services = new HashMap<String, DXRAMService>();
 	
-	public DXRAMEngine(final DXRAMComponentSetupHandler p_componentSetupHandler)
+	public DXRAMEngine(final DXRAMEngineSetupHandler p_setupHandler)
 	{
-		m_componentSetupHandler = p_componentSetupHandler;
+		m_setupHandler = p_setupHandler;
 	}
 	
 	public boolean addComponent(final DXRAMComponent p_component)
@@ -162,7 +161,13 @@ public class DXRAMEngine
 		return m_logger;
 	}
 	
-	public boolean init(final String p_configurationFolder) throws ConfigurationException, NodesConfigurationException
+	public boolean init(final String p_configurationFolder) throws ConfigurationException, NodesConfigurationException {
+		return init(p_configurationFolder, null, null, null);
+	}
+	
+	public boolean init(final String p_configurationFolder, final String p_overrideNetworkIP, 
+			final String p_overridePort, final String p_overrideRole) 
+					throws ConfigurationException, NodesConfigurationException
 	{
 		assert !m_isInitilized;
 		
@@ -171,34 +176,34 @@ public class DXRAMEngine
 		
 		m_logger.info("Initializing engine...");
 		
-		bootstrap(p_configurationFolder);
-		
-		if (m_componentSetupHandler != null)
-		{
+		// allow external handler to register further components and/or services
+		if (m_setupHandler != null) {
 			m_logger.debug("Setting up components with external handler...");
-			m_componentSetupHandler.setupComponents(m_configuration);
+			m_setupHandler.setupComponents(this, m_configuration);
+			m_logger.debug("Setting up services with external handler...");
+			m_setupHandler.setupServices(this, m_configuration);
 		}
 		
+		bootstrap(p_configurationFolder, p_overrideNetworkIP, 
+				p_overridePort, p_overrideRole);
+		
+		// sort list by initialization priority
         list = new ArrayList<DXRAMComponent>(m_components.values());
-
         comp = new Comparator<DXRAMComponent>() {
             @Override
             public int compare(DXRAMComponent o1, DXRAMComponent o2) {
                 return (new Integer(o1.getPriorityInit())).compareTo(new Integer(o2.getPriorityInit()));
             }
         };
-
         Collections.sort(list, comp);
         
         m_logger.info("Initializing " + list.size() + " components...");
-
         for (DXRAMComponent component : list) {
             if (component.init(this) == false) {
             	m_logger.error("Initializing component '" + component.getIdentifier() + "' failed, aborting init.");
                 return false;
             }
         }
-        
         m_logger.info("Initializing components done.");
 
         m_logger.info("Initializing engine done.");
@@ -244,7 +249,9 @@ public class DXRAMEngine
 		return true;
 	}
 	
-	private void bootstrap(final String p_configurationFolder) throws ConfigurationException, NodesConfigurationException
+	private void bootstrap(final String p_configurationFolder, final String p_overrideNetworkIP, 
+			final String p_overridePort, final String p_overrideRole) 
+					throws ConfigurationException, NodesConfigurationException
 	{
 		String configurationFolder = p_configurationFolder;
 		
@@ -254,12 +261,32 @@ public class DXRAMEngine
 		
 		m_logger.info("Bootstrapping with configuration folder: " + configurationFolder);
 		
+		m_configuration = new Configuration();
+		
+		registerConfigurationValues();
+		
+		// register configuration values of components
+		for (DXRAMComponent component : m_components.values()) {
+			component.registerConfigurationValues(m_configuration);
+		}
+		
+		// overriding order:
+		// config
 		loadConfiguration(configurationFolder);
+		
+		// parameters
+		overrideConfigurationWithParameters(p_overrideNetworkIP, p_overridePort, p_overrideRole);
+		
+		// vm arguments
 		overrideConfigurationWithVMArguments();
 		
 		setupNodesRouting(configurationFolder);
 		
 		initializeSystemData();
+	}
+	
+	private void registerConfigurationValues() {
+		m_configuration.registerConfigurationEntries(DXRAMConfigurationValues.CONFIGURATION_ENTRIES);
 	}
 	
 	private void loadConfiguration(final String p_configurationFolder) throws ConfigurationException
@@ -269,7 +296,6 @@ public class DXRAMEngine
 		
 		file = new File(p_configurationFolder + "/" + DXRAM_CONF_FILE);
 		parser = new ConfigurationFileParser(file);
-		m_configuration = new Configuration();
 		if (file.exists())
 		{
 			m_logger.debug("Loading configuration file: " + file);
@@ -285,10 +311,7 @@ public class DXRAMEngine
 				throw new DXRAMRuntimeException("Creating new file '" + file + "' failed.");
 			}
 			
-			// create configuration with defined default values
-			for (ConfigurationEntry<?> entry : DXRAMConfigurationConstants.getConfigurationEntries()) {
-				m_configuration.setValue(entry.getKey(), entry.getDefaultValue().toString());
-			}
+			// default values already written with registering values
 			
 			// write back configuration
 			parser.writeConfiguration(m_configuration);
@@ -305,10 +328,12 @@ public class DXRAMEngine
 			m_logger.warn("Nodes configuration file does not exist: " + file);
 		}
 		
-		m_nodesWatcher = new NodesWatcher(m_configuration.getStringValue(DXRAMConfigurationConstants.NETWORK_IP), 
-				m_configuration.getIntValue(DXRAMConfigurationConstants.NETWORK_PORT), 
-				m_configuration.getStringValue(DXRAMConfigurationConstants.ZOOKEEPER_PATH), 
-				m_configuration.getIntValue(DXRAMConfigurationConstants.ZOOKEEPER_BITFIELD_SIZE));
+		m_nodesWatcher = new NodesWatcher(m_configuration.getStringValue(NetworkConfigurationValues.NETWORK_IP), 
+				m_configuration.getIntValue(NetworkConfigurationValues.NETWORK_PORT), 
+				m_configuration.getStringValue(DXRAMConfigurationValues.ZOOKEEPER_PATH), 
+				m_configuration.getStringValue(DXRAMConfigurationValues.ZOOKEEPER_CONNECTION_STRING),
+				m_configuration.getIntValue(DXRAMConfigurationValues.ZOOKEEPER_TIMEOUT),
+				m_configuration.getIntValue(DXRAMConfigurationValues.ZOOKEEPER_BITFIELD_SIZE));
 		
 		m_nodesWatcher.setupNodeRouting(new NodesConfigurationFileParser(file));
 	}
@@ -318,30 +343,43 @@ public class DXRAMEngine
 		m_systemData = new DXRAMSystemData(m_nodesWatcher);
 	}
 	
+	private void overrideConfigurationWithParameters(final String p_networkIP, 
+			final String p_port, final String p_role) {
+		if (p_networkIP != null) {
+			m_configuration.setValue(NetworkConfigurationValues.NETWORK_IP, p_networkIP);
+		}
+		if (p_port != null) {
+			m_configuration.setValue(NetworkConfigurationValues.NETWORK_PORT, p_port);
+		}
+		if (p_role != null) {
+			m_configuration.setValue(DXRAMConfigurationValues.DXRAM_ROLE, p_role);
+		}
+	}
+	
 	private void overrideConfigurationWithVMArguments()
 	{
 		String[] keyValue;
 
 		keyValue = new String[2];
-		keyValue[0] = "network.ip";
+		keyValue[0] = "dxram.network.ip";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			m_logger.debug("Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
-			m_configuration.setValue(keyValue[0], keyValue[1]);
+			m_configuration.setValue(NetworkConfigurationValues.NETWORK_IP, keyValue[1]);
 		}
 
-		keyValue[0] = "network.port";
+		keyValue[0] = "dxram.network.ip";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			m_logger.debug("Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
-			m_configuration.setValue(keyValue[0], keyValue[1]);
+			m_configuration.setValue(NetworkConfigurationValues.NETWORK_PORT, keyValue[1]);
 		}
 
 		keyValue[0] = "dxram.role";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			m_logger.debug("Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
-			m_configuration.setValue(keyValue[0], keyValue[1]);
+			m_configuration.setValue(DXRAMConfigurationValues.DXRAM_ROLE, keyValue[1]);
 		}
 	}
 	

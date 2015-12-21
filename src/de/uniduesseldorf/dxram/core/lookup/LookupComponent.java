@@ -5,6 +5,8 @@ import java.util.List;
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
 
+import de.uniduesseldorf.utils.config.Configuration;
+
 public abstract class LookupComponent extends DXRAMComponent {
 	
 	public static final String COMPONENT_IDENTIFIER = "Lookup";
@@ -189,4 +191,9 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * @return true if all superpeers are known, false otherwise
 	 */
 	public abstract boolean overlayIsStable();
+	
+	@Override
+	protected void registerConfigurationValuesComponent(Configuration p_configuration) {
+		p_configuration.registerConfigurationEntries(LookupConfigurationValues.CONFIGURATION_ENTRIES);
+	}
 }

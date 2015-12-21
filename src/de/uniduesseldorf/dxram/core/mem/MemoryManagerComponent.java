@@ -44,9 +44,14 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	}
 	
 	@Override
+	protected void registerConfigurationValuesComponent(final Configuration p_configuration) {
+		p_configuration.registerConfigurationEntries(MemoryManagerConfigurationValues.CONFIGURATION_ENTRIES);
+	}
+	
+	@Override
 	protected boolean initComponent(final Configuration p_configuration) 
 	{
-		p_configuration.getLongValue(DXRAMConfigurationConstants.RAM_SIZE);
+		p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SIZE);
 
 		m_enableMemoryStatistics = p_configuration.getBooleanValue(DXRAMConfigurationConstants.STATISTIC_MEMORY);
 
@@ -56,14 +61,14 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 
 		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 		m_rawMemory.initialize(
-				p_configuration.getLongValue(DXRAMConfigurationConstants.RAM_SIZE), 
-				p_configuration.getLongValue(DXRAMConfigurationConstants.RAM_SEGMENT_SIZE));
+				p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SIZE), 
+				p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SEGMENT_SIZE));
 		m_cidTable = new CIDTable(getSystemData().getNodeID(), m_enableMemoryStatistics);
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
 		
-		MemoryStatistic.getInstance().initMemory(p_configuration.getLongValue(DXRAMConfigurationConstants.RAM_SIZE));
+		MemoryStatistic.getInstance().initMemory(p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SIZE));
 		
 		return true;
 	}

@@ -1,12 +1,7 @@
 
 package de.uniduesseldorf.dxram.run;
 
-import de.uniduesseldorf.dxram.commands.Shell;
-import de.uniduesseldorf.dxram.core.dxram.Core;
-import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
-
-import de.uniduesseldorf.utils.config.ConfigurationHandler;
+import de.uniduesseldorf.dxram.core.dxram.DXRAM;
 
 /**
  * Monitoring peer
@@ -27,13 +22,16 @@ public final class Monitor {
 	 *            The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
+		DXRAM dxram = new DXRAM();
+		dxram.initialize("config", null, null, "Monitor");
 
-		// Initialize DXRAM
-		try {
-			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-		} catch (final DXRAMException e1) {
-			e1.printStackTrace();
+		System.out.println("Monitor started");
+
+		while (true) {
+			// Wait a moment
+			try {
+				Thread.sleep(3000);
+			} catch (final InterruptedException e) {}
 		}
 
 		System.out.println("Monitor started");

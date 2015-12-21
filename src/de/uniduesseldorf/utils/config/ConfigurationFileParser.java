@@ -1,9 +1,13 @@
 package de.uniduesseldorf.utils.config;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -31,8 +35,24 @@ public class ConfigurationFileParser implements ConfigurationParser {
 
 	@Override
 	public void writeConfiguration(final Configuration p_configuration) throws ConfigurationException {
-		// TODO Auto-generated method stub
-		throw new RuntimeException("Not implemented");
+		try {
+			writeFile(p_configuration, m_file);
+		} catch (final IOException e) {
+			throw new ConfigurationException("ERR: Could not write to configuration file", e);
+		}
+	}
+	
+	private static void writeFile(final Configuration p_configuration, final File p_file) throws IOException {
+		BufferedWriter out;
+		
+		out = new BufferedWriter(new FileWriter(p_file));
+
+		Set<Entry<String, String>> entries = p_configuration.getValues();
+		for (Entry<String, String> entry : entries) {
+			out.write(entry.getKey() + " " + KEY_VALUE_SEPERATOR + " " + entry.getValue());
+		}
+		
+		out.close();	
 	}
 	
 	/**

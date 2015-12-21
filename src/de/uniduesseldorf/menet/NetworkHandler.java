@@ -10,6 +10,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
+import de.uniduesseldorf.dxram.core.log.LogMessages;
+
 import de.uniduesseldorf.menet.AbstractConnection.DataReceiver;
 import de.uniduesseldorf.utils.StatisticsManager;
 
@@ -217,8 +219,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		/**
 		 * Creates an instance of MessageHandler
 		 */
-		MessageHandler() {
-			m_executor = new TaskExecutor("MessageHandler", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MESSAGE_HANDLER_THREAD_COUNT));
+		MessageHandler(final int p_numMessageHandlerThreads) {
+			m_executor = new TaskExecutor("MessageHandler", p_numMessageHandlerThreads);
 			m_defaultMessages = new ArrayDeque<>();
 			m_exclusiveMessages = new ArrayDeque<>();
 			m_messagesLock = new ReentrantLock(false);
@@ -232,6 +234,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
+			// TODO LogMessage.TYPE has to vanish
 			if (p_message.getType() == LogMessages.TYPE) {
 				m_messagesLock.lock();
 				m_exclusiveMessages.offer(p_message);

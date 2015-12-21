@@ -7,8 +7,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.log.LogComponent;
+import de.uniduesseldorf.dxram.core.log.LogConfigurationValues;
 import de.uniduesseldorf.dxram.core.lookup.Locations;
 import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
@@ -45,13 +45,17 @@ public class BackupComponent extends DXRAMComponent {
 	}
 	
 	@Override
+	protected void registerConfigurationValuesComponent(Configuration p_configuration) {
+	}
+	
+	@Override
 	protected boolean initComponent(Configuration p_configuration) {
 		m_lookup = getDependantComponent(LookupComponent.COMPONENT_IDENTIFIER);
 		m_logging = getDependantComponent(LogComponent.COMPONENT_IDENTIFIER);
 		
-		m_logActive = p_configuration.getBooleanValue(DXRAMConfigurationConstants.LOG_ACTIVE);
-		m_secondaryLogSize = p_configuration.getLongValue(DXRAMConfigurationConstants.SECONDARY_LOG_SIZE);
-		m_replicationFactor = p_configuration.getIntValue(DXRAMConfigurationConstants.REPLICATION_FACTOR);
+		m_logActive = p_configuration.getBooleanValue(LogConfigurationValues.LOG_ACTIVE);
+		m_secondaryLogSize = p_configuration.getLongValue(LogConfigurationValues.SECONDARY_LOG_SIZE);
+		m_replicationFactor = p_configuration.getIntValue(LogConfigurationValues.REPLICATION_FACTOR);
 		
 		m_migrationsTree = new MigratedBackupsTree((short) 10, m_secondaryLogSize);
 		

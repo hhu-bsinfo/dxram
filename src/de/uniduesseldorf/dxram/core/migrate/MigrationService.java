@@ -9,6 +9,8 @@ import org.apache.log4j.Logger;
 import de.uniduesseldorf.dxram.core.backup.BackupComponent;
 import de.uniduesseldorf.dxram.core.chunk.ChunkService;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
+import de.uniduesseldorf.dxram.core.data.Chunk;
+import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
@@ -21,22 +23,20 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
 import de.uniduesseldorf.dxram.core.lookup.LookupException;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
-import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
+import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.migrate.messages.MigrationMessage;
 import de.uniduesseldorf.dxram.core.migrate.messages.MigrationMessages;
 import de.uniduesseldorf.dxram.core.migrate.messages.MigrationRequest;
 import de.uniduesseldorf.dxram.core.migrate.messages.MigrationResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.data.Chunk;
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
+import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.menet.NodeID;
 import de.uniduesseldorf.utils.config.Configuration;
 
-public class MigrationService extends DXRAMService {
+public class MigrationService extends DXRAMService implements MessageReceiver {
 	
 	private static final String SERVICE_NAME = "Migration";
 	
@@ -82,80 +82,81 @@ public class MigrationService extends DXRAMService {
 	// ---------------------------------------------------------------------------------------------
 	
 	// TODO have this split into migrated and recovered chunks?
-	/**
-	 * Puts migrated or recovered Chunks
-	 * @param p_chunks
-	 *            the Chunks
-	 * @throws LookupException
-	 *             if the backup range could not be initialized on superpeers
-	 * @throws NetworkException
-	 *             if the put Chunks could not be logged properly
-	 * @throws MemoryException
-	 *             if the Chunks could not be put properly
-	 */
-	public void putForeignChunks(final Chunk[] p_chunks) {
-		int logEntrySize;
-		long size = 0;
-		long cutChunkID = -1;
-		short[] backupPeers = null;
-		Chunk chunk = null;
-
-		// multi put
-		/*-m_memoryManager.lockManage();
-		for (Chunk chunk : p_chunks) {
-			int bytesWritten;
-
-			m_memoryManager.create(chunk.getChunkID());
-			bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
-		}
-		m_memoryManager.unlockManage();*/
-
-		for (int i = 0; i < p_chunks.length; i++) {
-			chunk = p_chunks[i];
-
-			if (m_logActive) {
-				logEntrySize = chunk.getSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()), ChunkID.getLocalID(chunk.getChunkID()),
-						chunk.getSize());
-				if (m_migrationsTree.fits(size + logEntrySize) && (m_migrationsTree.size() != 0 || size > 0)) {
-					// Chunk fits in current migration backup range
-					size += logEntrySize;
-				} else {
-					// Chunk does not fit -> initialize new migration backup range and remember cut
-					size = logEntrySize;
-					cutChunkID = chunk.getChunkID();
-
-					determineBackupPeers(-1);
-					m_migrationsTree.initNewBackupRange();
-
-					m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), new Locations(m_nodeID,
-							m_currentMigrationBackupRange.getBackupPeers(), null));
-					m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), m_currentMigrationBackupRange.getBackupPeers());
-				}
-			}
-		}
-
-		if (LOG_ACTIVE) {
-			for (int i = 0; i < p_chunks.length; i++) {
-				chunk = p_chunks[i];
-
-				if (chunk.getChunkID() == cutChunkID) {
-					// All following chunks are in the new migration backup range
-					backupPeers = m_currentMigrationBackupRange.getBackupPeers();
-				}
-
-				m_migrationsTree.putObject(chunk.getChunkID(), (byte) m_currentMigrationBackupRange.getRangeID(), chunk.getSize());
-
-				if (backupPeers != null) {
-					for (int j = 0; j < backupPeers.length; j++) {
-						if (backupPeers[j] != m_nodeID && backupPeers[j] != -1) {
-							new LogMessage(backupPeers[j], (byte) m_currentMigrationBackupRange.getRangeID(),
-									new Chunk[] {chunk}).send(m_network);
-						}
-					}
-				}
-			}
-		}
-	}
+	// also: where to put this? where is it used?
+//	/**
+//	 * Puts migrated or recovered Chunks
+//	 * @param p_chunks
+//	 *            the Chunks
+//	 * @throws LookupException
+//	 *             if the backup range could not be initialized on superpeers
+//	 * @throws NetworkException
+//	 *             if the put Chunks could not be logged properly
+//	 * @throws MemoryException
+//	 *             if the Chunks could not be put properly
+//	 */
+//	public void putForeignDataStructures(final DataStructure[] p_dataStructures) {
+//		int logEntrySize;
+//		long size = 0;
+//		long cutChunkID = -1;
+//		short[] backupPeers = null;
+//		Chunk chunk = null;
+//
+//		// multi put
+//		/*-m_memoryManager.lockManage();
+//		for (Chunk chunk : p_chunks) {
+//			int bytesWritten;
+//
+//			m_memoryManager.create(chunk.getChunkID());
+//			bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
+//		}
+//		m_memoryManager.unlockManage();*/
+//
+//		for (int i = 0; i < p_chunks.length; i++) {
+//			chunk = p_chunks[i];
+//
+//			if (m_logActive) {
+//				logEntrySize = chunk.getSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getChunkID()), ChunkID.getLocalID(chunk.getChunkID()),
+//						chunk.getSize());
+//				if (m_migrationsTree.fits(size + logEntrySize) && (m_migrationsTree.size() != 0 || size > 0)) {
+//					// Chunk fits in current migration backup range
+//					size += logEntrySize;
+//				} else {
+//					// Chunk does not fit -> initialize new migration backup range and remember cut
+//					size = logEntrySize;
+//					cutChunkID = chunk.getChunkID();
+//
+//					determineBackupPeers(-1);
+//					m_migrationsTree.initNewBackupRange();
+//
+//					m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), new Locations(m_nodeID,
+//							m_currentMigrationBackupRange.getBackupPeers(), null));
+//					m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), m_currentMigrationBackupRange.getBackupPeers());
+//				}
+//			}
+//		}
+//
+//		if (m_logActive) {
+//			for (int i = 0; i < p_chunks.length; i++) {
+//				chunk = p_chunks[i];
+//
+//				if (chunk.getChunkID() == cutChunkID) {
+//					// All following chunks are in the new migration backup range
+//					backupPeers = m_currentMigrationBackupRange.getBackupPeers();
+//				}
+//
+//				m_migrationsTree.putObject(chunk.getChunkID(), (byte) m_currentMigrationBackupRange.getRangeID(), chunk.getSize());
+//
+//				if (backupPeers != null) {
+//					for (int j = 0; j < backupPeers.length; j++) {
+//						if (backupPeers[j] != getSystemData().getNodeID() && backupPeers[j] != -1) {
+//							new LogMessage(backupPeers[j], (byte) m_currentMigrationBackupRange.getRangeID(),
+//									new Chunk[] {chunk}).send(m_network);
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
 
 	public boolean migrate(final long p_chunkID, final short p_target) {
 		short[] backupPeers;
@@ -169,22 +170,26 @@ public class MigrationService extends DXRAMService {
 			LOGGER.error("a superpeer must not store chunks");
 		} else {
 			m_migrationLock.lock();
-			if (p_target != m_nodeID && m_memoryManager.isResponsible(p_chunkID)) {
+			
+			m_memoryManager.lockAccess();
+			if (p_target != getSystemData().getNodeID() && m_memoryManager.exists(p_chunkID)) {
 				int size;
-				int bytesRead;
 
-				chunk = null;
-
-				m_memoryManager.lockAccess();
 				size = m_memoryManager.getSize(p_chunkID);
 				chunk = new Chunk(p_chunkID, size);
-				bytesRead = m_memoryManager.get(p_chunkID, chunk.getData().array(), 0, size);
+				// TODO error handling
+				m_memoryManager.get(chunk);
 				m_memoryManager.unlockAccess();
 
 				if (chunk != null) {
 					LOGGER.trace("Send request to " + p_target);
 
-					new DataMessage(p_target, new Chunk[] {chunk}).send(m_network);
+					try {
+						new MigrationMessage(p_target, new Chunk[] {chunk}).send(m_network);
+					} catch (NetworkException e) {
+						// TODO proper error handling
+						e.printStackTrace();
+					}
 
 					// Update superpeers
 					m_lookup.migrate(p_chunkID, p_target);
@@ -192,13 +197,19 @@ public class MigrationService extends DXRAMService {
 					m_lock.unlockAll(p_chunkID);
 					// Update local memory management
 					m_memoryManager.remove(p_chunkID);
-					if (LOG_ACTIVE) {
-						// Update logging
-						backupPeers = getBackupPeersForLocalChunks(p_chunkID);
+					if (m_logActive) {
+						// TODO udpate logging: this should be done inside the log component
+						// because we use a log message here (also duped code)
+						backupPeers = m_backup.getBackupPeersForLocalChunks(p_chunkID);
 						if (backupPeers != null) {
 							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
+									try {
+										new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+									} catch (NetworkException e) {
+										// TODO proper error handling
+										e.printStackTrace();
+									}
 								}
 							}
 						}
@@ -206,6 +217,7 @@ public class MigrationService extends DXRAMService {
 					ret = true;
 				}
 			} else {
+				m_memoryManager.unlockAccess();
 				System.out.println("Chunk with ChunkID " + p_chunkID + " could not be migrated!");
 				ret = false;
 			}
@@ -230,13 +242,13 @@ public class MigrationService extends DXRAMService {
 
 		// TODO: Handle range properly
 
-		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
 			LOGGER.error("a superpeer must not store chunks");
 		} else {
 			if (p_startChunkID <= p_endChunkID) {
 				chunkIDs = new long[(int) (p_endChunkID - p_startChunkID + 1)];
 				m_migrationLock.lock();
-				if (p_target != m_nodeID) {
+				if (p_target != getSystemData().getNodeID()) {
 					iter = p_startChunkID;
 					while (true) {
 						// Send chunks to p_target
@@ -245,7 +257,7 @@ public class MigrationService extends DXRAMService {
 						size = 0;
 						m_memoryManager.lockAccess();
 						while (iter <= p_endChunkID) {
-							if (m_memoryManager.isResponsible(iter)) {
+							if (m_memoryManager.exists(iter)) {
 								int bytesRead;
 								int sizeChunk;
 
@@ -253,11 +265,12 @@ public class MigrationService extends DXRAMService {
 
 								sizeChunk = m_memoryManager.getSize(iter);
 								chunk = new Chunk(iter, sizeChunk);
-								bytesRead = m_memoryManager.get(iter, chunk.getData().array(), 0, sizeChunk);
+								// TODO error handling
+								m_memoryManager.get(chunk);
 
 								chunks[counter] = chunk;
-								chunkIDs[counter] = chunk.getChunkID();
-								size += chunk.getSize();
+								chunkIDs[counter] = chunk.getID();
+								size += chunk.sizeofObject();
 							} else {
 								System.out.println("Chunk with ChunkID " + iter + " could not be migrated!");
 							}
@@ -266,7 +279,12 @@ public class MigrationService extends DXRAMService {
 						m_memoryManager.unlockAccess();
 
 						System.out.println("Sending " + counter + " Chunks (" + size + " Bytes) to " + p_target);
-						new DataMessage(p_target, Arrays.copyOf(chunks, counter)).send(m_network);
+						try {
+							new MigrationMessage(p_target, Arrays.copyOf(chunks, counter)).send(m_network);
+						} catch (NetworkException e) {
+							// TODO proper error handling
+							e.printStackTrace();
+						}
 
 						if (iter > p_endChunkID) {
 							break;
@@ -276,13 +294,19 @@ public class MigrationService extends DXRAMService {
 					// Update superpeers
 					m_lookup.migrateRange(p_startChunkID, p_endChunkID, p_target);
 
-					if (LOG_ACTIVE) {
-						// Update logging
-						backupPeers = getBackupPeersForLocalChunks(iter);
+					if (m_logActive) {
+						// TODO udpate logging: this should be done inside the log component
+						// because we use a log message here (also duped code)
+						backupPeers = m_backup.getBackupPeersForLocalChunks(iter);
 						if (backupPeers != null) {
 							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], chunkIDs).send(m_network);
+								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
+									try {
+										new RemoveMessage(backupPeers[i], chunkIDs).send(m_network);
+									} catch (NetworkException e) {
+										// TODO proper error handling
+										e.printStackTrace();
+									}
 								}
 							}
 						}
@@ -323,8 +347,15 @@ public class MigrationService extends DXRAMService {
 		// Migrate own chunks to p_target
 		if (1 != localID) {
 			for (int i = 1; i <= localID; i++) {
-				chunkID = ((long) m_nodeID << 48) + i;
-				if (m_memoryManager.isResponsible(chunkID)) {
+				boolean chunkExists = false;
+				
+				chunkID = ((long) getSystemData().getNodeID() << 48) + i;
+				
+				m_memoryManager.lockAccess();
+				chunkExists = m_memoryManager.exists(chunkID);
+				m_memoryManager.unlockAccess();
+				
+				if (chunkExists) {
 					migrateOwnChunk(chunkID, p_target);
 				}
 			}
@@ -361,10 +392,10 @@ public class MigrationService extends DXRAMService {
 		creator = ChunkID.getCreatorID(p_chunkID);
 
 		m_migrationLock.lock();
-		if (p_target != getSystemData().getNodeID() && m_memoryManager.isResponsible(p_chunkID) 
-				&& m_memoryManager.wasMigrated(p_chunkID)) {
+		m_memoryManager.lockManage();
+		if (p_target != getSystemData().getNodeID() && m_memoryManager.exists(p_chunkID) 
+				&& m_memoryManager.dataWasMigrated(p_chunkID)) {
 			
-			m_memoryManager.lockManage();
 			chunk = new Chunk(p_chunkID, m_memoryManager.getSize(p_chunkID));
 			// TODO error handling
 			m_memoryManager.get(chunk);
@@ -385,7 +416,12 @@ public class MigrationService extends DXRAMService {
 
 			// This is not safe, but there is no other possibility unless
 			// the number of network threads is increased
-			new MigrationMessage(target, new DataStructure[] {chunk}).send(m_network);
+			try {
+				new MigrationMessage(target, new DataStructure[] {chunk}).send(m_network);
+			} catch (NetworkException e) {
+				// TODO proper error handling
+				e.printStackTrace();
+			}
 
 			// Update superpeers
 			m_lookup.migrateNotCreatedChunk(p_chunkID, target);
@@ -397,11 +433,18 @@ public class MigrationService extends DXRAMService {
 				if (backupPeers != null) {
 					for (int i = 0; i < backupPeers.length; i++) {
 						if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
-							new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+							try {
+								new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+							} catch (NetworkException e) {
+								// TODO proper error handling
+								e.printStackTrace();
+							}
 						}
 					}
 				}
 			}
+		} else {
+			m_memoryManager.unlockManage();
 		}
 		m_migrationLock.unlock();
 	}
@@ -423,16 +466,14 @@ public class MigrationService extends DXRAMService {
 		NodeID.check(p_target);
 
 		m_migrationLock.lock();
-		if (p_target != m_nodeID) {
+		if (p_target != getSystemData().getNodeID()) {
 			int sizeChunk;
-			int bytesRead;
-
-			chunk = null;
 
 			m_memoryManager.lockAccess();
 			sizeChunk = m_memoryManager.getSize(p_chunkID);
 			chunk = new Chunk(p_chunkID, sizeChunk);
-			bytesRead = m_memoryManager.get(p_chunkID, chunk.getData().array(), 0, sizeChunk);
+			// TODO error handling if failed
+			m_memoryManager.get(chunk);
 			m_memoryManager.unlockAccess();
 
 			if (chunk != null) {
@@ -441,7 +482,12 @@ public class MigrationService extends DXRAMService {
 				// This is not safe, but there is no other possibility unless
 				// the number of network threads is increased
 				System.out.println("** Migrating own chunk " + p_chunkID + " to " + p_target);
-				new DataMessage(p_target, new Chunk[] {chunk}).send(m_network);
+				try {
+					new MigrationMessage(p_target, new Chunk[] {chunk}).send(m_network);
+				} catch (NetworkException e) {
+					// TODO error handling
+					e.printStackTrace();
+				}
 
 				// Update superpeers
 				m_lookup.migrateOwnChunk(p_chunkID, p_target);
@@ -449,13 +495,18 @@ public class MigrationService extends DXRAMService {
 				m_lock.unlockAll(p_chunkID);
 				// Update local memory management
 				m_memoryManager.remove(p_chunkID);
-				if (LOG_ACTIVE) {
+				if (m_logActive) {
 					// Update logging
-					backupPeers = getBackupPeersForLocalChunks(p_chunkID);
+					backupPeers = m_backup.getBackupPeersForLocalChunks(p_chunkID);
 					if (backupPeers != null) {
 						for (int i = 0; i < backupPeers.length; i++) {
-							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-								new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+							if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
+								try {
+									new RemoveMessage(backupPeers[i], new long[] {p_chunkID}).send(m_network);
+								} catch (NetworkException e) {
+									// TODO error handling
+									e.printStackTrace();
+								}
 							}
 						}
 					}
@@ -472,11 +523,11 @@ public class MigrationService extends DXRAMService {
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case ChunkMessages.SUBTYPE_DATA_REQUEST:
-					incomingDataRequest((DataRequest) p_message);
+				case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
+					incomingMigrationRequest((MigrationRequest) p_message);
 					break;
-				case ChunkMessages.SUBTYPE_DATA_MESSAGE:
-					incomingDataMessage((DataMessage) p_message);
+				case MigrationMessages.SUBTYPE_MIGRATION_MESSAGE:
+					incomingMigrationMessage((MigrationMessage) p_message);
 					break;
 				default:
 					break;
@@ -492,16 +543,10 @@ public class MigrationService extends DXRAMService {
 	 * @param p_request
 	 *            the DataRequest
 	 */
-	private void incomingDataRequest(final DataRequest p_request) {
-		try {
-			putForeignChunks(p_request.getChunks());
+	private void incomingMigrationRequest(final MigrationRequest p_request) {
+		putForeignDataStructures(p_request.getDataStructures());
 
-			new DataResponse(p_request).send(m_network);
-		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle request", e);
-
-			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
-		}
+		new MigrationResponse(p_request).send(m_network);
 	}
 
 	/**
@@ -509,14 +554,8 @@ public class MigrationService extends DXRAMService {
 	 * @param p_message
 	 *            the DataMessage
 	 */
-	private void incomingDataMessage(final DataMessage p_message) {
-		try {
-			putForeignChunks(p_message.getChunks());
-		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
-
-			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
-		}
+	private void incomingMigrationMessage(final MigrationMessage p_message) {
+		putForeignDataStructures(p_message.getDataStructures());
 	}
 
 

@@ -7,10 +7,8 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkService;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
 import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
-import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
@@ -20,6 +18,7 @@ import de.uniduesseldorf.dxram.core.lock.messages.LockResponse;
 import de.uniduesseldorf.dxram.core.lock.messages.UnlockMessage;
 import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
+import de.uniduesseldorf.dxram.core.statistics.StatisticsConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
@@ -54,7 +53,7 @@ public class LockService extends DXRAMService {
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
 		
 		// TODO have statistic 
-		m_statisticsEnabled = p_configuration.getBooleanValue(DXRAMConfigurationConstants.STATISTIC_CHUNK);
+		m_statisticsEnabled = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_CHUNK);
 		
 		return true;
 	}

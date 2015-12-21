@@ -2,8 +2,13 @@
 package de.uniduesseldorf.utils.config;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import de.uniduesseldorf.utils.config.Configuration.ConfigurationEntry;
+
+import java.util.Set;
 
 /**
  * Represents a configuration for DXRAM
@@ -61,6 +66,10 @@ public final class Configuration {
 		return getValue(p_entry.getKey());
 	}
 
+	public synchronized Set<Entry<String, String>> getValues() {
+		return m_entries.entrySet();
+	}
+	
 	/**
 	 * Gets the corresponding configuration value
 	 * @param p_key
@@ -361,6 +370,12 @@ public final class Configuration {
 	 */
 	public void setCharValue(final ConfigurationEntry<Character> p_entry, final char p_value) {
 		setValue(p_entry.getKey(), "" + p_value);
+	}
+	
+	public void registerConfigurationEntries(final List<ConfigurationEntry<?>> p_entries) {
+		for (ConfigurationEntry<?> entry : p_entries) {
+			m_entries.put(entry.getKey(), entry.getDefaultValue().toString());
+		}
 	}
 
 	// Methods

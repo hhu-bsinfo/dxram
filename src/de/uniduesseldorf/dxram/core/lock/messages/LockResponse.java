@@ -2,8 +2,10 @@ package de.uniduesseldorf.dxram.core.lock.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.data.ByteBufferDataStructureReaderWriter;
 import de.uniduesseldorf.dxram.core.data.Chunk;
+import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.data.MessagesDataStructureImExporter;
+
 import de.uniduesseldorf.menet.AbstractResponse;
 
 /**
@@ -13,7 +15,7 @@ import de.uniduesseldorf.menet.AbstractResponse;
 public class LockResponse extends AbstractResponse {
 
 	// Attributes
-	private Chunk m_chunk = null;
+	private DataStructure m_dataStructure = null;
 
 	// Constructors
 	/**
@@ -30,42 +32,47 @@ public class LockResponse extends AbstractResponse {
 	 * @param p_chunk
 	 *            the requested Chunk
 	 */
-	public LockResponse(final LockRequest p_request, final Chunk p_chunk) {
+	public LockResponse(final LockRequest p_request, final DataStructure p_dataStructure) {
 		super(p_request, LockMessages.SUBTYPE_LOCK_RESPONSE);
 
-		m_chunk = p_chunk;
+		m_dataStructure = p_dataStructure;
 	}
 
 	// Getters
 	/**
-	 * Get the requested Chunk
-	 * @return the requested Chunk
+	 * Get the requested DataStructure
+	 * @return the requested DataStructure
 	 */
-	public final Chunk getChunk() {
-		return m_chunk;
+	public final DataStructure getDataStructure() {
+		return m_dataStructure;
 	}
 
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		// read the data to be sent to the remote from the chunk set for this message
-		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
-		p_buffer.putLong(m_chunk.getID());
-		m_chunk.writePayload(0, dataStructureWriter);
+		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+		int size = m_dataStructure.sizeofObject();
+		
+		// we don't need to re-send the id, the request still remembers that
+		exporter.setPayloadSize(size);
+		p_buffer.putInt(size);
+		exporter.exportObject(m_dataStructure);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		// read the payload from the buffer and write it directly into
 		// the data structure provided by the request to avoid further copying of data
-		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
+		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 		LockRequest request = (LockRequest) getCorrespondingRequest();
-		request.getDataStructure().writePayload(0, dataStructureWriter);
+		importer.setPayloadSize(p_buffer.getInt());
+		importer.importObject(request.getDataStructure());
 	}
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return Long.BYTES + m_chunk.sizeofPayload();
+		return Integer.BYTES + m_dataStructure.sizeofObject();
 	}
 
 }

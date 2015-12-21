@@ -1,11 +1,7 @@
 
 package de.uniduesseldorf.dxram.run;
 
-import de.uniduesseldorf.dxram.core.dxram.Core;
-import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
-
-import de.uniduesseldorf.utils.config.ConfigurationHandler;
+import de.uniduesseldorf.dxram.core.dxram.DXRAM;
 
 /**
  * Peer
@@ -26,13 +22,10 @@ public final class Peer {
 	 *            The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
-		// Initialize DXRAM
-		try {
-			Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-					NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-		} catch (final DXRAMException e1) {
-			e1.printStackTrace();
-		}
+		
+		DXRAM dxram = new DXRAM();
+		Runtime.getRuntime().addShutdownHook(new ShutdownThread(dxram));
+		dxram.initialize("config", null, null, "Peer");
 
 		System.out.println("Peer started");
 
@@ -44,4 +37,28 @@ public final class Peer {
 		}
 	}
 
+	/**
+	 * Shuts down DXRAM in case of the system exits
+	 * @author Florian Klein 03.09.2013
+	 */
+	private static final class ShutdownThread extends Thread {
+
+		private DXRAM m_dxram = null;
+		
+		// Constructors
+		/**
+		 * Creates an instance of ShutdownThread
+		 */
+		private ShutdownThread(final DXRAM p_dxram) {
+			super(ShutdownThread.class.getSimpleName());
+			m_dxram = p_dxram;
+		}
+
+		// Methods
+		@Override
+		public void run() {
+			m_dxram.shutdown();
+		}
+
+	}
 }

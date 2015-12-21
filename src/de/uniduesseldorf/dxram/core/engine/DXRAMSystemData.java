@@ -1,11 +1,13 @@
 package de.uniduesseldorf.dxram.core.engine;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.apache.zookeeper.data.Stat;
 
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
+import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.NodeEntry;
 
 public class DXRAMSystemData 
 {
@@ -24,6 +26,12 @@ public class DXRAMSystemData
 	public NodeRole getNodeRole()
 	{
 		return m_nodesWatcher.getNodesConfiguration().getOwnNodeEntry().getRole();
+	}
+	
+	public InetSocketAddress getNodeAddress(final short p_nodeID) {
+		NodeEntry entry = m_nodesWatcher.getNodesConfiguration().getNode(p_nodeID);
+		
+		return new InetSocketAddress(entry.getIP(), entry.getPort());
 	}
 	
 	public void zookeeperCreate(final String p_path) {

@@ -5,7 +5,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
@@ -211,8 +210,8 @@ public class CachedLookupComponent extends LookupComponent {
 	protected boolean initComponent(Configuration p_configuration) {
 		m_lookup.initComponent(p_configuration);
 		if (!getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
-			m_chunkIDCache.enableTTL(p_configuration.getLongValue(DXRAMConfigurationConstants.LOOKUP_CACHE_TTL));
-			m_applicationIDCache.enableTTL(p_configuration.getLongValue(DXRAMConfigurationConstants.LOOKUP_CACHE_TTL));
+			m_chunkIDCache.enableTTL(p_configuration.getLongValue(LookupConfigurationValues.LOOKUP_CACHE_TTL));
+			m_applicationIDCache.enableTTL(p_configuration.getLongValue(LookupConfigurationValues.LOOKUP_CACHE_TTL));
 		} else {
 			m_chunkIDCache = null;
 			m_applicationIDCache = null;

@@ -2,9 +2,10 @@ package de.uniduesseldorf.dxram.core.migrate.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.data.ByteBufferDataStructureReaderWriter;
 import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.data.MessagesDataStructureImExporter;
+
 import de.uniduesseldorf.menet.AbstractRequest;
 
 /**
@@ -15,9 +16,8 @@ import de.uniduesseldorf.menet.AbstractRequest;
 public class MigrationRequest extends AbstractRequest {
 
 	// data structure is used when request is sent
+	// chunks are created if data is received
 	private DataStructure[] m_dataStructures = null;
-	// chunks are used when request is received
-	private Chunk[] m_chunks = null;
 
 	/**
 	 * Creates an instance of DataRequest.
@@ -55,39 +55,41 @@ public class MigrationRequest extends AbstractRequest {
 	}
 
 	/**
-	 * Get the Chunks to store
-	 * @return the Chunks to store
+	 * Get the DataStructures to store
+	 * @return the DataStructures to store
 	 */
-	public final Chunk[] getChunks() {
-		return m_chunks;
+	public final DataStructure[] getDataStructures() {
+		return m_dataStructures;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
+		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		
 		p_buffer.putInt(m_dataStructures.length);
-		for (DataStructure dataStructure : m_dataStructures)
-		{
+		for (DataStructure dataStructure : m_dataStructures) {
+			int size = dataStructure.sizeofObject();
+			
 			p_buffer.putLong(dataStructure.getID());
-			p_buffer.putInt(dataStructure.sizeofPayload());
-			dataStructure.writePayload(0, dataStructureWriter);
+			exporter.setPayloadSize(size);
+			p_buffer.putInt(size);
+			exporter.exportObject(dataStructure);
 		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		ByteBufferDataStructureReaderWriter dataStructureReader = new ByteBufferDataStructureReaderWriter(p_buffer);
+		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 		
-		m_chunks = new Chunk[p_buffer.getInt()];
+		m_dataStructures = new Chunk[p_buffer.getInt()];
 		
-		for (int i = 0; i < m_chunks.length; i++)
-		{
+		for (int i = 0; i < m_dataStructures.length; i++) {
 			long id = p_buffer.getLong();
 			int size = p_buffer.getInt();
 			
-			m_chunks[i] = new Chunk(id, size);
-			m_chunks[i].readPayload(0, size, dataStructureReader);
+			importer.setPayloadSize(size);
+			m_dataStructures[i] = new Chunk(id, size);
+			importer.importObject(m_dataStructures[i]);
 		}
 	}
 
@@ -95,8 +97,9 @@ public class MigrationRequest extends AbstractRequest {
 	protected final int getPayloadLengthForWrite() {
 		int length = 0;
 		length += Long.BYTES * m_dataStructures.length;
-		for (DataStructure dataStructure : m_dataStructures)
-			length += dataStructure.sizeofPayload();
+		for (DataStructure dataStructure : m_dataStructures) {
+			length += dataStructure.sizeofObject();
+		}
 		
 		return length;
 	}

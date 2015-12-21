@@ -33,7 +33,7 @@ public interface LogInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	Chunk[] recoverBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
+	Chunk[] recoverBackupRange(short p_owner, long p_chunkID, byte p_rangeID);
 
 	/**
 	 * Recovers all Chunks of given backup range
@@ -45,7 +45,7 @@ public interface LogInterface extends CoreComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be read
 	 */
-	Chunk[] recoverBackupRangeFromFile(String p_fileName, String p_path) throws DXRAMException;
+	Chunk[] recoverBackupRangeFromFile(String p_fileName, String p_path);
 
 	/**
 	 * Prints the metadata of one node's log
@@ -59,7 +59,7 @@ public interface LogInterface extends CoreComponent {
 	 *             if the Chunks could not be read
 	 * @note for testing only
 	 */
-	void printBackupRange(short p_owner, long p_chunkID, byte p_rangeID) throws DXRAMException;
+	void printBackupRange(short p_owner, long p_chunkID, byte p_rangeID);
 
 	/**
 	 * Returns the header size

@@ -5,7 +5,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
@@ -202,11 +201,11 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	protected boolean initComponent(Configuration p_configuration) {
 		m_lookup.initComponent(p_configuration);
 
-		m_maxCacheSize = p_configuration.getLongValue(DXRAMConfigurationConstants.LOOKUP_CACHE_TTL);
+		m_maxCacheSize = p_configuration.getLongValue(LookupConfigurationValues.LOOKUP_CACHE_TTL);
 		
 		if (!getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_chunkIDCacheTree = new CacheTree(m_maxCacheSize, ORDER);
-			m_applicationIDCache = new Cache<Integer, Long>(p_configuration.getIntValue(DXRAMConfigurationConstants.NAMESERVICE_CACHE_ENTRIES));
+			m_applicationIDCache = new Cache<Integer, Long>(p_configuration.getIntValue(LookupConfigurationValues.NAMESERVICE_CACHE_ENTRIES));
 			// m_aidCache.enableTTL();
 		}
 		
