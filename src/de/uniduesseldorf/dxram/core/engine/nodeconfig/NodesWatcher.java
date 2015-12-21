@@ -8,6 +8,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.data.Stat;
 
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.NodeEntry;
@@ -64,6 +65,34 @@ public final class NodesWatcher implements Watcher {
 		return m_nodesConfiguration;
 	}
 	
+	public void zookeeperCreate(final String p_path) {
+		try {
+			m_zookeeper.create(p_path);
+		} catch (ZooKeeperException | KeeperException | InterruptedException e) {
+			LOGGER.error("Creating path in zookeeper failed.", e);
+		}
+	}
+	
+	public Stat zookeeperGetStatus(final String p_path) {
+		Stat status = null;
+		
+		try {
+			status = m_zookeeper.getStatus(p_path);
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Getting status from zookeeper failed.", e);
+		}
+		
+		return status;
+	}
+	
+	public void zookeeperDelete(final String p_path, final int p_version) {
+		try {
+			m_zookeeper.delete(p_path, p_version);
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Deleting path from zookeeper failed.", e);
+		}
+	}
+	
 	public List<String> zookeeperGetChildren(final String p_path) {
 		List<String> children = null;
 		
@@ -87,6 +116,31 @@ public final class NodesWatcher implements Watcher {
 		}
 		
 		return data;
+	}
+	
+	public byte[] zookeeperGetData(final String p_path, Stat p_status)
+	{
+		byte[] data = null;
+		
+		try {
+			data = m_zookeeper.getData(p_path, p_status);
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Getting data from zookeeper failed.", e);
+		}
+		
+		return data;
+	}
+	
+	public boolean zookeeperPathExists(final String p_path) {
+		boolean ret = false;
+		
+		try {
+			ret = m_zookeeper.exists(p_path);
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Checking if path exists in zookeeper failed.", e);
+		}
+		
+		return ret;
 	}
 	
 	/** 

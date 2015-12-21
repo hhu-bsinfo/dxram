@@ -30,7 +30,7 @@ import de.uniduesseldorf.dxram.core.migrate.messages.MigrationRequest;
 import de.uniduesseldorf.dxram.core.migrate.messages.MigrationResponse;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-
+import de.uniduesseldorf.dxram.data.Chunk;
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.menet.NodeID;

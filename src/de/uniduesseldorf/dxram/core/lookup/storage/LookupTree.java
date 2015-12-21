@@ -1,22 +1,32 @@
 
 package de.uniduesseldorf.dxram.core.lookup.storage;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import de.uniduesseldorf.dxram.core.lookup.Locations;
-
 import de.uniduesseldorf.utils.Contract;
+import de.uniduesseldorf.utils.serialization.Exportable;
+import de.uniduesseldorf.utils.serialization.Exporter;
+import de.uniduesseldorf.utils.serialization.Importable;
+import de.uniduesseldorf.utils.serialization.Importer;
 
 /**
  * Btree to store ranges. Backup nodes are stored in an ArrayList<Long> to improve access times.
  * @author Kevin Beineke
  *         13.06.2013
  */
-public final class LookupTree implements Serializable {
+public final class LookupTree implements Serializable, Importable, Exportable {
 
-	// Constants
-	private static final long serialVersionUID = 7565597467331239020L;
+	private static final long serialVersionUID = -3992560499375457216L;
 
 	// Attributes
 	private short m_minEntries;
@@ -35,7 +45,7 @@ public final class LookupTree implements Serializable {
 
 	private Entry m_changedEntry;
 
-	// Constructors
+	// Constructors	
 	/**
 	 * Creates an instance of LookupTree
 	 * @param p_order
@@ -60,6 +70,159 @@ public final class LookupTree implements Serializable {
 
 		m_changedEntry = null;
 	}
+	
+
+	/**
+	 * Reads an CIDTree from ByteBuffer
+	 * @param p_buffer
+	 *            the ByteBuffer
+	 * @return the CIDTree
+	 */
+	// TODO stefan: delete this when done implementing importer/exporter interface
+	public static LookupTree readCIDTree(final ByteBuffer p_buffer) {
+		LookupTree ret = null;
+		byte[] data;
+
+		if (p_buffer.get() != 0) {
+			data = new byte[p_buffer.getInt()];
+			p_buffer.get(data);
+			ret = parseCIDTree(data);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Parses binary data into an CIDTree
+	 * @param p_data
+	 *            the binary data
+	 * @return the CIDTree
+	 */
+	// TODO stefan: delete this when done implementing importer/exporter interface
+	public static LookupTree parseCIDTree(final byte[] p_data) {
+		LookupTree ret = null;
+		ByteArrayInputStream byteArrayInputStream;
+		ObjectInput objectInput = null;
+
+		if (p_data != null && p_data.length > 0) {
+			byteArrayInputStream = new ByteArrayInputStream(p_data);
+			try {
+				objectInput = new ObjectInputStream(byteArrayInputStream);
+				ret = (LookupTree) objectInput.readObject();
+			} catch (final Exception e) {} finally {
+				try {
+					if (objectInput != null) {
+						objectInput.close();
+					}
+					byteArrayInputStream.close();
+				} catch (final IOException e) {}
+			}
+		}
+
+		return ret;
+	}
+	
+	/**
+	 * Writes an CIDTree
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_tree
+	 *            the CIDTree
+	 */
+	// TODO stefan: delete this when done implementing importer/exporter interface
+	public static void writeCIDTree(final ByteBuffer p_buffer, final LookupTree p_tree) {
+		byte[] data;
+
+		Contract.checkNotNull(p_buffer, "no buffer given");
+
+		if (p_tree == null) {
+			p_buffer.put((byte) 0);
+		} else {
+			data = parseCIDTree(p_tree);
+			p_buffer.put((byte) (data != null ? 1 : 0));
+			if (data != null) {
+				p_buffer.putInt(data.length);
+				p_buffer.put(data);
+			}
+		}
+	}
+
+	/**
+	 * Parses an CIDTree to a byte array
+	 * @param p_tree
+	 *            the CIDTree
+	 * @return the byte array
+	 */
+	// TODO stefan: delete this when done implementing importer/exporter interface
+	private static byte[] parseCIDTree(final LookupTree p_tree) {
+		byte[] ret = null;
+		ByteArrayOutputStream byteArrayOutputStream;
+		ObjectOutput objectOutput = null;
+
+		byteArrayOutputStream = new ByteArrayOutputStream();
+		try {
+			objectOutput = new ObjectOutputStream(byteArrayOutputStream);
+			objectOutput.writeObject(p_tree);
+			ret = byteArrayOutputStream.toByteArray();
+		} catch (final IOException e) {} finally {
+			try {
+				if (objectOutput != null) {
+					objectOutput.close();
+				}
+				byteArrayOutputStream.close();
+			} catch (final IOException e) {}
+		}
+
+		return ret;
+	}
+	
+	/**
+	 * Get the lenth of a CIDTree
+	 * @param p_tree
+	 *            the CIDTree
+	 * @return the lenght of the CIDTree
+	 */
+	// TODO stefan: delete this when done implementing importer/exporter interface
+	public static int getCIDTreeWriteLength(final LookupTree p_tree) {
+		int ret;
+		byte[] data;
+
+		if (p_tree == null) {
+			ret = Byte.BYTES;
+		} else {
+			data = parseCIDTree(p_tree);
+			ret = Byte.BYTES;
+			if (data != null) {
+				ret += Integer.BYTES + data.length;
+			}
+		}
+
+		return ret;
+	}
+	
+	@Override
+	public int importObject(Importer p_importer, int p_size) {
+		// TODO stefan: replace java serializable interface with importer/exporter interface
+		throw new RuntimeException("Not implemented.");
+	}
+	
+	@Override
+	public int exportObject(Exporter p_exporter, int p_size) {
+		// TODO stefan: replace java serializable interface with importer/exporter interface
+		throw new RuntimeException("Not implemented.");
+	}
+	
+	@Override
+	public int sizeofObject() {
+		// TODO stefan: replace java serializable interface with importer/exporter interface
+		throw new RuntimeException("Not implemented.");
+	}
+
+	@Override
+	public boolean hasDynamicObjectSize() {
+		return true;
+	}
+
 
 	// Getters
 	/**
@@ -1295,8 +1458,7 @@ public final class LookupTree implements Serializable {
 	 */
 	private final class Node implements Comparable<Node>, Serializable {
 
-		// Attributes
-		private static final long serialVersionUID = 8096853988906422021L;
+		private static final long serialVersionUID = 7768073624509268941L;
 
 		private Node m_parent;
 
@@ -1784,9 +1946,8 @@ public final class LookupTree implements Serializable {
 	 */
 	private final class Entry implements Serializable {
 
-		// Constants
-		private static final long serialVersionUID = -7000053901808777917L;
-
+		private static final long serialVersionUID = -3247514337685593792L;
+		
 		// Attributes
 		private long m_localID;
 		private short m_nodeID;

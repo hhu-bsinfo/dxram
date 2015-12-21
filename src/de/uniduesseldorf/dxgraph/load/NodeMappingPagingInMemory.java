@@ -3,8 +3,7 @@ package de.uniduesseldorf.dxgraph.load;
 import java.util.Iterator;
 
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.core.mem.storage.PagingTable;
-
+import de.uniduesseldorf.dxram.core.mem.PagingTable;
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
 import de.uniduesseldorf.utils.Pair;

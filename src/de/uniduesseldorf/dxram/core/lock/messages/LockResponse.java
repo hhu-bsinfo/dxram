@@ -2,9 +2,8 @@ package de.uniduesseldorf.dxram.core.lock.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.mem.ByteBufferDataStructureReaderWriter;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-
+import de.uniduesseldorf.dxram.core.data.ByteBufferDataStructureReaderWriter;
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.menet.AbstractResponse;
 
 /**

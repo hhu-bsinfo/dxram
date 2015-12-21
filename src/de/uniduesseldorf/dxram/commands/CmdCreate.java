@@ -3,9 +3,9 @@ package de.uniduesseldorf.dxram.commands;
 
 import java.nio.ByteBuffer;
 
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
 
 /**
  * Create a new chunk

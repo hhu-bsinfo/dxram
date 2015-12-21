@@ -2,12 +2,15 @@ package de.uniduesseldorf.dxram.core.lock;
 
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.chunk.ChunkService;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
+import de.uniduesseldorf.dxram.core.chunk.ChunkService;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
+import de.uniduesseldorf.dxram.core.data.Chunk;
+import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
+import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
@@ -15,12 +18,9 @@ import de.uniduesseldorf.dxram.core.lock.messages.LockMessages;
 import de.uniduesseldorf.dxram.core.lock.messages.LockRequest;
 import de.uniduesseldorf.dxram.core.lock.messages.LockResponse;
 import de.uniduesseldorf.dxram.core.lock.messages.UnlockMessage;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
-import de.uniduesseldorf.dxram.core.mem.storage.MemoryManagerComponent;
+import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
-
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.utils.Contract;
@@ -53,7 +53,8 @@ public class LockService extends DXRAMService {
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
 		
-		// TODO get values from configuration
+		// TODO have statistic 
+		m_statisticsEnabled = p_configuration.getBooleanValue(DXRAMConfigurationConstants.STATISTIC_CHUNK);
 		
 		return true;
 	}
@@ -85,7 +86,7 @@ public class LockService extends DXRAMService {
 			LOGGER.error("a superpeer must not use/lock chunks");
 		} else {
 			m_memoryManager.lockAccess();
-			if (m_memoryManager.isResponsible(p_dataStructure.getID())) {
+			if (m_memoryManager.exists(p_dataStructure.getID())) {
 				int size;
 				int bytesRead;
 
@@ -143,7 +144,7 @@ public class LockService extends DXRAMService {
 	}
 
 	@Override
-	public void unlock(final long p_chunkID) throws DXRAMException {
+	public void unlock(final long p_chunkID) {
 		short primaryPeer;
 		UnlockMessage request;
 
@@ -154,7 +155,7 @@ public class LockService extends DXRAMService {
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			if (m_memoryManager.isResponsible(p_chunkID)) {
+			if (m_memoryManager.exists(p_chunkID)) {
 				// Local release
 				m_lock.unlock(p_chunkID, m_nodeID);
 			} else {

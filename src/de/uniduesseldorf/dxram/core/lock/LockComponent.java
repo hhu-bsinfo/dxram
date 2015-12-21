@@ -19,7 +19,7 @@ public abstract class LockComponent extends DXRAMComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be locked
 	 */
-	public abstract void lock(DefaultLock p_lock) throws DXRAMException;
+	public abstract void lock(DefaultLock p_lock);
 
 	/**
 	 * Unlocks a Chunk
@@ -30,7 +30,7 @@ public abstract class LockComponent extends DXRAMComponent {
 	 * @throws DXRAMException
 	 *             if the Chunk could not be unlocked
 	 */
-	public abstract void unlock(long p_chunkID, short p_nodeID) throws DXRAMException;
+	public abstract void unlock(long p_chunkID, short p_nodeID);
 
 	/**
 	 * Unlocks a Chunk (all locks)
@@ -39,7 +39,7 @@ public abstract class LockComponent extends DXRAMComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be unlocked
 	 */
-	public abstract void unlockAll(long p_chunkID) throws DXRAMException;
+	public abstract void unlockAll(long p_chunkID);
 
 	/**
 	 * Unlocks all Chunks (locked by a node)
@@ -48,12 +48,12 @@ public abstract class LockComponent extends DXRAMComponent {
 	 * @throws DXRAMException
 	 *             if the Chunks could not be unlocked
 	 */
-	public abstract void unlockAll(short p_nodeID) throws DXRAMException;
+	public abstract void unlockAll(short p_nodeID);
 
 	/**
 	 * Unlocks all Chunks
 	 * @throws DXRAMException
 	 *             if the Chunks could not be unlocked
 	 */
-	public abstract void unlockAll() throws DXRAMException;
+	public abstract void unlockAll();
 }

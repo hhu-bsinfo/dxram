@@ -2,9 +2,8 @@ package de.uniduesseldorf.dxram.core.chunk.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.mem.ByteBufferDataStructureReaderWriter;
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
-
+import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.data.MessagesDataStructureImExporter;
 import de.uniduesseldorf.menet.AbstractResponse;
 
 /**
@@ -61,12 +60,14 @@ public class GetResponse extends AbstractResponse {
 		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
 		
 		// read the data to be sent to the remote from the chunk set for this message
-		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
+		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		for (DataStructure dataStructure : m_dataStructures) {
+			int size = dataStructure.sizeofObject();
 			// we keep the order of the chunks, so we don't have to send the ID again
 			//p_buffer.putLong(dataStructure.getID());
-			p_buffer.putInt(dataStructure.sizeofPayload());
-			dataStructure.writePayload(0, dataStructureWriter);	
+			exporter.setPayloadSize(size);
+			p_buffer.putInt(size);
+			exporter.exportObject(dataStructure);
 		}
 	}
 
@@ -76,10 +77,11 @@ public class GetResponse extends AbstractResponse {
 		
 		// read the payload from the buffer and write it directly into
 		// the data structure provided by the request to avoid further copying of data
-		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
+		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 		GetRequest request = (GetRequest) getCorrespondingRequest();
 		for (DataStructure dataStructure : request.getDataStructures()) {
-			dataStructure.readPayload(0, p_buffer.getInt(), dataStructureWriter);
+			importer.setPayloadSize(p_buffer.getInt());
+			importer.importObject(dataStructure);
 		}
 	}
 
@@ -90,7 +92,7 @@ public class GetResponse extends AbstractResponse {
 		size += m_dataStructures.length * Integer.BYTES;
 		
 		for (DataStructure dataStructure : m_dataStructures) {
-			size += dataStructure.sizeofPayload();
+			size += dataStructure.sizeofObject();
 		}
 		
 		return size;

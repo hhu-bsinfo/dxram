@@ -2,8 +2,7 @@ package de.uniduesseldorf.dxram.core.chunk.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
-
+import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.menet.AbstractRequest;
 
 /**

@@ -4,7 +4,7 @@ import com.sun.corba.se.impl.ior.GenericTaggedComponent;
 
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
+import de.uniduesseldorf.dxram.data.Chunk;
 
 public class LogComponent extends DXRAMComponent implements LogInterface
 {

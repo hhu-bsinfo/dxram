@@ -4,9 +4,7 @@ package de.uniduesseldorf.dxram.test;
 import java.nio.ByteBuffer;
 
 import sun.misc.Unsafe;
-
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.utils.unsafe.UnsafeHandler;
 
 /**

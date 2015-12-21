@@ -2,11 +2,10 @@ package de.uniduesseldorf.dxgraph.load;
 
 import java.util.Vector;
 
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-
 import de.uniduesseldorf.dxcompute.ComputeJob;
 import de.uniduesseldorf.dxcompute.logger.LOG_LEVEL;
 import de.uniduesseldorf.dxgraph.data.SimpleVertex;
+import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.utils.Pair;
 
 public class JobLoadEdges extends ComputeJob

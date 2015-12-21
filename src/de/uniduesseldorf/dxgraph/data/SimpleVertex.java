@@ -2,9 +2,9 @@ package de.uniduesseldorf.dxgraph.data;
 
 import java.util.Vector;
 
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
-import de.uniduesseldorf.dxram.core.mem.DataStructureReader;
-import de.uniduesseldorf.dxram.core.mem.DataStructureWriter;
+import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.data.DataStructureReader;
+import de.uniduesseldorf.dxram.core.data.DataStructureWriter;
 
 public class SimpleVertex implements DataStructure
 {

@@ -1,16 +1,29 @@
 package de.uniduesseldorf.dxram.core.backup;
 
+import de.uniduesseldorf.utils.serialization.Exportable;
+import de.uniduesseldorf.utils.serialization.Exporter;
+import de.uniduesseldorf.utils.serialization.Importable;
+import de.uniduesseldorf.utils.serialization.Importer;
+
 /**
  * Stores a backup range
  * @author Kevin Beineke 10.06.2015
  */
-public final class BackupRange {
+public final class BackupRange implements Importable, Exportable {
 
 	// Attributes
 	private long m_firstChunkIDORRangeID;
 	private short[] m_backupPeers;
 
 	// Constructors
+	/**
+	 * Default constructor
+	 */
+	public BackupRange() {
+		m_firstChunkIDORRangeID = -1;
+		m_backupPeers = null;
+	}
+	
 	/**
 	 * Creates an instance of Locations
 	 * @param p_firstChunkIDORRangeID
@@ -98,5 +111,54 @@ public final class BackupRange {
 		}
 
 		return ret;
+	}
+	
+	@Override
+	public int importObject(Importer p_importer, int p_size) {
+		int ret = 0;
+		
+		if (p_size < sizeofObject()) {
+			ret = -1;
+		} else {
+			long backupPeers = -1;
+			
+			m_firstChunkIDORRangeID = p_importer.readLong();
+			backupPeers = p_importer.readLong();
+			m_backupPeers = new short[] {(short) (backupPeers & 0x000000000000FFFFL),
+					(short) ((backupPeers & 0x00000000FFFF0000L) >> 16), (short) ((backupPeers & 0x0000FFFF00000000L) >> 32)};
+		}
+		
+		return ret;
+	}
+	
+
+	@Override
+	public int exportObject(Exporter p_exporter, int p_size) {
+		int ret = 0;
+		
+		if (p_size < sizeofObject()) {
+			ret = -1;
+		} else {
+			p_exporter.writeLong(getRangeID());
+			p_exporter.writeLong(getBackupPeersAsLong());
+			
+			ret = Long.BYTES * 2;
+		}
+		
+		return ret;
+	}
+
+	@Override
+	public int sizeofObject() {
+		return sizeofObjectStatic();
+	}
+	
+	public static int sizeofObjectStatic() {
+		return Long.BYTES + 3 * Short.BYTES;
+	}
+
+	@Override
+	public boolean hasDynamicObjectSize() {
+		return false;
 	}
 }

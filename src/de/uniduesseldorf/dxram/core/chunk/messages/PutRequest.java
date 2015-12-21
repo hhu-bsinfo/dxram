@@ -2,10 +2,9 @@ package de.uniduesseldorf.dxram.core.chunk.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.mem.ByteBufferDataStructureReaderWriter;
-import de.uniduesseldorf.dxram.core.mem.Chunk;
-import de.uniduesseldorf.dxram.core.mem.DataStructure;
-
+import de.uniduesseldorf.dxram.core.data.Chunk;
+import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.data.MessagesDataStructureImExporter;
 import de.uniduesseldorf.menet.AbstractRequest;
 
 /**
@@ -81,17 +80,20 @@ public class PutRequest extends AbstractRequest {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
 		
-		ByteBufferDataStructureReaderWriter dataStructureWriter = new ByteBufferDataStructureReaderWriter(p_buffer);
+		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		for (DataStructure dataStructure : m_dataStructures) {
+			int size = dataStructure.sizeofObject();
+			
 			p_buffer.putLong(dataStructure.getID());
-			p_buffer.putInt(dataStructure.sizeofPayload());
-			dataStructure.writePayload(0, dataStructureWriter);
+			exporter.setPayloadSize(size);
+			p_buffer.putInt(size);
+			exporter.exportObject(dataStructure);
 		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		ByteBufferDataStructureReaderWriter dataStructureReader = new ByteBufferDataStructureReaderWriter(p_buffer);
+		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 		int numChunks = ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode());
 		
 		m_dataStructures = new Chunk[numChunks];
@@ -100,8 +102,9 @@ public class PutRequest extends AbstractRequest {
 			long id = p_buffer.getLong();
 			int size = p_buffer.getInt();
 			
+			importer.setPayloadSize(size);
 			m_dataStructures[i] = new Chunk(id, size);
-			m_dataStructures[i].readPayload(0, size, dataStructureReader);
+			importer.importObject(m_dataStructures[i]);
 		}
 	}
 
@@ -113,7 +116,7 @@ public class PutRequest extends AbstractRequest {
 		size += m_dataStructures.length * Integer.BYTES;
 		
 		for (DataStructure dataStructure : m_dataStructures) {
-			size += dataStructure.sizeofPayload();
+			size += dataStructure.sizeofObject();
 		}
 		
 		return size;
