@@ -68,9 +68,6 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	private BackupComponent m_backup = null;
 	
 	private boolean m_statisticsEnabled = false;
-	private boolean m_logActive = false;
-	private long m_secondaryLogSize = 0;
-	private int m_replicationFactor = 0;
 	
 	private IncomingChunkListener m_listener;
 	
@@ -92,9 +89,6 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		m_backup = getComponent(BackupComponent.COMPONENT_IDENTIFIER);
 		
 		m_statisticsEnabled = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_CHUNK);
-		m_logActive = p_configuration.getBooleanValue(LogConfigurationValues.LOG_ACTIVE);
-		m_secondaryLogSize = p_configuration.getLongValue(LogConfigurationValues.SECONDARY_LOG_SIZE);
-		m_replicationFactor = p_configuration.getIntValue(LogConfigurationValues.REPLICATION_FACTOR);
 
 		registerNetworkMessages();
 
@@ -140,10 +134,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				chunkIDs[i] = m_memoryManager.create(p_sizes[i]);		
 			}
 			m_memoryManager.unlockManage();
-			
-			for (int i = 0; i < p_sizes.length; i++) {
-				m_backup.initBackupRange(ChunkID.getLocalID(chunkIDs[i]), p_sizes[i]);
-			}
+
+			// TODO backup
+//			for (int i = 0; i < p_sizes.length; i++) {
+//				m_backup.initBackupRange(ChunkID.getLocalID(chunkIDs[i]), p_sizes[i]);
+//			}
 			
 			// TODO inform logging about creation?
 		}
@@ -207,6 +202,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 					totalChunksGot++;
 			}
 			m_memoryManager.unlockAccess();
+			
+			// TODO p_aquireLock for local chunks
 
 			// go for remote ones by each peer
 			for (final Entry<Short, Vector<DataStructure>> peerWithChunks : remoteChunksByPeers.entrySet()) {
@@ -214,29 +211,25 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				Vector<DataStructure> remoteChunks = peerWithChunks.getValue();
 
 				if (peer == getSystemData().getNodeID()) {
-					// local get, migrated
+					// local get, migrated data to current node
 					m_memoryManager.lockAccess();
 					for (final DataStructure chunk : remoteChunks) {
 						if (m_memoryManager.get(chunk))
 							totalChunksGot++;
 					}
 					m_memoryManager.unlockAccess();
-				} else {
-					// gather chunk ids for message
-					long[] ids = new long[remoteChunks.size()];
-					for (int i = 0; i < ids.length; i++) {
-						ids[i] = remoteChunks.get(i).getID();
-					}
-					
-					// Remote get
+				} else {					
+					// Remote get from specified peer
 					request = new GetRequest(peer, p_aquireLock, (DataStructure[]) remoteChunks.toArray());
 					try {
 						request.sendSync(m_network);
 					} catch (final NetworkException e) {
-						m_lookup.invalidate(ids);
-						if (m_logActive) {
-							// TODO: Start Recovery
-						}
+						// sending failed, could not reach peer
+						// TODO
+//						m_lookup.invalidate(ids);
+//						if (m_logActive) {
+//							// TODO: Start Recovery
+//						}
 						continue;
 					}
 					response = request.getResponse(GetResponse.class);
@@ -282,18 +275,19 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				if (m_memoryManager.exists(dataStructure.getID())) {
 					localChunks.add(dataStructure);
 
-					if (m_logActive) {
-						// Send backups for logging (unreliable)
-						long backupPeersAsLong = m_backup.getBackupPeersForLocalChunksAsLong(dataStructure.getID());
-						if (backupPeersAsLong != -1) {
-							ArrayList<DataStructure> list = backupMap.get(backupPeersAsLong);
-							if (list == null) {
-								list = new ArrayList<DataStructure>();
-								backupMap.put(backupPeersAsLong, list);
-							}
-							list.add(dataStructure);
-						}
-					}
+					// TODO log/backup
+//					if (m_logActive) {
+//						// Send backups for logging (unreliable)
+//						long backupPeersAsLong = m_backup.getBackupPeersForLocalChunksAsLong(dataStructure.getID());
+//						if (backupPeersAsLong != -1) {
+//							ArrayList<DataStructure> list = backupMap.get(backupPeersAsLong);
+//							if (list == null) {
+//								list = new ArrayList<DataStructure>();
+//								backupMap.put(backupPeersAsLong, list);
+//							}
+//							list.add(dataStructure);
+//						}
+//					}
 				} else {
 					// remote, figure out location and sort by peers
 					locations = m_lookup.get(dataStructure.getID());
@@ -365,40 +359,40 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 					}
 				}
 				
-				if (m_logActive) {
-					// Send backups for logging (unreliable)
-					if (backupPeersAsLong != -1) {
-						ArrayList<DataStructure>  list = backupMap.get(backupPeersAsLong);
-						if (list == null) {
-							list = new ArrayList<DataStructure>();
-							backupMap.put(backupPeersAsLong, list);
-						}
-						list.add(dataStructure);
-					}
-				}
+//				if (m_logActive) {
+//					// Send backups for logging (unreliable)
+//					if (backupPeersAsLong != -1) {
+//						ArrayList<DataStructure>  list = backupMap.get(backupPeersAsLong);
+//						if (list == null) {
+//							list = new ArrayList<DataStructure>();
+//							backupMap.put(backupPeersAsLong, list);
+//						}
+//						list.add(dataStructure);
+//					}
+//				}
 			}
 			
-			if (m_logActive) {
-				short[] backupPeers;
-				Chunk[] chunks;
-				for (Map.Entry<Long, ArrayList<DataStructure>> entry : backupMap.entrySet()) {
-					long backupPeersAsLong = entry.getKey();
-					chunks = entry.getValue().toArray(new Chunk[entry.getValue().size()]);
-
-					backupPeers = new short[] {(short) (backupPeersAsLong & 0x000000000000FFFFL),
-							(short) ((backupPeersAsLong & 0x00000000FFFF0000L) >> 16), (short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
-					for (int i = 0; i < backupPeers.length; i++) {
-						if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
-							LOGGER.debug("Logging " + chunks.length + " Chunks to " + backupPeers[i]);
-							try {
-								new LogMessage(backupPeers[i], chunks).send(m_network);
-							} catch (NetworkException e) {
-								LOGGER.error("Sending log message for put failed.", e);
-							}
-						}
-					}
-				}
-			}
+//			if (m_logActive) {
+//				short[] backupPeers;
+//				Chunk[] chunks;
+//				for (Map.Entry<Long, ArrayList<DataStructure>> entry : backupMap.entrySet()) {
+//					long backupPeersAsLong = entry.getKey();
+//					chunks = entry.getValue().toArray(new Chunk[entry.getValue().size()]);
+//
+//					backupPeers = new short[] {(short) (backupPeersAsLong & 0x000000000000FFFFL),
+//							(short) ((backupPeersAsLong & 0x00000000FFFF0000L) >> 16), (short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
+//					for (int i = 0; i < backupPeers.length; i++) {
+//						if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
+//							LOGGER.debug("Logging " + chunks.length + " Chunks to " + backupPeers[i]);
+//							try {
+//								new LogMessage(backupPeers[i], chunks).send(m_network);
+//							} catch (NetworkException e) {
+//								LOGGER.error("Sending log message for put failed.", e);
+//							}
+//						}
+//					}
+//				}
+//			}
 		}
 
 		if (m_statisticsEnabled)
@@ -424,17 +418,17 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 					m_memoryManager.remove(p_dataStructure.getID());
 					m_memoryManager.unlockManage();
 
-					if (m_logActive) {
-						// Send backups for logging (unreliable)
-						short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
-						if (backupPeers != null) {
-							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], new long[] {p_dataStructure.getID()}).send(m_network);
-								}
-							}
-						}
-					}
+//					if (m_logActive) {
+//						// Send backups for logging (unreliable)
+//						short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
+//						if (backupPeers != null) {
+//							for (int i = 0; i < backupPeers.length; i++) {
+//								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
+//									new RemoveMessage(backupPeers[i], new long[] {p_dataStructure.getID()}).send(m_network);
+//								}
+//							}
+//						}
+//					}
 					chunksRemoved++;
 				} else {
 					// Local remove
@@ -453,17 +447,17 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 						LOGGER.error("Cannot inform creator about removal! Is not available!");
 					}
 
-					if (m_logActive) {
-						// Send backups for logging (unreliable)
-						short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
-						if (backupPeers != null) {
-							for (int i = 0; i < backupPeers.length; i++) {
-								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
-									new RemoveMessage(backupPeers[i], new long[] {p_dataStructure.getID()}, rangeID).send(m_network);
-								}
-							}
-						}
-					}
+//					if (m_logActive) {
+//						// Send backups for logging (unreliable)
+//						short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
+//						if (backupPeers != null) {
+//							for (int i = 0; i < backupPeers.length; i++) {
+//								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
+//									new RemoveMessage(backupPeers[i], new long[] {p_dataStructure.getID()}, rangeID).send(m_network);
+//								}
+//							}
+//						}
+//					}
 					chunksRemoved++;
 				}
 			} else {
@@ -691,20 +685,20 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				}
 			}
 			
-			if (m_logActive) {
-				// Send backups for logging (unreliable)
-				if (backupPeers != null) {
-					for (int j = 0; j < backupPeers.length; j++) {
-						if (backupPeers[j] != getSystemData().getNodeID() && backupPeers[j] != -1) {
-							try {
-								new RemoveMessage(backupPeers[i], new long[] {chunkIDs[i]}, rangeID).send(m_network);
-							} catch (NetworkException e) {
-								LOGGER.error("Sending logging remove message failed.", e);
-							}
-						}
-					}
-				}
-			}
+//			if (m_logActive) {
+//				// Send backups for logging (unreliable)
+//				if (backupPeers != null) {
+//					for (int j = 0; j < backupPeers.length; j++) {
+//						if (backupPeers[j] != getSystemData().getNodeID() && backupPeers[j] != -1) {
+//							try {
+//								new RemoveMessage(backupPeers[i], new long[] {chunkIDs[i]}, rangeID).send(m_network);
+//							} catch (NetworkException e) {
+//								LOGGER.error("Sending logging remove message failed.", e);
+//							}
+//						}
+//					}
+//				}
+//			}
 		}
 
 		// finally, send back response with status codes
