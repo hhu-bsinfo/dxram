@@ -37,8 +37,8 @@ public class SendBackupsMessage extends AbstractMessage {
 	 * @param p_trees
 	 *            the CIDTrees
 	 */
-	public SendBackupsMessage(final short p_source, final short p_destination, final byte[] p_mappings, final ArrayList<LookupTree> p_trees) {
-		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE);
+	public SendBackupsMessage(final short p_destination, final byte[] p_mappings, final ArrayList<LookupTree> p_trees) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE);
 
 		m_mappings = p_mappings;
 		m_trees = p_trees;

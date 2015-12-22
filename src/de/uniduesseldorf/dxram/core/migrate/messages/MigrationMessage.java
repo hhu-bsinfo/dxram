@@ -34,8 +34,8 @@ public class MigrationMessage extends AbstractMessage {
 	 * @param p_versions
 	 *            the versions of the Chunks
 	 */
-	public MigrationMessage(final short p_source, final short p_destination, final DataStructure[] p_dataStructures) {
-		super(p_source, p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_MESSAGE);
+	public MigrationMessage(final short p_destination, final DataStructure[] p_dataStructures) {
+		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_MESSAGE);
 
 		m_dataStructures = p_dataStructures;
 	}

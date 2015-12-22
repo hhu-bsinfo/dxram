@@ -31,8 +31,8 @@ public class UpdateAllMessage extends AbstractMessage {
 	 * @param p_owner
 	 *            the failed peer
 	 */
-	public UpdateAllMessage(final short p_source, final short p_destination, final short p_owner) {
-		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_UPDATE_ALL_MESSAGE);
+	public UpdateAllMessage(final short p_destination, final short p_owner) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_UPDATE_ALL_MESSAGE);
 
 		m_owner = p_owner;
 	}

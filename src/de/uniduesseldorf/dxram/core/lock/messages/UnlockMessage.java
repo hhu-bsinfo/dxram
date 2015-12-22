@@ -30,8 +30,8 @@ public class UnlockMessage extends AbstractMessage {
 	 * @param p_chunkID
 	 *            The ID of the Chunk to unlock
 	 */
-	public UnlockMessage(final short p_source, final short p_destination, final long p_chunkID) {
-		super(p_source, p_destination, LockMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE);
+	public UnlockMessage(final short p_destination, final long p_chunkID) {
+		super(p_destination, LockMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE);
 
 		ChunkID.check(p_chunkID);
 

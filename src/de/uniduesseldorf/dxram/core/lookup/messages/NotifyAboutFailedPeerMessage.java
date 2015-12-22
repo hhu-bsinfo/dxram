@@ -32,8 +32,8 @@ public class NotifyAboutFailedPeerMessage extends AbstractMessage {
 	 * @param p_failedPeer
 	 *            the failed peer
 	 */
-	public NotifyAboutFailedPeerMessage(final short p_source, final short p_destination, final short p_failedPeer) {
-		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE);
+	public NotifyAboutFailedPeerMessage(final short p_destination, final short p_failedPeer) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE);
 
 		Contract.checkNotNull(p_failedPeer, "no failed peer given");
 

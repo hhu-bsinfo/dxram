@@ -216,7 +216,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			responsibleSuperpeer = getResponsibleSuperpeer(p_owner, check);
 
 			try {
-				new UpdateAllMessage(getSystemData().getNodeID(), responsibleSuperpeer, p_owner).send(m_network);
+				new UpdateAllMessage(responsibleSuperpeer, p_owner).send(m_network);
 			} catch (final NetworkException e) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
@@ -340,7 +340,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		responsibleSuperpeer = getResponsibleSuperpeer(ChunkID.getCreatorID(p_chunkID), NO_CHECK);
 		try {
-			new MigrateMessage(getSystemData().getNodeID(), responsibleSuperpeer, p_chunkID, p_nodeID, NO_BACKUP).send(m_network);
+			new MigrateMessage(responsibleSuperpeer, p_chunkID, p_nodeID, NO_BACKUP).send(m_network);
 		} catch (final NetworkException e) {
 			// Ignore superpeer failure, System will fix this
 		}
@@ -359,7 +359,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length - 1; i++) {
 						try {
-							new MigrateMessage(getSystemData().getNodeID(), backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
+							new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
 						} catch (final NetworkException e) {
 							// Ignore superpeer failure, System will fix this
 							continue;
@@ -369,7 +369,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
 						try {
-							new MigrateMessage(getSystemData().getNodeID(), backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
+							new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
 						} catch (final NetworkException e) {
 							// Ignore superpeer failure, System will fix this
 							continue;
@@ -403,7 +403,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				// Send backups
 				for (int i = 0; i < backupSuperpeers.length; i++) {
 					try {
-						new MigrateMessage(getSystemData().getNodeID(), backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
+						new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
 					} catch (final NetworkException e) {
 						// Ignore superpeer failure, will fix this later
 						continue;
@@ -653,7 +653,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			// Deactivate connection manager temporarily to accelerate creator checking
 			m_network.deactivateConnectionManager();
 			try {
-				new SendSuperpeersMessage(getSystemData().getNodeID(), p_creator, m_superpeers).send(m_network);
+				new SendSuperpeersMessage(p_creator, m_superpeers).send(m_network);
 				ret = true;
 			} catch (final NetworkException e) {
 				// Peer is not available anymore
@@ -676,7 +676,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				while (i < m_superpeers.size()) {
 					superpeer = m_superpeers.get(i++);
 					try {
-						new PingSuperpeerMessage(getSystemData().getNodeID(), superpeer).send(m_network);
+						new PingSuperpeerMessage(superpeer).send(m_network);
 					} catch (final NetworkException e) {
 						continue;
 					}
@@ -1389,7 +1389,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					m_overlayLock.unlock();
 
 					try {
-						new NotifyAboutNewSuccessorMessage(getSystemData().getNodeID(), joiningNodesPredecessor, m_predecessor).send(m_network);
+						new NotifyAboutNewSuccessorMessage(joiningNodesPredecessor, m_predecessor).send(m_network);
 					} catch (final NetworkException e) {
 						// Old predecessor is not available anymore, ignore it
 					}
@@ -2293,7 +2293,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 							m_overlayLock.unlock();
 							System.out.println("* Delegating to " + otherSuperpeer + ", hopcount: " + hops);
 							try {
-								new DelegatePromotePeerMessage(getSystemData().getNodeID(), otherSuperpeer, ++hops).send(m_network);
+								new DelegatePromotePeerMessage(otherSuperpeer, ++hops).send(m_network);
 							} catch (final NetworkException e) {
 								// Other superpeer is not available, remove it and try another
 								m_overlayLock.unlock();
@@ -2506,7 +2506,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		if (m_bootstrap != m_me) {
 			try {
-				new PingSuperpeerMessage(getSystemData().getNodeID(), m_bootstrap).send(m_network);
+				new PingSuperpeerMessage(m_bootstrap).send(m_network);
 			} catch (final NetworkException e) {
 				// New bootstrap is not available, start failure handling to
 				// remove bootstrap from superpeer array and to determine a new bootstrap
@@ -2615,7 +2615,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 						m_overlayLock.unlock();
 						System.out.println("** Do not have enough peers, delegating to " + otherSuperpeer);
 						try {
-							new DelegatePromotePeerMessage(getSystemData().getNodeID(), otherSuperpeer, (short) 1).send(m_network);
+							new DelegatePromotePeerMessage(otherSuperpeer, (short) 1).send(m_network);
 						} catch (final NetworkException e) {
 							// Other superpeer is not available, try another
 							continue;
@@ -2809,7 +2809,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					m_overlayLock.unlock();
 
 					try {
-						new NotifyAboutNewSuccessorMessage(getSystemData().getNodeID(), superpeersPredecessor, m_predecessor).send(m_network);
+						new NotifyAboutNewSuccessorMessage(superpeersPredecessor, m_predecessor).send(m_network);
 					} catch (final NetworkException e) {
 						// Old predecessor is not available anymore, ignore it
 					}
@@ -2875,7 +2875,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		while (!isOnlySuperpeer()) {
 			try {
 				System.out.print("** Spreading failed superpeers meta-data to " + m_successor);
-				new SendBackupsMessage(getSystemData().getNodeID(), m_successor, allMappings, trees).send(m_network);
+				new SendBackupsMessage(m_successor, allMappings, trees).send(m_network);
 			} catch (final NetworkException e) {
 				// Successor is not available anymore, remove from superpeer array and try next superpeer
 				LOGGER.error("successor failed, too");
@@ -2957,7 +2957,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			System.out.print(" to " + newBackupSuperpeer);
 
 			try {
-				new SendBackupsMessage(getSystemData().getNodeID(), newBackupSuperpeer, allMappings, trees).send(m_network);
+				new SendBackupsMessage(newBackupSuperpeer, allMappings, trees).send(m_network);
 			} catch (final NetworkException e) {
 				// Superpeer is not available anymore, remove from superpeer array and try next superpeer
 				LOGGER.error("new backup superpeer failed, too");
@@ -3098,7 +3098,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 						// Inform superpeer about failed peer to initialize deletion
 						System.out.println("** Informing " + superpeer + " to remove " + p_failedNode + " from meta-data");
 						try {
-							new NotifyAboutFailedPeerMessage(getSystemData().getNodeID(), superpeer, p_failedNode).send(m_network);
+							new NotifyAboutFailedPeerMessage(superpeer, p_failedNode).send(m_network);
 						} catch (final NetworkException e) {
 							// Superpeer is not available anymore, remove from superpeer array and continue
 							LOGGER.error("superpeer failed, too");
@@ -3324,7 +3324,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		private void performStabilization() {
 			while (-1 != m_predecessor) {
 				try {
-					new NotifyAboutNewSuccessorMessage(getSystemData().getNodeID(), m_predecessor, m_me).send(m_network);
+					new NotifyAboutNewSuccessorMessage(m_predecessor, m_me).send(m_network);
 				} catch (final NetworkException e) {
 					// Predecessor is not available anymore, determine new predecessor and repeat it
 					failureHandling(m_predecessor);
@@ -3335,7 +3335,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 			while (-1 != m_successor) {
 				try {
-					new NotifyAboutNewPredecessorMessage(getSystemData().getNodeID(), m_successor, m_me).send(m_network);
+					new NotifyAboutNewPredecessorMessage(m_successor, m_me).send(m_network);
 				} catch (final NetworkException e) {
 					// Predecessor is not available anymore, determine new predecessor and repeat it
 					failureHandling(m_successor);
@@ -3428,7 +3428,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 						break;
 					}
 					try {
-						new SendSuperpeersMessage(getSystemData().getNodeID(), peer, m_superpeers).send(m_network);
+						new SendSuperpeersMessage(peer, m_superpeers).send(m_network);
 					} catch (final NetworkException e) {
 						// Peer is not available anymore, remove it from peer array
 						failureHandling(peer);

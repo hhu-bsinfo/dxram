@@ -41,7 +41,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	private NodeMap m_nodeMap;
 
-	private short m_nodeID;
 	private int m_listenPort;
 
 	// Constructors
@@ -59,8 +58,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		m_maxOutstandingBytes = p_maxOutstandingBytes;
 		
 		m_nodeMap = p_nodeMap;
-
-		m_nodeID = NodeID.INVALID_ID;
 	}
 
 	// Methods
@@ -69,7 +66,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 */
 	@Override
 	public void initialize(final short p_nodeID, final int p_listenPort) {
-		m_nodeID = p_nodeID;
 		m_listenPort = p_listenPort;
 
 		m_worker = new Worker();
@@ -273,7 +269,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		@Override
 		protected void doWrite(final AbstractMessage p_message) {
 			ByteBuffer buffer;
-
+			
+			// set the source before writing
+			p_message.setSource(m_nodeMap.getOwnNodeID());
 			buffer = p_message.getBuffer();
 			m_flowControlCondLock.lock();
 			while (m_unconfirmedBytes > m_maxOutstandingBytes) {
@@ -382,7 +380,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			}
 
 			temp = ByteBuffer.allocate(2);
-			temp.putShort(m_nodeID);
+			temp.putShort(m_nodeMap.getOwnNodeID());
 			temp.flip();
 
 			writeToChannel(temp);

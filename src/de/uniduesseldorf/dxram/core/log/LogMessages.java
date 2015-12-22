@@ -63,8 +63,8 @@ public final class LogMessages {
 		 * @param p_chunks
 		 *            the Chunks to store
 		 */
-		public LogMessage(final short p_source, final short p_destination, final Chunk[] p_chunks) {
-			super(p_source, p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
+		public LogMessage(final short p_destination, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
@@ -81,8 +81,8 @@ public final class LogMessages {
 		 * @param p_rangeID
 		 *            the RangeID
 		 */
-		public LogMessage(final short p_source, final short p_destination, final byte p_rangeID, final Chunk[] p_chunks) {
-			super(p_source, p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
+		public LogMessage(final short p_destination, final byte p_rangeID, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_LOG_MESSAGE);
 
 			Contract.checkNotNull(p_chunks, "no chunks given");
 
@@ -159,8 +159,8 @@ public final class LogMessages {
 		 * @param p_chunkIDs
 		 *            the ChunkIDs of the Chunks to remove
 		 */
-		public RemoveMessage(final short p_source, final short p_destination, final long[] p_chunkIDs) {
-			super(p_source, p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
+		public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
+			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
 
 			m_chunkIDs = p_chunkIDs;
 			m_rangeID = -1;
@@ -175,8 +175,8 @@ public final class LogMessages {
 		 * @param p_rangeID
 		 *            the RangeID
 		 */
-		public RemoveMessage(final short p_source, final short p_destination, final long[] p_chunkIDs, final byte p_rangeID) {
-			super(p_source, p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
+		public RemoveMessage(final short p_destination, final long[] p_chunkIDs, final byte p_rangeID) {
+			super(p_destination, TYPE, SUBTYPE_REMOVE_MESSAGE);
 
 			m_chunkIDs = p_chunkIDs;
 			m_rangeID = p_rangeID;

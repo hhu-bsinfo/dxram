@@ -53,8 +53,8 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 * @param p_type
 	 *            the message type
 	 */
-	public AbstractRequest(final short p_source, final short p_destination, final byte p_type) {
-		this(p_source, p_destination, p_type, DEFAULT_SUBTYPE);
+	public AbstractRequest(final short p_destination, final byte p_type) {
+		this(p_destination, p_type, DEFAULT_SUBTYPE);
 	}
 
 	/**
@@ -66,8 +66,8 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 * @param p_subtype
 	 *            the message subtype
 	 */
-	public AbstractRequest(final short p_source, final short p_destination, final byte p_type, final byte p_subtype) {
-		super(p_source, p_destination, p_type, p_subtype);
+	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype) {
+		super(p_destination, p_type, p_subtype);
 
 		m_fulfilled = false;
 		m_fulfillAction = null;

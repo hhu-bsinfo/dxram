@@ -22,8 +22,8 @@ public class PingSuperpeerMessage extends AbstractMessage {
 	 * @param p_destination
 	 *            the destination
 	 */
-	public PingSuperpeerMessage(final short p_source, final short p_destination) {
-		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE);
+	public PingSuperpeerMessage(final short p_destination) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE);
 	}
 
 }

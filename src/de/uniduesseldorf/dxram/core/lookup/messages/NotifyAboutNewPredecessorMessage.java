@@ -32,8 +32,8 @@ public class NotifyAboutNewPredecessorMessage extends AbstractMessage {
 	 * @param p_newPredecessor
 	 *            the new predecessor
 	 */
-	public NotifyAboutNewPredecessorMessage(final short p_source, final short p_destination, final short p_newPredecessor) {
-		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE);
+	public NotifyAboutNewPredecessorMessage(final short p_destination, final short p_newPredecessor) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE);
 
 		Contract.checkNotNull(p_newPredecessor, "no new predecessor given");
 

@@ -39,8 +39,8 @@ public class MigrateMessage extends AbstractMessage {
 	 * @param p_isBackup
 	 *            whether this is a backup message or not
 	 */
-	public MigrateMessage(final short p_source, final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
-		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_MESSAGE);
+	public MigrateMessage(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_MESSAGE);
 
 		m_chunkID = p_chunkID;
 		m_nodeID = p_nodeID;
