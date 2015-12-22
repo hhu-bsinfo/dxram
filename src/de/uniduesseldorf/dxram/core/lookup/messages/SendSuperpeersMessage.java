@@ -33,8 +33,8 @@ public class SendSuperpeersMessage extends AbstractMessage {
 	 * @param p_superpeers
 	 *            the superpeers
 	 */
-	public SendSuperpeersMessage(final short p_destination, final ArrayList<Short> p_superpeers) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE);
+	public SendSuperpeersMessage(final short p_source, final short p_destination, final ArrayList<Short> p_superpeers) {
+		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE);
 
 		Contract.checkNotNull(p_superpeers, "no superpeers given");
 

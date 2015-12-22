@@ -22,7 +22,7 @@ public abstract class AbstractMessage {
 	public static final byte DEFAULT_STATUS_CODE = 0;
 	public static final byte DEFAULT_RATING_VALUE = 1;
 
-	public static final byte HEADER_SIZE = 15;
+	public static final byte HEADER_SIZE = 16;
 
 	// Attributes
 	private long m_messageID;
@@ -382,7 +382,7 @@ public abstract class AbstractMessage {
 		try {
 			ret = p_messageDirectory.getInstance(type, subtype);
 		} catch (final Exception e) {
-			throw new NetworkException("Unable to create message", e);
+			throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype, e);
 		}
 
 		ret.m_messageID = messageID;

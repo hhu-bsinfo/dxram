@@ -36,8 +36,8 @@ public class StartRecoveryMessage extends AbstractMessage {
 	 * @param p_beginOfRange
 	 *            the beginning of the range that has to be recovered
 	 */
-	public StartRecoveryMessage(final short p_destination, final short p_failedPeer, final int p_beginOfRange) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
+	public StartRecoveryMessage(final short p_source, final short p_destination, final short p_failedPeer, final int p_beginOfRange) {
+		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
 
 		Contract.checkNotNull(p_failedPeer, "no failed peer given");
 

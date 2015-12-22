@@ -26,6 +26,7 @@ public abstract class AbstractConnection {
 	private final ByteStreamInterpreter m_streamInterpreter;
 
 	private short m_destination;
+	private NodeMap m_nodeMap;
 	private final TaskExecutor m_taskExecutor;
 
 	private boolean m_connected;
@@ -43,8 +44,8 @@ public abstract class AbstractConnection {
 	 * @param p_destination
 	 *            the destination
 	 */
-	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory) {
-		this(p_destination, p_taskExecutor, p_messageDirectory, null);
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory) {
+		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null);
 	}
 
 	/**
@@ -54,7 +55,7 @@ public abstract class AbstractConnection {
 	 * @param p_listener
 	 *            the ConnectionListener
 	 */
-	AbstractConnection(final short p_destination, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final DataReceiver p_listener) {
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final DataReceiver p_listener) {
 		NodeID.check(p_destination);
 
 		m_dataHandler = new DataHandler();
@@ -62,6 +63,7 @@ public abstract class AbstractConnection {
 		m_streamInterpreter = new ByteStreamInterpreter();
 
 		m_destination = p_destination;
+		m_nodeMap = p_nodeMap;
 		m_taskExecutor = p_taskExecutor;
 		
 		m_connected = false;
@@ -352,7 +354,7 @@ public abstract class AbstractConnection {
 			message = createMessage(buffer);
 
 			if (message != null) {
-				message.setDestination(NodeID.getLocalNodeID());
+				message.setDestination(m_nodeMap.getOwnNodeID());
 				message.setSource(m_destination);
 
 				incRating(message.getRatingValue());

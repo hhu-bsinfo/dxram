@@ -61,8 +61,8 @@ public final class RecoveryMessages {
 		 * @param p_owner
 		 *            the NodeID of the owner
 		 */
-		public RecoverMessage(final short p_destination, final short p_owner, final boolean p_useLiveData) {
-			super(p_destination, TYPE, SUBTYPE_RECOVER_MESSAGE);
+		public RecoverMessage(final short p_source, final short p_destination, final short p_owner, final boolean p_useLiveData) {
+			super(p_source, p_destination, TYPE, SUBTYPE_RECOVER_MESSAGE);
 
 			m_owner = p_owner;
 			m_useLiveData = p_useLiveData;

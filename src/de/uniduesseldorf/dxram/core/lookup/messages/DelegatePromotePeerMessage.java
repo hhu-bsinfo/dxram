@@ -31,8 +31,8 @@ public class DelegatePromotePeerMessage extends AbstractMessage {
 	 * @param p_hops
 	 *            the number of hops until now
 	 */
-	public DelegatePromotePeerMessage(final short p_destination, final short p_hops) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE);
+	public DelegatePromotePeerMessage(final short p_source, final short p_destination, final short p_hops) {
+		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE);
 
 		m_hops = p_hops;
 	}

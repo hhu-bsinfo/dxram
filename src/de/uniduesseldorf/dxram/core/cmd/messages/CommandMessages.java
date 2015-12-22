@@ -41,8 +41,8 @@ public static class ChunkCommandMessage extends AbstractMessage {
 	 * @param p_cmd
 	 *            the command
 	 */
-	public ChunkCommandMessage(final short p_destination, final String p_cmd) {
-		super(p_destination, TYPE, SUBTYPE_CHUNK_COMMAND_MESSAGE);
+	public ChunkCommandMessage(final short p_source, final short p_destination, final String p_cmd) {
+		super(p_source, p_destination, TYPE, SUBTYPE_CHUNK_COMMAND_MESSAGE);
 		Contract.checkNotNull(p_cmd, "no command given");
 		m_cmd = p_cmd;
 	}

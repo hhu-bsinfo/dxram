@@ -169,7 +169,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 */
 		protected NIOConnection(final short p_destination, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final DataReceiver p_listener,
 				final ReentrantLock p_lock, final Condition p_cond) throws IOException {
-			super(p_destination, p_taskExecutor, p_messageDirectory, p_listener);
+			super(p_destination, m_nodeMap, p_taskExecutor, p_messageDirectory, p_listener);
 			m_channel = SocketChannel.open();
 			m_channel.configureBlocking(false);
 			m_channel.socket().setSoTimeout(0);
@@ -203,7 +203,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *             if the connection could not be created
 		 */
 		protected NIOConnection(final short p_destination, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final SocketChannel p_channel) throws IOException {
-			super(p_destination, p_taskExecutor, p_messageDirectory);
+			super(p_destination, m_nodeMap, p_taskExecutor, p_messageDirectory);
 
 			m_channel = p_channel;
 			m_channel.configureBlocking(false);
@@ -382,7 +382,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			}
 
 			temp = ByteBuffer.allocate(2);
-			NodeID.writeNodeID(temp, m_nodeID);
+			temp.putShort(m_nodeID);
 			temp.flip();
 
 			writeToChannel(temp);
@@ -804,7 +804,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				} else {
 					m_buffer.flip();
 
-					connection = new NIOConnection(NodeID.readNodeID(m_buffer), m_taskExecutor, m_messageDirectory, p_channel);
+					connection = new NIOConnection(m_buffer.getShort(), m_taskExecutor, m_messageDirectory, p_channel);
 					p_channel.register(m_worker.m_selector, SelectionKey.OP_READ, connection);
 
 					fireConnectionCreated(connection);

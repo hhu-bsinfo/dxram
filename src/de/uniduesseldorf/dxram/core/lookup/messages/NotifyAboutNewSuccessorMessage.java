@@ -32,8 +32,8 @@ public class NotifyAboutNewSuccessorMessage extends AbstractMessage {
 	 * @param p_newSuccessor
 	 *            the new successor
 	 */
-	public NotifyAboutNewSuccessorMessage(final short p_destination, final short p_newSuccessor) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE);
+	public NotifyAboutNewSuccessorMessage(final short p_source, final short p_destination, final short p_newSuccessor) {
+		super(p_source, p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE);
 
 		Contract.checkNotNull(p_newSuccessor, "no new successor given");
 

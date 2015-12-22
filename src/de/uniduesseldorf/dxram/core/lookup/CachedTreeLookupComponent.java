@@ -198,7 +198,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	// ------------------------------------------------------------------------------------------
 
 	@Override
-	protected boolean initComponent(Configuration p_configuration) {
+	protected boolean initComponent(Configuration p_configuration) {		
 		m_lookup.initComponent(p_configuration);
 
 		m_maxCacheSize = p_configuration.getLongValue(LookupConfigurationValues.LOOKUP_CACHE_TTL);

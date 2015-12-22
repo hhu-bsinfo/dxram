@@ -4,7 +4,48 @@ import java.util.List;
 
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
-
+import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutBackupsRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutBackupsResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutSuccessorRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutSuccessorResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.DelegatePromotePeerMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.GetBackupRangesRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.GetBackupRangesResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.GetChunkIDRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.GetChunkIDResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.GetMappingCountRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.GetMappingCountResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.InitRangeRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.InitRangeResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.InsertIDRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.InsertIDResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.JoinRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.JoinResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.LookupMessages;
+import de.uniduesseldorf.dxram.core.lookup.messages.LookupReflectionRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.LookupReflectionResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.LookupRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.LookupResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.MigrateMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.MigrateRangeRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.MigrateRangeResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.MigrateRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.MigrateResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.NotifyAboutFailedPeerMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.NotifyAboutNewPredecessorMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.NotifyAboutNewSuccessorMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.PingSuperpeerMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.PromotePeerRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.PromotePeerResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.RemoveRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.RemoveResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.SearchForPeerRequest;
+import de.uniduesseldorf.dxram.core.lookup.messages.SearchForPeerResponse;
+import de.uniduesseldorf.dxram.core.lookup.messages.SendBackupsMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.SendSuperpeersMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.StartRecoveryMessage;
+import de.uniduesseldorf.dxram.core.lookup.messages.UpdateAllMessage;
+import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.utils.config.Configuration;
 
 public abstract class LookupComponent extends DXRAMComponent {
@@ -195,5 +236,59 @@ public abstract class LookupComponent extends DXRAMComponent {
 	@Override
 	protected void registerConfigurationValuesComponent(Configuration p_configuration) {
 		p_configuration.registerConfigurationEntries(LookupConfigurationValues.CONFIGURATION_ENTRIES);
+	}
+	
+	@Override
+	protected boolean initComponent(final Configuration p_configuration)
+	{
+		registerNetworkMessages();
+		return true;
+	}
+	
+	private void registerNetworkMessages() {
+		NetworkComponent network = getDependantComponent(NetworkComponent.COMPONENT_IDENTIFIER);
+		
+		// Lookup Messages
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST, JoinRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_JOIN_RESPONSE, JoinResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST, InitRangeRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE, InitRangeResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REQUEST, LookupRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_RESPONSE, LookupResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_REQUEST, GetBackupRangesRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_RESPONSE, GetBackupRangesResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_UPDATE_ALL_MESSAGE, UpdateAllMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST, MigrateRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE, MigrateResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_MESSAGE, MigrateMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST, MigrateRangeRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_RESPONSE, MigrateRangeResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_REQUEST, RemoveRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_RESPONSE, RemoveResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE, SendBackupsMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST, AskAboutBackupsRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE, AskAboutBackupsResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, AskAboutSuccessorRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, AskAboutSuccessorResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE, NotifyAboutNewPredecessorMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, NotifyAboutNewSuccessorMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_REQUEST, SearchForPeerRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_RESPONSE, SearchForPeerResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PROMOTE_PEER_REQUEST, PromotePeerRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PROMOTE_PEER_RESPONSE, PromotePeerResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE, DelegatePromotePeerMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE, NotifyAboutFailedPeerMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE, StartRecoveryMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_ID_REQUEST, InsertIDRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_ID_RESPONSE, InsertIDResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_REQUEST, GetChunkIDRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_RESPONSE, GetChunkIDResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_MAPPING_COUNT_REQUEST, GetMappingCountRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_MAPPING_COUNT_RESPONSE, GetMappingCountResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST, LookupReflectionRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_RESPONSE, LookupReflectionResponse.class);
+
 	}
 }
