@@ -45,7 +45,7 @@ public class DXRAMEngine
 		m_setupHandler = p_setupHandler;
 		
 		// TODO have this setable through config/console arguments?
-		Logger.getRootLogger().setLevel(Level.DEBUG);
+		Logger.getRootLogger().setLevel(Level.TRACE);
 	}
 	
 	public boolean addComponent(final DXRAMComponent p_component)
