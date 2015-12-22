@@ -2,6 +2,7 @@
 package de.uniduesseldorf.dxram.core.engine.nodeconfig;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import de.uniduesseldorf.utils.Contract;
 
@@ -93,6 +94,18 @@ public final class NodesConfiguration {
 	 */
 	synchronized void setOwnNodeID(final short p_nodeID) {
 		m_ownID = p_nodeID;
+	}
+	
+	@Override
+	public String toString() {
+		String str = new String();
+		
+		str += "NodesConfiguration[ownID: " + m_ownID + "]:";
+		for (Entry<Short, NodeEntry> entry : m_nodes.entrySet()) {
+			str += "\n" + entry.getKey() + ": " + entry.getValue();
+		}
+		
+		return str;
 	}
 
 	// Classes

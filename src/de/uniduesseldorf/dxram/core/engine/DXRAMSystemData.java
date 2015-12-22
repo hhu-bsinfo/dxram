@@ -30,8 +30,14 @@ public class DXRAMSystemData
 	
 	public InetSocketAddress getNodeAddress(final short p_nodeID) {
 		NodeEntry entry = m_nodesWatcher.getNodesConfiguration().getNode(p_nodeID);
+		InetSocketAddress address;
+		// return "proper" invalid address if entry does not exist
+		if (entry == null)
+			address = new InetSocketAddress("255.255.255.255", 0xFFFF);
+		else
+			address = new InetSocketAddress(entry.getIP(), entry.getPort());
 		
-		return new InetSocketAddress(entry.getIP(), entry.getPort());
+		return address;
 	}
 	
 	public void zookeeperCreate(final String p_path) {

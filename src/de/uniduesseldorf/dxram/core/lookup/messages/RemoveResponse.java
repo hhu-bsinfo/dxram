@@ -55,6 +55,7 @@ public class RemoveResponse extends AbstractResponse {
 			p_buffer.put((byte) 1);
 			p_buffer.putInt(m_backupSuperpeers.length);
 			p_buffer.asShortBuffer().put(m_backupSuperpeers);
+			p_buffer.position(p_buffer.position() + Short.BYTES * m_backupSuperpeers.length);
 		}
 	}
 
@@ -63,6 +64,7 @@ public class RemoveResponse extends AbstractResponse {
 		if (p_buffer.get() != 0) {
 			m_backupSuperpeers = new short[p_buffer.getInt()];
 			p_buffer.asShortBuffer().get(m_backupSuperpeers);
+			p_buffer.position(p_buffer.position() + Short.BYTES * m_backupSuperpeers.length);
 		}
 	}
 

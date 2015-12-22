@@ -6,6 +6,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -47,9 +51,19 @@ public class ConfigurationFileParser implements ConfigurationParser {
 		
 		out = new BufferedWriter(new FileWriter(p_file));
 
-		Set<Entry<String, String>> entries = p_configuration.getValues();
-		for (Entry<String, String> entry : entries) {
-			out.write(entry.getKey() + " " + KEY_VALUE_SEPERATOR + " " + entry.getValue());
+		// sort
+	    List<Entry<String, String>> sortedEntries = new ArrayList<Entry<String, String>>(p_configuration.getValues());
+
+	    Collections.sort(sortedEntries, 
+	            new Comparator<Entry<String, String>>() {
+	                @Override
+	                public int compare(Entry<String, String> e1, Entry<String, String> e2) {
+	                    return e1.getKey().compareTo(e2.getKey());
+	                }
+	            });
+		
+		for (Entry<String, String> entry : sortedEntries) {
+			out.write(entry.getKey() + " " + KEY_VALUE_SEPERATOR + " " + entry.getValue() + "\n");
 		}
 		
 		out.close();	

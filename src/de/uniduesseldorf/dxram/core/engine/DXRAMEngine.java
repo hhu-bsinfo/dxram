@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration;
@@ -23,8 +24,8 @@ import de.uniduesseldorf.utils.config.ConfigurationException;
 
 public class DXRAMEngine 
 {
-	private static final String DXRAM_CONF_FILE = "dxram.conf";
-	private static final String DXRAM_NODES_CONF_FILE = "nodes.conf";
+	private static final String DXRAM_CONF_FILE = "dxram.config";
+	private static final String DXRAM_NODES_CONF_FILE = "nodes.config";
 	
 	private final Logger m_logger = Logger.getLogger(DXRAMEngine.class);
 	
@@ -42,6 +43,9 @@ public class DXRAMEngine
 	public DXRAMEngine(final DXRAMEngineSetupHandler p_setupHandler)
 	{
 		m_setupHandler = p_setupHandler;
+		
+		// TODO have this setable through config/console arguments?
+		Logger.getRootLogger().setLevel(Level.DEBUG);
 	}
 	
 	public boolean addComponent(final DXRAMComponent p_component)
@@ -122,38 +126,22 @@ public class DXRAMEngine
 	
 	DXRAMComponent getComponent(final String p_identifier)
 	{
-		DXRAMComponent component = null;
-		
-		if (m_isInitilized)
-		{
-			component = m_components.get(p_identifier);
-		}
-		
-		return component;
+		return m_components.get(p_identifier);
 	}
 	
 	Configuration getConfiguration()
 	{
-		if (m_isInitilized)
-			return m_configuration;
-		else
-			return null;
+		return m_configuration;
 	}
 	
 	NodesConfiguration getNodesConfiguration()
 	{
-		if (m_isInitilized)
-			return m_nodesWatcher.getNodesConfiguration();
-		else
-			return null;
+		return m_nodesWatcher.getNodesConfiguration();
 	}
 	
 	DXRAMSystemData getSystemData()
 	{
-		if (m_isInitilized)
-			return m_systemData;
-		else
-			return null;
+		return m_systemData;
 	}
 	
 	Logger getLogger()
@@ -368,7 +356,7 @@ public class DXRAMEngine
 			m_configuration.setValue(NetworkConfigurationValues.NETWORK_IP, keyValue[1]);
 		}
 
-		keyValue[0] = "dxram.network.ip";
+		keyValue[0] = "dxram.network.port";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			m_logger.debug("Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");

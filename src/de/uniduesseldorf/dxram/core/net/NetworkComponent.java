@@ -1,7 +1,6 @@
 package de.uniduesseldorf.dxram.core.net;
 
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;

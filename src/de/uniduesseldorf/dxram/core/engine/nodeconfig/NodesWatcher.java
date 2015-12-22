@@ -155,6 +155,8 @@ public final class NodesWatcher implements Watcher {
 		
 		nodeEntries = p_parser.readConfiguration();
 		parseNodes(nodeEntries);
+		
+		LOGGER.debug("Resulting nodes configuration for setup:\n" + m_nodesConfiguration);
 	}
 	
 	public void close(final boolean p_cleanup)

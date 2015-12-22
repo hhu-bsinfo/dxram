@@ -19,7 +19,7 @@ import de.uniduesseldorf.utils.config.Configuration;
 public class BackupComponent extends DXRAMComponent {
 	private static final Logger LOGGER = Logger.getLogger(BackupComponent.class);
 	
-	public static final String COMPONENT_IDENTIFIER = "Lookup";
+	public static final String COMPONENT_IDENTIFIER = "Backup";
 	
 	private LookupComponent m_lookup = null;
 	private LogComponent m_logging = null;

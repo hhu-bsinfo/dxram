@@ -3,8 +3,8 @@ package de.uniduesseldorf.dxram.core.mem;
 
 import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
-import de.uniduesseldorf.dxram.core.engine.config.DXRAMConfigurationConstants;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+import de.uniduesseldorf.dxram.core.statistics.StatisticsConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
@@ -53,7 +53,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	{
 		p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SIZE);
 
-		m_enableMemoryStatistics = p_configuration.getBooleanValue(DXRAMConfigurationConstants.STATISTIC_MEMORY);
+		m_enableMemoryStatistics = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_MEMORY);
 
 		if (m_enableMemoryStatistics) {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());

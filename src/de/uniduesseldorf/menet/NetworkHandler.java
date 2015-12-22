@@ -2,6 +2,7 @@
 package de.uniduesseldorf.menet;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
@@ -83,7 +84,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		m_lock.lock();
 		
-		m_manager = new ConnectionManager(new NIOConnectionCreator(m_executor, m_messageDirectory, p_nodeMap, p_maxOutstandingBytes));
+		AbstractConnectionCreator connectionCreator = new NIOConnectionCreator(m_executor, m_messageDirectory, p_nodeMap, p_maxOutstandingBytes);
+		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
+		m_manager = new ConnectionManager(connectionCreator);
 
 		m_lock.unlock();
 
