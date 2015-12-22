@@ -445,7 +445,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 					m_backup.removeChunk(p_dataStructure.getID());
 
 					// Inform creator about removal
-					RemoveRequest request = new RemoveRequest(ChunkID.getCreatorID(p_dataStructure.getID()), p_dataStructure.getID());
+					RemoveRequest request = new RemoveRequest(ChunkID.getCreatorID(p_dataStructure.getID()), p_dataStructure);
 					try {
 						request.sendSync(m_network);
 						request.getResponse(RemoveResponse.class);
@@ -473,7 +473,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				Locations locations = m_lookup.get(p_dataStructure.getID());
 				if (locations != null) {
 					// Remote remove
-					RemoveRequest request = new RemoveRequest(locations.getPrimaryPeer(), p_dataStructure.getID());
+					RemoveRequest request = new RemoveRequest(locations.getPrimaryPeer(), p_dataStructure);
 					try {
 						request.sendSync(m_network);
 						if (request.getResponse(RemoveResponse.class).getStatus()) {

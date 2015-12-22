@@ -10,6 +10,7 @@ import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
+import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.lock.messages.LockMessages;
@@ -22,10 +23,11 @@ import de.uniduesseldorf.dxram.core.statistics.StatisticsConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
+import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.utils.Contract;
 import de.uniduesseldorf.utils.config.Configuration;
 
-public class LockService extends DXRAMService {
+public class LockService extends DXRAMService implements MessageReceiver, ConnectionLostListener {
 	
 	public static final String SERVICE_NAME = "Lock";
 	
@@ -52,7 +54,6 @@ public class LockService extends DXRAMService {
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
 		
-		// TODO have statistic 
 		m_statisticsEnabled = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_CHUNK);
 		
 		return true;
@@ -142,27 +143,27 @@ public class LockService extends DXRAMService {
 		return ret;
 	}
 
-	@Override
 	public void unlock(final long p_chunkID) {
 		short primaryPeer;
 		UnlockMessage request;
 
-		Operation.UNLOCK.enter();
+		if (m_statisticsEnabled)
+			Operation.UNLOCK.enter();
 
 		ChunkID.check(p_chunkID);
 
-		if (NodeID.getRole().equals(Role.SUPERPEER)) {
+		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
 			if (m_memoryManager.exists(p_chunkID)) {
 				// Local release
-				m_lock.unlock(p_chunkID, m_nodeID);
+				m_lock.unlock(p_chunkID, getSystemData().getNodeID());
 			} else {
 				while (true) {
 					primaryPeer = m_lookup.get(p_chunkID).getPrimaryPeer();
-					if (primaryPeer == m_nodeID) {
+					if (primaryPeer == getSystemData().getNodeID()) {
 						// Local release
-						m_lock.unlock(p_chunkID, m_nodeID);
+						m_lock.unlock(p_chunkID, getSystemData().getNodeID());
 						break;
 					} else {
 						try {
@@ -179,17 +180,15 @@ public class LockService extends DXRAMService {
 			}
 		}
 
-		Operation.UNLOCK.leave();
+		if (m_statisticsEnabled)
+			Operation.UNLOCK.leave();
 	}
 	
 	@Override
 	public void triggerEvent(ConnectionLostEvent p_event) {
-		// TODO move to lock service?
-		Contract.checkNotNull(p_event, "no event given");
-
-		try {
-			m_lock.unlockAll(p_event.getSource());
-		} catch (final DXRAMException e) {}
+		LOGGER.debug("Connection to " + p_event.getSource() + " lost, unlocking all chunks locked by lost instance.");
+		
+		m_lock.unlockAll(p_event.getSource());
 	}
 	
 	@Override
@@ -199,35 +198,11 @@ public class LockService extends DXRAMService {
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case ChunkMessages.SUBTYPE_GET_REQUEST:
-					incomingGetRequest((GetRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_PUT_REQUEST:
-					incomingPutRequest((PutRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
-					incomingRemoveRequest((RemoveRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_LOCK_REQUEST:
+				case LockMessages.SUBTYPE_LOCK_REQUEST:
 					incomingLockRequest((LockRequest) p_message);
 					break;
-				case ChunkMessages.SUBTYPE_UNLOCK_MESSAGE:
+				case LockMessages.SUBTYPE_UNLOCK_MESSAGE:
 					incomingUnlockMessage((UnlockMessage) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_DATA_REQUEST:
-					incomingDataRequest((DataRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_DATA_MESSAGE:
-					incomingDataMessage((DataMessage) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_MULTIGET_REQUEST:
-					incomingMultiGetRequest((MultiGetRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_CHUNK_COMMAND_MESSAGE:
-					incomingCommandMessage((ChunkCommandMessage) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_CHUNK_COMMAND_REQUEST:
-					incomingCommandRequest((ChunkCommandRequest) p_message);
 					break;
 				default:
 					break;
@@ -246,22 +221,19 @@ public class LockService extends DXRAMService {
 	private void incomingLockRequest(final LockRequest p_request) {
 		DefaultLock lock;
 
-		Operation.INCOMING_LOCK.enter();
+		if (m_statisticsEnabled)
+			Operation.INCOMING_LOCK.enter();
 
-		try {
+	
 			lock = new DefaultLock(p_request.getChunkID(), p_request.getSource(), p_request.isReadLock());
 			m_lock.lock(lock);
 
 			// TODO
 			// object without variable to store it?
 			// new LockResponse(p_request, m_memoryManager.get(lock.getChunk())).send(m_network);
-		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
 
-			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
-		}
-
-		Operation.INCOMING_LOCK.leave();
+		if (m_statisticsEnabled)
+			Operation.INCOMING_LOCK.leave();
 	}
 
 	/**
@@ -270,16 +242,12 @@ public class LockService extends DXRAMService {
 	 *            the UnlockMessage
 	 */
 	private void incomingUnlockMessage(final UnlockMessage p_message) {
-		Operation.INCOMING_UNLOCK.enter();
+		if (m_statisticsEnabled)
+			Operation.INCOMING_UNLOCK.enter();
 
-		try {
-			m_lock.unlock(p_message.getChunkID(), p_message.getSource());
-		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
+		m_lock.unlock(p_message.getChunkID(), p_message.getSource());
 
-			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
-		}
-
-		Operation.INCOMING_UNLOCK.leave();
+		if (m_statisticsEnabled)
+			Operation.INCOMING_UNLOCK.leave();
 	}
 }

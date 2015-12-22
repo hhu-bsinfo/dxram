@@ -255,7 +255,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_incoming.offer(p_buffer);
 			m_incomingLock.unlock();
 
-			// fireNewData();
+			//fireNewData();
 			newData();
 		}
 

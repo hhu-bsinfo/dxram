@@ -34,15 +34,6 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	 * Creates an instance of ConnectionStore
 	 * @param p_creator
 	 *            the ConnectionCreator
-	 */
-	ConnectionManager(final AbstractConnectionCreator p_creator) {
-		this(p_creator, null);
-	}
-
-	/**
-	 * Creates an instance of ConnectionStore
-	 * @param p_creator
-	 *            the ConnectionCreator
 	 * @param p_listener
 	 *            the ConnectionListener
 	 */
