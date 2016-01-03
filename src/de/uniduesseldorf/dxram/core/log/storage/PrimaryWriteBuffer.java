@@ -9,9 +9,12 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 
+import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.LogHandler;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
@@ -68,6 +71,8 @@ public class PrimaryWriteBuffer {
 	private int m_writingNetworkThreads;
 	private boolean m_writerThreadWantsToFlush;
 
+	private ReentrantLock m_exclusiveLock;
+
 	// Constructors
 	/**
 	 * Creates an instance of PrimaryWriteBuffer with user-specific
@@ -96,6 +101,13 @@ public class PrimaryWriteBuffer {
 			m_isShuttingDown = false;
 		}
 		m_metaDataLock = new Semaphore(1, false);
+
+		try {
+			m_exclusiveLock = CoreComponentFactory.getNetworkInterface().getExclusiveLock();
+		} catch (DXRAMException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		m_writerThread = new PrimaryLogWriterThread();
 		m_writerThread.setName("Logging: Writer Thread");
@@ -168,26 +180,10 @@ public class PrimaryWriteBuffer {
 			throw new IllegalArgumentException("Data to write exceeds buffer size!");
 		}
 		if (!m_isShuttingDown) {
-			/*-if (PARALLEL_BUFFERING) {
-				while (true) {
-					m_metaDataLock.acquire();
-					if (!m_writerThreadWantsToFlush && m_bytesInWriteBuffer + bytesToWrite <= MAX_BYTE_COUNT) {
-						m_writingNetworkThreads++;
-						break;
-					} else {
-						m_metaDataLock.release();
-					}
-				}
-			} else {
-				while (m_bytesInWriteBuffer + bytesToWrite > MAX_BYTE_COUNT) {
-					Thread.yield();
-				}
-				m_metaDataLock.acquire();
-			}*/
-			/*-while (m_accessGranted) {
+			// Wait if writer thread accesses the meta-data to flush buffer
+			while (m_accessGranted) {
 				Thread.yield();
-			}*/
-			m_metaDataLock.acquire();
+			}
 
 			// Set buffer write pointer and byte counter before writing to
 			// enable multi-threading
@@ -205,9 +201,6 @@ public class PrimaryWriteBuffer {
 			} else {
 				m_lengthByBackupRange.put(rangeID, counter + bytesToWrite);
 			}
-			/*-if (PARALLEL_BUFFERING) {
-				m_metaDataLock.release();
-			}*/
 
 			// Determine free space from end of log to end of array
 			if (writePointer >= m_bufferReadPointer) {
@@ -256,22 +249,15 @@ public class PrimaryWriteBuffer {
 				}
 			}
 
-			/*-if (PARALLEL_BUFFERING) {
-				m_metaDataLock.acquire();
-				m_writingNetworkThreads--;
-			}*/
-
 			if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
-				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is
-				// written
+				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is written
 				m_dataAvailable = true;
 			}
 
-			/*-if (m_accessRequested) {
+			// Grant the writer thread access to the meta-data
+			if (m_accessRequested) {
 				m_accessGranted = true;
-			}*/
-			m_metaDataLock.release();
-			// m_metaDataLock.release();
+			}
 		}
 		return bytesToWrite;
 	}
@@ -376,31 +362,25 @@ public class PrimaryWriteBuffer {
 			// 1. Gain exclusive write access
 			// 2. Copy read pointer and counter
 			// 3. Set read pointer and reset counter
-			// 4. Release lock
+			// 4. Grant access to write buffer
 			// 5. Write buffer to hard drive
 			// -> During writing to hard drive the next slot in Write Buffer can be filled
-			/*-if (PARALLEL_BUFFERING) {
-				while (true) {
-					m_metaDataLock.acquire();
-					if (m_writingNetworkThreads == 0) {
-						break;
-					} else {
-						m_writerThreadWantsToFlush = true;
-						m_metaDataLock.release();
-					}
-				}
-			} else {
-				m_metaDataLock.acquire();
-			}*/
-			/*-long timestamp = System.currentTimeMillis();
+
+			// Gain exclusive write access:
+			// Request access and wait for acknowledgement by message handler (lock-free)
+			// If after 100ms the access has not been granted (no log message has arrived) -> try to block all message handler
+			final long timestamp = System.currentTimeMillis();
+			boolean locked = false;
 			m_accessRequested = true;
 			while (!m_accessGranted) {
-				if (System.currentTimeMillis() - timestamp > 500) {// TODO
-					m_accessGranted = true;
+				if (System.currentTimeMillis() - timestamp > 100) {
+					if (m_exclusiveLock.tryLock()) {
+						locked = true;
+						break;
+					}
 				}
 				Thread.yield();
-			}*/
-			m_metaDataLock.acquire();
+			}
 
 			readPointer = m_bufferReadPointer;
 			bytesInWriteBuffer = m_bytesInWriteBuffer;
@@ -413,10 +393,12 @@ public class PrimaryWriteBuffer {
 			m_dataAvailable = false;
 			m_flushingComplete = false;
 
+			m_accessRequested = false;
 			m_accessGranted = false;
-			// m_writerThreadWantsToFlush = false;
-			// m_metaDataLock.release();
-			m_metaDataLock.release();
+			m_writerThreadWantsToFlush = false;
+			if (locked) {
+				m_exclusiveLock.unlock();
+			}
 
 			if (bytesInWriteBuffer > 0) {
 				// Write data to secondary logs or primary log

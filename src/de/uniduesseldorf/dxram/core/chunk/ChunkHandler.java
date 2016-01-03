@@ -625,9 +625,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				// Local put
 				int bytesWritten;
 
-				m_memoryManager.lockManage();
+				m_memoryManager.lockAccess();
 				bytesWritten = m_memoryManager.put(p_chunk.getChunkID(), p_chunk.getData().array(), 0, p_chunk.getData().array().length);
-				m_memoryManager.unlockManage();
+				m_memoryManager.unlockAccess();
 
 				if (p_releaseLock) {
 					m_lock.unlock(p_chunk.getChunkID(), m_nodeID);
@@ -656,9 +656,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						// Local put
 						int bytesWritten;
 
-						m_memoryManager.lockManage();
+						m_memoryManager.lockAccess();
 						bytesWritten = m_memoryManager.put(p_chunk.getChunkID(), p_chunk.getData().array(), 0, p_chunk.getData().array().length);
-						m_memoryManager.unlockManage();
+						m_memoryManager.unlockAccess();
 						if (p_releaseLock) {
 							m_lock.unlock(p_chunk.getChunkID(), m_nodeID);
 						}
@@ -797,9 +797,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					// TODO optimize: have this in a separate loop
 					int bytesWritten;
 
-					m_memoryManager.lockManage();
+					m_memoryManager.lockAccess();
 					bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
-					m_memoryManager.unlockManage();
+					m_memoryManager.unlockAccess();
 
 					if (LOG_ACTIVE) {
 						// Send backups for logging (unreliable)
@@ -823,9 +823,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 							// Local put
 							int bytesWritten;
 							// TODO optimize: have this in a separate loop
-							m_memoryManager.lockManage();
+							m_memoryManager.lockAccess();
 							bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
-							m_memoryManager.unlockManage();
+							m_memoryManager.unlockAccess();
 							success = true;
 						} else {
 							// Remote put
@@ -1926,6 +1926,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private void incomingGetRequest(final GetRequest p_request) {
 		Chunk chunk;
+		int size;
+		int bytesRead;
 
 		Operation.INCOMING_GET.enter();
 
@@ -1933,6 +1935,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			// TODO
 			chunk = null;
 			// chunk = m_memoryManager.get(p_request.getChunkID());
+
+			m_memoryManager.lockAccess();
+			size = m_memoryManager.getSize(p_request.getChunkID());
+			chunk = new Chunk(p_request.getChunkID(), size);
+			bytesRead = m_memoryManager.get(p_request.getChunkID(), chunk.getData().array(), 0, size);
+			m_memoryManager.unlockAccess();
 
 			new GetResponse(p_request, chunk).send(m_network);
 		} catch (final DXRAMException e) {
@@ -1952,16 +1960,24 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	private void incomingMultiGetRequest(final MultiGetRequest p_request) {
 		long[] chunkIDs;
 		Chunk[] chunks;
+		int size;
+		int bytesRead;
 
 		Operation.INCOMING_MULTI_GET.enter();
 
 		try {
 			chunkIDs = p_request.getChunkIDs();
 			chunks = new Chunk[chunkIDs.length];
+			m_memoryManager.lockAccess();
 			for (int i = 0; i < chunkIDs.length; i++) {
 				// TODO
 				// chunks[i] = m_memoryManager.get(chunkIDs[i]);
+
+				size = m_memoryManager.getSize(chunkIDs[i]);
+				chunks[i] = new Chunk(chunkIDs[i], size);
+				bytesRead = m_memoryManager.get(chunkIDs[i], chunks[i].getData().array(), 0, size);
 			}
+			m_memoryManager.unlockAccess();
 
 			new MultiGetResponse(p_request, chunks).send(m_network);
 		} catch (final DXRAMException e) {
@@ -1981,6 +1997,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	private void incomingPutRequest(final PutRequest p_request) {
 		boolean success = false;
 		Chunk chunk;
+		int bytesWritten;
 
 		Operation.INCOMING_PUT.enter();
 
@@ -1990,6 +2007,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			if (m_memoryManager.isResponsible(chunk.getChunkID())) {
 				// TODO
 				// m_memoryManager.put(chunk);
+				m_memoryManager.lockAccess();
+				bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
+				m_memoryManager.unlockAccess();
 				success = true;
 			}
 

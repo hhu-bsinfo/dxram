@@ -55,6 +55,12 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		m_lock = new ReentrantLock(false);
 	}
 
+	// Getter
+	@Override
+	public ReentrantLock getExclusiveLock() {
+		return m_messageHandler.m_exclusiveLock;
+	}
+
 	// Methods
 	@Override
 	public void initialize() throws NetworkException {
@@ -287,8 +293,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
 		private final TaskExecutor m_executor;
 		private ReentrantLock m_defaultMessagesLock;
-		private ReentrantLock m_exclusiveMessagesLock;
 		private ReentrantLock m_exclusiveLock;
+		private ReentrantLock m_exclusiveMessagesLock;
 
 		// Constructors
 		/**
@@ -299,8 +305,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			m_defaultMessages = new ArrayDeque<>();
 			m_exclusiveMessages = new ArrayDeque<>();
 			m_defaultMessagesLock = new ReentrantLock(false);
-			m_exclusiveMessagesLock = new ReentrantLock(false);
 			m_exclusiveLock = new ReentrantLock(false);
+			m_exclusiveMessagesLock = new ReentrantLock(false);
 		}
 
 		// Methods
@@ -319,9 +325,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				m_defaultMessages.offer(p_message);
 				m_defaultMessagesLock.unlock();
 			} else {
-				m_exclusiveLock.lock();
+				m_exclusiveMessagesLock.lock();
 				m_exclusiveMessages.offer(p_message);
-				m_exclusiveLock.unlock();
+				m_exclusiveMessagesLock.unlock();
 			}
 
 			m_executor.execute(this);
@@ -333,10 +339,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			Entry entry;
 
 			while (message == null) {
-				if (m_exclusiveMessages.size() > m_defaultMessages.size() && m_exclusiveMessagesLock.tryLock()) {
-					m_exclusiveLock.lock();
+				if (m_exclusiveMessages.size() > m_defaultMessages.size() && m_exclusiveLock.tryLock()) {
+					m_exclusiveMessagesLock.lock();
 					message = m_exclusiveMessages.poll();
-					m_exclusiveLock.unlock();
+					m_exclusiveMessagesLock.unlock();
 				} else {
 					m_defaultMessagesLock.lock();
 					message = m_defaultMessages.poll();
@@ -350,9 +356,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 			if (entry != null) {
 				entry.newMessage(message);
-				if (message.isExclusive()) {
-					m_exclusiveMessagesLock.unlock();
-				}
+			}
+			if (message.isExclusive()) {
+				m_exclusiveLock.unlock();
 			}
 		}
 	}
