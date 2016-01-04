@@ -11,7 +11,7 @@ import de.uniduesseldorf.dxram.core.log.EpochVersion;
  * @author Kevin Beineke
  *         28.11.2014
  */
-public class VersionsHashTableRAM {
+public class VersionsBuffer {
 
 	// Attributes
 	private int[] m_table;
@@ -20,6 +20,9 @@ public class VersionsHashTableRAM {
 	private int m_elementCapacity;
 	private int m_threshold;
 	private float m_loadFactor;
+
+	private byte m_eon;
+	private short m_epoch;
 
 	private ReentrantLock m_lock;
 
@@ -31,7 +34,7 @@ public class VersionsHashTableRAM {
 	 * @param p_loadFactor
 	 *            the load factor of VersionsHashTable
 	 */
-	public VersionsHashTableRAM(final int p_initialElementCapacity, final float p_loadFactor) {
+	public VersionsBuffer(final int p_initialElementCapacity, final float p_loadFactor) {
 		super();
 
 		m_count = 0;
@@ -47,6 +50,9 @@ public class VersionsHashTableRAM {
 			m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		}
 
+		m_eon = 0;
+		m_epoch = 0;
+
 		m_lock = new ReentrantLock(false);
 	}
 
@@ -60,11 +66,40 @@ public class VersionsHashTableRAM {
 	}
 
 	/**
+	 * Returns the current eon
+	 * @return the current eon
+	 */
+	public final byte getEon() {
+		return m_eon;
+	}
+
+	/**
 	 * Checks if VersionsHashTable is empty
 	 * @return true if VersionsHashTable maps no keys to values, false otherwise
 	 */
 	public final boolean isEmpty() {
 		return m_count == 0;
+	}
+
+	// Setter
+	/**
+	 * Increments the epoch
+	 * @return whether an overflow occurred or not
+	 */
+	public final boolean incrementEpoch() {
+		boolean ret = false;
+
+		m_lock.lock();
+		m_count++;
+
+		// Overflow
+		if (m_epoch == 0) {
+			m_eon = (byte) (m_eon ^ 1);
+			ret = true;
+		}
+		m_lock.unlock();
+
+		return ret;
 	}
 
 	// Methods
@@ -93,10 +128,6 @@ public class VersionsHashTableRAM {
 		}
 		m_lock.unlock();
 
-		if (ret == null) {
-			System.out.println("ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		}
-
 		return ret;
 	}
 
@@ -118,7 +149,7 @@ public class VersionsHashTableRAM {
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				ret = new EpochVersion((short) getEpoch(index), getVersion(index) + 1);
+				ret = new EpochVersion((short) (m_epoch + (m_eon << 15)), getVersion(index) + 1);
 				set(index, key, ret.getEpoch(), ret.getVersion());
 				break;
 			}
@@ -126,7 +157,7 @@ public class VersionsHashTableRAM {
 		}
 		if (iter == 0) {
 			// First version for this epoch
-			ret = new EpochVersion((short) 0, 1);
+			ret = new EpochVersion((short) (m_epoch + (m_eon << 15)), 1);
 			set(index, key, ret.getEpoch(), ret.getVersion());
 			m_count++;
 		}
@@ -143,12 +174,23 @@ public class VersionsHashTableRAM {
 	 * Maps the given key to the given value in VersionsHashTable
 	 * @param p_key
 	 *            the key (is incremented before insertion to avoid 0)
+	 * @param p_version
+	 *            the version
+	 */
+	public final void put(final long p_key, final int p_version) {
+		put(p_key, (short) (m_epoch + (m_eon << 15)), p_version);
+	}
+
+	/**
+	 * Maps the given key to the given value in VersionsHashTable
+	 * @param p_key
+	 *            the key (is incremented before insertion to avoid 0)
 	 * @param p_epoch
 	 *            the epoch
 	 * @param p_version
 	 *            the version
 	 */
-	public final void put(final long p_key, final int p_epoch, final int p_version) {
+	public void put(final long p_key, final int p_epoch, final int p_version) {
 		int index;
 		long iter;
 		final long key = p_key + 1;

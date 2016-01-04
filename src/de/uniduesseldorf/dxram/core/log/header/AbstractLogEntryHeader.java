@@ -372,7 +372,8 @@ public abstract class AbstractLogEntryHeader {
 	 * @return the maximum log entry header size for secondary log
 	 */
 	public static short getAproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
-		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation because the
+		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
+		// because the
 		// actual version is determined during logging on backup peer
 		short ret = (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size)
 				+ LOG_ENTRY_EPO_SIZE + 1 + LOG_ENTRY_CRC_SIZE);
@@ -400,6 +401,21 @@ public abstract class AbstractLogEntryHeader {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * Flip eon in log entry header
+	 * @param p_logEntryHeader
+	 *            the AbstractLogEntryHeader
+	 * @param p_buffer
+	 *            the buffer the log entry header is in
+	 * @param p_offset
+	 *            the offset within the buffer
+	 */
+	public static void flipEon(final AbstractLogEntryHeader p_logEntryHeader, final byte[] p_buffer, final int p_offset) {
+		final int offset = p_offset + p_logEntryHeader.getVEROffset(p_buffer, p_offset);
+
+		p_buffer[offset + 1] = (byte) (p_buffer[offset + 1] ^ 1 << 15);
 	}
 
 	/**

@@ -37,7 +37,13 @@ public class EpochVersion {
 		return m_version;
 	}
 
+	/**
+	 * Compares two EpochVersions
+	 * @param p_cmp
+	 *            the EpochVersion to compare with
+	 * @return true if version, epoch and eon is equal
+	 */
 	public boolean equals(final EpochVersion p_cmp) {
-		return (m_epoch == p_cmp.getEpoch() && m_version == p_cmp.getVersion());
+		return m_epoch == p_cmp.getEpoch() && m_version == p_cmp.getVersion();
 	}
 }

@@ -2,6 +2,9 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
+
+import de.uniduesseldorf.dxram.core.log.EpochVersion;
 
 /**
  * HashTable to store versions (Linear probing)
@@ -18,6 +21,8 @@ public class VersionsHashTable {
 	private int m_threshold;
 	private float m_loadFactor;
 
+	private ReentrantLock m_lock;
+
 	// Constructors
 	/**
 	 * Creates an instance of VersionsHashTable
@@ -31,16 +36,18 @@ public class VersionsHashTable {
 
 		m_count = 0;
 		m_elementCapacity = p_initialElementCapacity;
-		m_intCapacity = m_elementCapacity * 3;
+		m_intCapacity = m_elementCapacity * 4;
 		m_loadFactor = p_loadFactor;
 
 		if (m_elementCapacity == 0) {
-			m_table = new int[3];
+			m_table = new int[4];
 			m_threshold = (int) m_loadFactor;
 		} else {
 			m_table = new int[m_intCapacity];
 			m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		}
+
+		m_lock = new ReentrantLock(false);
 	}
 
 	// Getter
@@ -67,22 +74,25 @@ public class VersionsHashTable {
 	 *            the searched key (is incremented before insertion to avoid 0)
 	 * @return the value to which the key is mapped in VersionsHashTable
 	 */
-	public final int get(final long p_key) {
-		int ret = 0;
+	public final EpochVersion get(final long p_key) {
+		EpochVersion ret = null;
 		int index;
 		long iter;
 		final long key = p_key + 1;
 
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				ret = getValue(index);
+				ret = new EpochVersion((short) getEpoch(index), getVersion(index));
 				break;
 			}
 			iter = getKey(++index);
 		}
+		m_lock.unlock();
+
 		return ret;
 	}
 
@@ -90,45 +100,37 @@ public class VersionsHashTable {
 	 * Maps the given key to the given value in VersionsHashTable
 	 * @param p_key
 	 *            the key (is incremented before insertion to avoid 0)
-	 * @param p_value
-	 *            the value
-	 * @return the old value
+	 * @param p_epoch
+	 *            the epoch
+	 * @param p_version
+	 *            the version
 	 */
-	public final long putMax(final long p_key, final int p_value) {
-		long ret = 0;
+	public void put(final long p_key, final int p_epoch, final int p_version) {
 		int index;
 		long iter;
 		final long key = p_key + 1;
 
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				ret = getValue(index);
-				if (ret > 0 && (p_value > ret || p_value < 0)) {
-					// Both values are positive and the new one is greater -> newer log entry
-					// Or current value is positive and new value is negative -> tombstone
-					set(index, key, p_value);
-				} else if (ret < 0 && p_value < ret) {
-					// Both values are negative and the new one is smaller -> newer tombstone
-					set(index, key, p_value);
-				}
+				set(index, key, p_epoch, p_version);
 				break;
 			}
 			iter = getKey(++index);
 		}
-		if (ret == 0) {
+		if (iter == 0) {
 			// Key unknown until now
-			set(index, key, p_value);
+			set(index, key, p_epoch, p_version);
 			m_count++;
 		}
 
 		if (m_count >= m_threshold) {
 			rehash();
 		}
-
-		return ret;
+		m_lock.unlock();
 	}
 
 	/**
@@ -148,18 +150,28 @@ public class VersionsHashTable {
 	private long getKey(final int p_index) {
 		int index;
 
-		index = p_index % m_elementCapacity * 3;
+		index = p_index % m_elementCapacity * 4;
 		return (long) m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
 	}
 
 	/**
-	 * Gets the value at given index
+	 * Gets the epoch at given index
 	 * @param p_index
 	 *            the index
-	 * @return the value
+	 * @return the epoch
 	 */
-	private int getValue(final int p_index) {
-		return m_table[p_index % m_elementCapacity * 3 + 2];
+	private int getEpoch(final int p_index) {
+		return m_table[p_index % m_elementCapacity * 4 + 2];
+	}
+
+	/**
+	 * Gets the version at given index
+	 * @param p_index
+	 *            the index
+	 * @return the version
+	 */
+	private int getVersion(final int p_index) {
+		return m_table[p_index % m_elementCapacity * 4 + 3];
 	}
 
 	/**
@@ -168,16 +180,19 @@ public class VersionsHashTable {
 	 *            the index
 	 * @param p_key
 	 *            the key
-	 * @param p_value
-	 *            the value
+	 * @param p_epoch
+	 *            the epoch
+	 * @param p_version
+	 *            the version
 	 */
-	private void set(final int p_index, final long p_key, final int p_value) {
+	private void set(final int p_index, final long p_key, final int p_epoch, final int p_version) {
 		int index;
 
-		index = p_index % m_elementCapacity * 3;
+		index = p_index % m_elementCapacity * 4;
 		m_table[index] = (int) (p_key >> 32);
 		m_table[index + 1] = (int) p_key;
-		m_table[index + 2] = p_value;
+		m_table[index + 2] = p_epoch;
+		m_table[index + 3] = p_version;
 	}
 
 	/**
@@ -194,71 +209,30 @@ public class VersionsHashTable {
 	}
 
 	/**
-	 * Maps the given key to the given value in VersionsHashTable
-	 * @param p_key
-	 *            the key (is incremented before insertion to avoid 0)
-	 * @param p_value
-	 *            the value
-	 * @return the old value
-	 */
-	private long put(final long p_key, final int p_value) {
-		long ret = -1;
-		int index;
-		long iter;
-		final long key = p_key + 1;
-
-		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
-
-		iter = getKey(index);
-		while (iter != 0) {
-			if (iter == key) {
-				ret = getValue(index);
-				break;
-			}
-			iter = getKey(++index);
-		}
-		if (ret == -1) {
-			set(index, key, p_value);
-			m_count++;
-		}
-
-		if (m_count >= m_threshold) {
-			rehash();
-		}
-
-		return ret;
-	}
-
-	/**
 	 * Increases the capacity of and internally reorganizes VersionsHashTable
 	 */
 	private void rehash() {
 		int index = 0;
-		int oldCount;
-		int oldThreshold;
+		int oldCapacity;
 		int[] oldMap;
 		int[] newMap;
 
-		oldThreshold = m_threshold;
+		oldCapacity = m_intCapacity;
 		oldMap = m_table;
 
 		m_elementCapacity = m_elementCapacity * 2 + 1;
-		m_intCapacity = m_elementCapacity * 3;
+		m_intCapacity = m_elementCapacity * 4;
 		newMap = new int[m_intCapacity];
 		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newMap;
 
-		System.out.print("Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
-
-		oldCount = m_count;
-		while (index < oldThreshold) {
-			if (oldMap[index * 3] != 0) {
-				put((long) oldMap[index * 3] << 32 | oldMap[index * 3 + 1] & 0xFFFFFFFFL, oldMap[index * 3 + 2] - 1);
+		m_count = 0;
+		while (index < oldCapacity) {
+			if (((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) != 0) {
+				put(((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) - 1, oldMap[index + 2], oldMap[index + 3]);
 			}
-			index = (index + 1) % m_elementCapacity;
+			index += 4;
 		}
-		m_count = oldCount;
-		System.out.println("done");
 	}
 
 }

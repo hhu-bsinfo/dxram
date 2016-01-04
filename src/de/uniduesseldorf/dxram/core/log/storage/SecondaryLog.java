@@ -39,7 +39,8 @@ public class SecondaryLog extends AbstractLog {
 	private short m_nodeID;
 	private long m_rangeIDOrFirstLocalID;
 
-	private VersionsHashTableRAM m_hashTable;
+	private long m_epochTimestamp;
+	private VersionsBuffer m_versionsBuffer;
 
 	private long m_numberOfBytes;
 	private int m_numberOfInvalidsInLog;
@@ -89,10 +90,12 @@ public class SecondaryLog extends AbstractLog {
 		m_nodeID = p_nodeID;
 		m_rangeIDOrFirstLocalID = p_rangeIDOrFirstLocalID;
 
+		m_epochTimestamp = System.currentTimeMillis();
+
 		m_numberOfBytes = 0;
 		m_numberOfInvalidsInLog = 0;
 
-		m_hashTable = new VersionsHashTableRAM(4000000, 0.9f);
+		m_versionsBuffer = new VersionsBuffer(4000000, 0.9f);
 
 		m_reorganizationThread = p_reorganizationThread;
 
@@ -123,9 +126,9 @@ public class SecondaryLog extends AbstractLog {
 		EpochVersion ret;
 
 		if (m_storesMigrations) {
-			ret = m_hashTable.getNext(p_chunkID);
+			ret = m_versionsBuffer.getNext(p_chunkID);
 		} else {
-			ret = m_hashTable.getNext(ChunkID.getLocalID(p_chunkID));
+			ret = m_versionsBuffer.getNext(ChunkID.getLocalID(p_chunkID));
 		}
 
 		return ret;
@@ -138,7 +141,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @return the current version
 	 */
 	public final EpochVersion getCurrentVersion(final long p_chunkID) {
-		return m_hashTable.get(p_chunkID);
+		return m_versionsBuffer.get(p_chunkID);
 	}
 
 	/**
@@ -208,9 +211,9 @@ public class SecondaryLog extends AbstractLog {
 	 */
 	public final void invalidateChunk(final long p_chunkID) {
 		if (m_storesMigrations) {
-			m_hashTable.put(p_chunkID, 0, -1);
+			m_versionsBuffer.put(p_chunkID, -1);
 		} else {
-			m_hashTable.put(ChunkID.getLocalID(p_chunkID), 0, -1);
+			m_versionsBuffer.put(ChunkID.getLocalID(p_chunkID), -1);
 		}
 		incLogInvalidCounter();
 	}
@@ -246,6 +249,18 @@ public class SecondaryLog extends AbstractLog {
 				signalReorganizationAndWait();
 			}
 
+			// Change epoch
+			if (System.currentTimeMillis() - m_epochTimestamp > 60 * 1000) {
+				// TODO: Write versions cache to SSD
+				m_versionsBuffer.clear();
+				if (m_versionsBuffer.incrementEpoch()) {
+					for (SegmentHeader segmentHeader : m_segmentHeaders) {
+						segmentHeader.beginEon();
+					}
+				}
+				m_epochTimestamp = System.currentTimeMillis();
+			}
+
 			/*
 			 * Appending data cases:
 			 * 1. This secondary log is accessed by the reorganization thread:
@@ -265,7 +280,8 @@ public class SecondaryLog extends AbstractLog {
 					length = 0;
 				} else {
 					if (m_activeSegment != null) {
-						// There is not enough space in active segment to store the whole buffer -> first fill current one
+						// There is not enough space in active segment to store the whole buffer -> first fill current
+						// one
 						header = m_segmentHeaders[m_activeSegment.getIndex()];
 						while (rangeSize < length) {
 							logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(p_data, p_offset + rangeSize, m_storesMigrations);
@@ -821,28 +837,34 @@ public class SecondaryLog extends AbstractLog {
 
 	/**
 	 * Reorganizes all segments
+	 * @param p_allVersions
+	 *            a hash table with all versions for this secondary log
 	 */
-	public final void reorganizeAll() {
+	public final void reorganizeAll(final VersionsHashTable p_allVersions) {
 		for (int i = 0; i < m_segmentHeaders.length; i++) {
 			if (m_segmentHeaders[i] != null) {
-				reorganizeSegment(i);
+				reorganizeSegment(i, p_allVersions);
 			}
 		}
 	}
 
 	/**
 	 * Reorganizes one segment by choosing the segment with best cost-benefit ratio
+	 * @param p_allVersions
+	 *            a hash table with all versions for this secondary log
 	 */
-	public final void reorganizeIteratively() {
-		reorganizeSegment(chooseSegment());
+	public final void reorganizeIteratively(final VersionsHashTable p_allVersions) {
+		reorganizeSegment(chooseSegment(), p_allVersions);
 	}
 
 	/**
 	 * Reorganizes one given segment
 	 * @param p_segmentIndex
 	 *            the segments index
+	 * @param p_allVersions
+	 *            a hash table with all versions for this secondary log
 	 */
-	private void reorganizeSegment(final int p_segmentIndex) {
+	private void reorganizeSegment(final int p_segmentIndex, final VersionsHashTable p_allVersions) {
 		int length;
 		int readBytes = 0;
 		int writtenBytes = 0;
@@ -850,6 +872,7 @@ public class SecondaryLog extends AbstractLog {
 		long chunkID;
 		byte[] segmentData;
 		byte[] newData;
+		EpochVersion currentVersion;
 		AbstractLogEntryHeader logEntryHeader;
 
 		if (-1 != p_segmentIndex) {
@@ -858,18 +881,32 @@ public class SecondaryLog extends AbstractLog {
 				segmentData = readSegment(p_segmentIndex);
 				newData = new byte[SECLOG_SEGMENT_SIZE];
 
-				// TODO: Remove all old versions in segment if a tombstone appears?
-				// TODO: Remove object if there is a newer version in this segment?
 				while (readBytes < segmentData.length) {
 					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segmentData, readBytes, m_storesMigrations);
 					length = logEntryHeader.getHeaderSize(segmentData, readBytes) + logEntryHeader.getLength(segmentData, readBytes);
 					chunkID = logEntryHeader.getCID(segmentData, readBytes);
 					// logEntryHeader.print(segmentData, readBytes);
 
-					if (m_hashTable.get(chunkID).equals(logEntryHeader.getVersion(segmentData, readBytes))) {
+					currentVersion = p_allVersions.get(chunkID);
+					// Compare version, epoch and eon
+					if (currentVersion.equals(logEntryHeader.getVersion(segmentData, readBytes))) {
 						System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
 						writtenBytes += length;
+
+						if ((currentVersion.getEpoch() & 0x7FFF) == m_versionsBuffer.getEon()) {
+							// Update eon in both versions
+							AbstractLogEntryHeader.flipEon(logEntryHeader, newData, writtenBytes - length);
+
+							if (m_storesMigrations) {
+								m_versionsBuffer.put(chunkID, currentVersion.getEpoch() ^ 1 << 15,
+										currentVersion.getVersion());
+							} else {
+								m_versionsBuffer.put(ChunkID.getLocalID(chunkID), currentVersion.getEpoch() ^ 1 << 15,
+										currentVersion.getVersion());
+							}
+						}
 					} else {
+						// Version, epoch and/or eon is different -> remove entry
 						// removedObjects++;
 					}
 					readBytes += length;
@@ -887,6 +924,7 @@ public class SecondaryLog extends AbstractLog {
 					/*-} else {
 						removedObjects = 0;
 						removedTombstones = 0;*/
+					m_segmentHeaders[p_segmentIndex].markSegmentAsReorganized();
 				}
 				m_lock.unlock();
 			} catch (final IOException | InterruptedException e) {
@@ -911,6 +949,8 @@ public class SecondaryLog extends AbstractLog {
 		long max = -1;
 		SegmentHeader currentSegment;
 
+		// TODO: Choose every segment within one eon
+
 		// Cost-benefit ratio: ((1-u)*age)/(1+u)
 		for (int i = 0; i < m_segmentHeaders.length; i++) {
 			currentSegment = m_segmentHeaders[i];
@@ -933,7 +973,7 @@ public class SecondaryLog extends AbstractLog {
 	 *            a hash table to store version numbers in
 	 */
 	public final void getCurrentVersions(final VersionsHashTable p_hashtable) {
-
+		// TODO: Read versions from SSD
 	}
 
 	// Classes
@@ -948,6 +988,7 @@ public class SecondaryLog extends AbstractLog {
 		private int m_usedBytes;
 		private int m_deletedBytes;
 		private long m_lastAccess;
+		private boolean m_reorgInCurrEon;
 
 		// Constructors
 		/**
@@ -962,6 +1003,7 @@ public class SecondaryLog extends AbstractLog {
 			m_usedBytes = p_usedBytes;
 			m_deletedBytes = 0;
 			m_lastAccess = System.currentTimeMillis();
+			m_reorgInCurrEon = false;
 		}
 
 		// Getter
@@ -1011,6 +1053,14 @@ public class SecondaryLog extends AbstractLog {
 			return System.currentTimeMillis() - m_lastAccess;
 		}
 
+		/**
+		 * Returns whether this segment was reorganized in current eon
+		 * @return whether this segment was reorganized in current eon
+		 */
+		private boolean wasReorganized() {
+			return m_reorgInCurrEon;
+		}
+
 		// Setter
 		/**
 		 * Updates the number of used bytes
@@ -1030,6 +1080,20 @@ public class SecondaryLog extends AbstractLog {
 		private void updateDeletedBytes(final int p_deletedBytes) {
 			m_deletedBytes += p_deletedBytes;
 			m_lastAccess = System.currentTimeMillis();
+		}
+
+		/**
+		 * Sets the reorganization status for current eon
+		 */
+		private void markSegmentAsReorganized() {
+			m_reorgInCurrEon = true;
+		}
+
+		/**
+		 * Resets the reorganization status for new eon
+		 */
+		private void beginEon() {
+			m_reorgInCurrEon = false;
 		}
 
 		/**

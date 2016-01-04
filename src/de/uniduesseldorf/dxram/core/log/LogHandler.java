@@ -788,7 +788,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public final class SecondaryLogsReorgThread extends Thread {
 
 		// Attributes
-		private VersionsHashTable m_versionsHT;
+		private VersionsHashTable m_allVersions;
 		private SecondaryLog m_secLog;
 
 		// Constructors
@@ -796,7 +796,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		 * Creates an instance of SecondaryLogsReorgThread
 		 */
 		public SecondaryLogsReorgThread() {
-			m_versionsHT = new VersionsHashTable(6400000, 0.9f);
+			m_allVersions = new VersionsHashTable(6400000, 0.9f);
 		}
 
 		// Setter
@@ -909,7 +909,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					if (null != secondaryLog) {
 						getAccessToSecLog(secondaryLog);
 						if (secondaryLog.getLogInvalidCounter() != 0) {
-							secondaryLog.getCurrentVersions(m_versionsHT);
+							secondaryLog.getCurrentVersions(m_allVersions);
 						}
 						for (int i = 0; i < 10; i++) {
 							// m_writeBuffer.printThroughput();
@@ -919,8 +919,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								}
 								// Reorganization thread was signaled -> process given log completely
 								getAccessToSecLog(m_secLog);
-								m_secLog.getCurrentVersions(new VersionsHashTable(6400000, 0.9f));
-								m_secLog.reorganizeAll();
+								final VersionsHashTable versions = new VersionsHashTable(6400000, 0.9f);
+								m_secLog.getCurrentVersions(versions);
+								m_secLog.reorganizeAll(versions);
 								leaveSecLog(m_secLog);
 								m_secLog = null;
 								m_reorganizationFinishedCondition.signal();
@@ -931,7 +932,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								}
 								// Time-out -> reorganize another segment in current log
 								getAccessToSecLog(secondaryLog);
-								secondaryLog.reorganizeIteratively();
+								secondaryLog.reorganizeIteratively(m_allVersions);
 							}
 						}
 						leaveSecLog(secondaryLog);
