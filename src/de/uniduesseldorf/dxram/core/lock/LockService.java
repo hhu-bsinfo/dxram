@@ -1,5 +1,10 @@
 package de.uniduesseldorf.dxram.core.lock;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Vector;
+
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
@@ -17,10 +22,14 @@ import de.uniduesseldorf.dxram.core.lock.messages.LockMessages;
 import de.uniduesseldorf.dxram.core.lock.messages.LockRequest;
 import de.uniduesseldorf.dxram.core.lock.messages.LockResponse;
 import de.uniduesseldorf.dxram.core.lock.messages.UnlockMessage;
+import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
 import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.dxram.core.statistics.StatisticsConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
+import de.uniduesseldorf.dxram.core.util.ChunkLockOperation;
+import de.uniduesseldorf.dxram.core.util.ChunkSortByOrigin;
+
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
@@ -36,6 +45,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 	private NetworkComponent m_network = null;
 	private MemoryManagerComponent m_memoryManager = null;
 	private LockComponent m_lock = null;
+	private LookupComponent m_lookup = null;
 	
 	private boolean m_statisticsEnabled = false;
 	
@@ -49,6 +59,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 		m_network = getComponent(NetworkComponent.COMPONENT_IDENTIFIER);
 		m_memoryManager = getComponent(MemoryManagerComponent.COMPONENT_IDENTIFIER);
 		m_lock = getComponent(LockComponent.COMPONENT_IDENTIFIER);
+		m_lookup = getComponent(LookupComponent.COMPONENT_IDENTIFIER);
 		
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
@@ -64,15 +75,127 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 	protected boolean shutdownService() 
 	{
 		m_network = null;
+		m_memoryManager = null;
+		m_lock = null;
+		m_lookup = null;
 		
 		return true;
 	}
 	
-	public int lock(final DataStructure p_dataStructure) {
-		return lock(p_dataStructure, false);
+	public int lock(final boolean p_writeLock, final DataStructure... p_dataStructures) {
+		int lockCount = 0;
+		
+		if (m_statisticsEnabled)
+			Operation.LOCK.enter();
+		
+		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+			LOGGER.error("a superpeer must not lock chunks");
+		} else {
+			ChunkSortByOrigin chunksSorted = ChunkSortByOrigin.sort(m_lookup, m_memoryManager, p_dataStructures);
+			
+			// execute local locks
+			for (DataStructure dataStructure : chunksSorted.getLocalChunks()) {
+				m_lock.lock(dataStructure.getID(), p_writeLock);
+				lockCount++;
+			}
+			
+			// remote locks
+			for (Entry<Short, ArrayList<DataStructure>> entry : chunksSorted.getRemoteChunksByPeers().entrySet()) {
+				ArrayList<DataStructure> chunksForMessage = new ArrayList<DataStructure>();
+				
+				for (DataStructure dataStructure : entry.getValue()) {
+					short primaryPeer = m_lookup.get(dataStructure.getID()).getPrimaryPeer();
+					if (primaryPeer == getSystemData().getNodeID()) {
+						int size;
+						int bytesRead;
+
+						// local lock
+						m_lock.lock(dataStructure.getID(), p_writeLock);
+					} else {
+						// Remote lock
+						chunksForMessage.add(dataStructure);
+					}
+				}
+				
+				LockRequest request;
+				if (p_writeLock) {
+					request = new LockRequest(entry.getKey(), ChunkLockOperation.WRITE_LOCK, (DataStructure[]) chunksForMessage.toArray());
+				} else {
+					request = new LockRequest(entry.getKey(), ChunkLockOperation.READ_LOCK, (DataStructure[]) chunksForMessage.toArray());
+				}
+				// XXX ???
+				request.setIgnoreTimeout(true);
+				try {
+					request.sendSync(m_network);
+				} catch (final NetworkException e) {
+					// TODO handle error if message could not be sent
+					//m_lookup.invalidate(p_chunkID);
+					//continue;
+				}
+				LockResponse response = request.getResponse(LockResponse.class);
+				if (response != null) {
+					ret = response.getChunk();
+				} else {
+					// TODO no response?
+				}
+				// TODO so for locking this is a little tricky here:
+				// when sending the request and the chunk on the remote side is locked, we can't
+				// just wait until the chunk gets unlocked. instead a kind of try lock is executed
+				// by trying a specific amount of time and returning an error code to the host
+				// the host then waits a little a tries again until the chunk is unlocked
+				// TODO add stuff of lock reponse (if all locks were successful just send a single byte)
+				// to put request and others as well
+				if (-1 == ret.getChunkID()) {
+					try {
+						// Chunk is locked, wait a bit
+						Thread.sleep(10);
+					} catch (final InterruptedException e) {}
+				}
+			}
+//			for (DataStructure dataStructure : remoteChunks) {
+//				while (null == ret || -1 == ret.getChunkID()) {
+//					short primaryPeer = m_lookup.get(dataStructure.getID()).getPrimaryPeer();
+//					if (primaryPeer == getSystemData().getNodeID()) {
+//						int size;
+//						int bytesRead;
+//
+//						// local lock
+//						m_lock.lock(dataStructure.getID(), p_writeLock);
+//					} else {
+//						// Remote lock
+//						LockRequest request;
+//						if (p_writeLock) {
+//							request = new LockRequest(primaryPeer, ChunkLockOperation.WRITE_LOCK, dataStructure.getID());
+//						} else {
+//							
+//						}
+//						request.setIgnoreTimeout(true);
+//						try {
+//							request.sendSync(m_network);
+//						} catch (final NetworkException e) {
+//							m_lookup.invalidate(p_chunkID);
+//							continue;
+//						}
+//						response = request.getResponse(LockResponse.class);
+//						if (response != null) {
+//							ret = response.getChunk();
+//						}
+//						if (-1 == ret.getChunkID()) {
+//							try {
+//								// Chunk is locked, wait a bit
+//								Thread.sleep(10);
+//							} catch (final InterruptedException e) {}
+//						}
+//					}
+//				}
+//			}
+		}
+		
+		if (m_statisticsEnabled)
+			Operation.LOCK.leave();
 	}
 
-	public int lock(final DataStructure p_dataStructure, final boolean p_readLock) {
+	public int lock(final DataStructure p_dataStructure, final int p_writeLock) {
 		DefaultLock lock;
 		short primaryPeer;
 		LockRequest request;

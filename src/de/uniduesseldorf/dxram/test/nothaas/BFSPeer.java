@@ -14,7 +14,7 @@ import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.utils.NameServiceStringConverter;
+import de.uniduesseldorf.dxram.core.nameservice.NameServiceStringConverter;
 
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.utils.Tools;

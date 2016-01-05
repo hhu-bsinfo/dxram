@@ -193,6 +193,15 @@ public class DXRAMEngine
             }
         }
         m_logger.info("Initializing components done.");
+        
+        m_logger.info("Starting " + m_services.size() + " services...");
+        for (DXRAMService service : m_services.values()) {
+            if (service.start(this) == false) {
+            	m_logger.error("Starting service '" + service.getServiceName() + "' failed, aborting init.");
+                return false;
+            }
+        }
+        m_logger.info("Starting services done.");
 
         m_logger.info("Initializing engine done.");
         m_isInitilized = true;
@@ -209,6 +218,14 @@ public class DXRAMEngine
 		
 		m_logger.info("Shutting down engine...");
 
+		m_logger.info("Shutting down " + m_services.size() + " services...");
+        for (DXRAMService service : m_services.values()) {
+            if (service.shutdown() == false) {
+            	m_logger.error("Shutting down service '" + service.getServiceName() + "' failed.");
+            }
+        }
+        m_logger.info("Shutting down services done.");
+		
 		list = new ArrayList<DXRAMComponent>(m_components.values());
 
 	    comp = new Comparator<DXRAMComponent>() {

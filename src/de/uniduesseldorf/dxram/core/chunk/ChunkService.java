@@ -64,8 +64,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	private MemoryManagerComponent m_memoryManager = null;
 	private NetworkComponent m_network = null;
 	private LookupComponent m_lookup = null;
-	private LockComponent m_lock = null;
-	private BackupComponent m_backup = null;
+//	private LockComponent m_lock = null;
+//	private BackupComponent m_backup = null;
 	
 	private boolean m_statisticsEnabled = false;
 	
@@ -85,16 +85,16 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		m_memoryManager = getComponent(MemoryManagerComponent.COMPONENT_IDENTIFIER);
 		m_network = getComponent(NetworkComponent.COMPONENT_IDENTIFIER);
 		m_lookup = getComponent(LookupComponent.COMPONENT_IDENTIFIER);
-		m_lock = getComponent(LockComponent.COMPONENT_IDENTIFIER);
-		m_backup = getComponent(BackupComponent.COMPONENT_IDENTIFIER);
+//		m_lock = getComponent(LockComponent.COMPONENT_IDENTIFIER);
+//		m_backup = getComponent(BackupComponent.COMPONENT_IDENTIFIER);
 		
 		m_statisticsEnabled = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_CHUNK);
 
 		registerNetworkMessages();
 
-		if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
-			m_backup.registerPeer();
-		}
+//		if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
+//			m_backup.registerPeer();
+//		}
 
 		if (m_statisticsEnabled) {
 			StatisticsManager.registerStatistic("Chunk", ChunkStatistic.getInstance());
@@ -109,8 +109,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		m_memoryManager = null;
 		m_network = null;
 		m_lookup = null;
-		m_lock = null;
-		m_backup = null;
+//		m_lock = null;
+//		m_backup = null;
 		
 		return true;
 	}
@@ -128,19 +128,12 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 			chunkIDs = new long[p_sizes.length];
 
 			m_memoryManager.lockManage();
-			// keep first loop tight and execute everything
+			// keep loop tight and execute everything
 			// that we don't have to lock outside of this section
 			for (int i = 0; i < p_sizes.length; i++) {
 				chunkIDs[i] = m_memoryManager.create(p_sizes[i]);		
 			}
 			m_memoryManager.unlockManage();
-
-			// TODO backup
-//			for (int i = 0; i < p_sizes.length; i++) {
-//				m_backup.initBackupRange(ChunkID.getLocalID(chunkIDs[i]), p_sizes[i]);
-//			}
-			
-			// TODO inform logging about creation?
 		}
 
 		if (m_statisticsEnabled) {
@@ -162,9 +155,10 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		Vector<DataStructure> localChunks;
 		int totalChunksGot = 0;
 		
-		if (m_statisticsEnabled)
+		if (m_statisticsEnabled) {
 			Operation.MULTI_GET.enter();
-
+		}
+			
 		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {

@@ -2,77 +2,83 @@ package de.uniduesseldorf.dxram.core.lock.messages;
 
 import java.nio.ByteBuffer;
 
-import de.uniduesseldorf.dxram.core.data.Chunk;
-import de.uniduesseldorf.dxram.core.data.DataStructure;
-import de.uniduesseldorf.dxram.core.data.MessagesDataStructureImExporter;
+import de.uniduesseldorf.dxram.core.util.ChunkMessagesMetadataUtils;
 
 import de.uniduesseldorf.menet.AbstractResponse;
 
 /**
  * Response to a LockRequest
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 5.1.16
  */
 public class LockResponse extends AbstractResponse {
 
 	// Attributes
-	private DataStructure m_dataStructure = null;
+	private byte[] m_chunkStatusCodes = null;
 
 	// Constructors
 	/**
-	 * Creates an instance of LockResponse
+	 * Creates an instance of LockResponse as a receiver.
 	 */
 	public LockResponse() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of LockResponse
-	 * @param p_request
-	 *            the corresponding LockRequest
-	 * @param p_chunk
-	 *            the requested Chunk
+	 * Creates an instance of LockResponse as a sender.
+	 * @param p_request Corresponding request to this response.
+	 * @param p_statusCodes Null if all locks were successful, otherwise an array with status codes for each chunkID.
 	 */
-	public LockResponse(final LockRequest p_request, final DataStructure p_dataStructure) {
+	public LockResponse(final LockRequest p_request, final byte... p_statusCodes) {
 		super(p_request, LockMessages.SUBTYPE_LOCK_RESPONSE);
 
-		m_dataStructure = p_dataStructure;
+		m_chunkStatusCodes = p_statusCodes;
+		
+		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_statusCodes.length));
 	}
 
 	// Getters
 	/**
-	 * Get the requested DataStructure
-	 * @return the requested DataStructure
+	 * Get the status codes of the execution after message was received.
+	 * @return Null if execution on all locks was successful, otherwise an array with error codes for each chunk requested.
 	 */
-	public final DataStructure getDataStructure() {
-		return m_dataStructure;
+	public final byte[] getStatusCodes() {
+		return m_chunkStatusCodes;
 	}
 
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		// read the data to be sent to the remote from the chunk set for this message
-		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-		int size = m_dataStructure.sizeofObject();
+		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkStatusCodes.length);
 		
-		// we don't need to re-send the id, the request still remembers that
-		exporter.setPayloadSize(size);
-		p_buffer.putInt(size);
-		exporter.exportObject(m_dataStructure);
+		// null indicates that all calls were successful
+		// send a single status byte only
+		if (m_chunkStatusCodes == null) {
+			p_buffer.put((byte) 1);
+		} else {
+			// otherwise send all the status bytes for further error evaluation later
+			p_buffer.put((byte) 0);
+			p_buffer.put(m_chunkStatusCodes);
+		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		// read the payload from the buffer and write it directly into
-		// the data structure provided by the request to avoid further copying of data
-		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-		LockRequest request = (LockRequest) getCorrespondingRequest();
-		importer.setPayloadSize(p_buffer.getInt());
-		importer.importObject(request.getDataStructure());
+		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		boolean allSuccessful = p_buffer.get() == 1 ? true : false;
+		
+		// first byte indicates if all calls were successful, shortens message length
+		// only get further bytes if failed
+		if (!allSuccessful) {
+			m_chunkStatusCodes = new byte[numChunks];
+			
+			p_buffer.get(m_chunkStatusCodes);
+		}
 	}
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return Integer.BYTES + m_dataStructure.sizeofObject();
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + m_chunkStatusCodes.length * Byte.BYTES;
 	}
 
 }

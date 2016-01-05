@@ -3,6 +3,9 @@ package de.uniduesseldorf.dxram.core.chunk.messages;
 import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.util.ChunkLockOperation;
+import de.uniduesseldorf.dxram.core.util.ChunkMessagesMetadataUtils;
+
 import de.uniduesseldorf.menet.AbstractRequest;
 
 /**
@@ -35,13 +38,25 @@ public class GetRequest extends AbstractRequest {
 	 * @param p_dataStructure
 	 *            Data structure with the ID of the chunk to get.
 	 */
-	public GetRequest(final short p_destination, final boolean p_lockAcquire, final DataStructure... p_dataStructures) {
+	public GetRequest(final short p_destination, final ChunkLockOperation m_lockOperation, final DataStructure... p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
 
 		m_dataStructure = p_dataStructures;
 		
-		byte tmpCode = ChunkMessagesUtils.setLockFlag(getStatusCode(), p_lockAcquire);
-		ChunkMessagesUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length);
+		byte tmpCode = getStatusCode();
+		switch (m_lockOperation)
+		{
+			case NO_LOCK_OPERATION:
+				break;
+			case READ_LOCK:
+				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+			case WRITE_LOCK:
+				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+			default:
+				assert 1 == 2;
+		}
+
+		ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length);
 		setStatusCode(tmpCode);
 	}
 	
@@ -53,12 +68,16 @@ public class GetRequest extends AbstractRequest {
 		return m_chunkIDs;
 	}
 	
-	/**
-	 * Get the acquire lock flag of the request (when receiving it).
-	 * @return
-	 */
-	public boolean acquireLock() {
-		return ChunkMessagesUtils.getLockFlag(getStatusCode());
+	public ChunkLockOperation getLockOperation() {
+		if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
+			if (ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode())) {
+				return ChunkLockOperation.READ_LOCK;
+			} else {
+				return ChunkLockOperation.WRITE_LOCK;
+			}
+		} else {
+			return ChunkLockOperation.NO_LOCK_OPERATION;
+		}
 	}
 	
 	/**
@@ -73,7 +92,7 @@ public class GetRequest extends AbstractRequest {
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructure.length);
+		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructure.length);
 		
 		for (DataStructure dataStructure : m_dataStructure) {
 			p_buffer.putLong(dataStructure.getID());
@@ -82,7 +101,7 @@ public class GetRequest extends AbstractRequest {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		int numChunks = ChunkMessagesUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 		
 		m_chunkIDs = new long[numChunks];
 		for (int i = 0; i < m_chunkIDs.length; i++) {
@@ -92,6 +111,6 @@ public class GetRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructure.length;
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructure.length;
 	}
 }

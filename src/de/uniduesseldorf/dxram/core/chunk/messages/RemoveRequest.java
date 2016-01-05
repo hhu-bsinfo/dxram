@@ -3,6 +3,8 @@ package de.uniduesseldorf.dxram.core.chunk.messages;
 import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.util.ChunkMessagesMetadataUtils;
+
 import de.uniduesseldorf.menet.AbstractRequest;
 
 /**
@@ -39,7 +41,7 @@ public class RemoveRequest extends AbstractRequest {
 
 		m_dataStructures = p_dataStructures;
 		
-		setStatusCode(ChunkMessagesUtils.setNumberOfItemsToSend(getStatusCode(), p_dataStructures.length));
+		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_dataStructures.length));
 	}
 
 	/**
@@ -52,7 +54,7 @@ public class RemoveRequest extends AbstractRequest {
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
+		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
 		
 		for (DataStructure dataStructure : m_dataStructures) {
 			p_buffer.putLong(dataStructure.getID());
@@ -61,7 +63,7 @@ public class RemoveRequest extends AbstractRequest {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		int numChunks = ChunkMessagesUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 		
 		m_chunkIDs = new long[numChunks];
 		
@@ -72,7 +74,7 @@ public class RemoveRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructures.length;
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructures.length;
 	}
 
 }

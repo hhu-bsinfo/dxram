@@ -2,6 +2,8 @@ package de.uniduesseldorf.dxram.core.chunk.messages;
 
 import java.nio.ByteBuffer;
 
+import de.uniduesseldorf.dxram.core.util.ChunkMessagesMetadataUtils;
+
 import de.uniduesseldorf.menet.AbstractResponse;
 
 /**
@@ -34,7 +36,7 @@ public class PutResponse extends AbstractResponse {
 
 		m_chunkStatusCodes = p_statusCodes;
 		
-		setStatusCode(ChunkMessagesUtils.setNumberOfItemsToSend(getStatusCode(), p_statusCodes.length));
+		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_statusCodes.length));
 	}
 
 	/**
@@ -47,14 +49,14 @@ public class PutResponse extends AbstractResponse {
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkStatusCodes.length);
+		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkStatusCodes.length);
 		
 		p_buffer.put(m_chunkStatusCodes);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		int numChunks = ChunkMessagesUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 		
 		m_chunkStatusCodes = new byte[numChunks];
 		
@@ -63,7 +65,7 @@ public class PutResponse extends AbstractResponse {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode()) + m_chunkStatusCodes.length * Byte.BYTES;
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + m_chunkStatusCodes.length * Byte.BYTES;
 	}
 
 }

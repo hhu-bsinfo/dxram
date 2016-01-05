@@ -10,7 +10,7 @@ import de.uniduesseldorf.utils.serialization.Importer;
  * Stores data
  * @author Florian Klein 09.03.2012
  */
-public class Chunk implements Comparable<Chunk>, DataStructure
+public class Chunk implements DataStructure
 {
 	// Constants
 	public static final long INVALID_CHUNKID = -1;
@@ -42,12 +42,6 @@ public class Chunk implements Comparable<Chunk>, DataStructure
 	 */
 	public final int getDataSize() {
 		return m_data.capacity();
-	}
-
-	// Methods
-	@Override
-	public final int compareTo(final Chunk p_chunk) {
-		return (int) (m_chunkID - p_chunk.m_chunkID);
 	}
 
 	@Override

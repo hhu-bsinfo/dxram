@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 
 import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.data.MessagesDataStructureImExporter;
+import de.uniduesseldorf.dxram.core.util.ChunkMessagesMetadataUtils;
+
 import de.uniduesseldorf.menet.AbstractResponse;
 
 /**
@@ -44,7 +46,7 @@ public class GetResponse extends AbstractResponse {
 		super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
 
 		m_dataStructures = p_dataStructures;
-		setStatusCode(ChunkMessagesUtils.setNumberOfItemsToSend(getStatusCode(), p_numChunksGot));
+		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_numChunksGot));
 	}
 	
 	/**
@@ -57,7 +59,7 @@ public class GetResponse extends AbstractResponse {
 	
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ChunkMessagesUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
+		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
 		
 		// read the data to be sent to the remote from the chunk set for this message
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
@@ -73,7 +75,7 @@ public class GetResponse extends AbstractResponse {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_numChunksGot = ChunkMessagesUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		m_numChunksGot = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 		
 		// read the payload from the buffer and write it directly into
 		// the data structure provided by the request to avoid further copying of data
@@ -87,7 +89,7 @@ public class GetResponse extends AbstractResponse {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		int size = ChunkMessagesUtils.getSizeOfAdditionalLengthField(getStatusCode());
+		int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
 		
 		size += m_dataStructures.length * Integer.BYTES;
 		

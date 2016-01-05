@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.utils;
+package de.uniduesseldorf.dxram.core.nameservice;
 
 import java.util.HashMap;
 import java.util.Map;

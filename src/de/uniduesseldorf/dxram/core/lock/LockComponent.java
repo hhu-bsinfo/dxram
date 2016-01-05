@@ -1,7 +1,6 @@
 package de.uniduesseldorf.dxram.core.lock;
 
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
-import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 
 public abstract class LockComponent extends DXRAMComponent {
 
@@ -13,47 +12,22 @@ public abstract class LockComponent extends DXRAMComponent {
 
 	// Methods
 	/**
-	 * Locks a Chunk
-	 * @param p_lock
-	 *            the lock
-	 * @throws DXRAMException
-	 *             if the Chunk could not be locked
+	 * Lock a chunk with the specified id (nodeID + localID).
+	 * @param p_chunkID ID of the chunk to lock.
+	 * @param p_writeLock True to acquire a write lock, false for a read lock.
 	 */
-	public abstract void lock(DefaultLock p_lock);
-
+	public abstract void lock(final long p_chunkID, final boolean p_writeLock);
+	
 	/**
-	 * Unlocks a Chunk
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @throws DXRAMException
-	 *             if the Chunk could not be unlocked
+	 * Unlock a chunk with the specified ID (nodeID + localID).
+	 * @param p_chunkID ID of the chunk to unlock.
+	 * @param p_writeLock True to unlock a write lock, false for a read lock.
 	 */
-	public abstract void unlock(long p_chunkID, short p_nodeID);
-
-	/**
-	 * Unlocks a Chunk (all locks)
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @throws DXRAMException
-	 *             if the Chunks could not be unlocked
-	 */
-	public abstract void unlockAll(long p_chunkID);
-
-	/**
-	 * Unlocks all Chunks (locked by a node)
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @throws DXRAMException
-	 *             if the Chunks could not be unlocked
-	 */
-	public abstract void unlockAll(short p_nodeID);
-
-	/**
-	 * Unlocks all Chunks
-	 * @throws DXRAMException
-	 *             if the Chunks could not be unlocked
-	 */
-	public abstract void unlockAll();
+	public abstract void unlock(final long p_chunkID, final boolean p_writeLock);
+	
+//	/**
+//	 * Unlock all locally locked chunks.
+//	 * @param p_writeLock True to unlock all write locks, false for a read locks.
+//	 */
+//	public abstract void unlockAll(final boolean p_writeLock);
 }
