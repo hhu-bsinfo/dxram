@@ -2,6 +2,7 @@ package de.uniduesseldorf.dxram.core.lock;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -21,14 +22,33 @@ public class DefaultLockComponent extends LockComponent
 	}
 
 	@Override
-	public void lock(long p_chunkID, boolean p_writeLock) {
+	public boolean lock(long p_chunkID, boolean p_writeLock, final int p_timeoutMs) {
 		ReadWriteLock lock = getLock(p_chunkID);
+		boolean success = false;
 		
 		if (p_writeLock) {
-			lock.writeLock().lock();
+			if (p_timeoutMs == -1) {
+				success = true;
+				lock.writeLock().lock();
+			} else {
+				try {
+					success = lock.writeLock().tryLock(p_timeoutMs, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+				}
+			}
 		} else {
-			lock.readLock().lock();
+			if (p_timeoutMs == -1) {
+				success = true;
+				lock.readLock().lock();
+			} else {
+				try {
+					success = lock.readLock().tryLock(p_timeoutMs, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+				}
+			}
 		}
+		
+		return success;
 	}
 
 	@Override

@@ -305,43 +305,6 @@ public abstract class AbstractMessage {
 	}
 
 	/**
-	 * Send the Message using the given NetworkInterface
-	 * @param p_network
-	 *            the NetworkInterface
-	 * @throws NetworkException
-	 *             if the message could not be send
-	 */
-	public final void send(final NetworkInterface p_network) throws NetworkException {
-		Contract.checkNotNull(p_network, "no network given");
-
-		beforeSend();
-
-		p_network.sendMessage(this);
-
-		afterSend();
-	}
-
-	/**
-	 * Forward the Message to the given destination using the given NetworkInterface
-	 * @param p_destination
-	 *            the destination
-	 * @param p_network
-	 *            the NetworkInterface 
-	 * @throws NetworkException
-	 *             if the message could not be forwarded
-	 */
-	public final void forward(final short p_destination, final NetworkInterface p_network) throws NetworkException {
-		NodeID.check(p_destination);
-		Contract.checkNotNull(p_network, "no network given");
-
-		m_destination = p_destination;
-
-		// LOGGER.trace("forwarding message to " + p_destination);
-
-		p_network.sendMessage(this);
-	}
-
-	/**
 	 * Executed before a Message is send (not forwarded)
 	 */
 	protected void beforeSend() {}
@@ -394,11 +357,8 @@ public abstract class AbstractMessage {
 		return ret;
 	}
 
-	/**
-	 * Creates a string representation of the message
-	 * @return the string representation
-	 */
-	public final String print() {
+	@Override
+	public final String toString() {
 		return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
 	}
 

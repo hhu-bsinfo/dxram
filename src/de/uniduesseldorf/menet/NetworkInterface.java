@@ -31,11 +31,18 @@ public interface NetworkInterface {
 	 * Sends a Message
 	 * @param p_message
 	 *            the Message
-	 * @throws NetworkException
-	 *             if the message could not be send
+	 * @returns 0 if successful, -1 could not connect to destination, -2 sending message failed
 	 */
-	void sendMessage(AbstractMessage p_message) throws NetworkException;
+	int sendMessage(final AbstractMessage p_message);
 
+	/**
+	 * Forward the message to the given destination.
+	 * @param p_destination Target destination to forward to.
+	 * @param p_message Message to forward.
+	 * @returns 0 if successful, -1 could not connect to destination, -2 sending message failed
+	 */
+	int forwardMessage(final short p_destination, final AbstractMessage p_message);
+	
 	/**
 	 * Registers a MessageReceiver for a message class
 	 * @param p_message

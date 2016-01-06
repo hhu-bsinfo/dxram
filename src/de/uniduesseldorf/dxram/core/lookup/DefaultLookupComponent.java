@@ -93,7 +93,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private static final short DUMMY = -1;
 
 	// Attributes
-	private NetworkInterface m_network = null;
+	private NetworkComponent m_network = null;
 
 	private short m_me = -1;
 	private short m_predecessor = -1;
@@ -148,14 +148,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 			if (-1 != responsibleSuperpeer) {
 				request = new LookupRequest(responsibleSuperpeer, p_chunkID);
-				Contract.checkNotNull(request);
-				try {
-					request.sendSync(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 					// Responsible superpeer is not available, try again and check responsible superpeer
 					check = true;
-		//continue;
 				}
+				
 				response = request.getResponse(LookupResponse.class);
 
 				ret = response.getLocations();
@@ -185,15 +182,12 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 			if (-1 != responsibleSuperpeer) {
 				request = new GetBackupRangesRequest(responsibleSuperpeer, p_nodeID);
-				Contract.checkNotNull(request);
-				try {
-					request.sendSync(m_network);
-					response = request.getResponse(GetBackupRangesResponse.class);
-				} catch (final NetworkException e) {
+				if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 					// Responsible superpeer is not available, try again and check responsible superpeer
 					check = true;
 					continue;
 				}
+				response = request.getResponse(GetBackupRangesResponse.class);
 				ret = response.getBackupRanges();
 			}
 		}
@@ -215,9 +209,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		while (true) {
 			responsibleSuperpeer = getResponsibleSuperpeer(p_owner, check);
 
-			try {
-				new UpdateAllMessage(responsibleSuperpeer, p_owner).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(new UpdateAllMessage(responsibleSuperpeer, p_owner)) != NetworkComponent.ErrorCode.SUCCESS) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -225,6 +217,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				} catch (final InterruptedException e1) {}
 				continue;
 			}
+
 			break;
 		}
 
@@ -246,10 +239,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			responsibleSuperpeer = m_mySuperpeer;
 
 			request = new InitRangeRequest(responsibleSuperpeer, p_firstChunkIDOrRangeID, p_primaryAndBackupPeers.convertToLong(), NO_BACKUP);
-			Contract.checkNotNull(request);
-			try {
-				request.sendSync(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -257,6 +247,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				} catch (final InterruptedException e1) {}
 				continue;
 			}
+
 			finished = request.getResponse(InitRangeResponse.class).getStatus();
 		}
 
@@ -276,16 +267,13 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			responsibleSuperpeer = m_mySuperpeer;
 
 			request = new MigrateRequest(responsibleSuperpeer, p_chunkID, p_nodeID, NO_BACKUP);
-			Contract.checkNotNull(request);
-			try {
-				request.sendSync(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
 				} catch (final InterruptedException e1) {}
-				continue;
+				continue;	
 			}
 			finished = request.getResponse(MigrateResponse.class).getStatus();
 		}
@@ -311,17 +299,15 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				responsibleSuperpeer = m_mySuperpeer;
 
 				request = new MigrateRangeRequest(responsibleSuperpeer, p_startCID, p_endCID, p_nodeID, NO_BACKUP);
-				Contract.checkNotNull(request);
-				try {
-					request.sendSync(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
 					} catch (final InterruptedException e1) {}
-					continue;
+					continue;	
 				}
+
 				finished = request.getResponse(MigrateRangeResponse.class).getStatus();
 			}
 		}
@@ -339,9 +325,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LOGGER.trace("Entering migrateNotCreatedChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
 
 		responsibleSuperpeer = getResponsibleSuperpeer(ChunkID.getCreatorID(p_chunkID), NO_CHECK);
-		try {
-			new MigrateMessage(responsibleSuperpeer, p_chunkID, p_nodeID, NO_BACKUP).send(m_network);
-		} catch (final NetworkException e) {
+		if (m_network.sendMessage(new MigrateMessage(responsibleSuperpeer, p_chunkID, p_nodeID, NO_BACKUP)) != NetworkComponent.ErrorCode.SUCCESS) {
 			// Ignore superpeer failure, System will fix this
 		}
 
@@ -358,9 +342,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					m_dataLock.unlock();
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length - 1; i++) {
-						try {
-							new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
-						} catch (final NetworkException e) {
+						if (m_network.sendMessage(new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP)) != NetworkComponent.ErrorCode.SUCCESS) {
 							// Ignore superpeer failure, System will fix this
 							continue;
 						}
@@ -368,9 +350,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				} else {
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
-						try {
-							new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
-						} catch (final NetworkException e) {
+						if (m_network.sendMessage(new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP)) != NetworkComponent.ErrorCode.SUCCESS) {
 							// Ignore superpeer failure, System will fix this
 							continue;
 						}
@@ -402,9 +382,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			if (-1 != backupSuperpeers[0]) {
 				// Send backups
 				for (int i = 0; i < backupSuperpeers.length; i++) {
-					try {
-						new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP).send(m_network);
-					} catch (final NetworkException e) {
+					if (m_network.sendMessage(new MigrateMessage(backupSuperpeers[i], p_chunkID, p_nodeID, BACKUP)) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Ignore superpeer failure, will fix this later
 						continue;
 					}
@@ -434,10 +412,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 			if (-1 != responsibleSuperpeer) {
 				request = new InsertIDRequest(responsibleSuperpeer, p_id, p_chunkID, NO_BACKUP);
-				Contract.checkNotNull(request);
-				try {
-					request.sendSync(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -445,6 +420,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					} catch (final InterruptedException e1) {}
 					continue;
 				}
+
 				response = request.getResponse(InsertIDResponse.class);
 
 				backupSuperpeers = response.getBackupSuperpeers();
@@ -453,10 +429,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 						// Send backups
 						for (int i = 0; i < backupSuperpeers.length; i++) {
 							request = new InsertIDRequest(backupSuperpeers[i], p_id, p_chunkID, BACKUP);
-							Contract.checkNotNull(request);
-							try {
-								request.sendSync(m_network);
-							} catch (final NetworkException e) {
+							if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 								// Ignore superpeer failure, own superpeer will fix this
 								continue;
 							}
@@ -488,10 +461,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 			if (-1 != responsibleSuperpeer) {
 				request = new GetChunkIDRequest(responsibleSuperpeer, p_id);
-				Contract.checkNotNull(request);
-				try {
-					request.sendSync(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
@@ -499,6 +469,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					} catch (final InterruptedException e1) {}
 					continue;
 				}
+
 				ret = request.getResponse(GetChunkIDResponse.class).getChunkID();
 			}
 		}
@@ -521,12 +492,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		for (short superpeer : superpeers) {
 			request = new GetMappingCountRequest(superpeer);
-			try {
-				request.sendSync(m_network);
+			if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
+				// TODO error handling?
+			} else {
 				response = request.getResponse(GetMappingCountResponse.class);
 				ret += response.getCount();
-			} catch (final NetworkException e) {
-				e.printStackTrace();
 			}
 		}
 
@@ -549,10 +519,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			responsibleSuperpeer = m_mySuperpeer;
 
 			request = new RemoveRequest(responsibleSuperpeer, new long[] {p_chunkID}, NO_BACKUP);
-			Contract.checkNotNull(request);
-			try {
-				request.sendSync(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -560,6 +527,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				} catch (final InterruptedException e1) {}
 				continue;
 			}
+
 			response = request.getResponse(RemoveResponse.class);
 
 			backupSuperpeers = response.getBackupSuperpeers();
@@ -568,10 +536,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
 						request = new RemoveRequest(backupSuperpeers[i], new long[] {p_chunkID}, BACKUP);
-						Contract.checkNotNull(request);
-						try {
-							request.sendSync(m_network);
-						} catch (final NetworkException e) {
+						if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 							// Ignore superpeer failure, own superpeer will fix this
 							continue;
 						}
@@ -600,10 +565,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			responsibleSuperpeer = m_mySuperpeer;
 
 			request = new RemoveRequest(responsibleSuperpeer, p_chunkIDs, NO_BACKUP);
-			Contract.checkNotNull(request);
-			try {
-				request.sendSync(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -611,6 +573,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				} catch (final InterruptedException e1) {}
 				continue;
 			}
+
 			response = request.getResponse(RemoveResponse.class);
 
 			backupSuperpeers = response.getBackupSuperpeers();
@@ -619,10 +582,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
 						request = new RemoveRequest(backupSuperpeers[i], p_chunkIDs, BACKUP);
-						Contract.checkNotNull(request);
-						try {
-							request.sendSync(m_network);
-						} catch (final NetworkException e) {
+						if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 							// Ignore superpeer failure, own superpeer will fix this
 							continue;
 						}
@@ -652,11 +612,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		if (0 > Collections.binarySearch(m_superpeers, p_creator)) {
 			// Deactivate connection manager temporarily to accelerate creator checking
 			m_network.deactivateConnectionManager();
-			try {
-				new SendSuperpeersMessage(p_creator, m_superpeers).send(m_network);
-				ret = true;
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(new SendSuperpeersMessage(p_creator, m_superpeers)) != NetworkComponent.ErrorCode.SUCCESS) {
 				// Peer is not available anymore
+			} else {
+				ret = true;
 			}
 			m_network.activateConnectionManager();
 		}
@@ -675,11 +634,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			if (!m_superpeers.isEmpty()) {
 				while (i < m_superpeers.size()) {
 					superpeer = m_superpeers.get(i++);
-					try {
-						new PingSuperpeerMessage(superpeer).send(m_network);
-					} catch (final NetworkException e) {
+					if (m_network.sendMessage(new PingSuperpeerMessage(superpeer)) != NetworkComponent.ErrorCode.SUCCESS) {
 						continue;
-					}
+					} 
+					
 					ret = false;
 					break;
 				}
@@ -922,14 +880,12 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					LOGGER.trace("Contacting " + contactSuperpeer + " to join the ring, I am " + m_me);
 
 					joinRequest = new JoinRequest(contactSuperpeer, m_me, IS_SUPERPEER);
-					Contract.checkNotNull(joinRequest);
-					try {
-						joinRequest.sendSync(m_network);
-					} catch (final NetworkException e) {
+					if (m_network.sendSync(joinRequest) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Contact superpeer is not available, get a new contact superpeer
 						contactSuperpeer = getCurrentBootstrap();
 						continue;
 					}
+
 					joinResponse = joinRequest.getResponse(JoinResponse.class);
 					contactSuperpeer = joinResponse.getNewContactSuperpeer();
 				}
@@ -952,14 +908,12 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					LOGGER.trace("Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + m_me);
 
 					joinRequest = new JoinRequest(contactSuperpeer, m_me, IS_NOT_SUPERPEER);
-					Contract.checkNotNull(joinRequest);
-					try {
-						joinRequest.sendSync(m_network);
-					} catch (final NetworkException e) {
+					if (m_network.sendSync(joinRequest) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Contact superpeer is not available, get a new contact superpeer
 						contactSuperpeer = getCurrentBootstrap();
 						continue;
 					}
+
 					joinResponse = joinRequest.getResponse(JoinResponse.class);
 					contactSuperpeer = joinResponse.getNewContactSuperpeer();
 				}
@@ -1052,13 +1006,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 				while (true) {
 					request = new AskAboutSuccessorRequest(predecessor);
-					Contract.checkNotNull(request);
-					try {
-						request.sendSync(m_network);
-					} catch (final NetworkException e) {
+					if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Predecessor is not available, try responsibleSuperpeer without checking
-						break;
+						break;	
 					}
+
 					response = request.getResponse(AskAboutSuccessorResponse.class);
 					Contract.checkNotNull(response);
 					hisSuccessor = response.getSuccessor();
@@ -1367,12 +1319,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				mappings = m_idTable.toArray(responsibleArea[0], responsibleArea[1], isOnlySuperpeer(), CLOSED_INTERVAL);
 				m_mappingLock.unlock();
 
-				try {
-					new JoinResponse(p_joinRequest, (short) -1, joiningNodesPredecessor, m_me, mappings, m_superpeers, peers, trees).send(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendMessage(new JoinResponse(p_joinRequest, (short) -1, joiningNodesPredecessor, m_me, mappings, m_superpeers, peers, trees)) != NetworkComponent.ErrorCode.SUCCESS) {
 					// Joining node is not available anymore -> ignore request and return directly
 					m_overlayLock.unlock();
-					return;
+					return;	
 				}
 
 				for (int i = 0; i < peers.size(); i++) {
@@ -1388,27 +1338,22 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					setPredecessor(joiningNode);
 					m_overlayLock.unlock();
 
-					try {
-						new NotifyAboutNewSuccessorMessage(joiningNodesPredecessor, m_predecessor).send(m_network);
-					} catch (final NetworkException e) {
+					if (m_network.sendMessage(new NotifyAboutNewSuccessorMessage(joiningNodesPredecessor, m_predecessor)) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Old predecessor is not available anymore, ignore it
 					}
 				}
 			} else {
 				m_overlayLock.lock();
 				insertPeer(joiningNode);
-				try {
-					new JoinResponse(p_joinRequest, (short) -1, (short) -1, (short) -1, null, m_superpeers, null, null).send(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendMessage(new JoinResponse(p_joinRequest, (short) -1, (short) -1, (short) -1, null, m_superpeers, null, null)) != NetworkComponent.ErrorCode.SUCCESS) {
 					// Joining node is not available anymore, ignore request
 				}
+
 				m_overlayLock.unlock();
 			}
 		} else {
 			superpeer = getResponsibleSuperpeer(joiningNode, NO_CHECK);
-			try {
-				new JoinResponse(p_joinRequest, superpeer, (short) -1, (short) -1, null, null, null, null).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(new JoinResponse(p_joinRequest, superpeer, (short) -1, (short) -1, null, null, null, null)) != NetworkComponent.ErrorCode.SUCCESS) {
 				// Joining node is not available anymore, ignore request
 			}
 		}
@@ -1433,9 +1378,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			result = tree.getMetadata(chunkID);
 		}
 		m_dataLock.unlock();
-		try {
-			new LookupResponse(p_lookupRequest, result).send(m_network);
-		} catch (final NetworkException e) {
+		
+		if (m_network.sendMessage(
+				new LookupResponse(p_lookupRequest, result)) 
+				!= NetworkComponent.ErrorCode.SUCCESS) {
 			// Requesting peer is not available anymore, ignore it
 		}
 	}
@@ -1471,9 +1417,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 		m_dataLock.unlock();
-		try {
-			new GetBackupRangesResponse(p_getBackupRangesRequest, result).send(m_network);
-		} catch (final NetworkException e) {
+		if (m_network.sendMessage(
+				new GetBackupRangesResponse(p_getBackupRangesRequest, result)) 
+				!= NetworkComponent.ErrorCode.SUCCESS) {
 			// Requesting peer is not available anymore, ignore it
 		}
 	}
@@ -1538,18 +1484,15 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				// Send backups
 				for (int i = 0; i < backupSuperpeers.length; i++) {
 					request = new InitRangeRequest(backupSuperpeers[i], startChunkIDRangeID, primaryAndBackupPeers.convertToLong(), BACKUP);
-					Contract.checkNotNull(request);
-					try {
-						request.sendSync(m_network);
-					} catch (final NetworkException e) {
+					if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Ignore superpeer failure, superpeer will fix this later
 						continue;
 					}
 				}
 			}
-			try {
-				new InitRangeResponse(p_initRangeRequest, true).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(
+					new InitRangeResponse(p_initRangeRequest, true)) 
+					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		} else if (isBackup) {
@@ -1565,16 +1508,16 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				tree.initMigrationRange((int) startChunkIDRangeID, primaryAndBackupPeers.getBackupPeers());
 			}
 			m_dataLock.unlock();
-			try {
-				new InitRangeResponse(p_initRangeRequest, true).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(
+					new InitRangeResponse(p_initRangeRequest, true)) 
+					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		} else {
 			// Not responsible for requesting peer
-			try {
-				new InitRangeResponse(p_initRangeRequest, false).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(
+					new InitRangeResponse(p_initRangeRequest, false)) 
+					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Requesting node is not available anymore, ignore it
 			}
 		}
@@ -1607,9 +1550,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			if (null == tree) {
 				m_dataLock.unlock();
 				LOGGER.error("CIDTree range not initialized on responsible superpeer " + m_me);
-				try {
-					new MigrateResponse(p_migrateRequest, false).send(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendMessage(
+						new MigrateResponse(p_migrateRequest, false)) 
+						!= NetworkComponent.ErrorCode.SUCCESS) {
 					// Requesting peer is not available anymore, ignore request it
 				}
 			} else {
@@ -1623,18 +1566,15 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
 						request = new MigrateRequest(backupSuperpeers[i], chunkID, nodeID, BACKUP);
-						Contract.checkNotNull(request);
-						try {
-							request.sendSync(m_network);
-						} catch (final NetworkException e) {
+						if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 							// Ignore superpeer failure, superpeer will fix this later
-							continue;
+							continue;	
 						}
 					}
 				}
-				try {
-					new MigrateResponse(p_migrateRequest, true).send(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendMessage(
+						new MigrateResponse(p_migrateRequest, true)) 
+						!= NetworkComponent.ErrorCode.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
 				}
 			}
@@ -1647,16 +1587,17 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				tree.migrateObject(chunkID, nodeID);
 			}
 			m_dataLock.unlock();
-			try {
-				new MigrateResponse(p_migrateRequest, true).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(
+					new MigrateResponse(p_migrateRequest, true)) 
+					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
+
 		} else {
 			// Not responsible for requesting peer
-			try {
-				new MigrateResponse(p_migrateRequest, false).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(
+					new MigrateResponse(p_migrateRequest, false)) 
+					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		}
@@ -1696,9 +1637,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			if (null == tree) {
 				m_dataLock.unlock();
 				LOGGER.error("CIDTree range not initialized on responsible superpeer " + m_me);
-				try {
-					new MigrateRangeResponse(p_migrateRangeRequest, false).send(m_network);
-				} catch (final NetworkException e) {
+				if (m_network.sendMessage(
+						new MigrateRangeResponse(p_migrateRangeRequest, false)) 
+						!= NetworkComponent.ErrorCode.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
 				}
 			} else {
@@ -1712,17 +1653,19 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					// Send backups
 					for (int i = 0; i < backupSuperpeers.length; i++) {
 						request = new MigrateRangeRequest(backupSuperpeers[i], startChunkID, endChunkID, nodeID, BACKUP);
-						Contract.checkNotNull(request);
-						try {
-							request.sendSync(m_network);
-						} catch (final NetworkException e) {
+						if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 							// Ignore superpeer failure, superpeer will fix this later
-							continue;
+							continue;	
 						}
 					}
 				}
+				if (m_network.sendMessage(
+						new MigrateRangeResponse(p_migrateRangeRequest, true)) 
+						!= NetworkComponent.ErrorCode.SUCCESS) {
+					
+				}
 				try {
-					new MigrateRangeResponse(p_migrateRangeRequest, true).send(m_network);
+					.send(m_network);
 				} catch (final NetworkException e) {
 					// Requesting peer is not available anymore, ignore it
 				}

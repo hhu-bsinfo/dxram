@@ -152,9 +152,11 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	}
 
 	@Override
-	public void sendMessage(final AbstractMessage p_message) throws NetworkException {
+	public int sendMessage(final AbstractMessage p_message) {
 		AbstractConnection connection;
 
+		p_message.beforeSend();
+		
 		// LOGGER.trace("Entering sendMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
@@ -175,18 +177,33 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			} else {
 				try {
 					connection = m_manager.getConnection(p_message.getDestination());
+				} catch (final IOException e) {
+					return -1;
+				}
+				try {
 					if (null != connection) {
 						connection.write(p_message);
 					} else {
-						throw new NetworkException("Error while accessing network connection");
+						return -1;
 					}
 				} catch (final IOException e) {
-					throw new NetworkException("Error while accessing network connection", e);
+					return -2;
 				}
 			}
 		}
+		
+		p_message.afterSend();
 
 		// LOGGER.trace("Exiting sendMessage");
+		
+		return 0;
+	}
+	
+	@Override
+	public int forwardMessage(short p_destination, AbstractMessage p_message) {
+		p_message.setDestination(p_destination);
+		
+		return sendMessage(p_message);
 	}
 
 	/**

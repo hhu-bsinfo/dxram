@@ -154,10 +154,10 @@ public abstract class AbstractRequest extends AbstractMessage {
 	// Methods
 	/**
 	 * Wait until the Request is fulfilled or aborted
-	 * @throws NetworkException
-	 *             if a timeout occurred
+	 * @returns False if message timed out, true if response received.
 	 */
-	final void waitForResponses() throws NetworkException {
+	public final boolean waitForResponses() {
+		boolean success = true;
 		long timeStart;
 		long timeNow;
 
@@ -167,13 +167,14 @@ public abstract class AbstractRequest extends AbstractMessage {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > 1200 && !m_ignoreTimeout) {
 				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
-				System.out.println("wait-for-response time-out: " + print());
-				throw new NetworkException("Timeout Occurred");
+				success = false;
 			}
 			try {
 				m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
 			} catch (final InterruptedException e) {}
 		}
+		
+		return success;
 	}
 
 	/**
@@ -228,18 +229,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 		if (m_abortAction != null) {
 			m_abortAction.execute(this);
 		}
-	}
-
-	/**
-	 * Send the Request and wait for fulfillment using the given NetworkInterface
-	 * @param p_network
-	 *            the NetworkInterface
-	 * @throws NetworkException
-	 *             if the message could not be send
-	 */
-	public final void sendSync(final NetworkInterface p_network) throws NetworkException {
-		send(p_network);
-		waitForResponses();
 	}
 
 	@Override

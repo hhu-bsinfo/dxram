@@ -1,8 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.util;
 
-import de.uniduesseldorf.utils.Contract;
-
 /**
  * Wrapper class for a ChunkID
  * @author Florian Klein
@@ -31,7 +29,7 @@ public final class ChunkID {
 	 * @return the CreatorID part
 	 */
 	public static short getCreatorID(final long p_chunkID) {
-		check(p_chunkID);
+		assert p_chunkID != INVALID_ID;
 
 		return (short) ((p_chunkID & CREATORID_BITMASK) >> 48);
 	}
@@ -43,29 +41,8 @@ public final class ChunkID {
 	 * @return the LocalID part
 	 */
 	public static long getLocalID(final long p_chunkID) {
-		check(p_chunkID);
+		assert p_chunkID != INVALID_ID;
 
 		return p_chunkID & LOCALID_BITMASK;
 	}
-
-	/**
-	 * Checks if the ChunkID is valid
-	 * @param p_chunkID
-	 *            the ChunkID
-	 */
-	public static void check(final long p_chunkID) {
-		Contract.check(p_chunkID != INVALID_ID, "invalid ChunkID");
-	}
-
-	/**
-	 * Checks if the ChunkIDs is valid
-	 * @param p_chunkIDs
-	 *            the ChunkIDs
-	 */
-	public static void check(final long[] p_chunkIDs) {
-		for (final long chunkID : p_chunkIDs) {
-			Contract.check(chunkID != INVALID_ID, "invalid ChunkID");
-		}
-	}
-
 }

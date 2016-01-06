@@ -60,9 +60,7 @@ public abstract class LookupComponent extends DXRAMComponent {
 	 * Get the corresponding NodeID for the given ID
 	 * @param p_chunkID
 	 *            the ID
-	 * @return the corresponding NodeID
-	 * @throws LookupException
-	 *             if the NodeID could not be get
+	 * @return the corresponding NodeID or null if node ID not available.
 	 */
 	public abstract Locations get(long p_chunkID);
 
