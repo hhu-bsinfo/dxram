@@ -9,6 +9,7 @@ import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.NodeEntry;
 
+// TODO obsolete? -> zookeeper stuff goes to BootComponent
 public class DXRAMSystemData 
 {
 	private NodesWatcher m_nodesWatcher = null;

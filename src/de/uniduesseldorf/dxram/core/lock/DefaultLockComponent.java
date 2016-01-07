@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import de.uniduesseldorf.utils.config.Configuration;
 import de.uniduesseldorf.utils.locks.JNIReadWriteSpinLock;
 import de.uniduesseldorf.utils.locks.SpinLock;
 
@@ -63,12 +62,11 @@ public class DefaultLockComponent extends LockComponent
 	}
 
 	@Override
-	protected void registerConfigurationValuesComponent(Configuration p_configuration) {
-
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 	}
 
 	@Override
-	protected boolean initComponent(Configuration p_configuration) {
+	protected boolean initComponent(final Settings p_settings) {
 		m_locks = new HashMap<Long, ReadWriteLock>();
 		m_creationLock = new SpinLock();
 		

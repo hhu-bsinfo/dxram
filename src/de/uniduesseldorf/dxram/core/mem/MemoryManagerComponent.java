@@ -4,12 +4,10 @@ package de.uniduesseldorf.dxram.core.mem;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.core.statistics.StatisticsConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.soh.SmallObjectHeap;
 import de.uniduesseldorf.soh.StorageUnsafeMemory;
 import de.uniduesseldorf.utils.StatisticsManager;
-import de.uniduesseldorf.utils.config.Configuration;
 import de.uniduesseldorf.utils.locks.JNIReadWriteSpinLock;
 
 /**
@@ -44,16 +42,16 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	}
 	
 	@Override
-	protected void registerConfigurationValuesComponent(final Configuration p_configuration) {
-		p_configuration.registerConfigurationEntries(MemoryManagerConfigurationValues.CONFIGURATION_ENTRIES);
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
+		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
+		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE);
+		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.STATISTICS);
 	}
 	
 	@Override
-	protected boolean initComponent(final Configuration p_configuration) 
+	protected boolean initComponent(final Settings p_settings) 
 	{
-		p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SIZE);
-
-		m_enableMemoryStatistics = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_MEMORY);
+		m_enableMemoryStatistics = p_settings.getValue(MemoryManagerConfigurationValues.Component.STATISTICS);
 
 		if (m_enableMemoryStatistics) {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
@@ -61,14 +59,14 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 
 		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 		m_rawMemory.initialize(
-				p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SIZE), 
-				p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SEGMENT_SIZE));
+				p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE),
+				p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
 		m_cidTable = new CIDTable(getSystemData().getNodeID(), m_enableMemoryStatistics);
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
 		
-		MemoryStatistic.getInstance().initMemory(p_configuration.getLongValue(MemoryManagerConfigurationValues.MEM_SIZE));
+		MemoryStatistic.getInstance().initMemory(p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE));
 		
 		return true;
 	}

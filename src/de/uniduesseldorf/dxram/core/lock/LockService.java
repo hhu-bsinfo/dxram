@@ -1,23 +1,13 @@
 package de.uniduesseldorf.dxram.core.lock;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Vector;
-
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
-import de.uniduesseldorf.dxram.core.chunk.ChunkService;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
-import de.uniduesseldorf.dxram.core.data.Chunk;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
-import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
-import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
-import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 import de.uniduesseldorf.dxram.core.lock.messages.LockMessages;
 import de.uniduesseldorf.dxram.core.lock.messages.LockRequest;
 import de.uniduesseldorf.dxram.core.lock.messages.LockResponse;
@@ -26,17 +16,9 @@ import de.uniduesseldorf.dxram.core.lookup.Locations;
 import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
 import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
-import de.uniduesseldorf.dxram.core.net.NetworkComponent.ErrorCode;
-import de.uniduesseldorf.dxram.core.statistics.StatisticsConfigurationValues;
-import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.ChunkLockOperation;
-import de.uniduesseldorf.dxram.core.util.ChunkSortByOrigin;
 
 import de.uniduesseldorf.menet.AbstractMessage;
-import de.uniduesseldorf.menet.NetworkException;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
-import de.uniduesseldorf.utils.Contract;
-import de.uniduesseldorf.utils.config.Configuration;
 
 public class LockService extends DXRAMService implements MessageReceiver, ConnectionLostListener {
 	
@@ -63,14 +45,21 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 	
 	private boolean m_statisticsEnabled = false;
 	private int m_remoteLockSendIntervalMs = -1;
-	private int m_remoteLockTryTimeout = -1;
+	private int m_remoteLockTryTimeoutMs = -1;
 	
 	public LockService() {
 		super(SERVICE_NAME);
 	}
 	
 	@Override
-	protected boolean startService(Configuration p_configuration) {
+	protected void registerDefaultSettingsService(Settings p_settings) {
+		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
+		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
+		p_settings.setDefaultValue(LockConfigurationValues.Service.STATISTICS);
+	}
+	
+	@Override
+	protected boolean startService(final Settings p_settings) {
 	
 		m_network = getComponent(NetworkComponent.COMPONENT_IDENTIFIER);
 		m_memoryManager = getComponent(MemoryManagerComponent.COMPONENT_IDENTIFIER);
@@ -81,11 +70,9 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
 		
-		m_statisticsEnabled = p_configuration.getBooleanValue(StatisticsConfigurationValues.STATISTIC_CHUNK);
-		
-		// TODO add to config and get
-		m_remoteLockSendIntervalMs 
-		m_remoteLockTryTimeout
+		m_statisticsEnabled = p_settings.getValue(LockConfigurationValues.Service.STATISTICS);
+		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
+		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
 		
 		return true;
 	}
@@ -314,7 +301,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 		
 		// the host handles the timeout as we don't want to block the message receiver thread
 		// for too long, execute a tryLock instead	
-		success = m_lock.lock(p_request.getChunkID(), p_request.isWriteLockOperation(), m_remoteLockTryTimeout);
+		success = m_lock.lock(p_request.getChunkID(), p_request.isWriteLockOperation(), m_remoteLockTryTimeoutMs);
 		
 		informSuperpeerChunkLocked(p_request.getChunkID());
 		
