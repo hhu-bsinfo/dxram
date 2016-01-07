@@ -131,6 +131,17 @@ public final class NodesWatcher implements Watcher {
 		return data;
 	}
 	
+	public boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version)
+	{
+		try {
+			m_zookeeper.setData(p_path, p_data, p_version);
+			return true;
+		} catch (ZooKeeperException e) {
+			LOGGER.error("Setting data on zookeeper failed.", e);
+			return false;
+		}
+	}
+	
 	public boolean zookeeperPathExists(final String p_path) {
 		boolean ret = false;
 		

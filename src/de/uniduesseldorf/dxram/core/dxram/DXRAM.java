@@ -79,6 +79,6 @@ public final class DXRAM implements DXRAMEngineSetupHandler
 	@Override
 	public void setupServices(final DXRAMEngine p_engine, final Configuration p_configuration) {
 		// TODO read from configuration and setup
-		p_engine.addService(new ChunkService());
+		//p_engine.addService(new ChunkService());
 	}
 }

@@ -68,4 +68,8 @@ public class DXRAMSystemData
 	public boolean zookeeperExists(final String p_path) {
 		return m_nodesWatcher.zookeeperPathExists(p_path);
 	}
+	
+	public boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) {
+		return m_nodesWatcher.zookeeperSetData(p_path, p_data, p_version);
+	}
 }

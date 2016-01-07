@@ -63,7 +63,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 	@Override
 	public void migrate(final long p_chunkID, final short p_nodeID) {
-		ChunkID.check(p_chunkID);
+		assert p_chunkID != ChunkID.INVALID_ID;
 
 		invalidate(p_chunkID);
 
@@ -72,8 +72,8 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 	@Override
 	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
-		ChunkID.check(p_startCID);
-		ChunkID.check(p_endCID);
+		assert p_startCID != ChunkID.INVALID_ID;
+		assert p_endCID != ChunkID.INVALID_ID;
 
 		invalidate(p_startCID, p_endCID);
 
@@ -82,7 +82,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 	@Override
 	public void migrateNotCreatedChunk(final long p_chunkID, final short p_nodeID) {
-		ChunkID.check(p_chunkID);
+		assert p_chunkID != ChunkID.INVALID_ID;
 
 		invalidate(p_chunkID);
 
@@ -91,7 +91,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 	@Override
 	public void migrateOwnChunk(final long p_chunkID, final short p_nodeID) {
-		ChunkID.check(p_chunkID);
+		assert p_chunkID != ChunkID.INVALID_ID;
 
 		invalidate(p_chunkID);
 
@@ -100,7 +100,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 	@Override
 	public void initRange(final long p_firstChunkID, final Locations p_locations) {
-		ChunkID.check(p_firstChunkID);
+		assert p_firstChunkID != ChunkID.INVALID_ID;
 
 		m_lookup.initRange(p_firstChunkID, p_locations);
 	}
@@ -137,7 +137,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 	@Override
 	public void remove(final long p_chunkID) {
-		ChunkID.check(p_chunkID);
+		assert p_chunkID != ChunkID.INVALID_ID;
 
 		invalidate(p_chunkID);
 
@@ -146,8 +146,6 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 	@Override
 	public void remove(final long[] p_chunkIDs) {
-		ChunkID.check(p_chunkIDs);
-
 		invalidate(p_chunkIDs);
 
 		m_lookup.remove(p_chunkIDs);
@@ -156,6 +154,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	@Override
 	public void invalidate(final long... p_chunkIDs) {
 		for (long chunkID : p_chunkIDs) {
+			assert chunkID != ChunkID.INVALID_ID;
 			m_chunkIDCacheTree.invalidateChunkID(chunkID);
 		}
 	}
