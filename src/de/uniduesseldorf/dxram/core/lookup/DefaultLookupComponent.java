@@ -13,8 +13,9 @@ import org.apache.zookeeper.data.Stat;
 
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
+import de.uniduesseldorf.dxram.core.boot.BootComponent;
+import de.uniduesseldorf.dxram.core.boot.NodeRole;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
 import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutBackupsRequest;
@@ -94,6 +95,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 	// Attributes
 	private NetworkComponent m_network = null;
+	private BootComponent m_boot = null;
 
 	private short m_me = -1;
 	private short m_predecessor = -1;
@@ -233,7 +235,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		LOGGER.trace("Entering initRange with: p_endChunkID=" + p_firstChunkIDOrRangeID + ", p_locations=" + p_primaryAndBackupPeers);
 
-		Contract.check(!getSystemData().getNodeRole().equals(NodeRole.SUPERPEER));
+		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
 
 		while (!finished) {
 			responsibleSuperpeer = m_mySuperpeer;
@@ -513,7 +515,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		LOGGER.trace("Entering remove with: p_chunkID=" + p_chunkID);
 
-		Contract.check(!getSystemData().getNodeRole().equals(NodeRole.SUPERPEER));
+		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
 
 		while (true) {
 			responsibleSuperpeer = m_mySuperpeer;
@@ -559,7 +561,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		LOGGER.trace("Entering remove with: p_chunkIDs=" + p_chunkIDs);
 
-		Contract.check(!getSystemData().getNodeRole().equals(NodeRole.SUPERPEER));
+		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
 
 		while (true) {
 			responsibleSuperpeer = m_mySuperpeer;
@@ -629,7 +631,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short superpeer;
 		int i = 0;
 
-		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			ret = true;
 			if (!m_superpeers.isEmpty()) {
 				while (i < m_superpeers.size()) {
@@ -662,7 +664,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 * @return true if there are other known superpeers, false otherwise
 	 */
 	public boolean isOnlySuperpeer() {
-		return getSystemData().getNodeRole().equals(NodeRole.SUPERPEER) && m_superpeers.isEmpty();
+		return m_boot.getNodeRole().equals(NodeRole.SUPERPEER) && m_superpeers.isEmpty();
 	}
 
  
@@ -773,8 +775,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		if (!super.initComponent(p_configuration))
 			return false;
 			
-		m_bootstrap = Short.parseShort(new String(getSystemData().zookeeperGetData("nodes/bootstrap")));
-		m_numberOfSuperpeers = Integer.parseInt(new String(getSystemData().zookeeperGetData("nodes/superpeers")));
+		m_bootstrap = m_boot.getNodeIDBootstrap();
+		m_numberOfSuperpeers = m_boot.getNumberOfAvailableSuperpeers();
 
 		m_sleepInterval = p_configuration.getIntValue(LookupConfigurationValues.LOOKUP_SLEEP);
 
@@ -804,10 +806,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_network.register(GetChunkIDRequest.class, this);
 		m_network.register(LookupReflectionRequest.class, this);
 
-		m_me = getSystemData().getNodeID();
+		m_me = m_boot.getNodeID();
 		Contract.check(-1 != m_me);
 
-		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_nodeTable = new LookupTree[65536];
 			m_nodeList = new ArrayList<Short>();
 			m_idTable = new AIDTableOptimized(1000, 0.9f);
@@ -867,7 +869,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		contactSuperpeer = p_contactSuperpeer;
 
 		if (m_me == contactSuperpeer) {
-			if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 				LOGGER.trace("Setting up new ring, I am " + m_me);
 				setSuccessor(m_me);
 			} else {
@@ -875,14 +877,14 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				System.exit(-1);
 			}
 		} else {
-			if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 				while (-1 != contactSuperpeer) {
 					LOGGER.trace("Contacting " + contactSuperpeer + " to join the ring, I am " + m_me);
 
 					joinRequest = new JoinRequest(contactSuperpeer, m_me, IS_SUPERPEER);
 					if (m_network.sendSync(joinRequest) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Contact superpeer is not available, get a new contact superpeer
-						contactSuperpeer = getCurrentBootstrap();
+						contactSuperpeer = m_boot.getNodeIDBootstrap();
 						continue;
 					}
 
@@ -910,7 +912,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					joinRequest = new JoinRequest(contactSuperpeer, m_me, IS_NOT_SUPERPEER);
 					if (m_network.sendSync(joinRequest) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Contact superpeer is not available, get a new contact superpeer
-						contactSuperpeer = getCurrentBootstrap();
+						contactSuperpeer = m_boot.getNodeIDBootstrap();
 						continue;
 					}
 
@@ -1936,7 +1938,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		res = "success: incomingReflectionRequest";
 
 		// process request
-		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 
 			if (cmd.indexOf("chunkinfo") >= 0) {
 				res = cmdReqChunkinfo(cmd);
@@ -2122,7 +2124,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		// Promote this peer to superpeer
 		m_overlayLock.lock();
 
-		NodeID.setRole(Role.SUPERPEER);
+		m_boot.promoteToSuperpeer();
+		// TODO remove this for m_boot.getNumberOfAvailableSuperpeers()?	
 		m_numberOfSuperpeers--;
 		m_nodeTable = new LookupTree[65536];
 		m_nodeList = new ArrayList<Short>();
@@ -2152,9 +2155,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		// Give away all stored chunks
 		replacement = p_promotePeerRequest.getReplacement();
 		System.out.println("* Migrating chunks to " + replacement);
-		try {
-			m_chunk.migrateAll(replacement);
-
+		
+		// TODO needs access to migration, but not to a service. use proper components instead
+		boolean migrationSuccess = true; // m_chunk.migrateAll(replacement);
+		if (migrationSuccess)
+		{
 			System.out.println("** Migration complete");
 
 			LOGGER.trace("Starting stabilization thread");
@@ -2165,29 +2170,32 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			m_stabilizationThread.setName(SOWorker.class.getSimpleName() + " for " + DefaultLookupComponent.class.getSimpleName());
 			m_stabilizationThread.setDaemon(true);
 			m_stabilizationThread.start();
-			try {
-				new PromotePeerResponse(p_promotePeerRequest, true).send(m_network);
-			} catch (final NetworkException e) {
+			if (m_network.sendMessage(
+					new PromotePeerResponse(p_promotePeerRequest, true)) 
+					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Requesting superpeer is not available anymore, ignore request and remove superpeer
 				failureHandling(p_promotePeerRequest.getSource());
 			}
-		} catch (final DXRAMException e) {
+		}
+		else
+		{
 			System.out.println("** Migration failed");
 
 			// Revert everything
-			NodeID.setRole(Role.PEER);
+			m_boot.demoteToPeer();
 			m_numberOfSuperpeers++;
 			m_nodeTable = null;
 			m_nodeList = null;
 			m_peers = null;
 			m_successor = -1;
 			m_predecessor = -1;
-			try {
-				new PromotePeerResponse(p_promotePeerRequest, false).send(m_network);
-			} catch (final NetworkException exp) {
+			if (m_network.sendMessage(
+					new PromotePeerResponse(p_promotePeerRequest, false)) 
+					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Requesting superpeer is not available anymore, ignore request and remove superpeer
 			}
 		}
+
 		System.out.println("********** ********** ** End ** ********** **********");
 		System.out.println();
 		System.out.println();
@@ -2972,7 +2980,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					promoteOnePeer(p_failedNode);
 				}
 
-				notifyAboutFailure(p_failedNode, true);
+				m_boot.reportNodeFailure(p_failedNode, true);
 				System.out.println("********** ********** *** End **** ********** **********");
 				System.out.println("********** ********** ************ ********** **********");
 				System.out.println();
@@ -2981,7 +2989,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				m_failureLock.unlock();
 			} else if (0 <= Collections.binarySearch(m_peers, p_failedNode)) {
 				m_overlayLock.unlock();
-				existsInZooKeeper = getSystemData().zookeeperExists("nodes/peers/" + p_failedNode);
+				existsInZooKeeper = m_boot.nodeAvailable(p_failedNode);
 
 				if (!existsInZooKeeper) {
 					// Failed node was a monitor
@@ -3073,7 +3081,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					m_overlayLock.lock();
 					removePeer(p_failedNode);
 					m_overlayLock.unlock();
-					notifyAboutFailure(p_failedNode, false);
+					m_boot.reportNodeFailure(p_failedNode, false);
 					System.out.println("********** ********** *** End **** ********** **********");
 					System.out.println("********** ********** ************ ********** **********");
 					System.out.println();
@@ -3085,76 +3093,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		}
 	}
 
-	/**
-	 * Returns the current bootstrap
-	 * @return the current bootstrap
-	 */
-	public short getCurrentBootstrap() {
-		return Short.parseShort(new String(getSystemData().zookeeperGetData("nodes/bootstrap")));
-	}
 
-	/**
-	 * Replaces the current bootstrap with p_nodeID if the failed bootstrap has not been replaced by another superpeer
-	 * @param p_nodeID
-	 *            the new bootstrap candidate
-	 * @return the new bootstrap
-	 */
 	public short replaceBootstrap(final short p_nodeID) {
-		short ret;
-		Stat status;
-		String entry;
 
-		status = getSystemData().zookeeperGetStatus("nodes/bootstrap");
-		entry = new String(getSystemData().zookeeperGetData("nodes/bootstrap", status));
-		ret = Short.parseShort(entry);
-		if (ret == m_bootstrap) {
-			if (!getSystemData().zookeeperSetData("nodes/bootstrap", ("" + p_nodeID).getBytes(), status.getVersion())) {
-				m_bootstrap = Short.parseShort(new String(getSystemData().zookeeperGetData("nodes/bootstrap")));
-			} else {
-				m_bootstrap = p_nodeID;
-			}
-		} else {
-			m_bootstrap = ret;
-		}
-
-		return m_bootstrap;
-	}
-
-	/**
-	 * Remove node from /nodes/new/ if listed and add NodeID to /nodes/free/
-	 * @param p_failedNode
-	 *            the failed node
-	 * @param p_isSuperpeer
-	 *            whether the failed node was a superpeer or not
-	 * @return true if this node reported the failure first
-	 */
-	public boolean notifyAboutFailure(final short p_failedNode, final boolean p_isSuperpeer) {
-		boolean ret = false;
-		Stat status;
-
-		if (getSystemData().zookeeperExists("nodes/peers/" + p_failedNode)) {
-			getSystemData().zookeeperCreate("nodes/free/" + p_failedNode);
-
-			status = getSystemData().zookeeperGetStatus("nodes/new/" + p_failedNode);
-			if (null != status) {
-				getSystemData().zookeeperDelete("nodes/new/" + p_failedNode, status.getVersion());
-			}
-			if (p_isSuperpeer) {
-				status = getSystemData().zookeeperGetStatus("nodes/superpeers/" + p_failedNode);
-				if (null != status) {
-					getSystemData().zookeeperDelete("nodes/superpeers/" + p_failedNode, status.getVersion());
-				}
-			} else {
-				status = getSystemData().zookeeperGetStatus("nodes/peers/" + p_failedNode);
-				if (null != status) {
-					getSystemData().zookeeperDelete("nodes/peers/" + p_failedNode, status.getVersion());
-				}
-			}
-
-			ret = true;
-		}
-
-		return ret;
 	}
 
 	/**
@@ -3166,7 +3107,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short superpeer;
 		short peer;
 
-		printMe = getSystemData().getNodeRole().equals(NodeRole.SUPERPEER);
+		printMe = m_boot.getNodeRole().equals(NodeRole.SUPERPEER);
 		str = "Superpeer overlay:";
 
 		m_overlayLock.lock();

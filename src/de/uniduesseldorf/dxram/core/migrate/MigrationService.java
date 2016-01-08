@@ -7,6 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.backup.BackupComponent;
+import de.uniduesseldorf.dxram.core.boot.NodeRole;
 import de.uniduesseldorf.dxram.core.chunk.ChunkService;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
 import de.uniduesseldorf.dxram.core.data.Chunk;
@@ -14,7 +15,6 @@ import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.lock.LockComponent;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;

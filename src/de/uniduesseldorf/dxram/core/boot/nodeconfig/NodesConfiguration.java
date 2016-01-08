@@ -4,6 +4,8 @@ package de.uniduesseldorf.dxram.core.engine.nodeconfig;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import de.uniduesseldorf.dxram.core.boot.NodeRole;
+
 import de.uniduesseldorf.utils.Contract;
 
 /**

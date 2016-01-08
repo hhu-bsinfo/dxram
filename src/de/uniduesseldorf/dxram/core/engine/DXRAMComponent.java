@@ -1,5 +1,7 @@
 package de.uniduesseldorf.dxram.core.engine;
 
+import java.util.Map;
+
 import de.uniduesseldorf.utils.Pair;
 import de.uniduesseldorf.utils.conf.Configuration;
 import de.uniduesseldorf.utils.conf.ConfigurationException;
@@ -40,6 +42,11 @@ public abstract class DXRAMComponent
 			} catch (ConfigurationException e) {
 				throw new DXRAMRuntimeException(e.getMessage());
 			}
+		}
+		
+		public <T> Map<Integer, T> GetValues(final String p_key, final Class<T> p_type)
+		{
+			return m_configuration.GetValues(p_key, p_type);
 		}
 	}
 	
@@ -106,20 +113,14 @@ public abstract class DXRAMComponent
    
    // ------------------------------------------------------------------------------
    
-   protected DXRAMSystemData getSystemData()
-   {
-	   return m_parentEngine.getSystemData();
-   }
-   
-   @SuppressWarnings("unchecked")
-   protected <T extends DXRAMComponent> T getDependantComponent(final String p_componentName)
+   protected <T extends DXRAMComponent> T getDependantComponent(final Class<T> p_class)
    {		   
-	   return (T) m_parentEngine.getComponent(p_componentName);
+	   return m_parentEngine.getComponent(p_class);
    }
    
    protected abstract void registerDefaultSettingsComponent(final Settings p_settings);
    
-   protected abstract boolean initComponent(final Settings p_settings);
+   protected abstract boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings);
    
    protected abstract boolean shutdownComponent();
 }

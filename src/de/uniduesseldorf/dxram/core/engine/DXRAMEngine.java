@@ -1,7 +1,5 @@
 package de.uniduesseldorf.dxram.core.engine;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -15,11 +13,6 @@ import java.util.Map.Entry;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationFileParser;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
-import de.uniduesseldorf.dxram.core.net.NetworkConfigurationValues;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationException;
 import de.uniduesseldorf.utils.Pair;
 import de.uniduesseldorf.utils.conf.Configuration;
 import de.uniduesseldorf.utils.conf.ConfigurationException;
@@ -217,8 +210,6 @@ public class DXRAMEngine
         }
         
         m_logger.info("Shutting down components done.");
-        
-        closeNodesRouting();
 
         m_logger.info("Shutting down engine done.");
 

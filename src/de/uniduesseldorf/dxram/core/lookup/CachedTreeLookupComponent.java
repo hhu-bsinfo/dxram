@@ -5,7 +5,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
+import de.uniduesseldorf.dxram.core.boot.NodeRole;
 import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
 import de.uniduesseldorf.dxram.core.nameservice.NameserviceConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;

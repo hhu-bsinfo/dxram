@@ -2,11 +2,11 @@ package de.uniduesseldorf.dxram.core.lock;
 
 import org.apache.log4j.Logger;
 
+import de.uniduesseldorf.dxram.core.boot.NodeRole;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodeRole;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.lock.messages.LockMessages;
 import de.uniduesseldorf.dxram.core.lock.messages.LockRequest;

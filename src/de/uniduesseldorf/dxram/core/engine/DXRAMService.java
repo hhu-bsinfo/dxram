@@ -90,20 +90,14 @@ public abstract class DXRAMService
         return ret;	
 	}
 	
-	protected DXRAMSystemData getSystemData()
-	{
-		return m_parentEngine.getSystemData();
-	}
-	
-	@SuppressWarnings("unchecked")
-	protected <T extends DXRAMComponent> T getComponent(final String p_componentName)
+	protected <T extends DXRAMComponent> T getComponent(final Class<T> p_class)
 	{		   
-		return (T) m_parentEngine.getComponent(p_componentName);
+		   return m_parentEngine.getComponent(p_class);
 	}
 	
 	protected abstract void registerDefaultSettingsService(final Settings p_settings);
 	
-	protected abstract boolean startService(final Settings p_settings);
+	protected abstract boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings);
 	
 	protected abstract boolean shutdownService();
 }

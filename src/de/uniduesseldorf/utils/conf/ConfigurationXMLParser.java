@@ -1,6 +1,7 @@
 package de.uniduesseldorf.utils.conf;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -24,21 +25,53 @@ public class ConfigurationXMLParser implements ConfigurationParser
 	private static final String ATTR_KEY_TYPE = "__type";
 	private static final String ATTR_KEY_UNIT = "__unit";
 	
-	private static final String TYPE_STR = "str";
-	private static final String TYPE_BYTE = "byte";
-	private static final String TYPE_SHORT = "short";
-	private static final String TYPE_INT = "int";
-	private static final String TYPE_LONG = "long";
-	private static final String TYPE_FLOAT = "float";
-	private static final String TYPE_DOUBLE = "double";
-	private static final String TYPE_BOOLEAN = "bool";
-	private static final String TYPE_BOOLEAN_2 = "boolean";
+	public static interface DataTypeParser
+	{
+		public String getTypeIdentifer();
+		
+		public Object parse(final String p_str);
+	}
 	
-	private ConfigurationXMLLoader m_loader;
+	public static interface UnitConverter
+	{
+		public String getUnitIdentifier();
+		
+		public Object convert(final Object p_value);
+	}
+	
+	private ConfigurationXMLLoader m_loader = null;
+	private Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
+	private Map<String, UnitConverter> m_unitConverters = new HashMap<String, UnitConverter>();
 	
 	public ConfigurationXMLParser(final ConfigurationXMLLoader p_loader)
 	{
 		m_loader = p_loader;
+		
+		// add default type parsers
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.String());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Byte());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Short());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Int());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Long());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Float());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Double());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Bool());
+		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Boolean());
+		
+		// add default unit converters
+		addUnitConverter(new ConfigurationXMLParserUnitConverters.KiloByteToByte());
+		addUnitConverter(new ConfigurationXMLParserUnitConverters.MegaByteToByte());
+		addUnitConverter(new ConfigurationXMLParserUnitConverters.GigabyteByteToByte());
+	}
+	
+	public boolean addDataTypeParser(final DataTypeParser p_parser)
+	{
+		return m_dataTypeParsers.put(p_parser.getTypeIdentifer(), p_parser) == null;
+	}
+	
+	public boolean addUnitConverter(final UnitConverter p_converter)
+	{
+		return m_unitConverters.put(p_converter.getUnitIdentifier(), p_converter) == null;
 	}
 	
 	@Override
@@ -66,34 +99,30 @@ public class ConfigurationXMLParser implements ConfigurationParser
 	}
 
 	private void parseXML(final Node p_root, final Configuration p_configuration) throws ConfigurationException {		
-		NodeList children = p_root.getChildNodes();
-		for (int i = 0; i < children.getLength(); i++)
+		if (p_root.getNodeName().equals(ROOT_ELEMENT))
 		{
-			Node rootChild = children.item(i);
-			// support multiple root nodes
-			if (rootChild.getNodeName().equals(ROOT_ELEMENT))
+			// iterate children of root node
+			NodeList childrenOfRoot = p_root.getChildNodes();
+			for (int j = 0; j < childrenOfRoot.getLength(); j++)
 			{
-				// iterate children of root node
-				NodeList childrenOfRoot = rootChild.getChildNodes();
-				for (int j = 0; j < childrenOfRoot.getLength(); j++)
-				{
-					Node confEntry = childrenOfRoot.item(j);
-					parseChildren(confEntry, p_configuration, "");
+				Node confEntry = childrenOfRoot.item(j);
+				if (confEntry.getNodeType() == Element.ELEMENT_NODE) {
+					parseChildren((Element) confEntry, p_configuration, "");
 				}
 			}
 		}
 	}
 	
-	private void parseChildren(final Node p_parent, final Configuration p_configuration, final String p_key) throws ConfigurationException
+	private void parseChildren(final Element p_parent, final Configuration p_configuration, final String p_key) throws ConfigurationException
 	{
-		String key = p_key;
+		String key = new String(p_key);
 		
 		// no leafs, return
 		if (p_parent == null)
 			return;
 		
 		// extend path
-		key += Configuration.KEY_SEQ_SEPARATOR + p_parent.getNodeValue();
+		key += Configuration.KEY_SEQ_SEPARATOR + p_parent.getTagName();
 		
 		// only leafs are allowed to have attributes
 		if (p_parent.hasAttributes())
@@ -101,7 +130,6 @@ public class ConfigurationXMLParser implements ConfigurationParser
 			// got leaf
 			Object value = null;
 			int index = 0;
-			long unitConversionFactor = 1;
 			
 			NamedNodeMap attributes = p_parent.getAttributes();
 			Node attrIndex = attributes.getNamedItem(ATTR_KEY_ID);
@@ -115,49 +143,28 @@ public class ConfigurationXMLParser implements ConfigurationParser
 				index = 0;
 			}
 			
-			// prepare unit conversion
-			// this does only apply to integer numbers
-			if (attrUnit != null) {
-				if (attrUnit.getNodeValue().equals("kb")) {
-					unitConversionFactor = 1024;
-				} else if (attrUnit.getNodeValue().equals("mb")) {
-					unitConversionFactor = 1024 * 1024;
-				} else if (attrUnit.getNodeValue().equals("gb")) {
-					unitConversionFactor = 1024 * 1024 * 1024;
-				} else {
-					unitConversionFactor = 1;
+			if (attrType != null)
+			{
+				DataTypeParser parser = m_dataTypeParsers.get(attrType.getNodeValue());
+				if (parser != null)
+				{
+					value = parser.parse(p_parent.getTextContent());
+					
+					// check for unit conversion, attribute optional
+					if (attrUnit != null)
+					{
+						UnitConverter unitConverter = m_unitConverters.get(attrUnit.getNodeValue());
+						if (unitConverter != null)
+							value = unitConverter.convert(value);
+					}
+						
+					// add the value and do not replace existing values
+					// i.e. if same index is available multiple times, only the first one is used
+					p_configuration.AddValue(key, index, value, false);
 				}
+				// no parser to support, ignore
 			}
-			
-			// if no type specified, we assume a string
-			if (attrType == null || attrType.getNodeValue().equals(TYPE_STR)) {
-				value = new String(p_parent.getNodeValue());
-			} else if (attrType.getNodeValue().equals(TYPE_BYTE)) {
-				value = Byte.parseByte(p_parent.getNodeValue()) * unitConversionFactor;
-			} else if (attrType.getNodeValue().equals(TYPE_SHORT)) {
-				value = Short.parseShort(p_parent.getNodeValue()) * unitConversionFactor;
-			} else if (attrType.getNodeValue().equals(TYPE_INT)) {
-				value = Integer.parseInt(p_parent.getNodeValue()) * unitConversionFactor;
-			} else if (attrType.getNodeValue().equals(TYPE_LONG)) {
-				value = Long.parseLong(p_parent.getNodeValue()) * unitConversionFactor;
-			} else if (attrType.getNodeValue().equals(TYPE_FLOAT)) {
-				value = Float.parseFloat(p_parent.getNodeValue());
-			} else if (attrType.getNodeValue().equals(TYPE_DOUBLE)) {
-				value = Double.parseDouble(p_parent.getNodeValue());
-			} else if (attrType.getNodeValue().equals(TYPE_BOOLEAN) || attrType.getNodeValue().equals(TYPE_BOOLEAN_2)) {
-				// allow 0 and 1 as well
-				if (p_parent.getNodeValue().equals("0")) {
-					value = new Boolean(false);
-				} else if (p_parent.getNodeValue().equals("1")) {
-					value = new Boolean(true);
-				} else {
-					value = Boolean.parseBoolean(p_parent.getNodeValue());
-				}
-			} 
-			
-			// add the value and do not replace existing values
-			// i.e. if same index is available multiple times, only the first one is used
-			p_configuration.AddValue(key, index, value, false);
+			// missing type, ignore	
 		}
 		else
 		{
@@ -165,7 +172,10 @@ public class ConfigurationXMLParser implements ConfigurationParser
 			NodeList children = p_parent.getChildNodes();
 			for (int i = 0; i < children.getLength(); i++)
 			{
-				parseChildren(children.item(i), p_configuration, key);
+				Node child = children.item(i);
+				if (child.getNodeType() == Element.ELEMENT_NODE) {
+					parseChildren((Element) child, p_configuration, key);
+				}
 			}
 		}
 	}

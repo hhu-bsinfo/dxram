@@ -9,6 +9,7 @@ import java.util.Vector;
 
 import org.apache.log4j.Logger;
 
+import de.uniduesseldorf.dxram.core.boot.NodeRole;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration.NodeEntry;
 
 public class NodesConfigurationFileParser implements NodesConfigurationParser {

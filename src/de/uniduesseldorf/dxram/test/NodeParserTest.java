@@ -1,9 +1,9 @@
 
 package de.uniduesseldorf.dxram.test;
 
+import de.uniduesseldorf.dxram.core.boot.NodesWatcher;
 import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesWatcher;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfiguration;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.NodesConfigurationHandler;
 import de.uniduesseldorf.dxram.core.engine.nodeconfig.SimpleNodesConfigurationParser;
