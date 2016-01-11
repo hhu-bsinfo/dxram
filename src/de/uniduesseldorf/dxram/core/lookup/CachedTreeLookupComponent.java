@@ -2,25 +2,23 @@ package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
+import de.uniduesseldorf.dxram.core.boot.BootComponent;
 import de.uniduesseldorf.dxram.core.boot.NodeRole;
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
+import de.uniduesseldorf.dxram.core.logger.LoggerComponent;
 import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
-import de.uniduesseldorf.dxram.core.nameservice.NameserviceConfigurationValues;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 import de.uniduesseldorf.utils.Cache;
-import de.uniduesseldorf.utils.config.Configuration;
 
 public class CachedTreeLookupComponent extends LookupComponent {
 
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(CachedTreeLookupComponent.class);
-
 	private static final short ORDER = 10;
 
-	// Attributes
+	private BootComponent m_boot = null;
+	private LoggerComponent m_logger = null;
+	
 	private DefaultLookupComponent m_lookup = new DefaultLookupComponent(-1, -1);
 	private long m_maxCacheSize = -1;
 	
@@ -118,7 +116,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 		chunkID = m_applicationIDCache.get(p_id);
 		if (null == chunkID) {
-			LOGGER.trace("value not cached: " + p_id);
+			m_logger.trace(getClass(), "value not cached: " + p_id);
 
 			ret = m_lookup.getChunkID(p_id);
 
@@ -198,18 +196,28 @@ public class CachedTreeLookupComponent extends LookupComponent {
 	// ------------------------------------------------------------------------------------------
 
 	@Override
-	protected boolean initComponent(Configuration p_configuration) {		
-		m_lookup.initComponent(p_configuration);
-
-		m_maxCacheSize = p_configuration.getLongValue(LookupConfigurationValues.LOOKUP_CACHE_TTL);
+	protected void registerDefaultSettingsComponent(Settings p_settings) {
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.CACHE_TTL);
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.NAMESERVICE_CACHE_ENTRIES);
+	}
+	
+	@Override
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {		
+		if (!m_lookup.init(getParentEngine()))
+			return false;
 		
-		if (!getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+		m_boot = getDependantComponent(BootComponent.class);
+		m_logger = getDependantComponent(LoggerComponent.class);
+
+		m_maxCacheSize = p_settings.getValue(LookupConfigurationValues.Component.CACHE_TTL);
+		
+		if (!m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_chunkIDCacheTree = new CacheTree(m_maxCacheSize, ORDER);
-			m_applicationIDCache = new Cache<Integer, Long>(p_configuration.getIntValue(NameserviceConfigurationValues.NAMESERVICE_CACHE_ENTRIES));
+			m_applicationIDCache = new Cache<Integer, Long>(p_settings.getValue(LookupConfigurationValues.Component.NAMESERVICE_CACHE_ENTRIES));
 			// m_aidCache.enableTTL();
 		}
 		
-		return false;
+		return true;
 	}
 
 	@Override
@@ -227,5 +235,4 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 		return true;
 	}
-
 }

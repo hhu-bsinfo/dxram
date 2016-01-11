@@ -7,17 +7,14 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.data.Stat;
-
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
 import de.uniduesseldorf.dxram.core.boot.BootComponent;
 import de.uniduesseldorf.dxram.core.boot.NodeRole;
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
 import de.uniduesseldorf.dxram.core.engine.DXRAMException;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
-import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
+import de.uniduesseldorf.dxram.core.logger.LoggerComponent;
 import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutBackupsRequest;
 import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutBackupsResponse;
 import de.uniduesseldorf.dxram.core.lookup.messages.AskAboutSuccessorRequest;
@@ -60,26 +57,16 @@ import de.uniduesseldorf.dxram.core.lookup.messages.SendSuperpeersMessage;
 import de.uniduesseldorf.dxram.core.lookup.messages.StartRecoveryMessage;
 import de.uniduesseldorf.dxram.core.lookup.messages.UpdateAllMessage;
 import de.uniduesseldorf.dxram.core.lookup.storage.AIDTableOptimized;
-import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.core.net.NetworkComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 import de.uniduesseldorf.menet.AbstractMessage;
-import de.uniduesseldorf.menet.NetworkException;
-import de.uniduesseldorf.menet.NetworkInterface;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 import de.uniduesseldorf.utils.CRC16;
-import de.uniduesseldorf.utils.Cache;
 import de.uniduesseldorf.utils.Contract;
-import de.uniduesseldorf.utils.ZooKeeperHandler;
-import de.uniduesseldorf.utils.ZooKeeperHandler.ZooKeeperException;
-import de.uniduesseldorf.utils.config.Configuration;
 
 public class DefaultLookupComponent extends LookupComponent implements MessageReceiver, ConnectionLostListener {
-
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(DefaultLookupComponent.class);
 
 	private static final short ORDER = 10;
 
@@ -96,6 +83,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	// Attributes
 	private NetworkComponent m_network = null;
 	private BootComponent m_boot = null;
+	private LoggerComponent m_logger = null;
 
 	private short m_me = -1;
 	private short m_predecessor = -1;
@@ -138,7 +126,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupRequest request;
 		LookupResponse response;
 
-		LOGGER.trace("Entering get with: p_chunkID=" + p_chunkID);
+		m_logger.trace(getClass(), "Entering get with: p_chunkID=" + p_chunkID);
 
 		if (!overlayIsStable()) {
 			check = true;
@@ -161,7 +149,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		//}
 
-		LOGGER.trace("Exiting get");
+		m_logger.trace(getClass(), "Exiting get");
 		return ret;
 	}
 
@@ -174,7 +162,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		GetBackupRangesRequest request;
 		GetBackupRangesResponse response;
 
-		LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering getAllBackupRanges with: p_nodeID=" + p_nodeID);
 
 		if (!overlayIsStable()) {
 			check = true;
@@ -194,7 +182,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		LOGGER.trace("Exiting getAllBackupRanges");
+		m_logger.trace(getClass(), "Exiting getAllBackupRanges");
 		return ret;
 	}
 
@@ -203,7 +191,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short responsibleSuperpeer;
 		boolean check = false;
 
-		LOGGER.trace("Entering updateAllAfterRecovery with: p_owner=" + p_owner);
+		m_logger.trace(getClass(), "Entering updateAllAfterRecovery with: p_owner=" + p_owner);
 
 		if (!overlayIsStable()) {
 			check = true;
@@ -223,7 +211,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			break;
 		}
 
-		LOGGER.trace("Exiting updateAllAfterRecovery");
+		m_logger.trace(getClass(), "Exiting updateAllAfterRecovery");
 	}
 
 	@Override
@@ -233,7 +221,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		InitRangeRequest request;
 
-		LOGGER.trace("Entering initRange with: p_endChunkID=" + p_firstChunkIDOrRangeID + ", p_locations=" + p_primaryAndBackupPeers);
+		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=" + p_firstChunkIDOrRangeID + ", p_locations=" + p_primaryAndBackupPeers);
 
 		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
 
@@ -253,7 +241,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			finished = request.getResponse(InitRangeResponse.class).getStatus();
 		}
 
-		LOGGER.trace("Exiting initRange");
+		m_logger.trace(getClass(), "Exiting initRange");
 	}
 
 	@Override
@@ -263,7 +251,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		MigrateRequest request;
 
-		LOGGER.trace("Entering migrate with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering migrate with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
 
 		while (!finished) {
 			responsibleSuperpeer = m_mySuperpeer;
@@ -280,7 +268,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			finished = request.getResponse(MigrateResponse.class).getStatus();
 		}
 
-		LOGGER.trace("Exiting migrate");
+		m_logger.trace(getClass(), "Exiting migrate");
 	}
 
 	@Override
@@ -291,11 +279,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		MigrateRangeRequest request;
 
-		LOGGER.trace("Entering migrateRange with: p_startChunkID=" + p_startCID + ", p_endChunkID=" + p_endCID + ", p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + p_startCID + ", p_endChunkID=" + p_endCID + ", p_nodeID=" + p_nodeID);
 
 		creator = ChunkID.getCreatorID(p_startCID);
 		if (creator != ChunkID.getCreatorID(p_endCID)) {
-			LOGGER.error("Start and end objects creators not equal");
+			m_logger.error(getClass(), "Start and end objects creators not equal");
 		} else {
 			while (!finished) {
 				responsibleSuperpeer = m_mySuperpeer;
@@ -314,7 +302,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		LOGGER.trace("Exiting migrateRange");
+		m_logger.trace(getClass(), "Exiting migrateRange");
 	}
 
 	@Override
@@ -324,7 +312,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		LookupTree tree;
 
-		LOGGER.trace("Entering migrateNotCreatedChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering migrateNotCreatedChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
 
 		responsibleSuperpeer = getResponsibleSuperpeer(ChunkID.getCreatorID(p_chunkID), NO_CHECK);
 		if (m_network.sendMessage(new MigrateMessage(responsibleSuperpeer, p_chunkID, p_nodeID, NO_BACKUP)) != NetworkComponent.ErrorCode.SUCCESS) {
@@ -360,7 +348,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				}
 			}
 		}
-		LOGGER.trace("Exiting migrateNotCreatedChunk");
+		m_logger.trace(getClass(), "Exiting migrateNotCreatedChunk");
 	}
 
 	@Override
@@ -369,7 +357,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		LookupTree tree;
 
-		LOGGER.trace("Entering migrateOwnChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering migrateOwnChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
 
 		m_dataLock.lock();
 		tree = getCIDTree(m_me);
@@ -391,7 +379,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				}
 			}
 		}
-		LOGGER.trace("Exiting migrateOwnChunk");
+		m_logger.trace(getClass(), "Exiting migrateOwnChunk");
 	}
 
 	@Override
@@ -403,7 +391,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		InsertIDResponse response;
 
 		// Insert ChunkID <-> ApplicationID mapping
-		LOGGER.trace("Entering insertID with: p_id=" + p_id + ", p_chunkID=" + p_chunkID);
+		m_logger.trace(getClass(), "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + p_chunkID);
 		Contract.check(p_id < Math.pow(2, 31) && p_id >= 0);
 
 		if (!overlayIsStable()) {
@@ -442,7 +430,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		LOGGER.trace("Exiting insertID");
+		m_logger.trace(getClass(), "Exiting insertID");
 	}
 
 	@Override
@@ -453,7 +441,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		GetChunkIDRequest request;
 
 		// Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
-		LOGGER.trace("Entering getChunkID with: p_id=" + p_id);
+		m_logger.trace(getClass(), "Entering getChunkID with: p_id=" + p_id);
 
 		if (!overlayIsStable()) {
 			check = true;
@@ -476,7 +464,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		LOGGER.trace("Exiting getChunkID");
+		m_logger.trace(getClass(), "Exiting getChunkID");
 
 		return ret;
 	}
@@ -513,7 +501,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		RemoveRequest request;
 		RemoveResponse response;
 
-		LOGGER.trace("Entering remove with: p_chunkID=" + p_chunkID);
+		m_logger.trace(getClass(), "Entering remove with: p_chunkID=" + p_chunkID);
 
 		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
 
@@ -548,7 +536,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		LOGGER.trace("Exiting remove");
+		m_logger.trace(getClass(), "Exiting remove");
 	}
 
 	@Override
@@ -559,7 +547,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		RemoveRequest request;
 		RemoveResponse response;
 
-		LOGGER.trace("Entering remove with: p_chunkIDs=" + p_chunkIDs);
+		m_logger.trace(getClass(), "Entering remove with: p_chunkIDs=" + p_chunkIDs);
 
 		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
 
@@ -594,7 +582,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		LOGGER.trace("Exiting remove");
+		m_logger.trace(getClass(), "Exiting remove");
 	}
 
 	@Override
@@ -763,24 +751,31 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 */
 	@Override
 	public void triggerEvent(final ConnectionLostEvent p_event) {
-		LOGGER.trace("Entering trigger with: p_event=" + p_event);
+		m_logger.trace(getClass(), "Entering trigger with: p_event=" + p_event);
 
-		LOGGER.trace("Exiting onConnectionLost");
+		m_logger.trace(getClass(), "Exiting onConnectionLost");
 	}
 	
 	// --------------------------------------------------------------------------------
 	
 	@Override
-	protected boolean initComponent(final Configuration p_configuration) {
-		if (!super.initComponent(p_configuration))
-			return false;
-			
+	protected void registerDefaultSettingsComponent(Settings p_settings) {
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.SLEEP);
+	}
+	
+	@Override
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {			
+		m_boot = getDependantComponent(BootComponent.class);
+		m_network = getDependantComponent(NetworkComponent.class);
+		m_logger = getDependantComponent(LoggerComponent.class);
+		
 		m_bootstrap = m_boot.getNodeIDBootstrap();
 		m_numberOfSuperpeers = m_boot.getNumberOfAvailableSuperpeers();
 
-		m_sleepInterval = p_configuration.getIntValue(LookupConfigurationValues.LOOKUP_SLEEP);
-
-		m_network = getDependantComponent(NetworkComponent.COMPONENT_IDENTIFIER);
+		m_sleepInterval = p_settings.getValue(LookupConfigurationValues.Component.SLEEP);
+		registerNetworkMessages();
+		
+		// register to receive responses
 		m_network.register(JoinRequest.class, this);
 		m_network.register(LookupRequest.class, this);
 		m_network.register(GetBackupRangesRequest.class, this);
@@ -864,22 +859,22 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		ArrayList<LookupTree> trees;
 		LookupTree tree;
 
-		LOGGER.trace("Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
+		m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
 
 		contactSuperpeer = p_contactSuperpeer;
 
 		if (m_me == contactSuperpeer) {
 			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-				LOGGER.trace("Setting up new ring, I am " + m_me);
+				m_logger.trace(getClass(), "Setting up new ring, I am " + m_me);
 				setSuccessor(m_me);
 			} else {
-				LOGGER.error("Bootstrap has to be a superpeer, exiting now.");
+				m_logger.error(getClass(), "Bootstrap has to be a superpeer, exiting now.");
 				System.exit(-1);
 			}
 		} else {
 			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 				while (-1 != contactSuperpeer) {
-					LOGGER.trace("Contacting " + contactSuperpeer + " to join the ring, I am " + m_me);
+					m_logger.trace(getClass(), "Contacting " + contactSuperpeer + " to join the ring, I am " + m_me);
 
 					joinRequest = new JoinRequest(contactSuperpeer, m_me, IS_SUPERPEER);
 					if (m_network.sendSync(joinRequest) != NetworkComponent.ErrorCode.SUCCESS) {
@@ -907,7 +902,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				setPredecessor(joinResponse.getPredecessor());
 			} else {
 				while (-1 != contactSuperpeer) {
-					LOGGER.trace("Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + m_me);
+					m_logger.trace(getClass(), "Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + m_me);
 
 					joinRequest = new JoinRequest(contactSuperpeer, m_me, IS_NOT_SUPERPEER);
 					if (m_network.sendSync(joinRequest) != NetworkComponent.ErrorCode.SUCCESS) {
@@ -923,12 +918,12 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				m_mySuperpeer = joinResponse.getSource();
 				insertSuperpeer(m_mySuperpeer);
 
-				LOGGER.trace("Exiting createOrJoinSuperpeerOverlay");
+				m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
 				return;
 			}
 		}
 
-		LOGGER.trace("Starting stabilization thread");
+		m_logger.trace(getClass(), "Starting stabilization thread");
 		m_worker = new SOWorker();
 
 		m_stabilizationThread = new Thread(m_worker);
@@ -937,7 +932,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
-		LOGGER.trace("Exiting createOrJoinSuperpeerOverlay");
+		m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
 	}
 
 	/* helper methods: superpeers */
@@ -984,7 +979,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		AskAboutSuccessorRequest request = null;
 		AskAboutSuccessorResponse response = null;
 
-		LOGGER.trace("Entering getResponsibleSuperpeer with: p_chunkID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering getResponsibleSuperpeer with: p_chunkID=" + p_nodeID);
 
 		m_overlayLock.lock();
 		if (!m_superpeers.isEmpty()) {
@@ -1029,10 +1024,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				m_overlayLock.unlock();
 			}
 		} else {
-			LOGGER.warn("do not know any superpeer");
+			m_logger.warn(getClass(), "do not know any superpeer");
 			m_overlayLock.unlock();
 		}
-		LOGGER.trace("Exiting getResponsibleSuperpeer");
+		m_logger.trace(getClass(), "Exiting getResponsibleSuperpeer");
 
 		return responsibleSuperpeer;
 	}
@@ -1266,7 +1261,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		boolean newNodeisSuperpeer;
 
-		LOGGER.trace("Got request: JOIN_REQUEST from " + p_joinRequest.getSource());
+		m_logger.trace(getClass(), "Got request: JOIN_REQUEST from " + p_joinRequest.getSource());
 
 		joiningNode = p_joinRequest.getNewNode();
 		newNodeisSuperpeer = p_joinRequest.nodeIsSuperpeer();
@@ -1371,7 +1366,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		Locations result = null;
 		LookupTree tree;
 
-		LOGGER.trace("Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource());
+		m_logger.trace(getClass(), "Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource());
 
 		chunkID = p_lookupRequest.getChunkID();
 		m_dataLock.lock();
@@ -1400,7 +1395,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		ArrayList<long[]> ownBackupRanges;
 		ArrayList<Long> migrationBackupRanges;
 
-		LOGGER.trace("Got request: GET_BACKUP_RANGES_REQUEST " + p_getBackupRangesRequest.getSource());
+		m_logger.trace(getClass(), "Got request: GET_BACKUP_RANGES_REQUEST " + p_getBackupRangesRequest.getSource());
 
 		m_dataLock.lock();
 		tree = getCIDTree(p_getBackupRangesRequest.getNodeID());
@@ -1434,7 +1429,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingUpdateAllMessage(final UpdateAllMessage p_updateAllMessage) {
 		LookupTree tree;
 
-		LOGGER.trace("Got request: GET_UPDATE_ALL_MESSAGE " + p_updateAllMessage.getSource());
+		m_logger.trace(getClass(), "Got request: GET_UPDATE_ALL_MESSAGE " + p_updateAllMessage.getSource());
 
 		m_dataLock.lock();
 		tree = getCIDTree(p_updateAllMessage.getOwner());
@@ -1458,7 +1453,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		InitRangeRequest request;
 		boolean isBackup;
 
-		LOGGER.trace("Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
+		m_logger.trace(getClass(), "Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
 
 		primaryAndBackupPeers = new Locations(p_initRangeRequest.getLocations());
 		startChunkIDRangeID = p_initRangeRequest.getStartChunkIDOrRangeID();
@@ -1539,7 +1534,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		MigrateRequest request;
 		boolean isBackup;
 
-		LOGGER.trace("Got Message: MIGRATE_REQUEST from " + p_migrateRequest.getSource());
+		m_logger.trace(getClass(), "Got Message: MIGRATE_REQUEST from " + p_migrateRequest.getSource());
 
 		nodeID = p_migrateRequest.getNodeID();
 		chunkID = p_migrateRequest.getChunkID();
@@ -1551,7 +1546,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			tree = getCIDTree(creator);
 			if (null == tree) {
 				m_dataLock.unlock();
-				LOGGER.error("CIDTree range not initialized on responsible superpeer " + m_me);
+				m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_me);
 				if (m_network.sendMessage(
 						new MigrateResponse(p_migrateRequest, false)) 
 						!= NetworkComponent.ErrorCode.SUCCESS) {
@@ -1584,7 +1579,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			m_dataLock.lock();
 			tree = getCIDTree(creator);
 			if (null == tree) {
-				LOGGER.warn("CIDTree range not initialized on backup superpeer " + m_me);
+				m_logger.warn(getClass(), "CIDTree range not initialized on backup superpeer " + m_me);
 			} else {
 				tree.migrateObject(chunkID, nodeID);
 			}
@@ -1620,7 +1615,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		MigrateRangeRequest request;
 		boolean isBackup;
 
-		LOGGER.trace("Got Message: MIGRATE_RANGE_REQUEST from " + p_migrateRangeRequest.getSource());
+		m_logger.trace(getClass(), "Got Message: MIGRATE_RANGE_REQUEST from " + p_migrateRangeRequest.getSource());
 
 		nodeID = p_migrateRangeRequest.getNodeID();
 		startChunkID = p_migrateRangeRequest.getStartChunkID();
@@ -1629,7 +1624,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		isBackup = p_migrateRangeRequest.isBackup();
 
 		if (creator != ChunkID.getCreatorID(endChunkID)) {
-			LOGGER.error("start and end objects creators not equal");
+			m_logger.error(getClass(), "start and end objects creators not equal");
 			return;
 		}
 
@@ -1638,7 +1633,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			tree = getCIDTree(creator);
 			if (null == tree) {
 				m_dataLock.unlock();
-				LOGGER.error("CIDTree range not initialized on responsible superpeer " + m_me);
+				m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_me);
 				if (m_network.sendMessage(
 						new MigrateRangeResponse(p_migrateRangeRequest, false)) 
 						!= NetworkComponent.ErrorCode.SUCCESS) {
@@ -1671,7 +1666,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			m_dataLock.lock();
 			tree = getCIDTree(creator);
 			if (null == tree) {
-				LOGGER.warn("CIDTree range not initialized on backup superpeer " + m_me);
+				m_logger.warn(getClass(), "CIDTree range not initialized on backup superpeer " + m_me);
 			} else {
 				tree.migrateRange(startChunkID, endChunkID, nodeID);
 			}
@@ -1703,7 +1698,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		boolean isBackup;
 		LookupTree tree;
 
-		LOGGER.trace("Got Message: REMOVE_REQUEST from " + p_removeRequest.getSource());
+		m_logger.trace(getClass(), "Got Message: REMOVE_REQUEST from " + p_removeRequest.getSource());
 
 		chunkIDs = p_removeRequest.getChunkIDs();
 		isBackup = p_removeRequest.isBackup();
@@ -1715,7 +1710,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				tree = getCIDTree(creator);
 				if (null == tree) {
 					m_dataLock.unlock();
-					LOGGER.error("CIDTree range not initialized on responsible superpeer " + m_me);
+					m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_me);
 					if (m_network.sendMessage(
 							new RemoveResponse(p_removeRequest, new short[] {-1})) 
 							!= NetworkComponent.ErrorCode.SUCCESS) {
@@ -1738,7 +1733,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				m_dataLock.lock();
 				tree = getCIDTree(creator);
 				if (null == tree) {
-					LOGGER.warn("CIDTree range not initialized on backup superpeer " + m_me);
+					m_logger.warn(getClass(), "CIDTree range not initialized on backup superpeer " + m_me);
 				} else {
 					tree.removeObject(chunkID);
 				}
@@ -1771,7 +1766,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupTree tree;
 
 		source = p_sendBackupsMessage.getSource();
-		LOGGER.trace("Got Message: SEND_BACKUPS_MESSAGE from " + source);
+		m_logger.trace(getClass(), "Got Message: SEND_BACKUPS_MESSAGE from " + source);
 
 		trees = p_sendBackupsMessage.getCIDTrees();
 		m_dataLock.lock();
@@ -1795,7 +1790,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short source;
 
 		source = p_sendSuperpeersMessage.getSource();
-		LOGGER.trace("Got Message: SEND_SUPERPEERS_MESSAGE from " + source);
+		m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + source);
 
 		m_overlayLock.lock();
 		m_superpeers = p_sendSuperpeersMessage.getSuperpeers();
@@ -1973,7 +1968,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		ArrayList<LookupTree> trees;
 		ArrayList<Short> peers;
 
-		LOGGER.trace("Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutBackupsRequest.getSource());
+		m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutBackupsRequest.getSource());
 
 		trees = new ArrayList<LookupTree>();
 		peers = p_askAboutBackupsRequest.getPeers();
@@ -2031,7 +2026,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 *            the AskAboutSuccessorRequest
 	 */
 	private void incomingAskAboutSuccessorRequest(final AskAboutSuccessorRequest p_askAboutSuccessorRequest) {
-		LOGGER.trace("Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutSuccessorRequest.getSource());
+		m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutSuccessorRequest.getSource());
 
 		if (m_network.sendMessage(
 				new AskAboutSuccessorResponse(p_askAboutSuccessorRequest, m_successor)) 
@@ -2049,7 +2044,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingNotifyAboutNewPredecessorMessage(final NotifyAboutNewPredecessorMessage p_notifyAboutNewPredecessorMessage) {
 		short possiblePredecessor;
 
-		LOGGER.trace("Got Message: NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE from " + p_notifyAboutNewPredecessorMessage.getSource());
+		m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE from " + p_notifyAboutNewPredecessorMessage.getSource());
 
 		possiblePredecessor = p_notifyAboutNewPredecessorMessage.getNewPredecessor();
 		if (m_predecessor != possiblePredecessor) {
@@ -2069,7 +2064,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingNotifyAboutNewSuccessorMessage(final NotifyAboutNewSuccessorMessage p_notifyAboutNewSuccessorMessage) {
 		short possibleSuccessor;
 
-		LOGGER.trace("Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from " + p_notifyAboutNewSuccessorMessage.getSource());
+		m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from " + p_notifyAboutNewSuccessorMessage.getSource());
 
 		possibleSuccessor = p_notifyAboutNewSuccessorMessage.getNewSuccessor();
 		if (m_successor != possibleSuccessor) {
@@ -2089,7 +2084,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingSearchForPeerRequest(final SearchForPeerRequest p_searchForPeerRequest) {
 		short peer = -1;
 
-		LOGGER.trace("Got request: SEARCH_FOR_PEER_REQUEST from " + p_searchForPeerRequest.getSource());
+		m_logger.trace(getClass(), "Got request: SEARCH_FOR_PEER_REQUEST from " + p_searchForPeerRequest.getSource());
 
 		m_overlayLock.lock();
 		if (0 < m_peers.size()) {
@@ -2114,7 +2109,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		ArrayList<LookupTree> trees;
 		LookupTree tree;
 
-		LOGGER.trace("Got request: PROMOTE_PEER_REQUEST from " + p_promotePeerRequest.getSource());
+		m_logger.trace(getClass(), "Got request: PROMOTE_PEER_REQUEST from " + p_promotePeerRequest.getSource());
 
 		System.out.println();
 		System.out.println();
@@ -2162,7 +2157,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		{
 			System.out.println("** Migration complete");
 
-			LOGGER.trace("Starting stabilization thread");
+			m_logger.trace(getClass(), "Starting stabilization thread");
 			m_worker = new SOWorker();
 
 			m_stabilizationThread = new Thread(m_worker);
@@ -2213,7 +2208,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short hops;
 		int ret = 0;
 
-		LOGGER.trace("Got message: DELEGATE_PROMOTE_PEER_MESSAGE from " + p_delegatePromotePeerMessage.getSource());
+		m_logger.trace(getClass(), "Got message: DELEGATE_PROMOTE_PEER_MESSAGE from " + p_delegatePromotePeerMessage.getSource());
 
 		System.out.println();
 		System.out.println();
@@ -2247,7 +2242,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 								continue;
 							}
 						} else {
-							LOGGER.error("* Superpeer replacement not possible");
+							m_logger.error(getClass(), "* Superpeer replacement not possible");
 						}
 						break;
 					}
@@ -2273,7 +2268,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupTree tree;
 		Iterator<Short> iter;
 
-		LOGGER.trace("Got message: NOTIFY_ABOUT_FAILED_PEER_MESSAGE from " + p_notifyAboutFailedPeerMessage.getSource());
+		m_logger.trace(getClass(), "Got message: NOTIFY_ABOUT_FAILED_PEER_MESSAGE from " + p_notifyAboutFailedPeerMessage.getSource());
 
 		failedPeer = p_notifyAboutFailedPeerMessage.getFailedPeer();
 		m_dataLock.lock();
@@ -2297,7 +2292,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 */
 	private void incomingStartRecoveryMessage(final StartRecoveryMessage p_startRecoveryMessage) {
 
-		LOGGER.trace("Got message: START_RECOVERY_MESSAGE from " + p_startRecoveryMessage.getSource());
+		m_logger.trace(getClass(), "Got message: START_RECOVERY_MESSAGE from " + p_startRecoveryMessage.getSource());
 
 		System.out.println("********** Starting recovery for " + p_startRecoveryMessage.getFailedPeer() + " **********");
 		// TODO: Start recovery
@@ -2312,7 +2307,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		int id;
 		short[] backupSuperpeers;
 
-		LOGGER.trace("Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource());
+		m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource());
 
 		id = p_insertIDRequest.getID();
 		if (isOnlySuperpeer() || isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_me, CLOSED_INTERVAL)) {
@@ -2357,7 +2352,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		int id;
 		long chunkID = -1;
 
-		LOGGER.trace("Got request: GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource());
+		m_logger.trace(getClass(), "Got request: GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource());
 
 		id = p_getChunkIDRequest.getID();
 		if (isOnlySuperpeer() || isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_me, CLOSED_INTERVAL)) {
@@ -2385,12 +2380,12 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		int index;
 
 		if (isOnlySuperpeer()) {
-			// LOGGER.warn("no replication possible. Too less superpeers");
+			// m_logger.warn(getClass()"no replication possible. Too less superpeers");
 			superpeers = new short[] {-1};
 		} else {
 			size = Math.min(m_superpeers.size(), 3);
 			if (3 > size) {
-				// LOGGER.warn("replication incomplete. Too less superpeers");
+				// m_logger.warn(getClass()"replication incomplete. Too less superpeers");
 			}
 			superpeers = new short[size];
 
@@ -2447,7 +2442,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 * Determines a new bootstrap
 	 */
 	private void determineNewBootstrap() {
-		m_bootstrap = replaceBootstrap(m_me);
+		// replace bootstrap
+		m_bootstrap = m_boot.setBootstrapPeer(m_me);
 
 		if (m_bootstrap != m_me) {
 			if (m_network.sendMessage(
@@ -2455,7 +2451,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// New bootstrap is not available, start failure handling to
 				// remove bootstrap from superpeer array and to determine a new bootstrap
-				LOGGER.error("new bootstrap failed, too");
+				m_logger.error(getClass(), "new bootstrap failed, too");
 				m_failureLock.unlock();
 				failureHandling(m_bootstrap);
 				m_failureLock.lock();
@@ -2566,7 +2562,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 							continue;
 						}
 					} else {
-						LOGGER.error("superpeer replacement not possible");
+						m_logger.error(getClass(), "superpeer replacement not possible");
 					}
 					break;
 				}
@@ -2713,7 +2709,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				if (p_safe) {
 					if (m_network.sendSync(promotePeerRequest) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Peer is not available anymore, get a new one
-						LOGGER.error("*** Promote " + p_newSuperpeer + " failed, try another peer");
+						m_logger.error(getClass(), "*** Promote " + p_newSuperpeer + " failed, try another peer");
 						ret = -1;
 						break;
 					}
@@ -2725,7 +2721,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 							promotePeerRequest) 
 							!= NetworkComponent.ErrorCode.SUCCESS) {
 						// Peer is not available anymore, get a new one
-						LOGGER.error("*** Promote " + p_newSuperpeer + " failed, try another peer");
+						m_logger.error(getClass(), "*** Promote " + p_newSuperpeer + " failed, try another peer");
 						ret = -1;
 						break;
 					} else {
@@ -2820,7 +2816,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					new SendBackupsMessage(m_successor, allMappings, trees)) 
 					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Successor is not available anymore, remove from superpeer array and try next superpeer
-				LOGGER.error("successor failed, too");
+				m_logger.error(getClass(), "successor failed, too");
 				m_failureLock.unlock();
 				failureHandling(m_successor);
 				m_failureLock.lock();
@@ -2902,7 +2898,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					new SendBackupsMessage(newBackupSuperpeer, allMappings, trees)) 
 					!= NetworkComponent.ErrorCode.SUCCESS) {
 				// Superpeer is not available anymore, remove from superpeer array and try next superpeer
-				LOGGER.error("new backup superpeer failed, too");
+				m_logger.error(getClass(), "new backup superpeer failed, too");
 				m_failureLock.unlock();
 				failureHandling(newBackupSuperpeer);
 				m_failureLock.lock();
@@ -3043,7 +3039,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 								new NotifyAboutFailedPeerMessage(superpeer, p_failedNode)) 
 								!= NetworkComponent.ErrorCode.SUCCESS) {
 							// Superpeer is not available anymore, remove from superpeer array and continue
-							LOGGER.error("superpeer failed, too");
+							m_logger.error(getClass(), "superpeer failed, too");
 							m_failureLock.unlock();
 							failureHandling(superpeer);
 							m_failureLock.lock();
@@ -3091,11 +3087,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				}
 			}
 		}
-	}
-
-
-	public short replaceBootstrap(final short p_nodeID) {
-
 	}
 
 	/**
@@ -3168,7 +3159,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				try {
 					Thread.sleep(m_sleepInterval * 1000);
 				} catch (final InterruptedException e) {
-					LOGGER.trace("Got an interrupt while sleeping");
+					m_logger.trace(getClass(), "Got an interrupt while sleeping");
 					break;
 				}
 
@@ -3532,5 +3523,51 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 			m_dataLock.unlock();
 		}
+	}
+	
+	private void registerNetworkMessages() {
+		NetworkComponent network = getDependantComponent(NetworkComponent.class);
+		
+		// Lookup Messages
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST, JoinRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_JOIN_RESPONSE, JoinResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST, InitRangeRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE, InitRangeResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REQUEST, LookupRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_RESPONSE, LookupResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_REQUEST, GetBackupRangesRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_RESPONSE, GetBackupRangesResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_UPDATE_ALL_MESSAGE, UpdateAllMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST, MigrateRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE, MigrateResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_MESSAGE, MigrateMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST, MigrateRangeRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_RESPONSE, MigrateRangeResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_REQUEST, RemoveRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_RESPONSE, RemoveResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE, SendBackupsMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST, AskAboutBackupsRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE, AskAboutBackupsResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, AskAboutSuccessorRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, AskAboutSuccessorResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE, NotifyAboutNewPredecessorMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, NotifyAboutNewSuccessorMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_REQUEST, SearchForPeerRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEARCH_FOR_PEER_RESPONSE, SearchForPeerResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PROMOTE_PEER_REQUEST, PromotePeerRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PROMOTE_PEER_RESPONSE, PromotePeerResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_DELEGATE_PROMOTE_PEER_MESSAGE, DelegatePromotePeerMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE, NotifyAboutFailedPeerMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE, StartRecoveryMessage.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_ID_REQUEST, InsertIDRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_ID_RESPONSE, InsertIDResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_REQUEST, GetChunkIDRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_RESPONSE, GetChunkIDResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_MAPPING_COUNT_REQUEST, GetMappingCountRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_MAPPING_COUNT_RESPONSE, GetMappingCountResponse.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST, LookupReflectionRequest.class);
+		network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_RESPONSE, LookupReflectionResponse.class);
 	}
 }

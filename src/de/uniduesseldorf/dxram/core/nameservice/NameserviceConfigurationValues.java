@@ -11,8 +11,7 @@ public class NameserviceConfigurationValues {
 	// Nameservice key length
 	public static final ConfigurationEntry<Integer> NAMESERVICE_KEY_LENGTH = new ConfigurationEntry<Integer>("nameservice.key_length", Integer.class, 32);
 	// Nameservice cache size
-	public static final ConfigurationEntry<Integer> NAMESERVICE_CACHE_ENTRIES = new ConfigurationEntry<Integer>("nameservice.cache_entries", Integer.class,
-			1000000);
+	
 	
 	public static final List<ConfigurationEntry<?>> CONFIGURATION_ENTRIES;
 	static {

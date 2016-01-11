@@ -1,20 +1,22 @@
 package de.uniduesseldorf.dxram.core.engine;
 
-import de.uniduesseldorf.dxram.core.engine.DXRAMComponent.Settings;
+import de.uniduesseldorf.dxram.core.util.logger.Logger;
+
 import de.uniduesseldorf.utils.Pair;
 import de.uniduesseldorf.utils.conf.Configuration;
-import de.uniduesseldorf.utils.conf.ConfigurationException;
 
 public abstract class DXRAMService 
 {
 	public static class Settings
 	{
 		private Configuration m_configuration = null;
+		private Logger m_logger = null;
 		private String m_basePath = new String();
 		
-		Settings(final Configuration p_configuration, final String p_serviceIdentifier)
+		Settings(final Configuration p_configuration, final Logger p_logger, final String p_serviceIdentifier)
 		{
 			m_configuration = p_configuration;
+			m_logger = p_logger;
 			m_basePath = "/DXRAMEngine/ServiceSettings/" + p_serviceIdentifier + "/";
 		}
 		
@@ -25,7 +27,11 @@ public abstract class DXRAMService
 		
 		public <T> void setDefaultValue(final String p_key, final T p_value)
 		{
-			m_configuration.AddValue(m_basePath + p_key, p_value, false);
+			if (m_configuration.AddValue(m_basePath + p_key, p_value, false))
+			{
+				// we added a default value => value was missing from configuration
+				m_logger.warn(this.getClass().getSimpleName(), "Settings value for '" + p_key + "' was missing, using default value " + p_value);
+			}
 		}
 		
 		@SuppressWarnings("unchecked")
@@ -36,27 +42,21 @@ public abstract class DXRAMService
 		
 		public <T> T getValue(final String p_key, final Class<T> p_type)
 		{
-			try {
-				return m_configuration.GetValue(m_basePath + p_key, p_type);
-			} catch (ConfigurationException e) {
-				throw new DXRAMRuntimeException(e.getMessage());
-			}
+			return m_configuration.GetValue(m_basePath + p_key, p_type);
 		}
 	}
 	
-	private DXRAMEngine m_parentEngine;
-	private Settings m_settings;
+	private DXRAMEngine m_parentEngine = null;
+	private Settings m_settings = null;
 	
-	private String m_serviceName;
-	
-	public DXRAMService(final String p_name)
+	public DXRAMService()
 	{
-		m_serviceName = p_name;
+		
 	}
 	
 	public String getServiceName()
 	{
-		return m_serviceName;
+		return this.getClass().getSimpleName();
 	}
 	
 	public boolean start(final DXRAMEngine p_engine)
@@ -64,14 +64,14 @@ public abstract class DXRAMService
 		boolean ret = false;
 		
 		m_parentEngine = p_engine;
-		m_settings = new Settings(m_parentEngine.getConfiguration(), m_serviceName);
+		m_settings = new Settings(m_parentEngine.getConfiguration(), m_parentEngine.getLogger(), getServiceName());
 		
-		m_parentEngine.getLogger().info("Starting service '" + m_serviceName + "'...");
-		ret = startService(m_settings);
+		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service...");
+		ret = startService(m_parentEngine.getSettings(), m_settings);
 		if (ret == false)
-        	m_parentEngine.getLogger().warn("Starting service '" + m_serviceName + "' failed.");
+			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.");
         else
-        	m_parentEngine.getLogger().info("Starting service '" + m_serviceName + "'' successful.");
+        	m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service successful.");
 		
 		return ret;
 	}
@@ -80,12 +80,12 @@ public abstract class DXRAMService
 	{
 		boolean ret = false;
 	   
-		m_parentEngine.getLogger().info("Shutting down service '" + m_serviceName + "'...");
+		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down service...");
         ret = shutdownService();
         if (ret == false)
-        	m_parentEngine.getLogger().warn("Shutting down service '" + m_serviceName + "' failed.");
+        	m_parentEngine.getLogger().warn(this.getClass().getSimpleName(), "Shutting down service failed.");
         else
-        	m_parentEngine.getLogger().info("Shutting down service '" + m_serviceName + "' successful.");
+        	m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down service successful.");
 
         return ret;	
 	}

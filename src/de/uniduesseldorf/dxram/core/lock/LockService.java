@@ -2,10 +2,12 @@ package de.uniduesseldorf.dxram.core.lock;
 
 import org.apache.log4j.Logger;
 
+import de.uniduesseldorf.dxram.core.boot.BootComponent;
 import de.uniduesseldorf.dxram.core.boot.NodeRole;
 import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
 import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
 import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
 import de.uniduesseldorf.dxram.core.lock.messages.LockMessages;
@@ -22,8 +24,6 @@ import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
 
 public class LockService extends DXRAMService implements MessageReceiver, ConnectionLostListener {
 	
-	public static final String SERVICE_NAME = "Lock";
-	
 	private final Logger LOGGER = Logger.getLogger(LockService.class);
 	
 	public enum ErrorCode
@@ -38,6 +38,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 		NETWORK
 	}
 	
+	private BootComponent m_boot = null;
 	private NetworkComponent m_network = null;
 	private MemoryManagerComponent m_memoryManager = null;
 	private LockComponent m_lock = null;
@@ -48,7 +49,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 	private int m_remoteLockTryTimeoutMs = -1;
 	
 	public LockService() {
-		super(SERVICE_NAME);
+
 	}
 	
 	@Override
@@ -59,12 +60,13 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 	}
 	
 	@Override
-	protected boolean startService(final Settings p_settings) {
+	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 	
-		m_network = getComponent(NetworkComponent.COMPONENT_IDENTIFIER);
-		m_memoryManager = getComponent(MemoryManagerComponent.COMPONENT_IDENTIFIER);
-		m_lock = getComponent(LockComponent.COMPONENT_IDENTIFIER);
-		m_lookup = getComponent(LookupComponent.COMPONENT_IDENTIFIER);
+		m_boot = getComponent(BootComponent.class);
+		m_network = getComponent(NetworkComponent.class);
+		m_memoryManager = getComponent(MemoryManagerComponent.class);
+		m_lock = getComponent(LockComponent.class);
+		m_lookup = getComponent(LookupComponent.class);
 		
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
@@ -99,7 +101,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 		if (p_timeout < 0) 
 			return ErrorCode.INVALID_PARAMETER;
 		
-		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			LOGGER.error("a superpeer must not lock chunks");
 			return ErrorCode.INVALID_PEER_ROLE;
 		} 
@@ -123,7 +125,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 			} else {
 	
 				short peer = locations.getPrimaryPeer();
-				if (peer == getSystemData().getNodeID()) {
+				if (peer == m_boot.getNodeID()) {
 					// local lock
 					if (!m_lock.lock(p_dataStructure.getID(), p_writeLock, p_timeout)) {
 						err = ErrorCode.LOCK_TIMEOUT;
@@ -196,7 +198,7 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 			Operation.UNLOCK.enter();
 		
 		// early returns
-		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 			return ErrorCode.INVALID_PEER_ROLE;
 		} 
@@ -218,12 +220,12 @@ public class LockService extends DXRAMService implements MessageReceiver, Connec
 			} else {
 	
 				short peer = locations.getPrimaryPeer();
-				if (peer == getSystemData().getNodeID()) {
+				if (peer == m_boot.getNodeID()) {
 					// local unlock
 					m_lock.unlock(p_dataStructure.getID(), p_writeLock);
 				} else {	
 					short primaryPeer = m_lookup.get(p_dataStructure.getID()).getPrimaryPeer();
-					if (primaryPeer == getSystemData().getNodeID()) {
+					if (primaryPeer == m_boot.getNodeID()) {
 						// Local release
 						m_lock.unlock(p_dataStructure.getID(), p_writeLock);
 

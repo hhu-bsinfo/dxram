@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
-
 import de.uniduesseldorf.dxram.core.log.LogMessages;
 
 import de.uniduesseldorf.menet.AbstractConnection.DataReceiver;
 import de.uniduesseldorf.utils.StatisticsManager;
+import de.uniduesseldorf.utils.log.LoggerInterface;
+import de.uniduesseldorf.utils.log.LoggerNull;
 
 /**
  * Access the network through Java NIO
@@ -21,9 +21,6 @@ import de.uniduesseldorf.utils.StatisticsManager;
  * @author Marc Ewert 14.08.2014
  */
 public final class NetworkHandler implements NetworkInterface, DataReceiver {
-
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(NetworkHandler.class);
 
 	// Attributes
 	private final TaskExecutor m_executor;
@@ -38,7 +35,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	private ReentrantLock m_lock;
 	
 	private NodeMap m_nodeMap = null;
-
+	private LoggerInterface m_logger = new LoggerNull();
+	
 	// Constructors
 	/**
 	 * Creates an instance of NetworkHandler
@@ -68,6 +66,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		}
 	}
 	
+	void setLogger(final LoggerInterface p_logger) {
+		m_logger = p_logger;
+	}
+	
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class)
 	{
 		m_lock.lock();
@@ -77,7 +79,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 	// Methods
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes) {
-		LOGGER.trace("Entering initialize");
+		m_logger.trace(getClass().getSimpleName(), "Entering initialize");
 		
 		m_lock.lock();
 		
@@ -89,7 +91,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		m_lock.unlock();
 
-		LOGGER.trace("Exiting initialize");
+		m_logger.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
 
 	@Override
@@ -107,14 +109,14 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	}
 
 	public void close() {
-		LOGGER.trace("Entering close");
+		m_logger.trace(getClass().getSimpleName(), "Entering close");
 
 		m_lock.lock();
 		m_executor.shutdown();
 		m_messageHandler.m_executor.shutdown();
 		m_lock.unlock();
 
-		LOGGER.trace("Exiting close");
+		m_logger.trace(getClass().getSimpleName(), "Exiting close");
 	}
 
 	@Override
@@ -130,7 +132,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			}
 			entry.add(p_receiver);
 
-			LOGGER.info("new MessageReceiver");
+			m_logger.info(getClass().getSimpleName(), "new MessageReceiver");
 			m_receiversLock.unlock();
 		}
 	}
@@ -145,7 +147,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			if (entry != null) {
 				entry.remove(p_receiver);
 
-				LOGGER.info("MessageReceiver removed");
+				m_logger.info(getClass().getSimpleName(), "MessageReceiver removed");
 			}
 			m_receiversLock.unlock();
 		}

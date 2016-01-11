@@ -1,8 +1,10 @@
 
 package de.uniduesseldorf.dxram.core.mem;
 
+import de.uniduesseldorf.dxram.core.boot.BootComponent;
 import de.uniduesseldorf.dxram.core.data.DataStructure;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.soh.SmallObjectHeap;
@@ -23,13 +25,13 @@ import de.uniduesseldorf.utils.locks.JNIReadWriteSpinLock;
  */
 public final class MemoryManagerComponent extends DXRAMComponent {
 
-	public static final String COMPONENT_IDENTIFIER = "MemoryManager";
-	
 	// Attributes
 	private boolean m_enableMemoryStatistics;
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	private JNIReadWriteSpinLock m_lock;
+
+	private BootComponent m_boot = null;
 
 	// Constructors
 	/**
@@ -38,7 +40,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 *            ID of the node this manager is running on.
 	 */
 	public MemoryManagerComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(COMPONENT_IDENTIFIER, p_priorityInit, p_priorityShutdown);
+		super(p_priorityInit, p_priorityShutdown);
 	}
 	
 	@Override
@@ -49,8 +51,10 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	}
 	
 	@Override
-	protected boolean initComponent(final Settings p_settings) 
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
 	{
+		m_boot = getDependantComponent(BootComponent.class);
+		
 		m_enableMemoryStatistics = p_settings.getValue(MemoryManagerConfigurationValues.Component.STATISTICS);
 
 		if (m_enableMemoryStatistics) {
@@ -61,7 +65,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_rawMemory.initialize(
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE),
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
-		m_cidTable = new CIDTable(getSystemData().getNodeID(), m_enableMemoryStatistics);
+		m_cidTable = new CIDTable(m_boot.getNodeID(), m_enableMemoryStatistics);
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
@@ -139,7 +143,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 			address = m_rawMemory.malloc(p_size);
 			if (address >= 0) {
 				// register new chunk
-				chunkID = ((long) getSystemData().getNodeID() << 48) + lid;
+				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
 				m_cidTable.set(chunkID, address);
 				
 				if (m_enableMemoryStatistics) {
@@ -308,7 +312,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @return whether this Chunk was migrated here or not
 	 */
 	public boolean dataWasMigrated(final long p_chunkID) {
-		return ChunkID.getCreatorID(p_chunkID) != getSystemData().getNodeID();
+		return ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID();
 	}
 
 	/**

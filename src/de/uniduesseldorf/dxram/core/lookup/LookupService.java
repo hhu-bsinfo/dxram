@@ -2,25 +2,27 @@ package de.uniduesseldorf.dxram.core.lookup;
 
 import org.apache.log4j.Logger;
 
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
 import de.uniduesseldorf.dxram.core.engine.DXRAMService;
-import de.uniduesseldorf.utils.config.Configuration;
 
 // TODO move many things from the LookupComponent to this class:
 // - network message handling
 // - connection lost handling
 public class LookupService extends DXRAMService {
 
-	public static final String SERVICE_NAME = "Lookup";
-	
 	private final Logger LOGGER = Logger.getLogger(LookupService.class);
 	
 	public LookupService() {
-		super(SERVICE_NAME);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	protected boolean startService(Configuration p_configuration) {
+	protected void registerDefaultSettingsService(Settings p_settings) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -30,6 +32,5 @@ public class LookupService extends DXRAMService {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
 	
 }

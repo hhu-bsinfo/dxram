@@ -2,26 +2,26 @@ package de.uniduesseldorf.dxram.core.net;
 
 import java.net.InetSocketAddress;
 
-import de.uniduesseldorf.dxram.core.engine.DXRAMSystemData;
+import de.uniduesseldorf.dxram.core.boot.BootComponent;
 
 import de.uniduesseldorf.menet.NodeMap;
 
 public class NodeMappings implements NodeMap {
 
-	private DXRAMSystemData m_dxramSystemData;
+	private BootComponent m_boot;
 	
-	public NodeMappings(final DXRAMSystemData p_dxramSystemData)
+	public NodeMappings(final BootComponent p_bootComponent)
 	{
-		m_dxramSystemData = p_dxramSystemData;
+		m_boot = p_bootComponent;
 	}
 	
 	@Override
 	public short getOwnNodeID() {
-		return m_dxramSystemData.getNodeID();
+		return m_boot.getNodeID();
 	}
 	
 	@Override
 	public InetSocketAddress getAddress(short p_nodeID) {
-		return m_dxramSystemData.getNodeAddress(p_nodeID);
+		return m_boot.getNodeAddress(p_nodeID);
 	}
 }

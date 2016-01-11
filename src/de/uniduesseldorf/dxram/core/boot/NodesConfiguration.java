@@ -1,5 +1,5 @@
 
-package de.uniduesseldorf.dxram.core.engine.nodeconfig;
+package de.uniduesseldorf.dxram.core.boot;
 
 import java.util.HashMap;
 import java.util.Map.Entry;

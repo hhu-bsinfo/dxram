@@ -1,21 +1,17 @@
 package de.uniduesseldorf.dxram.core.net;
 
-import org.apache.log4j.Logger;
-
+import de.uniduesseldorf.dxram.core.boot.BootComponent;
 import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
+import de.uniduesseldorf.dxram.core.logger.LoggerComponent;
 
 import de.uniduesseldorf.menet.AbstractMessage;
 import de.uniduesseldorf.menet.AbstractRequest;
 import de.uniduesseldorf.menet.NetworkHandler;
 import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
-import de.uniduesseldorf.utils.config.Configuration;
 
 public class NetworkComponent extends DXRAMComponent {
-	
-	public static final String COMPONENT_IDENTIFIER = "Network";
-	
-	private final Logger LOGGER = Logger.getLogger(NetworkComponent.class);
-	
+		
 	public enum ErrorCode 
 	{
 		SUCCESS,
@@ -25,11 +21,14 @@ public class NetworkComponent extends DXRAMComponent {
 		RESPONSE_TIMEOUT,
 	}
 	
+	private LoggerComponent m_logger = null;
+	private BootComponent m_boot = null;
+	
 	// Attributes
 	private NetworkHandler m_networkHandler;
 	
 	public NetworkComponent(int p_priorityInit, int p_priorityShutdown) {
-		super("Network", p_priorityInit, p_priorityShutdown);
+		super(p_priorityInit, p_priorityShutdown);
 	}
 
 	// --------------------------------------------------------------------------------------
@@ -47,6 +46,7 @@ public class NetworkComponent extends DXRAMComponent {
 	}
 
 	public ErrorCode sendMessage(final AbstractMessage p_message) {
+		m_logger.trace(getClass(), "Sending message " + p_message);
 		int res = m_networkHandler.sendMessage(p_message);
 		ErrorCode errCode = ErrorCode.UNKNOWN;
 		
@@ -62,7 +62,7 @@ public class NetworkComponent extends DXRAMComponent {
 		}
 		
 		if (errCode != ErrorCode.SUCCESS) {
-			LOGGER.error("Sending message " + p_message + " failed: " + errCode);
+			m_logger.error(this.getClass(), "Sending message " + p_message + " failed: " + errCode);
 		}
 		
 		return errCode;
@@ -70,6 +70,7 @@ public class NetworkComponent extends DXRAMComponent {
 	
 	
 	public ErrorCode forwardMessage(final short p_destination, final AbstractMessage p_message) {
+		m_logger.trace(getClass(), "Forwarding message " + p_message);
 		int res = m_networkHandler.forwardMessage(p_destination, p_message);
 		
 		ErrorCode errCode = ErrorCode.UNKNOWN;
@@ -86,7 +87,7 @@ public class NetworkComponent extends DXRAMComponent {
 		}
 		
 		if (errCode != ErrorCode.SUCCESS) {
-			LOGGER.error("Forwarding message " + p_message + " failed: " + errCode);
+			m_logger.error(this.getClass(), "Forwarding message " + p_message + " failed: " + errCode);
 		}
 		
 		return errCode;
@@ -98,12 +99,16 @@ public class NetworkComponent extends DXRAMComponent {
 	 * @return 0 if successful, -1 if sending the request failed, 1 waiting for the response timed out.
 	 */
 	public ErrorCode sendSync(final AbstractRequest p_request) {
+		m_logger.trace(getClass(), "Sending request (sync): " + p_request);
 		ErrorCode err = sendMessage(p_request);
 		if (err == ErrorCode.SUCCESS) {
+			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
 			if (!p_request.waitForResponses()) {
-				LOGGER.error("Sending sync, waiting for responses " + p_request + " failed, timeout.");
+				m_logger.error(this.getClass(), "Sending sync, waiting for responses " + p_request + " failed, timeout.");
 				err = ErrorCode.RESPONSE_TIMEOUT;
-			}		
+			} else {		
+				m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
+			}
 		}
 		
 		return err;
@@ -120,23 +125,30 @@ public class NetworkComponent extends DXRAMComponent {
 	// --------------------------------------------------------------------------------------
 
 	@Override
-	protected void registerConfigurationValuesComponent(final Configuration p_configuration) {
-		p_configuration.registerConfigurationEntries(NetworkConfigurationValues.CONFIGURATION_ENTRIES);
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.MSG_BUFFER_SIZE);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_TASK_HANDLER);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS);
 	}
 	
 	@Override
-	protected boolean initComponent(final Configuration p_configuration) 
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
 	{
+		m_logger = getDependantComponent(LoggerComponent.class);
+		m_boot = getDependantComponent(BootComponent.class);
+		
 		m_networkHandler = new NetworkHandler(
-				p_configuration.getIntValue(NetworkConfigurationValues.NETWORK_TASK_HANDLER_THREAD_COUNT),
-				p_configuration.getIntValue(NetworkConfigurationValues.NETWORK_MESSAGE_HANDLER_THREAD_COUNT),
-				p_configuration.getBooleanValue(NetworkConfigurationValues.NETWORK_STATISTICS_THROUGHPUT),
-				p_configuration.getBooleanValue(NetworkConfigurationValues.NETWORK_STATISTICS_REQUESTS));
+				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_TASK_HANDLER),
+				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER),
+				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT),
+				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS));
 		
 		m_networkHandler.initialize(
-				getSystemData().getNodeID(), 
-				new NodeMappings(getSystemData()), 
-				p_configuration.getIntValue(NetworkConfigurationValues.NETWORK_BUFFER_SIZE));
+				m_boot.getNodeID(), 
+				new NodeMappings(m_boot), 
+				p_settings.getValue(NetworkConfigurationValues.Component.MSG_BUFFER_SIZE));
 		
 		return true;
 	}

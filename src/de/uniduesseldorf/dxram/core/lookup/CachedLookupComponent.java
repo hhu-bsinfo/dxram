@@ -2,21 +2,20 @@ package de.uniduesseldorf.dxram.core.lookup;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import de.uniduesseldorf.dxram.core.backup.BackupRange;
+import de.uniduesseldorf.dxram.core.boot.BootComponent;
 import de.uniduesseldorf.dxram.core.boot.NodeRole;
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
+import de.uniduesseldorf.dxram.core.logger.LoggerComponent;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 import de.uniduesseldorf.utils.Cache;
-import de.uniduesseldorf.utils.config.Configuration;
 
 public class CachedLookupComponent extends LookupComponent {
 
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(CachedLookupComponent.class);
-
-	// Attributes
+	private BootComponent m_boot = null;
+	private LoggerComponent m_logger = null;
+	
 	private DefaultLookupComponent m_lookup = new DefaultLookupComponent(-1, -1);
 	private Cache<Long, Long> m_chunkIDCache;
 	private Cache<Long, Long> m_applicationIDCache;
@@ -55,7 +54,7 @@ public class CachedLookupComponent extends LookupComponent {
 		
 		locations = m_chunkIDCache.get(p_chunkID);
 		if (p_force || null == locations) {
-			LOGGER.trace("value not cached: " + p_chunkID);
+			m_logger.trace(getClass(), "value not cached: " + p_chunkID);
 
 			ret = m_lookup.get(p_chunkID);
 
@@ -128,7 +127,7 @@ public class CachedLookupComponent extends LookupComponent {
 
 		chunkID = m_applicationIDCache.get((long) p_id);
 		if (null == chunkID) {
-			LOGGER.trace("value not cached: " + p_id);
+			m_logger.trace(getClass(), "value not cached: " + p_id);
 
 			ret = m_lookup.getChunkID(p_id);
 
@@ -206,11 +205,21 @@ public class CachedLookupComponent extends LookupComponent {
 	// ------------------------------------------------------------------------------------
 	
 	@Override
-	protected boolean initComponent(Configuration p_configuration) {
-		m_lookup.initComponent(p_configuration);
-		if (!getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
-			m_chunkIDCache.enableTTL(p_configuration.getLongValue(LookupConfigurationValues.LOOKUP_CACHE_TTL));
-			m_applicationIDCache.enableTTL(p_configuration.getLongValue(LookupConfigurationValues.LOOKUP_CACHE_TTL));
+	protected void registerDefaultSettingsComponent(Settings p_settings) {
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.SLEEP);
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.CACHE_ENTRIES);
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.CACHE_TTL);
+	}
+	
+	@Override
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+		m_boot = getDependantComponent(BootComponent.class);
+		
+		m_lookup.initComponent(p_engineSettings, p_settings);
+		if (!m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			Long cacheTTL = p_settings.getValue(LookupConfigurationValues.Component.CACHE_TTL);
+			m_chunkIDCache.enableTTL(cacheTTL);
+			m_applicationIDCache.enableTTL(cacheTTL);
 		} else {
 			m_chunkIDCache = null;
 			m_applicationIDCache = null;
@@ -223,6 +232,4 @@ public class CachedLookupComponent extends LookupComponent {
 	protected boolean shutdownComponent() {
 		return m_lookup.shutdownComponent();
 	}
-
-
 }

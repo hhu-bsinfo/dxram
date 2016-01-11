@@ -10,9 +10,9 @@ public enum NodeRole {
 	// Constants
 	PEER('P'), SUPERPEER('S'), MONITOR('M');
 
-	public static final String SUPERPEER_STR = "Superpeer";
-	public static final String PEER_STR = "Peer";
-	public static final String MONITOR_STR = "Monitor";
+	public static final String SUPERPEER_STR = "superpeer";
+	public static final String PEER_STR = "peer";
+	public static final String MONITOR_STR = "monitor";
 	
 	// Attributes
 	private char m_acronym;
@@ -33,9 +33,10 @@ public enum NodeRole {
 	 * @return Role node of string.
 	 */
 	static NodeRole toNodeRole(final String p_str) {
-		if (p_str.equals(SUPERPEER_STR)) {
+		String str = p_str.toLowerCase();
+		if (str.equals(SUPERPEER_STR) || str.equals("s")) {
 			return NodeRole.SUPERPEER;
-		} else if (p_str.equals(MONITOR_STR)) {
+		} else if (str.equals(MONITOR_STR) || str.equals("m")) {
 			return NodeRole.MONITOR;
 		} else {
 			return NodeRole.PEER;

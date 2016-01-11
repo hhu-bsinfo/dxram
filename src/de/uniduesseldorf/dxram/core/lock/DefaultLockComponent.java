@@ -6,6 +6,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
+
 import de.uniduesseldorf.utils.locks.JNIReadWriteSpinLock;
 import de.uniduesseldorf.utils.locks.SpinLock;
 
@@ -66,7 +68,7 @@ public class DefaultLockComponent extends LockComponent
 	}
 
 	@Override
-	protected boolean initComponent(final Settings p_settings) {
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		m_locks = new HashMap<Long, ReadWriteLock>();
 		m_creationLock = new SpinLock();
 		

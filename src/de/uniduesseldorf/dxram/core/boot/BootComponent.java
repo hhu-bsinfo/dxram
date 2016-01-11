@@ -6,10 +6,8 @@ import de.uniduesseldorf.dxram.core.engine.DXRAMComponent;
 
 public abstract class BootComponent extends DXRAMComponent {
 
-	public static final String COMPONENT_IDENTIFIER = "Boot";
-	
 	public BootComponent(int p_priorityInit, int p_priorityShutdown) {
-		super(COMPONENT_IDENTIFIER, p_priorityInit, p_priorityShutdown);
+		super(p_priorityInit, p_priorityShutdown);
 	}
 
 	/**
