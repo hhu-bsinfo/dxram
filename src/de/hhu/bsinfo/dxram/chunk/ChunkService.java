@@ -89,6 +89,51 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return true;
 	}
 	
+	public long[] create(final int p_size, final int p_count)
+	{		
+		long[] chunkIDs = null;
+
+		// TODO have parameter checks for all other calls as well
+		if (p_size <= 0) {
+			return null;
+		}
+		
+		if (p_count <= 0) {
+			return null;
+		}
+		
+		m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not create chunks");
+			return null;
+		} 
+		
+		if (m_statisticsEnabled) {
+			Operation.MULTI_CREATE.enter();
+		}
+			
+		
+		chunkIDs = new long[p_count];
+
+		m_memoryManager.lockManage();
+		// keep loop tight and execute everything
+		// that we don't have to lock outside of this section
+		for (int i = 0; i < p_count; i++) {
+			chunkIDs[i] = m_memoryManager.create(p_size);		
+		}
+		m_memoryManager.unlockManage();
+		
+
+		if (m_statisticsEnabled) {
+			Operation.MULTI_CREATE.leave();
+		}
+		
+		m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
+		
+		return chunkIDs;
+	}
+	
 	public long[] create(final int... p_sizes) {
 		long[] chunkIDs = null;
 		

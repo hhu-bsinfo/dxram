@@ -1,16 +1,33 @@
 package de.hhu.bsinfo.dxram.test.nothaas;
 
-import de.uniduesseldorf.dxram.core.dxram.Core;
-
+import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.engine.DXRAMException;
-import de.hhu.bsinfo.dxram.engine.nodeconfig.NodesConfigurationHandler;
 import de.hhu.bsinfo.utils.Stopwatch;
-import de.hhu.bsinfo.utils.config.ConfigurationHandler;
 
 public class LinkedListBenchmark 
 {
-	public static void main(String[] args) throws DXRAMException
+	private DXRAM m_dxram = null;
+	private ChunkService m_chunkService = null;
+	private Stopwatch m_stopwatch = new Stopwatch();
+	
+	public LinkedListBenchmark()
+	{
+		m_dxram = new DXRAM();
+		m_dxram.initialize("config/dxram.conf");
+		m_chunkService = m_dxram.getService(ChunkService.class);
+	}
+	
+	public void run(int numItems)
+	{
+		System.out.println("Creating linked list with " + numItems + " items.");
+		m_stopwatch.start();
+		long listHead = createLinkedList(numItems);
+		m_stopwatch.printAndStop();
+		System.out.println("Done creating linked list.");
+	}
+	
+	public static void main(String[] args)
 	{
 		if (args.length < 1)
 		{
@@ -20,9 +37,7 @@ public class LinkedListBenchmark
 		
 		long numElementsList = Long.parseLong(args[0]);
 		
-		System.out.println("Starting Peer...");
-		Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-				NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
+
 		
 		System.out.println("Creating linked list with " + numElementsList + " items.");
 		Stopwatch.start();
@@ -39,12 +54,12 @@ public class LinkedListBenchmark
 		System.out.println("Done");
 	}
 	
-	public static long createLinkedList(long numItems) throws DXRAMException
+	public Chunk createLinkedList(int numItems)
 	{	
-		// initial chunk
-		long head = -1;
-		Chunk previousChunk = Core.createNewChunk(8);
-		head = previousChunk.getChunkID();
+		Chunk[] chunks = new Chunk[numItems];
+		long[] chunkIDs = m_chunkService.create(8, numItems);
+		
+		for ()
 		
 		for (long i = 0; i < numItems; i++)
 		{
@@ -62,7 +77,7 @@ public class LinkedListBenchmark
 		return head;
 	}
 	
-	public static long walkLinkedList(long headChunkID) throws DXRAMException
+	public long walkLinkedList(long headChunkID) throws DXRAMException
 	{	
 		long counter = 0;
 		Chunk chunk = Core.get(headChunkID);
