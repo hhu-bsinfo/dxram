@@ -2,8 +2,6 @@ package de.hhu.bsinfo.soh;
 
 import java.util.Arrays;
 
-import de.hhu.bsinfo.soh.exception.MemoryRuntimeException;
-
 /**
  * The memory is divided into segments to enable better concurrent access
  * to the memory as a a whole. This also enables locking single segmens

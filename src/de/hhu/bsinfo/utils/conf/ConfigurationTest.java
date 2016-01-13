@@ -12,17 +12,17 @@ public class ConfigurationTest
 	public static void createConfiguration(final String p_path) 
 	{
 		Configuration config = new Configuration("NewTest");
-		config.AddValue("/Resolution/X", 1024);
-		config.AddValue("/Resolution/Y", 768);
-		config.AddValue("/Services/Service/Name", 0, "my_service");
-		config.AddValue("/Services/Service/IP", 0, "192.168.178.20");
-		config.AddValue("/Services/Service/Port", 0, "1234");
-		config.AddValue("/Services/Service/Name", 1, "your_service");
-		config.AddValue("/Services/Service/IP", 1, "192.168.178.55");
-		config.AddValue("/Services/Service/Port", 1, "4321");
-		config.AddValue("/Services/Service/Name", 2, "his_service");
-		config.AddValue("/Services/Service/IP", 2, "192.168.178.11");
-		config.AddValue("/Services/Service/Port", 2, "9999");
+		config.addValue("/Resolution/X", 1024);
+		config.addValue("/Resolution/Y", 768);
+		config.addValue("/Services/Service/Name", 0, "my_service");
+		config.addValue("/Services/Service/IP", 0, "192.168.178.20");
+		config.addValue("/Services/Service/Port", 0, "1234");
+		config.addValue("/Services/Service/Name", 1, "your_service");
+		config.addValue("/Services/Service/IP", 1, "192.168.178.55");
+		config.addValue("/Services/Service/Port", 1, "4321");
+		config.addValue("/Services/Service/Name", 2, "his_service");
+		config.addValue("/Services/Service/IP", 2, "192.168.178.11");
+		config.addValue("/Services/Service/Port", 2, "9999");
 		
 		System.out.println("=================================");
 		System.out.println(config);

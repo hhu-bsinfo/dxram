@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import sun.misc.Unsafe;
-import de.hhu.bsinfo.soh.exception.MemoryRuntimeException;
 import de.hhu.bsinfo.utils.Endianness;
 import de.hhu.bsinfo.utils.unsafe.UnsafeHandler;
 

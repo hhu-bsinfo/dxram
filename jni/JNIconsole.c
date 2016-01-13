@@ -1,8 +1,5 @@
 // compile:
-// gcc -c JNIconsole.c -o JNIconsole.o -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include
-//
-// link (uses static version of readline lib)
-// g++ -dynamiclib -undefined suppress -flat_namespace *.o -o libJNIconsole.dylib libreadline.a -ltermcap
+// gcc -shared -fpic -o libJNIconsole.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNIconsole.c
 
 #include <jni.h>
 #include <stdlib.h>
@@ -31,7 +28,7 @@ extern void exit();
 extern HIST_ENTRY **history_list ();
 
 
-JNIEXPORT jbyteArray JNICALL Java_de_uniduesseldorf_dxram_utils_JNIconsole_readline(JNIEnv *p_env, jclass p_class) {
+JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv *p_env, jclass p_class) {
     char *temp, *prompt, *ptr;
     
     

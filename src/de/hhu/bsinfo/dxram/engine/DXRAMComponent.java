@@ -35,7 +35,7 @@ public abstract class DXRAMComponent
 		
 		public <T> void setDefaultValue(final String p_key, final T p_value)
 		{
-			if (m_configuration.AddValue(m_basePath + p_key, p_value, false))
+			if (m_configuration.addValue(m_basePath + p_key, p_value, false))
 			{
 				// we added a default value => value was missing from configuration
 				m_logger.warn(this.getClass().getSimpleName(), "Settings value for '" + p_key + "' was missing, using default value '" + p_value + "'.");
@@ -51,9 +51,9 @@ public abstract class DXRAMComponent
 		public <T> T getValue(final String p_key, final Class<T> p_type)
 		{
 			// try implementation specific path first, then common interface path
-			T val = m_configuration.GetValue(m_basePath + p_key, p_type);
+			T val = m_configuration.getValue(m_basePath + p_key, p_type);
 			if (val == null)
-				val = m_configuration.GetValue(m_commonBasePath + p_key, p_type);
+				val = m_configuration.getValue(m_commonBasePath + p_key, p_type);
 			
 			return val;
 		}
@@ -61,9 +61,9 @@ public abstract class DXRAMComponent
 		public <T> Map<Integer, T> GetValues(final String p_key, final Class<T> p_type)
 		{
 			// try implementation specific path first, then common interface path
-			Map<Integer, T> vals = m_configuration.GetValues(m_basePath + p_key, p_type);
+			Map<Integer, T> vals = m_configuration.getValues(m_basePath + p_key, p_type);
 			if (vals == null || vals.isEmpty())
-				vals = m_configuration.GetValues(m_commonBasePath + p_key, p_type);
+				vals = m_configuration.getValues(m_commonBasePath + p_key, p_type);
 			
 			return vals;
 		}

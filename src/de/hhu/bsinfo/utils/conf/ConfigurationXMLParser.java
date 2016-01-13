@@ -15,9 +15,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import de.uniduesseldorf.utils.conf.Configuration;
-import de.uniduesseldorf.utils.conf.ConfigurationException;
-
 public class ConfigurationXMLParser implements ConfigurationParser
 {
 	private static final String ROOT_ELEMENT = "conf";
@@ -160,7 +157,7 @@ public class ConfigurationXMLParser implements ConfigurationParser
 						
 					// add the value and do not replace existing values
 					// i.e. if same index is available multiple times, only the first one is used
-					p_configuration.AddValue(key, index, value, false);
+					p_configuration.addValue(key, index, value, false);
 				}
 				// no parser to support, ignore
 			}

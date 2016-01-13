@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 
-import de.hhu.bsinfo.soh.exception.MemoryRuntimeException;
 import de.hhu.bsinfo.utils.Endianness;
 
 /**

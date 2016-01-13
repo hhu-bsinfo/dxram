@@ -1,65 +1,39 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Vector;
 import java.util.Map.Entry;
-import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.NodeRole;
+import de.hhu.bsinfo.dxram.chunk.ChunkStatistic.Operation;
+import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
+import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.RemoveRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.RemoveResponse;
+import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.Locations;
+import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.net.NetworkComponent.ErrorCode;
+import de.hhu.bsinfo.dxram.util.ChunkID;
+import de.hhu.bsinfo.dxram.util.ChunkLockOperation;
+import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
+import de.hhu.bsinfo.utils.StatisticsManager;
 
-import de.uniduesseldorf.dxram.core.backup.BackupComponent;
-import de.uniduesseldorf.dxram.core.boot.BootComponent;
-import de.uniduesseldorf.dxram.core.boot.NodeRole;
-import de.uniduesseldorf.dxram.core.chunk.ChunkStatistic.Operation;
-import de.uniduesseldorf.dxram.core.chunk.messages.ChunkMessages;
-import de.uniduesseldorf.dxram.core.chunk.messages.GetRequest;
-import de.uniduesseldorf.dxram.core.chunk.messages.GetResponse;
-import de.uniduesseldorf.dxram.core.chunk.messages.PutRequest;
-import de.uniduesseldorf.dxram.core.chunk.messages.PutResponse;
-import de.uniduesseldorf.dxram.core.chunk.messages.RemoveRequest;
-import de.uniduesseldorf.dxram.core.chunk.messages.RemoveResponse;
-import de.uniduesseldorf.dxram.core.data.Chunk;
-import de.uniduesseldorf.dxram.core.data.DataStructure;
-import de.uniduesseldorf.dxram.core.engine.DXRAMEngine;
-import de.uniduesseldorf.dxram.core.engine.DXRAMException;
-import de.uniduesseldorf.dxram.core.engine.DXRAMService;
-import de.uniduesseldorf.dxram.core.engine.DXRAMService.Settings;
-import de.uniduesseldorf.dxram.core.events.ConnectionLostListener;
-import de.uniduesseldorf.dxram.core.events.IncomingChunkListener;
-import de.uniduesseldorf.dxram.core.events.ConnectionLostListener.ConnectionLostEvent;
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
-import de.uniduesseldorf.dxram.core.lock.LockComponent;
-import de.uniduesseldorf.dxram.core.log.LogConfigurationValues;
-import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
-import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
-import de.uniduesseldorf.dxram.core.logger.LoggerComponent;
-import de.uniduesseldorf.dxram.core.lookup.Locations;
-import de.uniduesseldorf.dxram.core.lookup.LookupComponent;
-import de.uniduesseldorf.dxram.core.lookup.LookupException;
-import de.uniduesseldorf.dxram.core.mem.MemoryManagerComponent;
-import de.uniduesseldorf.dxram.core.net.NetworkComponent;
-import de.uniduesseldorf.dxram.core.net.NetworkComponent.ErrorCode;
-import de.uniduesseldorf.dxram.core.util.ChunkID;
-import de.uniduesseldorf.dxram.core.util.ChunkLockOperation;
-
-import de.hhu.bsinfo.dxram.statistics.StatisticsConfigurationValues;
-import de.uniduesseldorf.menet.AbstractMessage;
-import de.uniduesseldorf.menet.MessageDirectory;
-import de.uniduesseldorf.menet.NetworkException;
-import de.uniduesseldorf.menet.NetworkInterface;
-import de.uniduesseldorf.menet.NetworkInterface.MessageReceiver;
-import de.uniduesseldorf.utils.Contract;
-import de.uniduesseldorf.utils.Pair;
-import de.uniduesseldorf.utils.StatisticsManager;
-import de.uniduesseldorf.utils.unsafe.IntegerLongList;
-import de.uniduesseldorf.utils.unsafe.AbstractKeyValueList.KeyValuePair;
-
-public class ChunkService extends DXRAMService implements MessageReceiver, ConnectionLostListener
+public class ChunkService extends DXRAMService implements MessageReceiver
 {
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
@@ -71,20 +45,13 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	
 	private boolean m_statisticsEnabled = false;
 	
-	// TODO why not multiple?
-	private IncomingChunkListener m_listener;
-	
 	public ChunkService() {
 		super();
 	}
 	
-	public void setListener(final IncomingChunkListener p_listener) {
-		m_listener = p_listener;
-	}
-	
 	@Override
 	protected void registerDefaultSettingsService(Settings p_settings) {
-		
+		p_settings.setDefaultValue(ChunkConfigurationValues.Service.STATISTICS);
 	}
 	
 	@Override
@@ -99,6 +66,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		m_statisticsEnabled = p_settings.getValue(ChunkConfigurationValues.Service.STATISTICS);
 
 		registerNetworkMessages();
+		registerNetworkMessageListener();
 
 //		if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
 //			m_backup.registerPeer();
@@ -120,33 +88,303 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		
 		return true;
 	}
-
+	
 	public long[] create(final int... p_sizes) {
 		long[] chunkIDs = null;
+		
+		if (p_sizes.length == 0)
+			return new long[0];
 
+		m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not create chunks");
+			return null;
+		} 
+		
 		if (m_statisticsEnabled) {
 			Operation.MULTI_CREATE.enter();
 		}
 			
-		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-			m_logger.error(getClass(), "a superpeer must not create chunks");
-		} else {
-			chunkIDs = new long[p_sizes.length];
+		
+		chunkIDs = new long[p_sizes.length];
 
-			m_memoryManager.lockManage();
-			// keep loop tight and execute everything
-			// that we don't have to lock outside of this section
-			for (int i = 0; i < p_sizes.length; i++) {
-				chunkIDs[i] = m_memoryManager.create(p_sizes[i]);		
-			}
-			m_memoryManager.unlockManage();
+		m_memoryManager.lockManage();
+		// keep loop tight and execute everything
+		// that we don't have to lock outside of this section
+		for (int i = 0; i < p_sizes.length; i++) {
+			chunkIDs[i] = m_memoryManager.create(p_sizes[i]);		
 		}
+		m_memoryManager.unlockManage();
+		
 
 		if (m_statisticsEnabled) {
 			Operation.MULTI_CREATE.leave();
 		}
 		
+		m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
+		
 		return chunkIDs;
+	}
+
+	// remote create
+	public long[] create(final short p_peer, final int... p_sizes) {
+		long[] chunkIDs = null;
+		
+		if (p_sizes.length == 0)
+			return new long[0];
+
+		m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not create chunks");
+		}
+		
+		if (m_statisticsEnabled) {
+			Operation.MULTI_CREATE.enter();
+		}
+			
+
+		CreateRequest request = new CreateRequest(p_peer, p_sizes);
+		ErrorCode error = m_network.sendSync(request);
+		if (error != ErrorCode.SUCCESS)
+		{
+			m_logger.error(getClass(), "Sending chunk create request to peer " + Integer.toHexString(p_peer & 0xFFFF) + " failed: " + error);
+		} else {
+			CreateResponse response = request.getResponse(CreateResponse.class);
+			chunkIDs = response.getChunkIDs();
+		}
+		
+
+		if (m_statisticsEnabled) {
+			Operation.MULTI_CREATE.leave();
+		}
+		
+		m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + Long.toHexString(p_sizes[0]) + ", ...] -> " + chunkIDs[0] + ", ...");
+		
+		return chunkIDs;
+	}
+	
+	public int remove(final DataStructure[] p_dataStructures) {
+		int chunksRemoved = 0;
+		
+		if (p_dataStructures.length == 0)
+			return chunksRemoved;
+		
+		m_logger.trace(getClass(), "remove[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not remove chunks");
+		}
+		
+		if (m_statisticsEnabled) {
+			Operation.REMOVE.enter();
+		}
+		
+		
+		// sort by local and remote data first
+		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
+		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
+		m_memoryManager.lockAccess();
+		for (int i = 0; i < p_dataStructures.length; i++) {
+			if (m_memoryManager.exists(p_dataStructures[i].getID())) {
+				// local
+				localChunks.add(p_dataStructures[i]);
+			} else {
+				// remote, figure out location and sort by peers
+				Locations locations;
+				
+				locations = m_lookup.get(p_dataStructures[i].getID());
+				if (locations == null) {
+					continue;
+				} else {
+					short peer = locations.getPrimaryPeer();
+
+					ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+					if (remoteChunksOfPeer == null) {
+						remoteChunksOfPeer = new ArrayList<DataStructure>();
+						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
+					}
+					remoteChunksOfPeer.add(p_dataStructures[i]);
+				}
+			}
+		}
+		m_memoryManager.unlockAccess();
+
+		// remove local chunkIDs
+		m_memoryManager.lockManage();
+		for (final DataStructure chunk : localChunks) {
+			if (m_memoryManager.remove(chunk.getID())) {
+				chunksRemoved++;
+			} else {
+				m_logger.error(getClass(), "Removing chunk ID " + Long.toHexString(chunk.getID()) + " failed.");
+			}
+		}
+		m_memoryManager.unlockManage();
+		
+		// go for remote ones by each peer
+		for (final Entry<Short, ArrayList<DataStructure>> peerWithChunks : remoteChunksByPeers.entrySet()) {
+			short peer = peerWithChunks.getKey();
+			ArrayList<DataStructure> remoteChunks = peerWithChunks.getValue();
+
+			if (peer == m_boot.getNodeID()) {
+				// local remove, migrated data to current node
+				m_memoryManager.lockManage();
+				for (final DataStructure chunk : remoteChunks) {
+					if (m_memoryManager.remove(chunk.getID())) {
+						chunksRemoved++;
+					} else {
+						m_logger.error(getClass(), "Removing chunk ID " + Long.toHexString(chunk.getID()) + " failed.");
+					}
+				}
+				m_memoryManager.unlockManage();
+			} else {					
+				// Remote remove from specified peer
+				RemoveRequest request = new RemoveRequest(peer, (DataStructure[]) remoteChunks.toArray());
+				ErrorCode error = m_network.sendSync(request);
+				if (error != ErrorCode.SUCCESS)
+				{
+					m_logger.error(getClass(), "Sending chunk remove request to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
+					continue;
+				}
+
+				RemoveResponse response = request.getResponse(RemoveResponse.class);
+				if (response != null) {
+					byte[] statusCodes = response.getStatusCodes();
+					// short cut if everything is ok
+					if (statusCodes[0] == 2) {
+						chunksRemoved += remoteChunks.size();
+					} else {
+						for (int i = 0; i < statusCodes.length; i++) {
+							if (statusCodes[i] < 0) {
+								m_logger.error(getClass(), "Remote removing chunk " + Long.toHexString(remoteChunks.get(i).getID()) + " failed: " + statusCodes[i]);
+							} else {
+								chunksRemoved++;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		if (m_statisticsEnabled) {
+			Operation.REMOVE.leave();
+		}
+		
+		m_logger.trace(getClass(), "remove[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + chunksRemoved);
+		
+		return chunksRemoved;
+	}
+	
+	public int put(final DataStructure... p_dataStructres) {
+		return put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
+	}
+	
+	public int put(final ChunkLockOperation p_chunkUnlockOperation, DataStructure... p_dataStructures)
+	{
+		int chunksPut = 0;
+		
+		if (p_dataStructures.length == 0)
+			return chunksPut;
+		
+		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not put chunks");
+		}
+		
+		if (m_statisticsEnabled) {
+			Operation.PUT.enter();
+		}	
+		
+		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
+		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
+		
+		// sort by local/remote chunks
+		m_memoryManager.lockAccess();
+		for (DataStructure dataStructure : p_dataStructures) {
+			if (m_memoryManager.exists(dataStructure.getID())) {
+				localChunks.add(dataStructure);
+			} else {
+				// remote, figure out location and sort by peers
+				Locations locations = m_lookup.get(dataStructure.getID());
+				if (locations == null) {
+					continue;
+				} else {
+					short peer = locations.getPrimaryPeer();
+
+					ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+					if (remoteChunksOfPeer == null) {
+						remoteChunksOfPeer = new ArrayList<DataStructure>();
+						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
+					}
+					remoteChunksOfPeer.add(dataStructure);
+				}
+			}
+		}
+		
+		// have local puts first
+		for (DataStructure dataStructure : localChunks) {
+			if (m_memoryManager.put(dataStructure))
+				chunksPut++;
+			else
+				m_logger.error(getClass(), "Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+		}
+		m_memoryManager.unlockAccess();
+		
+		// TODO unlock chunks	
+	
+		// go for remote chunks
+		for (Entry<Short, ArrayList<DataStructure>> entry : remoteChunksByPeers.entrySet()) {
+			short peer = entry.getKey();
+			
+			if (peer == m_boot.getNodeID()) {
+				// local put, migrated data to current node
+				m_memoryManager.lockAccess();
+				for (final DataStructure dataStructure : entry.getValue()) {
+					if (m_memoryManager.put(dataStructure))
+						chunksPut++;
+					else
+						m_logger.error(getClass(), "Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+				}
+				m_memoryManager.unlockAccess();
+			} else {
+				// Remote put
+				ArrayList<DataStructure> chunksToPut = entry.getValue();
+				PutRequest request = new PutRequest(peer, p_chunkUnlockOperation, (DataStructure[]) chunksToPut.toArray());
+				ErrorCode error = m_network.sendSync(request);
+				if (error != ErrorCode.SUCCESS) {
+					m_logger.error(getClass(), "Sending chunk put request to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
+					
+					// TODO
+					//m_lookup.invalidate(dataStructure.getID());
+					
+					continue;
+				}
+			
+				PutResponse response = request.getResponse(PutResponse.class);
+				byte[] statusCodes = response.getStatusCodes();
+				// try short cut, i.e. all puts successful
+				if (statusCodes.length == 1 && statusCodes[0] == 1) {
+					chunksPut += chunksToPut.size();
+				} else {
+					for (int i = 0; i < statusCodes.length; i++) {
+						if (statusCodes[i] < 0) {
+							m_logger.error(getClass(), "Remote put chunk " + Long.toHexString(chunksToPut.get(i).getID()) + " failed: " + statusCodes[i]);
+						} else {
+							chunksPut++;
+						}
+					}
+				}
+			}
+		}		
+			
+		if (m_statisticsEnabled)
+			Operation.PUT.leave();		
+		
+		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + chunksPut);
+		
+		return chunksPut;
 	}
 
 	public int get(final DataStructure... p_dataStructures) {
@@ -154,401 +392,113 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 	}
 	
 	public int get(final ChunkLockOperation p_chunkLockOperation, DataStructure... p_dataStructures) {
-		Map<Short, Vector<DataStructure>> remoteChunksByPeers;
-		Vector<DataStructure> remoteChunksOfPeer;
-		GetRequest request;
-		GetResponse response;
-		Vector<DataStructure> localChunks;
 		int totalChunksGot = 0;
 		
+		if (p_dataStructures.length == 0)
+			return totalChunksGot;
+		
+		m_logger.trace(getClass(), "get[lockOp " + p_chunkLockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not get chunks");
+		}
+		
 		if (m_statisticsEnabled) {
-			Operation.MULTI_GET.enter();
-		}
-			
-		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-			m_logger.error(getClass(), "a superpeer must not use chunks");
-		} else {
-			// sort by local and remote data first
-			remoteChunksByPeers = new TreeMap<>();
-			localChunks = new Vector<DataStructure>();
-			m_memoryManager.lockAccess();
-			for (int i = 0; i < p_dataStructures.length; i++) {
-				if (m_memoryManager.exists(p_dataStructures[i].getID())) {
-					// local
-					localChunks.add(p_dataStructures[i]);
+			Operation.GET.enter();
+		}	
+
+		// sort by local and remote data first
+		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
+		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
+		m_memoryManager.lockAccess();
+		for (int i = 0; i < p_dataStructures.length; i++) {
+			if (m_memoryManager.exists(p_dataStructures[i].getID())) {
+				// local
+				localChunks.add(p_dataStructures[i]);
+			} else {
+				// remote, figure out location and sort by peers
+				Locations locations;
+				
+				locations = m_lookup.get(p_dataStructures[i].getID());
+				if (locations == null) {
+					continue;
 				} else {
-					// remote, figure out location and sort by peers
-					Locations locations;
-					
-					locations = m_lookup.get(p_dataStructures[i].getID());
-					if (locations == null) {
-						continue;
-					} else {
-						short peer = locations.getPrimaryPeer();
+					short peer = locations.getPrimaryPeer();
 
-						remoteChunksOfPeer = remoteChunksByPeers.get(peer);
-						if (remoteChunksOfPeer == null) {
-							remoteChunksOfPeer = new Vector<DataStructure>();
-							remoteChunksByPeers.put(peer, remoteChunksOfPeer);
-						}
-						remoteChunksOfPeer.add(p_dataStructures[i]);
+					ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+					if (remoteChunksOfPeer == null) {
+						remoteChunksOfPeer = new ArrayList<DataStructure>();
+						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
 					}
-				}
-			}
-
-			// get local chunkIDs
-			for (final DataStructure chunk : localChunks) {
-				if (m_memoryManager.get(chunk))
-					totalChunksGot++;
-			}
-			m_memoryManager.unlockAccess();
-			
-			// TODO p_aquireLock for local chunks
-
-			// go for remote ones by each peer
-			for (final Entry<Short, Vector<DataStructure>> peerWithChunks : remoteChunksByPeers.entrySet()) {
-				short peer = peerWithChunks.getKey();
-				Vector<DataStructure> remoteChunks = peerWithChunks.getValue();
-
-				if (peer == m_boot.getNodeID()) {
-					// local get, migrated data to current node
-					m_memoryManager.lockAccess();
-					for (final DataStructure chunk : remoteChunks) {
-						if (m_memoryManager.get(chunk))
-							totalChunksGot++;
-					}
-					m_memoryManager.unlockAccess();
-				} else {					
-					// Remote get from specified peer
-					request = new GetRequest(peer, p_chunkLockOperation, (DataStructure[]) remoteChunks.toArray());
-					ErrorCode error = m_network.sendSync(request);
-					if (error != ErrorCode.SUCCESS)
-					{
-						m_logger.error(getClass(), "Sending chunk get request to peer " + peer + " failed: " + error);
-						continue;
-					}
-
-					response = request.getResponse(GetResponse.class);
-					if (response != null) {
-						if (response.getNumberOfChunksGot() != remoteChunks.size())
-						{
-							// TODO not all chunks were found
-							m_logger.warn(getClass(), "Could not find all chunks on peer " + peer + " for chunk request.");
-							
-						}
-
-						totalChunksGot += response.getNumberOfChunksGot();
-					}
+					remoteChunksOfPeer.add(p_dataStructures[i]);
 				}
 			}
 		}
 
-		if (m_statisticsEnabled)
-			Operation.MULTI_GET.leave();
-
-		return totalChunksGot;
-	}
-
-	public int put(DataStructure... p_dataStrucutre) {
-		return put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStrucutre);
-	}
-	
-	public int put(final ChunkLockOperation p_chunkUnlockOperation, DataStructure... p_dataStructure)
-	{
-		Locations locations;
-		short primaryPeer;
-		int numChunksPut = 0;
-		PutRequest request;
-
-		if (m_statisticsEnabled)
-			Operation.PUT.enter();
-
-		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-			m_logger.error(getClass(), "a superpeer must not use chunks");
-		} else {
-			ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
-			Map<Short, Vector<DataStructure>> remoteChunksByPeers = new HashMap<Short, Vector<DataStructure>>();
-			
-			// sort by local/remote chunks
-			m_memoryManager.lockAccess();
-			for (DataStructure dataStructure : p_dataStructure) {
-				if (m_memoryManager.exists(dataStructure.getID())) {
-					localChunks.add(dataStructure);
-				} else {
-					// remote, figure out location and sort by peers
-					locations = m_lookup.get(dataStructure.getID());
-					if (locations == null) {
-						continue;
-					} else {
-						short peer = locations.getPrimaryPeer();
-
-						Vector<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
-						if (remoteChunksOfPeer == null) {
-							remoteChunksOfPeer = new Vector<DataStructure>();
-							remoteChunksByPeers.put(peer, remoteChunksOfPeer);
-						}
-						remoteChunksOfPeer.add(dataStructure);
-					}
-				}
+		// get local chunkIDs
+		for (final DataStructure dataStructure : localChunks) {
+			if (m_memoryManager.get(dataStructure)) {
+				totalChunksGot++;
+			} else {
+				m_logger.error(getClass(), "Getting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
 			}
+		}
+		m_memoryManager.unlockAccess();
 			
-			// have local puts first
-			for (DataStructure dataStructure : localChunks) {
-				if (m_memoryManager.put(dataStructure))
-					numChunksPut++;
-				else
-					m_logger.error(getClass(), "Putting local chunk " + dataStructure + " failed.");
-			}
-			m_memoryManager.unlockAccess();
-			
-			// TODO unlock chunks
-			
-			for (Entry<Short, Vector<DataStructure>> entry : remoteChunksByPeers.entrySet()) {
-				short peer = entry.getKey();
-				
-				if (peer == m_boot.getNodeID()) {
-					// local put, migrated data to current node
-					m_memoryManager.lockManage();
-					for (final DataStructure chunk : entry.getValue()) {
-						if (m_memoryManager.put(chunk))
-							numChunksPut++;
-					}
-					m_memoryManager.unlockManage();
-				} else {
-					// Remote put
-					request = new PutRequest(peer, p_chunkUnlockOperation, (DataStructure[]) entry.getValue().toArray());
-					ErrorCode error = m_network.sendSync(request);
-					if (error != ErrorCode.SUCCESS) {
-						m_logger.error(getClass(), "Sending chunk put request to peer " + peer + " failed: " + error);
-						
-						// TODO
-						//m_lookup.invalidate(dataStructure.getID());
-						
-						continue;
-					}
-				
-					request.getResponse(PutResponse.class).
-					
-					// TODO stefan: have multi put? -> needs sorting by peer
-					if (request.getResponse(PutResponse.class).getStatusCodes()[0] == 0) {
-						numChunksPut++;
-					} else {
-						LOGGER.error("Putting remote chunk " + dataStructure + " failed.");
-					}
-				}
-			}
-			
-			
+		// TODO p_aquireLock for local chunks
+
+		// go for remote ones by each peer
+		for (final Entry<Short, ArrayList<DataStructure>> peerWithChunks : remoteChunksByPeers.entrySet()) {
 			short peer = peerWithChunks.getKey();
-			Vector<DataStructure> remoteChunks = peerWithChunks.getValue();
+			ArrayList<DataStructure> remoteChunks = peerWithChunks.getValue();
 
 			if (peer == m_boot.getNodeID()) {
 				// local get, migrated data to current node
 				m_memoryManager.lockAccess();
-				for (final DataStructure chunk : remoteChunks) {
-					if (m_memoryManager.get(chunk))
+				for (final DataStructure dataStructure : remoteChunks) {
+					if (m_memoryManager.get(dataStructure)) {
 						totalChunksGot++;
+					} else {
+						m_logger.error(getClass(), "Getting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+					}
 				}
 				m_memoryManager.unlockAccess();
-			
-			// now handle the remote ones
-			// TODO sort by locations for multi put messages
-			for (DataStructure dataStructure : remoteChunksOfPeer) {
-				locations = m_lookup.get(dataStructure.getID());
-				primaryPeer = locations.getPrimaryPeer();
-				long backupPeersAsLong = locations.getBackupPeersAsLong();
-
-				if (primaryPeer == getSystemData().getNodeID()) {
-					// Local put, migrated
-					m_memoryManager.lockManage();
-					if (m_memoryManager.put(dataStructure)) {
-						numChunksPut++;
-					} else {
-						LOGGER.error("Putting local (migrated) chunk " + dataStructure + " failed.");
-					}
-					m_memoryManager.unlockManage();
-					
-					if (p_releaseLock) {
-						m_lock.unlock(dataStructure.getID(), getSystemData().getNodeID());
-					}
-				} else {
-					// Remote put
-					request = new PutRequest(primaryPeer, p_releaseLock, dataStructure);
-					try {
-						request.sendSync(m_network);
-					} catch (final NetworkException e) {
-						m_lookup.invalidate(dataStructure.getID());
-						continue;
-					}
-					// TODO stefan: have multi put? -> needs sorting by peer
-					if (request.getResponse(PutResponse.class).getStatusCodes()[0] == 0) {
-						numChunksPut++;
-					} else {
-						LOGGER.error("Putting remote chunk " + dataStructure + " failed.");
-					}
+			} else {					
+				// Remote get from specified peer
+				GetRequest request = new GetRequest(peer, p_chunkLockOperation, (DataStructure[]) remoteChunks.toArray());
+				ErrorCode error = m_network.sendSync(request);
+				if (error != ErrorCode.SUCCESS)
+				{
+					m_logger.error(getClass(), "Sending chunk get request to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
+					continue;
 				}
-				
-//				if (m_logActive) {
-//					// Send backups for logging (unreliable)
-//					if (backupPeersAsLong != -1) {
-//						ArrayList<DataStructure>  list = backupMap.get(backupPeersAsLong);
-//						if (list == null) {
-//							list = new ArrayList<DataStructure>();
-//							backupMap.put(backupPeersAsLong, list);
-//						}
-//						list.add(dataStructure);
-//					}
-//				}
-			}
-			
-//			if (m_logActive) {
-//				short[] backupPeers;
-//				Chunk[] chunks;
-//				for (Map.Entry<Long, ArrayList<DataStructure>> entry : backupMap.entrySet()) {
-//					long backupPeersAsLong = entry.getKey();
-//					chunks = entry.getValue().toArray(new Chunk[entry.getValue().size()]);
-//
-//					backupPeers = new short[] {(short) (backupPeersAsLong & 0x000000000000FFFFL),
-//							(short) ((backupPeersAsLong & 0x00000000FFFF0000L) >> 16), (short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
-//					for (int i = 0; i < backupPeers.length; i++) {
-//						if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
-//							LOGGER.debug("Logging " + chunks.length + " Chunks to " + backupPeers[i]);
-//							try {
-//								new LogMessage(backupPeers[i], chunks).send(m_network);
-//							} catch (NetworkException e) {
-//								LOGGER.error("Sending log message for put failed.", e);
-//							}
-//						}
-//					}
-//				}
-//			}
-		}
 
-		if (m_statisticsEnabled)
-			Operation.PUT.leave();		
-		
-		return numChunksPut;
-	}
-
-	// TODO stefan: re-check and re-do
-	public int remove(DataStructure p_dataStructure) {
-		int chunksRemoved = 0;
-
-		if (m_statisticsEnabled)
-			Operation.REMOVE.enter();
-
-		if (getSystemData().getNodeRole().equals(NodeRole.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
-		} else {
-			m_memoryManager.lockManage();
-			if (m_memoryManager.exists(p_dataStructure.getID())) {
-				if (!m_memoryManager.dataWasMigrated(p_dataStructure.getID())) {
-					// Local remove
-					m_memoryManager.remove(p_dataStructure.getID());
-					m_memoryManager.unlockManage();
-
-//					if (m_logActive) {
-//						// Send backups for logging (unreliable)
-//						short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
-//						if (backupPeers != null) {
-//							for (int i = 0; i < backupPeers.length; i++) {
-//								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
-//									new RemoveMessage(backupPeers[i], new long[] {p_dataStructure.getID()}).send(m_network);
-//								}
-//							}
-//						}
-//					}
-					chunksRemoved++;
-				} else {
-					// Local remove
-					m_memoryManager.remove(p_dataStructure.getID());
-					m_memoryManager.unlockManage();
-
-					byte rangeID = m_backup.getBackupRange(p_dataStructure.getID());
-					m_backup.removeChunk(p_dataStructure.getID());
-
-					// Inform creator about removal
-					RemoveRequest request = new RemoveRequest(ChunkID.getCreatorID(p_dataStructure.getID()), p_dataStructure);
-					try {
-						request.sendSync(m_network);
-						request.getResponse(RemoveResponse.class);
-					} catch (final NetworkException e) {
-						LOGGER.error("Cannot inform creator about removal! Is not available!");
+				GetResponse response = request.getResponse(GetResponse.class);
+				if (response != null) {
+					if (response.getNumberOfChunksGot() != remoteChunks.size())
+					{
+						// TODO not all chunks were found
+						m_logger.warn(getClass(), "Could not find all chunks on peer " + Integer.toHexString(peer & 0xFFFF) + " for chunk request.");
 					}
 
-//					if (m_logActive) {
-//						// Send backups for logging (unreliable)
-//						short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
-//						if (backupPeers != null) {
-//							for (int i = 0; i < backupPeers.length; i++) {
-//								if (backupPeers[i] != getSystemData().getNodeID() && backupPeers[i] != -1) {
-//									new RemoveMessage(backupPeers[i], new long[] {p_dataStructure.getID()}, rangeID).send(m_network);
-//								}
-//							}
-//						}
-//					}
-					chunksRemoved++;
-				}
-			} else {
-				m_memoryManager.unlockManage();
-				
-				// remote remove
-				Locations locations = m_lookup.get(p_dataStructure.getID());
-				if (locations != null) {
-					// Remote remove
-					RemoveRequest request = new RemoveRequest(locations.getPrimaryPeer(), p_dataStructure);
-					try {
-						request.sendSync(m_network);
-						if (request.getResponse(RemoveResponse.class).getStatus()) {
-							chunksRemoved++;
-						} else {
-							LOGGER.error("Removing remote chunk " + p_dataStructure + " failed.");
-						}
-					} catch (final NetworkException e) {
-						m_lookup.invalidate(p_dataStructure.getID());
-					}
+					totalChunksGot += response.getNumberOfChunksGot();
 				}
 			}
-			
-			m_lookup.remove(p_dataStructure.getID());
 		}
 		
+
 		if (m_statisticsEnabled)
-			Operation.REMOVE.leave();
+			Operation.MULTI_GET.leave();
+		
+		m_logger.trace(getClass(), "get[lockOp " + p_chunkLockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + totalChunksGot);
 
-		return chunksRemoved;
+		return totalChunksGot;
 	}
 
-	// TODO delete when remove done
-	public int remove(DataStructure[] p_dataStructures) {
-		boolean success = false;
-
-		Operation.REMOVE.enter();
-
-		if (p_chunkIDs != null && p_chunkIDs.length > 0) {
-			if (NodeID.getRole().equals(Role.SUPERPEER)) {
-				LOGGER.error("a superpeer must not use chunks");
-			} else {
-				success = true;
-				for (long chunkID : p_chunkIDs) {
-					success = success && deleteChunkData(chunkID);
-				}
-				m_lookup.remove(p_chunkIDs);
-			}
-		} else {
-			success = true;
-		}
-
-		Operation.REMOVE.leave();
-
-		if (!success) {
-			throw new DXRAMException("chunks removal failed");
-		}
-	}
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
-		LOGGER.trace("Entering incomingMessage with: p_message=" + p_message);
+		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
@@ -562,19 +512,16 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
 					incomingRemoveRequest((RemoveRequest) p_message);
 					break;
+				case ChunkMessages.SUBTYPE_CREATE_REQUEST:
+					incomingCreateRequest((CreateRequest) p_message);
+					break;
 				default:
 					break;
 				}
 			}
 		}
 
-		LOGGER.trace("Exiting incomingMessage");
-	}
-	
-	@Override
-	public void triggerEvent(ConnectionLostEvent p_event) {
-		// TODO Auto-generated method stub
-		
+		m_logger.trace(getClass(), "Exiting incomingMessage");
 	}
 	
 	// -----------------------------------------------------------------------------------
@@ -587,6 +534,16 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_PUT_RESPONSE, PutResponse.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST, RemoveRequest.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_REMOVE_RESPONSE, RemoveResponse.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST, CreateRequest.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_RESPONSE, CreateResponse.class);
+	}
+	
+	private void registerNetworkMessageListener()
+	{
+		m_network.register(GetResponse.class, this);
+		m_network.register(PutResponse.class, this);
+		m_network.register(RemoveResponse.class, this);
+		m_network.register(CreateResponse.class, this);
 	}
 	
 	// -----------------------------------------------------------------------------------
@@ -610,7 +567,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 			// also does exist check
 			int size = m_memoryManager.getSize(chunkIDs[i]);
 			if (size < 0) {
-				LOGGER.warn("Getting size of chunk " + chunkIDs[i] + " failed, does not exist.");
+				m_logger.warn(getClass(), "Getting size of chunk " + Long.toHexString(chunkIDs[i]) + " failed, does not exist.");
 				size = 0;
 			} else {
 				numChunksGot++;
@@ -621,10 +578,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		}
 		m_memoryManager.unlockAccess();
 
-		try {
-			new GetResponse(p_request, numChunksGot, chunks).send(m_network);
-		} catch (NetworkException e) {
-			LOGGER.error("Sending GetResponse for " + numChunksGot + " chunks failed.", e);
+		GetResponse response = new GetResponse(p_request, numChunksGot, chunks);
+		ErrorCode error = m_network.sendMessage(response);
+		if (error != ErrorCode.SUCCESS)
+		{
+			m_logger.error(getClass(), "Sending GetResponse for " + numChunksGot + " chunks failed: " + error);
 		}
 
 		if (m_statisticsEnabled)
@@ -640,8 +598,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 		if (m_statisticsEnabled)
 			Operation.INCOMING_PUT.enter();
 
-		Chunk[] chunks = p_request.getChunks();
+		DataStructure[] chunks = p_request.getDataStructures();
 		byte[] statusChunks = new byte[chunks.length];
+		boolean allSuccessful = true;
 		
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < chunks.length; i++) {
@@ -649,20 +608,34 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 				if (!m_memoryManager.put(chunks[i])) {
 					// does not exist (anymore)
 					statusChunks[i] = -1;
-					LOGGER.warn("Putting chunk " + chunks[i] + " failed, does not exist.");
+					m_logger.warn(getClass(), "Putting chunk " + Long.toHexString(chunks[i].getID()) + " failed, does not exist.");
+					allSuccessful = false;
+				} else {
+					// put successful
+					statusChunks[i] = 0;
 				}
 			} else {
 				// got migrated, not responsible anymore
 				statusChunks[i] = -2;
-				LOGGER.warn("Putting chunk " + chunks[i] + " failed, was migrated.");
+				m_logger.warn(getClass(), "Putting chunk " + Long.toHexString(chunks[i].getID()) + " failed, was migrated.");
+				allSuccessful = false;
 			}
 		}
 		m_memoryManager.unlockAccess();
 		
-		try {
-			new PutResponse(p_request, statusChunks).send(m_network);
-		} catch (NetworkException e) {
-			LOGGER.error("Sending put response failed.", e);
+		PutResponse response = null;
+		// cut message length if all were successful
+		if (allSuccessful){
+			response = new PutResponse(p_request, (byte) 1);
+		} else {
+			// we got errors, default message
+			response = new PutResponse(p_request, statusChunks);
+		}
+		
+		ErrorCode error = m_network.sendMessage(response);
+		if (error != ErrorCode.SUCCESS)
+		{
+			m_logger.error(getClass(), "Sending chunk put respond to request " + p_request + " failed: " + error);
 		}
 
 		if (m_statisticsEnabled)
@@ -680,64 +653,91 @@ public class ChunkService extends DXRAMService implements MessageReceiver, Conne
 
 		long[] chunkIDs = p_request.getChunkIDs();
 		byte[] chunkStatusCodes = new byte[chunkIDs.length];
+		boolean allSuccessful = true;
 		
 		// remove chunks first (local)
 		m_memoryManager.lockManage();
-		for (int i = 0; i < chunkIDs.length; i++) {
+		for (int i = 0; i < chunkIDs.length; i++) 
+		{
 			if (m_memoryManager.exists(chunkIDs[i])) {
-				m_memoryManager.remove(chunkIDs[i]);
-				chunkStatusCodes[i] = 0;
-			} else if (ChunkID.getCreatorID(chunkIDs[i]) == getSystemData().getNodeID()) {
+				if (m_memoryManager.remove(chunkIDs[i])) {
+					// remove successful
+					chunkStatusCodes[i] = 0;
+				} else {
+					// remove failed
+					chunkStatusCodes[i] = -1;
+					allSuccessful = false;
+				}
+			} else if (ChunkID.getCreatorID(chunkIDs[i]) == m_boot.getNodeID()) {
 				// chunk data was migrated, "migrate back" id
 				m_memoryManager.prepareChunkIDForReuse(chunkIDs[i]);
 				chunkStatusCodes[i] = 1;
 			} else {
 				// remove failed, does not exist
-				chunkStatusCodes[i] = -1;
+				chunkStatusCodes[i] = -2;
+				allSuccessful = false;
 			}
 		}
 		m_memoryManager.unlockManage();
 
-		for (int i = 0; i < chunkIDs.length; i++) {
-			byte rangeID = m_backup.getBackupRange(chunkIDs[i]);
-			short[] backupPeers = m_backup.getBackupPeersForLocalChunks(chunkIDs[i]);
-			m_backup.removeChunk(chunkIDs[i]);
-			
-			if (m_memoryManager.dataWasMigrated(chunkIDs[i])) {	
-				// Inform peer who got the migrated data about removal
-				RemoveRequest request = new RemoveRequest(ChunkID.getCreatorID(chunkIDs[i]), new Chunk(chunkIDs[i], 0));
-				try {
-					request.sendSync(m_network);
-					request.getResponse(RemoveResponse.class);
-				} catch (final NetworkException e) {
-					LOGGER.error("Informing creator about removal of chunk " + chunkIDs[i] + " failed.", e);
-				}
-			}
-			
-//			if (m_logActive) {
-//				// Send backups for logging (unreliable)
-//				if (backupPeers != null) {
-//					for (int j = 0; j < backupPeers.length; j++) {
-//						if (backupPeers[j] != getSystemData().getNodeID() && backupPeers[j] != -1) {
-//							try {
-//								new RemoveMessage(backupPeers[i], new long[] {chunkIDs[i]}, rangeID).send(m_network);
-//							} catch (NetworkException e) {
-//								LOGGER.error("Sending logging remove message failed.", e);
-//							}
-//						}
-//					}
+		RemoveResponse response = null;
+		if (allSuccessful) {
+			// use a short version to indicate everything is ok
+			response = new RemoveResponse(p_request, (byte) 2);
+		} else {
+			// errors occured, send full status report
+			response = new RemoveResponse(p_request, chunkStatusCodes);
+		}
+		
+		ErrorCode error = m_network.sendMessage(response);
+		if (error != ErrorCode.SUCCESS)
+		{
+			m_logger.error(getClass(), "Sending chunk remove respond to request " + p_request + " failed: " + error);
+		}	
+		
+		// TODO for migrated chunks, send remove request to peer currently holding the chunk data
+//		for (int i = 0; i < chunkIDs.length; i++) {
+//			byte rangeID = m_backup.getBackupRange(chunkIDs[i]);
+//			short[] backupPeers = m_backup.getBackupPeersForLocalChunks(chunkIDs[i]);
+//			m_backup.removeChunk(chunkIDs[i]);
+//			
+//			if (m_memoryManager.dataWasMigrated(chunkIDs[i])) {	
+//				// Inform peer who got the migrated data about removal
+//				RemoveRequest request = new RemoveRequest(ChunkID.getCreatorID(chunkIDs[i]), new Chunk(chunkIDs[i], 0));
+//				try {
+//					request.sendSync(m_network);
+//					request.getResponse(RemoveResponse.class);
+//				} catch (final NetworkException e) {
+//					LOGGER.error("Informing creator about removal of chunk " + chunkIDs[i] + " failed.", e);
 //				}
 //			}
-		}
-
-		// finally, send back response with status codes
-		try {
-			new RemoveResponse(p_request, chunkStatusCodes).send(m_network);
-		} catch (NetworkException e) {
-			LOGGER.error("Sending remove response failed.", e);
-		}
+//		}
 
 		if (m_statisticsEnabled)
 			Operation.INCOMING_REMOVE.leave();
+	}
+	
+	private void incomingCreateRequest(final CreateRequest p_request) {
+//		if (m_statisticsEnabled)
+//			Operation.INCOMING_CREATE.enter();
+		
+		int[] sizes = p_request.getSizes();
+		long[] chunkIDs = new long[sizes.length];
+		
+		m_memoryManager.lockManage();
+		for (int i = 0; i < sizes.length; i++) {
+			chunkIDs[i] = m_memoryManager.create(sizes[i]);
+		}
+		m_memoryManager.unlockManage();
+		
+		CreateResponse response = new CreateResponse(p_request, chunkIDs);
+		ErrorCode error = m_network.sendMessage(response);
+		if (error != ErrorCode.SUCCESS)
+		{
+			m_logger.error(getClass(), "Sending chunk create respond to request " + p_request + " failed: " + error);
+		}
+		
+//		if (m_statisticsEnabled)
+//			Operation.INCOMING_CREATE.leave();
 	}
 }

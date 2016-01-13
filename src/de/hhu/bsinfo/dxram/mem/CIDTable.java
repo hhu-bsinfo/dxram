@@ -4,9 +4,8 @@ package de.hhu.bsinfo.dxram.mem;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.commands.CmdUtils;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 
@@ -17,9 +16,6 @@ import de.hhu.bsinfo.soh.SmallObjectHeap;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public final class CIDTable {
-
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(CIDTable.class);
 
 	public static final byte ENTRY_SIZE = 5;
 	public static final byte LID_TABLE_LEVELS = 4;
@@ -40,23 +36,26 @@ public final class CIDTable {
 	protected static final long DELETED_FLAG = BIT_FLAG;
 
 	// Attributes
-	private short m_ownNodeID;
-	private boolean m_memoryStatisticsEnabled;
-	private long m_addressTableDirectory;
-	private SmallObjectHeap m_rawMemory;
+	private short m_ownNodeID = -1;
+	private boolean m_memoryStatisticsEnabled = false;
+	private long m_addressTableDirectory = -1;
+	private SmallObjectHeap m_rawMemory = null;
 
-	private LIDStore m_store;
+	private LIDStore m_store = null;
+
+	private LoggerComponent m_logger = null;
 
 	// Attributes
-	private AtomicLong m_nextLocalID;
+	private AtomicLong m_nextLocalID = null;
 
 	// Constructors
 	/**
 	 * Creates an instance of CIDTable
 	 */
-	public CIDTable(final short p_ownNodeID, final boolean p_enableMemoryStastics) {
+	public CIDTable(final short p_ownNodeID, final boolean p_enableMemoryStastics, final LoggerComponent p_logger) {
 		m_ownNodeID = p_ownNodeID;
 		m_memoryStatisticsEnabled = p_enableMemoryStastics;
+		m_logger = p_logger;
 	}
 
 	// Methods
@@ -74,7 +73,7 @@ public final class CIDTable {
 		m_store = new LIDStore();
 		m_nextLocalID = new AtomicLong(1);
 
-		LOGGER.info("CIDTable: init success (page directory at: 0x" + Long.toHexString(m_addressTableDirectory) + ")");
+		m_logger.info(getClass(), "CIDTable: init success (page directory at: 0x" + Long.toHexString(m_addressTableDirectory) + ")");
 	}
 
 	/**

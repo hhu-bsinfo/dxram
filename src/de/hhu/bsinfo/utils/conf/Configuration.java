@@ -39,12 +39,12 @@ public class Configuration
 		return str;
 	}
 	
-	public <T> T GetValue(final String p_key, final Class<T> p_type)
+	public <T> T getValue(final String p_key, final Class<T> p_type)
 	{
-		return GetValue(p_key, 0, p_type);
+		return getValue(p_key, 0, p_type);
 	}
 	
-	public <T> T GetValue(final String p_key, final int p_index, final Class<T> p_type)
+	public <T> T getValue(final String p_key, final int p_index, final Class<T> p_type)
 	{
 		String key = genAndNormalizeKey(p_key);
 		
@@ -66,7 +66,7 @@ public class Configuration
 		return p_type.cast(val);
 	}
 	
-	public <T> Map<Integer, T> GetValues(final String p_key, final Class<T> p_type)
+	public <T> Map<Integer, T> getValues(final String p_key, final Class<T> p_type)
 	{
 		String key = genAndNormalizeKey(p_key);
 		
@@ -90,22 +90,22 @@ public class Configuration
 		return retMap;
 	}
 	
-	public <T> boolean AddValue(final String p_key, final T p_value) 
+	public <T> boolean addValue(final String p_key, final T p_value) 
 	{
-		return AddValue(p_key, p_value, true);
+		return addValue(p_key, p_value, true);
 	}
 	
-	public <T> boolean AddValue(final String p_key, final T p_value, final boolean p_replaceExisting) 
+	public <T> boolean addValue(final String p_key, final T p_value, final boolean p_replaceExisting) 
 	{
-		return AddValue(p_key, 0, p_value, p_replaceExisting);
+		return addValue(p_key, 0, p_value, p_replaceExisting);
 	}
 	
-	public <T> boolean AddValue(final String p_key, final int p_index, final T p_value)
+	public <T> boolean addValue(final String p_key, final int p_index, final T p_value)
 	{
-		return AddValue(p_key, p_index, p_value, true);
+		return addValue(p_key, p_index, p_value, true);
 	}
 	
-	public <T> boolean AddValue(final String p_key, final int p_index, final T p_value, final boolean p_replaceExisting)
+	public <T> boolean addValue(final String p_key, final int p_index, final T p_value, final boolean p_replaceExisting)
 	{
 		String key = genAndNormalizeKey(p_key);
 		

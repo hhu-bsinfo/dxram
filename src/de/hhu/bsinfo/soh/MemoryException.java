@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.soh.exception;
+package de.hhu.bsinfo.soh;
 
 public class MemoryException extends Exception {
 

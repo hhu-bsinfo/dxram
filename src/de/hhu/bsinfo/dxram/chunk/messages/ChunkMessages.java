@@ -12,12 +12,8 @@ public class ChunkMessages {
 	public static final byte SUBTYPE_PUT_RESPONSE = 4;
 	public static final byte SUBTYPE_REMOVE_REQUEST = 5;
 	public static final byte SUBTYPE_REMOVE_RESPONSE = 6;
-
-	public static final byte SUBTYPE_MULTIGET_REQUEST = 13;
-	public static final byte SUBTYPE_MULTIGET_RESPONSE = 14;
-	public static final byte SUBTYPE_CHUNK_COMMAND_MESSAGE = 15;
-	public static final byte SUBTYPE_CHUNK_COMMAND_REQUEST = 16;
-	public static final byte SUBTYPE_CHUNK_COMMAND_RESPONSE = 17;
+	public static final byte SUBTYPE_CREATE_REQUEST = 7;
+	public static final byte SUBTYPE_CREATE_RESPONSE = 8;
 	
 	/**
 	 * Static class

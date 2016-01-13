@@ -1,7 +1,6 @@
-package de.hhu.bsinfo.dxram.test.nothaas;
+package de.hhu.bsinfo.soh;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
@@ -9,20 +8,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 
 import de.hhu.bsinfo.dxram.mem.HeapIntegrityChecker;
 import de.hhu.bsinfo.dxram.mem.MemoryStatistic;
-import de.hhu.bsinfo.soh.HeapWalker;
-import de.hhu.bsinfo.soh.SmallObjectHeap;
-import de.hhu.bsinfo.soh.StorageRandomAccessFile;
-import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 import de.hhu.bsinfo.utils.StatisticsManager;
-import de.hhu.bsinfo.utils.config.Configuration.ConfigurationConstants;
 import de.hhu.bsinfo.utils.locks.JNILock;
 import sun.misc.Lock;
 
-public class RawMemoryTest 
+public class SmallObjectHeapTest 
 {
 	private SmallObjectHeap m_memory = null;
 	private int m_numThreads = -1;
@@ -32,7 +25,7 @@ public class RawMemoryTest
 	private int m_blockSizeMax = -1;
 	private boolean m_debugPrint = false;
 	
-	public RawMemoryTest(final long p_memorySize, final long p_segmentSize, 
+	public SmallObjectHeapTest(final long p_memorySize, final long p_segmentSize, 
 			final int p_numThreads, final int p_numOperations, final float p_mallocFreeRatio, 
 			final int p_blockSizeMin, final int p_blockSizeMax, final boolean p_debugPrint)
 	{
@@ -49,7 +42,7 @@ public class RawMemoryTest
 		//JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
 		JNILock.load("/home/nothaas/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
 		
-		//m_memory = new RawMemory(new StorageUnsafeMemory());
+		//m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
 		try {
 			File file = new File("rawMemory.dump");
 			if (file.exists())
@@ -58,16 +51,15 @@ public class RawMemoryTest
 				file.createNewFile();
 			}
 			
-			//m_memory = new RawMemory(new StorageRandomAccessFile(file));
+			//m_memory = new SmallObjectHeap(new StorageRandomAccessFile(file));
 			m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 		
-		try {
-			m_memory.initialize(p_memorySize, p_segmentSize);
-		} catch (MemoryException e) {
-			e.printStackTrace();
+		if(m_memory.initialize(p_memorySize, p_segmentSize) == -1)
+		{
+			System.out.println("Initializing memory failed.");
 		}
 		
 		m_numThreads = p_numThreads;
@@ -121,7 +113,7 @@ public class RawMemoryTest
 		executor.shutdown();
 	}
 	
-	public static void main(String[] args) throws MemoryException
+	public static void main(String[] args)
 	{
 		if (args.length < 8)
 		{
@@ -139,7 +131,7 @@ public class RawMemoryTest
 		boolean debugPrint = Boolean.parseBoolean(args[7]);
 		
 		System.out.println("Initializing RawMemory test...");
-		RawMemoryTest test = new RawMemoryTest(memorySize, segmentSize, numThreads, numOperations, mallocFreeRatio, blockSizeMin, blockSizeMax, debugPrint);
+		SmallObjectHeapTest test = new SmallObjectHeapTest(memorySize, segmentSize, numThreads, numOperations, mallocFreeRatio, blockSizeMin, blockSizeMax, debugPrint);
 		System.out.println("Running test...");
 		test.run();
 		System.out.println("Test done.");
@@ -203,27 +195,20 @@ public class RawMemoryTest
 					int size = 0;
 					while (size <= 0)
 						size = (int) (Math.random() * (m_blockSizeMax - m_blockSizeMin));
+	
+					long ptr = -1;
+					
 					try {
-						long ptr = -1;
-						
-						try {
-							m_lock.lock();
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						ptr = m_memory.malloc(size);
-						m_lock.unlock();
-						if (m_debugPrint)
-							System.out.println(">>> Allocated " + size + ":\n" + m_memory);
-						m_blocksAlloced.add(ptr);
-						m_memory.set(ptr, size, (byte) 0xFF);
-					} catch (MemoryException e) {
-						System.out.println("Malloc try size: " + size);
-						printDebug();
+						m_lock.lock();
+					} catch (InterruptedException e) {
 						e.printStackTrace();
-						return;
 					}
+					ptr = m_memory.malloc(size);
+					m_lock.unlock();
+					if (m_debugPrint)
+						System.out.println(">>> Allocated " + size + ":\n" + m_memory);
+					m_blocksAlloced.add(ptr);
+					m_memory.set(ptr, size, (byte) 0xFF);					
 					
 					m_numMallocOperations--;
 				}
@@ -236,22 +221,14 @@ public class RawMemoryTest
 						m_blocksAlloced.remove(0);
 						
 						try {
-							try {
-								m_lock.lock();
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							m_memory.free(memoryPtr);
-							m_lock.unlock();
-							if (m_debugPrint)
-								System.out.println(">>> Freed " + memoryPtr + ":\n" + m_memory);
-						} catch (MemoryException e) {
-							System.out.println("Free try address: " + memoryPtr);
-							printDebug();
+							m_lock.lock();
+						} catch (InterruptedException e) {
 							e.printStackTrace();
-							return;
 						}
+						m_memory.free(memoryPtr);
+						m_lock.unlock();
+						if (m_debugPrint)
+							System.out.println(">>> Freed " + memoryPtr + ":\n" + m_memory);
 						
 						m_numFreeOperations--;
 					}

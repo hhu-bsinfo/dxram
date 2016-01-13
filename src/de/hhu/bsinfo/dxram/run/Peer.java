@@ -24,7 +24,7 @@ public final class Peer {
 	public static void main(final String[] p_arguments) {
 		
 		DXRAM dxram = new DXRAM();
-		if (!dxram.initialize("config", null, null, "Peer")) {
+		if (!dxram.initialize("config/dxram.conf", null, null, "Peer")) {
 			System.out.println("Failed starting peer.");
 			System.exit(-1);
 		}

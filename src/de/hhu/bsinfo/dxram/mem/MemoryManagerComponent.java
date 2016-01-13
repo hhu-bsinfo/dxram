@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
@@ -31,6 +32,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	private JNIReadWriteSpinLock m_lock;
 
 	private BootComponent m_boot = null;
+	private LoggerComponent m_logger = null;
 
 	// Constructors
 	/**
@@ -53,6 +55,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
 	{
 		m_boot = getDependantComponent(BootComponent.class);
+		m_logger = getDependantComponent(LoggerComponent.class);
 		
 		m_enableMemoryStatistics = p_settings.getValue(MemoryManagerConfigurationValues.Component.STATISTICS);
 
@@ -64,7 +67,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_rawMemory.initialize(
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE),
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
-		m_cidTable = new CIDTable(m_boot.getNodeID(), m_enableMemoryStatistics);
+		m_cidTable = new CIDTable(m_boot.getNodeID(), m_enableMemoryStatistics, m_logger);
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
@@ -274,6 +277,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 				size = m_rawMemory.getSizeBlock(addressDeletedChunk);
 				MemoryStatistic.getInstance().free(size);
 			}
+			
+			ret = true;
 		}
 		
 		return ret;

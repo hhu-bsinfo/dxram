@@ -21,11 +21,10 @@ import de.hhu.bsinfo.utils.conf.ConfigurationParser;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoader;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoaderFile;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
+import de.hhu.bsinfo.utils.locks.JNILock;
 
 public class DXRAMEngine 
 {
-	private static final String DXRAM_CONF_FILE = "dxram.conf";
-
 	public static class Settings
 	{
 		private final String DXRAM_ENGINE_LOG_HEADER = this.getClass().getSimpleName();
@@ -43,7 +42,7 @@ public class DXRAMEngine
 		
 		public <T> void overrideValue(final Pair<String, T> p_default, final T p_overrideValue)
 		{
-			m_configuration.AddValue(m_basePath + p_default.first(), p_overrideValue, true);
+			m_configuration.addValue(m_basePath + p_default.first(), p_overrideValue, true);
 		}
 		
 		public <T> void setDefaultValue(final Pair<String, T> p_default)
@@ -53,7 +52,7 @@ public class DXRAMEngine
 		
 		public <T> void setDefaultValue(final String p_key, final T p_value)
 		{
-			if (m_configuration.AddValue(m_basePath + p_key, p_value, false))
+			if (m_configuration.addValue(m_basePath + p_key, p_value, false))
 			{
 				// we added a default value => value was missing from configuration
 				if (m_logger != null)
@@ -69,7 +68,7 @@ public class DXRAMEngine
 		
 		public <T> T getValue(final String p_key, final Class<T> p_type)
 		{
-			return m_configuration.GetValue(m_basePath + p_key, p_type);
+			return m_configuration.getValue(m_basePath + p_key, p_type);
 		}
 	}
 	
@@ -148,11 +147,11 @@ public class DXRAMEngine
 		return m_logger;
 	}
 	
-	public boolean init(final String p_configurationFolder) {
-		return init(p_configurationFolder, null, null, null);
+	public boolean init(final String p_configurationFile) {
+		return init(p_configurationFile, null, null, null);
 	}
 	
-	public boolean init(final String p_configurationFolder, final String p_overrideNetworkIP, 
+	public boolean init(final String p_configurationFile, final String p_overrideNetworkIP, 
 			final String p_overridePort, final String p_overrideRole)
 	{
 		assert !m_isInitilized;
@@ -160,10 +159,12 @@ public class DXRAMEngine
 		List<DXRAMComponent> list;
 		Comparator<DXRAMComponent> comp;
 		
-		bootstrap(p_configurationFolder, p_overrideNetworkIP, 
+		bootstrap(p_configurationFile, p_overrideNetworkIP, 
 				p_overridePort, p_overrideRole);
 		
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine...");
+		
+		setupJNI();
 		
 		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up components...");
 		setupComponents(m_configuration);
@@ -249,79 +250,82 @@ public class DXRAMEngine
 	
 	private void setupComponents(final Configuration p_configuration)
 	{
-		Map<Integer, String> componentsClass = p_configuration.GetValues("/DXRAMEngine/Components/Component/Class", String.class);
-		Map<Integer, Boolean> componentsEnabled = p_configuration.GetValues("/DXRAMEngine/Components/Component/Enabled", Boolean.class);
-		Map<Integer, Integer> componentsPriorityInit = p_configuration.GetValues("/DXRAMEngine/Components/Component/PriorityInit", Integer.class);
-		Map<Integer, Integer> componentsPriorityShutdown = p_configuration.GetValues("/DXRAMEngine/Components/Component/PriorityShutdown", Integer.class);
+		Map<Integer, String> componentsClass = p_configuration.getValues("/DXRAMEngine/Components/Component/Class", String.class);
+		Map<Integer, Boolean> componentsEnabled = p_configuration.getValues("/DXRAMEngine/Components/Component/Enabled", Boolean.class);
+		Map<Integer, Integer> componentsPriorityInit = p_configuration.getValues("/DXRAMEngine/Components/Component/PriorityInit", Integer.class);
+		Map<Integer, Integer> componentsPriorityShutdown = p_configuration.getValues("/DXRAMEngine/Components/Component/PriorityShutdown", Integer.class);
 		
-		for (Entry<Integer, String> component : componentsClass.entrySet())
+		if (componentsClass != null)
 		{
-			Boolean enabled = componentsEnabled.get(component.getKey());
-			if (enabled != null && enabled.booleanValue())
+			for (Entry<Integer, String> component : componentsClass.entrySet())
 			{
-				Integer priorityInit = componentsPriorityInit.get(component.getKey());
-				if (priorityInit == null)
+				Boolean enabled = componentsEnabled.get(component.getKey());
+				if (enabled != null && enabled.booleanValue())
 				{
-					m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Cannot setup component " + component.getValue() + " missing init priority, component ignored.");
-					continue;
-				}
-				
-				Integer priorityShutdown = componentsPriorityShutdown.get(component.getKey());
-				if (priorityShutdown == null)
-				{
-					m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Cannot setup component " + component.getValue() + " missing uninit priority, component ignored.");
-					continue;
-				}
-				
-				Class<?> clazz = null;
-				try {
-					clazz = Class.forName(component.getValue());
-				} catch (ClassNotFoundException e) {
-					m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not find class " + component.getValue() + " in runtime, component ignored.");
-					continue;
-				}
-				
-				if (!clazz.getSuperclass().equals(DXRAMComponent.class))
-				{
-					// check if there is an "interface"/abstract class between DXRAMComponent and the instance to create
-					if (!clazz.getSuperclass().getSuperclass().equals(DXRAMComponent.class))
+					Integer priorityInit = componentsPriorityInit.get(component.getKey());
+					if (priorityInit == null)
 					{
-						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "DXRAMComponent is not a superclass of " + component.getValue() + ", component ignored.");
+						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Cannot setup component " + component.getValue() + " missing init priority, component ignored.");
 						continue;
 					}
+					
+					Integer priorityShutdown = componentsPriorityShutdown.get(component.getKey());
+					if (priorityShutdown == null)
+					{
+						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Cannot setup component " + component.getValue() + " missing uninit priority, component ignored.");
+						continue;
+					}
+					
+					Class<?> clazz = null;
+					try {
+						clazz = Class.forName(component.getValue());
+					} catch (ClassNotFoundException e) {
+						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not find class " + component.getValue() + " in runtime, component ignored.");
+						continue;
+					}
+					
+					if (!clazz.getSuperclass().equals(DXRAMComponent.class))
+					{
+						// check if there is an "interface"/abstract class between DXRAMComponent and the instance to create
+						if (!clazz.getSuperclass().getSuperclass().equals(DXRAMComponent.class))
+						{
+							m_logger.error(DXRAM_ENGINE_LOG_HEADER, "DXRAMComponent is not a superclass of " + component.getValue() + ", component ignored.");
+							continue;
+						}
+					}
+					
+					Constructor<?> ctor = null;
+					
+					try {
+						ctor = clazz.getConstructor(Integer.TYPE, Integer.TYPE);
+					} catch (NoSuchMethodException | SecurityException e1) {
+						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not get constructor of component " + component.getValue() + " invalid constructor, component ignored.");
+						continue;
+					}
+					
+					try {
+						m_components.put(clazz.getName(), (DXRAMComponent) ctor.newInstance(new Object[] {priorityInit, priorityShutdown}));
+					} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+						if (Modifier.isAbstract(clazz.getModifiers()))
+							m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Component '" + component.getValue() + "' is an abstract class.");
+						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not create instance of component " + component.getValue() + ", component ignored.");
+						continue;
+					}
+					
+					m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Component " + component.getValue() + " enabled.");
 				}
-				
-				Constructor<?> ctor = null;
-				
-				try {
-					ctor = clazz.getConstructor(Integer.TYPE, Integer.TYPE);
-				} catch (NoSuchMethodException | SecurityException e1) {
-					m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not get constructor of component " + component.getValue() + " invalid constructor, component ignored.");
-					continue;
+				else
+				{
+					m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Component " + component.getValue() + " disabled.");
 				}
-				
-				try {
-					m_components.put(clazz.getName(), (DXRAMComponent) ctor.newInstance(new Object[] {priorityInit, priorityShutdown}));
-				} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					if (Modifier.isAbstract(clazz.getModifiers()))
-						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Component '" + component.getValue() + "' is an abstract class.");
-					m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not create instance of component " + component.getValue() + ", component ignored.");
-					continue;
-				}
-				
-				m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Component " + component.getValue() + " enabled.");
-			}
-			else
-			{
-				m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Component " + component.getValue() + " disabled.");
 			}
 		}
 	}
 	
 	private void setupServices(final Configuration p_configuration)
 	{
-		Map<Integer, String> servicesClass = p_configuration.GetValues("/DXRAMEngine/Services/Service/Class", String.class);
-		Map<Integer, Boolean> servicesEnabled = p_configuration.GetValues("/DXRAMEngine/Services/Service/Enabled", Boolean.class);
+		Map<Integer, String> servicesClass = p_configuration.getValues("/DXRAMEngine/Services/Service/Class", String.class);
+		Map<Integer, Boolean> servicesEnabled = p_configuration.getValues("/DXRAMEngine/Services/Service/Enabled", Boolean.class);
 	
 		for (Entry<Integer, String> service : servicesClass.entrySet())
 		{
@@ -358,27 +362,24 @@ public class DXRAMEngine
 		}	
 	}
 	
-	private void bootstrap(final String p_configurationFolder, final String p_overrideNetworkIP, 
+	private void bootstrap(final String p_configurationFile, final String p_overrideNetworkIP, 
 			final String p_overridePort, final String p_overrideRole)
 	{
-		String configurationFolder = p_configurationFolder;
-		
-		// normalize folder path
-		if (configurationFolder.endsWith("/") && configurationFolder.length() > 1)
-			configurationFolder.substring(0, configurationFolder.length() - 1);
-		
 		m_configuration = new Configuration("DXRAMEngine");
 			
 		// overriding order:
 		// config
-		int configLoadSuccessful = loadConfiguration(configurationFolder);
+		int configLoadSuccessful = loadConfiguration(p_configurationFile);
 		
 		// default configuration values from engine (if values don't exist)
 		m_settings = new Settings(m_configuration, m_logger);
 		registerDefaultConfigurationValues();
 		
 		setupLogger();
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Bootstrapping with configuration folder: " + configurationFolder);
+		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Bootstrapping with configuration file: " + p_configurationFile);
+		if (configLoadSuccessful != 0) {
+			m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Loading from configuration file: " + configLoadSuccessful);
+		}
 		
 		// parameters
 		overrideConfigurationWithParameters(p_overrideNetworkIP, p_overridePort, p_overrideRole);
@@ -394,7 +395,7 @@ public class DXRAMEngine
 		
 		// if loading the configuration failed (file missing), write back the created version
 		if (configLoadSuccessful == 1) {
-			saveConfiguration(configurationFolder);
+			saveConfiguration(p_configurationFile);
 		}
 	}
 	
@@ -402,12 +403,14 @@ public class DXRAMEngine
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.IP);
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.PORT);
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.ROLE);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOG_LEVEL);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.JNI_LOCK_PATH);
 	}
 	
-	private int loadConfiguration(final String p_configurationFolder)
+	private int loadConfiguration(final String p_configurationFile)
 	{
-		final String configPath = p_configurationFolder + "/" + DXRAM_CONF_FILE;
-		ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(configPath);
+		ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFile);
 		ConfigurationParser parser = new ConfigurationXMLParser(loader);
 		
 		//m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Loading configuration: " + loader);
@@ -416,7 +419,7 @@ public class DXRAMEngine
 		} catch (ConfigurationException e) {
 			//m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Loading configuration failed.", e);
 			// check if file exists -> save default config later
-			if (!(new File(configPath).exists())) {
+			if (!(new File(p_configurationFile).exists())) {
 				//m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Creating default configuration file: " + configPath);
 				return 1;
 			} else {
@@ -429,7 +432,7 @@ public class DXRAMEngine
 	
 	private boolean saveConfiguration(final String p_configurationFolder)
 	{
-		ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFolder + "/" + DXRAM_CONF_FILE);
+		ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFolder);
 		ConfigurationParser parser = new ConfigurationXMLParser(loader);
 		
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Saving configuration: " + loader);
@@ -522,5 +525,13 @@ public class DXRAMEngine
 		}
 		
 		m_logger.setLogLevel(LogLevel.toLogLevel(logLevel));
+	}
+	
+	private void setupJNI()
+	{
+		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up JNI classes..." );
+		
+		String jniLock = m_settings.getValue(DXRAMEngineConfigurationValues.JNI_LOCK_PATH);
+		JNILock.load(jniLock);
 	}
 }

@@ -26,7 +26,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.ERROR.ordinal())
+		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
 			getLogger().error(clazz.getName(), msg);
 	}
 	
@@ -37,7 +37,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.ERROR.ordinal())
+		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
 			getLogger().error(clazz.getName(), msg, e);
 	}
 	
@@ -48,7 +48,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.WARN.ordinal())
+		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
 			getLogger().warn(clazz.getName(), msg);
 	}
 	
@@ -59,7 +59,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.WARN.ordinal())
+		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
 			getLogger().warn(clazz.getName(), msg, e);
 	}
 	
@@ -70,7 +70,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.INFO.ordinal())
+		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
 			getLogger().info(clazz.getName(), msg);
 	}
 	
@@ -81,7 +81,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.INFO.ordinal())
+		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
 			getLogger().info(clazz.getName(), msg, e);
 	}
 	
@@ -92,7 +92,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.DEBUG.ordinal())
+		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
 			getLogger().debug(clazz.getName(), msg);
 	}
 	
@@ -103,7 +103,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.DEBUG.ordinal())
+		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
 			getLogger().debug(clazz.getName(), msg, e);
 	}
 	
@@ -114,7 +114,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.TRACE.ordinal())
+		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
 			getLogger().trace(clazz.getName(), msg);
 	}
 	
@@ -125,7 +125,7 @@ public class LoggerComponent extends DXRAMComponent
 			logLevel = m_defaultLogLevel;
 		}
 		
-		if (logLevel.ordinal() <= LogLevel.TRACE.ordinal())
+		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
 			getLogger().trace(clazz.getName(), msg, e);
 	}
 	

@@ -23,7 +23,7 @@ public final class Superpeer {
 	 */
 	public static void main(final String[] p_arguments) {
 		DXRAM dxram = new DXRAM();
-		if (!dxram.initialize("config", null, null, "Superpeer")) {
+		if (!dxram.initialize("config/dxram.conf", null, null, "Superpeer")) {
 			System.out.println("Failed starting superpeer.");
 			System.exit(-1);
 		}

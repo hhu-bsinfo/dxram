@@ -1,0 +1,61 @@
+package de.hhu.bsinfo.dxram.chunk.messages;
+
+import java.nio.ByteBuffer;
+
+import de.hhu.bsinfo.dxram.util.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.menet.AbstractResponse;
+
+public class CreateResponse extends AbstractResponse {
+	
+	private long[] m_chunkIDs = null;
+	
+	/**
+	 * Creates an instance of CreateResponse.
+	 * This constructor is used when receiving this message.
+	 */
+	public CreateResponse() {
+		super();
+	}
+
+	/**
+	 * Creates an instance of CreateResponse.
+	 * This constructor is used when sending this message.
+	 * Make sure to include all the chunks with IDs from the request in the correct order. If a chunk does
+	 * not exist, no data and a length of 0 indicates this situation. 
+	 * @param p_request
+	 *            the corresponding GetRequest
+	 * @param p_chunk
+	 *            the requested Chunk
+	 */
+	public CreateResponse(final CreateRequest p_request, final long... p_chunkIDs) {
+		super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
+
+		m_chunkIDs = p_chunkIDs;
+		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_chunkIDs.length));
+	}
+	
+	public final long[] getChunkIDs() {
+		return m_chunkIDs;
+	}
+	
+	@Override
+	protected final void writePayload(final ByteBuffer p_buffer) {
+		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
+		
+		p_buffer.asLongBuffer().put(m_chunkIDs);
+	}
+
+	@Override
+	protected final void readPayload(final ByteBuffer p_buffer) {
+		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
+		
+		m_chunkIDs = new long[numChunks];
+		
+		p_buffer.asLongBuffer().get(m_chunkIDs);
+	}
+
+	@Override
+	protected final int getPayloadLengthForWrite() {
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + m_chunkIDs.length * Long.BYTES;
+	}
+}

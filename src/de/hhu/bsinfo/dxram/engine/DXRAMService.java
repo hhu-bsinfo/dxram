@@ -26,7 +26,7 @@ public abstract class DXRAMService
 		
 		public <T> void setDefaultValue(final String p_key, final T p_value)
 		{
-			if (m_configuration.AddValue(m_basePath + p_key, p_value, false))
+			if (m_configuration.addValue(m_basePath + p_key, p_value, false))
 			{
 				// we added a default value => value was missing from configuration
 				m_logger.warn(this.getClass().getSimpleName(), "Settings value for '" + p_key + "' was missing, using default value " + p_value);
@@ -41,7 +41,7 @@ public abstract class DXRAMService
 		
 		public <T> T getValue(final String p_key, final Class<T> p_type)
 		{
-			return m_configuration.GetValue(m_basePath + p_key, p_type);
+			return m_configuration.getValue(m_basePath + p_key, p_type);
 		}
 	}
 	
@@ -64,6 +64,8 @@ public abstract class DXRAMService
 		
 		m_parentEngine = p_engine;
 		m_settings = new Settings(m_parentEngine.getConfiguration(), m_parentEngine.getLogger(), getServiceName());
+		
+		registerDefaultSettingsService(m_settings);
 		
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service...");
 		ret = startService(m_parentEngine.getSettings(), m_settings);

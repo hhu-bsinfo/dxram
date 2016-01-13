@@ -1,3 +1,6 @@
+// compile:
+// gcc -shared -fpic -o libJNILock.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNILock.c
+
 #include <jni.h>
 #include <stdio.h>
 #include "JNILock.h"
@@ -5,7 +8,7 @@
 #define READER_BITMASK 0x7FFFFFFF
 #define WRITER_FLAG 0x80000000
 
-JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_readLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_readLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	int *lock;
 	int oldValue;
 	int newValue;
@@ -20,7 +23,7 @@ JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_readLock
 	} while (!__sync_bool_compare_and_swap(lock, oldValue, newValue));
 }
 
-JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_readUnlock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_readUnlock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	int *lock;
 	int oldValue;
 	int newValue;
@@ -33,7 +36,7 @@ JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_readUnlo
 	} while (!__sync_bool_compare_and_swap(lock, oldValue, newValue));
 }
 
-JNIEXPORT jboolean JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_tryReadLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT jboolean JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_tryReadLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	jboolean ret = JNI_FALSE;
 	int *lock;
 	int oldValue;
@@ -52,7 +55,7 @@ JNIEXPORT jboolean JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_tryR
 	return ret;
 }
 
-JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_writeLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_writeLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	int *lock;
 	int oldValue;
 	int newValue;
@@ -67,7 +70,7 @@ JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_writeLoc
 	while ((*lock & READER_BITMASK) != 0);
 }
 
-JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_writeUnlock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_writeUnlock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	int *lock;
 
 	lock = (int*)p_address;
@@ -75,7 +78,7 @@ JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_writeUnl
 	__sync_val_compare_and_swap(lock, WRITER_FLAG, 0);
 }
 
-JNIEXPORT jboolean JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_tryWriteLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT jboolean JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_tryWriteLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	jboolean ret = JNI_FALSE;
 	int *lock;
 
@@ -88,7 +91,7 @@ JNIEXPORT jboolean JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_tryW
 	return ret;
 }
 
-JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_lock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_lock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	int *lock;
 
 	lock = (int*)p_address;
@@ -96,7 +99,7 @@ JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_lock(JNI
 	while (!__sync_bool_compare_and_swap(lock, 0, 1));
 }
 
-JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_unlock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_unlock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	int *lock;
 
 	lock = (int*)p_address;
@@ -104,7 +107,7 @@ JNIEXPORT void JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_unlock(J
 	__sync_val_compare_and_swap(lock, 1, 0);
 }
 
-JNIEXPORT jboolean JNICALL Java_de_uniduesseldorf_dxram_utils_locks_JNILock_tryLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
+JNIEXPORT jboolean JNICALL Java_de_hhu_bsinfo_utils_locks_JNILock_tryLock(JNIEnv *p_env, jclass p_class, jlong p_address) {
 	jboolean ret = JNI_FALSE;
 	int *lock;
 

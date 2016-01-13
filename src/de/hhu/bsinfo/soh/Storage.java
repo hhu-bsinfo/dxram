@@ -2,8 +2,6 @@ package de.hhu.bsinfo.soh;
 
 import java.io.File;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-
 /**
  * Interface to describe a type of storage/memory to store
  * data to.
