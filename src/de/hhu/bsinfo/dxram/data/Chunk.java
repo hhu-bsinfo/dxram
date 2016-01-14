@@ -35,6 +35,10 @@ public class Chunk implements DataStructure
 
 		return m_data;
 	}
+	
+	public void setID(final long p_id) {
+		m_chunkID = p_id;
+	}
 
 	/**
 	 * Gets the size of the data

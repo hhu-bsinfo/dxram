@@ -25,6 +25,14 @@ public class LinkedListBenchmark
 		long listHead = createLinkedList(numItems);
 		m_stopwatch.printAndStop();
 		System.out.println("Done creating linked list.");
+		
+		System.out.println("Walking linked list, head " + listHead);
+		m_stopwatch.start();
+		long itemsTouched = walkLinkedList(listHead);
+		m_stopwatch.printAndStop();
+		System.out.println("Walking linked list done, total elements touched: " + itemsTouched);
+		
+		System.out.println("Done");
 	}
 	
 	public static void main(String[] args)
@@ -35,59 +43,63 @@ public class LinkedListBenchmark
 			return;
 		}
 		
-		long numElementsList = Long.parseLong(args[0]);
-		
-
-		
-		System.out.println("Creating linked list with " + numElementsList + " items.");
-		Stopwatch.start();
-		long listHead = createLinkedList(numElementsList);
-		Stopwatch.printAndStop();
-		System.out.println("Done creating linked list.");
-		
-		System.out.println("Walking linked list, head " + listHead);
-		Stopwatch.start();
-		long itemsTouched = walkLinkedList(listHead);
-		Stopwatch.printAndStop();
-		System.out.println("Walking linked list done, total elements touched: " + itemsTouched);
-		
-		System.out.println("Done");
+		int numElementsList = Integer.parseInt(args[0]);
+		LinkedListBenchmark benchmark = new LinkedListBenchmark();
+		benchmark.run(numElementsList);
 	}
 	
-	public Chunk createLinkedList(int numItems)
+	public long createLinkedList(int numItems)
 	{	
 		Chunk[] chunks = new Chunk[numItems];
 		long[] chunkIDs = m_chunkService.create(8, numItems);
+		Chunk head = null;
+		Chunk previousChunk = null;
 		
-		for ()
-		
-		for (long i = 0; i < numItems; i++)
+		for (int i = 0; i < chunkIDs.length; i++)
 		{
-			Chunk chunk = Core.createNewChunk(8);
-			
-			// have previous chunk point to next/this one
-			previousChunk.getData().putLong(chunk.getChunkID());
-			Core.put(previousChunk);
-			previousChunk = chunk;
+			chunks[i] = new Chunk(chunkIDs[i], 8);
+			if (previousChunk == null)
+			{
+				// init head
+				head = chunks[i];
+				previousChunk = head;
+			} else {
+				previousChunk.getData().putLong(chunks[i].getID());
+				previousChunk = chunks[i];
+			}
 		}
 		
-		previousChunk.getData().putLong(-1);
-		Core.put(previousChunk);
+		// mark end
+		chunks[chunks.length - 1].getData().putLong(-1);
 		
-		return head;
+		if (m_chunkService.put(chunks) != chunks.length)
+		{
+			System.out.println("Putting linked list failed.");
+			return -1;
+		}
+		
+		return head.getID();
 	}
 	
-	public long walkLinkedList(long headChunkID) throws DXRAMException
+	public long walkLinkedList(long headChunkID)
 	{	
 		long counter = 0;
-		Chunk chunk = Core.get(headChunkID);
+		Chunk chunk = new Chunk(headChunkID, 8);
+		if (m_chunkService.get(chunk) != 1)
+		{
+			System.out.println("Getting head chunk if linked list failed.");
+			return 0;
+		}
+		counter++;
 		
 		while (chunk != null)
 		{
 			long nextChunkID = chunk.getData().getLong();
 			if (nextChunkID == -1)
 				break;
-			chunk = Core.get(nextChunkID);
+			// reuse same chunk to avoid allocations
+			chunk.setID(nextChunkID);
+			m_chunkService.get(chunk);
 			counter++;
 		}
 		

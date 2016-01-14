@@ -28,7 +28,7 @@ public class CreateResponse extends AbstractResponse {
 	 *            the requested Chunk
 	 */
 	public CreateResponse(final CreateRequest p_request, final long... p_chunkIDs) {
-		super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
+		super(p_request, ChunkMessages.SUBTYPE_CREATE_RESPONSE);
 
 		m_chunkIDs = p_chunkIDs;
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_chunkIDs.length));
@@ -42,7 +42,9 @@ public class CreateResponse extends AbstractResponse {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
 		
-		p_buffer.asLongBuffer().put(m_chunkIDs);
+		for (long chunkID : m_chunkIDs) {
+			p_buffer.putLong(chunkID);
+		}
 	}
 
 	@Override
@@ -51,7 +53,9 @@ public class CreateResponse extends AbstractResponse {
 		
 		m_chunkIDs = new long[numChunks];
 		
-		p_buffer.asLongBuffer().get(m_chunkIDs);
+		for (int i = 0; i < m_chunkIDs.length; i++) {
+			m_chunkIDs[i] = p_buffer.getLong();
+		}
 	}
 
 	@Override

@@ -29,7 +29,7 @@ public class CreateRequest extends AbstractRequest {
 	 *            Sizes of the chunks to create.
 	 */
 	public CreateRequest(final short p_destination, final int... p_sizes) {
-		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
+		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
 
 		m_sizes = p_sizes;
 		
@@ -48,7 +48,9 @@ public class CreateRequest extends AbstractRequest {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_sizes.length);
 		
-		p_buffer.asIntBuffer().put(m_sizes);
+		for (int size : m_sizes) {
+			p_buffer.putInt(size);
+		}
 	}
 
 	@Override
@@ -56,7 +58,9 @@ public class CreateRequest extends AbstractRequest {
 		int numSizes = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 		
 		m_sizes = new int[numSizes];
-		p_buffer.asIntBuffer().get(m_sizes);
+		for (int i = 0; i < m_sizes.length; i++) {
+			m_sizes[i] = p_buffer.getInt();
+		}
 	}
 
 	@Override

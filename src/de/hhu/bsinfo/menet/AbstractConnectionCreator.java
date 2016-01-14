@@ -3,8 +3,6 @@ package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
-
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
 
 /**
@@ -13,9 +11,6 @@ import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
  *         18.03.2012
  */
 abstract class AbstractConnectionCreator {
-
-	// Constants
-	protected static final Logger LOGGER = Logger.getLogger(AbstractConnectionCreator.class);
 
 	// Attributes
 	private ConnectionCreatorListener m_listener;

@@ -7,8 +7,9 @@ import java.util.Map.Entry;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.util.logger.LogLevel;
+import de.hhu.bsinfo.utils.log.LoggerInterface;
 
-public class LoggerComponent extends DXRAMComponent
+public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 {
 	private LogLevel m_defaultLogLevel = LogLevel.DISABLED;
 	private Map<String, LogLevel> m_logLevels = new HashMap<String, LogLevel>();
@@ -160,5 +161,65 @@ public class LoggerComponent extends DXRAMComponent
 	@Override
 	protected boolean shutdownComponent() {
 		return true;
+	}
+
+	@Override
+	public void error(String p_header, String p_msg) {
+		if (LogLevel.ERROR.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg);
+	}
+
+	@Override
+	public void error(String p_header, String p_msg, Exception p_e) {
+		if (LogLevel.ERROR.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg, p_e);
+	}
+
+	@Override
+	public void warn(String p_header, String p_msg) {
+		if (LogLevel.WARN.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg);
+	}
+
+	@Override
+	public void warn(String p_header, String p_msg, Exception p_e) {
+		if (LogLevel.WARN.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg, p_e);
+	}
+
+	@Override
+	public void info(String p_header, String p_msg) {
+		if (LogLevel.INFO.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg);
+	}
+
+	@Override
+	public void info(String p_header, String p_msg, Exception p_e) {
+		if (LogLevel.INFO.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg, p_e);
+	}
+
+	@Override
+	public void debug(String p_header, String p_msg) {
+		if (LogLevel.DEBUG.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg);
+	}
+
+	@Override
+	public void debug(String p_header, String p_msg, Exception p_e) {
+		if (LogLevel.DEBUG.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg, p_e);
+	}
+
+	@Override
+	public void trace(String p_header, String p_msg) {
+		if (LogLevel.TRACE.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg);
+	}
+
+	@Override
+	public void trace(String p_header, String p_msg, Exception p_e) {		
+		if (LogLevel.TRACE.ordinal() <= m_defaultLogLevel.ordinal())
+			getLogger().trace(p_header, p_msg, p_e);
 	}
 }

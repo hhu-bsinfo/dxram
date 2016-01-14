@@ -168,6 +168,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 			if (timeNow - timeStart > 1200 && !m_ignoreTimeout) {
 				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
 				success = false;
+				break;
 			}
 			try {
 				m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);

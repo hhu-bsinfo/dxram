@@ -144,6 +144,8 @@ public class NetworkComponent extends DXRAMComponent {
 				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT),
 				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS));
 		
+		m_networkHandler.setLogger(m_logger);
+		
 		m_networkHandler.initialize(
 				m_boot.getNodeID(), 
 				new NodeMappings(m_boot), 

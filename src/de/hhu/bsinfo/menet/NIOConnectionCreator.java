@@ -108,7 +108,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		while (!ret.isConnected()) {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > CONNECTION_TIMEOUT) {
-				LOGGER.debug("connection time-out");
+				NetworkHandler.ms_logger.debug(getClass().getSimpleName(), "connection time-out");
 
 				condLock.unlock();
 				throw new IOException("Timeout occurred");
@@ -505,7 +505,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			}
 
 			if (exception != null) {
-				LOGGER.fatal("FATAL::Could not create network channel", exception);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not create network channel", exception);
 			}
 		}
 
@@ -554,7 +554,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					selected.clear();
 				}
 			} catch (final Exception e) {
-				LOGGER.error("ERROR::Accessing the selector", e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Accessing the selector", e);
 			}
 
 			if (m_running) {
@@ -638,7 +638,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			try {
 				p_connection.m_channel.register(m_selector, p_operations, p_connection);
 			} catch (final ClosedChannelException e) {
-				LOGGER.error("ERROR::Could not change operations");
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not change operations");
 			}
 		}
 
@@ -656,7 +656,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				try {
 					p_connection.m_channel.close();
 				} catch (final IOException e) {
-					LOGGER.error("ERROR::Could not close connection to " + p_connection.getDestination(), e);
+					NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not close connection to " + p_connection.getDestination(), e);
 				}
 				fireConnectionClosed(p_connection);
 			}
@@ -672,13 +672,13 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			try {
 				m_channel.close();
 			} catch (final IOException e) {
-				LOGGER.error("ERROR::Unable to close channel", e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to close channel", e);
 			}
 
 			try {
 				m_selector.close();
 			} catch (final IOException e) {
-				LOGGER.error("ERROR::Unable to close selector", e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to close selector", e);
 			}
 		}
 	}
@@ -775,7 +775,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 						connect(connection);
 					}
 				} catch (final IOException e) {
-					LOGGER.debug("WARN::Accessing the channel");
+					NetworkHandler.ms_logger.warn(getClass().getSimpleName(), "Accessing the channel");
 				}
 			}
 		}
@@ -816,7 +816,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					}
 				}
 			} catch (final IOException e) {
-				LOGGER.error("ERROR::Could not create connection", e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not create connection", e);
 				m_connectionLock.unlock();
 				throw e;
 			}
@@ -862,7 +862,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					}
 				}
 			} catch (final IOException e) {
-				LOGGER.debug("WARN::Could not read from channel (" + p_connection.getDestination() + ")", e);
+				NetworkHandler.ms_logger.warn(getClass().getSimpleName(), "Could not read from channel (" + p_connection.getDestination() + ")", e);
 				m_bufferLock.unlock();
 				throw e;
 			}
@@ -922,7 +922,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					}
 				}
 			} catch (final IOException e) {
-				LOGGER.debug("WARN::Could not write to channel (" + p_connection.getDestination() + ")", e);
+				NetworkHandler.ms_logger.warn(getClass().getSimpleName(), "Could not write to channel (" + p_connection.getDestination() + ")", e);
 				m_writeLock.unlock();
 				throw e;
 			}

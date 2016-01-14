@@ -75,7 +75,7 @@ public class RemoveResponse extends AbstractResponse {
 		if (m_backupSuperpeers == null) {
 			ret = Byte.BYTES;
 		} else {
-			ret = Byte.BYTES + Short.BYTES * m_backupSuperpeers.length;
+			ret = Byte.BYTES + Integer.BYTES + Short.BYTES * m_backupSuperpeers.length;
 		}
 
 		return ret;

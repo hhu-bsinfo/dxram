@@ -341,7 +341,7 @@ public abstract class AbstractMessage {
 		subtype = p_buffer.get();
 		ratingValue = p_buffer.get();
 		statusCode = p_buffer.get();
-
+		
 		try {
 			ret = p_messageDirectory.getInstance(type, subtype);
 		} catch (final Exception e) {

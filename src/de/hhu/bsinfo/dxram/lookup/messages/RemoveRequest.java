@@ -79,7 +79,7 @@ public class RemoveRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return Long.BYTES * m_chunkIDs.length + Byte.BYTES;
+		return Integer.BYTES + Long.BYTES * m_chunkIDs.length + Byte.BYTES;
 	}
 
 }

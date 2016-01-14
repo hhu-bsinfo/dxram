@@ -10,8 +10,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
-
 /**
  * Access to a singleton of an ExecutorService
  * for usage inside of the network package
@@ -22,11 +20,6 @@ import org.apache.log4j.Logger;
  * @author Marc Ewert 14.08.14
  */
 public final class TaskExecutor {
-
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(TaskExecutor.class);
-
-	private TaskExecutor m_defaultExecutor;
 
 	private final ExecutorService m_executor;
 	private final HashMap<Short, TaskQueue> m_taskMap;
@@ -48,7 +41,7 @@ public final class TaskExecutor {
 
 		m_taskMapLock = new ReentrantLock(false);
 
-		LOGGER.info(m_name + ": Initialising " + p_threads + " threads");
+		NetworkHandler.ms_logger.info(getClass().getSimpleName(), m_name + ": Initialising " + p_threads + " threads");
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
 	}
 
@@ -76,7 +69,7 @@ public final class TaskExecutor {
 		try {
 			m_executor.execute(p_runnable);
 		} catch (final RejectedExecutionException e) {
-			LOGGER.error("ERROR::" + m_name + ":" + e.getMessage());
+			NetworkHandler.ms_logger.error(getClass().getSimpleName(), m_name + ":" + e.getMessage());
 		}
 	}
 
@@ -121,7 +114,7 @@ public final class TaskExecutor {
 	 * Initiate a graceful shutdown of the thread pool
 	 */
 	public void shutdown() {
-		LOGGER.info("Shutdown TaskExecutor " + m_name);
+		NetworkHandler.ms_logger.info(getClass().getSimpleName(), "Shutdown TaskExecutor " + m_name);
 		m_executor.shutdown();
 	}
 
@@ -171,7 +164,7 @@ public final class TaskExecutor {
 			try {
 				runnable.run();
 			} catch (final Exception e) {
-				LOGGER.error("ERROR::" + m_name + ":exception during " + runnable, e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
 			} finally {
 				m_queueLock.lock();
 				// remove executed task

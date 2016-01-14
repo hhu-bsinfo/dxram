@@ -6,8 +6,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
-
 import de.hhu.bsinfo.utils.Contract;
 
 /**
@@ -16,9 +14,6 @@ import de.hhu.bsinfo.utils.Contract;
  * @author Marc Ewert 14.10.2014
  */
 public abstract class AbstractConnection {
-
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(AbstractConnection.class);
 
 	// Attributes
 	private final DataHandler m_dataHandler;
@@ -304,7 +299,7 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final IOException e) {
-				LOGGER.error("ERROR::Could not access network connection", e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not access network connection", e);
 			}
 		}
 	}
@@ -379,7 +374,7 @@ public abstract class AbstractConnection {
 				message = AbstractMessage.createMessageHeader(buffer, m_messageDirectory);
 				message.readPayload(buffer);
 			} catch (final Exception e) {
-				LOGGER.error("ERROR::Unable to create message", e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to create message", e);
 			}
 
 			return message;
@@ -394,7 +389,6 @@ public abstract class AbstractConnection {
 	private static class ByteStreamInterpreter {
 
 		// Constants
-		private static final Logger LOGGER = Logger.getLogger(ByteStreamInterpreter.class);
 		private static final int HEADER_OFFSET = AbstractMessage.BYTES_PAYLOAD_SIZE;
 
 		// Attributes
@@ -470,7 +464,7 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final Exception e) {
-				LOGGER.error("ERROR::Unable to create Message ", e);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to create Message ", e);
 				clear();
 			}
 		}

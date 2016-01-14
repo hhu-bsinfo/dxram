@@ -124,6 +124,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 		m_memoryManager.unlockManage();
 		
+		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+		// by other peers
+		for (int i = 0; i < p_count; i++) {
+			m_lookup.initRange(chunkIDs[i], new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+		}
 
 		if (m_statisticsEnabled) {
 			Operation.MULTI_CREATE.leave();
@@ -162,6 +167,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 		m_memoryManager.unlockManage();
 		
+		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+		// by other peers
+		for (int i = 0; i < p_sizes.length; i++) {
+			m_lookup.initRange(chunkIDs[i], new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+		}
 
 		if (m_statisticsEnabled) {
 			Operation.MULTI_CREATE.leave();
@@ -205,7 +215,10 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			Operation.MULTI_CREATE.leave();
 		}
 		
-		m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + Long.toHexString(p_sizes[0]) + ", ...] -> " + chunkIDs[0] + ", ...");
+		if (chunkIDs != null)
+			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + Long.toHexString(p_sizes[0]) + ", ...] -> " + chunkIDs[0] + ", ...");
+		else
+			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + Long.toHexString(p_sizes[0]) + ", ...] -> -1");
 		
 		return chunkIDs;
 	}
@@ -256,6 +269,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 		m_memoryManager.unlockAccess();
 
+		// remove chunks from superpeer overlay first, so cannot be found before being deleted
+		for (final DataStructure chunk : localChunks) {
+			m_lookup.remove(chunk.getID());
+		}
+		
 		// remove local chunkIDs
 		m_memoryManager.lockManage();
 		for (final DataStructure chunk : localChunks) {
@@ -285,7 +303,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				m_memoryManager.unlockManage();
 			} else {					
 				// Remote remove from specified peer
-				RemoveRequest request = new RemoveRequest(peer, (DataStructure[]) remoteChunks.toArray());
+				RemoveRequest request = new RemoveRequest(peer, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
 				ErrorCode error = m_network.sendSync(request);
 				if (error != ErrorCode.SUCCESS)
 				{
@@ -396,7 +414,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			} else {
 				// Remote put
 				ArrayList<DataStructure> chunksToPut = entry.getValue();
-				PutRequest request = new PutRequest(peer, p_chunkUnlockOperation, (DataStructure[]) chunksToPut.toArray());
+				PutRequest request = new PutRequest(peer, p_chunkUnlockOperation, chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
 				ErrorCode error = m_network.sendSync(request);
 				if (error != ErrorCode.SUCCESS) {
 					m_logger.error(getClass(), "Sending chunk put request to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
@@ -510,7 +528,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				m_memoryManager.unlockAccess();
 			} else {					
 				// Remote get from specified peer
-				GetRequest request = new GetRequest(peer, p_chunkLockOperation, (DataStructure[]) remoteChunks.toArray());
+				GetRequest request = new GetRequest(peer, p_chunkLockOperation, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
 				ErrorCode error = m_network.sendSync(request);
 				if (error != ErrorCode.SUCCESS)
 				{
@@ -585,10 +603,10 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	private void registerNetworkMessageListener()
 	{
-		m_network.register(GetResponse.class, this);
-		m_network.register(PutResponse.class, this);
-		m_network.register(RemoveResponse.class, this);
-		m_network.register(CreateResponse.class, this);
+		m_network.register(GetRequest.class, this);
+		m_network.register(PutRequest.class, this);
+		m_network.register(RemoveRequest.class, this);
+		m_network.register(CreateRequest.class, this);
 	}
 	
 	// -----------------------------------------------------------------------------------
@@ -700,6 +718,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		byte[] chunkStatusCodes = new byte[chunkIDs.length];
 		boolean allSuccessful = true;
 		
+		// remove chunks from superpeer overlay first, so cannot be found before being deleted
+		for (int i = 0; i < chunkIDs.length; i++)  {
+			m_lookup.remove(chunkIDs[i]);
+		}
+		
 		// remove chunks first (local)
 		m_memoryManager.lockManage();
 		for (int i = 0; i < chunkIDs.length; i++) 
@@ -775,12 +798,19 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 		m_memoryManager.unlockManage();
 		
+		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+		// by other peers
+		for (int i = 0; i < sizes.length; i++) {
+			m_lookup.initRange(chunkIDs[i], new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+		}
+		
 		CreateResponse response = new CreateResponse(p_request, chunkIDs);
 		ErrorCode error = m_network.sendMessage(response);
 		if (error != ErrorCode.SUCCESS)
 		{
 			m_logger.error(getClass(), "Sending chunk create respond to request " + p_request + " failed: " + error);
 		}
+		
 		
 //		if (m_statisticsEnabled)
 //			Operation.INCOMING_CREATE.leave();

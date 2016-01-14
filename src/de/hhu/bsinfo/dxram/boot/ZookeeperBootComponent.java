@@ -395,7 +395,7 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 
 			// check if own node entry was correctly assigned to a valid node ID
 			if (m_nodesConfiguration.getOwnNodeEntry() == null) {
-				throw new BootRuntimeException("Bootstrap entry for node in configuration missing!");
+				throw new BootRuntimeException("Bootstrap entry for node in nodes configuration missing!");
 			}
 
 			m_zookeeper.create("nodes/bootstrap", (m_bootstrap + "").getBytes());

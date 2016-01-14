@@ -66,9 +66,9 @@ public class RemoveRequest extends AbstractRequest {
 		
 		m_chunkIDs = new long[numChunks];
 		
-		p_buffer.asLongBuffer().get(m_chunkIDs);
-		// we have to manually advance the original buffer
-		p_buffer.position(p_buffer.position() + numChunks * Long.BYTES);
+		for (int i = 0; i < numChunks; i++) {
+			m_chunkIDs[i] = p_buffer.getLong();
+		}
 	}
 
 	@Override

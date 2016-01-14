@@ -34,7 +34,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	private ReentrantLock m_lock;
 	
 	private NodeMap m_nodeMap = null;
-	private LoggerInterface m_logger = new LoggerNull();
+	static LoggerInterface ms_logger = new LoggerNull();
 	
 	// Constructors
 	/**
@@ -65,8 +65,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		}
 	}
 	
-	void setLogger(final LoggerInterface p_logger) {
-		m_logger = p_logger;
+	public void setLogger(final LoggerInterface p_logger) {
+		ms_logger = p_logger;
 	}
 	
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class)
@@ -78,7 +78,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 	// Methods
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes) {
-		m_logger.trace(getClass().getSimpleName(), "Entering initialize");
+		ms_logger.trace(getClass().getSimpleName(), "Entering initialize");
 		
 		m_lock.lock();
 		
@@ -90,7 +90,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		m_lock.unlock();
 
-		m_logger.trace(getClass().getSimpleName(), "Exiting initialize");
+		ms_logger.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
 
 	@Override
@@ -108,14 +108,14 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	}
 
 	public void close() {
-		m_logger.trace(getClass().getSimpleName(), "Entering close");
+		ms_logger.trace(getClass().getSimpleName(), "Entering close");
 
 		m_lock.lock();
 		m_executor.shutdown();
 		m_messageHandler.m_executor.shutdown();
 		m_lock.unlock();
 
-		m_logger.trace(getClass().getSimpleName(), "Exiting close");
+		ms_logger.trace(getClass().getSimpleName(), "Exiting close");
 	}
 
 	@Override
@@ -131,7 +131,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			}
 			entry.add(p_receiver);
 
-			m_logger.info(getClass().getSimpleName(), "new MessageReceiver");
+			ms_logger.info(getClass().getSimpleName(), "new MessageReceiver");
 			m_receiversLock.unlock();
 		}
 	}
@@ -146,7 +146,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			if (entry != null) {
 				entry.remove(p_receiver);
 
-				m_logger.info(getClass().getSimpleName(), "MessageReceiver removed");
+				ms_logger.info(getClass().getSimpleName(), "MessageReceiver removed");
 			}
 			m_receiversLock.unlock();
 		}
@@ -158,7 +158,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		p_message.beforeSend();
 		
-		// LOGGER.trace("Entering sendMessage with: p_message=" + p_message);
+		ms_logger.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
 			/*
@@ -195,7 +195,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		
 		p_message.afterSend();
 
-		// LOGGER.trace("Exiting sendMessage");
+		ms_logger.trace(getClass().getSimpleName(), "Exiting sendMessage");
 		
 		return 0;
 	}
@@ -214,6 +214,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	 */
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
+		ms_logger.trace(getClass().getSimpleName(), "NewMessage: " + p_message);
+		
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);
 		} else {
