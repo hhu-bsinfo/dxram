@@ -45,20 +45,20 @@ public class SimpleRemoteChunkServiceTest
 			System.out.println(chunks[i]);
 		}
 		
-//		for (Chunk chunk : chunks)
-//		{
-//			chunk.getData().putLong(chunk.getID());
-//		}
-//	
-//		m_chunkService.put(chunks);
-//		
-//		m_chunkService.get(chunksCopy);
-//		
-//		System.out.println("Data got: ");
-//		for (Chunk chunk : chunksCopy)
-//		{
-//			System.out.println(Long.toHexString(chunk.getData().getLong()));
-//		}
+		for (Chunk chunk : chunks)
+		{
+			chunk.getData().putLong(chunk.getID());
+		}
+	
+		m_chunkService.put(chunks);
+		
+		m_chunkService.get(chunksCopy);
+		
+		System.out.println("Data got: ");
+		for (Chunk chunk : chunksCopy)
+		{
+			System.out.println(Long.toHexString(chunk.getData().getLong()));
+		}
 		
 		int removeCount = m_chunkService.remove(chunks);
 		System.out.println("Removed: " + removeCount);

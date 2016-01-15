@@ -67,6 +67,7 @@ public class RemoveRequest extends AbstractRequest {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_chunkIDs.length);
 		p_buffer.asLongBuffer().put(m_chunkIDs);
+		p_buffer.position(p_buffer.position() + m_chunkIDs.length * Long.BYTES);
 		p_buffer.put((byte) (m_isBackup ? 1 : 0));
 	}
 
@@ -74,6 +75,7 @@ public class RemoveRequest extends AbstractRequest {
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_chunkIDs = new long[p_buffer.getInt()];
 		p_buffer.asLongBuffer().get(m_chunkIDs);
+		p_buffer.position(p_buffer.position() + m_chunkIDs.length * Long.BYTES);
 		m_isBackup = p_buffer.get() != 0 ? true : false;			
 	}
 
