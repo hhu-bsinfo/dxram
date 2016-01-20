@@ -216,9 +216,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 		
 		if (chunkIDs != null)
-			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + Long.toHexString(p_sizes[0]) + ", ...] -> " + chunkIDs[0] + ", ...");
+			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
 		else
-			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + Long.toHexString(p_sizes[0]) + ", ...] -> -1");
+			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> -1");
 		
 		return chunkIDs;
 	}

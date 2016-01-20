@@ -372,6 +372,20 @@ public abstract class AbstractConnection {
 
 			try {
 				message = AbstractMessage.createMessageHeader(buffer, m_messageDirectory);
+				// hack:
+				// to avoid copying data multiple times, some responses use the same objects provided
+				// with the request to directly write the data to them instead of creating a temporary 
+				// object in the response, de-serializing the data and then copying from the temporary object
+				// to the object that should receive the data in the first place. (example DXRAM: get request/response)
+				// This is only possible, if we have a reference to the original request within the response 
+				// while reading from the network byte buffer. But in this low level stage, we (usually) don't have
+				// access to requests/responses. So we exploit the request map to get our corresponding request 
+				// before de-serializing the network buffer for every request.
+				if (message instanceof AbstractResponse) {
+					AbstractResponse resp = (AbstractResponse) message;
+					resp.m_correspondingRequest = RequestMap.getRequest(resp);
+				}
+				
 				message.readPayload(buffer);
 			} catch (final Exception e) {
 				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to create message", e);

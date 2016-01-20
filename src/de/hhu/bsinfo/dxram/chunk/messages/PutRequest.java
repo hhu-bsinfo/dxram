@@ -57,8 +57,7 @@ public class PutRequest extends AbstractRequest {
 				assert 1 == 2;
 		}
 		
-		ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length);
-		setStatusCode(tmpCode);
+		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
 	}
 
 	/**
@@ -100,7 +99,7 @@ public class PutRequest extends AbstractRequest {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-		int numChunks = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
+		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 		
 		m_dataStructures = new Chunk[numChunks];
 		

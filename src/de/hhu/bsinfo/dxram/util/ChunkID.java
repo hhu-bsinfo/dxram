@@ -10,8 +10,8 @@ public final class ChunkID {
 
 	// Constants
 	public static final long INVALID_ID = -1;
-	private static final long CREATORID_BITMASK = 0xFFFF000000000000L;
-	private static final long LOCALID_BITMASK = 0x0000FFFFFFFFFFFFL;
+	public static final long CREATORID_BITMASK = 0xFFFF000000000000L;
+	public static final long LOCALID_BITMASK = 0x0000FFFFFFFFFFFFL;
 
 	public static final long MAX_LOCALID = Long.MAX_VALUE & LOCALID_BITMASK;
 

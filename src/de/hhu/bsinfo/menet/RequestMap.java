@@ -59,6 +59,18 @@ public final class RequestMap {
 
 		return ret;
 	}
+	
+	static AbstractRequest getRequest(final AbstractResponse p_resonse) {
+		AbstractRequest req = null;
+		
+		m_lock.lock();
+
+		req = m_pendingRequests.get(p_resonse.getRequestID());
+
+		m_lock.unlock();
+		
+		return req;
+	}
 
 	/**
 	 * Fulfill a Request by the given Response

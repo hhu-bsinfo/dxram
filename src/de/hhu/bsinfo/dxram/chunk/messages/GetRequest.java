@@ -55,8 +55,7 @@ public class GetRequest extends AbstractRequest {
 				assert 1 == 2;
 		}
 
-		ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length);
-		setStatusCode(tmpCode);
+		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
 	}
 	
 	/**

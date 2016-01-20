@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public final class MemoryManagerComponent extends DXRAMComponent {
-
+	
 	// Attributes
 	private boolean m_enableMemoryStatistics;
 	private SmallObjectHeap m_rawMemory;
@@ -122,9 +122,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * This is a management call and has to be locked using lockManage().
 	 * @param p_size
 	 *            Size in bytes of the payload the chunk contains.
-	 * @return Address of the allocated chunk.
-	 * @throws MemoryException
-	 *             If allocation failed.
+	 * @return Address of the allocated chunk or -1 if creating the chunk failed.
 	 */
 	public long create(final int p_size) {
 		assert p_size > 0;
@@ -140,13 +138,13 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 			chunkID = -1;
 		}
 		else
-		{
+		{			
 			// first, try to allocate. maybe early return
 			address = m_rawMemory.malloc(p_size);
 			if (address >= 0) {
 				// register new chunk
+				m_cidTable.set(lid, address);
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
-				m_cidTable.set(chunkID, address);
 				
 				if (m_enableMemoryStatistics) {
 					MemoryStatistic.getInstance().malloc(p_size);
@@ -164,10 +162,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * Get the size of a chunk (payload only, i.e. minus size for version).
 	 * This is an access call and has to be locked using lockAccess().
 	 * @param p_chunkID
-	 *            ChunkID of the chunk.
+	 *            ChunkID of the chunk, the local id gets extracted, the node ID ignored.
 	 * @return Size of the chunk or -1 if the chunkID was invalid.
-	 * @throws MemoryException
-	 *             If getting the size of the chunk failed.
 	 */
 	public int getSize(final long p_chunkID) {
 		long address = -1;
@@ -184,17 +180,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	/**
 	 * Get the payload of a chunk.
 	 * This is an access call and has to be locked using lockAccess().
-	 * @param p_chunkID
-	 *            ChunkID of the chunk.
-	 * @param p_buffer
-	 *            Buffer to copy the payload to.
-	 * @param p_offset
-	 *            Start offset within the buffer.
-	 * @param p_length
-	 *            Number of bytes to get.
-	 * @return Number of bytes written to buffer.
-	 * @throws MemoryException
-	 *             If reading chunk data failed.
+	 * @param p_dataStructure Data structure to write the data of its specified ID to.
+	 * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.l
 	 */
 	public boolean get(final DataStructure p_dataStructure)
 	{
@@ -303,7 +290,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		long address;
 
 		// Get the address from the CIDTable
-		address = m_cidTable.get(p_chunkID);
+		address = m_cidTable.get(p_chunkID & 0xFFFFFFFFFFFFL);
 
 		// If address <= 0, the Chunk does not exists in memory
 		return address > 0;

@@ -26,8 +26,9 @@ public class Chunk implements DataStructure
 	}
 
 	/**
-	 * Gets the data
-	 * @return the data
+	 * Gets the underlying byte buffer. 
+	 * @note The position gets rested to 0 before returning the reference.
+	 * @return ByteBuffer with position reseted.
 	 */
 	public final ByteBuffer getData() {
 		if (m_data != null)
