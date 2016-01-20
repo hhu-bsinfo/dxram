@@ -35,7 +35,7 @@ public class SimpleRemoteChunkServiceTest
 		
 		System.out.println("Remote chunks created: ");
 		for (int i = 0; i < chunkIDs.length; i++) {
-			System.out.println(chunkIDs[i]);
+			System.out.println(Long.toHexString(chunkIDs[i]));
 		}
 		
 		System.out.println("Setting chunk payload...");

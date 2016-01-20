@@ -4,10 +4,6 @@ package de.hhu.bsinfo.dxram.nameservice;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.uniduesseldorf.dxram.core.dxram.Core;
-
-import de.hhu.bsinfo.utils.config.Configuration.ConfigurationConstants;
-
 /**
  * Methods for converting Strings into integers
  * @author Kevin Beineke
@@ -15,21 +11,21 @@ import de.hhu.bsinfo.utils.config.Configuration.ConfigurationConstants;
  */
 public final class NameServiceStringConverter {
 
-	// Constants
-	private static final String NAMESERVICE_TYPE = Core.getConfiguration().getStringValue(DXRAMConfigurationConstants.NAMESERVICE_TYPE);
-	private static final int KEY_LENGTH = Core.getConfiguration().getIntValue(DXRAMConfigurationConstants.NAMESERVICE_KEY_LENGTH);
-
 	// Attributes
-	private static Map<Character, Integer> m_charMap;
+	private String m_nameserviceType = null;
+	private int m_keyLength = -1;
+	private Map<Character, Integer> m_charMap = new HashMap<Character, Integer>();
 
 	// Constructors
 	/**
 	 * Creates an instance of StringConverter
 	 */
-	private NameServiceStringConverter() {}
-
-	static {
-		if (NAMESERVICE_TYPE.equals("NAME")) {
+	public NameServiceStringConverter(final String p_nameserviceType, final int p_keyLength) 
+	{
+		m_nameserviceType = p_nameserviceType;
+		m_keyLength = p_keyLength;
+		
+		if (m_nameserviceType.equals("NAME")) {
 			m_charMap = new HashMap<Character, Integer>();
 			m_charMap.put('0', 1);
 			m_charMap.put('1', 2);
@@ -107,14 +103,14 @@ public final class NameServiceStringConverter {
 	 *            the String
 	 * @return the integer
 	 */
-	public static int convert(final String p_name) {
+	public int convert(final String p_name) {
 		int ret = 0;
 		int value = 0;
 		char[] chars;
 
-		if (NAMESERVICE_TYPE.equals("NAME")) {
+		if (m_nameserviceType.equals("NAME")) {
 			chars = p_name.toCharArray();
-			for (int i = 0; i < KEY_LENGTH / 6 && i < chars.length; i++) {
+			for (int i = 0; i < m_keyLength / 6 && i < chars.length; i++) {
 				value = m_charMap.get(chars[i]);
 				ret += value << i * 6;
 			}
