@@ -1,8 +1,5 @@
 package de.hhu.bsinfo.dxram.nameservice;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -22,29 +19,30 @@ public class NameserviceService extends DXRAMService {
 	@Override
 	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
+		m_lookup = getComponent(LookupComponent.class);
+		
 		m_converter = new NameServiceStringConverter(p_settings.getValue(NameserviceConfigurationValues.Component.TYPE), 
 				p_settings.getValue(NameserviceConfigurationValues.Component.KEY_LENGTH));
-		
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownService() {
+		m_lookup = null;
 		m_converter = null;
 		return true;
 	}
 
 	public void register(final DataStructure p_dataStructure, final String p_name) {
-		// TODO add entry to superpeer overlay, this stores the mappings
-		// ChunkHandler does only store backups (index chunk) -> don't need this here
+		m_lookup.insertID(m_converter.convert(p_name), p_dataStructure.getID());
 	}
 	
-	public long convert(final String p_name) {
-		
+	public long getChunkID(final String p_name) {
+		return m_lookup.getChunkID(m_converter.convert(p_name));
 	}
 	
 	public void remove(final DataStructure p_dataStructure) {
-		
+		m_lookup.remove(p_dataStructure.getID());
 	}
 	
 //	/**
