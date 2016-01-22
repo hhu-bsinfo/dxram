@@ -3,28 +3,45 @@ package de.hhu.bsinfo.dxram.test.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.MainArguments;
 
 // before running this as a peer, start a superpeer and an additional storage peer
-public class SimpleRemoteChunkServiceTest 
+public class SimpleRemoteChunkServiceTest extends Main
 {
-	public DXRAM m_dxram;
-	public ChunkService m_chunkService;
+	public static final Pair<String, Integer> ARG_REMOTE_PEER_ID = new Pair<String, Integer>("remotePeerID", 22222);
+	
+	private DXRAM m_dxram;
+	private ChunkService m_chunkService;
 
+	public static void main(final String[] args) {
+		Main main = new SimpleRemoteChunkServiceTest();
+		main.run(args);
+	}
+	
 	public SimpleRemoteChunkServiceTest()
 	{
-		DXRAM m_dxram = new DXRAM();
+		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
 	}
 	
-	public void run(final short p_remotePeerID)
-	{
+	@Override
+	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+		p_arguments.setArgument(ARG_REMOTE_PEER_ID);
+	}
+
+	@Override
+	protected int main(MainArguments p_arguments) {
+		final short remotePeerID = (short) (p_arguments.getArgument(ARG_REMOTE_PEER_ID) & 0xFFFF);
+		
 		int[] sizes = new int[] {155, 543, 99, 65, 233};
 		System.out.println("Creating remote chunks...");
-		long[] chunkIDs = m_chunkService.create(p_remotePeerID, sizes);
+		long[] chunkIDs = m_chunkService.create(remotePeerID, sizes);
 		if (chunkIDs == null) {
 			System.out.println("Creating remote chunks failed.");
-			return;
+			return -1;
 		}
 		Chunk[] chunks = new Chunk[chunkIDs.length];
 		Chunk[] chunksCopy = new Chunk[chunkIDs.length];
@@ -60,19 +77,6 @@ public class SimpleRemoteChunkServiceTest
 		System.out.println("Removing chunks...");
 		int removeCount = m_chunkService.remove(chunks);
 		System.out.println("Removed chunks: " + removeCount);
-	}
-	
-	public static void main(String[] args)
-	{
-		if (args.length < 1)
-		{
-			System.out.println("Usage: SimpleRemoteChunkServiceTest <remote peer ID>");
-			return;
-		}
-		
-		short remotePeerID = Short.parseShort(args[0]);
-		
-		SimpleRemoteChunkServiceTest test = new SimpleRemoteChunkServiceTest();
-		test.run(remotePeerID);
+		return 0;
 	}
 }

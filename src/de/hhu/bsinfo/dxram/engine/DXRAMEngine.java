@@ -94,6 +94,21 @@ public class DXRAMEngine
 		
 		if (m_isInitilized) {
 			DXRAMService tmpService = m_services.get(p_class.getName());
+			if (tmpService == null) 
+			{
+				// check for any kind of instance of the specified class
+				// we might have another interface/abstract class between the 
+				// class we request and an instance we could serve
+				for (Entry<String, DXRAMService> entry : m_services.entrySet())
+				{
+					tmpService = entry.getValue();
+					if (p_class.isInstance(tmpService))
+						break;
+					
+					tmpService = null;
+				}
+			}
+			
 			if (tmpService != null && p_class.isInstance(tmpService)) {
 				service = p_class.cast(tmpService);
 			}
@@ -346,8 +361,12 @@ public class DXRAMEngine
 				
 				if (!clazz.getSuperclass().equals(DXRAMService.class))
 				{
-					m_logger.error(DXRAM_ENGINE_LOG_HEADER, "DXRAMService is not a superclass of " + service.getValue() + ", service ignored.");
-					continue;
+					// check if there is an "interface"/abstract class between DXRAMService and the instance to create
+					if (!clazz.getSuperclass().getSuperclass().equals(DXRAMService.class))
+					{
+						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "DXRAMService is not a superclass of " + service.getValue() + ", service ignored.");
+						continue;
+					}
 				}
 				
 				try {

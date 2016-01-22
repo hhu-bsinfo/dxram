@@ -15,26 +15,27 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParser;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBool;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBoolean;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserByte;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserDouble;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserFloat;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserInt;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserLong;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserShort;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserString;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverter;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverterGBToByte;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverterKBToByte;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverterMBToByte;
+
 public class ConfigurationXMLParser implements ConfigurationParser
 {
 	private static final String ROOT_ELEMENT = "conf";
 	private static final String ATTR_KEY_ID = "__id";
 	private static final String ATTR_KEY_TYPE = "__type";
 	private static final String ATTR_KEY_UNIT = "__unit";
-	
-	public static interface DataTypeParser
-	{
-		public String getTypeIdentifer();
-		
-		public Object parse(final String p_str);
-	}
-	
-	public static interface UnitConverter
-	{
-		public String getUnitIdentifier();
-		
-		public Object convert(final Object p_value);
-	}
 	
 	private ConfigurationXMLLoader m_loader = null;
 	private Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
@@ -45,20 +46,20 @@ public class ConfigurationXMLParser implements ConfigurationParser
 		m_loader = p_loader;
 		
 		// add default type parsers
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.String());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Byte());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Short());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Int());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Long());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Float());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Double());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Bool());
-		addDataTypeParser(new ConfigurationXMLParserDataTypeParsers.Boolean());
+		addDataTypeParser(new DataTypeParserString());
+		addDataTypeParser(new DataTypeParserByte());
+		addDataTypeParser(new DataTypeParserShort());
+		addDataTypeParser(new DataTypeParserInt());
+		addDataTypeParser(new DataTypeParserLong());
+		addDataTypeParser(new DataTypeParserFloat());
+		addDataTypeParser(new DataTypeParserDouble());
+		addDataTypeParser(new DataTypeParserBool());
+		addDataTypeParser(new DataTypeParserBoolean());
 		
 		// add default unit converters
-		addUnitConverter(new ConfigurationXMLParserUnitConverters.KiloByteToByte());
-		addUnitConverter(new ConfigurationXMLParserUnitConverters.MegaByteToByte());
-		addUnitConverter(new ConfigurationXMLParserUnitConverters.GigabyteByteToByte());
+		addUnitConverter(new UnitConverterKBToByte());
+		addUnitConverter(new UnitConverterMBToByte());
+		addUnitConverter(new UnitConverterGBToByte());
 	}
 	
 	public boolean addDataTypeParser(final DataTypeParser p_parser)

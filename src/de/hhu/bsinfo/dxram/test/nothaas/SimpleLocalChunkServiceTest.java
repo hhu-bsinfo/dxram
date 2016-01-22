@@ -3,22 +3,33 @@ package de.hhu.bsinfo.dxram.test.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.MainArguments;
 
 // before running this as a peer, start one superpeer
-public class SimpleLocalChunkServiceTest 
-{
-	public DXRAM m_dxram;
-	public ChunkService m_chunkService;
+public class SimpleLocalChunkServiceTest extends Main
+{	
+	private DXRAM m_dxram = null;
+	private ChunkService m_chunkService = null;
 
+	public static void main(final String[] args) {
+		Main main = new SimpleLocalChunkServiceTest();
+		main.run(args);
+	}
+	
 	public SimpleLocalChunkServiceTest()
 	{
-		DXRAM m_dxram = new DXRAM();
+		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
 	}
 	
-	public void run()
-	{
+	@Override
+	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	}
+
+	@Override
+	protected int main(MainArguments p_arguments) {
 		int[] sizes = new int[] {100, 32, 432, 8};
 		System.out.println("Creating chunks...");
 		long[] chunkIDs = m_chunkService.create(sizes);
@@ -56,11 +67,7 @@ public class SimpleLocalChunkServiceTest
 		System.out.println("Removing chunks...");
 		int removeCount = m_chunkService.remove(chunks);
 		System.out.println("Removed chunks: " + removeCount);
-	}
-	
-	public static void main(String[] args)
-	{
-		SimpleLocalChunkServiceTest test = new SimpleLocalChunkServiceTest();
-		test.run();
+		
+		return 0;
 	}
 }

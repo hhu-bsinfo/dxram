@@ -3,15 +3,25 @@ package de.hhu.bsinfo.dxram.test.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.Stopwatch;
+import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.MainArguments;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
-public class LinkedListBenchmark 
+public class LinkedListBenchmark extends Main
 {
+	public static final Pair<String, Integer> ARG_ITEM_COUNT = new Pair<String, Integer>("itemCount", 100);
+	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
 	private Stopwatch m_stopwatch = new Stopwatch();
+	
+	public static void main(final String[] args) {
+		Main main = new LinkedListBenchmark();
+		main.run(args);
+	}
 	
 	public LinkedListBenchmark()
 	{
@@ -20,11 +30,18 @@ public class LinkedListBenchmark
 		m_chunkService = m_dxram.getService(ChunkService.class);
 	}
 	
-	public void run(int numItems)
-	{
-		System.out.println("Creating linked list with " + numItems + " items.");
+	@Override
+	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+		p_arguments.setArgument(ARG_ITEM_COUNT);
+	}
+
+	@Override
+	protected int main(MainArguments p_arguments) {
+		final int itemCount = p_arguments.getArgument(ARG_ITEM_COUNT);
+		
+		System.out.println("Creating linked list with " + itemCount + " items.");
 		m_stopwatch.start();
-		long listHead = createLinkedList(numItems);
+		long listHead = createLinkedList(itemCount);
 		m_stopwatch.printAndStop();
 		System.out.println("Done creating linked list.");
 		
@@ -35,22 +52,10 @@ public class LinkedListBenchmark
 		System.out.println("Walking linked list done, total elements touched: " + itemsTouched);
 		
 		System.out.println("Done");
+		return 0;
 	}
 	
-	public static void main(String[] args)
-	{
-		if (args.length < 1)
-		{
-			System.out.println("Usage: LinkedListBenchmark <#elements list>");
-			return;
-		}
-		
-		int numElementsList = Integer.parseInt(args[0]);
-		LinkedListBenchmark benchmark = new LinkedListBenchmark();
-		benchmark.run(numElementsList);
-	}
-	
-	public long createLinkedList(int numItems)
+	private long createLinkedList(int numItems)
 	{	
 		LinkedListElement[] chunks = new LinkedListElement[numItems];
 		long[] chunkIDs = m_chunkService.create(8, numItems);
@@ -83,7 +88,7 @@ public class LinkedListBenchmark
 		return head.getID();
 	}
 	
-	public long walkLinkedList(long headChunkID)
+	private long walkLinkedList(long headChunkID)
 	{	
 		long counter = 0;
 		LinkedListElement chunk = new LinkedListElement(headChunkID);
@@ -108,7 +113,7 @@ public class LinkedListBenchmark
 		return counter;
 	}
 	
-	public static class LinkedListElement implements DataStructure
+	private static class LinkedListElement implements DataStructure
 	{
 		private long m_ownID = -1;
 		private long m_nextID = -1;

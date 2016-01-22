@@ -8,24 +8,44 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
+import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.MainArguments;
 
-public class SimpleNameserviceTest {
-	public DXRAM m_dxram;
-	public ChunkService m_chunkService;
-	public NameserviceService m_nameserviceService;
+//before running this as a peer, start one superpeer
+public class SimpleNameserviceTest extends Main {
+	
+	public static final Pair<String, Integer> ARG_CHUNK_SIZE = new Pair<String, Integer>("chunkSize", 76);
+	public static final Pair<String, Integer> ARG_CHUNK_COUNT = new Pair<String, Integer>("chunkCount", 10);
+	
+	private DXRAM m_dxram;
+	private ChunkService m_chunkService;
+	private NameserviceService m_nameserviceService;
 
+	public static void main(final String[] args) {
+		Main main = new SimpleNameserviceTest();
+		main.run(args);
+	}
+	
 	public SimpleNameserviceTest()
 	{
-		DXRAM m_dxram = new DXRAM();
+		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
 		m_nameserviceService = m_dxram.getService(NameserviceService.class);
 	}
 	
-	public void run()
-	{
-		final int size = 76;
-		final int chunkCount = 100;
+	@Override
+	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+		p_arguments.setArgument(ARG_CHUNK_SIZE);
+		p_arguments.setArgument(ARG_CHUNK_COUNT);
+	}
+
+	@Override
+	protected int main(MainArguments p_arguments) {
+		final int size = p_arguments.getArgument(ARG_CHUNK_SIZE);
+		final int chunkCount = p_arguments.getArgument(ARG_CHUNK_COUNT);
+		
 		Chunk[] chunks = new Chunk[chunkCount];
 		int[] sizes = new int[chunkCount];
 		for (int i = 0; i < sizes.length; i++) {
@@ -66,11 +86,6 @@ public class SimpleNameserviceTest {
 		}
 		
 		System.out.println("Done.");
-	}
-	
-	public static void main(String[] args)
-	{
-		SimpleNameserviceTest test = new SimpleNameserviceTest();
-		test.run();
+		return 0;
 	}
 }
