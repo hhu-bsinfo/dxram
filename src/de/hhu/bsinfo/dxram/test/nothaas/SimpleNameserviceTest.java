@@ -43,19 +43,19 @@ public class SimpleNameserviceTest {
 		
 		System.out.println("Registering " + chunkCount + " chunks...");
 		for (int i = 0; i < chunks.length; i++) {
-			String name = new String("Entry_" + i);
+			String name = new String("I-" + i);
 			m_nameserviceService.register(chunks[i], name);
 			verificationMap.put(chunks[i].getID(), name);
 		}
 		
-		System.out.println("Getting chunk IDs from name service...");
+		System.out.println("Getting chunk IDs from name service and verifying...");
 		for (Entry<Long, String> entry : verificationMap.entrySet())
 		{
 			long chunkID = m_nameserviceService.getChunkID(entry.getValue());
 			if (chunkID != entry.getKey().longValue())
 			{
 				System.out.println("ChunkID from name service (" + Long.toHexString(entry.getKey()) + 
-						") not matching original chunk ID (" + chunkID + "), for name " + entry.getValue() + "."); 
+						") not matching original chunk ID (" + Long.toHexString(chunkID) + "), for name " + entry.getValue() + "."); 
 			}
 		}
 		

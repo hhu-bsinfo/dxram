@@ -97,7 +97,11 @@ public class DXRAMEngine
 			if (tmpService != null && p_class.isInstance(tmpService)) {
 				service = p_class.cast(tmpService);
 			}
-		} 
+			
+			if (service == null) {
+				m_logger.warn(DXRAM_ENGINE_LOG_HEADER, "Service not available " + p_class);
+			}
+		}
 		
 		return service;
 	}

@@ -6,6 +6,7 @@ import java.util.Map;
 
 /**
  * Methods for converting Strings into integers
+ * The character set is very limited. Make sure to use valid characters only to avoid undefined behaviour.
  * @author Kevin Beineke
  *         14.02.2014
  */
@@ -13,17 +14,15 @@ public final class NameServiceStringConverter {
 
 	// Attributes
 	private String m_nameserviceType = null;
-	private int m_keyLength = -1;
 	private Map<Character, Integer> m_charMap = new HashMap<Character, Integer>();
 
 	// Constructors
 	/**
 	 * Creates an instance of StringConverter
 	 */
-	public NameServiceStringConverter(final String p_nameserviceType, final int p_keyLength) 
+	public NameServiceStringConverter(final String p_nameserviceType) 
 	{
 		m_nameserviceType = p_nameserviceType;
-		m_keyLength = p_keyLength;
 		
 		if (m_nameserviceType.equals("NAME")) {
 			m_charMap = new HashMap<Character, Integer>();
@@ -98,7 +97,8 @@ public final class NameServiceStringConverter {
 
 	// Methods
 	/**
-	 * Converts a String into an integer
+	 * Converts a String into an integer. String length is limited to 5 chars.
+	 * If the string is longer, all other characters are ignored.
 	 * @param p_name
 	 *            the String
 	 * @return the integer
@@ -110,7 +110,7 @@ public final class NameServiceStringConverter {
 
 		if (m_nameserviceType.equals("NAME")) {
 			chars = p_name.toCharArray();
-			for (int i = 0; i < m_keyLength / 6 && i < chars.length; i++) {
+			for (int i = 0; i < 32 / 6 && i < chars.length; i++) {
 				value = m_charMap.get(chars[i]);
 				ret += value << i * 6;
 			}

@@ -13,7 +13,6 @@ public class NameserviceService extends DXRAMService {
 	@Override
 	protected void registerDefaultSettingsService(Settings p_settings) {
 		p_settings.setDefaultValue(NameserviceConfigurationValues.Component.TYPE);
-		p_settings.setDefaultValue(NameserviceConfigurationValues.Component.KEY_LENGTH);
 	}
 
 	@Override
@@ -21,8 +20,7 @@ public class NameserviceService extends DXRAMService {
 			Settings p_settings) {
 		m_lookup = getComponent(LookupComponent.class);
 		
-		m_converter = new NameServiceStringConverter(p_settings.getValue(NameserviceConfigurationValues.Component.TYPE), 
-				p_settings.getValue(NameserviceConfigurationValues.Component.KEY_LENGTH));
+		m_converter = new NameServiceStringConverter(p_settings.getValue(NameserviceConfigurationValues.Component.TYPE));
 		return true;
 	}
 

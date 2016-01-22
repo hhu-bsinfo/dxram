@@ -75,7 +75,7 @@ public class InsertIDResponse extends AbstractResponse {
 		if (m_backupSuperpeers == null) {
 			ret = Byte.BYTES;
 		} else {
-			ret = Byte.BYTES + m_backupSuperpeers.length * Short.BYTES;
+			ret = Byte.BYTES + Integer.BYTES + m_backupSuperpeers.length * Short.BYTES;
 		}
 
 		return ret;
