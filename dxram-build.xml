@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dxram" basedir="." default="build-all">
+	<property name="name" value="dxram" />
+	<property name="build_dir" value="build" />
+	<property name="conf_dir" value="config" />
+	<property name="lib_dir" value="lib" />
+	<property name="log_dir" value="log" />
+	<property name="source_dir" value="src" />
+	
+	<property name="build_proj_dir" value="${build_dir}/${name}" />
+	<property name="build_proj_conf_dir" value="${build_proj_dir}/${conf_dir}" />	
+	<property name="build_proj_lib_dir" value="${build_proj_dir}/${lib_dir}" />	
+	<property name="build_proj_log_dir" value="${build_proj_dir}/${log_dir}" />	
+	
+	<target name="build-all" depends="clean-all, create_base_dirs, copy_libs, copy_config, create_log, compile-debug, compile-release" description="builds all files" />
+	
+	<target name="create_base_dirs" description="creates necessary folders">
+		<mkdir dir="${build_dir}" />
+		<mkdir dir="${build_proj_dir}" />
+	</target>
+	
+	<target name="copy_libs" depends="create_base_dirs" description="copies the libs">
+		<copy file="${lib_dir}/log4j-1.2.16.jar" todir="${build_proj_lib_dir}" />
+		<copy file="${lib_dir}/slf4j-log4j12-1.6.1.jar" todir="${build_proj_lib_dir}" />
+		<copy file="${lib_dir}/slf4j-api-1.6.1.jar" todir="${build_proj_lib_dir}" />
+		<copy file="${lib_dir}/zookeeper-3.4.3.jar" todir="${build_proj_lib_dir}" />
+	</target>
+
+	<target name="copy_config" depends="create_base_dirs" description="copies the config files">
+		<mkdir dir="${build_proj_conf_dir}" />
+		<copy todir="${build_proj_conf_dir}">
+			<fileset dir="${conf_dir}">
+				<include name="**/*.conf" />
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="create_log" depends="create_base_dirs" description="creates the log directory">
+		<mkdir dir="${build_proj_log_dir}" />
+	</target>
+	
+	<target name="compile-debug" depends="create_base_dirs" description="builds class files, debug build">
+		<antcall target="compile">
+			<param name="buildtype" value="debug"/>
+		</antcall>
+	</target>
+	
+	<target name="compile-release" depends="create_base_dirs" description="builds class files, release build">
+		<antcall target="compile">
+			<param name="buildtype" value="release"/>
+		</antcall>
+	</target>
+	
+	<target name="compile" depends="create_base_dirs" description="builds class files">
+		<echo message="Compiling with build type ${buildtype}"/>
+		
+		<mkdir dir="${build_proj_dir}/classes" />
+		<mkdir dir="${build_proj_dir}/classes/${buildtype}" />
+		
+		<condition property="debugOn" value="true" else="false">
+			<equals arg1="${buildtype}" arg2="debug" />
+		</condition>
+		<condition property="optimizeOn" value="on" else="off">
+			<equals arg1="${buildtype}" arg2="release" />
+		</condition>
+		
+		<path id="build.classpath">
+			<pathelement path="${lib_dir}/log4j-1.2.16.jar" />
+			<pathelement path="${lib_dir}/slf4j-log4j12-1.6.1.jar" />
+			<pathelement path="${lib_dir}/slf4j-api-1.6.1.jar" />
+			<pathelement path="${lib_dir}/zookeeper-3.4.3.jar" />
+			<pathelement path="${build_proj_conf_dir}" />
+		</path>
+		<manifestclasspath property="jar.classpath" jarfile="${build_proj_dir}/${name}-${buildtype}.jar">
+			<classpath refid="build.classpath" />
+		</manifestclasspath>
+		
+		<javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false" debug="${debugOn}" optimize="${optimizeOn}" encoding="UTF-8">
+			<include name="de/hhu/bsinfo/dxram/**/*.java"/>
+			<include name="de/hhu/bsinfo/menet/**/*.java"/>
+			<include name="de/hhu/bsinfo/soh/**/*.java"/>
+			<include name="de/hhu/bsinfo/utils/**/*.java"/>
+			<classpath>
+				<fileset dir="${lib_dir}">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+		
+		<jar destfile="${build_proj_dir}/${name}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
+			<manifest>
+				<attribute name="Main-Class" value="de.hhu.bsinfo.dxram.run.LibMain" />
+				<attribute name="Class-Path" value="${jar.classpath}" />
+			</manifest>
+		</jar>
+	</target>
+	
+	<target name="clean-all" description="removes all created files and folders">
+		<delete dir="${build_proj_dir}" failonerror="false" />
+	</target>
+</project>
+

@@ -4,7 +4,6 @@ package de.hhu.bsinfo.dxram.mem;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.hhu.bsinfo.dxram.commands.CmdUtils;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
@@ -436,70 +435,70 @@ public final class CIDTable {
 		return ret;
 	}
 
-	/**
-	 * Returns the ChunkID ranges of all locally stored Chunks
-	 * @return the ChunkID ranges in an ArrayList
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
-	 */
-	@SuppressWarnings("unused")
-	private ArrayList<Long> getCIDrangesOfAllLocalChunks() {
-		ArrayList<Long> ret = null;
-		long entry;
-		long intervalStart;
-		long intervalEnd;
-
-		if (m_store != null) {
-			ret = new ArrayList<Long>();
-			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-				if (entry > 0) {
-					if (i == (m_ownNodeID & 0xFFFF)) {
-						ret.addAll(getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
-								LID_TABLE_LEVELS - 1));
-					}
-				}
-			}
-		}
-
-		/*
-		 * // dump ChunkID ranges
-		 * System.out.println("getCIDrangesOfAllChunks: DUMP ChunkIDRanges");
-		 * for (int i=0; i<ret.size(); i++) {
-		 * System.out.println("   i="+i+", el: "+CmdUtils.getLIDfromCID(ret.get(i)));
-		 * }
-		 */
-		// compress intervals
-
-		if (ret.size() >= 2) {
-			if (ret.size() % 2 != 0) {
-				//throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
-				// System.out.println("error: in ChunkIDRange list");
-			} else {
-				for (int i = 0; i < ret.size() - 2; i += 2) {
-					intervalEnd = CmdUtils.getLIDfromCID(ret.get(i + 1));
-					intervalStart = CmdUtils.getLIDfromCID(ret.get(i + 2));
-
-					// can we melt intervals?
-					if (intervalEnd + 1 == intervalStart) {
-						System.out.println("   remove el.");
-						ret.remove(i + 1);
-						ret.remove(i + 1);
-						i -= 2;
-					}
-				}
-			}
-		}
-		/*
-		 * // dump ChunkID ranges
-		 * System.out.println("getCIDrangesOfAllChunks: DUMP ChunkIDRanges after compression");
-		 * Iterator<Long> il = ret.iterator();
-		 * while (il.hasNext()) {
-		 * System.out.println("   el: "+CmdUtils.getLIDfromCID(il.next()));
-		 * }
-		 */
-		return ret;
-	}
+//	/**
+//	 * Returns the ChunkID ranges of all locally stored Chunks
+//	 * @return the ChunkID ranges in an ArrayList
+//	 * @throws MemoryException
+//	 *             if the CIDTable could not be completely accessed
+//	 */
+//	@SuppressWarnings("unused")
+//	private ArrayList<Long> getCIDrangesOfAllLocalChunks() {
+//		ArrayList<Long> ret = null;
+//		long entry;
+//		long intervalStart;
+//		long intervalEnd;
+//
+//		if (m_store != null) {
+//			ret = new ArrayList<Long>();
+//			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
+//				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
+//				if (entry > 0) {
+//					if (i == (m_ownNodeID & 0xFFFF)) {
+//						ret.addAll(getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
+//								LID_TABLE_LEVELS - 1));
+//					}
+//				}
+//			}
+//		}
+//
+//		/*
+//		 * // dump ChunkID ranges
+//		 * System.out.println("getCIDrangesOfAllChunks: DUMP ChunkIDRanges");
+//		 * for (int i=0; i<ret.size(); i++) {
+//		 * System.out.println("   i="+i+", el: "+CmdUtils.getLIDfromCID(ret.get(i)));
+//		 * }
+//		 */
+//		// compress intervals
+//
+//		if (ret.size() >= 2) {
+//			if (ret.size() % 2 != 0) {
+//				//throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
+//				// System.out.println("error: in ChunkIDRange list");
+//			} else {
+//				for (int i = 0; i < ret.size() - 2; i += 2) {
+//					intervalEnd = CmdUtils.getLIDfromCID(ret.get(i + 1));
+//					intervalStart = CmdUtils.getLIDfromCID(ret.get(i + 2));
+//
+//					// can we melt intervals?
+//					if (intervalEnd + 1 == intervalStart) {
+//						System.out.println("   remove el.");
+//						ret.remove(i + 1);
+//						ret.remove(i + 1);
+//						i -= 2;
+//					}
+//				}
+//			}
+//		}
+//		/*
+//		 * // dump ChunkID ranges
+//		 * System.out.println("getCIDrangesOfAllChunks: DUMP ChunkIDRanges after compression");
+//		 * Iterator<Long> il = ret.iterator();
+//		 * while (il.hasNext()) {
+//		 * System.out.println("   el: "+CmdUtils.getLIDfromCID(il.next()));
+//		 * }
+//		 */
+//		return ret;
+//	}
 
 	/**
 	 * Adds all ChunkID ranges to an ArrayList

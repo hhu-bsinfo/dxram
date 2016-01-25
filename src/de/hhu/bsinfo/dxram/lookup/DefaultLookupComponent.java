@@ -10,7 +10,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRole;
-import de.hhu.bsinfo.dxram.commands.CmdUtils;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMException;
 import de.hhu.bsinfo.dxram.events.ConnectionLostListener;
@@ -734,8 +733,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					incomingGetChunkIDRequest((GetChunkIDRequest) p_message);
 					break;
 				case LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST:
-					incomingReflectionRequest((LookupReflectionRequest) p_message);
-					break;
+					// TODO either make this generic to avoid having references to commands
+					// here or move this to the proper component/service
+					throw new RuntimeException("Not implemented, fixed, ported,...");
+					//incomingReflectionRequest((LookupReflectionRequest) p_message);
+					//break;
 				default:
 					break;
 				}
@@ -1803,153 +1805,153 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		}
 	}
 
-	/**
-	 * Info about chunk, called by incomingReflectionRequest
-	 * @param p_cmd
-	 *            the command string
-	 * @return the result String
-	 */
-	private String cmdReqChunkinfo(final String p_cmd) {
-		String ret = null;
-		short nodeID;
-		long localID;
-		long chunkID;
-		String[] arguments;
-		LookupTree tree;
-		Locations locations;
+//	/**
+//	 * Info about chunk, called by incomingReflectionRequest
+//	 * @param p_cmd
+//	 *            the command string
+//	 * @return the result String
+//	 */
+//	private String cmdReqChunkinfo(final String p_cmd) {
+//		String ret = null;
+//		short nodeID;
+//		long localID;
+//		long chunkID;
+//		String[] arguments;
+//		LookupTree tree;
+//		Locations locations;
+//
+//		arguments = p_cmd.split(" ");
+//		if (arguments == null) {
+//			ret = "  error: problem in command";
+//		} else if (arguments.length < 3) {
+//			ret = "  error: problem in command";
+//		} else {
+//			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+//			localID = CmdUtils.getLIDfromTuple(arguments[1]);
+//			chunkID = CmdUtils.calcCID(nodeID, localID);
+//
+//			System.out.println("chunkinfo for " + nodeID + "," + localID);
+//			// System.out.println("   getCIDTree:"+nodeID);
+//			tree = getCIDTree(nodeID);
+//			if (tree == null) {
+//				ret = "  error: no CIDtree found for given NodeID=" + nodeID;
+//			} else {
+//				// get meta-data from tree
+//				locations = tree.getMetadata(chunkID);
+//				if (locations == null) {
+//					System.out.println(" tree.getMetadata failed");
+//					ret = "  error: tree.getMetadata failed";
+//				} else {
+//					ret = "  Stored on peer=" + locations.toString();
+//				}
+//			}
+//		}
+//		return ret;
+//	}
 
-		arguments = p_cmd.split(" ");
-		if (arguments == null) {
-			ret = "  error: problem in command";
-		} else if (arguments.length < 3) {
-			ret = "  error: problem in command";
-		} else {
-			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
-			localID = CmdUtils.getLIDfromTuple(arguments[1]);
-			chunkID = CmdUtils.calcCID(nodeID, localID);
+//	/**
+//	 * Handles 'backups' command. Called by incomingReflectionRequest
+//	 * @param p_command
+//	 *            the CommandMessage
+//	 * @return the result string
+//	 */
+//	private String cmdReqBackups(final String p_command) {
+//		String ret = "";
+//		String[] arguments;
+//		LookupTree tree;
+//		short nodeID;
+//
+//		// System.out.println("LookupHandler.cmdReqBackups");
+//
+//		arguments = p_command.split(" ");
+//		if (arguments == null) {
+//			ret = "  error: problem in command";
+//		} else {
+//			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
+//
+//			tree = getCIDTree(nodeID);
+//			if (tree != null) {
+//
+//				ret = ret + "  Backup ranges for chunks created on peer " + nodeID + "\n";
+//				if (tree.getAllBackupRanges() != null) {
+//					// System.out.println("   dumping backup ranges for peer="+nodeID);
+//					for (int i = 0; i < tree.getAllBackupRanges().size(); i++) {
+//						final long[] br = tree.getAllBackupRanges().get(i);
+//						// System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br[0]);
+//						ret = ret + "    BR" + Integer.toString(i) + ": " + Long.toString(br[0]) + " (";
+//						ret = ret + Short.toString((short) (br[1] >> 32 & 0xFFFF));
+//						ret = ret + ",";
+//						ret = ret + Short.toString((short) (br[1] >> 16 & 0xFFFF));
+//						ret = ret + ",";
+//						ret = ret + Short.toString((short) (br[1] & 0xFFFF));
+//						ret = ret + ")\n";
+//					}
+//					if (tree.getAllBackupRanges().size() == 0) {
+//						ret = ret + "    None.\n";
+//					}
+//				} else {
+//					ret = "  None.\n";
+//				}
+//
+//				ret = ret + "  Backup peers for chunks migrated to peer " + nodeID + " \n";
+//				if (tree.getAllMigratedBackupRanges() != null) {
+//					if (tree.getAllMigratedBackupRanges().size() == 0) {
+//						ret = ret + "    None.\n";
+//					} else {
+//						for (int i = 0; i < tree.getAllMigratedBackupRanges().size(); i++) {
+//							final ArrayList<Long> backupPeers = tree.getAllMigratedBackupRanges();
+//							ret = ret + "    BR" + Integer.toString(i) + ": (";
+//							ret = ret + Short.toString((short) (backupPeers.get(i) >> 32 & 0xFFFF));
+//							ret = ret + ",";
+//							ret = ret + Short.toString((short) (backupPeers.get(i) >> 16 & 0xFFFF));
+//							ret = ret + ",";
+//							ret = ret + Short.toString((short) (backupPeers.get(i) & 0xFFFF));
+//							ret = ret + ")\n";
+//						}
+//						ret = ret + "  (ChunkID ranges for migrated chunks are known by peers, only)\n";
+//					}
+//				} else {
+//					ret = ret + "    None.\n";
+//				}
+//			} else {
+//				ret = ret + "    None.\n";
+//			}
+//		}
+//
+//		return ret;
+//	}
 
-			System.out.println("chunkinfo for " + nodeID + "," + localID);
-			// System.out.println("   getCIDTree:"+nodeID);
-			tree = getCIDTree(nodeID);
-			if (tree == null) {
-				ret = "  error: no CIDtree found for given NodeID=" + nodeID;
-			} else {
-				// get meta-data from tree
-				locations = tree.getMetadata(chunkID);
-				if (locations == null) {
-					System.out.println(" tree.getMetadata failed");
-					ret = "  error: tree.getMetadata failed";
-				} else {
-					ret = "  Stored on peer=" + locations.toString();
-				}
-			}
-		}
-		return ret;
-	}
-
-	/**
-	 * Handles 'backups' command. Called by incomingReflectionRequest
-	 * @param p_command
-	 *            the CommandMessage
-	 * @return the result string
-	 */
-	private String cmdReqBackups(final String p_command) {
-		String ret = "";
-		String[] arguments;
-		LookupTree tree;
-		short nodeID;
-
-		// System.out.println("LookupHandler.cmdReqBackups");
-
-		arguments = p_command.split(" ");
-		if (arguments == null) {
-			ret = "  error: problem in command";
-		} else {
-			nodeID = CmdUtils.getNIDfromTuple(arguments[1]);
-
-			tree = getCIDTree(nodeID);
-			if (tree != null) {
-
-				ret = ret + "  Backup ranges for chunks created on peer " + nodeID + "\n";
-				if (tree.getAllBackupRanges() != null) {
-					// System.out.println("   dumping backup ranges for peer="+nodeID);
-					for (int i = 0; i < tree.getAllBackupRanges().size(); i++) {
-						final long[] br = tree.getAllBackupRanges().get(i);
-						// System.out.println("   BackupRange: "+i+", m_firstChunkIDORRangeID="+br[0]);
-						ret = ret + "    BR" + Integer.toString(i) + ": " + Long.toString(br[0]) + " (";
-						ret = ret + Short.toString((short) (br[1] >> 32 & 0xFFFF));
-						ret = ret + ",";
-						ret = ret + Short.toString((short) (br[1] >> 16 & 0xFFFF));
-						ret = ret + ",";
-						ret = ret + Short.toString((short) (br[1] & 0xFFFF));
-						ret = ret + ")\n";
-					}
-					if (tree.getAllBackupRanges().size() == 0) {
-						ret = ret + "    None.\n";
-					}
-				} else {
-					ret = "  None.\n";
-				}
-
-				ret = ret + "  Backup peers for chunks migrated to peer " + nodeID + " \n";
-				if (tree.getAllMigratedBackupRanges() != null) {
-					if (tree.getAllMigratedBackupRanges().size() == 0) {
-						ret = ret + "    None.\n";
-					} else {
-						for (int i = 0; i < tree.getAllMigratedBackupRanges().size(); i++) {
-							final ArrayList<Long> backupPeers = tree.getAllMigratedBackupRanges();
-							ret = ret + "    BR" + Integer.toString(i) + ": (";
-							ret = ret + Short.toString((short) (backupPeers.get(i) >> 32 & 0xFFFF));
-							ret = ret + ",";
-							ret = ret + Short.toString((short) (backupPeers.get(i) >> 16 & 0xFFFF));
-							ret = ret + ",";
-							ret = ret + Short.toString((short) (backupPeers.get(i) & 0xFFFF));
-							ret = ret + ")\n";
-						}
-						ret = ret + "  (ChunkID ranges for migrated chunks are known by peers, only)\n";
-					}
-				} else {
-					ret = ret + "    None.\n";
-				}
-			} else {
-				ret = ret + "    None.\n";
-			}
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Handles an incoming ReflectionRequest
-	 * @param p_lookupRequest
-	 *            the ReflectionRequest
-	 */
-	private void incomingReflectionRequest(final LookupReflectionRequest p_lookupRequest) {
-		String cmd;
-		String res = null;
-
-		cmd = p_lookupRequest.getArgument();
-		res = "success: incomingReflectionRequest";
-
-		// process request
-		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-
-			if (cmd.indexOf("chunkinfo") >= 0) {
-				res = cmdReqChunkinfo(cmd);
-			} else if (cmd.indexOf("backups") >= 0) {
-				res = cmdReqBackups(cmd);
-			}
-		} else {
-			res = "error: reflection command can be processed by superpeers only";
-		}
-
-		// send response
-		if (m_network.sendMessage(
-				new LookupReflectionResponse(p_lookupRequest, res)) 
-				!= NetworkComponent.ErrorCode.SUCCESS) {
-			// e.printStackTrace();
-		}
-	}
+//	/**
+//	 * Handles an incoming ReflectionRequest
+//	 * @param p_lookupRequest
+//	 *            the ReflectionRequest
+//	 */
+//	private void incomingReflectionRequest(final LookupReflectionRequest p_lookupRequest) {
+//		String cmd;
+//		String res = null;
+//
+//		cmd = p_lookupRequest.getArgument();
+//		res = "success: incomingReflectionRequest";
+//
+//		// process request
+//		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+//
+//			if (cmd.indexOf("chunkinfo") >= 0) {
+//				res = cmdReqChunkinfo(cmd);
+//			} else if (cmd.indexOf("backups") >= 0) {
+//				res = cmdReqBackups(cmd);
+//			}
+//		} else {
+//			res = "error: reflection command can be processed by superpeers only";
+//		}
+//
+//		// send response
+//		if (m_network.sendMessage(
+//				new LookupReflectionResponse(p_lookupRequest, res)) 
+//				!= NetworkComponent.ErrorCode.SUCCESS) {
+//			// e.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * Handles an incoming AskAboutBackupsRequest

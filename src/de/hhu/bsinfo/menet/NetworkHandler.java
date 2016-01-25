@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxram.log.LogMessages;
+import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
 import de.hhu.bsinfo.utils.StatisticsManager;
 import de.hhu.bsinfo.utils.log.LoggerInterface;
