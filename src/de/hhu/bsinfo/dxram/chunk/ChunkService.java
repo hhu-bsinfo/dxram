@@ -223,13 +223,22 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return chunkIDs;
 	}
 	
-	public int remove(final DataStructure[] p_dataStructures) {
+	public int remove(final DataStructure... p_dataStructures) {
+		long[] chunkIDs = new long[p_dataStructures.length];
+		for (int i = 0; i < chunkIDs.length; i++) {
+			chunkIDs[i] = p_dataStructures[i].getID();
+		}
+		
+		return remove(chunkIDs);
+	}
+	
+	public int remove(final long... p_chunkIDs) {
 		int chunksRemoved = 0;
 		
-		if (p_dataStructures.length == 0)
+		if (p_chunkIDs.length == 0)
 			return chunksRemoved;
 		
-		m_logger.trace(getClass(), "remove[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") " + Long.toHexString(p_chunkIDs[0]) + ", ...]");
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not remove chunks");
@@ -241,63 +250,63 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		
 		// sort by local and remote data first
-		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
-		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
+		Map<Short, ArrayList<Long>> remoteChunksByPeers = new TreeMap<>();
+		ArrayList<Long> localChunks = new ArrayList<Long>();
 		m_memoryManager.lockAccess();
-		for (int i = 0; i < p_dataStructures.length; i++) {
-			if (m_memoryManager.exists(p_dataStructures[i].getID())) {
+		for (int i = 0; i < p_chunkIDs.length; i++) {
+			if (m_memoryManager.exists(p_chunkIDs[i])) {
 				// local
-				localChunks.add(p_dataStructures[i]);
+				localChunks.add(p_chunkIDs[i]);
 			} else {
 				// remote, figure out location and sort by peers
 				Locations locations;
 				
-				locations = m_lookup.get(p_dataStructures[i].getID());
+				locations = m_lookup.get(p_chunkIDs[i]);
 				if (locations == null) {
 					continue;
 				} else {
 					short peer = locations.getPrimaryPeer();
 
-					ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+					ArrayList<Long> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
 					if (remoteChunksOfPeer == null) {
-						remoteChunksOfPeer = new ArrayList<DataStructure>();
+						remoteChunksOfPeer = new ArrayList<Long>();
 						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
 					}
-					remoteChunksOfPeer.add(p_dataStructures[i]);
+					remoteChunksOfPeer.add(p_chunkIDs[i]);
 				}
 			}
 		}
 		m_memoryManager.unlockAccess();
 
 		// remove chunks from superpeer overlay first, so cannot be found before being deleted
-		for (final DataStructure chunk : localChunks) {
-			m_lookup.remove(chunk.getID());
+		for (final Long chunkID : localChunks) {
+			m_lookup.remove(chunkID);
 		}
 		
 		// remove local chunkIDs
 		m_memoryManager.lockManage();
-		for (final DataStructure chunk : localChunks) {
-			if (m_memoryManager.remove(chunk.getID())) {
+		for (final Long chunkID : localChunks) {
+			if (m_memoryManager.remove(chunkID)) {
 				chunksRemoved++;
 			} else {
-				m_logger.error(getClass(), "Removing chunk ID " + Long.toHexString(chunk.getID()) + " failed.");
+				m_logger.error(getClass(), "Removing chunk ID " + Long.toHexString(chunkID) + " failed.");
 			}
 		}
 		m_memoryManager.unlockManage();
 		
 		// go for remote ones by each peer
-		for (final Entry<Short, ArrayList<DataStructure>> peerWithChunks : remoteChunksByPeers.entrySet()) {
+		for (final Entry<Short, ArrayList<Long>> peerWithChunks : remoteChunksByPeers.entrySet()) {
 			short peer = peerWithChunks.getKey();
-			ArrayList<DataStructure> remoteChunks = peerWithChunks.getValue();
+			ArrayList<Long> remoteChunks = peerWithChunks.getValue();
 
 			if (peer == m_boot.getNodeID()) {
 				// local remove, migrated data to current node
 				m_memoryManager.lockManage();
-				for (final DataStructure chunk : remoteChunks) {
-					if (m_memoryManager.remove(chunk.getID())) {
+				for (final Long chunkID : remoteChunks) {
+					if (m_memoryManager.remove(chunkID)) {
 						chunksRemoved++;
 					} else {
-						m_logger.error(getClass(), "Removing chunk ID " + Long.toHexString(chunk.getID()) + " failed.");
+						m_logger.error(getClass(), "Removing chunk ID " + Long.toHexString(chunkID) + " failed.");
 					}
 				}
 				m_memoryManager.unlockManage();
@@ -320,7 +329,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 					} else {
 						for (int i = 0; i < statusCodes.length; i++) {
 							if (statusCodes[i] < 0) {
-								m_logger.error(getClass(), "Remote removing chunk " + Long.toHexString(remoteChunks.get(i).getID()) + " failed: " + statusCodes[i]);
+								m_logger.error(getClass(), "Remote removing chunk " + Long.toHexString(remoteChunks.get(i)) + " failed: " + statusCodes[i]);
 							} else {
 								chunksRemoved++;
 							}
@@ -334,7 +343,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			Operation.REMOVE.leave();
 		}
 		
-		m_logger.trace(getClass(), "remove[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + chunksRemoved);
+		m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") " + Long.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
 		
 		return chunksRemoved;
 	}

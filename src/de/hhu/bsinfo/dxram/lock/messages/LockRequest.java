@@ -2,7 +2,6 @@ package de.hhu.bsinfo.dxram.lock.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.dxram.util.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.menet.AbstractRequest;
@@ -34,10 +33,10 @@ public class LockRequest extends AbstractRequest {
 	 * @param p_dataStructures
 	 *           Data structures to be locked.
 	 */
-	public LockRequest(final short p_destination, final boolean p_writeLock, final DataStructure p_dataStructure) {
+	public LockRequest(final short p_destination, final boolean p_writeLock, final long p_chunkID) {
 		super(p_destination, LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST);
 
-		m_chunkID = p_dataStructure.getID();
+		m_chunkID = p_chunkID;
 		
 		if (p_writeLock) {
 			setStatusCode(ChunkMessagesMetadataUtils.setWriteLockFlag(getStatusCode(), true));

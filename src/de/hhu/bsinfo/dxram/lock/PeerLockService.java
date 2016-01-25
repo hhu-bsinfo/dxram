@@ -16,6 +16,7 @@ import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
@@ -77,9 +78,9 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 	}
 	
 	@Override
-	public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final DataStructure p_dataStructure) {
+	public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final long p_chunkID) {
 		assert p_timeout >= 0;
-		assert p_dataStructure != null;
+		assert p_chunkID != ChunkID.INVALID_ID;
 		
 		if (m_statisticsEnabled)
 			Operation.LOCK.enter();
@@ -96,17 +97,17 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 		ErrorCode err = ErrorCode.SUCCESS;
 		
 		m_memoryManager.lockAccess();
-		if (m_memoryManager.exists(p_dataStructure.getID())) {
+		if (m_memoryManager.exists(p_chunkID)) {
 			m_memoryManager.unlockAccess();
 			
-			if (!m_lock.lock(p_dataStructure.getID(), m_boot.getNodeID(), p_writeLock, p_timeout)) {
+			if (!m_lock.lock(p_chunkID, m_boot.getNodeID(), p_writeLock, p_timeout)) {
 				err = ErrorCode.LOCK_TIMEOUT;
 			}
 		} else {
 			m_memoryManager.unlockAccess();
 			
 			// remote, figure out location
-			Locations locations = m_lookup.get(p_dataStructure.getID());
+			Locations locations = m_lookup.get(p_chunkID);
 			if (locations == null) {
 				err = ErrorCode.CHUNK_NOT_AVAILABLE;
 			} else {
@@ -114,7 +115,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 				short peer = locations.getPrimaryPeer();
 				if (peer == m_boot.getNodeID()) {
 					// local lock
-					if (!m_lock.lock(p_dataStructure.getID(), m_boot.getNodeID(), p_writeLock, p_timeout)) {
+					if (!m_lock.lock(p_chunkID, m_boot.getNodeID(), p_writeLock, p_timeout)) {
 						err = ErrorCode.LOCK_TIMEOUT;
 					}
 				} else {
@@ -131,7 +132,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 						}
 						
 						// Remote lock
-						LockRequest request = new LockRequest(peer, p_writeLock, p_dataStructure);
+						LockRequest request = new LockRequest(peer, p_writeLock, p_chunkID);
 						NetworkComponent.ErrorCode errNet = m_network.sendSync(request);
 						if (errNet != NetworkComponent.ErrorCode.SUCCESS) {
 							switch (errNet)
@@ -140,7 +141,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 									err = ErrorCode.PEER_NOT_AVAILABLE; 
 									break;
 								case SEND_DATA:
-									m_lookup.invalidate(p_dataStructure.getID()); 
+									m_lookup.invalidate(p_chunkID); 
 									err = ErrorCode.NETWORK; 
 									break;
 								case RESPONSE_TIMEOUT:
@@ -181,7 +182,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 	}
 
 	@Override
-	public ErrorCode unlock(final boolean p_writeLock, final DataStructure p_dataStructure) {
+	public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
 		if (m_statisticsEnabled)
 			Operation.UNLOCK.enter();
 		
@@ -194,17 +195,17 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 		ErrorCode err = ErrorCode.SUCCESS;
 
 		m_memoryManager.lockAccess();
-		if (m_memoryManager.exists(p_dataStructure.getID())) {
+		if (m_memoryManager.exists(p_chunkID)) {
 			m_memoryManager.unlockAccess();
 			
-			if (!m_lock.unlock(p_dataStructure.getID(), m_boot.getNodeID(), p_writeLock)) {
+			if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {
 				return ErrorCode.INVALID_PARAMETER;
 			}
 		} else {
 			m_memoryManager.unlockAccess();
 			
 			// remote, figure out location
-			Locations locations = m_lookup.get(p_dataStructure.getID());
+			Locations locations = m_lookup.get(p_chunkID);
 			if (locations == null) {
 				err = ErrorCode.CHUNK_NOT_AVAILABLE;
 			} else {
@@ -212,19 +213,19 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 				short peer = locations.getPrimaryPeer();
 				if (peer == m_boot.getNodeID()) {
 					// local unlock
-					if (!m_lock.unlock(p_dataStructure.getID(), m_boot.getNodeID(), p_writeLock)) {
+					if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {
 						return ErrorCode.INVALID_PARAMETER;
 					}
 				} else {	
-					short primaryPeer = m_lookup.get(p_dataStructure.getID()).getPrimaryPeer();
+					short primaryPeer = m_lookup.get(p_chunkID).getPrimaryPeer();
 					if (primaryPeer == m_boot.getNodeID()) {
 						// Local release
-						if (!m_lock.unlock(p_dataStructure.getID(), m_boot.getNodeID(), p_writeLock)) {
+						if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {
 							return ErrorCode.INVALID_PARAMETER;
 						}
 					} else {
 						// Remote release
-						UnlockMessage message = new UnlockMessage(primaryPeer, p_writeLock, p_dataStructure);
+						UnlockMessage message = new UnlockMessage(primaryPeer, p_writeLock, p_chunkID);
 						NetworkComponent.ErrorCode errNet = m_network.sendMessage(message);
 						if (errNet != NetworkComponent.ErrorCode.SUCCESS) {
 							switch (errNet)
@@ -233,7 +234,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 									err = ErrorCode.PEER_NOT_AVAILABLE; 
 									break;
 								case SEND_DATA:
-									m_lookup.invalidate(p_dataStructure.getID()); 
+									m_lookup.invalidate(p_chunkID); 
 									err = ErrorCode.NETWORK; 
 									break;
 								default:

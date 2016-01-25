@@ -17,7 +17,15 @@ public abstract class LockService extends DXRAMService {
 		NETWORK
 	}
 	
-	public abstract ErrorCode lock(final boolean p_writeLock, final int p_timeout, final DataStructure p_dataStructure);
+	public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final DataStructure p_dataStructure) {
+		return lock(p_writeLock, p_timeout, p_dataStructure.getID());
+	}
 	
-	public abstract ErrorCode unlock(final boolean p_writeLock, final DataStructure p_dataStructure);
+	public ErrorCode unlock(final boolean p_writeLock, final DataStructure p_dataStructure) {
+		return unlock(p_writeLock, p_dataStructure.getID());
+	}
+	
+	public abstract ErrorCode lock(final boolean p_writeLock, final int p_timeout, final long p_chunkID);
+	
+	public abstract ErrorCode unlock(final boolean p_writeLock, final long p_chunkID);
 }
