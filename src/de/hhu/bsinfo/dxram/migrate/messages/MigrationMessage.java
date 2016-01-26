@@ -10,6 +10,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 /**
  * Message for storing a Chunk on a remote node after migration
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class MigrationMessage extends AbstractMessage {
 
@@ -28,10 +29,8 @@ public class MigrationMessage extends AbstractMessage {
 	 * Creates an instance of DataMessage
 	 * @param p_destination
 	 *            the destination
-	 * @param p_chunks
-	 *            the Chunks to store
-	 * @param p_versions
-	 *            the versions of the Chunks
+	 * @param p_dataStructures
+	 *            the DataStructures to store
 	 */
 	public MigrationMessage(final short p_destination, final DataStructure[] p_dataStructures) {
 		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_MESSAGE);

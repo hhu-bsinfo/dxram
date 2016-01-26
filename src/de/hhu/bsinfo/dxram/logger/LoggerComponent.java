@@ -9,17 +9,38 @@ import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.util.logger.LogLevel;
 import de.hhu.bsinfo.utils.log.LoggerInterface;
 
+/**
+ * This component provides an extended interface for logging. It enables
+ * distinguishing log messages of different classes/components/services thus
+ * allowing filtering and redirecting of log messages.
+ * This component should be used by all other components and services to do any
+ * logging.
+ * 
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 {
 	private LogLevel m_defaultLogLevel = LogLevel.DISABLED;
 	private Map<String, LogLevel> m_logLevels = new HashMap<String, LogLevel>();
 	
+	/**
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 */
 	public LoggerComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 	
 	// -------------------------------------------------------------------------------------
 	
+	/**
+	 * Log an error message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 */
 	public <T> void error(final Class<T> clazz, final String msg)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -31,6 +52,12 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().error(clazz.getName(), msg);
 	}
 	
+	/**
+	 * Log an error message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 * @param e Exception to add to the log message.
+	 */
 	public <T> void error(final Class<T> clazz, final String msg, final Exception e)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -42,6 +69,11 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().error(clazz.getName(), msg, e);
 	}
 	
+	/**
+	 * Log a warning message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 */
 	public <T> void warn(final Class<T> clazz, final String msg)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -53,6 +85,12 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().warn(clazz.getName(), msg);
 	}
 	
+	/**
+	 * Log a warning message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 * @param e Exception to add to the log message.
+	 */
 	public <T> void warn(final Class<T> clazz, final String msg, final Exception e)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -64,6 +102,11 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().warn(clazz.getName(), msg, e);
 	}
 	
+	/**
+	 * Log an info message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 */
 	public <T> void info(final Class<T> clazz, final String msg)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -75,6 +118,12 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().info(clazz.getName(), msg);
 	}
 	
+	/**
+	 * Log an info message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 * @param e Exception to add to the log message.
+	 */
 	public <T> void info(final Class<T> clazz, final String msg, final Exception e)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -86,6 +135,11 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().info(clazz.getName(), msg, e);
 	}
 	
+	/**
+	 * Log a debug message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 */
 	public <T> void debug(final Class<T> clazz, final String msg)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -97,6 +151,12 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().debug(clazz.getName(), msg);
 	}
 	
+	/**
+	 * Log a debug message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 * @param e Exception to add to the log message.
+	 */
 	public <T> void debug(final Class<T> clazz, final String msg, final Exception e)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -108,6 +168,11 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().debug(clazz.getName(), msg, e);
 	}
 	
+	/**
+	 * Log a trace message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 */
 	public <T> void trace(final Class<T> clazz, final String msg)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -119,6 +184,12 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 			getLogger().trace(clazz.getName(), msg);
 	}
 	
+	/**
+	 * Log a trace message.
+	 * @param clazz Class calling this method.
+	 * @param msg Message to log.
+	 * @param e Exception to add to the log message.
+	 */
 	public <T> void trace(final Class<T> clazz, final String msg, final Exception e)
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getName());
@@ -160,6 +231,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 
 	@Override
 	protected boolean shutdownComponent() {
+		m_logLevels.clear();
 		return true;
 	}
 

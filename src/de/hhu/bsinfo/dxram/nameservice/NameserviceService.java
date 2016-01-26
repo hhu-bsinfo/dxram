@@ -4,6 +4,12 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 
+/**
+ * Nameservice service providing mappings of string identifiers to chunkIDs.
+ * Note: The character set and length of the string are limited. Refer to 
+ * the convert class for details.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class NameserviceService extends DXRAMService {
 
 	private LookupComponent m_lookup;
@@ -31,14 +37,28 @@ public class NameserviceService extends DXRAMService {
 		return true;
 	}
 
+	/**
+	 * Register a DataStructure for a specific name.
+	 * @param p_dataStructure DataStructure to register.
+	 * @param p_name Name to associate with the ID of the DataStructure.
+	 */
 	public void register(final DataStructure p_dataStructure, final String p_name) {
 		m_lookup.insertID(m_converter.convert(p_name), p_dataStructure.getID());
 	}
 	
+	/**
+	 * Get the chunk ID of the specific name from the service.
+	 * @param p_name Registered name to get the chunk ID for.
+	 * @return If the name was registered with a chunk ID before, returns the chunk ID, null otherwise.
+	 */
 	public long getChunkID(final String p_name) {
 		return m_lookup.getChunkID(m_converter.convert(p_name));
 	}
 	
+	/**
+	 * Remove the name of a registered DataStructure from lookup.
+	 * @param p_dataStructure DataStructure/Chunk ID to remove the name entry of.
+	 */
 	public void remove(final DataStructure p_dataStructure) {
 		m_lookup.remove(p_dataStructure.getID());
 	}

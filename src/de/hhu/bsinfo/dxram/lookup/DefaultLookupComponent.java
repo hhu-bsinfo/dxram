@@ -12,7 +12,6 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRole;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.events.ConnectionLostListener;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsResponse;
@@ -63,7 +62,7 @@ import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.Contract;
 
-public class DefaultLookupComponent extends LookupComponent implements MessageReceiver, ConnectionLostListener {
+public class DefaultLookupComponent extends LookupComponent implements MessageReceiver {
 
 	private static final short ORDER = 10;
 
@@ -744,17 +743,18 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		}
 	}
 
-	/**
-	 * Handles a lost connection
-	 * @param p_event
-	 *            the event
-	 */
-	@Override
-	public void triggerEvent(final ConnectionLostEvent p_event) {
-		m_logger.trace(getClass(), "Entering trigger with: p_event=" + p_event);
-
-		m_logger.trace(getClass(), "Exiting onConnectionLost");
-	}
+	// TODO port this to EventComponent
+//	/**
+//	 * Handles a lost connection
+//	 * @param p_event
+//	 *            the event
+//	 */
+//	@Override
+//	public void triggerEvent(final ConnectionLostEvent p_event) {
+//		m_logger.trace(getClass(), "Entering trigger with: p_event=" + p_event);
+//
+//		m_logger.trace(getClass(), "Exiting onConnectionLost");
+//	}
 	
 	// --------------------------------------------------------------------------------
 	

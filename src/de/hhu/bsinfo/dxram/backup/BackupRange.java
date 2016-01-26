@@ -12,16 +12,14 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public final class BackupRange implements Importable, Exportable {
 
 	// Attributes
-	private long m_firstChunkIDORRangeID;
-	private short[] m_backupPeers;
+	private long m_firstChunkIDORRangeID = -1;
+	private short[] m_backupPeers = null;
 
 	// Constructors
 	/**
 	 * Default constructor
 	 */
 	public BackupRange() {
-		m_firstChunkIDORRangeID = -1;
-		m_backupPeers = null;
 	}
 	
 	/**

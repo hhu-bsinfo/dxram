@@ -11,6 +11,11 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.utils.locks.SpinLock;
 
+/**
+ * Implementation of the lock component interface. This provides a peer side locking i.e.
+ * the peer owning the chunk stores any information about its locking state.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class PeerLockComponent extends LockComponent {
 
 	private Map<Long, LockEntry> m_lockedChunks = null;
@@ -18,6 +23,13 @@ public class PeerLockComponent extends LockComponent {
 	
 	private LoggerComponent m_logger = null;
 	
+	/**
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 */
 	public PeerLockComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
@@ -136,9 +148,19 @@ public class PeerLockComponent extends LockComponent {
 		return true;
 	}
 
+	/**
+	 * Entry for the lock map.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+	 */
 	private static class LockEntry
 	{
+		/**
+		 * Lock for the chunk.
+		 */
 		public Lock m_lock = new SpinLock();
+		/**
+		 * ID of the node that has locked the chunk.
+		 */
 		public short m_nodeID = NodeID.INVALID_ID;
 	}
 }

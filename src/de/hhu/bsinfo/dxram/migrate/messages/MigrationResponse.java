@@ -26,6 +26,7 @@ public class MigrationResponse extends AbstractResponse {
 	 * This constructor is used when sending this message.
 	 * @param p_request
 	 *            the request
+	 * @param p_failedMIgrationIDs List of failed migration IDs.
 	 */
 	public MigrationResponse(final MigrationRequest p_request, final long[] p_failedMigrationIDs) {
 		super(p_request, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE);

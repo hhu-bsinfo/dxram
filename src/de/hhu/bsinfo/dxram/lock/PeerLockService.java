@@ -3,10 +3,8 @@ package de.hhu.bsinfo.dxram.lock;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRole;
 import de.hhu.bsinfo.dxram.chunk.ChunkStatistic.Operation;
-import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.events.ConnectionLostListener;
 import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
@@ -19,7 +17,11 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
-public class PeerLockService extends LockService implements MessageReceiver, ConnectionLostListener {
+/**
+ * Lock service providing exclusive locking of chunks/data structures.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
+public class PeerLockService extends LockService implements MessageReceiver {
 	
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
@@ -31,10 +33,6 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 	private boolean m_statisticsEnabled = false;
 	private int m_remoteLockSendIntervalMs = -1;
 	private int m_remoteLockTryTimeoutMs = -1;
-	
-	public PeerLockService() {
-		super();
-	}
 	
 	@Override
 	protected void registerDefaultSettingsService(Settings p_settings) {
@@ -250,16 +248,17 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 		
 		return err;
 	}
-	
-	@Override
-	public void triggerEvent(ConnectionLostEvent p_event) {
-		m_logger.debug(getClass(), "Connection to " + p_event.getSource() + " lost, unlocking all chunks locked by lost instance.");
-		
-		if (!m_lock.unlockAllByNodeID(p_event.getSource())) {
-			m_logger.error(getClass(), "Unlocking all locked chunks of crashed peer " + 
-										Integer.toHexString(p_event.getSource() & 0xFFFF)  + " failed.");
-		}
-	}
+
+	// TODO port this to EventComponent
+//	@Override
+//	public void triggerEvent(ConnectionLostEvent p_event) {
+//		m_logger.debug(getClass(), "Connection to " + p_event.getSource() + " lost, unlocking all chunks locked by lost instance.");
+//		
+//		if (!m_lock.unlockAllByNodeID(p_event.getSource())) {
+//			m_logger.error(getClass(), "Unlocking all locked chunks of crashed peer " + 
+//										Integer.toHexString(p_event.getSource() & 0xFFFF)  + " failed.");
+//		}
+//	}
 	
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {

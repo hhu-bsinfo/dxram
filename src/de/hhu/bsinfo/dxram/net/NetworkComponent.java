@@ -9,6 +9,10 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 import de.hhu.bsinfo.menet.NetworkHandler;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
+/**
+ * 
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class NetworkComponent extends DXRAMComponent {
 		
 	public enum ErrorCode 

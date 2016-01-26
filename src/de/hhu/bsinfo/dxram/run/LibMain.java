@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
  * Main-Class for the jar-File
  * @author Florian Klein
  *         14.06.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public final class LibMain {
 

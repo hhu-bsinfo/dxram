@@ -21,6 +21,10 @@ import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
 
+/**
+ * Implementation of the BootComponent interface with zookeeper.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class ZookeeperBootComponent extends BootComponent implements Watcher {
 
 	// Attributes
@@ -38,6 +42,13 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	
 	private LoggerComponent m_logger = null;
 	
+	/**
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 */
 	public ZookeeperBootComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
@@ -241,6 +252,11 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	
 	// -----------------------------------------------------------------------------------
 	
+	/**
+	 * Read the nodes list from the settings instance.
+	 * @param p_settings Settings instance of the component.
+	 * @return List of node entries read from the settings.
+	 */
 	private ArrayList<NodeEntry> readNodesFromSettings(final Settings p_settings)
 	{
 		ArrayList<NodeEntry> nodes = new ArrayList<NodeEntry>();

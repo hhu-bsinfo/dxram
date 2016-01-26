@@ -4,8 +4,23 @@ import java.net.InetSocketAddress;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 
+/**
+ * Component executing the bootstrapping of a node in DXRAM.
+ * It takes care of assigning the node ID to this node, its role and
+ * managing everything related to the basic node status (available,
+ * failure report...)
+ * 
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public abstract class BootComponent extends DXRAMComponent {
 
+	/**
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 */
 	public BootComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}

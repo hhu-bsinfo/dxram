@@ -1,9 +1,12 @@
 package de.hhu.bsinfo.dxram.migrate.messages;
 
+/**
+ * Different migration message types.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class MigrationMessages {
-	// TODO adjust type as this is the same for chunk messages though we got different subtypes
-	public static final byte TYPE = 10;
-	public static final byte SUBTYPE_MIGRATION_REQUEST = 10;
-	public static final byte SUBTYPE_MIGRATION_RESPONSE = 11;
-	public static final byte SUBTYPE_MIGRATION_MESSAGE = 12;
+	public static final byte TYPE = 40;
+	public static final byte SUBTYPE_MIGRATION_REQUEST = 1;
+	public static final byte SUBTYPE_MIGRATION_RESPONSE = 2;
+	public static final byte SUBTYPE_MIGRATION_MESSAGE = 3;
 }

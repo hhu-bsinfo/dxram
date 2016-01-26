@@ -4,8 +4,9 @@ package de.hhu.bsinfo.dxram.run;
 import de.hhu.bsinfo.dxram.DXRAM;
 
 /**
- * Peer
+ * Run a DXRAM Peer instance.
  * @author Kevin Beineke 21.8.2015
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public final class Peer {
 

@@ -2,6 +2,10 @@ package de.hhu.bsinfo.dxram.boot;
 
 import de.hhu.bsinfo.utils.Pair;
 
+/**
+ * Configuration values for the zookeeper boot component implementation.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class ZookeeperBootConfigurationValues {
 	public static class Component {
 		public static final Pair<String, String> PATH = new Pair<String, String>("Path", "/dxram");
