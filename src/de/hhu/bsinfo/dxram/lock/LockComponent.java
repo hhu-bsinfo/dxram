@@ -4,6 +4,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 
 public abstract class LockComponent extends DXRAMComponent {
 
+	public static final int MS_TIMEOUT_UNLIMITED = -1;
+	
 	public LockComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}

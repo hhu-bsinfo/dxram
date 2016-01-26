@@ -71,9 +71,17 @@ public class PeerLockComponent extends LockComponent {
 		}
 		
 		try {
-			if (lockEntry.m_lock.tryLock(p_timeoutMs, TimeUnit.MILLISECONDS)) {
+			
+			if (p_timeoutMs == MS_TIMEOUT_UNLIMITED) {
+				// unlimited timeout, lock
+				lockEntry.m_lock.lock();
 				lockEntry.m_nodeID = p_lockingNodeID;
 				success = true;
+			} else {
+				if (lockEntry.m_lock.tryLock(p_timeoutMs, TimeUnit.MILLISECONDS)) {
+					lockEntry.m_nodeID = p_lockingNodeID;
+					success = true;
+				}
 			}
 		} catch (InterruptedException e) {
 			// ignore interrupt exception -> success false

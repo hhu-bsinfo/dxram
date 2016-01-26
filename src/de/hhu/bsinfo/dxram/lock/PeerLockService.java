@@ -4,7 +4,6 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRole;
 import de.hhu.bsinfo.dxram.chunk.ChunkStatistic.Operation;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.events.ConnectionLostListener;
 import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
@@ -58,6 +57,9 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
 		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
 		
+		m_network.register(LockRequest.class, this);
+		m_network.register(UnlockMessage.class, this);
+		
 		m_statisticsEnabled = p_settings.getValue(LockConfigurationValues.Service.STATISTICS);
 		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
 		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
@@ -84,10 +86,6 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 		
 		if (m_statisticsEnabled)
 			Operation.LOCK.enter();
-		
-		// early returns
-		if (p_timeout < 0) 
-			return ErrorCode.INVALID_PARAMETER;
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not lock chunks");
@@ -170,7 +168,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 								break;
 							}
 						}
-					} while (p_timeout == 0 || System.currentTimeMillis() - startTime < p_timeout);
+					} while (p_timeout == MS_TIMEOUT_UNLIMITED || System.currentTimeMillis() - startTime < p_timeout);
 				}
 			}
 		}
@@ -268,7 +266,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Con
 		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
-			if (p_message.getType() == ChunkMessages.TYPE) {
+			if (p_message.getType() == LockMessages.TYPE) {
 				switch (p_message.getSubtype()) {
 				case LockMessages.SUBTYPE_LOCK_REQUEST:
 					incomingLockRequest((LockRequest) p_message);

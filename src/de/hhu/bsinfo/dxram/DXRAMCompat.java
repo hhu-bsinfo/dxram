@@ -284,18 +284,18 @@ public class DXRAMCompat
 	public Chunk lock(final long p_chunkID, final boolean p_readLock) throws DXRAMException {
 		Chunk ret = null;
 
-		if (m_chunkService != null) {
-			ChunkLockOperation lockOp;
-			if (p_readLock) {
-				lockOp = ChunkLockOperation.READ_LOCK;
-			} else {
-				lockOp = ChunkLockOperation.WRITE_LOCK;
-			}
-			
-			// gets resized automatically, because dynamic sized data structure
-			ret = new Chunk(p_chunkID, 0);
-			if (m_chunkService.get(lockOp, ret) != 1) {
-				throw new DXRAMException("Lock and get of chunk " + p_chunkID + " failed.");
+		if (m_chunkService != null) {			
+			if (m_lockService != null) {
+				// gets resized automatically, because dynamic sized data structure
+				ret = new Chunk(p_chunkID, 0);
+				
+				if (m_lockService.lock(!p_readLock, LockService.MS_TIMEOUT_UNLIMITED, ret) != LockService.ErrorCode.SUCCESS) {
+					throw new DXRAMException("Locking chunk " + p_chunkID + " failed.");
+				}
+				
+				if (m_chunkService.get(ret) != 1) {
+					throw new DXRAMException("Getting chunk " + p_chunkID + " after locking failed.");
+				}
 			}
 		}
 

@@ -21,6 +21,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.lock.LockComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -40,7 +41,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	private MemoryManagerComponent m_memoryManager = null;
 	private NetworkComponent m_network = null;
 	private LookupComponent m_lookup = null;
-//	private LockComponent m_lock = null;
+	private LockComponent m_lock = null;
 //	private BackupComponent m_backup = null;
 	
 	private boolean m_statisticsEnabled = false;
@@ -62,6 +63,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
+		m_lock = getComponent(LockComponent.class);
 		
 		m_statisticsEnabled = p_settings.getValue(ChunkConfigurationValues.Service.STATISTICS);
 
@@ -404,7 +406,17 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 		m_memoryManager.unlockAccess();
 		
-		// TODO unlock chunks	
+		// unlock chunks
+		if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
+			boolean writeLock = false;
+			if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
+				writeLock = true;
+			}
+			
+			for (DataStructure dataStructure : localChunks) {
+				m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
+			}
+		}
 	
 		// go for remote chunks
 		for (Entry<Short, ArrayList<DataStructure>> entry : remoteChunksByPeers.entrySet()) {
@@ -458,18 +470,14 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		return chunksPut;
 	}
-
-	public int get(final DataStructure... p_dataStructures) {
-		return get(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructures);
-	}
 	
-	public int get(final ChunkLockOperation p_chunkLockOperation, DataStructure... p_dataStructures) {
+	public int get(DataStructure... p_dataStructures) {
 		int totalChunksGot = 0;
 		
 		if (p_dataStructures.length == 0)
 			return totalChunksGot;
 		
-		m_logger.trace(getClass(), "get[lockOp " + p_chunkLockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not get chunks");
@@ -506,7 +514,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				}
 			}
 		}
-
+		
 		// get local chunkIDs
 		for (final DataStructure dataStructure : localChunks) {
 			if (m_memoryManager.get(dataStructure)) {
@@ -516,8 +524,6 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			}
 		}
 		m_memoryManager.unlockAccess();
-			
-		// TODO p_aquireLock for local chunks
 
 		// go for remote ones by each peer
 		for (final Entry<Short, ArrayList<DataStructure>> peerWithChunks : remoteChunksByPeers.entrySet()) {
@@ -537,11 +543,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				m_memoryManager.unlockAccess();
 			} else {					
 				// Remote get from specified peer
-				GetRequest request = new GetRequest(peer, p_chunkLockOperation, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
+				GetRequest request = new GetRequest(peer, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
 				ErrorCode error = m_network.sendSync(request);
 				if (error != ErrorCode.SUCCESS)
 				{
-					m_logger.error(getClass(), "Sending chunk get request to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
+					m_logger.error(getClass(), "Sending chunk get request to peer " + peer + " failed: " + error);
 					continue;
 				}
 
@@ -562,7 +568,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (m_statisticsEnabled)
 			Operation.MULTI_GET.leave();
 		
-		m_logger.trace(getClass(), "get[lockOp " + p_chunkLockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + totalChunksGot);
+		m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + totalChunksGot);
 
 		return totalChunksGot;
 	}
@@ -694,6 +700,18 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			}
 		}
 		m_memoryManager.unlockAccess();
+		
+		// unlock chunks
+		if (p_request.getUnlockOperation() != ChunkLockOperation.NO_LOCK_OPERATION) {
+			boolean writeLock = false;
+			if (p_request.getUnlockOperation() == ChunkLockOperation.WRITE_LOCK) {
+				writeLock = true;
+			}
+			
+			for (DataStructure dataStructure : chunks) {
+				m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
+			}
+		}
 		
 		PutResponse response = null;
 		// cut message length if all were successful

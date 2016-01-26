@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.util.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.util.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
@@ -37,24 +36,12 @@ public class GetRequest extends AbstractRequest {
 	 * @param p_dataStructure
 	 *            Data structure with the ID of the chunk to get.
 	 */
-	public GetRequest(final short p_destination, final ChunkLockOperation m_lockOperation, final DataStructure... p_dataStructures) {
+	public GetRequest(final short p_destination, final DataStructure... p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
 
 		m_dataStructure = p_dataStructures;
 		
 		byte tmpCode = getStatusCode();
-		switch (m_lockOperation)
-		{
-			case NO_LOCK_OPERATION:
-				break;
-			case READ_LOCK:
-				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
-			case WRITE_LOCK:
-				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
-			default:
-				assert 1 == 2;
-		}
-
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
 	}
 	
@@ -64,18 +51,6 @@ public class GetRequest extends AbstractRequest {
 	 */
 	public long[] getChunkIDs() {
 		return m_chunkIDs;
-	}
-	
-	public ChunkLockOperation getLockOperation() {
-		if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
-			if (ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode())) {
-				return ChunkLockOperation.READ_LOCK;
-			} else {
-				return ChunkLockOperation.WRITE_LOCK;
-			}
-		} else {
-			return ChunkLockOperation.NO_LOCK_OPERATION;
-		}
 	}
 	
 	/**

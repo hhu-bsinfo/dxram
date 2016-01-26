@@ -5,6 +5,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMService;
 
 public abstract class LockService extends DXRAMService {
 
+	public static final int MS_TIMEOUT_UNLIMITED = -1;
+	
 	public enum ErrorCode
 	{
 		SUCCESS,
@@ -17,6 +19,7 @@ public abstract class LockService extends DXRAMService {
 		NETWORK
 	}
 	
+	// timeout -1 for unlimited
 	public ErrorCode lock(final boolean p_writeLock, final int p_timeout, final DataStructure p_dataStructure) {
 		return lock(p_writeLock, p_timeout, p_dataStructure.getID());
 	}
