@@ -8,13 +8,13 @@ import org.apache.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.backup.MigratedBackupsTree;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.LogConfigurationValues;
 import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupException;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.utils.config.Configuration;
 
 public class BackupComponent extends DXRAMComponent {
@@ -51,8 +51,8 @@ public class BackupComponent extends DXRAMComponent {
 	
 	@Override
 	protected boolean initComponent(Configuration p_configuration) {
-		m_lookup = getDependantComponent(LookupComponent.COMPONENT_IDENTIFIER);
-		m_logging = getDependantComponent(LogComponent.COMPONENT_IDENTIFIER);
+		m_lookup = getDependentComponent(LookupComponent.COMPONENT_IDENTIFIER);
+		m_logging = getDependentComponent(LogComponent.COMPONENT_IDENTIFIER);
 		
 		m_logActive = p_configuration.getBooleanValue(LogConfigurationValues.LOG_ACTIVE);
 		m_secondaryLogSize = p_configuration.getLongValue(LogConfigurationValues.SECONDARY_LOG_SIZE);

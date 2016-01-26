@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.lock.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.util.ChunkID;
-import de.hhu.bsinfo.dxram.util.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**

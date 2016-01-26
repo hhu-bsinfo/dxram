@@ -4,6 +4,7 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRole;
 import de.hhu.bsinfo.dxram.chunk.ChunkStatistic.Operation;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.events.ConnectionLostListener;
 import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
@@ -15,7 +16,6 @@ import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 

@@ -7,43 +7,55 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Stores data
+ * Default/generic implementation of a DataStructure. This can be used if the there is no
+ * need to further specify the data to be stored as a chunk (i.e. a byte buffer is fine for the job).
+ * Furthermore this class is used internally when chunks are moved between different nodes. The actual
+ * structure is unknown and not relevant for these tasks, as we just want to work with the payload as
+ * one package.
+ * 
  * @author Florian Klein 09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class Chunk implements DataStructure
 {
-	// Constants
-	public static final long INVALID_CHUNKID = -1;
+	public static final long INVALID_CHUNKID = ChunkID.INVALID_ID;
 
-	// Attributes
 	private long m_chunkID = INVALID_CHUNKID;
 	private ByteBuffer m_data = null;
 
-	// Constructors
+	/**
+	 * Constructor
+	 * @param p_id ID the chunk is assigned to.
+	 * @param p_bufferSize Initial size of the byte buffer. If unknown/to read the complete payload
+	 * 			stored for the specified ID, you can set this to 0. The importObject function will
+	 * 			allocate the exact size this chunk occupies in memory.
+	 */
 	public Chunk(final long p_id, final int p_bufferSize) {
 		m_chunkID = p_id;
 		m_data = ByteBuffer.allocate(p_bufferSize);
 	}
 
 	/**
-	 * Gets the underlying byte buffer. 
-	 * @note The position gets rested to 0 before returning the reference.
+	 * Gets the underlying byte buffer with the stored payload.
+	 * @note The position gets reseted to 0 before returning the reference.
 	 * @return ByteBuffer with position reseted.
 	 */
 	public final ByteBuffer getData() {
-		if (m_data != null)
-			m_data.position(0);
-
+		m_data.position(0);
 		return m_data;
 	}
 	
+	/**
+	 * Change the ID of this chunk. This can be used to re-use pre-allocated chunks (pooling).
+	 * @param p_id New ID to set for this chunk.
+	 */
 	public void setID(final long p_id) {
 		m_chunkID = p_id;
 	}
 
 	/**
-	 * Gets the size of the data
-	 * @return the size of the data
+	 * Gets the size of the data/payload.
+	 * @return Payload size in bytes.
 	 */
 	public final int getDataSize() {
 		return m_data.capacity();

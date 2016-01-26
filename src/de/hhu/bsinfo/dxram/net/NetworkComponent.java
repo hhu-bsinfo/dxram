@@ -135,8 +135,8 @@ public class NetworkComponent extends DXRAMComponent {
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
 	{
-		m_logger = getDependantComponent(LoggerComponent.class);
-		m_boot = getDependantComponent(BootComponent.class);
+		m_logger = getDependentComponent(LoggerComponent.class);
+		m_boot = getDependentComponent(BootComponent.class);
 		
 		m_networkHandler = new NetworkHandler(
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_TASK_HANDLER),

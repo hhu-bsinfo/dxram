@@ -23,8 +23,16 @@ import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoaderFile;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
 import de.hhu.bsinfo.utils.locks.JNILock;
 
+/**
+ * Main class to run DXRAM with components and services.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DXRAMEngine 
 {
+	/**
+	 * Settings subclass to provide settings for the engine. Wraps a configuration.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+	 */
 	public static class Settings
 	{
 		private final String DXRAM_ENGINE_LOG_HEADER = this.getClass().getSimpleName();
@@ -33,6 +41,11 @@ public class DXRAMEngine
 		private Logger m_logger = null;
 		private String m_basePath = new String();
 		
+		/**
+		 * Constructor
+		 * @param p_configuration Configuration to wrap, which contains engine settings.
+		 * @param p_logger Logger to use for logging messages.
+		 */
 		Settings(final Configuration p_configuration, final Logger p_logger)
 		{
 			m_configuration = p_configuration;
@@ -40,16 +53,30 @@ public class DXRAMEngine
 			m_basePath = "/DXRAMEngine/Settings/";
 		}
 		
+		/**
+		 * Override existing configuration values.
+		 * @param p_default Pair of key of the value to override and default value for the key.
+		 * @param p_overrideValue True to override if the value exists, false to not override if exists.
+		 */
 		public <T> void overrideValue(final Pair<String, T> p_default, final T p_overrideValue)
 		{
 			m_configuration.addValue(m_basePath + p_default.first(), p_overrideValue, true);
 		}
 		
+		/**
+		 * Set a default value for a specific configuration key.
+		 * @param p_default Pair of configuration key and default value to set for the specified key.
+		 */
 		public <T> void setDefaultValue(final Pair<String, T> p_default)
 		{
 			setDefaultValue(p_default.first(), p_default.second());
 		}
 		
+		/**
+		 * Set a default value for a specific configuration key.
+		 * @param p_key Key for the value.
+		 * @param p_value Value to set.
+		 */
 		public <T> void setDefaultValue(final String p_key, final T p_value)
 		{
 			if (m_configuration.addValue(m_basePath + p_key, p_value, false))
@@ -60,12 +87,23 @@ public class DXRAMEngine
 			}
 		}
 		
+		/**
+		 * Get a value from the configuration for the component.
+		 * @param p_default Pair of key and default value to get value for.
+		 * @return Value associated with the provided key.
+		 */
 		@SuppressWarnings("unchecked")
 		public <T> T getValue(final Pair<String, T> p_default)
 		{
 			return (T) getValue(p_default.first(), p_default.second().getClass());
 		}
 		
+		/**
+		 * Get a value from the configuration for the component.
+		 * @param p_key Key to get the value for.
+		 * @param p_type Type of the value to get.
+		 * @return Value assicated with the provided key.
+		 */
 		public <T> T getValue(final String p_key, final Class<T> p_type)
 		{
 			return m_configuration.getValue(m_basePath + p_key, p_type);
@@ -83,11 +121,20 @@ public class DXRAMEngine
 	private HashMap<String, DXRAMComponent> m_components = new HashMap<String, DXRAMComponent>();
 	private HashMap<String, DXRAMService> m_services = new HashMap<String, DXRAMService>();
 	
+	/**
+	 * Constructor
+	 */
 	public DXRAMEngine()
 	{		
 
 	}
 	
+	/**
+	 * Get a service from the engine.
+	 * @param p_class Class of the service to get. If the service has different implementations, use the common interface
+	 * 					or abstract class to get the registered instance.
+	 * @return Reference to the service if available and enabled, null otherwise or if the engine is not initialized.
+	 */
 	public <T extends DXRAMService> T getService(final Class<T> p_class)
 	{
 		T service = null;
@@ -121,6 +168,12 @@ public class DXRAMEngine
 		return service;
 	}
 	
+	/**
+	 * Get a component from the engine.
+	 * @param p_class Class of the component to get. If the component has different implementations, use the common interface
+	 * 					or abstract class to get the registered instance.
+	 * @return Reference to the component if available and enabled, null otherwise or if the engine is not initialized.
+	 */
 	<T extends DXRAMComponent> T getComponent(final Class<T> p_class)
 	{
 		T component = null;
@@ -151,25 +204,52 @@ public class DXRAMEngine
 		return component;
 	}
 	
+	/**
+	 * Get the configuration of the engine.
+	 * @return Configuration or null if engine is not initialized.
+	 */
 	Configuration getConfiguration()
 	{
 		return m_configuration;
 	}
 	
+	/**
+	 * Get the settings instance of the engine.
+	 * @return Settings instance or null if engine is not initialized.
+	 */
 	Settings getSettings()
 	{
 		return m_settings;
 	}
 	
+	/**
+	 * Get the logger of the engine.
+	 * @return Logger instance or null if engine is not initialized.
+	 */
 	Logger getLogger()
 	{
 		return m_logger;
 	}
 	
+	/**
+	 * Initialize the engine. Executes various bootstrapping tasks,
+	 * initializes components and services.
+	 * @param p_configurationFile Absolute or relative path to the configuration file.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean init(final String p_configurationFile) {
 		return init(p_configurationFile, null, null, null);
 	}
 	
+	/**
+	 * Initialize the engine. Executes various bootstrapping tasks,
+	 * initializes components and services.
+	 * @param p_configurationFile Absolute or relative path to the configuration file.
+	 * @param p_overrideIp Overriding the configuration file provided IP address (example: 127.0.0.1).
+	 * @param p_overridePort Overriding the configuration file provided port number (example: 22223).
+	 * @param p_overrideRole Overriding the configuration file provided role (example: Superpeer).
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean init(final String p_configurationFile, final String p_overrideNetworkIP, 
 			final String p_overridePort, final String p_overrideRole)
 	{
@@ -224,6 +304,10 @@ public class DXRAMEngine
 		return true;
 	}
 	
+	/**
+	 * Shut down the engine.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean shutdown()
 	{
 		assert m_isInitilized;
@@ -267,6 +351,10 @@ public class DXRAMEngine
 		return true;
 	}
 	
+	/**
+	 * Setup components from a configuration.
+	 * @param p_configuration Configuration to get the components from.
+	 */
 	private void setupComponents(final Configuration p_configuration)
 	{
 		Map<Integer, String> componentsClass = p_configuration.getValues("/DXRAMEngine/Components/Component/Class", String.class);
@@ -341,6 +429,10 @@ public class DXRAMEngine
 		}
 	}
 	
+	/**
+	 * Setup services from a configuration.
+	 * @param p_configuration Configuration to get the services from.
+	 */
 	private void setupServices(final Configuration p_configuration)
 	{
 		Map<Integer, String> servicesClass = p_configuration.getValues("/DXRAMEngine/Services/Service/Class", String.class);
@@ -385,6 +477,13 @@ public class DXRAMEngine
 		}	
 	}
 	
+	/**
+	 * Execute bootstrapping tasks for the engine.
+	 * @param p_configurationFile Absolute/Relative path to the configuration file.
+	 * @param p_overrideIp Overriding the configuration file provided IP address (example: 127.0.0.1).
+	 * @param p_overridePort Overriding the configuration file provided port number (example: 22223).
+	 * @param p_overrideRole Overriding the configuration file provided role (example: Superpeer).
+	 */
 	private void bootstrap(final String p_configurationFile, final String p_overrideNetworkIP, 
 			final String p_overridePort, final String p_overrideRole)
 	{
@@ -422,6 +521,9 @@ public class DXRAMEngine
 		}
 	}
 	
+	/**
+	 * Register default configuration values of the engine.
+	 */
 	private void registerDefaultConfigurationValues() {
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.IP);
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.PORT);
@@ -431,19 +533,22 @@ public class DXRAMEngine
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.JNI_LOCK_PATH);
 	}
 	
+	/**
+	 * Load the configuration from a file.
+	 * @param p_configurationFile Path to the configuration file.
+	 * @return 0 if successful, -1 if loading from an existing file failed, 1 if configuration file
+	 * 			does not exist and default file needs to be created/saved.
+	 */
 	private int loadConfiguration(final String p_configurationFile)
 	{
 		ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFile);
 		ConfigurationParser parser = new ConfigurationXMLParser(loader);
 		
-		//m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Loading configuration: " + loader);
 		try {
 			parser.readConfiguration(m_configuration);
 		} catch (ConfigurationException e) {
-			//m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Loading configuration failed.", e);
 			// check if file exists -> save default config later
 			if (!(new File(p_configurationFile).exists())) {
-				//m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Creating default configuration file: " + configPath);
 				return 1;
 			} else {
 				return -1;
@@ -453,6 +558,11 @@ public class DXRAMEngine
 		return 0;
 	}
 	
+	/**
+	 * Save the configuration to a file.
+	 * @param p_configurationFolder File to save the configuration to.
+	 * @return True if saving was successful, false otherwise.
+	 */
 	private boolean saveConfiguration(final String p_configurationFolder)
 	{
 		ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFolder);
@@ -469,6 +579,12 @@ public class DXRAMEngine
 		return true;
 	}
 	
+	/**
+	 * Override a few configuration values with the provided paramters.
+	 * @param p_networkIP Network IP of the instance.
+	 * @param p_port Port number of the instance.
+	 * @param p_role Role of the instance.
+	 */
 	private void overrideConfigurationWithParameters(final String p_networkIP, 
 			final String p_port, final String p_role) {
 		if (p_networkIP != null) {
@@ -482,6 +598,9 @@ public class DXRAMEngine
 		}
 	}
 	
+	/**
+	 * Override a few configuration values with parameters provided by the VM arguments.
+	 */
 	private void overrideConfigurationWithVMArguments()
 	{
 		String[] keyValue;
@@ -509,6 +628,9 @@ public class DXRAMEngine
 		}
 	}
 	
+	/**
+	 * Setup the logger.
+	 */
 	private void setupLogger()
 	{
 		String logger = m_settings.getValue(DXRAMEngineConfigurationValues.LOGGER);
@@ -550,6 +672,9 @@ public class DXRAMEngine
 		m_logger.setLogLevel(LogLevel.toLogLevel(logLevel));
 	}
 	
+	/**
+	 * Setup JNI related stuff.
+	 */
 	private void setupJNI()
 	{
 		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up JNI classes..." );

@@ -3,6 +3,10 @@ package de.hhu.bsinfo.dxram.util.logger;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+/**
+ * Log4j implementation for the DXRAM Logger.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class LoggerLog4j implements de.hhu.bsinfo.dxram.util.logger.Logger {
 
 	@Override

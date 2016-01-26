@@ -5,10 +5,10 @@ import java.util.List;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRole;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.storage.CacheTree;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.utils.Cache;
 
 public class CachedTreeLookupComponent extends LookupComponent {
@@ -205,8 +205,8 @@ public class CachedTreeLookupComponent extends LookupComponent {
 		if (!m_lookup.init(getParentEngine()))
 			return false;
 		
-		m_boot = getDependantComponent(BootComponent.class);
-		m_logger = getDependantComponent(LoggerComponent.class);
+		m_boot = getDependentComponent(BootComponent.class);
+		m_logger = getDependentComponent(LoggerComponent.class);
 
 		m_maxCacheSize = p_settings.getValue(LookupConfigurationValues.Component.CACHE_TTL);
 		

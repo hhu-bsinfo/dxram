@@ -2,11 +2,11 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 import de.hhu.bsinfo.utils.StatisticsManager;
@@ -54,8 +54,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
 	{
-		m_boot = getDependantComponent(BootComponent.class);
-		m_logger = getDependantComponent(LoggerComponent.class);
+		m_boot = getDependentComponent(BootComponent.class);
+		m_logger = getDependentComponent(LoggerComponent.class);
 		
 		m_enableMemoryStatistics = p_settings.getValue(MemoryManagerConfigurationValues.Component.STATISTICS);
 

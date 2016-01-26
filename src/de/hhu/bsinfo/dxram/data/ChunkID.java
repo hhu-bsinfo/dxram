@@ -1,32 +1,30 @@
 
-package de.hhu.bsinfo.dxram.util;
+package de.hhu.bsinfo.dxram.data;
 
 /**
- * Wrapper class for a ChunkID
+ * Helper class for ChunkID related issues. 
+ *
  * @author Florian Klein
  *         23.07.2013
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public final class ChunkID {
 
-	// Constants
 	public static final long INVALID_ID = -1;
 	public static final long CREATORID_BITMASK = 0xFFFF000000000000L;
 	public static final long LOCALID_BITMASK = 0x0000FFFFFFFFFFFFL;
 
 	public static final long MAX_LOCALID = Long.MAX_VALUE & LOCALID_BITMASK;
 
-	// Constructors
 	/**
-	 * Creates an instance of ChunkID
+	 * Static class.
 	 */
 	private ChunkID() {}
 
-	// Methods
 	/**
-	 * Get the CreatorID part of the ChunkID
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @return the CreatorID part
+	 * Get the CreatorID/NodeID part of the ChunkID.
+	 * @param p_chunkID ChunkID.
+	 * @return The NodeID/CreatorID part.
 	 */
 	public static short getCreatorID(final long p_chunkID) {
 		assert p_chunkID != INVALID_ID;

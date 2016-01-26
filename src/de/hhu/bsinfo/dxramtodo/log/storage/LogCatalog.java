@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxram.log.storage;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.util.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 
 /**
  * Log catalog: Bundles all logs and buffers for one node

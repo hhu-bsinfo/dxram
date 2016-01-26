@@ -10,8 +10,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRole;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMException;
 import de.hhu.bsinfo.dxram.events.ConnectionLostListener;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
@@ -58,7 +58,6 @@ import de.hhu.bsinfo.dxram.lookup.messages.UpdateAllMessage;
 import de.hhu.bsinfo.dxram.lookup.storage.AIDTableOptimized;
 import de.hhu.bsinfo.dxram.lookup.storage.LookupTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 import de.hhu.bsinfo.utils.CRC16;
@@ -766,9 +765,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {			
-		m_boot = getDependantComponent(BootComponent.class);
-		m_network = getDependantComponent(NetworkComponent.class);
-		m_logger = getDependantComponent(LoggerComponent.class);
+		m_boot = getDependentComponent(BootComponent.class);
+		m_network = getDependentComponent(NetworkComponent.class);
+		m_logger = getDependentComponent(LoggerComponent.class);
 		
 		m_bootstrap = m_boot.getNodeIDBootstrap();
 		m_numberOfSuperpeers = m_boot.getNumberOfAvailableSuperpeers();

@@ -6,8 +6,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.TreeSet;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.DefaultLookupComponent;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 
 /**
  * HashMap to store ID-Mappings (based on java.utils.hashmap, standard-chain hash table)

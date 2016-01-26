@@ -1,9 +1,8 @@
-package de.hhu.bsinfo.dxram.util;
+package de.hhu.bsinfo.dxram.data;
 
 /**
  * Flags to be used for locking/unlocking chunks and indicating the lock operation
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 5.1.16
- *
  */
 public enum ChunkLockOperation {
 	/**

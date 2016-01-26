@@ -19,6 +19,7 @@ import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
 import de.uniduesseldorf.dxram.core.exceptions.RecoveryException;
 
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMException;
 import de.hhu.bsinfo.dxram.events.ConnectionLostListener;
 import de.hhu.bsinfo.dxram.log.LogMessages.InitRequest;
@@ -36,7 +37,6 @@ import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.VersionsHashTable;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkException;
 import de.hhu.bsinfo.menet.NetworkInterface;

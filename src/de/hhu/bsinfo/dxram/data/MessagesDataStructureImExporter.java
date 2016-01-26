@@ -7,11 +7,21 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Implementation of an Importer/Exporter for DataStructure objects for 
+ * network messages. Use this if a network message has to send an object,
+ * which implements the DataStructure interface.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class MessagesDataStructureImExporter implements Importer, Exporter {
 
 	private ByteBuffer m_messageBuffer = null;
 	private int m_payloadSize = 0;
 	
+	/**
+	 * Constructor
+	 * @param p_messageBuffer Buffer the message has to write to/read from.
+	 */
 	public MessagesDataStructureImExporter(final ByteBuffer p_messageBuffer) {
 		m_messageBuffer = p_messageBuffer;
 	}

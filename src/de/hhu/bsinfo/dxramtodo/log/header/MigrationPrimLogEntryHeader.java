@@ -1,8 +1,8 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.EpochVersion;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (primary log)

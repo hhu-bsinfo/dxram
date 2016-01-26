@@ -2,14 +2,13 @@ package de.hhu.bsinfo.dxram;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.engine.DXRAMException;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.lock.LockService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.util.ChunkID;
-import de.hhu.bsinfo.dxram.util.ChunkLockOperation;
 
 /**
- * Wrapper to provide the old DXRAM Core API.
+ * Compatibility wrapper to provide the old DXRAM Core API.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
  */
 public class DXRAMCompat 
@@ -19,6 +18,44 @@ public class DXRAMCompat
 	private NameserviceService m_nameserviceService = null;
 	private LockService m_lockService = null;
 	
+	/**
+	 * Exception for failed DXRAM accesses
+	 * @author Florian Klein
+	 *         09.03.2012
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
+	 */
+	public static class DXRAMException extends Exception {
+
+		// Constants
+		private static final long serialVersionUID = 8402205300600257791L;
+
+		// Constructors
+		/**
+		 * Creates an instance of DXRAMException
+		 * @param p_message
+		 *            the message
+		 */
+		public DXRAMException(final String p_message) {
+			super(p_message);
+		}
+
+		/**
+		 * Creates an instance of DXRAMException
+		 * @param p_message
+		 *            the message
+		 * @param p_cause
+		 *            the cause
+		 */
+		public DXRAMException(final String p_message, final Throwable p_cause) {
+			super(p_message, p_cause);
+		}
+
+	}
+	
+	/**
+	 * Constructor
+	 * @param p_dxram DXRAM instance to wrap. Wrapper does not take care of init/shutdown.
+	 */
 	public DXRAMCompat(final DXRAM p_dxram) {
 		m_dxram = p_dxram;
 		m_chunkService = m_dxram.getService(ChunkService.class);

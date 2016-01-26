@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.test.nothaas;
+package de.hhu.bsinfo.dxram.run.test.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;

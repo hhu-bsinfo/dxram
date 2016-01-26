@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.dxram.test;
+package de.hhu.bsinfo.dxram.run.test;
 
 import java.text.NumberFormat;
 import java.util.concurrent.ExecutionException;

@@ -6,8 +6,8 @@ import java.util.zip.Checksum;
 
 import de.uniduesseldorf.dxram.core.dxram.Core;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.EpochVersion;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.utils.config.Configuration.ConfigurationConstants;
 
 /**

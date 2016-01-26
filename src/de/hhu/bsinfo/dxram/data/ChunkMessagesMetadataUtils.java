@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.util;
+package de.hhu.bsinfo.dxram.data;
 
 import java.nio.ByteBuffer;
 

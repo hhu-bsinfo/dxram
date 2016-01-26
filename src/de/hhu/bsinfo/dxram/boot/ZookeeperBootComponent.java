@@ -52,7 +52,7 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_logger = getDependantComponent(LoggerComponent.class);
+		m_logger = getDependentComponent(LoggerComponent.class);
 		
 		m_ownIP = p_engineSettings.getValue(DXRAMEngineConfigurationValues.IP);
 		m_ownPort = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PORT);
@@ -245,12 +245,12 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	{
 		ArrayList<NodeEntry> nodes = new ArrayList<NodeEntry>();
 		
-		Map<Integer, Boolean> nodesEnabled = p_settings.GetValues("Nodes/Node/Enabled", Boolean.class);
-		Map<Integer, String> nodesIP = p_settings.GetValues("Nodes/Node/IP", String.class);
-		Map<Integer, Integer> nodesPort = p_settings.GetValues("Nodes/Node/Port", Integer.class);
-		Map<Integer, String> nodesRole = p_settings.GetValues("Nodes/Node/Role", String.class);
-		Map<Integer, Short> nodesRack = p_settings.GetValues("Nodes/Node/Rack", Short.class);
-		Map<Integer, Short> nodesSwitch = p_settings.GetValues("Nodes/Node/Switch", Short.class);
+		Map<Integer, Boolean> nodesEnabled = p_settings.getValues("Nodes/Node/Enabled", Boolean.class);
+		Map<Integer, String> nodesIP = p_settings.getValues("Nodes/Node/IP", String.class);
+		Map<Integer, Integer> nodesPort = p_settings.getValues("Nodes/Node/Port", Integer.class);
+		Map<Integer, String> nodesRole = p_settings.getValues("Nodes/Node/Role", String.class);
+		Map<Integer, Short> nodesRack = p_settings.getValues("Nodes/Node/Rack", Short.class);
+		Map<Integer, Short> nodesSwitch = p_settings.getValues("Nodes/Node/Switch", Short.class);
 		
 		for (Entry<Integer, Boolean> entry : nodesEnabled.entrySet())
 		{

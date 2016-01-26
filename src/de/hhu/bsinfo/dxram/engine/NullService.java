@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.engine;
 
+/**
+ * Dummy service implementation for testing.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class NullService extends DXRAMService {
 
 	@Override

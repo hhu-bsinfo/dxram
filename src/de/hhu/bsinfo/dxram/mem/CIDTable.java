@@ -4,8 +4,8 @@ package de.hhu.bsinfo.dxram.mem;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 
 /**

@@ -5,6 +5,7 @@ package de.hhu.bsinfo.dxram.engine;
  * Exception for failed DXRAM accesses
  * @author Florian Klein
  *         09.03.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
  */
 public class DXRAMRuntimeException extends RuntimeException {
 

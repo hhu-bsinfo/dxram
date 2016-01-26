@@ -143,8 +143,8 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 		m_defaultLogLevel = LogLevel.toLogLevel(p_settings.getValue(LoggerConfigurationValues.Component.LOG_LEVEL));
 		
 		// get further configuration values for 
-		Map<Integer, String> classNames = p_settings.GetValues("Class/Name", String.class);
-		Map<Integer, String> logLevels = p_settings.GetValues("Class/LogLevel", String.class);
+		Map<Integer, String> classNames = p_settings.getValues("Class/Name", String.class);
+		Map<Integer, String> logLevels = p_settings.getValues("Class/LogLevel", String.class);
 		
 		if (classNames != null)
 		{

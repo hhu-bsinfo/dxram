@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.util.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**

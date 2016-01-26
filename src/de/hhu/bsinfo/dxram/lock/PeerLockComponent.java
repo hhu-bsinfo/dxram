@@ -6,8 +6,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.util.ChunkID;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.utils.locks.SpinLock;
 
@@ -29,7 +29,7 @@ public class PeerLockComponent extends LockComponent {
 	@Override
 	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
-		m_logger = getDependantComponent(LoggerComponent.class);
+		m_logger = getDependentComponent(LoggerComponent.class);
 		
 		m_lockedChunks = new HashMap<Long, LockEntry>();
 		m_mapEntryCreationLock = new SpinLock();

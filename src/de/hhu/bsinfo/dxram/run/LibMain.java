@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
  */
 public final class LibMain {
 
-	private static final String MS_CLASS_BASE_PATH = "de.hhu.bsinfo.dxram.";
+	private static final String MS_CLASS_BASE_PATH = "de.hhu.bsinfo.dxram.run.";
 	
 	// Constructors
 	/**
@@ -35,7 +35,7 @@ public final class LibMain {
 			}
 
 			try {
-				c = Class.forName("de.hhu.bsinfo.dxram." + p_arguments[0]);
+				c = Class.forName(MS_CLASS_BASE_PATH + p_arguments[0]);
 				m = c.getMethod("main", String[].class);
 				m.invoke(null, new Object[] {arguments});
 			} catch (final Exception e) {

@@ -2,6 +2,10 @@ package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.utils.Pair;
 
+/**
+ * Configuration values available for the engine.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DXRAMEngineConfigurationValues {
 	
 	// DXRAM role (Superpeer, Peer or Monitor)
