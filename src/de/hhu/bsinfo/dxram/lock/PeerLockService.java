@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.dxram.lock;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.chunk.ChunkStatistic.Operation;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -16,6 +15,7 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
@@ -33,8 +33,10 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 	private LockComponent m_lock = null;
 	private LookupComponent m_lookup = null;
 	private EventComponent m_event = null;
+	private StatisticsComponent m_statistics = null;
 	
-	private boolean m_statisticsEnabled = false;
+	private LockStatisticsRecorderIDs m_statisticsRecorderIDs = null;
+	
 	private int m_remoteLockSendIntervalMs = -1;
 	private int m_remoteLockTryTimeoutMs = -1;
 	
@@ -42,7 +44,6 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 	protected void registerDefaultSettingsService(Settings p_settings) {
 		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
 		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
-		p_settings.setDefaultValue(LockConfigurationValues.Service.STATISTICS);
 	}
 	
 	@Override
@@ -55,6 +56,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 		m_lock = getComponent(LockComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
 		m_event = getComponent(EventComponent.class);
+		m_statistics = getComponent(StatisticsComponent.class);
 		
 		m_event.registerListener(this, NodeFailureEvent.class);
 		
@@ -65,7 +67,13 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 		m_network.register(LockRequest.class, this);
 		m_network.register(UnlockMessage.class, this);
 		
-		m_statisticsEnabled = p_settings.getValue(LockConfigurationValues.Service.STATISTICS);
+		m_statisticsRecorderIDs = new LockStatisticsRecorderIDs();
+		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(getClass());
+		m_statisticsRecorderIDs.m_operations.m_lock = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, LockStatisticsRecorderIDs.Operations.MS_LOCK);
+		m_statisticsRecorderIDs.m_operations.m_unlock = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, LockStatisticsRecorderIDs.Operations.MS_UNLOCK);
+		m_statisticsRecorderIDs.m_operations.m_incomingLock = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, LockStatisticsRecorderIDs.Operations.MS_INCOMING_LOCK);
+		m_statisticsRecorderIDs.m_operations.m_incomingUnlock = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, LockStatisticsRecorderIDs.Operations.MS_INCOMING_UNLOCK);
+		
 		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
 		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
 		
@@ -89,13 +97,12 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 		assert p_timeout >= 0;
 		assert p_chunkID != ChunkID.INVALID_ID;
 		
-		if (m_statisticsEnabled)
-			Operation.LOCK.enter();
-		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not lock chunks");
 			return ErrorCode.INVALID_PEER_ROLE;
 		} 
+		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_lock);
 		
 		ErrorCode err = ErrorCode.SUCCESS;
 		
@@ -178,22 +185,20 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 			}
 		}
 		
-		if (m_statisticsEnabled)
-			Operation.LOCK.leave();
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_lock);
 		
 		return err;
 	}
 
 	@Override
 	public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
-		if (m_statisticsEnabled)
-			Operation.UNLOCK.enter();
-		
 		// early returns
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not use chunks");
 			return ErrorCode.INVALID_PEER_ROLE;
 		} 
+		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_unlock);
 
 		ErrorCode err = ErrorCode.SUCCESS;
 
@@ -250,8 +255,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 			}
 		}
 
-		if (m_statisticsEnabled)
-			Operation.UNLOCK.leave();
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_unlock);
 		
 		return err;
 	}
@@ -298,8 +302,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 	private void incomingLockRequest(final LockRequest p_request) {
 		boolean success = false;
 		
-		if (m_statisticsEnabled)
-			Operation.INCOMING_LOCK.enter();
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingLock);
 		
 		// the host handles the timeout as we don't want to block the message receiver thread
 		// for too long, execute a tryLock instead	
@@ -311,8 +314,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 			m_network.sendMessage(new LockResponse(p_request, (byte) -1));
 		}
 
-		if (m_statisticsEnabled)
-			Operation.INCOMING_LOCK.leave();
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingLock);
 	}
 
 	/**
@@ -321,12 +323,10 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 	 *            the UnlockMessage
 	 */
 	private void incomingUnlockMessage(final UnlockMessage p_message) {
-		if (m_statisticsEnabled)
-			Operation.INCOMING_UNLOCK.enter();
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingUnlock);
 
 		m_lock.unlock(p_message.getChunkID(), m_boot.getNodeID(), p_message.isWriteLockOperation());
 		
-		if (m_statisticsEnabled)
-			Operation.INCOMING_UNLOCK.leave();
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingUnlock);
 	}
 }

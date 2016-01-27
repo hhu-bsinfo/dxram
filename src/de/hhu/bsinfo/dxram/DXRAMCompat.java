@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.lock.LockService;
+import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 
 /**
@@ -17,6 +18,7 @@ public class DXRAMCompat
 	private ChunkService m_chunkService = null;
 	private NameserviceService m_nameserviceService = null;
 	private LockService m_lockService = null;
+	private LocalMonitorService m_localMonitorService = null;
 	
 	/**
 	 * Exception for failed DXRAM accesses
@@ -61,6 +63,7 @@ public class DXRAMCompat
 		m_chunkService = m_dxram.getService(ChunkService.class);
 		m_nameserviceService = m_dxram.getService(NameserviceService.class);
 		m_lockService = m_dxram.getService(LockService.class);
+		m_localMonitorService = m_dxram.getService(LocalMonitorService.class);
 	}
 
 	/**
@@ -382,4 +385,9 @@ public class DXRAMCompat
 		}
 	}
 
+	public void printStatistics() {
+		if (m_localMonitorService != null) {
+			m_localMonitorService.printStatisticsToConsole();
+		}
+	}
 }

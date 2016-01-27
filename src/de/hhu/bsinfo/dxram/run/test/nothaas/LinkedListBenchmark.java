@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.run.test.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.Stopwatch;
 import de.hhu.bsinfo.utils.main.Main;
@@ -16,6 +17,7 @@ public class LinkedListBenchmark extends Main
 	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
+	private LocalMonitorService m_localMonitorService = null;
 	private Stopwatch m_stopwatch = new Stopwatch();
 	
 	public static void main(final String[] args) {
@@ -28,6 +30,7 @@ public class LinkedListBenchmark extends Main
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
+		m_localMonitorService = m_dxram.getService(LocalMonitorService.class);
 	}
 	
 	@Override
@@ -52,6 +55,9 @@ public class LinkedListBenchmark extends Main
 		System.out.println("Walking linked list done, total elements touched: " + itemsTouched);
 		
 		System.out.println("Done");
+		
+		m_localMonitorService.printStatisticsToConsole();
+		
 		return 0;
 	}
 	
