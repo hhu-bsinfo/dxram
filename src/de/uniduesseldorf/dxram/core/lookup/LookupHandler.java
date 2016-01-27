@@ -3021,7 +3021,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		long backupRange;
 		boolean existsInZooKeeper = false;
 		Iterator<Short> iter;
-		ArrayList<long[]> backupRanges;
+		ArrayList<long[]> backupRanges = null;
 		LookupTree tree;
 
 		boolean promoteOnePeer = false;
@@ -3155,24 +3155,29 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 					while (!finished) {
 						finished = true;
 						m_dataLock.lock();
-						backupRanges = getCIDTree(p_failedNode).getAllBackupRanges();
+						tree = getCIDTree(p_failedNode);
+						if (tree != null) {
+							backupRanges = tree.getAllBackupRanges();
+						}
 						m_dataLock.unlock();
-						for (i = 0; i < backupRanges.size(); i++) {
-							for (int j = 0; j < 3; j++) {
-								backupRange = backupRanges.get(i)[0];
-								backupPeer = (short) (backupRanges.get(i)[1] >> j * 16);
-								// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 -
-								// 1)
-								System.out.println("** Informing backup peer " + backupPeer + " to recover chunks" + " from backup range starting with "
-										+ backupRange + " from " + p_failedNode);
-								/*
-								 * try {
-								 * new StartRecoveryMessage(backupPeer, p_failedNode, i * 1000).send(m_network);
-								 * } catch (final NetworkException e) {
-								 * // Backup peer is not available anymore, try next one
-								 * continue;
-								 * }
-								 */
+						if (backupRanges != null) {
+							for (i = 0; i < backupRanges.size(); i++) {
+								for (int j = 0; j < 3; j++) {
+									backupRange = backupRanges.get(i)[0];
+									backupPeer = (short) (backupRanges.get(i)[1] >> j * 16);
+									// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 -
+									// 1)
+									System.out.println("** Informing backup peer " + backupPeer + " to recover chunks" + " from backup range starting with "
+											+ backupRange + " from " + p_failedNode);
+									/*
+									 * try {
+									 * new StartRecoveryMessage(backupPeer, p_failedNode, i * 1000).send(m_network);
+									 * } catch (final NetworkException e) {
+									 * // Backup peer is not available anymore, try next one
+									 * continue;
+									 * }
+									 */
+								}
 							}
 						}
 					}
@@ -3797,7 +3802,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-									+ (m_backupPeers[0] & 0x000000000000FFFFL);
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {
@@ -3862,7 +3867,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 48) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
-									+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+							+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 				} else {

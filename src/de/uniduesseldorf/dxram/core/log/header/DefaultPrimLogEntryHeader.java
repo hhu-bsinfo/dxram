@@ -45,7 +45,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 		type = generateTypeField(type, localIDSize, lengthSize, (byte) (versionSize - LOG_ENTRY_EPO_SIZE));
 
-		result = new byte[LID_OFFSET + localIDSize + lengthSize + versionSize + checksumSize];
+		result = new byte[LID_OFFSET + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize];
 
 		putType(result, type, TYP_OFFSET);
 
@@ -269,8 +269,8 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	protected short getCRCOffset(final byte[] p_buffer, final int p_offset) {
-		short ret = getVEROffset(p_buffer, p_offset);
-		final byte versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
+		short ret = (short) (getVEROffset(p_buffer, p_offset) + LOG_ENTRY_EPO_SIZE);
+		final byte versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT));
 
 		if (USE_CHECKSUM) {
 			ret += versionSize;

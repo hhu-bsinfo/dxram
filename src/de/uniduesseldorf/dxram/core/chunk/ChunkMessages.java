@@ -23,19 +23,22 @@ public final class ChunkMessages {
 	public static final byte SUBTYPE_GET_RESPONSE = 2;
 	public static final byte SUBTYPE_PUT_REQUEST = 3;
 	public static final byte SUBTYPE_PUT_RESPONSE = 4;
-	public static final byte SUBTYPE_REMOVE_REQUEST = 5;
-	public static final byte SUBTYPE_REMOVE_RESPONSE = 6;
-	public static final byte SUBTYPE_LOCK_REQUEST = 7;
-	public static final byte SUBTYPE_LOCK_RESPONSE = 8;
-	public static final byte SUBTYPE_UNLOCK_MESSAGE = 9;
-	public static final byte SUBTYPE_DATA_REQUEST = 10;
-	public static final byte SUBTYPE_DATA_RESPONSE = 11;
-	public static final byte SUBTYPE_DATA_MESSAGE = 12;
-	public static final byte SUBTYPE_MULTIGET_REQUEST = 13;
-	public static final byte SUBTYPE_MULTIGET_RESPONSE = 14;
-	public static final byte SUBTYPE_CHUNK_COMMAND_MESSAGE = 15;
-	public static final byte SUBTYPE_CHUNK_COMMAND_REQUEST = 16;
-	public static final byte SUBTYPE_CHUNK_COMMAND_RESPONSE = 17;
+	public static final byte SUBTYPE_MULTI_PUT_MESSAGE = 5;
+	public static final byte SUBTYPE_MULTI_PUT_REQUEST = 6;
+	public static final byte SUBTYPE_MULTI_PUT_RESPONSE = 7;
+	public static final byte SUBTYPE_REMOVE_REQUEST = 8;
+	public static final byte SUBTYPE_REMOVE_RESPONSE = 9;
+	public static final byte SUBTYPE_LOCK_REQUEST = 10;
+	public static final byte SUBTYPE_LOCK_RESPONSE = 11;
+	public static final byte SUBTYPE_UNLOCK_MESSAGE = 12;
+	public static final byte SUBTYPE_DATA_REQUEST = 13;
+	public static final byte SUBTYPE_DATA_RESPONSE = 14;
+	public static final byte SUBTYPE_DATA_MESSAGE = 15;
+	public static final byte SUBTYPE_MULTIGET_REQUEST = 16;
+	public static final byte SUBTYPE_MULTIGET_RESPONSE = 17;
+	public static final byte SUBTYPE_CHUNK_COMMAND_MESSAGE = 18;
+	public static final byte SUBTYPE_CHUNK_COMMAND_REQUEST = 19;
+	public static final byte SUBTYPE_CHUNK_COMMAND_RESPONSE = 20;
 
 	// Constructors
 	/**
@@ -279,6 +282,183 @@ public final class ChunkMessages {
 		 */
 		public PutResponse(final PutRequest p_request, final boolean p_success) {
 			super(p_request, SUBTYPE_PUT_RESPONSE);
+
+			m_success = p_success;
+		}
+
+		// Getters
+		/**
+		 * Get the status
+		 * @return true if put was successful
+		 */
+		public final boolean getStatus() {
+			return m_success;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeBoolean(p_buffer, m_success);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_success = InputHelper.readBoolean(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getBooleanWriteLength();
+		}
+
+	}
+
+	/**
+	 * Request for updating a Chunk on a remote node
+	 * @author Florian Klein 09.03.2012
+	 */
+	public static class MultiPutMessage extends AbstractMessage {
+
+		// Attributes
+		private Chunk[] m_chunks;
+
+		// Constructors
+		/**
+		 * Creates an instance of MultiPutMessage
+		 */
+		public MultiPutMessage() {
+			super();
+
+			m_chunks = null;
+		}
+
+		/**
+		 * Creates an instance of MultiPutMessage
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunks
+		 *            the Chunks to put
+		 */
+		public MultiPutMessage(final short p_destination, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_MULTI_PUT_MESSAGE);
+
+			m_chunks = p_chunks;
+		}
+
+		// Getters
+		/**
+		 * Get the Chunks to put
+		 * @return the Chunks to put
+		 */
+		public final Chunk[] getChunks() {
+			return m_chunks;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeChunks(p_buffer, m_chunks);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_chunks = InputHelper.readChunks(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getChunksWriteLength(m_chunks);
+		}
+
+	}
+
+	/**
+	 * Request for updating a Chunk on a remote node
+	 * @author Florian Klein 09.03.2012
+	 */
+	public static class MultiPutRequest extends AbstractRequest {
+
+		// Attributes
+		private Chunk[] m_chunks;
+
+		// Constructors
+		/**
+		 * Creates an instance of MultiPutRequest
+		 */
+		public MultiPutRequest() {
+			super();
+
+			m_chunks = null;
+		}
+
+		/**
+		 * Creates an instance of PutRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunks
+		 *            the Chunks to put
+		 */
+		public MultiPutRequest(final short p_destination, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_MULTI_PUT_REQUEST);
+
+			m_chunks = p_chunks;
+		}
+
+		// Getters
+		/**
+		 * Get the Chunks to put
+		 * @return the Chunks to put
+		 */
+		public final Chunk[] getChunks() {
+			return m_chunks;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeChunks(p_buffer, m_chunks);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_chunks = InputHelper.readChunks(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getChunksWriteLength(m_chunks);
+		}
+
+	}
+
+	/**
+	 * Response to a MultiPutRequest
+	 * @author Florian Klein 09.03.2012
+	 */
+	public static class MultiPutResponse extends AbstractResponse {
+
+		// Attributes
+		private boolean m_success;
+
+		// Constructors
+		/**
+		 * Creates an instance of MultiPutResponse
+		 */
+		public MultiPutResponse() {
+			super();
+
+			m_success = false;
+		}
+
+		/**
+		 * Creates an instance of MultiPutResponse
+		 * @param p_request
+		 *            the request
+		 * @param p_success
+		 *            true if put was successful
+		 */
+		public MultiPutResponse(final MultiPutRequest p_request, final boolean p_success) {
+			super(p_request, SUBTYPE_MULTI_PUT_RESPONSE);
 
 			m_success = p_success;
 		}

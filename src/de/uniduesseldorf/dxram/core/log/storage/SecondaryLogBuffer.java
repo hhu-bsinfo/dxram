@@ -17,6 +17,7 @@ public final class SecondaryLogBuffer {
 
 	// Constants
 	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
+	private static final int SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
 
 	// Attributes
 	private byte[] m_buffer;
@@ -152,13 +153,23 @@ public final class SecondaryLogBuffer {
 			// No data in secondary log buffer -> Write directly in secondary log
 			m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize);
 		} else {
-			// Data in secondary log buffer -> Flush buffer and write new data in secondary log with one access
-			dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
-			System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
-			System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_entryOrRangeSize);
+			// There is data in secondary log buffer
+			if (m_bytesInBuffer + p_entryOrRangeSize <= SEGMENT_SIZE) {
+				// Data combined fits in one segment -> Flush buffer and write new data in secondary log with one access
+				dataToWrite = new byte[m_bytesInBuffer + p_entryOrRangeSize];
+				System.arraycopy(m_buffer, 0, dataToWrite, 0, m_bytesInBuffer);
+				System.arraycopy(p_buffer, 0, dataToWrite, m_bytesInBuffer, p_entryOrRangeSize);
 
-			m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length);
-			m_bytesInBuffer = 0;
+				m_secondaryLog.appendData(dataToWrite, 0, dataToWrite.length);
+				m_bytesInBuffer = 0;
+			} else {
+				// Write buffer first
+				m_secondaryLog.appendData(m_buffer, 0, m_bytesInBuffer);
+				m_bytesInBuffer = 0;
+
+				// Write new data
+				m_secondaryLog.appendData(p_buffer, p_bufferOffset, p_entryOrRangeSize);
+			}
 		}
 	}
 

@@ -83,6 +83,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_GET_RESPONSE, ChunkMessages.GetResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_REQUEST, ChunkMessages.PutRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_PUT_RESPONSE, ChunkMessages.PutResponse.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTI_PUT_MESSAGE, ChunkMessages.MultiPutMessage.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTI_PUT_REQUEST, ChunkMessages.MultiPutRequest.class);
+		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_MULTI_PUT_RESPONSE, ChunkMessages.MultiPutResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_REQUEST, ChunkMessages.RemoveRequest.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_REMOVE_RESPONSE, ChunkMessages.RemoveResponse.class);
 		MessageDirectory.register(chunkType, ChunkMessages.SUBTYPE_LOCK_REQUEST, ChunkMessages.LockRequest.class);
@@ -316,7 +319,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			while (m_defaultMessages.size() + m_exclusiveMessages.size() > 25) {
+			while (m_defaultMessages.size() + m_exclusiveMessages.size() > 25) {//
 				Thread.yield();
 			}
 

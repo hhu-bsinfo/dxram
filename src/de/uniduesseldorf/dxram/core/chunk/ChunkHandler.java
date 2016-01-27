@@ -33,6 +33,9 @@ import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LockRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.LockResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiGetResponse;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiPutMessage;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiPutRequest;
+import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.MultiPutResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.PutRequest;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.PutResponse;
 import de.uniduesseldorf.dxram.core.chunk.ChunkMessages.RemoveRequest;
@@ -159,6 +162,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(GetRequest.class, this);
 		m_network.register(PutRequest.class, this);
+		m_network.register(MultiPutMessage.class, this);
+		m_network.register(MultiPutRequest.class, this);
 		m_network.register(RemoveRequest.class, this);
 		m_network.register(LockRequest.class, this);
 		m_network.register(UnlockMessage.class, this);
@@ -776,11 +781,13 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	public void put(final Chunk[] p_chunks) throws DXRAMException {
 		Locations locations;
 		short primaryPeer;
+		short[] backupPeers;
 		long backupPeersAsLong;
 		boolean success = false;
-		PutRequest request;
+		Chunk[] chunks;
 
-		HashMap<Long, ArrayList<Chunk>> map = null;
+		HashMap<Short, ArrayList<Chunk>> primaryMap = null;
+		HashMap<Long, ArrayList<Chunk>> backupMap = null;
 		ArrayList<Chunk> list;
 
 		Operation.PUT.enter();
@@ -790,7 +797,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
 			LOGGER.error("a superpeer must not use chunks");
 		} else {
-			map = new HashMap<Long, ArrayList<Chunk>>();
+			primaryMap = new HashMap<Short, ArrayList<Chunk>>();
+			backupMap = new HashMap<Long, ArrayList<Chunk>>();
 			for (Chunk chunk : p_chunks) {
 				if (m_memoryManager.isResponsible(chunk.getChunkID())) {
 					// Local put
@@ -805,59 +813,76 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						// Send backups for logging (unreliable)
 						backupPeersAsLong = getBackupPeersForLocalChunksAsLong(chunk.getChunkID());
 						if (backupPeersAsLong != -1) {
-							list = map.get(backupPeersAsLong);
+							list = backupMap.get(backupPeersAsLong);
 							if (list == null) {
 								list = new ArrayList<Chunk>();
-								map.put(backupPeersAsLong, list);
+								backupMap.put(backupPeersAsLong, list);
 							}
 							list.add(chunk);
 						}
 					}
 				} else {
-					while (!success) {
-						locations = m_lookup.get(chunk.getChunkID());
-						primaryPeer = locations.getPrimaryPeer();
-						backupPeersAsLong = locations.getBackupPeersAsLong();
+					locations = m_lookup.get(chunk.getChunkID());
+					primaryPeer = locations.getPrimaryPeer();
+					backupPeersAsLong = locations.getBackupPeersAsLong();
 
-						if (primaryPeer == m_nodeID) {
-							// Local put
-							int bytesWritten;
-							// TODO optimize: have this in a separate loop
-							m_memoryManager.lockAccess();
-							bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
-							m_memoryManager.unlockAccess();
-							success = true;
-						} else {
-							// Remote put
-							request = new PutRequest(primaryPeer, chunk, false);
-							try {
-								request.sendSync(m_network);
-							} catch (final NetworkException e) {
-								m_lookup.invalidate(chunk.getChunkID());
-								continue;
-							}
-							success = request.getResponse(PutResponse.class).getStatus();
+					if (primaryPeer == m_nodeID) {
+						// Local put
+						int bytesWritten;
+						// TODO optimize: have this in a separate loop
+						m_memoryManager.lockAccess();
+						bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
+						m_memoryManager.unlockAccess();
+					} else {
+						// Store chunk for remote multi-put
+						list = primaryMap.get(primaryPeer);
+						if (list == null) {
+							list = new ArrayList<Chunk>();
+							primaryMap.put(primaryPeer, list);
 						}
-						if (success && LOG_ACTIVE) {
-							// Send backups for logging (unreliable)
-							if (backupPeersAsLong != -1) {
-								list = map.get(backupPeersAsLong);
-								if (list == null) {
-									list = new ArrayList<Chunk>();
-									map.put(backupPeersAsLong, list);
-								}
-								list.add(chunk);
+						list.add(chunk);
+					}
+					if (LOG_ACTIVE) {
+						// Send backups for logging (unreliable)
+						if (backupPeersAsLong != -1) {
+							list = backupMap.get(backupPeersAsLong);
+							if (list == null) {
+								list = new ArrayList<Chunk>();
+								backupMap.put(backupPeersAsLong, list);
 							}
+							list.add(chunk);
 						}
 					}
 				}
 			}
 		}
 
+		// Remote multi-put
+		if (primaryMap != null) {
+			for (Map.Entry<Short, ArrayList<Chunk>> entry : primaryMap.entrySet()) {
+				primaryPeer = entry.getKey();
+				chunks = entry.getValue().toArray(new Chunk[entry.getValue().size()]);
+
+				while (true) {
+					try {
+						// new MultiPutMessage(primaryPeer, chunks).send(m_network);
+						MultiPutRequest req = new MultiPutRequest(primaryPeer, chunks);
+						req.sendSync(m_network);
+						req.getResponse(MultiPutResponse.class);
+					} catch (final NetworkException e) {
+						for (Chunk chunk : chunks) {
+							m_lookup.invalidate(chunk.getChunkID());
+						}
+						continue;
+					}
+					break;
+				}
+			}
+		}
+
+		// Remote multi-log
 		if (LOG_ACTIVE) {
-			short[] backupPeers;
-			Chunk[] chunks;
-			for (Map.Entry<Long, ArrayList<Chunk>> entry : map.entrySet()) {
+			for (Map.Entry<Long, ArrayList<Chunk>> entry : backupMap.entrySet()) {
 				backupPeersAsLong = entry.getKey();
 				chunks = entry.getValue().toArray(new Chunk[entry.getValue().size()]);
 
@@ -865,7 +890,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						(short) ((backupPeersAsLong & 0x00000000FFFF0000L) >> 16), (short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
-						System.out.println("Logging " + chunks.length + " Chunks to " + backupPeers[i]);
+						// System.out.println("Logging " + chunks.length + " Chunks to " + backupPeers[i]);
 						new LogMessage(backupPeers[i], chunks).send(m_network);
 					}
 				}
@@ -2005,8 +2030,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		try {
 			if (m_memoryManager.isResponsible(chunk.getChunkID())) {
-				// TODO
-				// m_memoryManager.put(chunk);
 				m_memoryManager.lockAccess();
 				bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
 				m_memoryManager.unlockAccess();
@@ -2018,6 +2041,73 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			LOGGER.error("ERR::Could not handle message", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
+		}
+
+		Operation.INCOMING_PUT.leave();
+	}
+
+	/**
+	 * Handles an incoming MultiPutMessage
+	 * @param p_message
+	 *            the MultiPutMessage
+	 */
+	private void incomingMultiPutMessage(final MultiPutMessage p_message) {
+		Chunk[] chunks;
+		int bytesWritten;
+
+		Operation.INCOMING_PUT.enter();
+
+		chunks = p_message.getChunks();
+
+		for (Chunk chunk : chunks) {
+			try {
+				if (m_memoryManager.isResponsible(chunk.getChunkID())) {
+					m_memoryManager.lockAccess();
+					bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
+					m_memoryManager.unlockAccess();
+				}
+			} catch (final DXRAMException e) {
+				LOGGER.error("ERR::Could not handle message", e);
+
+				Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
+			}
+		}
+
+		Operation.INCOMING_PUT.leave();
+	}
+
+	/**
+	 * Handles an incoming MultiPutRequest
+	 * @param p_request
+	 *            the MultiPutRequest
+	 */
+	private void incomingMultiPutRequest(final MultiPutRequest p_request) {
+		boolean success = false;
+		Chunk[] chunks;
+		int bytesWritten;
+
+		Operation.INCOMING_PUT.enter();
+
+		chunks = p_request.getChunks();
+
+		for (Chunk chunk : chunks) {
+			try {
+				if (m_memoryManager.isResponsible(chunk.getChunkID())) {
+					m_memoryManager.lockAccess();
+					bytesWritten = m_memoryManager.put(chunk.getChunkID(), chunk.getData().array(), 0, chunk.getData().array().length);
+					m_memoryManager.unlockAccess();
+					success = true;
+				}
+			} catch (final DXRAMException e) {
+				LOGGER.error("ERR::Could not handle message", e);
+
+				Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
+			}
+		}
+		try {
+			new MultiPutResponse(p_request, success).send(m_network);
+		} catch (final NetworkException e) {
+			e.printStackTrace();
 		}
 
 		Operation.INCOMING_PUT.leave();
@@ -2431,6 +2521,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					break;
 				case ChunkMessages.SUBTYPE_PUT_REQUEST:
 					incomingPutRequest((PutRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_MULTI_PUT_MESSAGE:
+					incomingMultiPutMessage((MultiPutMessage) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_MULTI_PUT_REQUEST:
+					incomingMultiPutRequest((MultiPutRequest) p_message);
 					break;
 				case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
 					incomingRemoveRequest((RemoveRequest) p_message);

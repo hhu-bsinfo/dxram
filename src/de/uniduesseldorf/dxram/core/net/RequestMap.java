@@ -18,7 +18,7 @@ final class RequestMap {
 	// Attributes
 	private static Map<Long, AbstractRequest> m_pendingRequests = new HashMap<>();
 
-	private static Lock m_lock = new ReentrantLock();
+	private static Lock m_lock = new ReentrantLock(false);
 
 	// Constructors
 	/**

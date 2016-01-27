@@ -55,6 +55,30 @@ public final class LogCatalog {
 	}
 
 	/**
+	 * Returns whether there is already a secondary log with given identifier
+	 * @param p_chunkID
+	 *            the ChunkID
+	 * @param p_rangeID
+	 *            the RangeID for migrations or -1
+	 * @return whether there is already a secondary log with given identifier or not
+	 */
+	public boolean exists(final long p_chunkID, final byte p_rangeID) {
+		boolean ret = false;
+
+		if (p_rangeID != -1) {
+			if (m_migrationLogs.size() > p_rangeID) {
+				ret = true;
+			}
+		} else {
+			if (m_creatorBackupRanges.size() > 0 && m_creatorBackupRanges.get(m_creatorBackupRanges.size() - 1) >= ChunkID.getLocalID(p_chunkID)) {
+				ret = true;
+			}
+		}
+
+		return ret;
+	}
+
+	/**
 	 * Gets the corresponding secondary log
 	 * @param p_chunkID
 	 *            the ChunkID
@@ -239,9 +263,10 @@ public final class LogCatalog {
 	 */
 	private int getRangeID(final long p_chunkID) {
 		int ret = 0;
+		final long localID = ChunkID.getLocalID(p_chunkID);
 
 		for (int i = m_creatorLogs.size() - 1; i >= 0; i--) {
-			if (m_creatorBackupRanges.get(i) <= ChunkID.getLocalID(p_chunkID)) {
+			if (m_creatorBackupRanges.get(i) <= localID) {
 				ret = i;
 				break;
 			}

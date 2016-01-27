@@ -362,7 +362,7 @@ public abstract class AbstractLogEntryHeader {
 	}
 
 	/**
-	 * Returns the maximum log entry header size for secondary log
+	 * Returns the approximated log entry header size for secondary log (the version size can only be determined on backup -> 1 byte as average value)
 	 * @param p_logStoresMigrations
 	 *            whether the entry is in a secondary log for migrations or not
 	 * @param p_localID

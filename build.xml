@@ -24,7 +24,7 @@
 			<classpath refid="build.classpath" />
 		</manifestclasspath>
 
-		<javac srcdir="${source}" destdir="${classes}" includeantruntime="false" debug="true" encoding="UTF-8">
+		<javac srcdir="${source}" destdir="${classes}" includeantruntime="false" debug="false" encoding="UTF-8">
 			<classpath>
 				<fileset dir="${lib}">
 					<include name="**/*.jar" />

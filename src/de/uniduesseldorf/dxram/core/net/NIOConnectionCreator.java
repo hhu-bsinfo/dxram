@@ -256,18 +256,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 *            the ByteBuffer
 		 */
 		protected void addIncoming(final ByteBuffer p_buffer) {
-			/*-m_receivedBytes += p_buffer.remaining();
-
-			m_flowControlCondLock.lock();
-			if (m_receivedBytes > MAX_OUTSTANDING_BYTES / 8) {
-				sendFlowControlMessage();
-			}
-			m_flowControlCondLock.unlock();
-
-			execute(p_buffer);*/
-
 			// Avoid congestion by not allowing more than 1000 buffers to be cached for reading
-			while (m_incoming.size() > 1000) {
+			while (m_incoming.size() > 1000) {//
 				Thread.yield();
 			}
 			m_incomingLock.lock();
@@ -315,11 +305,24 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			}
 
 			m_outgoingLock.lock();
-			if (m_outgoing.isEmpty()) {
-				m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
-			}
+			// Change operation (read <-> write) and/or connection
+			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
 
 			m_outgoing.offer(p_buffer);
+			m_outgoingLock.unlock();
+		}
+
+		/**
+		 * Prepend buffer to be written into the channel. Called if buffer could not be written completely.
+		 * @param p_buffer
+		 *            Buffer
+		 */
+		private void addBuffer(final ByteBuffer p_buffer) {
+			m_outgoingLock.lock();
+			// Change operation request to OP_READ to read before trying to send the buffer again
+			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
+
+			m_outgoing.addFirst(p_buffer);
 			m_outgoingLock.unlock();
 		}
 
@@ -340,6 +343,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				m_outgoingLock.lock();
 				buffer = m_outgoing.poll();
 				m_outgoingLock.unlock();
+
+				// This is a left-over (see addBuffer())
+				if (buffer.remaining() != 0 && buffer.position() != 0) {
+					return buffer;
+				}
 
 				// Skip when buffer is completed
 				if (buffer == null || !buffer.hasRemaining()) {
@@ -612,23 +620,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				if (connection.m_handler == null) {
 					connection.m_handler = new SelectionKeyHandler(p_key);
 				}
-
-				// dispatch event when the connection is known
-				/*-if (p_key.isValid()) {
-					try {
-						connection = (NIOConnection) p_key.attachment();
-
-						if (p_key.isReadable()) {
-							connection.m_handler.read((NIOConnection) connection.m_handler.m_key.attachment());
-						} else if (p_key.isWritable()) {
-							connection.m_handler.write((NIOConnection) connection.m_handler.m_key.attachment());
-						} else if (p_key.isConnectable()) {
-							connection.m_handler.connect((NIOConnection) connection.m_handler.m_key.attachment());
-						}
-					} catch (final IOException e) {
-						LOGGER.debug("WARN::Accessing the channel");
-					}
-				}*/
 				m_executor.execute(connection.m_handler);
 			} else {
 				// handle unknown events by itself
@@ -929,46 +920,77 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 */
 		public void write(final NIOConnection p_connection) throws IOException {
 			int writtenBytes = 0;
+			int length = 0;
+			int bytes;
 			int size;
 			ByteBuffer view;
-			ByteBuffer buffers;
+			ByteBuffer buffer;
 
 			m_writeLock.lock();
-			buffers = p_connection.getOutgoingBytes(m_writeBuffer, SEND_BYTES);
+			buffer = p_connection.getOutgoingBytes(m_writeBuffer, SEND_BYTES);
 			try {
-				if (buffers != null) {
-					writtenBytes += buffers.remaining();
-					if (buffers.remaining() > SEND_BYTES) {
+				if (buffer != null) {
+					writtenBytes += buffer.remaining();
+					if (buffer.remaining() > SEND_BYTES) {
 						// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
 						// the length of the actual written data -> simulate a smaller buffer by slicing it
-						while (buffers.remaining() > 0) {
-							size = Math.min(buffers.remaining(), SEND_BYTES);
-							view = buffers.slice();
+						outerloop: while (buffer.remaining() > 0) {
+							size = Math.min(buffer.remaining(), SEND_BYTES);
+							view = buffer.slice();
 							view.limit(size);
 
-							int length = view.remaining();
+							length = view.remaining();
+							int tries = 0;
 							while (length > 0) {
 								try {
-									length -= p_connection.m_channel.write(view);
+									bytes = p_connection.m_channel.write(view);
+									length -= bytes;
+
+									if (bytes == 0) {
+										if (++tries == 1000000) {
+											System.out.println("Cannot write buffer because receive buffer has not been read for a while."
+													+ " Might be a deadlock. Solving it by reading first.");
+											buffer.position(buffer.position() + size - length);
+											view = buffer.slice();
+											p_connection.addBuffer(view);
+
+											break outerloop;
+										}
+									} else {
+										tries = 0;
+									}
 								} catch (final ClosedChannelException e) {
 									// Channel is closed -> ignore
 									break;
 								}
 							}
-							buffers.position(buffers.position() + size);
+							buffer.position(buffer.position() + size);
 						}
 					} else {
-						int length = buffers.remaining();
+						length = buffer.remaining();
+						int tries = 0;
 						while (length > 0) {
 							try {
-								length -= p_connection.m_channel.write(buffers);
+								bytes = p_connection.m_channel.write(buffer);
+								length -= bytes;
+
+								if (bytes == 0) {
+									if (++tries == 1000000) {
+										System.out.println("Cannot write buffer because receive buffer has not been read for a while."
+												+ " Might be a deadlock. Solving it by reading first.");
+										p_connection.addBuffer(buffer);
+										break;
+									}
+								} else {
+									tries = 0;
+								}
 							} catch (final ClosedChannelException e) {
 								// Channel is closed -> ignore
 								break;
 							}
 						}
 					}
-					ThroughputStatistic.getInstance().outgoingExtern(writtenBytes);
+					ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
 				}
 			} catch (final IOException e) {
 				LOGGER.debug("WARN::Could not write to channel (" + p_connection.getDestination() + ")", e);

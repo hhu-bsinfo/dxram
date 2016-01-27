@@ -71,7 +71,7 @@ public final class DefaultLockHandler implements LockInterface {
 	public void initialize() throws DXRAMException {
 		m_locks = new HashMap<Long, DefaultLock>();
 
-		m_lock = new ReentrantLock();
+		m_lock = new ReentrantLock(false);
 	}
 
 	@Override

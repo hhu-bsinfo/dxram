@@ -88,16 +88,13 @@ public final class CachedTreeLookup implements LookupInterface {
 	@Override
 	public Locations get(final long p_chunkID) throws LookupException {
 		Locations ret;
-		short nodeID;
 
 		ret = m_chunkIDCacheTree.getMetadata(p_chunkID);
 		if (ret == null) {
 			ret = m_lookup.get(p_chunkID);
 			if (ret != null) {
-				nodeID = ret.getPrimaryPeer();
-
 				m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
-						((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], nodeID);
+						((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer(), ret.getBackupPeers());
 			}
 		}
 		return ret;

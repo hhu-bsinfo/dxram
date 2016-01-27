@@ -2,7 +2,6 @@
 package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.util.Arrays;
-import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.log.EpochVersion;
 
@@ -16,38 +15,28 @@ public class VersionsHashTable {
 	// Attributes
 	private int[] m_table;
 	private int m_count;
-	private int m_intCapacity;
 	private int m_elementCapacity;
-	private int m_threshold;
-	private float m_loadFactor;
-
-	private ReentrantLock m_lock;
 
 	// Constructors
 	/**
 	 * Creates an instance of VersionsHashTable
 	 * @param p_initialElementCapacity
 	 *            the initial capacity of VersionsHashTable
-	 * @param p_loadFactor
-	 *            the load factor of VersionsHashTable
 	 */
-	public VersionsHashTable(final int p_initialElementCapacity, final float p_loadFactor) {
+	public VersionsHashTable(final int p_initialElementCapacity) {
 		super();
 
 		m_count = 0;
 		m_elementCapacity = p_initialElementCapacity;
-		m_intCapacity = m_elementCapacity * 4;
-		m_loadFactor = p_loadFactor;
+		if (p_initialElementCapacity == 0) {
+			m_elementCapacity = 100;
+		}
 
 		if (m_elementCapacity == 0) {
 			m_table = new int[4];
-			m_threshold = (int) m_loadFactor;
 		} else {
-			m_table = new int[m_intCapacity];
-			m_threshold = (int) (m_elementCapacity * m_loadFactor);
+			m_table = new int[m_elementCapacity * 4];
 		}
-
-		m_lock = new ReentrantLock(false);
 	}
 
 	// Getter
@@ -60,14 +49,22 @@ public class VersionsHashTable {
 	}
 
 	/**
-	 * Checks if VersionsHashTable is empty
-	 * @return true if VersionsHashTable maps no keys to values, false otherwise
+	 * Returns the number of array cells in VersionsHashTable
+	 * @return the number of array cells in VersionsHashTable
 	 */
-	public final boolean isEmpty() {
-		return m_count == 0;
+	public final int getTableLength() {
+		return m_elementCapacity;
 	}
 
 	// Methods
+	/**
+	 * Clears VersionsHashTable
+	 */
+	public final void clear() {
+		Arrays.fill(m_table, 0);
+		m_count = 0;
+	}
+
 	/**
 	 * Returns the value to which the specified key is mapped in VersionsHashTable
 	 * @param p_key
@@ -80,9 +77,8 @@ public class VersionsHashTable {
 		long iter;
 		final long key = p_key + 1;
 
-		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
+		index = (VersionsBuffer.hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
-		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -91,7 +87,6 @@ public class VersionsHashTable {
 			}
 			iter = getKey(++index);
 		}
-		m_lock.unlock();
 
 		return ret;
 	}
@@ -110,13 +105,12 @@ public class VersionsHashTable {
 		long iter;
 		final long key = p_key + 1;
 
-		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
+		index = (VersionsBuffer.hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
-		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				set(index, key, p_epoch, p_version);
+				// Do not overwrite entry!
 				break;
 			}
 			iter = getKey(++index);
@@ -127,18 +121,9 @@ public class VersionsHashTable {
 			m_count++;
 		}
 
-		if (m_count >= m_threshold) {
-			rehash();
+		if (m_count == m_elementCapacity) {
+			System.out.println("Error: HashTable too small!");
 		}
-		m_lock.unlock();
-	}
-
-	/**
-	 * Clears VersionsHashTable
-	 */
-	public final void clear() {
-		Arrays.fill(m_table, 0);
-		m_count = 0;
 	}
 
 	/**
@@ -147,7 +132,7 @@ public class VersionsHashTable {
 	 *            the index
 	 * @return the key
 	 */
-	private long getKey(final int p_index) {
+	protected long getKey(final int p_index) {
 		int index;
 
 		index = p_index % m_elementCapacity * 4;
@@ -160,7 +145,7 @@ public class VersionsHashTable {
 	 *            the index
 	 * @return the epoch
 	 */
-	private int getEpoch(final int p_index) {
+	protected int getEpoch(final int p_index) {
 		return m_table[p_index % m_elementCapacity * 4 + 2];
 	}
 
@@ -170,7 +155,7 @@ public class VersionsHashTable {
 	 *            the index
 	 * @return the version
 	 */
-	private int getVersion(final int p_index) {
+	protected int getVersion(final int p_index) {
 		return m_table[p_index % m_elementCapacity * 4 + 3];
 	}
 
@@ -194,45 +179,4 @@ public class VersionsHashTable {
 		m_table[index + 2] = p_epoch;
 		m_table[index + 3] = p_version;
 	}
-
-	/**
-	 * Hashes the given key
-	 * @param p_key
-	 *            the key
-	 * @return the hash value
-	 */
-	private int hash(final long p_key) {
-		long hash = p_key;
-
-		hash ^= hash >>> 20 ^ hash >>> 12;
-		return (int) (hash ^ hash >>> 7 ^ hash >>> 4);
-	}
-
-	/**
-	 * Increases the capacity of and internally reorganizes VersionsHashTable
-	 */
-	private void rehash() {
-		int index = 0;
-		int oldCapacity;
-		int[] oldMap;
-		int[] newMap;
-
-		oldCapacity = m_intCapacity;
-		oldMap = m_table;
-
-		m_elementCapacity = m_elementCapacity * 2 + 1;
-		m_intCapacity = m_elementCapacity * 4;
-		newMap = new int[m_intCapacity];
-		m_threshold = (int) (m_elementCapacity * m_loadFactor);
-		m_table = newMap;
-
-		m_count = 0;
-		while (index < oldCapacity) {
-			if (((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) != 0) {
-				put(((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) - 1, oldMap[index + 2], oldMap[index + 3]);
-			}
-			index += 4;
-		}
-	}
-
 }

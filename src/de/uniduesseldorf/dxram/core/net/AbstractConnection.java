@@ -27,7 +27,7 @@ abstract class AbstractConnection {
 	private final MessageCreator m_messageCreator;
 	private final ByteStreamInterpreter m_streamInterpreter;
 
-	private short m_destination;
+	public short m_destination;
 
 	private boolean m_connected;
 
@@ -355,7 +355,7 @@ abstract class AbstractConnection {
 		 *            new buffer
 		 */
 		public void newData(final ByteBuffer p_buffer) {
-			while (m_buffers.size() > 1000) {
+			while (m_buffers.size() > 1000) {//
 				Thread.yield();
 			}
 
