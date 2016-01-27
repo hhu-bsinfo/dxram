@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Represents a nodes configuration for DXRAM. This also holds any information
@@ -139,11 +138,11 @@ public final class NodesConfiguration {
 		 *            the role of the node
 		 */
 		public NodeEntry(final String p_ip, final int p_port, final short p_rack, final short p_switch, final NodeRole p_role) {
-			Contract.checkNotNull(p_ip, "no IP given");
-			Contract.check(p_port > 0 && p_port < 65536, "invalid port given");
-			Contract.check(p_rack >= 0, "invalid rack given");
-			Contract.check(p_switch >= 0, "invalid switch given");
-			Contract.checkNotNull(p_role, "no role given");
+			assert p_ip != null;
+			assert p_port > 0 && p_port < 65536;
+			assert p_rack >= 0;
+			assert p_switch >= 0;
+			assert p_role != null;
 
 			m_ip = p_ip;
 			m_port = p_port;

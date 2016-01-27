@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import de.hhu.bsinfo.utils.Contract;
 import de.hhu.bsinfo.utils.unsafe.AbstractUnsafeList.ElementChecker;
 import de.hhu.bsinfo.utils.unsafe.AbstractUnsafeList.UnsafeListIterator;
 import sun.misc.Unsafe;
@@ -45,7 +44,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 	 *            the list to use
 	 */
 	public AbstractList(final int p_elementSize, final AbstractUnsafeList p_list) {
-		Contract.check(p_elementSize > 0, "invalid element size given");
+		assert p_elementSize > 0;
 
 		m_list = p_list;
 		m_list.setElementSize(p_elementSize);
@@ -128,7 +127,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 		int size;
 		int position;
 
-		Contract.checkNotNull(p_array, "no array given");
+		assert p_array != null;
 
 		size = m_list.getSize();
 		if (p_array.length >= size) {
@@ -149,7 +148,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 	public final boolean add(final Type p_element) {
 		long address;
 
-		Contract.checkNotNull(p_element, "no element given");
+		assert p_element != null;
 
 		address = m_list.addTail();
 		write(address, p_element);
@@ -178,7 +177,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 	public final boolean containsAll(final Collection<?> p_collection) {
 		boolean ret = true;
 
-		Contract.checkNotNull(p_collection, "no collection given");
+		assert p_collection != null;
 
 		for (Object object : p_collection) {
 			if (!contains(object)) {
@@ -193,7 +192,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 
 	@Override
 	public final boolean addAll(final Collection<? extends Type> p_collection) {
-		Contract.checkNotNull(p_collection, "no collection given");
+		assert p_collection != null;
 
 		for (Type value : p_collection) {
 			add(value);
@@ -207,7 +206,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 		int index;
 		long address;
 
-		Contract.checkNotNull(p_collection, "no collection given");
+		assert p_collection != null;
 
 		index = p_index;
 		for (Type value : p_collection) {
@@ -222,7 +221,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 	public final boolean removeAll(final Collection<?> p_collection) {
 		boolean ret = false;
 
-		Contract.checkNotNull(p_collection, "no collection given");
+		assert p_collection != null;
 
 		for (Object object : p_collection) {
 			ret |= remove(object);
@@ -235,7 +234,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 	public final boolean retainAll(final Collection<?> p_collection) {
 		boolean ret = false;
 
-		Contract.checkNotNull(p_collection, "no collection given");
+		assert p_collection != null;
 
 		for (final Iterator<Type> iterator = iterator(); iterator.hasNext();) {
 			if (!p_collection.contains(iterator.next())) {
@@ -263,7 +262,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 		Type ret;
 		long address;
 
-		Contract.checkNotNull(p_element, "no element given");
+		assert p_element != null;
 
 		address = m_list.get(p_index);
 		ret = read(address);
@@ -274,7 +273,7 @@ public abstract class AbstractList<Type> implements List<Type> {
 
 	@Override
 	public final void add(final int p_index, final Type p_element) {
-		Contract.checkNotNull(p_element, "no element given");
+		assert p_element != null;
 
 		write(m_list.put(p_index), p_element);
 	}
@@ -382,14 +381,14 @@ public abstract class AbstractList<Type> implements List<Type> {
 
 		@Override
 		public void set(final Type p_element) {
-			Contract.checkNotNull(p_element, "no element given");
+			assert p_element != null;
 
 			write(m_iterator.getCurrent(), p_element);
 		}
 
 		@Override
 		public void add(final Type p_element) {
-			Contract.checkNotNull(p_element, "no element given");
+			assert p_element != null;
 
 			write(m_iterator.add(), p_element);
 		}

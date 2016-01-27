@@ -1,8 +1,6 @@
 
 package de.hhu.bsinfo.utils.unsafe;
 
-import de.hhu.bsinfo.utils.Contract;
-
 /**
  * Array List using the unsafe class to allocate elements
  * @author Florian Klein
@@ -46,8 +44,8 @@ public final class UnsafeArrayList extends AbstractUnsafeList {
 	private UnsafeArrayList(final int p_initialSize, final int p_elementSize) {
 		super(p_elementSize);
 
-		Contract.check(p_elementSize >= 0, "invalid element size");
-		Contract.check(p_initialSize > 0, "invalid initial size");
+		assert p_elementSize >= 0;
+		assert p_initialSize > 0;
 
 		m_array = null;
 

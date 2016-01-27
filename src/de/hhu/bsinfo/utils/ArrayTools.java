@@ -35,8 +35,8 @@ public final class ArrayTools {
 		T[] ret;
 		int i;
 
-		Contract.checkNotNull(p_collection, "no collection given");
-		Contract.checkNotNull(p_class, "no class given");
+		assert p_collection != null;
+		assert p_class != null;
 
 		ret = (T[]) Array.newInstance(p_class, p_collection.size());
 		i = 0;
@@ -63,8 +63,8 @@ public final class ArrayTools {
 		int length;
 		int i;
 
-		Contract.checkNotNull(p_class, "no class given");
-		Contract.checkNotNull(p_arrays, "no arrays given");
+		assert p_class != null;
+		assert p_arrays != null;
 
 		length = 0;
 		for (T[] array : p_arrays) {
@@ -93,7 +93,7 @@ public final class ArrayTools {
 		int length;
 		int i;
 
-		Contract.checkNotNull(p_arrays, "no arrays given");
+		assert p_arrays != null;
 
 		length = 0;
 		for (byte[] array : p_arrays) {
@@ -124,7 +124,7 @@ public final class ArrayTools {
 		int length;
 		int array;
 
-		Contract.checkNotNull(p_array, "no array given");
+		assert p_array != null;
 
 		length = p_array.length / p_length;
 		if (p_array.length % p_length != 0) {
@@ -155,8 +155,8 @@ public final class ArrayTools {
 	public static int copyArray(final byte[] p_source, final byte[] p_target) {
 		int ret;
 
-		Contract.checkNotNull(p_source, "no source array given");
-		Contract.checkNotNull(p_target, "no target array given");
+		assert p_source != null;
+		assert p_target != null;
 
 		ret = p_target.length - p_source.length;
 

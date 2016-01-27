@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.menet.AbstractRequest;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Request for command
@@ -32,7 +31,7 @@ public class LookupReflectionRequest extends AbstractRequest {
 	 */
 	public LookupReflectionRequest(final short p_destination, final String p_cmd) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REFLECTION_REQUEST);
-		Contract.checkNotNull(p_cmd, "error: no argument given");
+		assert p_cmd != null;
 		m_cmd = p_cmd;
 	}
 

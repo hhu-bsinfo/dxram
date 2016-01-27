@@ -63,7 +63,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 import de.hhu.bsinfo.utils.CRC16;
-import de.hhu.bsinfo.utils.Contract;
 
 public class DefaultLookupComponent extends LookupComponent implements MessageReceiver {
 
@@ -223,7 +222,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=" + p_firstChunkIDOrRangeID + ", p_locations=" + p_primaryAndBackupPeers);
 
-		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "Superpeer is not allowed to initialize backup ranges.");
+			return;
+		}
 
 		while (!finished) {
 			responsibleSuperpeer = m_mySuperpeer;
@@ -392,7 +394,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		// Insert ChunkID <-> ApplicationID mapping
 		m_logger.trace(getClass(), "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + p_chunkID);
-		Contract.check(p_id < Math.pow(2, 31) && p_id >= 0);
+		assert p_id < Math.pow(2, 31) && p_id >= 0;
 
 		if (!overlayIsStable()) {
 			check = true;
@@ -503,7 +505,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		m_logger.trace(getClass(), "Entering remove with: p_chunkID=" + p_chunkID);
 
-		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "Superpeer is not allowed to remove chunks from the overlay.");
+			return;
+		}
 
 		while (true) {
 			responsibleSuperpeer = m_mySuperpeer;
@@ -549,7 +554,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		m_logger.trace(getClass(), "Entering remove with: p_chunkIDs=" + p_chunkIDs);
 
-		Contract.check(!m_boot.getNodeRole().equals(NodeRole.SUPERPEER));
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "Superpeer is not allowed to remove chunks from the overlay.");
+			return;
+		}
 
 		while (true) {
 			responsibleSuperpeer = m_mySuperpeer;
@@ -794,7 +802,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_network.register(LookupReflectionRequest.class, this);
 
 		m_me = m_boot.getNodeID();
-		Contract.check(-1 != m_me);
+		assert m_me != NodeID.INVALID_ID;
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_nodeTable = new LookupTree[65536];
@@ -805,20 +813,13 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		}
 
 		m_superpeers = new ArrayList<Short>(m_numberOfSuperpeers);
-		Contract.checkNotNull(m_superpeers);
 		m_peers = new ArrayList<Short>();
-		Contract.checkNotNull(m_peers);
 
 		m_overlayLock = new ReentrantLock(false);
-		Contract.checkNotNull(m_overlayLock);
 		m_dataLock = new ReentrantLock(false);
-		Contract.checkNotNull(m_dataLock);
 		m_mappingLock = new ReentrantLock(false);
-		Contract.checkNotNull(m_mappingLock);
 		m_failureLock = new ReentrantLock(false);
-		Contract.checkNotNull(m_failureLock);
 		m_promoteLock = new ReentrantLock(false);
-		Contract.checkNotNull(m_promoteLock);
 
 		return createOrJoinSuperpeerOverlay(m_bootstrap);
 	}
@@ -922,7 +923,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_worker = new SOWorker();
 
 		m_stabilizationThread = new Thread(m_worker);
-		Contract.checkNotNull(m_stabilizationThread);
 		m_stabilizationThread.setName(SOWorker.class.getSimpleName() + " for " + DefaultLookupComponent.class.getSimpleName());
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
@@ -1006,7 +1006,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					}
 
 					response = request.getResponse(AskAboutSuccessorResponse.class);
-					Contract.checkNotNull(response);
 					hisSuccessor = response.getSuccessor();
 					if (responsibleSuperpeer == hisSuccessor) {
 						break;
@@ -1146,7 +1145,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void insertSuperpeer(final short p_superpeer) {
 		int index;
 
-		Contract.check(-1 != p_superpeer);
+		assert p_superpeer != NodeID.INVALID_ID;
 
 		index = Collections.binarySearch(m_superpeers, p_superpeer);
 		if (0 > index) {
@@ -1205,7 +1204,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void insertPeer(final short p_peer) {
 		int index;
 
-		Contract.check(-1 != p_peer);
+		assert p_peer != NodeID.INVALID_ID;
 
 		index = Collections.binarySearch(m_peers, p_peer);
 		if (0 > index) {
@@ -2154,7 +2153,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			m_worker = new SOWorker();
 
 			m_stabilizationThread = new Thread(m_worker);
-			Contract.checkNotNull(m_stabilizationThread);
 			m_stabilizationThread.setName(SOWorker.class.getSimpleName() + " for " + DefaultLookupComponent.class.getSimpleName());
 			m_stabilizationThread.setDaemon(true);
 			m_stabilizationThread.start();
@@ -2692,7 +2690,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 				promotePeerRequest =
 						new PromotePeerRequest(p_newSuperpeer, superpeersPredecessor, m_me, newResponsiblePeer, mappings, m_superpeers, peers, trees);
-				Contract.checkNotNull(promotePeerRequest);
 				if (p_safe) {
 					if (m_network.sendSync(promotePeerRequest) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Peer is not available anymore, get a new one
@@ -3237,7 +3234,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					m_overlayLock.unlock();
 
 					request = new AskAboutSuccessorRequest(contactSuperpeer);
-					Contract.checkNotNull(request);
 					if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 						// Superpeer is not available anymore, remove from superpeer array and try next superpeer
 						failureHandling(contactSuperpeer);
@@ -3247,7 +3243,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					}
 
 					response = request.getResponse(AskAboutSuccessorResponse.class);
-					Contract.checkNotNull(response);
 
 					hisSuccessor = response.getSuccessor();
 
@@ -3439,7 +3434,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					}
 					m_dataLock.unlock();
 					request = new AskAboutBackupsRequest(currentSuperpeer, peers);
-					Contract.checkNotNull(request);
 					if (m_network.sendSync(request) != NetworkComponent.ErrorCode.SUCCESS) {
 						// CurrentSuperpeer is not available anymore, remove it from superpeer array
 						failureHandling(currentSuperpeer);
@@ -3449,7 +3443,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					}
 
 					response = request.getResponse(AskAboutBackupsResponse.class);
-					Contract.checkNotNull(response);
 
 					trees = response.getBackups();
 					m_dataLock.lock();

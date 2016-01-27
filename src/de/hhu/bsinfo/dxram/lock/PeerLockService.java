@@ -4,6 +4,8 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkStatistic.Operation;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
@@ -11,6 +13,7 @@ import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -21,7 +24,7 @@ import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
  * Lock service providing exclusive locking of chunks/data structures.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class PeerLockService extends LockService implements MessageReceiver {
+public class PeerLockService extends LockService implements MessageReceiver, EventListener<NodeFailureEvent> {
 	
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
@@ -29,6 +32,7 @@ public class PeerLockService extends LockService implements MessageReceiver {
 	private MemoryManagerComponent m_memoryManager = null;
 	private LockComponent m_lock = null;
 	private LookupComponent m_lookup = null;
+	private EventComponent m_event = null;
 	
 	private boolean m_statisticsEnabled = false;
 	private int m_remoteLockSendIntervalMs = -1;
@@ -50,6 +54,9 @@ public class PeerLockService extends LockService implements MessageReceiver {
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_lock = getComponent(LockComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
+		m_event = getComponent(EventComponent.class);
+		
+		m_event.registerListener(this, NodeFailureEvent.class);
 		
 		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
 		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
@@ -247,6 +254,18 @@ public class PeerLockService extends LockService implements MessageReceiver {
 			Operation.UNLOCK.leave();
 		
 		return err;
+	}
+	
+	@Override
+	public void eventTriggered(NodeFailureEvent p_event) {
+		if (p_event.getRole() == NodeRole.PEER) {
+			m_logger.debug(getClass(), "Connection to peer " + p_event.getNodeID() + " lost, unlocking all chunks locked by lost instance.");
+			
+			if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
+				m_logger.error(getClass(), "Unlocking all locked chunks of crashed peer " + 
+											p_event.getNodeID() + " failed.");
+			}	
+		}
 	}
 	
 	@Override

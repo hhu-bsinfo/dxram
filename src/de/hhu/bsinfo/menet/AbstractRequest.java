@@ -4,8 +4,6 @@ package de.hhu.bsinfo.menet;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import de.hhu.bsinfo.utils.Contract;
-
 /**
  * Represents a Request
  * @author Florian Klein 09.03.2012
@@ -116,7 +114,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	public final <T extends AbstractResponse> T getResponse(final Class<T> p_class) {
 		T ret = null;
 
-		Contract.checkNotNull(p_class, "no class given");
+		assert p_class != null;
 
 		if (m_response != null && p_class.isAssignableFrom(m_response.getClass())) {
 			ret = p_class.cast(m_response);
@@ -194,7 +192,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 *            the Response
 	 */
 	final void fulfill(final AbstractResponse p_response) {
-		Contract.checkNotNull(p_response, "no response given");
+		assert p_response != null;
 
 		RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
 

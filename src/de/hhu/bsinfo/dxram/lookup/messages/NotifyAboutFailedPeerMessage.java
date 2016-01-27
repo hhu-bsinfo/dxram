@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Notify About Failed Peer Message
@@ -35,7 +35,7 @@ public class NotifyAboutFailedPeerMessage extends AbstractMessage {
 	public NotifyAboutFailedPeerMessage(final short p_destination, final short p_failedPeer) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE);
 
-		Contract.checkNotNull(p_failedPeer, "no failed peer given");
+		assert p_failedPeer != NodeID.INVALID_ID;
 
 		m_failedPeer = p_failedPeer;
 	}

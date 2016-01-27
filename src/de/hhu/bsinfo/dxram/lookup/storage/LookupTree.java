@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.lookup.Locations;
-import de.hhu.bsinfo.utils.Contract;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -52,7 +51,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	 *            order of the btree
 	 */
 	public LookupTree(final short p_order) {
-		Contract.check(1 < p_order, "too small order for BTree");
+		// too small order for BTree
+		assert p_order > 1;
 
 		m_minEntries = p_order;
 		m_minChildren = (short) (m_minEntries + 1);
@@ -133,7 +133,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	public static void writeCIDTree(final ByteBuffer p_buffer, final LookupTree p_tree) {
 		byte[] data;
 
-		Contract.checkNotNull(p_buffer, "no buffer given");
+		assert p_buffer != null;
 
 		if (p_tree == null) {
 			p_buffer.put((byte) 0);
@@ -275,7 +275,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
 
-		Contract.check(0 <= localID, "LocalID smaller than 0");
+		assert localID >= 0;
 
 		node = createOrReplaceEntry(localID, p_nodeID);
 
@@ -303,7 +303,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		startLID = p_startCID & 0x0000FFFFFFFFFFFFL;
 		endLID = p_endCID & 0x0000FFFFFFFFFFFFL;
-		Contract.check(startLID <= endLID && 0 < startLID, "end larger than start or start smaller than 1");
+		// end larger than start or start smaller than 1
+		assert startLID <= endLID && 0 < startLID;
+
 		if (startLID == endLID) {
 			migrateObject(p_startCID, p_nodeID);
 		} else {
@@ -368,7 +370,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	 * @return the NodeID of the primary peer for given object
 	 */
 	public short getPrimaryPeer(final long p_chunkID) {
-		Contract.checkNotNull(m_root);
+		assert m_root != null;
 		return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
 	}
 
@@ -387,7 +389,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 		Node node;
 		Entry predecessorEntry;
 
-		Contract.checkNotNull(m_root);
+		assert m_root != null;
 
 		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
 		node = getNodeOrSuccessorsNode(localID);
@@ -854,7 +856,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 		Node node;
 		Node parent;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		node = p_node;
 
@@ -933,7 +935,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 		Node node;
 		Node parent;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		node = p_node;
 
@@ -1103,7 +1105,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 		long replaceLID;
 		short replaceNodeID;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		index = p_node.indexOf(p_localID);
 		if (0 <= index) {

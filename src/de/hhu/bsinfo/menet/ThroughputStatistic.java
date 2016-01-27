@@ -8,7 +8,6 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.Contract;
 import de.hhu.bsinfo.utils.Tools;
 import de.hhu.bsinfo.utils.StatisticsManager.Statistic;
 import de.hhu.bsinfo.utils.StatisticsManager.StatisticEntry;
@@ -88,7 +87,7 @@ public final class ThroughputStatistic implements Statistic {
 	 *            the number of bytes
 	 */
 	public void incomingExtern(final int p_bytes) {
-		Contract.check(p_bytes >= 0, "invalid bytes value");
+		assert p_bytes >= 0;
 
 		m_lock.lock();
 
@@ -108,7 +107,7 @@ public final class ThroughputStatistic implements Statistic {
 	 *            the number of bytes
 	 */
 	public void outgoingExtern(final int p_bytes) {
-		Contract.check(p_bytes >= 0, "invalid bytes value");
+		assert p_bytes >= 0;
 
 		m_lock.lock();
 

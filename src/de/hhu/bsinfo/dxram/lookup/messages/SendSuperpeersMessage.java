@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Send Superpeers Message
@@ -36,7 +35,7 @@ public class SendSuperpeersMessage extends AbstractMessage {
 	public SendSuperpeersMessage(final short p_destination, final ArrayList<Short> p_superpeers) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE);
 
-		Contract.checkNotNull(p_superpeers, "no superpeers given");
+		assert p_superpeers != null;
 
 		m_superpeers = p_superpeers;
 	}

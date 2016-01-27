@@ -62,8 +62,8 @@ public class Cache<KeyType, ValueType> {
 		
 		EvictionPolicy<KeyType, ValueType> policy = null;
 
-		Contract.check(p_maxSize > 0, "max size must be greater or equal 1");
-		Contract.checkNotNull(p_policyEnum, "policy unkown");
+		assert p_maxSize > 0;
+		assert p_policyEnum != null;
 
 		switch (p_policyEnum) {
 		case DUMMY:
@@ -92,8 +92,8 @@ public class Cache<KeyType, ValueType> {
 	 *            the eviction policy
 	 */
 	public Cache(final int p_maxSize, final EvictionPolicy<KeyType, ValueType> p_policy) {
-		Contract.check(p_maxSize > 0, "max size must be greater or equal 1");
-		Contract.checkNotNull(p_policy, "no policy given");
+		assert p_maxSize > 0;
+		assert p_policy != null;
 
 		m_map = new HashMap<KeyType, CacheEntry<KeyType, ValueType>>();
 		m_maxSize = p_maxSize;
@@ -114,7 +114,7 @@ public class Cache<KeyType, ValueType> {
 	public final void put(final KeyType p_key, final ValueType p_value) {
 		CacheEntry<KeyType, ValueType> entry;
 
-		Contract.checkNotNull(p_key, "no key given");
+		assert p_key != null;
 
 		m_lock.writeLock().lock();
 
@@ -147,7 +147,7 @@ public class Cache<KeyType, ValueType> {
 		ValueType ret = null;
 		CacheEntry<KeyType, ValueType> entry;
 
-		Contract.checkNotNull(p_key, "no key given");
+		assert p_key != null;
 
 		m_lock.readLock().lock();
 
@@ -169,7 +169,7 @@ public class Cache<KeyType, ValueType> {
 	 *            the key
 	 */
 	public final void remove(final KeyType p_key) {
-		Contract.checkNotNull(p_key, "no key given");
+		assert p_key != null;
 
 		m_lock.writeLock().lock();
 
@@ -187,7 +187,7 @@ public class Cache<KeyType, ValueType> {
 	public final boolean contains(final KeyType p_key) {
 		boolean ret;
 
-		Contract.checkNotNull(p_key, "no key given");
+		assert p_key != null;
 
 		m_lock.readLock().lock();
 

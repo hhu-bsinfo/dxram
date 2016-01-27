@@ -4,8 +4,6 @@ package de.hhu.bsinfo.menet;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.Contract;
-
 /**
  * Represents a network message
  * @author Florian Klein 09.03.2012
@@ -123,7 +121,7 @@ public abstract class AbstractMessage {
 	 *            the rating value of the message
 	 */
 	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue, final byte p_statusCode) {
-		NodeID.check(p_destination);
+		assert p_destination != NodeID.INVALID_ID;
 
 		m_messageID = p_messageID;
 		m_source = -1;
@@ -330,7 +328,7 @@ public abstract class AbstractMessage {
 		byte ratingValue;
 		byte statusCode;
 
-		Contract.checkNotNull(p_buffer, "no bytes given");
+		assert p_buffer != null;
 
 		if (p_buffer.remaining() < HEADER_SIZE - BYTES_PAYLOAD_SIZE) {
 			throw new NetworkException("Incomplete header");

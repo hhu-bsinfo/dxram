@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import de.hhu.bsinfo.utils.Contract;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -216,7 +215,7 @@ public final class TestCase {
 	public static TestResult getMinimumResult(final List<TestResult> p_results) {
 		TestResult ret;
 
-		Contract.checkNotNull(p_results, "no results given");
+		assert p_results != null;
 
 		ret = null;
 		for (TestResult result : p_results) {
@@ -237,7 +236,7 @@ public final class TestCase {
 	public static TestResult getMaximumResult(final List<TestResult> p_results) {
 		TestResult ret;
 
-		Contract.checkNotNull(p_results, "no results given");
+		assert p_results != null;
 
 		ret = null;
 		for (TestResult result : p_results) {
@@ -278,7 +277,7 @@ public final class TestCase {
 	public static long getAverageTime(final List<TestResult> p_results) {
 		long ret;
 
-		Contract.checkNotNull(p_results, "no results given");
+		assert p_results != null;
 
 		ret = 0;
 		for (TestResult result : p_results) {
@@ -323,7 +322,7 @@ public final class TestCase {
 		StringBuilder out;
 		Throwable e;
 
-		Contract.checkNotNull(p_results, "no results given");
+		assert p_results != null;
 
 		out = new StringBuilder();
 		out.append("---\n");
@@ -651,8 +650,8 @@ public final class TestCase {
 		 *            the arguments
 		 */
 		public MethodCall(final Object p_instance, final String p_method, final Object... p_arguments) {
-			Contract.checkNotNull(p_instance, "no class instance given");
-			Contract.checkNotNull(p_method, "no methodname given");
+			assert p_instance != null;
+			assert p_method != null;
 
 			m_instance = p_instance;
 			m_class = null;
@@ -672,8 +671,8 @@ public final class TestCase {
 		 *            the arguments
 		 */
 		public MethodCall(final String p_class, final String p_method, final Object... p_arguments) {
-			Contract.checkNotNull(p_class, "no classname given");
-			Contract.checkNotNull(p_method, "no methodname given");
+			assert p_class != null;
+			assert p_method != null;
 
 			m_instance = null;
 			m_class = p_class;
@@ -1234,7 +1233,7 @@ public final class TestCase {
 		 *             if the operation could not be added
 		 */
 		public final void add(final AbstractOperation p_operation) throws TestCaseException {
-			Contract.checkNotNull(p_operation, "no operation given");
+			assert p_operation != null;
 
 			try {
 				doAdd(p_operation);
@@ -1408,8 +1407,8 @@ public final class TestCase {
 		 *            the titel for the interim time
 		 */
 		public void addInterimTime(final String p_title) {
-			Contract.checkNotNull(p_title, "no title given");
-
+			assert p_title != null;
+			
 			m_result.addInterimTime(new InterimTime(p_title, System.currentTimeMillis()));
 		}
 
@@ -1469,7 +1468,7 @@ public final class TestCase {
 		public String getDetails() {
 			StringBuilder out;
 
-			Contract.checkNotNull(m_result, "no result given");
+			assert m_result != null;
 
 			out = new StringBuilder();
 			out.append("---\n");

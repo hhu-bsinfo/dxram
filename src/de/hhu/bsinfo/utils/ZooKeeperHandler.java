@@ -173,7 +173,7 @@ public final class ZooKeeperHandler {
 	public Stat getStatus(final String p_path, final Watcher p_watcher) throws ZooKeeperException {
 		Stat ret;
 
-		Contract.checkNotNull(p_path, "no path given");
+		assert p_path != null;
 
 		try {
 			if (m_zookeeper == null) {
@@ -243,9 +243,9 @@ public final class ZooKeeperHandler {
 	 */
 	private void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException,
 	InterruptedException {
-		Contract.checkNotNull(p_path, "no path given");
-		Contract.checkNotNull(p_data, "no data given");
-		Contract.checkNotNull(p_mode, "no mode given");
+		assert p_path != null;
+		assert p_data != null;
+		assert p_mode != null;
 
 		if (m_zookeeper == null) {
 			connect();
@@ -275,7 +275,7 @@ public final class ZooKeeperHandler {
 	 *             if ZooKeeper could not accessed
 	 */
 	public void delete(final String p_path, final int p_version) throws ZooKeeperException {
-		Contract.checkNotNull(p_path, "no path given");
+		assert p_path != null;
 
 		try {
 			if (m_zookeeper == null) {
@@ -467,8 +467,8 @@ public final class ZooKeeperHandler {
 	 *             if ZooKeeper could not accessed
 	 */
 	public void setData(final String p_path, final byte[] p_data, final int p_version) throws ZooKeeperException {
-		Contract.checkNotNull(p_path, "no path given");
-		Contract.checkNotNull(p_data, "no data given");
+		assert p_path != null;
+		assert p_data != null;
 
 		try {
 			if (m_zookeeper == null) {

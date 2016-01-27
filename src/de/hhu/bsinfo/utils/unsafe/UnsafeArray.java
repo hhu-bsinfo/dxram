@@ -1,7 +1,6 @@
 
 package de.hhu.bsinfo.utils.unsafe;
 
-import de.hhu.bsinfo.utils.Contract;
 import sun.misc.Unsafe;
 
 /**
@@ -31,8 +30,8 @@ public final class UnsafeArray {
 	protected UnsafeArray(final int p_elementSize, final int p_elementCount) {
 		long size;
 
-		Contract.check(p_elementSize > 0, "invalid element size");
-		Contract.check(p_elementCount > 0, "invalid element count");
+		assert p_elementSize > 0;
+		assert p_elementCount > 0;
 
 		m_elementSize = p_elementSize;
 		m_size = p_elementCount;

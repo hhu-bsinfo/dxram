@@ -37,7 +37,7 @@ public final class Tools {
 		int digitGroups;
 		String ret;
 
-		Contract.check(p_size >= 0, "invalid size given");
+		assert p_size >= 0;
 
 		if (p_size == 0) {
 			ret = "0 B";
@@ -195,7 +195,7 @@ public final class Tools {
 		int ret = -1;
 		ServerSocket socket;
 
-		Contract.check(p_startPort >= 0, "invalid port given");
+		assert p_startPort >= 0;
 
 		for (int i = p_startPort; i < 65536; i++) {
 			try {

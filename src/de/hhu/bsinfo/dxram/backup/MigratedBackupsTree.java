@@ -4,8 +4,6 @@ package de.hhu.bsinfo.dxram.backup;
 import java.io.Serializable;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.Contract;
-
 /**
  * Btree to store backup ranges of migrated chunks.
  * @author Kevin Beineke
@@ -39,7 +37,8 @@ public final class MigratedBackupsTree implements Serializable {
 	 *            order of the btree
 	 */
 	public MigratedBackupsTree(final short p_order, final long p_secondaryLogSize) {
-		Contract.check(1 < p_order, "too small order for BTree");
+		// too small order for BTree
+		assert 1 < p_order;
 
 		m_minEntries = p_order;
 		m_secondaryLogSize = p_secondaryLogSize;
@@ -121,9 +120,11 @@ public final class MigratedBackupsTree implements Serializable {
 	 * @return true if insertion was successful
 	 */
 	public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
+		// end larger than start
+		assert p_startID <= p_endID;
+			
 		Node startNode;
 
-		Contract.check(p_startID <= p_endID, "end larger than start");
 		if (p_startID == p_endID) {
 			putObject(p_startID, p_rangeID, p_rangeSize);
 		} else {
@@ -151,10 +152,11 @@ public final class MigratedBackupsTree implements Serializable {
 	 * @return the backup range ID
 	 */
 	public byte getBackupRange(final long p_chunkID) {
+		assert m_root != null;
+		
 		byte ret;
 
 		m_lock.lock();
-		Contract.checkNotNull(m_root);
 		ret = getRangeIDOrSuccessorsRangeID(p_chunkID);
 		m_lock.unlock();
 
@@ -505,7 +507,7 @@ public final class MigratedBackupsTree implements Serializable {
 		Node node;
 		Node parent;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		node = p_node;
 
@@ -584,7 +586,7 @@ public final class MigratedBackupsTree implements Serializable {
 		Node node;
 		Node parent;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		node = p_node;
 
@@ -754,7 +756,7 @@ public final class MigratedBackupsTree implements Serializable {
 		long replaceCID;
 		byte replaceRangeID;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		index = p_node.indexOf(p_chunkID);
 		if (0 <= index) {

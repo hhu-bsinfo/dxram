@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Start Recovery Message
@@ -39,8 +39,8 @@ public class StartRecoveryMessage extends AbstractMessage {
 	public StartRecoveryMessage(final short p_destination, final short p_failedPeer, final int p_beginOfRange) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
 
-		Contract.checkNotNull(p_failedPeer, "no failed peer given");
-
+		assert p_failedPeer != NodeID.INVALID_ID;
+		
 		m_failedPeer = p_failedPeer;
 		m_beginOfRange = p_beginOfRange;
 	}

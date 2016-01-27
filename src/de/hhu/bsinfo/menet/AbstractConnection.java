@@ -6,8 +6,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.Contract;
-
 /**
  * Represents a network connections
  * @author Florian Klein 18.03.2012
@@ -51,7 +49,7 @@ public abstract class AbstractConnection {
 	 *            the ConnectionListener
 	 */
 	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final DataReceiver p_listener) {
-		NodeID.check(p_destination);
+		assert p_destination != NodeID.INVALID_ID;
 
 		m_dataHandler = new DataHandler();
 		m_messageCreator = new MessageCreator(p_messageDirectory);
@@ -459,7 +457,7 @@ public abstract class AbstractConnection {
 		 *            the ByteBuffer with new data
 		 */
 		public void update(final ByteBuffer p_buffer) {
-			Contract.checkNotNull(p_buffer, "no buffer given");
+			assert p_buffer != null;
 
 			try {
 				while (m_step != Step.DONE && p_buffer.hasRemaining()) {

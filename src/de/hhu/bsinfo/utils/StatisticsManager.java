@@ -132,8 +132,8 @@ public final class StatisticsManager {
 	 *            the statistic
 	 */
 	public static void registerStatistic(final String p_name, final Statistic p_statistic) {
-		Contract.checkNotNull(p_name, "no name given");
-		Contract.checkNotNull(p_statistic, "no statistic given");
+		assert p_name != null;
+		assert p_statistic != null;
 
 		m_lock.lock();
 
@@ -175,8 +175,8 @@ public final class StatisticsManager {
 	 *            the output stream
 	 */
 	public static void setupOutput(final long p_period, final PrintStream p_stream) {
-		Contract.check(p_period > 0, "invalid period");
-		Contract.checkNotNull(p_stream, "no stream given");
+		assert p_period > 0;
+		assert p_stream != null;
 
 		if (m_timer != null) {
 			m_timer.cancel();
@@ -266,7 +266,7 @@ public final class StatisticsManager {
 		// Methods
 		@Override
 		public int compareTo(final StatisticEntry p_other) {
-			Contract.checkNotNull(p_other, "no object given");
+			assert p_other != null;
 
 			return m_position - p_other.getPosition();
 		}

@@ -1,8 +1,6 @@
 
 package de.hhu.bsinfo.menet;
 
-import de.hhu.bsinfo.utils.Contract;
-
 /**
  * Wrapper class for a NodeID
  * @author Florian Klein
@@ -20,14 +18,4 @@ public final class NodeID {
 	 * Creates an instance of NodeID
 	 */
 	private NodeID() {}
-
-	// Methods
-	/**
-	 * Checks if the NodeID is valid
-	 * @param p_nodeID
-	 *            the NodeID
-	 */
-	public static void check(final short p_nodeID) {
-		Contract.check(p_nodeID != INVALID_ID, "invalid NodeID");
-	}
 }

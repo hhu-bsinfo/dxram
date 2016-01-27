@@ -3,7 +3,6 @@ package de.hhu.bsinfo.utils.unsafe;
 
 import java.util.List;
 
-import de.hhu.bsinfo.utils.Contract;
 import de.hhu.bsinfo.utils.unsafe.AbstractKeyValueList.KeyValuePair;
 
 /**
@@ -44,8 +43,8 @@ public abstract class AbstractKeyValueList<KeyType, ValueType> extends AbstractL
 	public AbstractKeyValueList(final int p_keySize, final int p_valueSize, final AbstractUnsafeList p_list) {
 		super(p_keySize + p_valueSize, p_list);
 
-		Contract.check(p_keySize > 0, "invalid key size given");
-		Contract.check(p_valueSize > 0, "invalid value size given");
+		assert p_keySize > 0;
+		assert p_valueSize > 0;
 
 		m_valueOffset = p_keySize;
 	}
@@ -200,7 +199,7 @@ public abstract class AbstractKeyValueList<KeyType, ValueType> extends AbstractL
 		 *            the key
 		 */
 		public KeyValuePair(final KeyType p_key) {
-			Contract.checkNotNull(p_key, "no key given");
+			assert p_key != null;
 
 			m_key = p_key;
 			m_value = null;
@@ -214,8 +213,8 @@ public abstract class AbstractKeyValueList<KeyType, ValueType> extends AbstractL
 		 *            the value
 		 */
 		public KeyValuePair(final KeyType p_key, final ValueType p_value) {
-			Contract.checkNotNull(p_key, "no key given");
-			Contract.checkNotNull(p_value, "no value given");
+			assert p_key != null;
+			assert p_value != null;
 
 			m_key = p_key;
 			m_value = p_value;

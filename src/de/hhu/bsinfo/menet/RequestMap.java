@@ -6,8 +6,6 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.Contract;
-
 /**
  * Manages pending requests
  * @author Florian Klein
@@ -33,7 +31,7 @@ public final class RequestMap {
 	 *            the Request
 	 */
 	protected static void put(final AbstractRequest p_request) {
-		Contract.checkNotNull(p_request, "no request given");
+		assert p_request != null;
 
 		m_lock.lock();
 

@@ -8,7 +8,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
 import de.hhu.bsinfo.menet.AbstractConnectionCreator.ConnectionCreatorListener;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Manages the network connections
@@ -76,7 +75,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	public AbstractConnection getConnection(final short p_destination) throws IOException {
 		AbstractConnection ret;
 
-		Contract.checkNotNull(p_destination, "no destination given");
+		assert p_destination != NodeID.INVALID_ID;
 
 		m_lock.lock();
 		try {
@@ -129,7 +128,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	public void closeConnection(final short p_destination) {
 		AbstractConnection connection;
 
-		Contract.checkNotNull(p_destination, "no destination given");
+		assert p_destination != NodeID.INVALID_ID;
 
 		m_lock.lock();
 		connection = m_connections.get(p_destination);

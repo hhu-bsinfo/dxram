@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.menet.AbstractRequest;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Remove Request
@@ -39,7 +38,7 @@ public class RemoveRequest extends AbstractRequest {
 	public RemoveRequest(final short p_destination, final long[] p_chunkIDs, final boolean p_isBackup) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_REQUEST);
 
-		Contract.checkNotNull(p_chunkIDs, "no ChunkIDs given");
+		assert p_chunkIDs != null;
 
 		m_chunkIDs = p_chunkIDs;
 		m_isBackup = p_isBackup;

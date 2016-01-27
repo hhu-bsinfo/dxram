@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.menet.AbstractResponse;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Response to a AskAboutSuccessorRequest
@@ -35,7 +34,7 @@ public class AskAboutSuccessorResponse extends AbstractResponse {
 	public AskAboutSuccessorResponse(final AskAboutSuccessorRequest p_request, final short p_predecessor) {
 		super(p_request, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE);
 
-		Contract.checkNotNull(p_predecessor, "no predecessor given");
+		assert p_predecessor != 0;
 
 		m_successor = p_predecessor;
 	}

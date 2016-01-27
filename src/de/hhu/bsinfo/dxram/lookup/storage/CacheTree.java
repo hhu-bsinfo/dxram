@@ -5,7 +5,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxram.lookup.Locations;
-import de.hhu.bsinfo.utils.Contract;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -41,8 +40,8 @@ public final class CacheTree {
 
 		ttl = Math.max(p_cacheMaxSize, 1000);
 
-		Contract.checkNotNull(p_order);
-		Contract.check(1 < p_order, "too small order for BTree");
+		// too small order for BTree
+		assert p_order > 1;
 
 		m_minEntries = p_order;
 		m_minChildren = (short) (m_minEntries + 1);
@@ -82,7 +81,7 @@ public final class CacheTree {
 	public short getPrimaryPeer(final long p_chunkID) {
 		short ret;
 
-		Contract.checkNotNull(m_root);
+		assert m_root != null;
 
 		m_lock.readLock().lock();
 		ret = getNodeIDOrSuccessorsNodeID(p_chunkID);
@@ -105,7 +104,7 @@ public final class CacheTree {
 		Node node;
 		Entry predecessorEntry;
 
-		Contract.checkNotNull(m_root);
+		assert m_root != null;
 
 		m_lock.readLock().lock();
 		node = getNodeOrSuccessorsNode(p_chunkID, true);
@@ -599,7 +598,7 @@ public final class CacheTree {
 		Node node;
 		Node parent;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		node = p_node;
 
@@ -678,7 +677,7 @@ public final class CacheTree {
 		Node node;
 		Node parent;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		node = p_node;
 
@@ -848,7 +847,7 @@ public final class CacheTree {
 		long replaceCID;
 		short replaceNodeID;
 
-		Contract.checkNotNull(p_node, "Node null");
+		assert p_node != null;
 
 		index = p_node.indexOf(p_chunkID);
 		if (0 <= index) {

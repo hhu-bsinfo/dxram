@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.menet.AbstractRequest;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Lookup Request
@@ -35,7 +35,7 @@ public class LookupRequest extends AbstractRequest {
 	public LookupRequest(final short p_destination, final long p_chunkID) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REQUEST);
 
-		Contract.checkNotNull(p_chunkID, "no ChunkID given");
+		assert p_chunkID != ChunkID.INVALID_ID;
 
 		m_chunkID = p_chunkID;
 	}

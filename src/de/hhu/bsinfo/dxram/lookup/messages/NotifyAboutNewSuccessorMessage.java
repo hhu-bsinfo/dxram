@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.utils.Contract;
 
 /**
  * Notify About New Successor Message
@@ -35,7 +35,7 @@ public class NotifyAboutNewSuccessorMessage extends AbstractMessage {
 	public NotifyAboutNewSuccessorMessage(final short p_destination, final short p_newSuccessor) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE);
 
-		Contract.checkNotNull(p_newSuccessor, "no new successor given");
+		assert p_newSuccessor != NodeID.INVALID_ID;
 
 		m_newSuccessor = p_newSuccessor;
 	}
