@@ -8,8 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-
-import de.hhu.bsinfo.dxram.mem.HeapIntegrityChecker;
 import de.hhu.bsinfo.dxram.mem.MemoryStatistic;
 import de.hhu.bsinfo.utils.StatisticsManager;
 import de.hhu.bsinfo.utils.locks.JNILock;

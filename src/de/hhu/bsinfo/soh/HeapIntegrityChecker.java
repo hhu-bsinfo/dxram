@@ -1,13 +1,11 @@
 
-package de.hhu.bsinfo.dxram.mem;
+package de.hhu.bsinfo.soh;
 
 import java.util.Map.Entry;
+import java.util.Vector;
 
-import de.hhu.bsinfo.soh.HeapWalker;
 import de.hhu.bsinfo.soh.HeapWalker.MemoryBlock;
 import de.hhu.bsinfo.soh.HeapWalker.Results;
-
-import java.util.Vector;
 
 /**
  * Integrity checker for the heap. This needs data from the

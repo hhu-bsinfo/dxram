@@ -18,11 +18,11 @@ import de.hhu.bsinfo.utils.Tools;
 public final class SmallObjectHeap {
 
 	// Attributes
-	// have a few attributes protected for the HeapWalker/Analyzer
-	protected Storage m_memory;
+	// have a few attributes package scoped for the HeapWalker/Analyzer
+	Storage m_memory;
 
-	protected long m_segmentSize;
-	protected SmallObjectHeapSegment[] m_segments;
+	long m_segmentSize;
+	SmallObjectHeapSegment[] m_segments;
 
 	// Constructors
 	/**
