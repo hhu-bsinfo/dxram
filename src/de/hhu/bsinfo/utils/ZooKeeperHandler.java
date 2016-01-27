@@ -431,7 +431,7 @@ public final class ZooKeeperHandler {
 			if (m_zookeeper == null) {
 				connect();
 			}
-
+				
 			ret = m_zookeeper.getData(m_path + "/" + p_path, p_watcher, p_status);
 		} catch (final KeeperException | InterruptedException e) {
 			LOGGER.error("ERR:Could not access ZooKeeper", e);

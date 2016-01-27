@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.dxram.lock;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.boot.NodeRole;
 import de.hhu.bsinfo.dxram.chunk.ChunkStatistic.Operation;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
@@ -14,6 +13,7 @@ import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
@@ -248,17 +248,6 @@ public class PeerLockService extends LockService implements MessageReceiver {
 		
 		return err;
 	}
-
-	// TODO port this to EventComponent
-//	@Override
-//	public void triggerEvent(ConnectionLostEvent p_event) {
-//		m_logger.debug(getClass(), "Connection to " + p_event.getSource() + " lost, unlocking all chunks locked by lost instance.");
-//		
-//		if (!m_lock.unlockAllByNodeID(p_event.getSource())) {
-//			m_logger.error(getClass(), "Unlocking all locked chunks of crashed peer " + 
-//										Integer.toHexString(p_event.getSource() & 0xFFFF)  + " failed.");
-//		}
-//	}
 	
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {

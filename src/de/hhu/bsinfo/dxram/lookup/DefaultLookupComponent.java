@@ -9,10 +9,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.boot.NodeRole;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
@@ -57,6 +58,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.UpdateAllMessage;
 import de.hhu.bsinfo.dxram.lookup.storage.AIDTableOptimized;
 import de.hhu.bsinfo.dxram.lookup.storage.LookupTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.NodeID;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 import de.hhu.bsinfo.utils.CRC16;
@@ -80,6 +83,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private NetworkComponent m_network = null;
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
+	private EventComponent m_event = null;
 
 	private short m_me = -1;
 	private short m_predecessor = -1;
@@ -742,19 +746,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 	}
-
-	// TODO port this to EventComponent
-//	/**
-//	 * Handles a lost connection
-//	 * @param p_event
-//	 *            the event
-//	 */
-//	@Override
-//	public void triggerEvent(final ConnectionLostEvent p_event) {
-//		m_logger.trace(getClass(), "Entering trigger with: p_event=" + p_event);
-//
-//		m_logger.trace(getClass(), "Exiting onConnectionLost");
-//	}
 	
 	// --------------------------------------------------------------------------------
 	
@@ -768,6 +759,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_boot = getDependentComponent(BootComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
+		m_event = getDependentComponent(EventComponent.class);
 		
 		m_bootstrap = m_boot.getNodeIDBootstrap();
 		m_numberOfSuperpeers = m_boot.getNumberOfAvailableSuperpeers();
@@ -828,9 +820,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_promoteLock = new ReentrantLock(false);
 		Contract.checkNotNull(m_promoteLock);
 
-		createOrJoinSuperpeerOverlay(m_bootstrap);
-
-		return true;
+		return createOrJoinSuperpeerOverlay(m_bootstrap);
 	}
 
 	@Override
@@ -852,7 +842,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 * @throws DXRAMException
 	 *             if the node could not join the superpeer overlay
 	 */
-	private void createOrJoinSuperpeerOverlay(final short p_contactSuperpeer) {
+	private boolean createOrJoinSuperpeerOverlay(final short p_contactSuperpeer) {
 		short contactSuperpeer;
 		JoinRequest joinRequest = null;
 		JoinResponse joinResponse = null;
@@ -862,6 +852,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
 
 		contactSuperpeer = p_contactSuperpeer;
+		
+		if (p_contactSuperpeer == NodeID.INVALID_ID) {
+			m_logger.error(getClass(), "Cannot join superpeer overlay, no bootstrap superpeer available to contact.");
+			return false;
+		}
 
 		if (m_me == contactSuperpeer) {
 			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -869,7 +864,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				setSuccessor(m_me);
 			} else {
 				m_logger.error(getClass(), "Bootstrap has to be a superpeer, exiting now.");
-				System.exit(-1);
+				return false;
 			}
 		} else {
 			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -919,7 +914,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				insertSuperpeer(m_mySuperpeer);
 
 				m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
-				return;
+				return true;
 			}
 		}
 
@@ -933,6 +928,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_stabilizationThread.start();
 
 		m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
+		
+		return true;
 	}
 
 	/* helper methods: superpeers */
@@ -1055,7 +1052,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 */
 	private void addCIDTree(final short p_nodeID, final LookupTree p_tree) {
 		int index;
-
 		index = Collections.binarySearch(m_nodeList, p_nodeID);
 		if (0 > index) {
 			index = index * -1 - 1;
@@ -1072,7 +1068,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 */
 	private void deleteCIDTree(final short p_nodeID) {
 		int index;
-
 		if (0 != m_nodeList.size()) {
 			index = Collections.binarySearch(m_nodeList, p_nodeID);
 			if (0 <= index) {
@@ -1999,7 +1994,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 						System.arraycopy(mappings, 0, allMappings, oldMappings.length, mappings.length);
 					}
 
-					System.out.println("---------------------------- " + currentPeer + " ----------------------------");
+					m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
 				}
 				if (index == m_nodeList.size()) {
 					index = 0;
@@ -2110,11 +2105,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupTree tree;
 
 		m_logger.trace(getClass(), "Got request: PROMOTE_PEER_REQUEST from " + p_promotePeerRequest.getSource());
-
-		System.out.println();
-		System.out.println();
-		System.out.println("********** ********** Promotion ********** **********");
-		System.out.println("* Got promotion from " + p_promotePeerRequest.getSource());
+		
+		m_logger.info(getClass(), "********** ********** Promotion ********** **********");
+		m_logger.info(getClass(), "Got promotion from " + p_promotePeerRequest.getSource());
 
 		// Promote this peer to superpeer
 		m_overlayLock.lock();
@@ -2149,13 +2142,13 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		// Give away all stored chunks
 		replacement = p_promotePeerRequest.getReplacement();
-		System.out.println("* Migrating chunks to " + replacement);
+		m_logger.info(getClass(), "Migrating chunks to " + replacement);
 		
 		// TODO needs access to migration, but not to a service. use proper components instead
 		boolean migrationSuccess = true; // m_chunk.migrateAll(replacement);
 		if (migrationSuccess)
 		{
-			System.out.println("** Migration complete");
+			m_logger.info(getClass(), "Migration complete");
 
 			m_logger.trace(getClass(), "Starting stabilization thread");
 			m_worker = new SOWorker();
@@ -2174,7 +2167,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		}
 		else
 		{
-			System.out.println("** Migration failed");
+			m_logger.info(getClass(), "Migration failed");
 
 			// Revert everything
 			m_boot.demoteToPeer();
@@ -2190,10 +2183,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				// Requesting superpeer is not available anymore, ignore request and remove superpeer
 			}
 		}
-
-		System.out.println("********** ********** ** End ** ********** **********");
-		System.out.println();
-		System.out.println();
 	}
 
 	/**
@@ -2209,10 +2198,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		int ret = 0;
 
 		m_logger.trace(getClass(), "Got message: DELEGATE_PROMOTE_PEER_MESSAGE from " + p_delegatePromotePeerMessage.getSource());
-
-		System.out.println();
-		System.out.println();
-		System.out.println("********** ********** Promoting Peer ********** **********");
+		
+		m_logger.info(getClass(), "********** ********** Promoting Peer ********** **********");
 
 		hops = p_delegatePromotePeerMessage.getHops();
 		if (hops < 2 * m_superpeers.size()) {
@@ -2231,7 +2218,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 							m_overlayLock.lock();
 							otherSuperpeer = m_superpeers.get((int) (m_superpeers.size() * Math.random()));
 							m_overlayLock.unlock();
-							System.out.println("* Delegating to " + otherSuperpeer + ", hopcount: " + hops);
+							m_logger.info(getClass(), "Delegating to " + otherSuperpeer + ", hopcount: " + hops);
 							if (m_network.sendMessage(
 									new DelegatePromotePeerMessage(otherSuperpeer, ++hops)) 
 									!= NetworkComponent.ErrorCode.SUCCESS) {
@@ -2249,7 +2236,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					break;
 				}
 
-				System.out.println("* New superpeer shall be " + newSuperpeer);
+				m_logger.info(getClass(), "New superpeer shall be " + newSuperpeer);
 				ret = promote(newSuperpeer, false);
 				if (0 == ret || -2 == ret) {
 					break;
@@ -2294,7 +2281,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		m_logger.trace(getClass(), "Got message: START_RECOVERY_MESSAGE from " + p_startRecoveryMessage.getSource());
 
-		System.out.println("********** Starting recovery for " + p_startRecoveryMessage.getFailedPeer() + " **********");
+		m_logger.info(getClass(), "********** Starting recovery for " + p_startRecoveryMessage.getFailedPeer() + " **********");
 		// TODO: Start recovery
 	}
 
@@ -2506,7 +2493,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			while (isNodeInRange(currentPeer, firstPeer, p_nodeID, CLOSED_INTERVAL)) {
 				if (getCIDTree(currentPeer).getStatus()) {
 					if (0 > Collections.binarySearch(m_peers, currentPeer) && 0 > Collections.binarySearch(m_superpeers, currentPeer)) {
-						System.out.println("** Taking over " + currentPeer);
+						m_logger.info(getClass(), "** Taking over " + currentPeer);
 						m_overlayLock.lock();
 						insertPeer(currentPeer);
 						m_overlayLock.unlock();
@@ -2554,7 +2541,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 						m_overlayLock.lock();
 						otherSuperpeer = m_superpeers.get((int) (m_superpeers.size() * Math.random()));
 						m_overlayLock.unlock();
-						System.out.println("** Do not have enough peers, delegating to " + otherSuperpeer);
+						m_logger.info(getClass(), "Do not have enough peers, delegating to " + otherSuperpeer);
 						if (m_network.sendMessage(
 								new DelegatePromotePeerMessage(otherSuperpeer, (short) 1)) 
 								!= NetworkComponent.ErrorCode.SUCCESS) {
@@ -2569,10 +2556,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				break;
 			}
 
-			System.out.println("** " + newSuperpeer + " shall be the new superpeer");
+			m_logger.info(getClass(), newSuperpeer + " shall be the new superpeer");
 			ret = promote(newSuperpeer, true);
 			if (0 == ret) {
-				System.out.println("** Promotion successful");
+				m_logger.info(getClass(), "Promotion successful");
 				break;
 			} else if (-2 == ret) {
 				delegate = true;
@@ -2629,7 +2616,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 						m_overlayLock.lock();
 						otherSuperpeer = m_superpeers.get((int) (m_superpeers.size() * Math.random()));
 						m_overlayLock.unlock();
-						System.out.println("** do not have enough peers, aksing " + otherSuperpeer);
+						m_logger.info(getClass(), "Do not have enough peers, aksing " + otherSuperpeer);
 						searchForPeerRequest = new SearchForPeerRequest(otherSuperpeer);
 						if (m_network.sendSync(searchForPeerRequest) != NetworkComponent.ErrorCode.SUCCESS) {
 							// Other superpeer is not available, try another
@@ -2647,7 +2634,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					break;
 				}
 
-				System.out.println("** " + newResponsiblePeer + " shall get all data of " + p_newSuperpeer);
+				m_logger.info(getClass(), newResponsiblePeer + " shall get all data of " + p_newSuperpeer);
 
 				// Send the joining node not only the successor, but the predecessor, superpeers
 				// and all relevant CIDTrees
@@ -2685,7 +2672,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					while (isNodeInRange(currentPeer, responsibleArea[0], responsibleArea[1], UPPER_CLOSED_INTERVAL)) {
 						tree = getCIDTree(currentPeer);
 						if (null != tree) {
-							System.out.println("*** Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
+							m_logger.info(getClass(), "Sending meta-data from " + currentPeer + " to " + p_newSuperpeer);
 							trees.add(tree);
 						}
 						if (index == m_nodeList.size()) {
@@ -2811,7 +2798,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		}
 		m_dataLock.unlock();
 		while (!isOnlySuperpeer()) {
-			System.out.print("** Spreading failed superpeers meta-data to " + m_successor);
+			m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
 			if (m_network.sendMessage(
 					new SendBackupsMessage(m_successor, allMappings, trees)) 
 					!= NetworkComponent.ErrorCode.SUCCESS) {
@@ -2855,9 +2842,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 			startIndex = index;
 			currentPeer = m_nodeList.get(index++);
-			System.out.print("** spreading data of");
+			m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
 			while (isNodeInRange(currentPeer, lowerBound, m_me, OPEN_INTERVAL)) {
-				System.out.print(" " + currentPeer);
+				m_logger.info(getClass(), " " + currentPeer);
 				trees.add(getCIDTree(currentPeer));
 
 				mappings = m_idTable.toArray(currentPeer, currentPeer, false, CLOSED_INTERVAL);
@@ -2892,7 +2879,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 			newBackupSuperpeer = m_superpeers.get(index);
 			m_overlayLock.unlock();
-			System.out.print(" to " + newBackupSuperpeer);
+			m_logger.info(getClass(), " to " + newBackupSuperpeer);
 
 			if (m_network.sendMessage(
 					new SendBackupsMessage(newBackupSuperpeer, allMappings, trees)) 
@@ -2929,23 +2916,28 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		boolean finished = false;
 
 		if (m_failureLock.tryLock()) {
+						
 			m_overlayLock.lock();
+			
+			m_logger.error(getClass(), "********** ********** Node Failure ********** **********");
 
 			// Check if failed node is a superpeer
 			if (0 <= Collections.binarySearch(m_superpeers, p_failedNode)) {
 				m_overlayLock.unlock();
-				System.out.println();
-				System.out.println();
-				System.out.println("********** ********** Node Failure ********** **********");
-				System.out.println("* Failed node was a superpeer, NodeID: " + p_failedNode);
+				
+				m_logger.error(getClass(), "Failed node was a superpeer, NodeID: " + p_failedNode);
+				
+				// notify others about failure
+				m_event.fireEvent(new NodeFailureEvent(getClass(), p_failedNode, NodeRole.SUPERPEER));
+				
 				// Determine new bootstrap if failed node is current one
 				if (p_failedNode == m_bootstrap) {
 					determineNewBootstrap();
-					System.out.println("* " + p_failedNode + " was bootstrap. New bootstrap is " + m_bootstrap);
+					m_logger.info(getClass(), "Failed node " + p_failedNode + " was bootstrap. New bootstrap is " + m_bootstrap);
 				}
 				// Take over failed nodes peers and CIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
-					System.out.println("* " + p_failedNode + " was my predecessor -> taking over all peers and data");
+					m_logger.info(getClass(), "Failed node " + p_failedNode + " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndCIDTrees(m_predecessor);
 					promoteOnePeer = true;
 				}
@@ -2954,7 +2946,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				responsibleArea = getResponsibleArea(m_me);
 				m_overlayLock.unlock();
 				if (3 < m_superpeers.size() && getResponsibleSuperpeer((short) (responsibleArea[0] + 1), NO_CHECK) == p_failedNode) {
-					System.out.println("* " + p_failedNode + " was in my responsible area -> spreading his data");
+					m_logger.info(getClass(), "Failed node " + p_failedNode + " was in my responsible area -> spreading his data");
 					spreadDataOfFailedSuperpeer(p_failedNode, responsibleArea);
 				}
 				// Send this nodes CIDTrees to new backup node that replaces the failed node
@@ -2962,7 +2954,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				backupSuperpeers = getBackupSuperpeers(m_me);
 				m_overlayLock.unlock();
 				if (3 < m_superpeers.size() && isNodeInRange(p_failedNode, backupSuperpeers[0], backupSuperpeers[2], CLOSED_INTERVAL)) {
-					System.out.println("* " + p_failedNode + " was one of my backup nodes -> spreading my data");
+					m_logger.info(getClass(), "Failed node " + p_failedNode + " was one of my backup nodes -> spreading my data");
 					spreadBackupsOfThisSuperpeer(backupSuperpeers);
 				}
 				// Remove superpeer
@@ -2972,15 +2964,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 				if (promoteOnePeer) {
 					// Promote a peer to replace the failed superpeer; for only stabilization thread, only
-					System.out.println("* Promoting a peer to superpeer");
+					m_logger.info(getClass(), "Promoting a peer to superpeer");
 					promoteOnePeer(p_failedNode);
 				}
 
 				m_boot.reportNodeFailure(p_failedNode, true);
-				System.out.println("********** ********** *** End **** ********** **********");
-				System.out.println("********** ********** ************ ********** **********");
-				System.out.println();
-				System.out.println();
 
 				m_failureLock.unlock();
 			} else if (0 <= Collections.binarySearch(m_peers, p_failedNode)) {
@@ -2989,28 +2977,26 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 				if (!existsInZooKeeper) {
 					// Failed node was a monitor
-					System.out.println();
-					System.out.println();
-					System.out.println("********** ********** Node Failure ********** **********");
-					System.out.println("* Failed node was a monitor, NodeID: " + p_failedNode);
+					m_logger.error(getClass(), "Failed node was a monitor, NodeID: " + p_failedNode);
+					
 					// Remove peer
 					m_overlayLock.lock();
 					removePeer(p_failedNode);
 					m_overlayLock.unlock();
-					System.out.println("* No actions required");
-					System.out.println("********** ********** *** End **** ********** **********");
-					System.out.println("********** ********** ************ ********** **********");
-					System.out.println();
-					System.out.println();
+					
+					m_logger.info(getClass(), "Failed node " + p_failedNode + ": no further actions required");
+					
+					// notify others about failure
+					m_event.fireEvent(new NodeFailureEvent(getClass(), p_failedNode, NodeRole.MONITOR));
 				} else {
 					// Failed node was a peer
-					System.out.println();
-					System.out.println();
-					System.out.println("********** ********** Node Failure ********** **********");
-					System.out.println("* Failed node was a peer, NodeID: " + p_failedNode);
+					m_logger.error(getClass(), "Failed node was a peer, NodeID: " + p_failedNode);
+					
+					// notify others about failure
+					m_event.fireEvent(new NodeFailureEvent(getClass(), p_failedNode, NodeRole.PEER));
 
 					// Remove peer in meta-data (and replace with new backup node; DUMMY element currently)
-					System.out.println("* Removing " + p_failedNode + " from local meta-data");
+					m_logger.info(getClass(), "Removing " + p_failedNode + " from local meta-data");
 					m_dataLock.lock();
 					iter = m_nodeList.iterator();
 					while (iter.hasNext()) {
@@ -3034,7 +3020,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 							break;
 						}
 						// Inform superpeer about failed peer to initialize deletion
-						System.out.println("** Informing " + superpeer + " to remove " + p_failedNode + " from meta-data");
+						m_logger.info(getClass(), "Informing " + superpeer + " to remove " + p_failedNode + " from meta-data");
 						if (m_network.sendMessage(
 								new NotifyAboutFailedPeerMessage(superpeer, p_failedNode)) 
 								!= NetworkComponent.ErrorCode.SUCCESS) {
@@ -3047,28 +3033,39 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					}
 
 					// Start recovery
-					System.out.println("* Starting recovery for " + p_failedNode);
+					m_logger.info(getClass(), "Starting recovery for failed node " + p_failedNode);
 					while (!finished) {
 						finished = true;
 						m_dataLock.lock();
-						backupRanges = getCIDTree(p_failedNode).getAllBackupRanges();
+						tree = getCIDTree(p_failedNode);
+						// no tree available -> no chunks were created
+						if (tree == null) {
+							backupRanges = null;
+						} else {
+							backupRanges = tree.getAllBackupRanges();
+						}
+						
 						m_dataLock.unlock();
-						for (i = 0; i < backupRanges.size(); i++) {
-							for (int j = 0; j < 3; j++) {
-								backupRange = backupRanges.get(i)[0];
-								backupPeer = (short) (backupRanges.get(i)[1] >> j * 16);
-								// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 -
-								// 1)
-								System.out.println("** Informing backup peer " + backupPeer + " to recover chunks" + " from backup range starting with "
-										+ backupRange + " from " + p_failedNode);
-								/*
-								 * try {
-								 * new StartRecoveryMessage(backupPeer, p_failedNode, i * 1000).send(m_network);
-								 * } catch (final NetworkException e) {
-								 * // Backup peer is not available anymore, try next one
-								 * continue;
-								 * }
-								 */
+						if (backupRanges != null)
+						{
+							for (i = 0; i < backupRanges.size(); i++) {
+								for (int j = 0; j < 3; j++) {
+									backupRange = backupRanges.get(i)[0];
+									backupPeer = (short) (backupRanges.get(i)[1] >> j * 16);
+									// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 -
+									// 1)
+									m_logger.info(getClass(), "Informing backup peer " + backupPeer + " to recover chunks" + " from backup range starting with "
+											+ backupRange + " from " + p_failedNode);
+									// TODO
+									/*
+									 * try {
+									 * new StartRecoveryMessage(backupPeer, p_failedNode, i * 1000).send(m_network);
+									 * } catch (final NetworkException e) {
+									 * // Backup peer is not available anymore, try next one
+									 * continue;
+									 * }
+									 */
+								}
 							}
 						}
 					}
@@ -3078,10 +3075,6 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					removePeer(p_failedNode);
 					m_overlayLock.unlock();
 					m_boot.reportNodeFailure(p_failedNode, false);
-					System.out.println("********** ********** *** End **** ********** **********");
-					System.out.println("********** ********** ************ ********** **********");
-					System.out.println();
-					System.out.println();
 
 					m_failureLock.unlock();
 				}
@@ -3092,7 +3085,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	/**
 	 * Print superpeer overlay
 	 */
-	public void printSuperpeerOverlay() {
+	public String superpeerOverlayToString() {
 		boolean printMe;
 		String str;
 		short superpeer;
@@ -3118,8 +3111,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			peer = m_peers.get(i);
 			str += " " + peer;
 		}
-		System.out.println(str);
 		m_overlayLock.unlock();
+		return str;
 	}
 	
 	// -----------------------------------------------------------------------------------------------------
@@ -3339,9 +3332,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 			if (!overlayIsStable()) {
 				if (300 == m_counter || 300 > m_numberOfSuperpeers && m_numberOfSuperpeers <= m_counter && 30 <= m_counter) {
-					System.out.println();
-					System.out.println();
-					System.out.println("********** ********** Promoting Peer ********** **********");
+					m_logger.info(getClass(), "********** ********** Promoting Peer ********** **********");
 					if (isOnlySuperpeer()) {
 						promoteOnePeer((short) ((m_me & 0xFFFF) + 32767));
 					} else {
@@ -3363,15 +3354,11 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 							superpeer = (short) allSuperpeers[0];
 						}
 
-						System.out.println(superpeer + " has privilege");
 						if (m_me == superpeer) {
 							promoteOnePeer((short) ((m_me & 0xFFFF) - biggestGap / 2));
 						}
 					}
 					m_counter = 0;
-					System.out.println("********** ********** ***** End **** ********** **********");
-					System.out.println();
-					System.out.println();
 				} else {
 					m_counter++;
 				}
@@ -3390,7 +3377,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			m_overlayLock.lock();
 			responsibleArea = getResponsibleArea(m_me);
 			m_overlayLock.unlock();
-			System.out.println("  Responsible area: " + responsibleArea[0] + ", " + responsibleArea[1]);
+			m_logger.info(getClass(), "Responsible backup area: " + responsibleArea[0] + ", " + responsibleArea[1]);
 
 			gatherBackups(responsibleArea);
 			deleteUnnecessaryBackups(responsibleArea);

@@ -2,16 +2,13 @@ package de.hhu.bsinfo.dxram.run.test.nothaas;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.event.Event;
+import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
+
 public class Sandbox {
 
 	public static void main(String[] args)
-	{
-		ByteBuffer buffer = ByteBuffer.allocate(100);
-		for (int i = 0; i < buffer.capacity(); i++)
-		{
-			buffer.put((byte) 5);
-		}
+	{		
 		
-		System.out.println("done");
 	}
 }

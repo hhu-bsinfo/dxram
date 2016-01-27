@@ -10,7 +10,6 @@ import de.uniduesseldorf.dxram.core.dxram.Core;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.exceptions.ExceptionHandler.ExceptionSource;
 
-import de.hhu.bsinfo.dxram.boot.NodeRole;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -30,6 +29,7 @@ import de.hhu.bsinfo.dxram.migrate.messages.MigrationMessages;
 import de.hhu.bsinfo.dxram.migrate.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migrate.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxramtodo.backup.BackupComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkException;

@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxram.boot;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import de.hhu.bsinfo.dxram.boot.NodeRole;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Contract;
 
 /**

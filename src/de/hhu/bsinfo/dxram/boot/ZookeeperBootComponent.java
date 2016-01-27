@@ -16,6 +16,8 @@ import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.util.NodeID;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.BloomFilter;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
@@ -126,13 +128,25 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	@Override
 	public int getNumberOfAvailableSuperpeers()
 	{
-		return Integer.parseInt(new String(zookeeperGetData("nodes/superpeers")));
+		// if bootstrap is not available (wrong startup order of superpeers and peers)
+		byte[] data = zookeeperGetData("nodes/superpeers");
+		if (data != null) {
+			return Integer.parseInt(new String(data));
+		} else {
+			return 0;
+		}
 	}
 	
 	@Override
 	public short getNodeIDBootstrap()
 	{
-		return Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
+		// if bootstrap is not available (wrong startup order of superpeers and peers)
+		byte[] data = zookeeperGetData("nodes/bootstrap");
+		if (data != null) {
+			return Short.parseShort(new String(data));
+		} else {
+			return NodeID.INVALID_ID;
+		}
 	}
 	
 	@Override
@@ -330,7 +344,7 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 		barrier = "barrier";
 
 		try {
-			if (!m_zookeeper.exists("nodes")) {
+			if (!m_zookeeper.exists("nodes/bootstrap")) {
 				try {
 					// Set barrier object
 					m_zookeeper.createBarrier(barrier);
@@ -374,8 +388,10 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 		m_logger.trace(this.getClass(), "Entering parseNodesBootstrap");
 
 		try {
-			m_zookeeper.create("nodes");
-
+			if (!m_zookeeper.exists("nodes")) {
+				m_zookeeper.create("nodes");
+			}
+			
 			// Parse node information
 			numberOfSuperpeers = 0;
 			seed = 1;
@@ -403,10 +419,14 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 				m_logger.info(this.getClass(), "Node added: " + entry);
 			}
 
-			m_zookeeper.create("nodes/new");
+			if (!m_zookeeper.exists("nodes/new")) {
+				m_zookeeper.create("nodes/new");
+			}
 			m_zookeeper.setChildrenWatch("nodes/new", this);
 
-			m_zookeeper.create("nodes/free");
+			if (!m_zookeeper.exists("nodes/free")) {
+				m_zookeeper.create("nodes/free");
+			}
 			m_zookeeper.setChildrenWatch("nodes/free", this);
 
 			// check if own node entry was correctly assigned to a valid node ID
@@ -414,12 +434,22 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 				throw new BootRuntimeException("Bootstrap entry for node in nodes configuration missing!");
 			}
 
-			m_zookeeper.create("nodes/bootstrap", (m_bootstrap + "").getBytes());
-			m_zookeeper.create("nodes/superpeers", (numberOfSuperpeers + "").getBytes());
-
-			m_zookeeper.create("nodes/peers");
+			// set default/invalid data
+			if (!m_zookeeper.exists("nodes/peers")) {
+				m_zookeeper.create("nodes/peers");
+			}
+			if (!m_zookeeper.exists("nodes/superpeers")) {
+				m_zookeeper.create("nodes/superpeers", (numberOfSuperpeers + "").getBytes());
+			} else {
+				m_zookeeper.setData("nodes/superpeers", (numberOfSuperpeers + "").getBytes());
+			}
+			
 			// Register superpeer
-			m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
+			// register only if we are the superpeer. don't add peer as superpeer
+			if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.SUPERPEER)) {
+				m_zookeeper.create("nodes/bootstrap", (m_bootstrap + "").getBytes());
+				m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
+			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
 			throw new BootRuntimeException("Parsing nodes bootstrap failed.", e);
 		}

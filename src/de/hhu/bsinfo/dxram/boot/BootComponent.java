@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.boot;
 import java.net.InetSocketAddress;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Component executing the bootstrapping of a node in DXRAM.
@@ -52,7 +53,7 @@ public abstract class BootComponent extends DXRAMComponent {
 	
 	/**
 	 * Get the node ID of the currently set bootstrap node.
-	 * @return Node ID assigned for bootstrapping.
+	 * @return Node ID assigned for bootstrapping or -1 if no bootstrap assigned/available.
 	 */
 	public abstract short getNodeIDBootstrap();
 	

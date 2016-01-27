@@ -7,8 +7,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.util.NodeID;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.locks.SpinLock;
 
 /**
@@ -16,12 +20,13 @@ import de.hhu.bsinfo.utils.locks.SpinLock;
  * the peer owning the chunk stores any information about its locking state.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class PeerLockComponent extends LockComponent {
+public class PeerLockComponent extends LockComponent implements EventListener<NodeFailureEvent> {
 
 	private Map<Long, LockEntry> m_lockedChunks = null;
 	private Lock m_mapEntryCreationLock = null;
 	
 	private LoggerComponent m_logger = null;
+	private EventComponent m_event = null;
 	
 	/**
 	 * Constructor
@@ -42,6 +47,9 @@ public class PeerLockComponent extends LockComponent {
 	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
+		m_event = getDependentComponent(EventComponent.class);
+		
+		m_event.registerListener(this, NodeFailureEvent.class);
 		
 		m_lockedChunks = new HashMap<Long, LockEntry>();
 		m_mapEntryCreationLock = new SpinLock();
@@ -146,6 +154,18 @@ public class PeerLockComponent extends LockComponent {
 		}
 		
 		return true;
+	}
+	
+	@Override
+	public void eventTriggered(NodeFailureEvent p_event) {
+		if (p_event.getRole() == NodeRole.PEER) {
+			m_logger.debug(getClass(), "Connection to peer " + p_event.getNodeID() + " lost, unlocking all chunks locked by lost instance.");
+			
+			if (!unlockAllByNodeID(p_event.getNodeID())) {
+				m_logger.error(getClass(), "Unlocking all locked chunks of crashed peer " + 
+											p_event.getNodeID() + " failed.");
+			}	
+		}
 	}
 
 	/**

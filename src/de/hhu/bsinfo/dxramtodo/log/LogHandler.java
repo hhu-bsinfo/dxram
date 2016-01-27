@@ -778,7 +778,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	}
 
 	@Override
-	public void triggerEvent(final ConnectionLostEvent p_event) {
+	public void triggerEvent(final NodeFailureEvent p_event) {
 		Contract.checkNotNull(p_event, "no event given");
 	}
 

@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.boot;
+package de.hhu.bsinfo.dxram.util;
 
 /**
  * Represents the node roles.
@@ -32,7 +32,7 @@ public enum NodeRole {
 	 * @param p_str String to parse.
 	 * @return Role node of string.
 	 */
-	static NodeRole toNodeRole(final String p_str) {
+	static public NodeRole toNodeRole(final String p_str) {
 		String str = p_str.toLowerCase();
 		if (str.equals(SUPERPEER_STR) || str.equals("s")) {
 			return NodeRole.SUPERPEER;

@@ -293,5 +293,5 @@ public final class RecoveryHandler implements RecoveryInterface, MessageReceiver
 	}
 
 	@Override
-	public void triggerEvent(final ConnectionLostEvent p_event) {}
+	public void triggerEvent(final NodeFailureEvent p_event) {}
 }
