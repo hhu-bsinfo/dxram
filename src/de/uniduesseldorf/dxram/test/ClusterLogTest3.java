@@ -16,10 +16,12 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
  * Third test case for Cluster 2016. Imitates a test found in http://dx.doi.org/10.1145/2806887.
  * Tests the performance of the log service with reorganization, chunk and network interfaces:
  * Phase 1:
- * - One master creates new chunks until specified utilization is reached. Every CHUNKS_PER_PUT chunks, the chunks are logged by calling put().
+ * - One master creates new chunks until specified utilization is reached. Every CHUNKS_PER_PUT chunks, the chunks are
+ * logged by calling put().
  * - Every Chunk is replicated on six backup peers.
  * Phase 2:
- * - Chunks are overwritten to put load on the reorganization. 75 chunks (uniform or zipfian) are updated with every access.
+ * - Chunks are overwritten to put load on the reorganization. 75 chunks (uniform or zipfian) are updated with every
+ * access.
  * - Network bandwidth and cpu load is logged externally.
  * @author Kevin Beineke
  *         22.01.2016
@@ -132,7 +134,7 @@ public final class ClusterLogTest3 {
 		 * Starts the client
 		 */
 		public void start() {
-			final short nodeID = 960;
+			final short nodeID = 320;
 			long offset;
 			long[] chunkIDs;
 			Chunk[] chunks;
@@ -172,7 +174,7 @@ public final class ClusterLogTest3 {
 					System.out.println("Wrote " + CHUNKS_PER_UPDATE + " on " + nodeID + " starting at " + offset + ".");
 				}
 			} else {
-				zipf = new FastZipfGenerator((int) ((UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT) + 1), 2.0);
+				zipf = new FastZipfGenerator((int) (UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT + 1), 2.0);
 
 				while (true) {
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
@@ -189,13 +191,13 @@ public final class ClusterLogTest3 {
 			}
 		}
 
-		long nextLong(Random rng, long n) {
+		long nextLong(final Random rng, final long n) {
 			// error checking and 2^x checking removed for simplicity.
 			long bits, val;
 			do {
-				bits = (rng.nextLong() << 1) >>> 1;
+				bits = rng.nextLong() << 1 >>> 1;
 				val = bits % n;
-			} while (bits - val + (n - 1) < 0L);
+			} while (bits - val + n - 1 < 0L);
 			return val;
 		}
 	}
@@ -204,11 +206,11 @@ public final class ClusterLogTest3 {
 		private Random random = new Random(0);
 		private NavigableMap<Double, Integer> map;
 
-		FastZipfGenerator(int size, double skew) {
+		FastZipfGenerator(final int size, final double skew) {
 			map = computeMap(size, skew);
 		}
 
-		private NavigableMap<Double, Integer> computeMap(int size, double skew) {
+		private NavigableMap<Double, Integer> computeMap(final int size, final double skew) {
 			NavigableMap<Double, Integer> map =
 					new TreeMap<Double, Integer>();
 
@@ -219,7 +221,7 @@ public final class ClusterLogTest3 {
 
 			double sum = 0;
 			for (int i = 1; i <= size; i++) {
-				double p = (1.0d / Math.pow(i, skew)) / div;
+				double p = 1.0d / Math.pow(i, skew) / div;
 				sum += p;
 				map.put(sum, i - 1);
 			}

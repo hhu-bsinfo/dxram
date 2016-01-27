@@ -368,7 +368,8 @@ public class PrimaryWriteBuffer {
 
 			// Gain exclusive write access:
 			// Request access and wait for acknowledgement by message handler (lock-free)
-			// If after 100ms the access has not been granted (no log message has arrived) -> try to block all message handler
+			// If after 100ms the access has not been granted (no log message has arrived) -> try to block all message
+			// handler
 			final long timestamp = System.currentTimeMillis();
 			boolean locked = false;
 			m_accessRequested = true;
@@ -493,7 +494,8 @@ public class PrimaryWriteBuffer {
 
 					logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, offset);
 					/*
-					 * Because of the log's wrap around three cases must be distinguished 1. Complete entry fits in current iteration 2.
+					 * Because of the log's wrap around three cases must be distinguished 1. Complete entry fits in
+					 * current iteration 2.
 					 * Offset pointer is already in next iteration 3. Log entry must be split over two iterations
 					 */
 					if (logEntryHeader.readable(p_buffer, offset, bytesUntilEnd)) {
@@ -567,7 +569,8 @@ public class PrimaryWriteBuffer {
 				}
 
 				if (primaryLogBufferSize > 0) {
-					// Write all log entries, that were not written to secondary log, in primary log with one write access
+					// Write all log entries, that were not written to secondary log, in primary log with one write
+					// access
 					m_primaryLog.appendData(primaryLogBuffer, 0, primaryLogBufferOffset);
 				}
 			}
@@ -652,7 +655,8 @@ public class PrimaryWriteBuffer {
 		/**
 		 * Creates an instance of BufferNode
 		 * @param p_length
-		 *            the buffer length (the length might change after converting the headers and fitting the data into segments)
+		 *            the buffer length (the length might change after converting the headers and fitting the data into
+		 *            segments)
 		 * @param p_convert
 		 *            wether the log entry headers have to be converted or not
 		 */
@@ -794,7 +798,8 @@ public class PrimaryWriteBuffer {
 				m_writtenBytesPerSegment[index] += AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
 						m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
 			} else {
-				// Less than one page for this node: Just append entry to node buffer without converting the log entry header
+				// Less than one page for this node: Just append entry to node buffer without converting the log entry
+				// header
 				if (p_logEntrySize <= p_bytesUntilEnd) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
 				} else {

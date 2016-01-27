@@ -194,7 +194,7 @@ public class VersionsBuffer {
 				buffer = ByteBuffer.wrap(data);
 
 				for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
-					p_allVersions.put(buffer.getLong(), buffer.getShort(), ((int) buffer.get()) << 16 | ((int) buffer.get()) << 8 | buffer.get());
+					p_allVersions.put(buffer.getLong(), buffer.getShort(), buffer.get() << 16 | buffer.get() << 8 | buffer.get());
 				}
 			} else {
 				// There is nothing on SSD yet
@@ -266,9 +266,9 @@ public class VersionsBuffer {
 		long iter;
 		final long key = p_key + 1;
 
+		m_lock.lock();
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
-		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -294,9 +294,9 @@ public class VersionsBuffer {
 		long iter;
 		final long key = p_key + 1;
 
+		m_lock.lock();
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
-		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -346,9 +346,9 @@ public class VersionsBuffer {
 		long iter;
 		final long key = p_key + 1;
 
+		m_lock.lock();
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
-		m_lock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -467,19 +467,19 @@ public class VersionsBuffer {
 
 		k1 = ((short) p_key & 0xff) + ((int) p_key & 0xff00) + ((int) p_key & 0xff0000) + ((int) p_key & 0xff000000);
 		k1 *= c1;
-		k1 = (k1 << 15) | (k1 >>> 17);
+		k1 = k1 << 15 | k1 >>> 17;
 		k1 *= c2;
 		h1 ^= k1;
-		h1 = (h1 << 13) | (h1 >>> 19);
+		h1 = h1 << 13 | h1 >>> 19;
 		h1 = h1 * 5 + 0xe6546b64;
 
-		k1 = (int) (((long) p_key & 0xff00000000L) + ((long) p_key & 0xff0000000000L)
-				+ ((long) p_key & 0xff000000000000L) + ((long) p_key & 0xff000000000000L));
+		k1 = (int) ((p_key & 0xff00000000L) + (p_key & 0xff0000000000L)
+				+ (p_key & 0xff000000000000L) + (p_key & 0xff000000000000L));
 		k1 *= c1;
-		k1 = (k1 << 15) | (k1 >>> 17);
+		k1 = k1 << 15 | k1 >>> 17;
 		k1 *= c2;
 		h1 ^= k1;
-		h1 = (h1 << 13) | (h1 >>> 19);
+		h1 = h1 << 13 | h1 >>> 19;
 		h1 = h1 * 5 + 0xe6546b64;
 
 		h1 ^= 8;
