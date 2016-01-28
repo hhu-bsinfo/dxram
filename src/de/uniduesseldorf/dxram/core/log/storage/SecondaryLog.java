@@ -167,7 +167,8 @@ public class SecondaryLog extends AbstractLog {
 	 * @return the number of objects to be deleted + the number of new objects (can be updates, too)
 	 */
 	public final int getLogLoad() {
-		return m_numberOfDeletesInLog.get() + m_versionsBuffer.size();// * 10 + determineLogSize();
+		// return m_numberOfDeletesInLog.get() + m_versionsBuffer.size();// * 10 + determineLogSize();
+		return determineLogSize();
 	}
 
 	/**
@@ -992,9 +993,9 @@ public class SecondaryLog extends AbstractLog {
 									Thread.sleep(3000);
 								}
 
-								if (currentVersion.getVersion() > 5) {
+								/*-if (currentVersion.getVersion() > 5) {
 									System.out.println("Warning: Version seems too high " + currentVersion.getVersion() + ", " + comp.getVersion());
-								}
+								}*/
 
 								if (currentVersion.getEpoch() > m_versionsBuffer.getEpoch()) {
 									System.out.println("Error: Epoch too high!");
@@ -1098,10 +1099,10 @@ public class SecondaryLog extends AbstractLog {
 	public final void getCurrentVersions(final VersionsHashTable p_allVersions) {
 		Arrays.fill(m_reorgVector, (byte) 0);
 
-		m_lock.lock();
+		/*-m_lock.lock();
 		// Read versions from SSD and write back current view
 		m_versionsBuffer.readAll(p_allVersions);
-		m_lock.unlock();
+		m_lock.unlock();*/
 	}
 
 	// Classes
