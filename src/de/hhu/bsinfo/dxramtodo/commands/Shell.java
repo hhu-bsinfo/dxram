@@ -18,42 +18,7 @@ public final class Shell {
 
 	// create & store all commands in HashMap
 	static {
-		AbstractCmd c;
 
-		m_commandMap = new HashMap<String, AbstractCmd>();
-
-		c = new CmdHelp();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdRecover();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdClear();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdNodes();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdChunkinfo();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdLogInfo();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdMigrate();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdMigrateRange();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdQuit();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdPut();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdGet();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdDel();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdCIDT();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdBackups();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdStats();
-		m_commandMap.put(c.getName(), c);
-		c = new CmdCreate();
-		m_commandMap.put(c.getName(), c);
 	}
 
 	/**

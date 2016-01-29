@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.monitor;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
+import de.hhu.bsinfo.utils.JNIconsole;
 
 public class LocalMonitorService extends DXRAMService {
 
@@ -12,6 +13,10 @@ public class LocalMonitorService extends DXRAMService {
 		for (StatisticsRecorder recorder : m_statistics.getRecorders()) {
 			System.out.println(recorder);
 		}
+	}
+	
+	public void run() {
+
 	}
 	
 	@Override

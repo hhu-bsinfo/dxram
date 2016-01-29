@@ -1,9 +1,5 @@
 
-package de.hhu.bsinfo.dxramtodo.commands;
-
-import de.uniduesseldorf.dxram.core.dxram.Core;
-
-import de.hhu.bsinfo.dxram.engine.DXRAMException;
+package de.hhu.bsinfo.dxram.run.term.cmd;
 
 /**
  * Get info about backups

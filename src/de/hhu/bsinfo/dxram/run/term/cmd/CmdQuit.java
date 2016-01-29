@@ -1,7 +1,5 @@
 
-package de.hhu.bsinfo.dxramtodo.commands;
-
-import de.uniduesseldorf.dxram.core.dxram.Core;
+package de.hhu.bsinfo.dxram.run.term.cmd;
 
 /**
  * Quit monitor.
@@ -47,7 +45,6 @@ public class CmdQuit extends AbstractCmd {
 		if (!areYouSure()) {
 			ret = false;
 		} else {
-			Core.close();
 			System.exit(0);
 		}
 

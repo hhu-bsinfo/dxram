@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.dxramtodo.commands;
+package de.hhu.bsinfo.dxram.run.term.cmd;
 
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;

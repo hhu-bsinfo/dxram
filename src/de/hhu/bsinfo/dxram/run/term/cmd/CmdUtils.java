@@ -1,11 +1,5 @@
 
-package de.hhu.bsinfo.dxramtodo.commands;
-
-import java.util.Iterator;
-import java.util.List;
-
-import de.hhu.bsinfo.utils.ZooKeeperHandler;
-import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
+package de.hhu.bsinfo.dxram.run.term.cmd;
 
 /**
  * Help methods for parsing and handling command strings.
@@ -170,106 +164,106 @@ public final class CmdUtils {
 		return res;
 	}
 
-	/**
-	 * Check if given NodeID is known and whether it is a superpeer or peer
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @return superpeer, peer, unknown
-	 */
-	public static String checkNID(final String p_nodeID) {
-		String ret = null;
-		List<String> nodeList = null;
-		Iterator<String> nli;
+//	/**
+//	 * Check if given NodeID is known and whether it is a superpeer or peer
+//	 * @param p_nodeID
+//	 *            the NodeID
+//	 * @return superpeer, peer, unknown
+//	 */
+//	public static String checkNID(final String p_nodeID) {
+//		String ret = null;
+//		List<String> nodeList = null;
+//		Iterator<String> nli;
+//
+//		// search superpeers
+//		try {
+//			nodeList = ZooKeeperHandler.getChildren("nodes/superpeers");
+//		} catch (final ZooKeeperException e) {
+//			System.out.println("error: could not access ZooKeeper!");
+//			ret = "error: could not access ZooKeeper!";
+//		}
+//
+//		if (nodeList != null) {
+//			nli = nodeList.iterator();
+//			while (nli.hasNext()) {
+//				if (nli.next().compareTo(p_nodeID) == 0) {
+//					ret = "superpeer";
+//					break;
+//				}
+//			}
+//
+//			if (ret == null) {
+//				// search peers
+//				nodeList = null;
+//				try {
+//					nodeList = ZooKeeperHandler.getChildren("nodes/peers");
+//				} catch (final ZooKeeperException e) {
+//					System.out.println("error: could not access ZooKeeper!");
+//					ret = "error: could not access ZooKeeper!";
+//				}
+//
+//				if (nodeList != null) {
+//					nli = nodeList.iterator();
+//					while (nli.hasNext()) {
+//						if (nli.next().compareTo(p_nodeID) == 0) {
+//							ret = "peer";
+//							break;
+//						}
+//					}
+//				}
+//			}
+//		}
+//
+//		if (ret == null) {
+//			ret = "unknown";
+//		}
+//
+//		return ret;
+//	}
 
-		// search superpeers
-		try {
-			nodeList = ZooKeeperHandler.getChildren("nodes/superpeers");
-		} catch (final ZooKeeperException e) {
-			System.out.println("error: could not access ZooKeeper!");
-			ret = "error: could not access ZooKeeper!";
-		}
-
-		if (nodeList != null) {
-			nli = nodeList.iterator();
-			while (nli.hasNext()) {
-				if (nli.next().compareTo(p_nodeID) == 0) {
-					ret = "superpeer";
-					break;
-				}
-			}
-
-			if (ret == null) {
-				// search peers
-				nodeList = null;
-				try {
-					nodeList = ZooKeeperHandler.getChildren("nodes/peers");
-				} catch (final ZooKeeperException e) {
-					System.out.println("error: could not access ZooKeeper!");
-					ret = "error: could not access ZooKeeper!";
-				}
-
-				if (nodeList != null) {
-					nli = nodeList.iterator();
-					while (nli.hasNext()) {
-						if (nli.next().compareTo(p_nodeID) == 0) {
-							ret = "peer";
-							break;
-						}
-					}
-				}
-			}
-		}
-
-		if (ret == null) {
-			ret = "unknown";
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Check if given NodeID is a peer and otherwise print an error message for the command 'p_command'
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_errorString
-	 *            the error string
-	 * @return true: NodeID is a known peer, false: unknown NodeID, or superpeer
-	 */
-	public static boolean mustBePeer(final short p_nodeID, final String p_errorString) {
-		boolean ret = false;
-		final String nodeIDok = checkNID(Short.toString(p_nodeID));
-
-		if (nodeIDok.compareTo("peer") == 0) {
-			ret = true;
-		} else if (nodeIDok.compareTo("unknown") == 0) {
-			System.out.println("error: unknown NodeID");
-		} else {
-			System.out.println("error: superpeer not allowed " + p_errorString);
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Check if given NodeID is a superpeer and otherwise print an error message for the command 'p_command'
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_errorString
-	 *            the error string
-	 * @return true: NodeID is a known superpeer, false: unknown NodeID, or peer
-	 */
-	public static boolean mustBeSuperpeer(final short p_nodeID, final String p_errorString) {
-		boolean ret = false;
-		final String nodeIDok = checkNID(Short.toString(p_nodeID));
-
-		if (nodeIDok.compareTo("superpeer") == 0) {
-			ret = true;
-		} else if (nodeIDok.compareTo("unknown") == 0) {
-			System.out.println("error: unknown NodeID");
-		} else {
-			System.out.println("error: peer not allowed " + p_errorString);
-		}
-
-		return ret;
-	}
+//	/**
+//	 * Check if given NodeID is a peer and otherwise print an error message for the command 'p_command'
+//	 * @param p_nodeID
+//	 *            the NodeID
+//	 * @param p_errorString
+//	 *            the error string
+//	 * @return true: NodeID is a known peer, false: unknown NodeID, or superpeer
+//	 */
+//	public static boolean mustBePeer(final short p_nodeID, final String p_errorString) {
+//		boolean ret = false;
+//		final String nodeIDok = checkNID(Short.toString(p_nodeID));
+//
+//		if (nodeIDok.compareTo("peer") == 0) {
+//			ret = true;
+//		} else if (nodeIDok.compareTo("unknown") == 0) {
+//			System.out.println("error: unknown NodeID");
+//		} else {
+//			System.out.println("error: superpeer not allowed " + p_errorString);
+//		}
+//
+//		return ret;
+//	}
+//
+//	/**
+//	 * Check if given NodeID is a superpeer and otherwise print an error message for the command 'p_command'
+//	 * @param p_nodeID
+//	 *            the NodeID
+//	 * @param p_errorString
+//	 *            the error string
+//	 * @return true: NodeID is a known superpeer, false: unknown NodeID, or peer
+//	 */
+//	public static boolean mustBeSuperpeer(final short p_nodeID, final String p_errorString) {
+//		boolean ret = false;
+//		final String nodeIDok = checkNID(Short.toString(p_nodeID));
+//
+//		if (nodeIDok.compareTo("superpeer") == 0) {
+//			ret = true;
+//		} else if (nodeIDok.compareTo("unknown") == 0) {
+//			System.out.println("error: unknown NodeID");
+//		} else {
+//			System.out.println("error: peer not allowed " + p_errorString);
+//		}
+//
+//		return ret;
+//	}
 }
