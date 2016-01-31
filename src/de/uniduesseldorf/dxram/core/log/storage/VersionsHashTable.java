@@ -110,7 +110,7 @@ public class VersionsHashTable {
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				// Do not overwrite entry!
+				set(index, key, p_epoch, p_version);
 				break;
 			}
 			iter = getKey(++index);

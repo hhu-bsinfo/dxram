@@ -34,7 +34,8 @@ public class VersionsBuffer {
 
 	private RandomAccessFile m_versionsFile;
 
-	private ReentrantLock m_lock;
+	private ReentrantLock m_accessLock;
+	private ReentrantLock m_flushLock;
 
 	// Constructors
 	/**
@@ -76,7 +77,8 @@ public class VersionsBuffer {
 			e.printStackTrace();
 		}
 
-		m_lock = new ReentrantLock(false);
+		m_accessLock = new ReentrantLock(false);
+		m_flushLock = new ReentrantLock(false);
 	}
 
 	// Getter
@@ -115,40 +117,43 @@ public class VersionsBuffer {
 		ByteBuffer buffer;
 
 		// Append all new versions to versions file
-		m_lock.lock();
-		if (m_count > 0) {
-			try {
-				buffer = ByteBuffer.allocate(m_count * SSD_ENTRY_SIZE);
+		if (m_flushLock.tryLock()) {
+			m_accessLock.lock();
+			if (m_count > 0) {
+				try {
+					buffer = ByteBuffer.allocate(m_count * SSD_ENTRY_SIZE);
 
-				// Iterate over all entries (4 bytes per cell)
-				for (int i = 0; i * 4 < m_table.length; i++) {
-					chunkID = getKey(i);
-					if (chunkID != 0) {
-						// ChunkID
-						buffer.putLong(chunkID - 1);
-						// Epoch (4 Bytes in hashtable, 2 in persistent table)
-						buffer.putShort((short) getEpoch(i));
-						// Version (4 Bytes in hashtable, 3 in persistent table)
-						version = getVersion(i);
-						buffer.put((byte) (version >>> 16));
-						buffer.put((byte) (version >>> 8));
-						buffer.put((byte) version);
+					// Iterate over all entries (4 bytes per cell)
+					for (int i = 0; i < m_elementCapacity; i++) {
+						chunkID = getKey(i);
+						if (chunkID != 0) {
+							// ChunkID
+							buffer.putLong(chunkID - 1);
+							// Epoch (4 Bytes in hashtable, 2 in persistent table)
+							buffer.putShort((short) getEpoch(i));
+							// Version (4 Bytes in hashtable, 3 in persistent table)
+							version = getVersion(i);
+							buffer.put((byte) (version >>> 16));
+							buffer.put((byte) (version >>> 8));
+							buffer.put((byte) version);
+						}
 					}
+
+					// Clear versions buffer and increment epoch
+					clear();
+					ret = incrementEpoch();
+					m_accessLock.unlock();
+
+					m_versionsFile.seek((int) m_versionsFile.length());
+					m_versionsFile.write(buffer.array());
+				} catch (final IOException e) {
+					e.printStackTrace();
+					m_accessLock.unlock();
 				}
-
-				// Clear versions buffer and increment epoch
-				clear();
-				ret = incrementEpoch();
-				m_lock.unlock();
-
-				m_versionsFile.seek((int) m_versionsFile.length());
-				m_versionsFile.write(buffer.array());
-			} catch (final IOException e) {
-				e.printStackTrace();
-				m_lock.unlock();
+			} else {
+				m_accessLock.unlock();
 			}
-		} else {
-			m_lock.unlock();
+			m_flushLock.unlock();
 		}
 
 		return ret;
@@ -166,20 +171,7 @@ public class VersionsBuffer {
 		byte[] data;
 		ByteBuffer buffer;
 
-		m_lock.lock();
-		// Put all versions from versions buffer to VersionsHashTable
-		for (int i = 0; i < m_elementCapacity; i++) {
-			chunkID = getKey(i);
-			if (chunkID != 0) {
-				p_allVersions.put(chunkID - 1, getEpoch(i), getVersion(i));
-			}
-		}
-
-		// Clear versions buffer and increment epoch
-		clear();
-		incrementEpoch();
-		m_lock.unlock();
-
+		m_flushLock.lock();
 		try {
 			length = (int) m_versionsFile.length();
 
@@ -199,6 +191,20 @@ public class VersionsBuffer {
 			} else {
 				// There is nothing on SSD yet
 			}
+
+			// Put all versions from versions buffer to VersionsHashTable
+			m_accessLock.lock();
+			for (int i = 0; i < m_elementCapacity; i++) {
+				chunkID = getKey(i);
+				if (chunkID != 0) {
+					p_allVersions.put(chunkID - 1, getEpoch(i), getVersion(i));
+				}
+			}
+
+			// Clear versions buffer and increment epoch
+			clear();
+			incrementEpoch();
+			m_accessLock.unlock();
 
 			// Write back current hashtable compactified
 			data = new byte[p_allVersions.size() * SSD_ENTRY_SIZE];
@@ -225,6 +231,7 @@ public class VersionsBuffer {
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
+		m_flushLock.unlock();
 	}
 
 	/**
@@ -266,9 +273,9 @@ public class VersionsBuffer {
 		long iter;
 		final long key = p_key + 1;
 
-		m_lock.lock();
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_accessLock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -277,7 +284,7 @@ public class VersionsBuffer {
 			}
 			iter = getKey(++index);
 		}
-		m_lock.unlock();
+		m_accessLock.unlock();
 
 		return ret;
 	}
@@ -294,9 +301,14 @@ public class VersionsBuffer {
 		long iter;
 		final long key = p_key + 1;
 
-		m_lock.lock();
+		// Avoid rehashing by waiting
+		while (m_count > m_threshold) {
+			Thread.yield();
+		}
+
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_accessLock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -312,11 +324,7 @@ public class VersionsBuffer {
 			set(index, key, ret.getEpoch(), ret.getVersion());
 			m_count++;
 		}
-
-		if (m_count >= m_threshold) {
-			rehash();
-		}
-		m_lock.unlock();
+		m_accessLock.unlock();
 
 		return ret;
 	}
@@ -346,9 +354,14 @@ public class VersionsBuffer {
 		long iter;
 		final long key = p_key + 1;
 
-		m_lock.lock();
+		// Avoid rehashing by waiting
+		while (m_count > m_threshold) {
+			Thread.yield();
+		}
+
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
+		m_accessLock.lock();
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
@@ -362,11 +375,7 @@ public class VersionsBuffer {
 			set(index, key, p_epoch, p_version);
 			m_count++;
 		}
-
-		if (m_count >= m_threshold) {
-			rehash();
-		}
-		m_lock.unlock();
+		m_accessLock.unlock();
 	}
 
 	/**

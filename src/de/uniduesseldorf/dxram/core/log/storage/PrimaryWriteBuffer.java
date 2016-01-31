@@ -249,6 +249,11 @@ public class PrimaryWriteBuffer {
 				}
 			}
 
+			if (m_bytesInWriteBuffer > 100 * 1024 * 1024) {
+				System.out.println("WARNING: Data loss possible! Size: " + m_bytesInWriteBuffer);
+				// TODO: Avoid overwriting data that has not been flushed yet
+			}
+
 			if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
 				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is written
 				m_dataAvailable = true;
