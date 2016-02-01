@@ -367,34 +367,34 @@ public abstract class AbstractCmd {
 		return ret;
 	}
 
-//	/**
-//	 * Check semantic of NodeID
-//	 * @param p_expectedNID
-//	 *            the expected NodeID
-//	 * @param p_foundNID
-//	 *            the given NodeID
-//	 * @return true: parameters are OK, false: syntax error
-//	 */
-//	private static boolean checkValidNode(final String p_expectedNID, final String p_foundNID) {
-//		boolean ret = true;
-//
-//		if (CmdUtils.checkNID(p_foundNID).compareTo("unknown") == 0) {
-//			System.out.println("  error: unknown NodeID '" + p_foundNID + "'");
-//			ret = false;
-//		} else {
-//			if (p_expectedNID.compareTo("PNID") == 0) {
-//				if (CmdUtils.checkNID(p_foundNID).compareTo("superpeer") == 0) {
-//					System.out.println("  error: superpeer NodeID not allowed '" + p_foundNID + "'");
-//					ret = false;
-//				}
-//			} else if (p_expectedNID.compareTo("SNID") == 0) {
-//				if (CmdUtils.checkNID(p_foundNID).compareTo("peer") == 0) {
-//					System.out.println("  error: peer NodeID not allowed '" + p_foundNID + "'");
-//					ret = false;
-//				}
-//			}
-//		}
-//		return ret;
-//	}
+	/**
+	 * Check semantic of NodeID
+	 * @param p_expectedNID
+	 *            the expected NodeID
+	 * @param p_foundNID
+	 *            the given NodeID
+	 * @return true: parameters are OK, false: syntax error
+	 */
+	private static boolean checkValidNode(final String p_expectedNID, final String p_foundNID) {
+		boolean ret = true;
+
+		if (CmdUtils.checkNID(p_foundNID).compareTo("unknown") == 0) {
+			System.out.println("  error: unknown NodeID '" + p_foundNID + "'");
+			ret = false;
+		} else {
+			if (p_expectedNID.compareTo("PNID") == 0) {
+				if (CmdUtils.checkNID(p_foundNID).compareTo("superpeer") == 0) {
+					System.out.println("  error: superpeer NodeID not allowed '" + p_foundNID + "'");
+					ret = false;
+				}
+			} else if (p_expectedNID.compareTo("SNID") == 0) {
+				if (CmdUtils.checkNID(p_foundNID).compareTo("peer") == 0) {
+					System.out.println("  error: peer NodeID not allowed '" + p_foundNID + "'");
+					ret = false;
+				}
+			}
+		}
+		return ret;
+	}
 
 }

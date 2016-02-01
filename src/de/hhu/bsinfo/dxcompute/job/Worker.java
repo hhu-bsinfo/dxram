@@ -1,25 +1,23 @@
 package de.hhu.bsinfo.dxcompute.job;
 
-import de.hhu.bsinfo.dxcompute.logger.LOG_LEVEL;
-import de.hhu.bsinfo.dxcompute.logger.LoggerDelegate;
-
 public class Worker extends Thread implements JobDelegate
 {
-	private int m_id;
-	private volatile boolean m_running;
-	private volatile boolean m_shutdown;
+	private int m_id = -1;
+	private volatile boolean m_running = false;
+	private volatile boolean m_shutdown = false;
+	private volatile boolean m_isIdle = false;
 	
 	private WorkStealingQueue m_publicLocalQueue = new WorkStealingQueue();
 	private WorkStealingQueue m_privateQueue = new WorkStealingQueue();
 	
-	private WorkerDelegate m_workerDelegate;
-	private LoggerDelegate m_loggerDelegate;
+	private WorkerDelegate m_workerDelegate = null;
+	private RemoteSubmissionDelegate m_remoteSubmissionDelegate = null;
 	
-	public Worker(final int p_id)
+	public Worker(final int p_id, final WorkerDelegate p_workerDelegate, final RemoteSubmissionDelegate p_remoteSubmissionDelegate)
 	{
 		m_id = p_id;
-		m_running = false;
-		m_shutdown = false;
+		m_workerDelegate = p_workerDelegate;
+		m_remoteSubmissionDelegate = p_remoteSubmissionDelegate;
 	}
 	
 	// -------------------------------------------------------------------
@@ -27,6 +25,18 @@ public class Worker extends Thread implements JobDelegate
 	public Job stealJobLocal() 
 	{
 		return m_publicLocalQueue.steal();
+	}
+	
+	public int getPublicLocalQueueJobsScheduled() {
+		return m_publicLocalQueue.jobsScheduled();
+	}
+
+	public int getPrivateQueueJobsScheduled() {
+		return m_privateQueue.jobsScheduled();
+	}
+	
+	public boolean isIdle() {
+		return m_isIdle;
 	}
 	
 	public void shutdown()
@@ -44,7 +54,7 @@ public class Worker extends Thread implements JobDelegate
 	@Override
 	public void run()
 	{
-		log(LOG_LEVEL.LL_INFO, "Running...");
+		m_workerDelegate.getLoggerComponent().info(getClass(), "Worker " + m_id + ": Running...");
 		
 		m_running = true;
 		
@@ -55,10 +65,10 @@ public class Worker extends Thread implements JobDelegate
 			job = m_privateQueue.pop();
 			if (job != null)
 			{
-				log(LOG_LEVEL.LL_DEBUG, "Executing job " + job.getJobID() + " from private queue.");
+				m_isIdle = false;
+				m_workerDelegate.getLoggerComponent().debug(getClass(), "Worker " + m_id + ": Executing job " + job.getID() + " from private queue.");
 				job.setJobDelegate(this);
-				job.setLoggerDelegate(m_loggerDelegate);
-				job.execute();
+				job.execute(m_workerDelegate.getNodeID());
 				m_workerDelegate.finishedJob();
 				continue;
 			}
@@ -66,10 +76,10 @@ public class Worker extends Thread implements JobDelegate
 			job = m_publicLocalQueue.pop();
 			if (job != null)
 			{
-				log(LOG_LEVEL.LL_DEBUG, "Executing job " + job.getJobID() + " from public local queue.");
+				m_isIdle = false;
+				m_workerDelegate.getLoggerComponent().debug(getClass(), "Worker " + m_id + ": Executing job " + job.getID() + " from public local queue.");
 				job.setJobDelegate(this);
-				job.setLoggerDelegate(m_loggerDelegate);
-				job.execute();
+				job.execute(m_workerDelegate.getNodeID());
 				m_workerDelegate.finishedJob();
 				continue;
 			}
@@ -77,10 +87,10 @@ public class Worker extends Thread implements JobDelegate
 			job = m_workerDelegate.stealJobLocal(this);
 			if (job != null)
 			{
-				log(LOG_LEVEL.LL_DEBUG, "Executing stolen job " + job.getJobID());
+				m_isIdle = false;
+				m_workerDelegate.getLoggerComponent().debug(getClass(), "Worker " + m_id + ": Executing stolen job " + job.getID());
 				job.setJobDelegate(this);
-				job.setLoggerDelegate(m_loggerDelegate);
-				job.execute();
+				job.execute(m_workerDelegate.getNodeID());
 				m_workerDelegate.finishedJob();
 				continue;
 			}
@@ -88,16 +98,18 @@ public class Worker extends Thread implements JobDelegate
 			if (m_shutdown)
 				break;
 			
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			m_isIdle = true;
+			Thread.yield();
 		}
 		
-		log(LOG_LEVEL.LL_INFO, "Shut down.");
+		m_workerDelegate.getLoggerComponent().info(getClass(), "Worker " + m_id + ": Shut down.");
 		m_running = false;
+	}
+	
+	@Override
+	public boolean pushJobPublicRemoteQueue(Job p_job, short p_nodeID) 
+	{
+		return m_remoteSubmissionDelegate.pushJobRemoteQueue(p_job, p_nodeID);
 	}
 	
 	@Override
@@ -120,23 +132,9 @@ public class Worker extends Thread implements JobDelegate
 	public int getAssignedWorkerID() {
 		return m_id;
 	}
-	
-	// -------------------------------------------------------------------
-	
-	void setLoggerDelegate(final LoggerDelegate p_loggerDelegate)
-	{
-		m_loggerDelegate = p_loggerDelegate;
-	}
-	
-	void setWorkerDelegate(final WorkerDelegate p_workerDelegate)
-	{
-		m_workerDelegate = p_workerDelegate;
-	}
-	
-	// -------------------------------------------------------------------
 
-	private void log(final LOG_LEVEL p_level, final String p_msg) {
-		if (m_loggerDelegate != null)
-			m_loggerDelegate.log(p_level, "Worker " + m_id, p_msg);
+	@Override
+	public void log(Job p_job, String p_msg) {
+		m_workerDelegate.getLoggerComponent().debug(Job.class, "Job-" + p_job.getID() + ": " + p_msg);
 	}
 }
