@@ -174,6 +174,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			 * can never be delivered.
 			 */
 			if (p_message.getDestination() == m_nodeMap.getOwnNodeID()) {
+				// source is never set otherwise for loop back
+				p_message.setSource(p_message.getDestination());
 				newMessage(p_message);
 			} else {
 				try {

@@ -1,9 +1,9 @@
-package de.hhu.bsinfo.dxcompute.job.messages;
+package de.hhu.bsinfo.dxram.job.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.job.Job;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 public class PushJobQueueRequest extends AbstractRequest {
@@ -53,6 +53,6 @@ public class PushJobQueueRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return m_job.sizeofObject();
+		return Short.BYTES + m_job.sizeofObject();
 	}
 }

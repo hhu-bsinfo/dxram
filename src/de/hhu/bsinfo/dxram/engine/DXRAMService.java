@@ -153,7 +153,7 @@ public abstract class DXRAMService
 	 */
 	protected <T extends DXRAMComponent> T getComponent(final Class<T> p_class)
 	{		   
-		   return m_parentEngine.getComponent(p_class);
+		return m_parentEngine.getComponent(p_class);
 	}
 	
    /**

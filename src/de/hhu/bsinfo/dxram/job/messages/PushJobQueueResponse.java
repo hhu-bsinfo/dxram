@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxcompute.job.messages;
+package de.hhu.bsinfo.dxram.job.messages;
 
 import de.hhu.bsinfo.menet.AbstractResponse;
 

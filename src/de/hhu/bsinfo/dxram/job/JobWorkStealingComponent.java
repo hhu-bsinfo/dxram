@@ -1,8 +1,9 @@
-package de.hhu.bsinfo.dxcompute.job;
+package de.hhu.bsinfo.dxram.job;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 public class JobWorkStealingComponent extends JobComponent implements WorkerDelegate {
@@ -26,23 +27,23 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	}
 
 	@Override
-	public boolean submit(final Job p_job) {	
+	public boolean pushJob(final Job p_job) {	
 		// cause we are using a work stealing approach, we do not need to
 		// care about which worker to assign this job to
 		
 		boolean success = false;
 		for (Worker worker : m_workers)
 		{
-			if (worker.pushJobPublicLocalQueue(p_job))
+			if (worker.pushJob(p_job))
 			{
-				m_logger.info(getClass(), "Submited job " + p_job.getID() + " to worker " + worker.getAssignedWorkerID());
+				m_logger.info(getClass(), "Submited job " + p_job + " to worker " + worker);
 				success = true;
 				break;
 			}
 		}
 		
 		if (!success)
-			m_logger.warn(getClass(), "Submiting job " + p_job.getID() + " failed.");
+			m_logger.warn(getClass(), "Submiting job " + p_job + " failed.");
 			
 		return success;
 	}
@@ -53,11 +54,13 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	}
 
 	@Override
-	public void waitForSubmittedJobsToFinish() {
+	public boolean waitForSubmittedJobsToFinish() {
 		while (m_unfinishedJobs.get() > 0)
 		{
 			Thread.yield();
 		}
+		
+		return true;
 	}
 
 	@Override
@@ -73,9 +76,12 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 		
 		m_workers = new Worker[p_settings.getValue(JobConfigurationValues.Component.NUM_WORKERS)];
 		
-		for (int i = 0; i < m_workers.length; i++)
-		{
+		for (int i = 0; i < m_workers.length; i++) {
 			m_workers[i] = new Worker(i, this, m_remoteSubmissionDelegate);
+		}
+		
+		// avoid race condition by first creating all workers, then starting them
+		for (int i = 0; i < m_workers.length; i++) {
 			m_workers[i].start();
 		}
 		
@@ -125,10 +131,10 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 			if (p_thief == worker)
 				continue;
 			
-			job = worker.stealJobLocal();
+			job = worker.stealJob();
 			if (job != null)
 			{
-				m_logger.debug(getClass(), "Job " + job.getID() + " stolen from worker " + worker.getAssignedWorkerID());
+				m_logger.debug(getClass(), "Job " + job + " stolen from worker " + worker);
 				break;
 			}
 		}
@@ -137,12 +143,13 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	}
 
 	@Override
-	public void scheduledJob() {
-		m_unfinishedJobs.incrementAndGet();
+	public void scheduledJob(final Job p_job) {
+		long id = m_unfinishedJobs.incrementAndGet();
+		p_job.setID(((long) m_boot.getNodeID() << 48) | id);
 	}
 
 	@Override
-	public void finishedJob() {
+	public void finishedJob(final Job p_job) {
 		m_unfinishedJobs.decrementAndGet();
 	}
 
@@ -154,5 +161,11 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	@Override
 	public short getNodeID() {
 		return m_boot.getNodeID();
+	}
+
+	@Override
+	public <T extends DXRAMService> T getService(Class<T> p_class) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxcompute.job;
+package de.hhu.bsinfo.dxram.job;
 
 public class JobNull extends Job {
 
@@ -18,7 +18,7 @@ public class JobNull extends Job {
 	}
 	
 	@Override
-	protected void execute(short p_nodeID) {
+	protected void execute(short p_nodeID, long[] p_chunkIDs) {
 		log("I am null job.");	
 	}
 }

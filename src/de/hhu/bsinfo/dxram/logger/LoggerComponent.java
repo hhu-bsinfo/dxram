@@ -43,13 +43,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void error(final Class<T> clazz, final String msg)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
-			getLogger().error(clazz.getName(), msg);
+			getLogger().error(clazz.getSimpleName(), msg);
 	}
 	
 	/**
@@ -60,13 +60,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void error(final Class<T> clazz, final String msg, final Exception e)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
-			getLogger().error(clazz.getName(), msg, e);
+			getLogger().error(clazz.getSimpleName(), msg, e);
 	}
 	
 	/**
@@ -76,13 +76,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void warn(final Class<T> clazz, final String msg)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
-			getLogger().warn(clazz.getName(), msg);
+			getLogger().warn(clazz.getSimpleName(), msg);
 	}
 	
 	/**
@@ -93,13 +93,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void warn(final Class<T> clazz, final String msg, final Exception e)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
-			getLogger().warn(clazz.getName(), msg, e);
+			getLogger().warn(clazz.getSimpleName(), msg, e);
 	}
 	
 	/**
@@ -109,13 +109,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void info(final Class<T> clazz, final String msg)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
-			getLogger().info(clazz.getName(), msg);
+			getLogger().info(clazz.getSimpleName(), msg);
 	}
 	
 	/**
@@ -126,13 +126,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void info(final Class<T> clazz, final String msg, final Exception e)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
-			getLogger().info(clazz.getName(), msg, e);
+			getLogger().info(clazz.getSimpleName(), msg, e);
 	}
 	
 	/**
@@ -142,13 +142,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void debug(final Class<T> clazz, final String msg)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
-			getLogger().debug(clazz.getName(), msg);
+			getLogger().debug(clazz.getSimpleName(), msg);
 	}
 	
 	/**
@@ -159,13 +159,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void debug(final Class<T> clazz, final String msg, final Exception e)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
-			getLogger().debug(clazz.getName(), msg, e);
+			getLogger().debug(clazz.getSimpleName(), msg, e);
 	}
 	
 	/**
@@ -175,13 +175,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void trace(final Class<T> clazz, final String msg)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
-			getLogger().trace(clazz.getName(), msg);
+			getLogger().trace(clazz.getSimpleName(), msg);
 	}
 	
 	/**
@@ -192,13 +192,13 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	 */
 	public <T> void trace(final Class<T> clazz, final String msg, final Exception e)
 	{
-		LogLevel logLevel = m_logLevels.get(clazz.getName());
+		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
 			logLevel = m_defaultLogLevel;
 		}
 		
 		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
-			getLogger().trace(clazz.getName(), msg, e);
+			getLogger().trace(clazz.getSimpleName(), msg, e);
 	}
 	
 	// -------------------------------------------------------------------------------------

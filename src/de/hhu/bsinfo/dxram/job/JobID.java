@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxcompute.job;
+package de.hhu.bsinfo.dxram.job;
 
 public class JobID {
 	public static final long INVALID_ID = -1;

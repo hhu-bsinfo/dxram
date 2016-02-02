@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxcompute.job;
+package de.hhu.bsinfo.dxram.job;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 
@@ -10,9 +10,9 @@ public abstract class JobComponent extends DXRAMComponent {
 	
 	public abstract void setRemoteSubsmissionDelegate(final RemoteSubmissionDelegate p_delegate);
 
-	public abstract boolean submit(final Job p_job);
+	public abstract boolean pushJob(final Job p_job);
 	
 	public abstract long getNumberOfUnfinishedJobs();
 	
-	public abstract void waitForSubmittedJobsToFinish();
+	public abstract boolean waitForSubmittedJobsToFinish();
 }

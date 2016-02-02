@@ -1,10 +1,10 @@
-package de.hhu.bsinfo.dxcompute.job;
+package de.hhu.bsinfo.dxram.job;
 
-import de.hhu.bsinfo.dxcompute.job.messages.JobMessages;
-import de.hhu.bsinfo.dxcompute.job.messages.PushJobQueueRequest;
-import de.hhu.bsinfo.dxcompute.job.messages.PushJobQueueResponse;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.job.messages.JobMessages;
+import de.hhu.bsinfo.dxram.job.messages.PushJobQueueRequest;
+import de.hhu.bsinfo.dxram.job.messages.PushJobQueueResponse;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent.ErrorCode;
@@ -23,7 +23,13 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 	
 	private JobStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 	
-	public boolean submit(final Job p_job)
+	public void registerJobType(final short p_typeID, final Class<? extends Job> p_clazz)
+	{
+		m_logger.debug(getClass(), "Registering job type " + p_typeID + " for class " + p_clazz);
+		Job.registerType(p_typeID, p_clazz);
+	}
+	
+	public boolean pushJob(final Job p_job)
 	{
 		// early return
 		if (m_boot.getNodeRole() == NodeRole.SUPERPEER)
@@ -34,14 +40,15 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
 				
-		boolean success = submit(p_job);
+		boolean success = m_job.pushJob(p_job);
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
 		
 		return success;
 	}	
 	
-	public boolean submitRemote(final Job p_job , final short p_nodeID)
+	@Override
+	public boolean pushJobRemote(final Job p_job , final short p_nodeID)
 	{
 		// early return
 		if (m_boot.getNodeRole() == NodeRole.SUPERPEER)
@@ -54,11 +61,28 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteSubmit);
 		
-		success = pushJobRemoteQueue(p_job, p_nodeID);
-			
+		PushJobQueueRequest request = new PushJobQueueRequest(p_nodeID, p_job);
+		ErrorCode error = m_network.sendSync(request);
+		if (error != ErrorCode.SUCCESS) {
+			m_logger.error(getClass(), "Sending push job queue request to node " + p_nodeID + " failed: " + error);
+		} else {
+			PushJobQueueResponse response = request.getResponse(PushJobQueueResponse.class);
+			byte statusCode = response.getStatusCode();
+			if (statusCode != 0) {
+				m_logger.error(getClass(), "Submitting remote job failed, remote node " + p_nodeID + " responded with error: " + statusCode);
+			} else {
+				success = true;
+			}
+		}
+		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteSubmit);
 		
 		return success;
+	}
+	
+	public boolean waitForLocalJobsToFinish()
+	{
+		return m_job.waitForSubmittedJobsToFinish();
 	}
 	
 	@Override
@@ -76,26 +100,6 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		}
 
 		m_logger.trace(getClass(), "Exiting incomingMessage");
-	}
-	
-	@Override
-	public boolean pushJobRemoteQueue(Job p_job, short p_nodeID) {
-		boolean success = false;
-		PushJobQueueRequest request = new PushJobQueueRequest(p_nodeID, p_job);
-		ErrorCode error = m_network.sendSync(request);
-		if (error != ErrorCode.SUCCESS) {
-			m_logger.error(getClass(), "Sending push job queue request to node " + p_nodeID + " failed: " + error);
-		} else {
-			PushJobQueueResponse response = request.getResponse(PushJobQueueResponse.class);
-			byte statusCode = response.getStatusCode();
-			if (statusCode != 0) {
-				m_logger.error(getClass(), "Submitting remote job failed, remote node " + p_nodeID + " responded with error: " + statusCode);
-			} else {
-				success = true;
-			}
-		}
-		
-		return success;
 	}
 	
 	// --------------------------------------------------------------------------------------------
@@ -119,6 +123,8 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 		registerStatisticsOperations();
+		
+		Job.registerType(JobNull.MS_TYPE_ID, JobNull.class);
 		
 		return true;
 	}
@@ -160,8 +166,10 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 	private void incomingPushJobQueueRequest(final PushJobQueueRequest p_request)
 	{
 		boolean success = false;
+	
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingSubmit);
 		
-		m_job.submit(p_request.getJob());
+		m_job.pushJob(p_request.getJob());
 		
 		PushJobQueueResponse response;
 		if (success)
@@ -174,5 +182,7 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		{
 			m_logger.error(getClass(), "Sending PushJobQueueResponse for " + p_request.getJob() + " failed: " + error);
 		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingSubmit);
 	}
 }

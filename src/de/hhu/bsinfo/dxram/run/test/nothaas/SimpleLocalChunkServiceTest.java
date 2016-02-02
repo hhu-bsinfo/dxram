@@ -20,7 +20,7 @@ public class SimpleLocalChunkServiceTest extends Main
 	public SimpleLocalChunkServiceTest()
 	{
 		m_dxram = new DXRAM();
-		m_dxram.initialize("config/dxram.conf");
+		m_dxram.initialize("config/dxram.conf", true);
 		m_chunkService = m_dxram.getService(ChunkService.class);
 	}
 	

@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxcompute.job;
+package de.hhu.bsinfo.dxram.job;
 
 import java.util.Deque;
 import java.util.LinkedList;

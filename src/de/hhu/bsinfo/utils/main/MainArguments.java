@@ -25,7 +25,10 @@ public class MainArguments {
 	
 	@SuppressWarnings("unchecked")
 	public <T> T getArgument(final Pair<String, T> p_default) {
-		return (T) getArgument(p_default.first(), p_default.second().getClass());
+		T val = (T) getArgument(p_default.first(), p_default.second().getClass());
+		if (val == null)
+			val = p_default.second();
+		return val;
 	}
 	
 	public <T> void setArgument(final Pair<String, T> p_default)

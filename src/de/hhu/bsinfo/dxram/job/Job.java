@@ -1,8 +1,9 @@
-package de.hhu.bsinfo.dxcompute.job;
+package de.hhu.bsinfo.dxram.job;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -11,7 +12,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public abstract class Job implements Importable, Exportable
 {
 	private long m_ID = JobID.INVALID_ID;
-	private long[] m_parameterChunkIDs;
+	private long[] m_parameterChunkIDs = null;
 
 	private JobDelegate m_jobDelegate = null;
 	
@@ -31,6 +32,8 @@ public abstract class Job implements Importable, Exportable
 			} catch (InstantiationException | IllegalAccessException e) {
 				throw new JobRuntimeException("Creating instance for job type ID " + p_typeID + " failed.", e);
 			}
+		} else {
+			throw new JobRuntimeException("Creating instance for job type ID " + p_typeID + " failed, no class registered for type " + p_typeID);
 		}
 		
 		return job;
@@ -50,7 +53,16 @@ public abstract class Job implements Importable, Exportable
 	{
 		assert p_parameterChunkIDs.length <= 255;
 		assert p_parameterChunkIDs.length >= 0;
-		m_parameterChunkIDs = p_parameterChunkIDs;
+		if (p_parameterChunkIDs != null) {
+			m_parameterChunkIDs = p_parameterChunkIDs;
+		} else {
+			m_parameterChunkIDs = new long[0];
+		}
+	}
+	
+	public Job()
+	{
+		m_parameterChunkIDs = new long[0];
 	}
 	
 	public abstract short getTypeID();
@@ -58,6 +70,10 @@ public abstract class Job implements Importable, Exportable
 	public long getID()
 	{
 		return m_ID;
+	}
+	
+	public void execute(short p_nodeID) {
+		execute(p_nodeID, m_parameterChunkIDs);
 	}
 	
 	@Override
@@ -99,7 +115,7 @@ public abstract class Job implements Importable, Exportable
 	@Override
 	public int sizeofObject()
 	{
-		return Short.BYTES + Long.BYTES + Long.BYTES * m_parameterChunkIDs.length;
+		return Long.BYTES + Byte.BYTES + Long.BYTES * m_parameterChunkIDs.length;
 	}
 	
 	@Override
@@ -122,25 +138,10 @@ public abstract class Job implements Importable, Exportable
 	
 	// -------------------------------------------------------------------
 	
-	protected abstract void execute(final short p_nodeID);
+	protected abstract void execute(final short p_nodeID, long[] p_chunkIDs);
 	
-	protected boolean pushJobPublicRemoteQueue(final Job p_job, final short p_nodeID)
+	protected <T extends DXRAMService> T getService(final Class<T> p_class)
 	{
-		return m_jobDelegate.pushJobPublicRemoteQueue(p_job, p_nodeID);
-	}
-	
-	protected boolean pushJobPublicLocalQueue(final Job p_job)
-	{
-		return m_jobDelegate.pushJobPublicLocalQueue(p_job);
-	}
-	
-	protected boolean pushJobPrivateQueue(final Job p_job)
-	{
-		return m_jobDelegate.pushJobPrivateQueue(p_job);
-	}
-	
-	protected void log(final String p_msg)
-	{
-		m_jobDelegate.log(this, p_msg);
+		return m_jobDelegate.getService(p_class);
 	}
 }
