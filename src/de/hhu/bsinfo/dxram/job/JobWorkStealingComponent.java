@@ -3,9 +3,15 @@ package de.hhu.bsinfo.dxram.job;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.job.ws.Worker;
+import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
+/**
+ * Implementation of a JobComponent using a work stealing approach for scheduling/load balancing.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class JobWorkStealingComponent extends JobComponent implements WorkerDelegate {
 
 	private LoggerComponent m_logger = null;
@@ -14,16 +20,15 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	private Worker[] m_workers = null;
 	private AtomicLong m_unfinishedJobs = new AtomicLong(0);
 	
-	private RemoteSubmissionDelegate m_remoteSubmissionDelegate = null;
-	
+	/**
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 */
 	public JobWorkStealingComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
-	}
-	
-	@Override
-	public void setRemoteSubsmissionDelegate(final RemoteSubmissionDelegate p_delegate)
-	{
-		m_remoteSubmissionDelegate = p_delegate;
 	}
 
 	@Override
@@ -77,7 +82,7 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 		m_workers = new Worker[p_settings.getValue(JobConfigurationValues.Component.NUM_WORKERS)];
 		
 		for (int i = 0; i < m_workers.length; i++) {
-			m_workers[i] = new Worker(i, this, m_remoteSubmissionDelegate);
+			m_workers[i] = new Worker(i, this);
 		}
 		
 		// avoid race condition by first creating all workers, then starting them
@@ -124,7 +129,7 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	public Job stealJobLocal(Worker p_thief) {
 		Job job = null;
 		
-		// TODO have better pattern for stealing
+		// TODO have better pattern for stealing?
 		for (Worker worker : m_workers)
 		{
 			// don't steal from own queue
@@ -161,11 +166,5 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	@Override
 	public short getNodeID() {
 		return m_boot.getNodeID();
-	}
-
-	@Override
-	public <T extends DXRAMService> T getService(Class<T> p_class) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }

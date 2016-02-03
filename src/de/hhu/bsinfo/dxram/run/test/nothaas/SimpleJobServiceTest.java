@@ -5,6 +5,7 @@ import java.util.Random;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
+import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.main.Main;
 import de.hhu.bsinfo.utils.main.MainArguments;
@@ -32,9 +33,10 @@ public class SimpleJobServiceTest extends Main {
 
 		@Override
 		protected void execute(short p_nodeID, long[] p_chunkIDs) {
+			LoggerService logger = getService(LoggerService.class);
 			try {
 				// abusing chunkID for time to wait
-				log("Sleeping " + p_chunkIDs[0]);
+				logger.debug(getClass(), "Sleeping " + p_chunkIDs[0]);
 				Thread.sleep(p_chunkIDs[0]);
 			} catch (InterruptedException e) {
 				e.printStackTrace();

@@ -68,6 +68,10 @@ public class PutRequest extends AbstractRequest {
 		return m_dataStructures;
 	}
 
+	/**
+	 * Get the unlock operation to execute after the put.
+	 * @return Unlock operation.
+	 */
 	public ChunkLockOperation getUnlockOperation() {
 		if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
 			if (ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode())) {

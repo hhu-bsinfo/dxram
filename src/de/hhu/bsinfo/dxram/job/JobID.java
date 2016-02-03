@@ -1,5 +1,10 @@
 package de.hhu.bsinfo.dxram.job;
 
+/**
+ * Helper class to work with job IDs.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ *
+ */
 public class JobID {
 	public static final long INVALID_ID = -1;
 	

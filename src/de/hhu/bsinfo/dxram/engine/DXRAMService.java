@@ -175,4 +175,18 @@ public abstract class DXRAMService
     * @return True if shutdown was successful, false otherwise.
     */
 	protected abstract boolean shutdownService();
+	
+	protected boolean isServiceAccessor()
+	{
+		return false;
+	}
+	
+	protected DXRAMServiceAccessor getServiceAccessor()
+	{
+		if (isServiceAccessor()) {
+			return m_parentEngine;
+		} else {
+			return null;
+		}
+	}
 }

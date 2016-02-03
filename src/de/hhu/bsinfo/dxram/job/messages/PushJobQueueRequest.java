@@ -6,6 +6,11 @@ import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
+/**
+ * Message to send a job to a remote node for execution.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class PushJobQueueRequest extends AbstractRequest {
 	
 	private Job m_job = null;
@@ -30,6 +35,10 @@ public class PushJobQueueRequest extends AbstractRequest {
 		m_job = p_job;
 	}
 	
+	/**
+	 * Get the job of this request.
+	 * @return Job.
+	 */
 	public Job getJob() {
 		return m_job;
 	}

@@ -33,6 +33,11 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
+/**
+ * This service provides access to the backend storage system.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class ChunkService extends DXRAMService implements MessageReceiver
 {
 	private BootComponent m_boot = null;
@@ -46,6 +51,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 	
+	/**
+	 * Constructor
+	 */
 	public ChunkService() {
 		super();
 	}
@@ -86,6 +94,12 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return true;
 	}
 	
+	/**
+	 * Create a new chunk.
+	 * @param p_size Size of the new chunk.
+	 * @param p_count Number of chunks to create with the specified size.
+	 * @return ChunkIDs/Handles identifying the created chunks.
+	 */
 	public long[] create(final int p_size, final int p_count)
 	{		
 		long[] chunkIDs = null;
@@ -131,6 +145,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return chunkIDs;
 	}
 	
+	/**
+	 * Create chunks with different sizes.
+	 * @param p_sizes List of sizes to create chunks for.
+	 * @return ChunkIDs/Handles identifying the created chunks.
+	 */
 	public long[] create(final int... p_sizes) {
 		long[] chunkIDs = null;
 		
@@ -169,7 +188,12 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return chunkIDs;
 	}
 
-	// remote create
+	/**
+	 * Create chunks on another node.
+	 * @param p_peer NodeID of the peer to create the chunks on.
+	 * @param p_sizes Sizes to create chunks of.
+	 * @return ChunkIDs/Handles identifying the created chunks.
+	 */
 	public long[] create(final short p_peer, final int... p_sizes) {
 		long[] chunkIDs = null;
 		
@@ -204,6 +228,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return chunkIDs;
 	}
 	
+	/**
+	 * Remove chunks/data structures from the storage.
+	 * @param p_dataStructures Data structures to remove from the storage.
+	 * @return Number of successfully removed data structures.
+	 */
 	public int remove(final DataStructure... p_dataStructures) {
 		long[] chunkIDs = new long[p_dataStructures.length];
 		for (int i = 0; i < chunkIDs.length; i++) {
@@ -213,6 +242,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return remove(chunkIDs);
 	}
 	
+	/**
+	 * Remove chunks/data structures from the storage (by handle/ID).
+	 * @param p_chunkIDs ChunkIDs/Handles of the data structures to remove.
+	 * @return Number of successfully removed data structures.
+	 */
 	public int remove(final long... p_chunkIDs) {
 		int chunksRemoved = 0;
 		
@@ -324,10 +358,21 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return chunksRemoved;
 	}
 	
+	/**
+	 * Put/Update the contents of the provided data structures in the backend storage.
+	 * @param p_dataStructres Data structures to put/update.
+	 * @return Number of successfully updated data structures.
+	 */
 	public int put(final DataStructure... p_dataStructres) {
 		return put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
 	}
 	
+	/**
+	 * Put/Update the contents of the provided data structures in the backend storage.
+	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures Data structures to put/update.
+	 * @return Number of successfully updated data structures.
+	 */
 	public int put(final ChunkLockOperation p_chunkUnlockOperation, DataStructure... p_dataStructures)
 	{
 		int chunksPut = 0;
@@ -442,6 +487,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return chunksPut;
 	}
 	
+	/**
+	 * Get/Read the data stored in the backend storage in the provided data structures.
+	 * @param p_dataStructures Data structures to read the stored data into.
+	 * @return Number of successfully read data structures.
+	 */
 	public int get(DataStructure... p_dataStructures) {
 		int totalChunksGot = 0;
 		
@@ -572,6 +622,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	// -----------------------------------------------------------------------------------
 	
+	/**
+	 * Register network messages we use in here.
+	 */
 	private void registerNetworkMessages()
 	{
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST, GetRequest.class);
@@ -584,6 +637,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_RESPONSE, CreateResponse.class);
 	}
 	
+	/**
+	 * Register network messages we want to listen to in here.
+	 */
 	private void registerNetworkMessageListener()
 	{
 		m_network.register(GetRequest.class, this);
@@ -592,6 +648,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_network.register(CreateRequest.class, this);
 	}
 	
+	/**
+	 * Register statistics operations for this service.
+	 */
 	private void registerStatisticsOperations() 
 	{
 		m_statisticsRecorderIDs = new ChunkStatisticsRecorderIDs();
@@ -790,6 +849,10 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingRemove);
 	}
 	
+	/**
+	 * Handle incoming create requests.
+	 * @param p_request Request to handle
+	 */
 	private void incomingCreateRequest(final CreateRequest p_request) {
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingCreate, p_request.getSizes().length);
 		

@@ -21,13 +21,12 @@ import de.hhu.bsinfo.utils.conf.ConfigurationParser;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoader;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoaderFile;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
-import de.hhu.bsinfo.utils.locks.JNILock;
 
 /**
  * Main class to run DXRAM with components and services.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class DXRAMEngine 
+public class DXRAMEngine implements DXRAMServiceAccessor
 {
 	/**
 	 * Settings subclass to provide settings for the engine. Wraps a configuration.
@@ -117,6 +116,7 @@ public class DXRAMEngine
 	private Configuration m_configuration = null;
 	private Settings m_settings = null;
 	private Logger m_logger = null;
+	private DXRAMJNIManager m_jniManager = null;
 	
 	private HashMap<String, DXRAMComponent> m_components = new HashMap<String, DXRAMComponent>();
 	private HashMap<String, DXRAMService> m_services = new HashMap<String, DXRAMService>();
@@ -135,6 +135,7 @@ public class DXRAMEngine
 	 * 					or abstract class to get the registered instance.
 	 * @return Reference to the service if available and enabled, null otherwise or if the engine is not initialized.
 	 */
+	@Override
 	public <T extends DXRAMService> T getService(final Class<T> p_class)
 	{
 		T service = null;
@@ -530,7 +531,6 @@ public class DXRAMEngine
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.ROLE);
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER);
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOG_LEVEL);
-		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.JNI_LOCK_PATH);
 	}
 	
 	/**
@@ -677,9 +677,7 @@ public class DXRAMEngine
 	 */
 	private void setupJNI()
 	{
-		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up JNI classes..." );
-		
-		String jniLock = m_settings.getValue(DXRAMEngineConfigurationValues.JNI_LOCK_PATH);
-		JNILock.load(jniLock);
+		m_jniManager = new DXRAMJNIManager(m_logger);
+		m_jniManager.setup(m_settings);
 	}
 }

@@ -5,6 +5,11 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
+/**
+ * Reponse message to the create request.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class CreateResponse extends AbstractResponse {
 	
 	private long[] m_chunkIDs = null;
@@ -34,6 +39,10 @@ public class CreateResponse extends AbstractResponse {
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_chunkIDs.length));
 	}
 	
+	/**
+	 * Get the chunk IDs of the created chunks.
+	 * @return ChunkIDs.
+	 */
 	public final long[] getChunkIDs() {
 		return m_chunkIDs;
 	}

@@ -2,6 +2,11 @@ package de.hhu.bsinfo.dxram.job;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 
+/**
+ * Metadata needed for registering and recording statistics in JobService.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class JobStatisticsRecorderIDs {
 	public int m_id = StatisticsRecorder.INVALID_ID;
 	public Operations m_operations = new Operations();

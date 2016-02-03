@@ -18,7 +18,12 @@ import de.hhu.bsinfo.utils.reflect.unit.UnitConverterGBToByte;
 import de.hhu.bsinfo.utils.reflect.unit.UnitConverterKBToByte;
 import de.hhu.bsinfo.utils.reflect.unit.UnitConverterMBToByte;
 
-//bla[int]{kb2b}:1234594
+/**
+ * Default parser for arguments provided for an application.
+ * Example: bla[int]{kb2b}:1234594 bla2[long]:5555
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class DefaultMainArgumentsParser implements MainArgumentsParser {
 
 	private static final String KEY_VAL_SEPARATOR = ":";
@@ -30,6 +35,9 @@ public class DefaultMainArgumentsParser implements MainArgumentsParser {
 	private Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
 	private Map<String, UnitConverter> m_unitConverters = new HashMap<String, UnitConverter>();
 	
+	/**
+	 * Constructor
+	 */
 	public DefaultMainArgumentsParser() {
 		// add default type parsers
 		addDataTypeParser(new DataTypeParserString());
@@ -77,16 +85,31 @@ public class DefaultMainArgumentsParser implements MainArgumentsParser {
 		}
 	}
 	
+	/**
+	 * Add a parser for parsing data types for the arguments.
+	 * @param p_parser Parser to add.
+	 * @return True if adding parser was successful, false if parser already added.
+	 */
 	public boolean addDataTypeParser(final DataTypeParser p_parser)
 	{
 		return m_dataTypeParsers.put(p_parser.getTypeIdentifer(), p_parser) == null;
 	}
 	
+	/**
+	 * Add a unit converter to allow unit conversion of arguments.
+	 * @param p_converter Unit converter to add.
+	 * @return True if adding converter was successful, false if already added.
+	 */
 	public boolean addUnitConverter(final UnitConverter p_converter)
 	{
 		return m_unitConverters.put(p_converter.getUnitIdentifier(), p_converter) == null;
 	}
 	
+	/**
+	 * Split key value tuple bla[int]{kb2b}:1234594 -> bla[int]{kb2b} and 1234594
+	 * @param p_argument String to split.
+	 * @return Key value tuple 
+	 */
 	private String[] splitKeyValue(final String p_argument) {
 		// don't use split here. the value can contain the separator as well
 		int sepIndex = p_argument.indexOf(KEY_VAL_SEPARATOR);
@@ -99,6 +122,11 @@ public class DefaultMainArgumentsParser implements MainArgumentsParser {
 		return keyVal;
 	}
 	
+	/**
+	 * Get the name from the key: bla[int]{kb2b} -> bla
+	 * @param p_key Key provided.
+	 * @return Name part of the key.
+	 */
 	private String getKeyName(final String p_key) {
 		int typeStart = p_key.indexOf(TYPE_PREFIX);
 
@@ -110,6 +138,11 @@ public class DefaultMainArgumentsParser implements MainArgumentsParser {
 		}
 	}
 	
+	/**
+	 * Get the type from the key: bla[int]{kb2b}:1234594 -> int
+	 * @param p_key Key provided.
+	 * @return Type part of the key.
+	 */
 	private String getKeyType(final String p_key) {
 		int typeStart = p_key.indexOf(TYPE_PREFIX);
 		int typeEnd = p_key.indexOf(TYPE_POSTFIX);
@@ -122,6 +155,11 @@ public class DefaultMainArgumentsParser implements MainArgumentsParser {
 		}
 	}
 	
+	/**
+	 * Get the unit part of the key: bla[int]{kb2b}:1234594 -> kb2b
+	 * @param p_key Key provided.
+	 * @return Unit part of the key or empty string if not available.
+	 */
 	private String getKeyUnit(final String p_key) {
 		int typeStart = p_key.indexOf(UNIT_PREFIX);
 		int typeEnd = p_key.indexOf(UNIT_POSTFIX);

@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.job;
+package de.hhu.bsinfo.dxram.job.ws;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -6,24 +6,34 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-// TODO make this lock free
-public class WorkStealingQueue 
+import de.hhu.bsinfo.dxram.job.Job;
+
+/**
+ * Simple mutex implementation of a work stealing queue.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ */
+public class WorkStealingQueueMutex implements WorkStealingQueue
 {
 	private Deque<Job> m_queue = new LinkedList<Job>();
 	private Lock m_lock = new ReentrantLock();
 	
-	public WorkStealingQueue()
+	/**
+	 * Constructor
+	 */
+	public WorkStealingQueueMutex()
 	{
 		
 	}
 	
 	// -------------------------------------------------------------------
 	
-	public int jobsScheduled()
+	@Override
+	public int count()
 	{
 		return m_queue.size();
 	}
 	
+	@Override
 	public boolean push(final Job job)
 	{
 		m_lock.lock();
@@ -32,6 +42,7 @@ public class WorkStealingQueue
 		return true;
 	}
 	
+	@Override
 	public Job pop()
 	{
 		Job job = null;
@@ -48,6 +59,7 @@ public class WorkStealingQueue
 		return job;
 	}
 	
+	@Override
 	public Job steal()
 	{
 		Job job = null;

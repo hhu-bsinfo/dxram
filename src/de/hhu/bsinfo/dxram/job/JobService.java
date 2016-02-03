@@ -13,7 +13,14 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
-public class JobService extends DXRAMService implements MessageReceiver, RemoteSubmissionDelegate {
+/**
+ * Service interface to schedule executables jobs. Use this to execute code
+ * concurrently and even remotely with DXRAM.
+ * 
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
+public class JobService extends DXRAMService implements MessageReceiver {
 
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
@@ -23,12 +30,23 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 	
 	private JobStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 	
+	/**
+	 * Register a new implementation/type of Job class.
+	 * Make sure to register all your Job classes.
+	 * @param p_typeID Type ID for the job to register.
+	 * @param p_clazz Class to register for the specified ID.
+	 */
 	public void registerJobType(final short p_typeID, final Class<? extends Job> p_clazz)
 	{
 		m_logger.debug(getClass(), "Registering job type " + p_typeID + " for class " + p_clazz);
 		Job.registerType(p_typeID, p_clazz);
 	}
 	
+	/**
+	 * Schedule a job for execution (local).
+	 * @param p_job Job to be scheduled for execution.
+	 * @return True if scheduling was successful, false otherwise.
+	 */
 	public boolean pushJob(final Job p_job)
 	{
 		// early return
@@ -40,6 +58,8 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
 				
+		// nasty way to access the services...feel free to have a better solution for this
+		p_job.setServiceAccessor(getServiceAccessor());
 		boolean success = m_job.pushJob(p_job);
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
@@ -47,7 +67,13 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		return success;
 	}	
 	
-	@Override
+	/**
+	 * Schedule a job for remote execution. The job is sent to the node specified and
+	 * scheduled for exeuction there.
+	 * @param p_job Job to schedule.
+	 * @param p_nodeID ID of the node to schedule the job on.
+	 * @return True of scheduling the job on the specified ID was successful, false otherwise.
+	 */
 	public boolean pushJobRemote(final Job p_job , final short p_nodeID)
 	{
 		// early return
@@ -80,6 +106,10 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		return success;
 	}
 	
+	/**
+	 * Wait for all locally scheduled and currently executing jobs to finish.
+	 * @return True if waiting was successful and all jobs finished, false otherwise.
+	 */
 	public boolean waitForLocalJobsToFinish()
 	{
 		return m_job.waitForSubmittedJobsToFinish();
@@ -118,8 +148,6 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		m_statistics = getComponent(StatisticsComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		
-		m_job.setRemoteSubsmissionDelegate(this);
-		
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 		registerStatisticsOperations();
@@ -140,19 +168,34 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		return true;
 	}
 	
+	@Override
+	protected boolean isServiceAccessor()
+	{
+		return true;
+	}
+	
 	// ------------------------------------------------------------------------------------------
 	
+	/**
+	 * Register network messages used here.
+	 */
 	private void registerNetworkMessages()
 	{
 		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_REQUEST, PushJobQueueRequest.class);
 		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_RESPONSE, PushJobQueueResponse.class);
 	}
 	
+	/**
+	 * Register listener for incoming messages.
+	 */
 	private void registerNetworkMessageListener()
 	{
 		m_network.register(PushJobQueueRequest.class, this);
 	}
 	
+	/**
+	 * Register statistics stuff.
+	 */
 	private void registerStatisticsOperations() 
 	{
 		m_statisticsRecorderIDs = new JobStatisticsRecorderIDs();
@@ -163,13 +206,20 @@ public class JobService extends DXRAMService implements MessageReceiver, RemoteS
 		m_statisticsRecorderIDs.m_operations.m_incomingSubmit = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, JobStatisticsRecorderIDs.Operations.MS_INCOMING_SUBMIT);
 	}
 
+	/**
+	 * Handle incoming push queue request.
+	 * @param p_request Incoming request.
+	 */
 	private void incomingPushJobQueueRequest(final PushJobQueueRequest p_request)
 	{
 		boolean success = false;
 	
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingSubmit);
 		
-		m_job.pushJob(p_request.getJob());
+		Job job = p_request.getJob();
+		job.setServiceAccessor(getServiceAccessor());
+		
+		m_job.pushJob(job);
 		
 		PushJobQueueResponse response;
 		if (success)

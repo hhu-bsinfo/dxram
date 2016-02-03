@@ -2,6 +2,11 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 
+/**
+ * Metadata needed for registering and recording statistics in ChunkService.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class ChunkStatisticsRecorderIDs {
 	public int m_id = StatisticsRecorder.INVALID_ID;
 	public Operations m_operations = new Operations();

@@ -2,6 +2,11 @@ package de.hhu.bsinfo.dxram.job.messages;
 
 import de.hhu.bsinfo.menet.AbstractResponse;
 
+/**
+ * Response to job push request.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class PushJobQueueResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of PushJobQueueResponse.

@@ -14,5 +14,4 @@ public class DXRAMEngineConfigurationValues {
 	public static final Pair<String, String> ROLE = new Pair<String, String>("Role", "Peer");
 	public static final Pair<String, String> LOGGER = new Pair<String, String>("Logger", "de.hhu.bsinfo.dxram.util.logger.LoggerLog4j");
 	public static final Pair<String, String> LOG_LEVEL = new Pair<String, String>("LogLevel", "trace");
-	public static final Pair<String, String> JNI_LOCK_PATH = new Pair<String, String>("JNI/JNILock", "/opt/dxram/lib/libJNILock.so");
 }

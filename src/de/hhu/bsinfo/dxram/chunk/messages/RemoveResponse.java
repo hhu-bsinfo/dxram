@@ -38,6 +38,10 @@ public class RemoveResponse extends AbstractResponse {
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_statusCodes.length));
 	}
 
+	/**
+	 * Get the status codes of the removed chunks.
+	 * @return Status codes of chunks.
+	 */
 	public final byte[] getStatusCodes() {
 		return m_chunkStatusCodes;
 	}

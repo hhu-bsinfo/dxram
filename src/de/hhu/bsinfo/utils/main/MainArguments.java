@@ -6,9 +6,20 @@ import java.util.Map.Entry;
 
 import de.hhu.bsinfo.utils.Pair;
 
+/**
+ * Easier to handle argument list/map for application.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class MainArguments {
 	private Map<String, Object> m_arguments = new HashMap<String, Object>();
 	
+	/**
+	 * Get an argument from the list.
+	 * @param p_key Name of the argument.
+	 * @param p_type Type expected of that argument.
+	 * @return Argument value or null if argument with specified name does not exist.
+	 */
 	public <T> T getArgument(final String p_key, final Class<T> p_type) {
 		
 		Object val = m_arguments.get(p_key);
@@ -23,6 +34,11 @@ public class MainArguments {
 		return p_type.cast(val);
 	}
 	
+	/**
+	 * Get an argument from the list.
+	 * @param p_default Pair of argument name and default value.
+	 * @return If argument exists, returns the value of the argument otherwise the provided default value.
+	 */
 	@SuppressWarnings("unchecked")
 	public <T> T getArgument(final Pair<String, T> p_default) {
 		T val = (T) getArgument(p_default.first(), p_default.second().getClass());
@@ -31,11 +47,20 @@ public class MainArguments {
 		return val;
 	}
 	
+	/**
+	 * Set an argument/default value.
+	 * @param p_default Pair of name of the argument and default value to set.
+	 */
 	public <T> void setArgument(final Pair<String, T> p_default)
 	{
 		setArgument(p_default.first(), p_default.second());
 	}
 	
+	/**
+	 * Set an argument/default value.
+	 * @param p_key Name of the argument.
+	 * @param p_value Value of the argument.
+	 */
 	public <T> void setArgument(final String p_key, final T p_value)
 	{
 		m_arguments.put(p_key, p_value);
