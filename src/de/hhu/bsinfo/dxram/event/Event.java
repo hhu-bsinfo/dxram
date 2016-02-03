@@ -10,6 +10,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 public abstract class Event {
 	private Class<? extends DXRAMComponent> m_sourceClass;
 	
+	/**
+	 * Constructor
+	 * @param p_sourceClass Source class this event originates from.
+	 */
 	public Event(final Class<? extends DXRAMComponent> p_sourceClass)
 	{
 		m_sourceClass = p_sourceClass;
