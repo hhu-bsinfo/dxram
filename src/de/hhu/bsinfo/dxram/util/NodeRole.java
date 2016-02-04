@@ -51,6 +51,17 @@ public enum NodeRole {
 	public char getAcronym() {
 		return m_acronym;
 	}
+	
+	@Override
+	public String toString()
+	{
+		if (equals(PEER))
+			return PEER_STR;
+		else if (equals(MONITOR))
+			return MONITOR_STR;
+		else
+			return SUPERPEER_STR;
+	}
 
 	// Methods
 	/**

@@ -1,27 +1,22 @@
-
-package de.hhu.bsinfo.dxram.run.term.cmd;
+package de.hhu.bsinfo.dxram.term;
 
 import java.io.UnsupportedEncodingException;
 
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.Tools;
 
-/**
- * Base class for commands
- * @author Michael Schoettner 16.09.2015
- *         Syntax must be described using a string, keywords:
- *         STR string, any chars
- *         PNR positive number, e.g. LocalID (may be 0)
- *         ANID any existing NodeID
- *         PNID any existing peer NodeID
- *         SNID any existing superpeer NodeID
- *         , for NodeID,LocalID tuples
- *         [] optional parameter; only one and at the end only.
- *         [-STR]
- *         or [-STR=STR|PNR|ANID|PNID|SNID]
- */
-public abstract class AbstractCmd {
-
+public abstract class TerminalCommand 
+{
+	private TerminalDelegate m_terminalDelegate = null;
+	
+	public TerminalCommand()
+	{
+		
+	}
+	
+	
+	
 	/**
 	 * Get name of command.
 	 * @return the name
@@ -51,7 +46,7 @@ public abstract class AbstractCmd {
 	 * @return the syntax string
 	 */
 	public abstract String[] getOptParams();
-
+	
 	/**
 	 * Execution method of a command.
 	 * Called from local node, parameters are checked before.
@@ -60,19 +55,7 @@ public abstract class AbstractCmd {
 	 * @return true: success, false: failed
 	 */
 	public abstract boolean execute(String p_command);
-
-	/**
-	 * Execution method of a command.
-	 * Called on remote node, if overwritten.
-	 * Some methods may me implemented in ChunkHandler or LookupHandler
-	 * @param p_command
-	 *            the string received from sending node
-	 * @return result string, depending on command
-	 */
-	public String remoteExecute(final String p_command) {
-		return "error: remote_execute not implemented";
-	}
-
+	
 	/**
 	 * Print usage message.
 	 */
@@ -99,7 +82,7 @@ public abstract class AbstractCmd {
 			System.out.println("               " + lines[i]);
 		}
 	}
-
+	
 	/**
 	 * Ask user to proceed or not
 	 * @return true: yes, false: no
@@ -128,117 +111,7 @@ public abstract class AbstractCmd {
 
 		return ret;
 	}
-
-	/**
-	 * Check syntax and semantic of a single given parameter
-	 * @param p_expectedParam
-	 *            expected parameter
-	 * @param p_givenParam
-	 *            given parameter
-	 * @return true: no problems, false: errors
-	 */
-	private static boolean checkSingleParam(final String p_expectedParam, final String p_givenParam) {
-		boolean ret = true;
-		String pattern = "";
-
-		// System.out.println("p_expectedParam="+p_expectedParam+", p_givenParam="+p_givenParam);
-
-		// next is a NodeID,LocalID tuple?
-		if (p_expectedParam.indexOf(",") > 1) {
-			// check syntax
-			pattern = pattern + "-?([0-9])+,([0-9])+";
-			ret = p_givenParam.matches(pattern);
-			if (!ret) {
-				System.out.println("  error: bad parameter: '" + p_givenParam + "'");
-				// check semantic
-			} else {
-				final String[] chunkIDtuple = p_givenParam.split(",");
-				ret = checkValidNode(p_expectedParam, chunkIDtuple[0]);
-			}
-
-			// next is a node number (positive or negative)?
-		} else if (p_expectedParam.compareTo("PNID") == 0
-				|| p_expectedParam.compareTo("SNID") == 0
-				|| p_expectedParam.compareTo("ANID") == 0) {
-			pattern = pattern + "-?([0-9])+";
-			ret = p_givenParam.matches(pattern);
-			if (!ret) {
-				System.out.println("  error: bad parameter. Given '" + p_givenParam + "' but expected was '" + p_expectedParam + "'");
-				// check semantic
-			} else {
-				ret = checkValidNode(p_expectedParam, p_givenParam);
-			}
-
-			// next is a positve number >0 ?
-		} else if (p_expectedParam.compareTo("PNR") == 0) {
-			pattern = pattern + "([0-9])+";
-			ret = p_givenParam.matches(pattern);
-
-			// next is a string?
-		} else if (p_expectedParam.compareTo("STR") == 0) {
-			try {
-				ret = Tools.looksLikeUTF8(p_givenParam.getBytes());
-			} catch (final UnsupportedEncodingException e) {
-				System.out.println("  error: bad parameter. Expected was a string but parameter has unsupported encoding.");
-				ret = false;
-			}
-			if (!ret) {
-				System.out.println("  error: bad parameter. Given '" + p_givenParam + "' but expected was a string.");
-			}
-		} else {
-			System.out.println("  error: bad token '" + p_expectedParam + "' in syntax definition");
-			ret = false;
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Check if there are duplicates in the given params
-	 * @param p_search
-	 *            argument to check for duplication
-	 * @param p_givenParams
-	 *            given params
-	 * @param p_foundIdx
-	 *            position of p_search in p_givenParams
-	 * @return true: p_search is duplicated, false: OK
-	 */
-	private static boolean duplicatesInOptParams(final String p_search, final String[] p_givenParams, final int p_foundIdx) {
-		boolean duplicates = false;
-
-		for (int i = 1; i < p_givenParams.length; i++) {
-			final String[] kvParam2 = p_givenParams[i].split("=");
-			if (p_search.compareTo(kvParam2[0]) == 0 && i != p_foundIdx) {
-				duplicates = true;
-				System.out.println("  error: duplicate parameter '" + p_search + "'");
-				break;
-			}
-		}
-		return duplicates;
-	}
-
-	/**
-	 * Get the given arguments (arguments[0] is the command name)
-	 * @param p_arguments
-	 *            tokens of the given command
-	 * @return given parameters (may be null if none are given)
-	 */
-	private String[] getGivenArguments(final String[] p_arguments) {
-		String[] givenParams = null;
-
-		// get the given params
-		if (p_arguments.length > 1) {
-			givenParams = new String[p_arguments.length - 1];
-			// System.out.print("   givenParams: ");
-			for (int i = 1; i < p_arguments.length; i++) {
-				givenParams[i - 1] = p_arguments[i];
-				// System.out.print(givenParams[i-1]+"; ");
-			}
-			// System.out.println();
-		}
-		return givenParams;
-	}
-
+	
 	/**
 	 * Check if parameters of a given command are sane according to its syntax and semantic definition.
 	 * (arguments[0] is the command name)
@@ -366,7 +239,131 @@ public abstract class AbstractCmd {
 
 		return ret;
 	}
+	
+	// --------------------------------------------------------------------------------------------
 
+	void setTerminalDelegate(final TerminalDelegate p_terminalDelegate)
+	{
+		m_terminalDelegate = p_terminalDelegate;
+	}
+
+	protected TerminalDelegate getTerminalDelegate()
+	{
+		return m_terminalDelegate;
+	}
+	
+	// -------------------------------------------------------------------------------------------
+	
+	/**
+	 * Get the given arguments (arguments[0] is the command name)
+	 * @param p_arguments
+	 *            tokens of the given command
+	 * @return given parameters (may be null if none are given)
+	 */
+	private static String[] getGivenArguments(final String[] p_arguments) {
+		String[] givenParams = null;
+
+		// get the given params
+		if (p_arguments.length > 1) {
+			givenParams = new String[p_arguments.length - 1];
+			// System.out.print("   givenParams: ");
+			for (int i = 1; i < p_arguments.length; i++) {
+				givenParams[i - 1] = p_arguments[i];
+				// System.out.print(givenParams[i-1]+"; ");
+			}
+			// System.out.println();
+		}
+		return givenParams;
+	}
+	
+	
+	/**
+	 * Check if there are duplicates in the given params
+	 * @param p_search
+	 *            argument to check for duplication
+	 * @param p_givenParams
+	 *            given params
+	 * @param p_foundIdx
+	 *            position of p_search in p_givenParams
+	 * @return true: p_search is duplicated, false: OK
+	 */
+	private static boolean duplicatesInOptParams(final String p_search, final String[] p_givenParams, final int p_foundIdx) {
+		boolean duplicates = false;
+
+		for (int i = 1; i < p_givenParams.length; i++) {
+			final String[] kvParam2 = p_givenParams[i].split("=");
+			if (p_search.compareTo(kvParam2[0]) == 0 && i != p_foundIdx) {
+				duplicates = true;
+				System.out.println("  error: duplicate parameter '" + p_search + "'");
+				break;
+			}
+		}
+		return duplicates;
+	}
+	/**
+	 * Check syntax and semantic of a single given parameter
+	 * @param p_expectedParam
+	 *            expected parameter
+	 * @param p_givenParam
+	 *            given parameter
+	 * @return true: no problems, false: errors
+	 */
+	private boolean checkSingleParam(final String p_expectedParam, final String p_givenParam) {
+		boolean ret = true;
+		String pattern = "";
+
+		// System.out.println("p_expectedParam="+p_expectedParam+", p_givenParam="+p_givenParam);
+
+		// next is a NodeID,LocalID tuple?
+		if (p_expectedParam.indexOf(",") > 1) {
+			// check syntax
+			pattern = pattern + "-?([0-9])+,([0-9])+";
+			ret = p_givenParam.matches(pattern);
+			if (!ret) {
+				System.out.println("  error: bad parameter: '" + p_givenParam + "'");
+				// check semantic
+			} else {
+				final String[] chunkIDtuple = p_givenParam.split(",");
+				ret = checkValidNode(p_expectedParam, chunkIDtuple[0]);
+			}
+
+			// next is a node number (positive or negative)?
+		} else if (p_expectedParam.compareTo("PNID") == 0
+				|| p_expectedParam.compareTo("SNID") == 0
+				|| p_expectedParam.compareTo("ANID") == 0) {
+			pattern = pattern + "-?([0-9])+";
+			ret = p_givenParam.matches(pattern);
+			if (!ret) {
+				System.out.println("  error: bad parameter. Given '" + p_givenParam + "' but expected was '" + p_expectedParam + "'");
+				// check semantic
+			} else {
+				ret = checkValidNode(p_expectedParam, p_givenParam);
+			}
+
+			// next is a positve number >0 ?
+		} else if (p_expectedParam.compareTo("PNR") == 0) {
+			pattern = pattern + "([0-9])+";
+			ret = p_givenParam.matches(pattern);
+
+			// next is a string?
+		} else if (p_expectedParam.compareTo("STR") == 0) {
+			try {
+				ret = Tools.looksLikeUTF8(p_givenParam.getBytes());
+			} catch (final UnsupportedEncodingException e) {
+				System.out.println("  error: bad parameter. Expected was a string but parameter has unsupported encoding.");
+				ret = false;
+			}
+			if (!ret) {
+				System.out.println("  error: bad parameter. Given '" + p_givenParam + "' but expected was a string.");
+			}
+		} else {
+			System.out.println("  error: bad token '" + p_expectedParam + "' in syntax definition");
+			ret = false;
+		}
+
+		return ret;
+	}
+	
 	/**
 	 * Check semantic of NodeID
 	 * @param p_expectedNID
@@ -375,20 +372,20 @@ public abstract class AbstractCmd {
 	 *            the given NodeID
 	 * @return true: parameters are OK, false: syntax error
 	 */
-	private static boolean checkValidNode(final String p_expectedNID, final String p_foundNID) {
+	private boolean checkValidNode(final String p_expectedNID, final String p_foundNID) {
 		boolean ret = true;
 
-		if (CmdUtils.checkNID(p_foundNID).compareTo("unknown") == 0) {
+		if (m_terminalDelegate.nodeExists(Short.parseShort(p_foundNID)) == null) {
 			System.out.println("  error: unknown NodeID '" + p_foundNID + "'");
 			ret = false;
 		} else {
 			if (p_expectedNID.compareTo("PNID") == 0) {
-				if (CmdUtils.checkNID(p_foundNID).compareTo("superpeer") == 0) {
+				if (m_terminalDelegate.nodeExists(Short.parseShort(p_foundNID)) == NodeRole.SUPERPEER) {
 					System.out.println("  error: superpeer NodeID not allowed '" + p_foundNID + "'");
 					ret = false;
 				}
 			} else if (p_expectedNID.compareTo("SNID") == 0) {
-				if (CmdUtils.checkNID(p_foundNID).compareTo("peer") == 0) {
+				if (m_terminalDelegate.nodeExists(Short.parseShort(p_foundNID)) == NodeRole.PEER) {
 					System.out.println("  error: peer NodeID not allowed '" + p_foundNID + "'");
 					ret = false;
 				}
@@ -396,5 +393,4 @@ public abstract class AbstractCmd {
 		}
 		return ret;
 	}
-
 }

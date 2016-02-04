@@ -1,16 +1,16 @@
 
-package de.hhu.bsinfo.dxram.run.term.cmd;
+package de.hhu.bsinfo.dxram.term;
 
 /**
  * Clear console.
  * @author Michael Schoettner 03.09.2015
  */
-public class CmdClear extends AbstractCmd {
+public class TerminalCommandClear extends TerminalCommand {
 
 	/**
 	 * Constructor
 	 */
-	public CmdClear() {}
+	public TerminalCommandClear() {}
 
 	@Override
 	public String getName() {

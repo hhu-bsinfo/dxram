@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxram.util.logger.LogLevel;
 import de.hhu.bsinfo.dxram.util.logger.Logger;
 import de.hhu.bsinfo.utils.Pair;
@@ -252,7 +253,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean init(final String p_configurationFile, final String p_overrideNetworkIP, 
-			final String p_overridePort, final String p_overrideRole)
+			final String p_overridePort, final NodeRole p_overrideRole)
 	{
 		assert !m_isInitilized;
 		
@@ -486,7 +487,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 	 * @param p_overrideRole Overriding the configuration file provided role (example: Superpeer).
 	 */
 	private void bootstrap(final String p_configurationFile, final String p_overrideNetworkIP, 
-			final String p_overridePort, final String p_overrideRole)
+			final String p_overridePort, final NodeRole p_overrideRole)
 	{
 		m_configuration = new Configuration("DXRAMEngine");
 			
@@ -586,7 +587,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 	 * @param p_role Role of the instance.
 	 */
 	private void overrideConfigurationWithParameters(final String p_networkIP, 
-			final String p_port, final String p_role) {
+			final String p_port, final NodeRole p_role) {
 		if (p_networkIP != null) {
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.IP, p_networkIP);
 		}
@@ -594,7 +595,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.PORT, Integer.parseInt(p_port));
 		}
 		if (p_role != null) {
-			m_settings.overrideValue(DXRAMEngineConfigurationValues.ROLE, p_role);
+			m_settings.overrideValue(DXRAMEngineConfigurationValues.ROLE, p_role.toString());
 		}
 	}
 	

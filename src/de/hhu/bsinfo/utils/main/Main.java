@@ -4,7 +4,7 @@ package de.hhu.bsinfo.utils.main;
  * Framwork for application execution with easier to handle argument list.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
-public abstract class Main 
+public abstract class Main
 {
 	private MainArguments m_arguments = new MainArguments();
 	private MainArgumentsParser m_argumentsParser = new DefaultMainArgumentsParser();
@@ -12,7 +12,7 @@ public abstract class Main
 	/**
 	 * Constructor
 	 */
-	public Main() {
+	protected Main() {
 		
 	}
 	

@@ -1,37 +1,34 @@
 
 package de.hhu.bsinfo.dxram.run;
 
-import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.MainArguments;
 
 /**
  * Run a DXRAM Peer instance.
  * @author Kevin Beineke 21.8.2015
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public final class Peer {
+public final class Peer extends DXRAMMain {
 
-	// Constructors
+	public static void main(final String[] args) {
+		Main main = new Peer();
+		main.run(args);
+	}
+	
 	/**
 	 * Creates an instance of Peer
 	 */
-	private Peer() {}
+	protected Peer() 
+	{
+		super(null, null, NodeRole.PEER);
+	}
 
-	// Methods
-	/**
-	 * Program entry point
-	 * @param p_arguments
-	 *            The program arguments
-	 */
-	public static void main(final String[] p_arguments) {
-		
-		DXRAM dxram = new DXRAM();
-		if (!dxram.initialize("config/dxram.conf", null, null, "Peer", true)) {
-			System.out.println("Failed starting peer.");
-			System.exit(-1);
-		}
-
+	@Override
+	protected int mainApplication(MainArguments p_arguments) {
 		System.out.println("Peer started");
-
+		
 		while (true) {
 			// Wait a moment
 			try {

@@ -1,36 +1,34 @@
 
 package de.hhu.bsinfo.dxram.run;
 
-import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.MainArguments;
 
 /**
  * Run a DXRAM Superpeer instance.
  * @author Kevin Beineke 21.08.2015
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public final class Superpeer {
+public final class Superpeer extends DXRAMMain {
 
-	// Constructors
+	public static void main(final String[] args) {
+		Main main = new Superpeer();
+		main.run(args);
+	}
+	
 	/**
 	 * Creates an instance of Superpeer
 	 */
-	private Superpeer() {}
+	protected Superpeer() 
+	{
+		super(null, null, NodeRole.SUPERPEER);
+	}
 
-	// Methods
-	/**
-	 * Program entry point
-	 * @param p_arguments
-	 *            The program arguments
-	 */
-	public static void main(final String[] p_arguments) {
-		DXRAM dxram = new DXRAM();
-		if (!dxram.initialize("config/dxram.conf", null, null, "Superpeer", true)) {
-			System.out.println("Failed starting superpeer.");
-			System.exit(-1);
-		}
-
+	@Override
+	protected int mainApplication(MainArguments p_arguments) {
 		System.out.println("Superpeer started");
-
+		
 		while (true) {
 			// Wait a moment
 			try {

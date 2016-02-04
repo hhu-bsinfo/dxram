@@ -1,7 +1,9 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.dxram.util.logger.Logger;
+import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.locks.JNILock;
+import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
 
 /**
  * Separate class to avoid further bloating of DXRAMEngine to setup JNI related things (used by DXRAMEngine).
@@ -54,6 +56,13 @@ public class DXRAMJNIManager
 			m_logger.error(LOG_HEADER, "Missing path for JNILock.");
 		} else {
 			JNILock.load(path);
+		}
+		
+		path = p_settings.getValue("JNI/" + profile + "/JNIconsole", String.class);
+		if (path == null) {
+			m_logger.error(LOG_HEADER, "Missing path for JNIconsole.");
+		} else {
+			JNIconsole.load(path);
 		}
 	}
 }

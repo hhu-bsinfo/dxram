@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Main class/entry point for any application to work with DXRAM and its services.
@@ -51,8 +52,8 @@ public final class DXRAM
 	 * @return True if initializing was successful, false otherwise.
 	 */
 	public boolean initialize(final String p_configurationFile, final String p_overrideIp, 
-			final String p_overridePort, final String p_overrideRole) {
-		return m_engine.init(p_configurationFile);
+			final String p_overridePort, final NodeRole p_overrideRole) {
+		return m_engine.init(p_configurationFile, p_overrideIp, p_overridePort, p_overrideRole);
 	}
 	
 	/**
@@ -66,8 +67,8 @@ public final class DXRAM
 	 * @return True if initializing was successful, false otherwise.
 	 */
 	public boolean initialize(final String p_configurationFile, final String p_overrideIp, 
-			final String p_overridePort, final String p_overrideRole, final boolean p_autoShutdown) {
-		boolean ret = m_engine.init(p_configurationFile);
+			final String p_overridePort, final NodeRole p_overrideRole, final boolean p_autoShutdown) {
+		boolean ret = m_engine.init(p_configurationFile, p_overrideIp, p_overridePort, p_overrideRole);
 		if (ret & p_autoShutdown)
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		return ret;

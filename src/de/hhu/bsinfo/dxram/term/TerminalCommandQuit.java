@@ -1,16 +1,16 @@
 
-package de.hhu.bsinfo.dxram.run.term.cmd;
+package de.hhu.bsinfo.dxram.term;
 
 /**
  * Quit monitor.
  * @author Michael Schoettner 03.09.2015
  */
-public class CmdQuit extends AbstractCmd {
+public class TerminalCommandQuit extends TerminalCommand {
 
 	/**
 	 * Constructor
 	 */
-	public CmdQuit() {}
+	public TerminalCommandQuit() {}
 
 	@Override
 	public String getName() {
@@ -45,7 +45,7 @@ public class CmdQuit extends AbstractCmd {
 		if (!areYouSure()) {
 			ret = false;
 		} else {
-			System.exit(0);
+			getTerminalDelegate().exitTerminal();
 		}
 
 		return ret;

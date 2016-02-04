@@ -113,6 +113,16 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	}
 	
 	@Override
+	public NodeRole getNodeRole(final short p_nodeID)
+	{
+		NodeEntry entry = m_nodesConfiguration.getNode(p_nodeID);
+		if (entry == null)
+			return null;
+		
+		return entry.getRole();
+	}
+	
+	@Override
 	public InetSocketAddress getNodeAddress(final short p_nodeID) {
 		NodeEntry entry = m_nodesConfiguration.getNode(p_nodeID);
 		InetSocketAddress address;

@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.utils.Pair;
 
 public class StatisticsComponent extends DXRAMComponent {
 

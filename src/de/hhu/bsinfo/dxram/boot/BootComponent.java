@@ -39,6 +39,12 @@ public abstract class BootComponent extends DXRAMComponent {
 	public abstract NodeRole getNodeRole();
 	
 	/**
+	 * Get the role of another nodeID.
+	 * @return Role of other nodeID or null if node does not exist.
+	 */
+	public abstract NodeRole getNodeRole(final short p_nodeID);
+	
+	/**
 	 * Get the IP and port of another node.
 	 * @param p_nodeID Node ID of the node.
 	 * @return IP and port of the specified node or an invalid address if not available.
