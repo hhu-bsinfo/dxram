@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.term;
 
+import de.hhu.bsinfo.utils.args.ArgumentList;
+
 /**
  * Quit monitor.
  * @author Michael Schoettner 03.09.2015
@@ -27,28 +29,14 @@ public class TerminalCommandQuit extends TerminalCommand {
 		return "Quit console and shutdown node.";
 	}
 
-	@Override
-	public String[] getMandParams() {
-	    return null;
-	}
-
-	@Override
-    public  String[] getOptParams() {
-        return null;
-    }
-
 	// called after parameter have been checked
 	@Override
-	public boolean execute(final String p_command) {
-		boolean ret = true;
-
-		if (!areYouSure()) {
-			ret = false;
-		} else {
+	public boolean execute(final ArgumentList p_arguments) {
+		if (getTerminalDelegate().areYouSure()) {
 			getTerminalDelegate().exitTerminal();
-		}
+		} 
 
-		return ret;
+		return true;
 	}
 
 }

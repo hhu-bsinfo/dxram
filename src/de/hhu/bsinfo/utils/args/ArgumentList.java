@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.utils.main;
+package de.hhu.bsinfo.utils.args;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -7,11 +7,11 @@ import java.util.Map.Entry;
 import de.hhu.bsinfo.utils.Pair;
 
 /**
- * Easier to handle argument list/map for application.
+ * Easier to handle argument list/map within an application.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public class MainArguments {
+public class ArgumentList {
 	private Map<String, Object> m_arguments = new HashMap<String, Object>();
 	
 	/**
@@ -64,6 +64,14 @@ public class MainArguments {
 	public <T> void setArgument(final String p_key, final T p_value)
 	{
 		m_arguments.put(p_key, p_value);
+	}
+	
+	/**
+	 * Clear the argument list.
+	 */
+	public void clear()
+	{
+		m_arguments.clear();
 	}
 	
 	@Override

@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.utils.main;
 
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Example/Test implementation to show usage of the main application framwork.
@@ -30,14 +31,14 @@ public class TestMain extends Main {
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		p_arguments.setArgument(PARAM_1);
 		p_arguments.setArgument(PARAM_2);
 		p_arguments.setArgument(PARAM_3);
 	}
 
 	@Override
-	protected int main(final MainArguments p_arguments) {
+	protected int main(final ArgumentList p_arguments) {
 		System.out.println(p_arguments);
 		
 		return 0;

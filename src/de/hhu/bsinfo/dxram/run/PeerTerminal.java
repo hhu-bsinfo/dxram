@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.run;
 
 import de.hhu.bsinfo.dxram.term.TerminalService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 
 // note: don't run this in eclipse like everything else
 // create new run configuration with:
@@ -21,7 +21,7 @@ public class PeerTerminal extends DXRAMMain {
 	}
 
 	@Override
-	protected int mainApplication(MainArguments p_arguments) {
+	protected int mainApplication(ArgumentList p_arguments) {
 		TerminalService term = getService(TerminalService.class);
 		if (term == null) {
 			System.out.println("Cannot run terminal, missing service.");

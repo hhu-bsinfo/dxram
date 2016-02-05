@@ -4,8 +4,8 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 
 public abstract class DXRAMMain extends Main {
 
@@ -28,12 +28,12 @@ public abstract class DXRAMMain extends Main {
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_DXRAM_CONF);
 	}
 	
 	@Override
-	protected int main(MainArguments p_arguments) {
+	protected int main(ArgumentList p_arguments) {
 		if (!m_dxram.initialize(p_arguments.getArgument(ARG_DXRAM_CONF), m_ip, m_port, m_role, true))
 		{
 			System.out.println("Initializing DXRAM with configuration '" + p_arguments.getArgument(ARG_DXRAM_CONF) + "' failed.");
@@ -43,7 +43,7 @@ public abstract class DXRAMMain extends Main {
 		return mainApplication(p_arguments);
 	}
 	
-	protected abstract int mainApplication(final MainArguments p_arguments);
+	protected abstract int mainApplication(final ArgumentList p_arguments);
 	
 	protected <T extends DXRAMService> T getService(final Class<T> p_class)
 	{

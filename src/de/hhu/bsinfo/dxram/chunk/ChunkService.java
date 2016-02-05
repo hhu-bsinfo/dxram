@@ -15,6 +15,8 @@ import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveResponse;
+import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkCreate;
+import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkRemove;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
@@ -29,6 +31,7 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent.ErrorCode;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
@@ -47,6 +50,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	private LookupComponent m_lookup = null;
 	private LockComponent m_lock = null;
 	private StatisticsComponent m_statistics = null;
+	private TerminalComponent m_terminal = null;
 //	private BackupComponent m_backup = null;
 	
 	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs = null;
@@ -72,10 +76,14 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_lookup = getComponent(LookupComponent.class);
 		m_lock = getComponent(LockComponent.class);
 		m_statistics = getComponent(StatisticsComponent.class);
+		m_terminal = getComponent(TerminalComponent.class);
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 		registerStatisticsOperations();
+		
+		m_terminal.registerCommand(new TcmdChunkCreate());
+		m_terminal.registerCommand(new TcmdChunkRemove());
 
 //		if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
 //			m_backup.registerPeer();

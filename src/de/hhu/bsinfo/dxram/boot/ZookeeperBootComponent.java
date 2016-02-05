@@ -13,9 +13,12 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.data.Stat;
 
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
+import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeInfo;
+import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeList;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.BloomFilter;
@@ -43,6 +46,7 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	private boolean m_isStarting = false;
 	
 	private LoggerComponent m_logger = null;
+	private TerminalComponent m_terminal = null;
 	
 	/**
 	 * Constructor
@@ -66,6 +70,7 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
+		m_terminal = getDependentComponent(TerminalComponent.class);
 		
 		m_ownIP = p_engineSettings.getValue(DXRAMEngineConfigurationValues.IP);
 		m_ownPort = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PORT);
@@ -84,6 +89,9 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 			return false;
 		}
 		
+		m_terminal.registerCommand(new TcmdNodeInfo());
+		m_terminal.registerCommand(new TcmdNodeList());
+		
 		return true;
 	}
 
@@ -98,6 +106,35 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 		}
 		
 		return true;
+	}
+	
+	@Override
+	public List<Short> getAvailableNodeIDs()
+	{
+		List<Short> ids = new ArrayList<Short>();
+		
+		if (zookeeperPathExists("nodes/superpeers"))
+		{
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/superpeers");
+				for (String child : children) {
+					ids.add(Short.parseShort(child));
+				}
+			} catch (ZooKeeperException e) {
+			}
+		}
+		if (zookeeperPathExists("nodes/peers"))
+		{
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/peers");
+				for (String child : children) {
+					ids.add(Short.parseShort(child));
+				}
+			} catch (ZooKeeperException e) {
+			}
+		}
+		
+		return ids;
 	}
 
 	@Override
@@ -162,7 +199,7 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	@Override
 	public boolean nodeAvailable(final short p_nodeID)
 	{
-		return zookeeperPathExists("nodes/peers/" + p_nodeID);
+		return zookeeperPathExists("nodes/superpeers/" + p_nodeID) || zookeeperPathExists("nodes/peers/" + p_nodeID);
 	}
 	
 	@Override

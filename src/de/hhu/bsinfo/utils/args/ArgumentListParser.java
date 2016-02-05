@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.utils.main;
+package de.hhu.bsinfo.utils.args;
 
 /**
  * Interface for a parser to process the string array provided by the java main function
@@ -6,11 +6,11 @@ package de.hhu.bsinfo.utils.main;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public interface MainArgumentsParser {
+public interface ArgumentListParser {
 	/**
 	 * Parse the string array provided by the java main function.
 	 * @param args Array of strings from the java main function.
 	 * @param m_arguments Argument list to add the parsed arguments to.
 	 */
-	void parseArguments(final String[] args, final MainArguments m_arguments);
+	void parseArguments(final String[] args, final ArgumentList m_arguments);
 }

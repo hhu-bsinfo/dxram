@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.utils.main;
+package de.hhu.bsinfo.utils.args;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.reflect.unit.UnitConverterMBToByte;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public class DefaultMainArgumentsParser implements MainArgumentsParser {
+public class DefaultArgumentListParser implements ArgumentListParser {
 
 	private static final String KEY_VAL_SEPARATOR = ":";
 	private static final String TYPE_PREFIX = "[";
@@ -38,7 +38,7 @@ public class DefaultMainArgumentsParser implements MainArgumentsParser {
 	/**
 	 * Constructor
 	 */
-	public DefaultMainArgumentsParser() {
+	public DefaultArgumentListParser() {
 		// add default type parsers
 		addDataTypeParser(new DataTypeParserString());
 		addDataTypeParser(new DataTypeParserByte());
@@ -57,7 +57,7 @@ public class DefaultMainArgumentsParser implements MainArgumentsParser {
 	}
 
 	@Override
-	public void parseArguments(final String[] p_args, final MainArguments p_arguments) {		
+	public void parseArguments(final String[] p_args, final ArgumentList p_arguments) {		
 		for (String arg : p_args) 
 		{
 			String[] keyVal = splitKeyValue(arg);

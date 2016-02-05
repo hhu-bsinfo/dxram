@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.boot;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -26,6 +27,12 @@ public abstract class BootComponent extends DXRAMComponent {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
+	/**
+	 * Get IDs of all available (online) nodes.
+	 * @return List of IDs of nodes available.
+	 */
+	public abstract List<Short> getAvailableNodeIDs();
+	
 	/**
 	 * Get the node ID, which is currently assigned to this running instance.
 	 * @return Own NodeID.

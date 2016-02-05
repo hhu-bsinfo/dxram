@@ -7,8 +7,8 @@ import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 
 public class SimpleJobServiceTest extends Main {
 
@@ -66,12 +66,12 @@ public class SimpleJobServiceTest extends Main {
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 
 	}
 
 	@Override
-	protected int main(MainArguments p_arguments) {
+	protected int main(ArgumentList p_arguments) {
 		boolean remotePeer = p_arguments.getArgument(ARG_REMOTE_PEER);
 		int numJobs = p_arguments.getArgument(ARG_NUM_JOBS);
 		int numRemoteJobs = p_arguments.getArgument(ARG_NUM_REMOTE_JOBS);

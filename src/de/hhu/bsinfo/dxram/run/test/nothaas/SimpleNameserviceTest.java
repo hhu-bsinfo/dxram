@@ -9,8 +9,8 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 
 //before running this as a peer, start one superpeer
 public class SimpleNameserviceTest extends Main {
@@ -36,13 +36,13 @@ public class SimpleNameserviceTest extends Main {
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_CHUNK_SIZE);
 		p_arguments.setArgument(ARG_CHUNK_COUNT);
 	}
 
 	@Override
-	protected int main(MainArguments p_arguments) {
+	protected int main(ArgumentList p_arguments) {
 		final int size = p_arguments.getArgument(ARG_CHUNK_SIZE);
 		final int chunkCount = p_arguments.getArgument(ARG_CHUNK_COUNT);
 		

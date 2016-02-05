@@ -1,6 +1,6 @@
 // compile:
 // linux:
-// gcc -shared -fpic -o libJNIconsole.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNIconsole.c
+// gcc -shared -fpic -o libJNIconsole.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNIconsole.c -lreadline
 // mac:
 // gcc -shared -fpic -o libJNIconsole.dylib -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include/darwin JNIconsole.c -lreadline
 
@@ -31,13 +31,14 @@ extern void exit();
 extern HIST_ENTRY **history_list ();
 
 
-JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv *p_env, jclass p_class) {
-    char *temp, *prompt, *ptr;
+JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv *p_env, jclass p_class, jstring p_prompt) {
+    char *temp, *ptr;
+	const char* prompt;
     
     
     temp = (char *)NULL;
     
-    prompt = "$ ";
+    prompt = (*p_env)->GetStringUTFChars(p_env, p_prompt, NULL);
     
     temp = readline (prompt);
     

@@ -4,8 +4,8 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 
 // before running this as a peer, start a superpeer and an additional storage peer
 public class SimpleRemoteChunkServiceTest extends Main
@@ -28,12 +28,12 @@ public class SimpleRemoteChunkServiceTest extends Main
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_REMOTE_PEER_ID);
 	}
 
 	@Override
-	protected int main(MainArguments p_arguments) {
+	protected int main(ArgumentList p_arguments) {
 		final short remotePeerID = (short) (p_arguments.getArgument(ARG_REMOTE_PEER_ID) & 0xFFFF);
 		
 		int[] sizes = new int[] {155, 543, 99, 65, 233};

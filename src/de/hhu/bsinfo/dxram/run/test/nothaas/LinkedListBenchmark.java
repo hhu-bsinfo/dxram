@@ -6,8 +6,8 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.Stopwatch;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -34,12 +34,12 @@ public class LinkedListBenchmark extends Main
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_ITEM_COUNT);
 	}
 
 	@Override
-	protected int main(MainArguments p_arguments) {
+	protected int main(ArgumentList p_arguments) {
 		final int itemCount = p_arguments.getArgument(ARG_ITEM_COUNT);
 		
 		System.out.println("Creating linked list with " + itemCount + " items.");

@@ -25,8 +25,9 @@ public final class JNIconsole {
 
 	/**
 	 * Read one line from console.
+	 * @param p_prompt The terminal prompt to display.
 	 * @return the read line
 	 */
-	public static native byte[] readline();
+	public static native byte[] readline(final String p_prompt);
 
 }

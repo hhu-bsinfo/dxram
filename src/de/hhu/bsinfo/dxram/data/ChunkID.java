@@ -43,4 +43,15 @@ public final class ChunkID {
 
 		return p_chunkID & LOCALID_BITMASK;
 	}
+	
+	/**
+	 * Create a full chunkID from a local and node ID.
+	 * @param p_nid Node ID part.
+	 * @param p_lid Local ID part.
+	 * @return Full Chunk ID.
+	 */
+	public static long getChunkID(final short p_nid, final long p_lid)
+	{
+		return ((((long) p_nid) << 48) | p_lid);
+	}
 }

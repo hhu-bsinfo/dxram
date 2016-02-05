@@ -3,8 +3,8 @@ package de.hhu.bsinfo.dxram.run.test.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 
 // before running this as a peer, start one superpeer
 public class SimpleLocalChunkServiceTest extends Main
@@ -25,11 +25,11 @@ public class SimpleLocalChunkServiceTest extends Main
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 	}
 
 	@Override
-	protected int main(MainArguments p_arguments) {
+	protected int main(ArgumentList p_arguments) {
 		int[] sizes = new int[] {100, 32, 432, 8};
 		System.out.println("Creating chunks...");
 		long[] chunkIDs = m_chunkService.create(sizes);

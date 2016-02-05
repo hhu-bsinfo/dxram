@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxram.run.test.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
-import de.hhu.bsinfo.utils.main.MainArguments;
 
 // simple test to verify if dxram starts and shuts down properly
 // run this as a peer, start one superpeer
@@ -22,12 +22,12 @@ public class SimpleDXRAMTest extends Main {
 	}
 	
 	@Override
-	protected void registerDefaultProgramArguments(MainArguments p_arguments) {
+	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 
 	}
 
 	@Override
-	protected int main(MainArguments p_arguments) {
+	protected int main(ArgumentList p_arguments) {
 		return 0;
 	}
 
