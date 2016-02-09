@@ -154,6 +154,58 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	}
 	
 	/**
+	 * Create new chunks according to the data structures provided.
+	 * Important: This does NOT put/write the contents of the data structure provided.
+	 * It creates chunks with the sizes of the data structures and sets the IDs.
+	 * @param p_dataStructures Data structures to create chunks for.
+	 * @return Number of successfully created chunks.
+	 */
+	public int create(final DataStructure... p_dataStructures)
+	{
+		int count = 0;
+		
+		if (p_dataStructures.length == 0)
+			return count;
+
+		m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not create chunks");
+			return count;
+		} 
+		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create, p_dataStructures.length);
+
+		m_memoryManager.lockManage();
+		// keep loop tight and execute everything
+		// that we don't have to lock outside of this section
+		for (int i = 0; i < p_dataStructures.length; i++) {
+			long chunkID = m_memoryManager.create(p_dataStructures[i].sizeofObject());
+			if (chunkID != ChunkID.INVALID_ID) {
+				count++;
+				p_dataStructures[i].setID(chunkID);
+			} else {	
+				p_dataStructures[i].setID(ChunkID.INVALID_ID);
+			}
+		}
+		m_memoryManager.unlockManage();
+		
+		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+		// by other peers
+		for (int i = 0; i < p_dataStructures.length; i++) {
+			if (p_dataStructures[i].getID() != ChunkID.INVALID_ID) {
+				m_lookup.initRange(p_dataStructures[i].getID(), new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+			}
+		}
+
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		
+		m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ") " + p_dataStructures[0].sizeofObject() + ", ...] -> " + Long.toHexString(p_dataStructures[0].getID()) + ", ...");
+		
+		return count;
+	}
+	
+	/**
 	 * Create chunks with different sizes.
 	 * @param p_sizes List of sizes to create chunks for.
 	 * @return ChunkIDs/Handles identifying the created chunks.

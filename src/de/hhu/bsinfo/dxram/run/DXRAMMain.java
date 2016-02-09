@@ -49,4 +49,9 @@ public abstract class DXRAMMain extends Main {
 	{
 		return m_dxram.getService(p_class);
 	}
+	
+	protected DXRAM getDXRAM()
+	{
+		return m_dxram;
+	}
 }

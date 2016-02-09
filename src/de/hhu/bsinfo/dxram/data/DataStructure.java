@@ -15,4 +15,10 @@ public interface DataStructure extends Importable, Exportable
 	 * @return Unique identifier.
 	 */
 	public long getID();
+	
+	/**
+	 * Set the unique identifier of this data structure.
+	 * @param p_id ID to set.
+	 */
+	public void setID(final long p_id);
 }
