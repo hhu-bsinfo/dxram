@@ -865,10 +865,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 				while (true) {
 					try {
-						// new MultiPutMessage(primaryPeer, chunks).send(m_network);
-						MultiPutRequest req = new MultiPutRequest(primaryPeer, chunks);
-						req.sendSync(m_network);
-						req.getResponse(MultiPutResponse.class);
+						new MultiPutMessage(primaryPeer, chunks).send(m_network);
+						// MultiPutRequest req = new MultiPutRequest(primaryPeer, chunks);
+						// req.sendSync(m_network);
+						// req.getResponse(MultiPutResponse.class);
 					} catch (final NetworkException e) {
 						for (Chunk chunk : chunks) {
 							m_lookup.invalidate(chunk.getChunkID());
@@ -1615,21 +1615,25 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 *             if range could not be initialized
 	 */
 	private void initBackupRange(final long p_localID, final int p_size) throws LookupException {
+		int size;
+
 		if (LOG_ACTIVE) {
-			m_rangeSize += p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
+			size = p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
 			if (!m_firstRangeInitialized && p_localID == 1) {
 				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
 				// This is the first put and p_localID is not reused
 				determineBackupPeers(0);
 				m_lookup.initRange((long) m_nodeID << 48, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
 				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = 0;
+				m_rangeSize = size;
 				m_firstRangeInitialized = true;
-			} else if (m_rangeSize > SECONDARY_LOG_SIZE / 2) {
+			} else if (m_rangeSize + size > SECONDARY_LOG_SIZE / 2) {
 				determineBackupPeers(p_localID);
 				m_lookup.initRange(((long) m_nodeID << 48) + p_localID, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
 				m_log.initBackupRange(((long) m_nodeID << 48) + p_localID, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = 0;
+				m_rangeSize = size;
+			} else {
+				m_rangeSize += size;
 			}
 		} else if (!m_firstRangeInitialized && p_localID == 1) {
 			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL, new Locations(m_nodeID, new short[] {-1, -1, -1}, null));

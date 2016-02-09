@@ -9,7 +9,10 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.uniduesseldorf.dxram.core.CoreComponentFactory;
+import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.log.EpochVersion;
+import de.uniduesseldorf.dxram.core.log.LogInterface;
 
 /**
  * HashTable to store versions (Linear probing)
@@ -27,7 +30,6 @@ public class VersionsBuffer {
 	private int m_intCapacity;
 	private int m_elementCapacity;
 	private int m_threshold;
-	private float m_loadFactor;
 
 	private byte m_eon;
 	private short m_epoch;
@@ -36,6 +38,8 @@ public class VersionsBuffer {
 
 	private ReentrantLock m_accessLock;
 	private ReentrantLock m_flushLock;
+
+	private LogInterface m_logHandler;
 
 	// Constructors
 	/**
@@ -52,15 +56,13 @@ public class VersionsBuffer {
 
 		m_count = 0;
 		m_elementCapacity = p_initialElementCapacity;
+		m_threshold = (int) (m_elementCapacity * p_loadFactor);
 		m_intCapacity = m_elementCapacity * 4;
-		m_loadFactor = p_loadFactor;
 
 		if (m_elementCapacity == 0) {
 			m_table = new int[4];
-			m_threshold = (int) m_loadFactor;
 		} else {
 			m_table = new int[m_intCapacity];
-			m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		}
 
 		m_eon = 0;
@@ -79,6 +81,12 @@ public class VersionsBuffer {
 
 		m_accessLock = new ReentrantLock(false);
 		m_flushLock = new ReentrantLock(false);
+
+		try {
+			m_logHandler = CoreComponentFactory.getLogInterface();
+		} catch (final DXRAMException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// Getter
@@ -114,41 +122,48 @@ public class VersionsBuffer {
 		boolean ret = false;
 		long chunkID;
 		int version;
+		int count;
+		int[] newTable;
+		int[] oldTable;
 		ByteBuffer buffer;
 
 		// Append all new versions to versions file
 		if (m_flushLock.tryLock()) {
 			m_accessLock.lock();
 			if (m_count > 0) {
+				// "Copy" all data to release lock as soon as possible
+				count = m_count;
+				newTable = new int[m_intCapacity];
+				oldTable = m_table;
+				m_table = newTable;
+				m_count = 0;
+
+				ret = incrementEpoch();
+				m_accessLock.unlock();
+
 				try {
-					buffer = ByteBuffer.allocate(m_count * SSD_ENTRY_SIZE);
+					buffer = ByteBuffer.allocate(count * SSD_ENTRY_SIZE);
 
 					// Iterate over all entries (4 bytes per cell)
-					for (int i = 0; i < m_elementCapacity; i++) {
-						chunkID = getKey(i);
+					for (int i = 0; i < oldTable.length; i += 4) {
+						chunkID = (long) oldTable[i] << 32 | (long) oldTable[i + 1] & 0xFFFFFFFFL;
 						if (chunkID != 0) {
-							// ChunkID
+							// ChunkID (-1 because 1 is added before putting to avoid LID 0)
 							buffer.putLong(chunkID - 1);
 							// Epoch (4 Bytes in hashtable, 2 in persistent table)
-							buffer.putShort((short) getEpoch(i));
+							buffer.putShort((short) oldTable[i + 2]);
 							// Version (4 Bytes in hashtable, 3 in persistent table)
-							version = getVersion(i);
+							version = oldTable[i + 3];
 							buffer.put((byte) (version >>> 16));
 							buffer.put((byte) (version >>> 8));
 							buffer.put((byte) version);
 						}
 					}
 
-					// Clear versions buffer and increment epoch
-					clear();
-					ret = incrementEpoch();
-					m_accessLock.unlock();
-
 					m_versionsFile.seek((int) m_versionsFile.length());
 					m_versionsFile.write(buffer.array());
 				} catch (final IOException e) {
 					e.printStackTrace();
-					m_accessLock.unlock();
 				}
 			} else {
 				m_accessLock.unlock();
@@ -169,6 +184,9 @@ public class VersionsBuffer {
 		int version;
 		long chunkID;
 		byte[] data;
+		int[] newTable;
+		int[] oldTable;
+		int[] hashTable;
 		ByteBuffer buffer;
 
 		m_flushLock.lock();
@@ -179,7 +197,7 @@ public class VersionsBuffer {
 				// Read all entries from SSD to hashtable
 
 				// Read old versions from SSD and add to hashtable
-				// Then read all new versions from versions log and add to hashtable (does not overwrite newer entries!)
+				// Then read all new versions from versions log and add to hashtable (overwrites older entries!)
 				data = new byte[length];
 				m_versionsFile.seek(0);
 				m_versionsFile.readFully(data);
@@ -194,31 +212,41 @@ public class VersionsBuffer {
 
 			// Put all versions from versions buffer to VersionsHashTable
 			m_accessLock.lock();
-			for (int i = 0; i < m_elementCapacity; i++) {
-				chunkID = getKey(i);
-				if (chunkID != 0) {
-					p_allVersions.put(chunkID - 1, getEpoch(i), getVersion(i));
-				}
-			}
+			if (m_count > 0) {
+				// "Copy" all data to release lock as soon as possible
+				newTable = new int[m_intCapacity];
+				oldTable = m_table;
+				m_table = newTable;
+				m_count = 0;
 
-			// Clear versions buffer and increment epoch
-			clear();
-			incrementEpoch();
-			m_accessLock.unlock();
+				incrementEpoch();
+				m_accessLock.unlock();
+
+				for (int i = 0; i < oldTable.length; i += 4) {
+					chunkID = (long) oldTable[i] << 32 | (long) oldTable[i + 1] & 0xFFFFFFFFL;
+					if (chunkID != 0) {
+						// ChunkID: -1 because 1 is added before putting to avoid LID 0
+						p_allVersions.put(chunkID - 1, oldTable[i + 2], oldTable[i + 3]);
+					}
+				}
+			} else {
+				m_accessLock.unlock();
+			}
 
 			// Write back current hashtable compactified
 			data = new byte[p_allVersions.size() * SSD_ENTRY_SIZE];
 			buffer = ByteBuffer.wrap(data);
 
-			for (int i = 0; i < p_allVersions.getTableLength(); i++) {
-				chunkID = p_allVersions.getKey(i);
+			hashTable = p_allVersions.getTable();
+			for (int i = 0; i < hashTable.length; i += 4) {
+				chunkID = (long) hashTable[i] << 32 | (long) hashTable[i + 1] & 0xFFFFFFFFL;
 				if (chunkID != 0) {
-					// ChunkID
+					// ChunkID (-1 because 1 is added before putting to avoid LID 0)
 					buffer.putLong(chunkID - 1);
 					// Epoch (4 Bytes in hashtable, 2 in persistent table)
-					buffer.putShort((short) p_allVersions.getEpoch(i));
+					buffer.putShort((short) hashTable[i + 2]);
 					// Version (4 Bytes in hashtable, 3 in persistent table)
-					version = p_allVersions.getVersion(i);
+					version = hashTable[i + 3];
 					buffer.put((byte) (version >>> 16));
 					buffer.put((byte) (version >>> 8));
 					buffer.put((byte) version);
@@ -302,7 +330,8 @@ public class VersionsBuffer {
 		final long key = p_key + 1;
 
 		// Avoid rehashing by waiting
-		while (m_count > m_threshold) {
+		while (m_count == m_threshold) {
+			m_logHandler.grantAccessToWriterThread();
 			Thread.yield();
 		}
 
@@ -337,6 +366,12 @@ public class VersionsBuffer {
 	 *            the version
 	 */
 	public final void put(final long p_key, final int p_version) {
+		// Avoid rehashing by waiting
+		while (m_count == m_threshold) {
+			m_logHandler.grantAccessToWriterThread();
+			Thread.yield();
+		}
+
 		put(p_key, (short) (m_epoch + (m_eon << 15)), p_version);
 	}
 
@@ -353,11 +388,6 @@ public class VersionsBuffer {
 		int index;
 		long iter;
 		final long key = p_key + 1;
-
-		// Avoid rehashing by waiting
-		while (m_count > m_threshold) {
-			Thread.yield();
-		}
 
 		index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
 
@@ -441,28 +471,6 @@ public class VersionsBuffer {
 	}
 
 	/**
-	 * Hashes the given key
-	 * @param p_key
-	 *            the key
-	 * @return the hash value
-	 */
-	/*-private int hash(final long p_key) {
-		long hash = p_key;
-
-		hash = (~hash) + (hash << 18); // hash = (hash << 18) - hash - 1;
-		hash = hash ^ (hash >>> 31);
-		hash = hash * 21; // hash = (hash + (hash << 2)) + (hash << 4);
-		hash = hash ^ (hash >>> 11);
-		hash = hash + (hash << 6);
-		hash = hash ^ (hash >>> 22);
-		return (int) hash;
-
-		hash = (hash >> 16 ^ hash) * 0x45d9f3b;
-		hash = (hash >> 16 ^ hash) * 0x45d9f3b;
-		return (int) (hash >> 16 ^ hash);
-	}*/
-
-	/**
 	 * Hashes the given key with MurmurHash3
 	 * @param p_key
 	 *            the key
@@ -499,33 +507,6 @@ public class VersionsBuffer {
 		h1 ^= h1 >>> 16;
 
 		return h1;
-	}
-
-	/**
-	 * Increases the capacity of and internally reorganizes VersionsHashTable
-	 */
-	private void rehash() {
-		int index = 0;
-		int oldCapacity;
-		int[] oldMap;
-		int[] newMap;
-
-		oldCapacity = m_intCapacity;
-		oldMap = m_table;
-
-		m_elementCapacity = m_elementCapacity * 2 + 1;
-		m_intCapacity = m_elementCapacity * 4;
-		newMap = new int[m_intCapacity];
-		m_threshold = (int) (m_elementCapacity * m_loadFactor);
-		m_table = newMap;
-
-		m_count = 0;
-		while (index < oldCapacity) {
-			if (((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) != 0) {
-				put(((long) oldMap[index] << 32 | oldMap[index + 1] & 0xFFFFFFFFL) - 1, oldMap[index + 2], oldMap[index + 3]);
-			}
-			index += 4;
-		}
 	}
 
 }

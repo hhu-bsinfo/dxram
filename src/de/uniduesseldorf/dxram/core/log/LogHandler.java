@@ -53,6 +53,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private static final int MAX_NODE_CNT = 65535;
 	private static final long FLUSHING_WAITTIME = 1000L;
 
+	private static final long SECLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
+
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
 
@@ -76,7 +78,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private boolean m_isShuttingDown;
 
 	private boolean m_reorgThreadWaits;
-	private boolean m_accessGranted;
+	private boolean m_accessGrantedForReorgThread;
 
 	// Constructors
 	/**
@@ -284,6 +286,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				i++;
 			}
 		}
+	}
+
+	@Override
+	public void grantAccessToWriterThread() {
+		m_writeBuffer.grantAccessToWriterThread();
 	}
 
 	/**
@@ -507,11 +514,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		if (!p_secLog.isAccessed()) {
 			p_secLog.setAccessFlag(true);
 
-			while (!m_accessGranted) {
+			while (!m_accessGrantedForReorgThread) {
 				m_reorgThreadWaits = true;
 				Thread.yield();
 			}
-			m_accessGranted = false;
+			m_accessGrantedForReorgThread = false;
 		}
 	}
 
@@ -529,9 +536,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	/**
 	 * Grants the reorganization thread access to a secondary log
 	 */
-	public void grantAccess() {
+	public void grantReorgThreadAccessToCurrentLog() {
 		if (m_reorgThreadWaits) {
-			m_accessGranted = true;
+			m_accessGrantedForReorgThread = true;
 		}
 	}
 
@@ -783,6 +790,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		private VersionsHashTable m_allVersions;
 		private SecondaryLog m_secLog;
 		private byte m_counter;
+		private boolean m_isRandomChoice;
 
 		// Constructors
 		/**
@@ -808,7 +816,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 			while (!m_reorganizationLock.tryLock()) {
 				// Grant access for reorganization thread to avoid deadlock
-				grantAccess();
+				grantReorgThreadAccessToCurrentLog();
 			}
 			m_secLog = p_secLog;
 			if (p_await) {
@@ -840,11 +848,11 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			}
 
 			/*
-			 * Choose the log with most updates recently (or a log that has unreorganized segments within an advanced eon)
+			 * Choose the largest log (or a log that has unreorganized segments within an advanced eon)
 			 * To avoid starvation choose every third log randomly
-			 * If there is not a single invalid object by read counters choose randomly (counter may be wrong because of lost-update)
 			 */
 			if (m_counter++ < 2) {
+				m_isRandomChoice = false;
 				outerloop: for (LogCatalog currentCat : cats) {
 					secLogs = currentCat.getAllLogs();
 					for (int j = 0; j < secLogs.length; j++) {
@@ -854,7 +862,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 								ret = secLog;
 								break outerloop;
 							}
-							current = secLog.getLogLoad();
+							current = secLog.getOccupiedSpace();
 							if (current > max) {
 								max = current;
 								ret = secLog;
@@ -866,11 +874,13 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				m_counter = 0;
 			}
 			if (ret == null && !cats.isEmpty()) {
+				m_isRandomChoice = true;
 				// Choose one secondary log randomly
 				cat = cats.get(Tools.getRandomValue(cats.size() - 1));
 				secLogs = cat.getAllLogs();
 				if (secLogs.length > 0) {
-					ret = secLogs[Tools.getRandomValue(secLogs.length - 1)];
+					// Skip last log to speed up loading phase
+					ret = secLogs[Tools.getRandomValue(secLogs.length - 2)];
 				}
 			}
 
@@ -881,8 +891,8 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		public void run() {
 			final int iterationsPerLog = 10;
 			int counter = 0;
-			long start;
-			long mid;
+			// long start;
+			// long mid;
 			SecondaryLog secondaryLog = null;
 
 			while (!m_isShuttingDown) {
@@ -912,39 +922,43 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					m_reorganizationLock.unlock();
 				}
 
-				// if (counter == 0) {
-				// start = System.currentTimeMillis();
-				// This is the first iteration -> choose secondary log and gather versions
-				secondaryLog = chooseLog();
-				if (null != secondaryLog && secondaryLog.getLogLoad() > 0) {
-					getAccessToSecLog(secondaryLog);
-					// mid = System.currentTimeMillis();
-					secondaryLog.getCurrentVersions(m_allVersions);
-					// System.out.println("Time to read versions: " + (System.currentTimeMillis() - mid));
-					// System.out.println("Time to enter log: " + (System.currentTimeMillis() - start));
-				} else {
-					continue;
+				if (counter == 0) {
+					// start = System.currentTimeMillis();
+					// This is the first iteration -> choose secondary log and gather versions
+					secondaryLog = chooseLog();
+					if (null != secondaryLog && (secondaryLog.getOccupiedSpace() > (SECLOG_SIZE / 2) || m_isRandomChoice)) {
+						getAccessToSecLog(secondaryLog);
+						// mid = System.currentTimeMillis();
+						secondaryLog.getCurrentVersions(m_allVersions);
+						// System.out.println("Time to read versions: " + (System.currentTimeMillis() - mid));
+						// System.out.println("Time to enter log: " + (System.currentTimeMillis() - start));
+					} else {
+						// Nothing to do -> wait for a while to reduce cpu load
+						try {
+							Thread.sleep(100);
+						} catch (final InterruptedException e) {}
+						continue;
+					}
 				}
-				// }
 
 				// Reorganize one segment
 				getAccessToSecLog(secondaryLog);
 				// start = System.currentTimeMillis();
-				secondaryLog.reorganizeAll(m_allVersions);
-				// secondaryLog.reorganizeIteratively(m_allVersions);
+				// secondaryLog.reorganizeAll(m_allVersions);
+				secondaryLog.reorganizeIteratively(m_allVersions);
 				// System.out.println("Time to reorg segment: " + (System.currentTimeMillis() - start));
 
-				// if (counter++ == iterationsPerLog) {
-				// start = System.currentTimeMillis();
-				// This was the last iteration for current secondary log -> clean-up
-				secondaryLog.resetReorgSegment();
-				leaveSecLog(secondaryLog);
-				m_allVersions.clear();
-				counter = 0;
-				// System.out.println("Time to leave log: " + (System.currentTimeMillis() - start));
-				// System.out.println();
-				// System.out.println();
-				// }
+				if (counter++ == iterationsPerLog) {
+					// start = System.currentTimeMillis();
+					// This was the last iteration for current secondary log -> clean-up
+					secondaryLog.resetReorgSegment();
+					leaveSecLog(secondaryLog);
+					m_allVersions.clear();
+					counter = 0;
+					// System.out.println("Time to leave log: " + (System.currentTimeMillis() - start));
+					// System.out.println();
+					// System.out.println();
+				}
 			}
 		}
 	}

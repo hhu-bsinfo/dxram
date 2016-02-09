@@ -154,7 +154,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 		byte versionSize;
 
 		if (USE_CHECKSUM) {
-			ret = (short) (getCRCOffset(p_buffer, p_offset) + LOG_ENTRY_CRC_SIZE + LOG_ENTRY_EPO_SIZE);
+			ret = (short) (getCRCOffset(p_buffer, p_offset) + LOG_ENTRY_CRC_SIZE);
 		} else {
 			versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
 			ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);

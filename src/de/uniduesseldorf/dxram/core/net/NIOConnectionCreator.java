@@ -264,7 +264,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_incoming.offer(p_buffer);
 			m_incomingLock.unlock();
 
-			// fireNewData();
 			newData();
 		}
 
@@ -948,8 +947,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 									if (bytes == 0) {
 										if (++tries == 1000000) {
-											System.out.println("Cannot write buffer because receive buffer has not been read for a while."
-													+ " Might be a deadlock. Solving it by reading first.");
+											System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
 											buffer.position(buffer.position() + size - length);
 											view = buffer.slice();
 											p_connection.addBuffer(view);
@@ -976,8 +974,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 								if (bytes == 0) {
 									if (++tries == 1000000) {
-										System.out.println("Cannot write buffer because receive buffer has not been read for a while."
-												+ " Might be a deadlock. Solving it by reading first.");
+										System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
 										p_connection.addBuffer(buffer);
 										break;
 									}

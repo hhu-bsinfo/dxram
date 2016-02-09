@@ -43,7 +43,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 			checksumSize = LOG_ENTRY_CRC_SIZE;
 		}
 
-		type = generateTypeField(type, localIDSize, lengthSize, (byte) (versionSize - LOG_ENTRY_EPO_SIZE));
+		type = generateTypeField(type, localIDSize, lengthSize, versionSize);
 
 		result = new byte[LID_OFFSET + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize];
 
@@ -60,11 +60,11 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 		}
 
 		putEpoch(result, p_version.getEpoch(), getVEROffset(result, 0));
-		if (versionSize - LOG_ENTRY_EPO_SIZE == 1) {
+		if (versionSize == 1) {
 			putVersion(result, (byte) p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
-		} else if (versionSize - LOG_ENTRY_EPO_SIZE == 2) {
+		} else if (versionSize == 2) {
 			putVersion(result, (short) p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
-		} else if (versionSize - LOG_ENTRY_EPO_SIZE > 2) {
+		} else if (versionSize > 2) {
 			putVersion(result, p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
 		}
 
@@ -199,7 +199,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 		byte versionSize;
 
 		if (USE_CHECKSUM) {
-			ret = (short) (getCRCOffset(p_buffer, p_offset) + LOG_ENTRY_CRC_SIZE + LOG_ENTRY_EPO_SIZE);
+			ret = (short) (getCRCOffset(p_buffer, p_offset) + LOG_ENTRY_CRC_SIZE);
 		} else {
 			versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
 			ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);

@@ -38,7 +38,7 @@ public class SecondaryLog extends AbstractLog {
 	private static final int REORG_UTILIZATION_THRESHOLD = Core.getConfiguration().getIntValue(ConfigurationConstants.REORG_UTILIZATION_THRESHOLD);
 	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
 
-	private static final int VERSIONS_BUFFER_CAPACITY = 655360;
+	private static final int VERSIONS_BUFFER_CAPACITY = 65536;
 
 	// Attributes
 	private short m_nodeID;
@@ -98,7 +98,7 @@ public class SecondaryLog extends AbstractLog {
 
 		m_numberOfDeletesInLog = new AtomicInteger(0);
 
-		m_versionsBuffer = new VersionsBuffer(VERSIONS_BUFFER_CAPACITY, 0.9f, BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + SECLOG_PREFIX_FILENAME
+		m_versionsBuffer = new VersionsBuffer(VERSIONS_BUFFER_CAPACITY * 4, 0.9f, BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + SECLOG_PREFIX_FILENAME
 				+ p_nodeID + "_" + p_rangeIdentification + ".ver");
 
 		m_reorganizationThread = p_reorganizationThread;
@@ -164,10 +164,10 @@ public class SecondaryLog extends AbstractLog {
 
 	/**
 	 * Returns the load of this log
-	 * @return the number of objects to be deleted + the number of new objects (can be updates, too)
+	 * @return the number of objects to be deleted + the number of new objects (can be updates, too) + the log's size
 	 */
 	public final int getLogLoad() {
-		return m_numberOfDeletesInLog.get() + m_versionsBuffer.size();// * 10 + determineLogSize();
+		return m_numberOfDeletesInLog.get() + m_versionsBuffer.size() + determineLogSize();
 	}
 
 	/**
@@ -301,8 +301,8 @@ public class SecondaryLog extends AbstractLog {
 			}
 
 			// Change epoch
-			if (m_versionsBuffer.size() >= VERSIONS_BUFFER_CAPACITY * 0.75 && !m_isAccessed) {
-				System.out.println("Flushing versions to SSD by Writer Thread");
+			/*-if (m_versionsBuffer.size() >= VERSIONS_BUFFER_CAPACITY * 0.65) {
+				System.out.println("Flushing versions to SSD by Writer Thread (" + m_nodeID + "," + m_rangeIDOrFirstLocalID + ").");
 				// Write versions buffer to SSD
 				if (m_versionsBuffer.flush()) {
 					for (SegmentHeader segmentHeader : m_segmentHeaders) {
@@ -310,6 +310,23 @@ public class SecondaryLog extends AbstractLog {
 							segmentHeader.beginEon();
 						}
 					}
+				}
+			}*/
+
+			if (m_versionsBuffer.size() >= VERSIONS_BUFFER_CAPACITY * 0.65) {
+				if (!m_isAccessed) {
+					System.out.println("Flushing versions to SSD by Writer Thread");
+					// Write versions buffer to SSD
+					if (m_versionsBuffer.flush()) {
+						for (SegmentHeader segmentHeader : m_segmentHeaders) {
+							if (segmentHeader != null) {
+								segmentHeader.beginEon();
+							}
+						}
+					}
+				} else {
+					// Force reorganization thread to flush all versions (even though it is reorganizing this log currently -> high update rate)
+					signalReorganization();
 				}
 			}
 
@@ -941,9 +958,151 @@ public class SecondaryLog extends AbstractLog {
 		byte[] segmentData;
 		byte[] newData;
 		EpochVersion currentVersion;
+		EpochVersion entryVersion;
 		AbstractLogEntryHeader logEntryHeader;
 
-		if (-1 != p_segmentIndex) {
+		/*-if (-1 != p_segmentIndex && p_allVersions != null) {
+			m_lock.lock();
+			if (m_activeSegment == null || m_activeSegment.getIndex() != p_segmentIndex) {
+				m_reorgSegment = m_segmentHeaders[p_segmentIndex];
+				m_lock.unlock();
+				try {
+					segmentData = readSegment(p_segmentIndex);
+					if (segmentData != null) {
+						newData = new byte[SECLOG_SEGMENT_SIZE];
+
+						while (readBytes < segmentData.length) {
+							logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segmentData, readBytes, m_storesMigrations);
+							length = logEntryHeader.getHeaderSize(segmentData, readBytes) + logEntryHeader.getLength(segmentData, readBytes);
+							chunkID = logEntryHeader.getCID(segmentData, readBytes);
+
+							// Get current version
+							currentVersion = p_allVersions.get(chunkID);
+							// Compare version, epoch and eon
+							if (currentVersion == null) {
+								System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
+								writtenBytes += length;
+							} else if (currentVersion.equals(logEntryHeader.getVersion(segmentData, readBytes))) {
+								System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
+								writtenBytes += length;
+
+								if ((currentVersion.getEpoch() & 0x8000) != m_versionsBuffer.getEon()) {
+									// Update eon in both versions
+									AbstractLogEntryHeader.flipEon(logEntryHeader, newData, writtenBytes - length);
+
+									if (m_storesMigrations) {
+										m_versionsBuffer.put(chunkID, currentVersion.getEpoch() ^ 1 << 15,
+												currentVersion.getVersion());
+									} else {
+										m_versionsBuffer.put(ChunkID.getLocalID(chunkID), currentVersion.getEpoch() ^ 1 << 15,
+												currentVersion.getVersion());
+									}
+								}
+							} else {
+								EpochVersion version = logEntryHeader.getVersion(segmentData, readBytes);
+								if (currentVersion.getEpoch() < version.getEpoch() || (currentVersion.getEpoch() == version.getEpoch() && currentVersion.getVersion() < version.getVersion())) {
+									System.out.println("######################################################################################################################");
+									System.out.println(currentVersion.getEpoch() + "<->" + version.getEpoch() + "; " + currentVersion.getVersion() + "<->" + version.getVersion());
+									System.out.println("######################################################################################################################");
+								}
+
+								// Version, epoch and/or eon is different -> remove entry
+								if (currentVersion.getVersion() == -1) {
+									removedObjects++;
+								}
+							}
+							readBytes += length;
+						}
+						if (writtenBytes < readBytes) {
+							if (writtenBytes > 0) {
+								updateSegment(newData, writtenBytes, p_segmentIndex);
+							} else {
+								freeSegment(p_segmentIndex);
+							}
+							decLogDeletesCounter(removedObjects);
+						}
+					}
+				} catch (final IOException | InterruptedException e) {
+					System.out.println("Reorganization failed!");
+				}
+			} else {
+				m_lock.unlock();
+			}
+
+			System.out.println("Freed " + (readBytes - writtenBytes) + " bytes during reorganization of:"
+					+ p_segmentIndex + "  " + m_nodeID + "," + m_rangeIDOrFirstLocalID + "\t " + determineLogSize() / 1024 / 1024);
+		}*/
+
+		if (-1 != p_segmentIndex && p_allVersions != null) {
+			m_lock.lock();
+			if (m_activeSegment == null || m_activeSegment.getIndex() != p_segmentIndex) {
+				m_reorgSegment = m_segmentHeaders[p_segmentIndex];
+				m_lock.unlock();
+				try {
+					segmentData = readSegment(p_segmentIndex);
+					if (segmentData != null) {
+						newData = new byte[SECLOG_SEGMENT_SIZE];
+
+						while (readBytes < segmentData.length) {
+							logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segmentData, readBytes, m_storesMigrations);
+							length = logEntryHeader.getHeaderSize(segmentData, readBytes) + logEntryHeader.getLength(segmentData, readBytes);
+							chunkID = logEntryHeader.getCID(segmentData, readBytes);
+							entryVersion = logEntryHeader.getVersion(segmentData, readBytes);
+
+							// Get current version
+							currentVersion = p_allVersions.get(chunkID);
+							if (currentVersion == null || currentVersion.getEpoch() + 1 == entryVersion.getEpoch()) {
+								// There is no entry in hashtable or element is more current -> get latest version from cache
+								// (Epoch can only be 1 greater because there is no flushing during reorganization)
+								currentVersion = m_versionsBuffer.get(chunkID);
+							}
+
+							// Compare current version with element
+							if (currentVersion.equals(logEntryHeader.getVersion(segmentData, readBytes))) {
+								System.arraycopy(segmentData, readBytes, newData, writtenBytes, length);
+								writtenBytes += length;
+
+								if ((currentVersion.getEpoch() & 0x8000) != m_versionsBuffer.getEon()) {
+									// Update eon in both versions
+									AbstractLogEntryHeader.flipEon(logEntryHeader, newData, writtenBytes - length);
+
+									if (m_storesMigrations) {
+										m_versionsBuffer.put(chunkID, currentVersion.getEpoch() ^ 1 << 15,
+												currentVersion.getVersion());
+									} else {
+										m_versionsBuffer.put(ChunkID.getLocalID(chunkID), currentVersion.getEpoch() ^ 1 << 15,
+												currentVersion.getVersion());
+									}
+								}
+							} else {
+								// Version, epoch and/or eon is different -> remove entry
+								if (currentVersion.getVersion() == -1) {
+									removedObjects++;
+								}
+							}
+							readBytes += length;
+						}
+						if (writtenBytes < readBytes) {
+							if (writtenBytes > 0) {
+								updateSegment(newData, writtenBytes, p_segmentIndex);
+							} else {
+								freeSegment(p_segmentIndex);
+							}
+							decLogDeletesCounter(removedObjects);
+						}
+					}
+				} catch (final IOException | InterruptedException e) {
+					System.out.println("Reorganization failed!");
+				}
+			} else {
+				m_lock.unlock();
+			}
+
+			System.out.println("Freed " + (readBytes - writtenBytes) + " bytes during reorganization of:"
+					+ p_segmentIndex + "  " + m_nodeID + "," + m_rangeIDOrFirstLocalID + "\t " + determineLogSize() / 1024 / 1024);
+		}
+
+		/*-if (-1 != p_segmentIndex) {
 			m_lock.lock();
 			if (m_activeSegment == null || m_activeSegment.getIndex() != p_segmentIndex) {
 				m_reorgSegment = m_segmentHeaders[p_segmentIndex];
@@ -1008,7 +1167,8 @@ public class SecondaryLog extends AbstractLog {
 
 			System.out.println("Freed " + (readBytes - writtenBytes) + " bytes during reorganization of:"
 					+ p_segmentIndex + "  " + m_nodeID + "," + m_rangeIDOrFirstLocalID + "\t " + determineLogSize() / 1024 / 1024);
-		}
+		}*/
+
 	}
 
 	/**
@@ -1078,6 +1238,8 @@ public class SecondaryLog extends AbstractLog {
 	public final void getCurrentVersions(final VersionsHashTable p_allVersions) {
 		Arrays.fill(m_reorgVector, (byte) 0);
 
+		System.out.println("Read-in all versions from SSD by Reorganization Thread (" + m_nodeID + "," + m_rangeIDOrFirstLocalID + ").");
+
 		// Read versions from SSD and write back current view
 		m_versionsBuffer.readAll(p_allVersions);
 	}
@@ -1119,8 +1281,8 @@ public class SecondaryLog extends AbstractLog {
 			float ret = 1;
 
 			/*-if (m_usedBytes > 0) {
-				ret = 1 - (float) m_deletedBytes / m_usedBytes;
-				}*/
+			ret = 1 - (float) m_deletedBytes / m_usedBytes;
+			}*/
 			ret = 1 - (float) m_usedBytes / SECLOG_SEGMENT_SIZE;
 
 			return ret;

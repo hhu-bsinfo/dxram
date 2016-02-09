@@ -44,16 +44,16 @@ public class VersionsHashTable {
 	 * Returns the number of keys in VersionsHashTable
 	 * @return the number of keys in VersionsHashTable
 	 */
-	public final int size() {
+	protected final int size() {
 		return m_count;
 	}
 
 	/**
-	 * Returns the number of array cells in VersionsHashTable
-	 * @return the number of array cells in VersionsHashTable
+	 * Returns all entries
+	 * @return the array
 	 */
-	public final int getTableLength() {
-		return m_elementCapacity;
+	protected final int[] getTable() {
+		return m_table;
 	}
 
 	// Methods
@@ -100,7 +100,7 @@ public class VersionsHashTable {
 	 * @param p_version
 	 *            the version
 	 */
-	public void put(final long p_key, final int p_epoch, final int p_version) {
+	protected void put(final long p_key, final int p_epoch, final int p_version) {
 		int index;
 		long iter;
 		final long key = p_key + 1;
@@ -132,7 +132,7 @@ public class VersionsHashTable {
 	 *            the index
 	 * @return the key
 	 */
-	protected long getKey(final int p_index) {
+	private long getKey(final int p_index) {
 		int index;
 
 		index = p_index % m_elementCapacity * 4;
@@ -145,7 +145,7 @@ public class VersionsHashTable {
 	 *            the index
 	 * @return the epoch
 	 */
-	protected int getEpoch(final int p_index) {
+	private int getEpoch(final int p_index) {
 		return m_table[p_index % m_elementCapacity * 4 + 2];
 	}
 
@@ -155,7 +155,7 @@ public class VersionsHashTable {
 	 *            the index
 	 * @return the version
 	 */
-	protected int getVersion(final int p_index) {
+	private int getVersion(final int p_index) {
 		return m_table[p_index % m_elementCapacity * 4 + 3];
 	}
 

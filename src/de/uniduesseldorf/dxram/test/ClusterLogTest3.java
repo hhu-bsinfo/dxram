@@ -32,11 +32,11 @@ public final class ClusterLogTest3 {
 	protected static final long UTILIZATION = 3221225472L;
 	protected static final int CHUNK_SIZE = 100;
 	protected static final int CHUNKS_PER_PUT = 1000;
-	protected static final int CHUNKS_PER_UPDATE = 750;
+	protected static final int CHUNKS_PER_UPDATE = 75;
 
 	// Attributes
 	// Workload: 0 -> uniform, 1 -> zipfian
-	private static byte m_workload;
+	private static byte m_workload = 0;
 
 	// Constructors
 	/**
@@ -110,7 +110,7 @@ public final class ClusterLogTest3 {
 					break;
 				}
 				if (counter % 7500000 == 0) {
-					System.out.println("Created 7500000 chunks and replicated them. All: " + counter);
+					System.out.println("Created 7500000 bytes and replicated them. All: " + counter);
 				}
 			}
 			System.out.println("Time to create " + UTILIZATION + " bytes of payload: " + (System.currentTimeMillis() - start));
@@ -161,9 +161,9 @@ public final class ClusterLogTest3 {
 				rand = new Random();
 
 				while (true) {
-					offset = nextLong(rand, UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT) + 1;
+					// offset = nextLong(rand, UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT) + 1;
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-						chunks[i].setChunkID(((long) nodeID << 48) + offset + i);
+						chunks[i].setChunkID(((long) nodeID << 48) + nextLong(rand, UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
 					}
 
 					try {
@@ -171,10 +171,11 @@ public final class ClusterLogTest3 {
 					} catch (final DXRAMException e) {
 						e.printStackTrace();
 					}
-					System.out.println("Wrote " + CHUNKS_PER_UPDATE + " on " + nodeID + " starting at " + offset + ".");
+					System.out.println("Wrote " + CHUNKS_PER_UPDATE + " on " + nodeID + " with random distribution.");
 				}
 			} else {
-				zipf = new FastZipfGenerator((int) (UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT + 1), 2.0);
+				System.out.println("Initializing ZipfGenerator. This might take a little.");
+				zipf = new FastZipfGenerator((int) (UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT + 1), 0.5);
 
 				while (true) {
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {

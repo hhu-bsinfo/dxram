@@ -46,4 +46,40 @@ public class EpochVersion {
 	public boolean equals(final EpochVersion p_cmp) {
 		return m_epoch == p_cmp.getEpoch() && m_version == p_cmp.getVersion();
 	}
+
+	/**
+	 * Compares two EpochVersions
+	 * @param p_cmp
+	 *            the EpochVersion to compare with
+	 * @return 1 if p_cmp is smaller, 0 if they are equal and -1 if p_cmp is greater
+	 */
+	public int compareTo(final EpochVersion p_cmp) {
+		int ret;
+
+		if (m_epoch == p_cmp.getEpoch()) {
+			if (m_version == p_cmp.getVersion()) {
+				ret = 0;
+			} else if (m_version < p_cmp.getVersion()) {
+				ret = -1;
+			} else {
+				ret = 1;
+			}
+		} else {
+			if (m_epoch > Short.MAX_VALUE - 100 && p_cmp.getEpoch() < 100) {
+				// Epoch overflow
+				ret = -1;
+			} else if (m_epoch < 100 && p_cmp.getEpoch() > Short.MAX_VALUE - 100) {
+				// Epoch overflow
+				ret = 1;
+			} else {
+				if (m_epoch < p_cmp.getEpoch()) {
+					ret = -1;
+				} else {
+					ret = 1;
+				}
+			}
+		}
+
+		return ret;
+	}
 }

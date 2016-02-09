@@ -372,9 +372,8 @@ public abstract class AbstractLogEntryHeader {
 	 * @return the maximum log entry header size for secondary log
 	 */
 	public static short getAproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
-		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
-		// because the
-		// actual version is determined during logging on backup peer
+		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation because the
+		// actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be bigger at some point)
 		short ret = (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size)
 				+ LOG_ENTRY_EPO_SIZE + 1 + LOG_ENTRY_CRC_SIZE);
 
@@ -656,7 +655,7 @@ public abstract class AbstractLogEntryHeader {
 			}
 		}
 
-		return (byte) (ret + LOG_ENTRY_EPO_SIZE);
+		return ret;
 	}
 
 	/**

@@ -339,10 +339,12 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		@Override
 		public void run() {
 			AbstractMessage message = null;
+			boolean isExclusive = false;
 			Entry entry;
 
 			while (message == null) {
 				if (m_exclusiveMessages.size() > m_defaultMessages.size() && m_exclusiveLock.tryLock()) {
+					isExclusive = true;
 					m_exclusiveMessagesLock.lock();
 					message = m_exclusiveMessages.poll();
 					m_exclusiveMessagesLock.unlock();
@@ -360,7 +362,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			if (entry != null) {
 				entry.newMessage(message);
 			}
-			if (message.isExclusive()) {
+			if (isExclusive) {
 				m_exclusiveLock.unlock();
 			}
 		}

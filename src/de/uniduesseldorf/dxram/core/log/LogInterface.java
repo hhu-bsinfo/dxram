@@ -72,4 +72,9 @@ public interface LogInterface extends CoreComponent {
 	 * @return the header size
 	 */
 	short getAproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size);
+
+	/**
+	 * Grant the writer thread access to write buffer
+	 */
+	void grantAccessToWriterThread();
 }
