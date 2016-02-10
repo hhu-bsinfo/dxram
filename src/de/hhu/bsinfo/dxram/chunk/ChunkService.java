@@ -15,6 +15,8 @@ import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkCreate;
 import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkRemove;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -29,12 +31,16 @@ import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkComponent.ErrorCode;
+import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
+import de.hhu.bsinfo.utils.serialization.Exportable;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importable;
+import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * This service provides access to the backend storage system.
@@ -100,6 +106,60 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_lookup = null;
 		
 		return true;
+	}
+	
+	public Status getStatus()
+	{
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer does not provide a status");
+			return null;
+		} 
+		
+		Status status = new Status();
+		
+		MemoryManagerComponent.Status memManStatus = m_memoryManager.getStatus();
+		
+		status.m_freeMemoryBytes = memManStatus.getFreeMemory();
+		status.m_totalMemoryBytes = memManStatus.getTotalMemory();
+		
+		return status;
+	}
+	
+	public Status getStatus(final short p_nodeID)
+	{
+		Status status = null;
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer does not provide a status");
+			return status;
+		} 
+			
+		// own status?
+		if (p_nodeID == m_boot.getNodeID()) {
+			status = getStatus();
+		} else {
+			
+		}
+		
+		return status;
+	}
+	
+	/**
+	 * Get the total amount of memory.
+	 * @return Total amount of memory in bytes.
+	 */
+	public long getTotalMemory()
+	{
+		return m_memoryManager.getStatus().getTotalMemory();
+	}
+	
+	/**
+	 * Get the amounf of free memory.
+	 * @return Amount of free memory in bytes.
+	 */
+	public long getFreeMemory()
+	{
+		return m_memoryManager.getStatus().getFreeMemory();
 	}
 	
 	/**
@@ -269,8 +329,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteCreate, p_sizes.length);
 
 		CreateRequest request = new CreateRequest(p_peer, p_sizes);
-		ErrorCode error = m_network.sendSync(request);
-		if (error != ErrorCode.SUCCESS)
+		NetworkErrorCodes error = m_network.sendSync(request);
+		if (error != NetworkErrorCodes.SUCCESS)
 		{
 			m_logger.error(getClass(), "Sending chunk create request to peer " + Integer.toHexString(p_peer & 0xFFFF) + " failed: " + error);
 		} else {
@@ -385,8 +445,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			} else {					
 				// Remote remove from specified peer
 				RemoveRequest request = new RemoveRequest(peer, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
-				ErrorCode error = m_network.sendSync(request);
-				if (error != ErrorCode.SUCCESS)
+				NetworkErrorCodes error = m_network.sendSync(request);
+				if (error != NetworkErrorCodes.SUCCESS)
 				{
 					m_logger.error(getClass(), "Sending chunk remove request to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
 					continue;
@@ -513,8 +573,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				// Remote put
 				ArrayList<DataStructure> chunksToPut = entry.getValue();
 				PutRequest request = new PutRequest(peer, p_chunkUnlockOperation, chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
-				ErrorCode error = m_network.sendSync(request);
-				if (error != ErrorCode.SUCCESS) {
+				NetworkErrorCodes error = m_network.sendSync(request);
+				if (error != NetworkErrorCodes.SUCCESS) {
 					m_logger.error(getClass(), "Sending chunk put request to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
 					
 					// TODO
@@ -623,8 +683,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			} else {					
 				// Remote get from specified peer
 				GetRequest request = new GetRequest(peer, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
-				ErrorCode error = m_network.sendSync(request);
-				if (error != ErrorCode.SUCCESS)
+				NetworkErrorCodes error = m_network.sendSync(request);
+				if (error != NetworkErrorCodes.SUCCESS)
 				{
 					m_logger.error(getClass(), "Sending chunk get request to peer " + peer + " failed: " + error);
 					continue;
@@ -671,6 +731,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				case ChunkMessages.SUBTYPE_CREATE_REQUEST:
 					incomingCreateRequest((CreateRequest) p_message);
 					break;
+				case ChunkMessages.SUBTYPE_STATUS_REQUEST:
+					incomingStatusRequest((StatusRequest) p_message);
+					break;
 				default:
 					break;
 				}
@@ -695,6 +758,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_REMOVE_RESPONSE, RemoveResponse.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST, CreateRequest.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_RESPONSE, CreateResponse.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_STATUS_REQUEST, StatusRequest.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_STATUS_RESPONSE, StatusResponse.class);
 	}
 	
 	/**
@@ -706,6 +771,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_network.register(PutRequest.class, this);
 		m_network.register(RemoveRequest.class, this);
 		m_network.register(CreateRequest.class, this);
+		m_network.register(StatusRequest.class, this);
 	}
 	
 	/**
@@ -759,8 +825,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_memoryManager.unlockAccess();
 
 		GetResponse response = new GetResponse(p_request, numChunksGot, chunks);
-		ErrorCode error = m_network.sendMessage(response);
-		if (error != ErrorCode.SUCCESS)
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		if (error != NetworkErrorCodes.SUCCESS)
 		{
 			m_logger.error(getClass(), "Sending GetResponse for " + numChunksGot + " chunks failed: " + error);
 		}
@@ -822,8 +888,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			response = new PutResponse(p_request, statusChunks);
 		}
 		
-		ErrorCode error = m_network.sendMessage(response);
-		if (error != ErrorCode.SUCCESS)
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		if (error != NetworkErrorCodes.SUCCESS)
 		{
 			m_logger.error(getClass(), "Sending chunk put respond to request " + p_request + " failed: " + error);
 		}
@@ -882,8 +948,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			response = new RemoveResponse(p_request, chunkStatusCodes);
 		}
 		
-		ErrorCode error = m_network.sendMessage(response);
-		if (error != ErrorCode.SUCCESS)
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		if (error != NetworkErrorCodes.SUCCESS)
 		{
 			m_logger.error(getClass(), "Sending chunk remove respond to request " + p_request + " failed: " + error);
 		}	
@@ -932,13 +998,73 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 		
 		CreateResponse response = new CreateResponse(p_request, chunkIDs);
-		ErrorCode error = m_network.sendMessage(response);
-		if (error != ErrorCode.SUCCESS)
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		if (error != NetworkErrorCodes.SUCCESS)
 		{
 			m_logger.error(getClass(), "Sending chunk create respond to request " + p_request + " failed: " + error);
 		}
 		
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingCreate);
+	}
+	
+	/**
+	 * Handle incoming status requests.
+	 * @param p_request Request to handle
+	 */
+	private void incomingStatusRequest(final StatusRequest p_request) {
+		Status status = getStatus();
+		
+		StatusResponse response = new StatusResponse(p_request, status);
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		if (error != NetworkErrorCodes.SUCCESS)
+		{
+			m_logger.error(getClass(), "Sending status respond to request " + p_request + " failed: " + error);
+		}
+	}
+	
+	public static class Status implements Importable, Exportable
+	{
+		private long m_freeMemoryBytes = -1;
+		private long m_totalMemoryBytes = -1;
+		
+		public Status()
+		{
+			
+		}
+		
+		public long getFreeMemory()
+		{
+			return m_freeMemoryBytes;
+		}
+		
+		public long getTotalMemory()
+		{
+			return m_totalMemoryBytes;
+		}
+
+		@Override
+		public int sizeofObject() {
+			return Long.BYTES * 2;
+		}
+
+		@Override
+		public boolean hasDynamicObjectSize() {
+			return false;
+		}
+
+		@Override
+		public int exportObject(Exporter p_exporter, int p_size) {
+			p_exporter.writeLong(m_freeMemoryBytes);
+			p_exporter.writeLong(m_totalMemoryBytes);
+			return sizeofObject();
+		}
+
+		@Override
+		public int importObject(Importer p_importer, int p_size) {
+			m_freeMemoryBytes = p_importer.readLong();
+			m_totalMemoryBytes = p_importer.readLong();
+			return sizeofObject();
+		}
 	}
 }

@@ -3,14 +3,16 @@ package de.hhu.bsinfo.dxgraph;
 import java.util.Vector;
 
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 
-// TODO base class for pipelines
+// base class for pipelines
 // consisting of multiple tasks
 public abstract class GraphTaskPipeline 
 {
 	private DXRAM m_dxram = null;
-	private LoggerService m_loggerService = null;
+	protected LoggerService m_loggerService = null;
+	protected BootService m_bootService = null;
 	
 	private Vector<GraphTask> m_tasks = new Vector<GraphTask>();
 	
@@ -43,16 +45,7 @@ public abstract class GraphTaskPipeline
 	{
 		m_dxram = p_dxram;
 		m_loggerService = p_dxram.getService(LoggerService.class);
-	}
-	
-	protected void log(final String p_msg)
-	{
-		m_loggerService.debug(getClass(), p_msg);
-	}
-	
-	protected void logError(final String p_msg)
-	{
-		m_loggerService.error(getClass(), p_msg);
+		m_bootService = p_dxram.getService(BootService.class);
 	}
 	
 	protected void pushTask(final GraphTask p_task)

@@ -136,6 +136,25 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 		
 		return ids;
 	}
+	
+	@Override
+	public List<Short> getAvailablePeerNodeIDs()
+	{
+		List<Short> ids = new ArrayList<Short>();
+
+		if (zookeeperPathExists("nodes/peers"))
+		{
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/peers");
+				for (String child : children) {
+					ids.add(Short.parseShort(child));
+				}
+			} catch (ZooKeeperException e) {
+			}
+		}
+		
+		return ids;
+	}
 
 	@Override
 	public short getNodeID()

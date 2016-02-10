@@ -15,15 +15,6 @@ import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
  */
 public class NetworkComponent extends DXRAMComponent {
 		
-	public enum ErrorCode 
-	{
-		SUCCESS,
-		UNKNOWN,
-		DESTINATION_UNREACHABLE,
-		SEND_DATA,
-		RESPONSE_TIMEOUT,
-	}
-	
 	private LoggerComponent m_logger = null;
 	private BootComponent m_boot = null;
 	
@@ -48,23 +39,23 @@ public class NetworkComponent extends DXRAMComponent {
 		m_networkHandler.registerMessageType(p_type, p_subtype, p_class);
 	}
 
-	public ErrorCode sendMessage(final AbstractMessage p_message) {
+	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
 		m_logger.trace(getClass(), "Sending message " + p_message);
 		int res = m_networkHandler.sendMessage(p_message);
-		ErrorCode errCode = ErrorCode.UNKNOWN;
+		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
 		
 		switch (res) {
 			case 0:
-				errCode = ErrorCode.SUCCESS; break;
+				errCode = NetworkErrorCodes.SUCCESS; break;
 			case -1:
-				errCode = ErrorCode.DESTINATION_UNREACHABLE; break;
+				errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE; break;
 			case -2:
-				errCode = ErrorCode.SEND_DATA; break;
+				errCode = NetworkErrorCodes.SEND_DATA; break;
 			default:
 				assert 1 == 2; break;
 		}
 		
-		if (errCode != ErrorCode.SUCCESS) {
+		if (errCode != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(this.getClass(), "Sending message " + p_message + " failed: " + errCode);
 		}
 		
@@ -72,24 +63,24 @@ public class NetworkComponent extends DXRAMComponent {
 	}
 	
 	
-	public ErrorCode forwardMessage(final short p_destination, final AbstractMessage p_message) {
+	public NetworkErrorCodes forwardMessage(final short p_destination, final AbstractMessage p_message) {
 		m_logger.trace(getClass(), "Forwarding message " + p_message);
 		int res = m_networkHandler.forwardMessage(p_destination, p_message);
 		
-		ErrorCode errCode = ErrorCode.UNKNOWN;
+		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
 		
 		switch (res) {
 			case 0:
-				errCode = ErrorCode.SUCCESS; break;
+				errCode = NetworkErrorCodes.SUCCESS; break;
 			case -1:
-				errCode = ErrorCode.DESTINATION_UNREACHABLE; break;
+				errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE; break;
 			case -2:
-				errCode = ErrorCode.SEND_DATA; break;
+				errCode = NetworkErrorCodes.SEND_DATA; break;
 			default:
 				assert 1 == 2; break;
 		}
 		
-		if (errCode != ErrorCode.SUCCESS) {
+		if (errCode != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(this.getClass(), "Forwarding message " + p_message + " failed: " + errCode);
 		}
 		
@@ -101,14 +92,14 @@ public class NetworkComponent extends DXRAMComponent {
 	 * @param p_request The request to send.
 	 * @return 0 if successful, -1 if sending the request failed, 1 waiting for the response timed out.
 	 */
-	public ErrorCode sendSync(final AbstractRequest p_request) {
+	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
 		m_logger.trace(getClass(), "Sending request (sync): " + p_request);
-		ErrorCode err = sendMessage(p_request);
-		if (err == ErrorCode.SUCCESS) {
+		NetworkErrorCodes err = sendMessage(p_request);
+		if (err == NetworkErrorCodes.SUCCESS) {
 			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
 			if (!p_request.waitForResponses()) {
 				m_logger.error(this.getClass(), "Sending sync, waiting for responses " + p_request + " failed, timeout.");
-				err = ErrorCode.RESPONSE_TIMEOUT;
+				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
 			} else {		
 				m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
 			}

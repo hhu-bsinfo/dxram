@@ -2,7 +2,6 @@ package de.hhu.bsinfo.dxram.job;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 
-// handles local jobs only
 /**
  * Component handling jobs to be executed (local only).
  * 

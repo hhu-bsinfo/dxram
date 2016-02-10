@@ -116,6 +116,20 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	public void unlockAccess() {
 		m_lock.readLock().unlock();
 	}
+	
+	/**
+	 * Get some status information about the memory manager (free, total amount of memory).
+	 * @return Status information.
+	 */
+	public Status getStatus()
+	{
+		Status status = new Status();
+		
+		status.m_freeMemoryBytes = m_rawMemory.getFreeMemory();
+		status.m_totalMemoryBytes = m_rawMemory.getTotalMemory();
+		
+		return status;
+	}
 
 	/**
 	 * Create a new chunk.
@@ -315,6 +329,27 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 */
 	public void prepareChunkIDForReuse(final long p_chunkID) {
 		m_cidTable.putChunkIDForReuse(p_chunkID);
+	}
+	
+	public static class Status
+	{
+		private long m_totalMemoryBytes = -1;
+		private long m_freeMemoryBytes = -1;
+		
+		public Status()
+		{
+			
+		}
+		
+		public long getTotalMemory()
+		{
+			return m_totalMemoryBytes;
+		}
+		
+		public long getFreeMemory()
+		{
+			return m_freeMemoryBytes;
+		}
 	}
 
 	// FIXME take back in

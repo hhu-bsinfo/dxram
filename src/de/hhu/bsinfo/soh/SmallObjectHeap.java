@@ -560,6 +560,30 @@ public final class SmallObjectHeap {
 		segment = m_segments[(int) (p_address / m_segmentSize)];
 		segment.setCustomState(p_address, p_customState);
 	}
+	
+	/**
+	 * Get the total space available in bytes.
+	 * @return Total space in bytes.
+	 */
+	public long getTotalMemory()
+	{
+		return m_segmentSize * m_segments.length;
+	}
+	
+	/**
+	 * Get the amount of free memory in bytes.
+	 * @return Free memory in bytes.
+	 */
+	public long getFreeMemory()
+	{
+		long size = 0;
+		
+		for (SmallObjectHeapSegment segment : m_segments) {
+			size += segment.getStatus().getFreeSpace();
+		}
+		
+		return size;
+	}
 
 	@Override
 	public String toString() {

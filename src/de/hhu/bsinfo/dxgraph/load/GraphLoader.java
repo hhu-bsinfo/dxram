@@ -27,12 +27,12 @@ public abstract class GraphLoader extends GraphTask
 	@Override
 	public boolean execute()
 	{
-		log("Loading graph, path '" + m_path + "' to " + m_numNodes + " nodes...");
+		m_loggerService.debug(getClass(), "Loading graph, path '" + m_path + "' to " + m_numNodes + " nodes...");
 		boolean ret = load(m_path, m_numNodes);
 		if (ret) {
-			log("Loading graph, path '" + m_path + "' successful.");
+			m_loggerService.debug(getClass(), "Loading graph, path '" + m_path + "' successful.");
 		} else {
-			logError("Loading graph, path '" + m_path + "' failed.");
+			m_loggerService.error(getClass(), "Loading graph, path '" + m_path + "' failed.");
 		}
 		
 		return ret;

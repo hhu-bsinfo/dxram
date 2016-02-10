@@ -7,6 +7,11 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+// vertex with a static list list of neighbours
+// this limits the number of neighbours that can be stored
+// within a single chunk in DXRAM (max chunk size 16MB)
+// to roughly 2 million neighbours, which should be fine
+// for many applications
 public class Vertex implements DataStructure
 {	
 	private long m_id = -1;

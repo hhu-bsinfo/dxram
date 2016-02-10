@@ -168,6 +168,11 @@ public class LinkedListBenchmark extends Main
 		public long getID() {
 			return m_ownID;
 		}
+
+		@Override
+		public void setID(long p_id) {
+			m_ownID = p_id;
+		}
 		
 	}
 }

@@ -18,12 +18,12 @@ public abstract class GraphAlgorithm extends GraphTask {
 	
 	@Override
 	public boolean execute() {
-		log("Executing algorithm with " + m_entryNodes.length + " entry nodes.");
+		m_loggerService.debug(getClass(), "Executing algorithm with " + m_entryNodes.length + " entry nodes.");
 		boolean ret = execute(m_entryNodes);
 		if (ret) {
-			log("Executing graph algorithm successful.");
+			m_loggerService.debug(getClass(), "Executing graph algorithm successful.");
 		} else {
-			logError("Executing graph algorithm failed.");
+			m_loggerService.error(getClass(), "Executing graph algorithm failed.");
 		}
 		
 		return ret;

@@ -15,6 +15,7 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
@@ -143,8 +144,8 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 						
 						// Remote lock
 						LockRequest request = new LockRequest(peer, p_writeLock, p_chunkID);
-						NetworkComponent.ErrorCode errNet = m_network.sendSync(request);
-						if (errNet != NetworkComponent.ErrorCode.SUCCESS) {
+						NetworkErrorCodes errNet = m_network.sendSync(request);
+						if (errNet != NetworkErrorCodes.SUCCESS) {
 							switch (errNet)
 							{
 								case DESTINATION_UNREACHABLE:
@@ -234,8 +235,8 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 					} else {
 						// Remote release
 						UnlockMessage message = new UnlockMessage(primaryPeer, p_writeLock, p_chunkID);
-						NetworkComponent.ErrorCode errNet = m_network.sendMessage(message);
-						if (errNet != NetworkComponent.ErrorCode.SUCCESS) {
+						NetworkErrorCodes errNet = m_network.sendMessage(message);
+						if (errNet != NetworkErrorCodes.SUCCESS) {
 							switch (errNet)
 							{
 								case DESTINATION_UNREACHABLE:

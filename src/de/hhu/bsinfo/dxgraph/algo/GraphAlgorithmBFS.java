@@ -1,9 +1,12 @@
 package de.hhu.bsinfo.dxgraph.algo;
 
+import java.util.List;
+
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
+import de.hhu.bsinfo.dxram.logger.LoggerService;
 
 public class GraphAlgorithmBFS extends GraphAlgorithm {
 
@@ -43,10 +46,10 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 				counter += remainder;
 			}
 			
-			pushJob(new JobBFS(tmp));
+			m_jobService.pushJob(new JobBFS(m_batchCountPerJob, tmp));
 		}
 		
-		return waitForLocalJobsToFinish();
+		return m_jobService.waitForLocalJobsToFinish();
 	}
 
 	private static class JobBFS extends Job {
@@ -56,9 +59,12 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 			registerType(MS_TYPE_ID, JobBFS.class);
 		}
 		
-		public JobBFS(final long... p_parameterChunkIDs)
+		private int m_vertexBatchCount = 1;
+		
+		public JobBFS(final int p_vertexBatchCount, final long... p_parameterChunkIDs)
 		{
 			super(p_parameterChunkIDs);
+			m_vertexBatchCount = p_vertexBatchCount;
 		}
 
 		@Override
@@ -70,6 +76,7 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 		protected void execute(short p_nodeID, long[] p_chunkIDs) {
 			ChunkService chunkService = getService(ChunkService.class);
 			JobService jobService = getService(JobService.class);
+			LoggerService loggerService = getService(LoggerService.class);
 			
 			Vertex[] entryVertices = new Vertex[p_chunkIDs.length];
 			for (int i = 0; i < p_chunkIDs.length; i++) {
@@ -78,27 +85,53 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 			
 			if (chunkService.get(entryVertices) != entryVertices.length)
 			{
-				// TODO error handling
+				loggerService.error(getClass(), "Getting vertices failed.");
+				return;
 			}
 		
 			for (Vertex v : entryVertices)
 			{
 				if (v.getUserData() == -1)
 				{
-					
 					v.setUserData(0);
 					if (chunkService.put(v) != 1)
 					{
-						// TODO error handling
+						loggerService.error(getClass(), "Marking vertex " + v + " as visited failed.");
+						continue;
 					}
+					
 					System.out.println(this + ", Visited: " + v);
 					
 					// spawn further jobs for neighbours
-					for (Long neighbour : v.getNeighbours())
+					List<Long> neighbours = v.getNeighbours();
+					int neighboursLeft = neighbours.size();
+					long[] batch = new long[m_vertexBatchCount];
+					while (true)
 					{
-						// TODO have block of neighbours for a job? avoid creating to many jobs
-						// -> have evaluation with different amounts of vertices per job
-						jobService.pushJob(new JobBFS(neighbour));
+						
+						if (neighboursLeft <= m_vertexBatchCount) {
+							// use an array that fits
+							batch = new long[neighboursLeft];
+							
+							for (int i = 0; i < neighboursLeft; i++) {
+								batch[i] = neighbours.get(neighbours.size() - 1);
+								neighbours.remove(neighbours.size() - 1);
+								// might yield better performance as the list does not have
+								// to be shifted
+							}
+							
+							jobService.pushJob(new JobBFS(m_vertexBatchCount, batch));
+							break;
+						} else {
+							for (int i = 0; i < batch.length; i++) {
+								batch[i] = neighbours.get(neighbours.size() - 1);
+								neighbours.remove(neighbours.size() - 1);
+								// might yield better performance as the list does not have
+								// to be shifted
+							}
+							
+							jobService.pushJob(new JobBFS(m_vertexBatchCount, batch));
+						}
 					}
 				}
 				else

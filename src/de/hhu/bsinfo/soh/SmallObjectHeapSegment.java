@@ -99,7 +99,7 @@ public final class SmallObjectHeapSegment {
 	 * @return the status
 	 */
 	public Status getStatus() {
-		return m_status.copy();
+		return m_status;
 	}
 
 	/**
@@ -1420,26 +1420,6 @@ public final class SmallObjectHeapSegment {
 		 */
 		public long[] getBlocks() {
 			return m_blocks;
-		}
-
-		// Methods
-		/**
-		 * Creates a copy
-		 * @return the copy
-		 */
-		private Status copy() {
-			Status ret;
-
-			ret = new Status(0);
-			ret.m_freeSpace = m_freeSpace;
-			ret.m_freeBlocks = m_freeBlocks;
-			ret.m_freeSmall64ByteBlocks = m_freeSmall64ByteBlocks;
-
-			ret.m_sizes = m_freeBlockListSizes;
-			// ret.m_blocks = new long[0];
-			// ret.m_blocks = getBlocks(p_pointerOffset);
-
-			return ret;
 		}
 
 		// /**

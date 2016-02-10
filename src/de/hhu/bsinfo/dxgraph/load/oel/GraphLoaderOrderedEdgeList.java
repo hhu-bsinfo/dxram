@@ -1,0 +1,142 @@
+package de.hhu.bsinfo.dxgraph.load.oel;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.load.GraphLoader;
+
+// this class can handle split files for multiple nodes, but
+// will only load them on a single/the current node
+public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
+
+	protected int m_vertexBatchSize = 100;
+	
+	public GraphLoaderOrderedEdgeList()
+	{
+		
+	}
+	
+	public void setVertexBatchSize(final int p_batchSize)
+	{
+		m_vertexBatchSize = p_batchSize;
+	}
+	
+
+
+	// returns edge list sorted by nodeIdx and localIdx
+	protected List<OrderedEdgeList> setupEdgeLists(final String p_path) {
+		List<OrderedEdgeList> list = new ArrayList<OrderedEdgeList>();
+		
+		// check if directory
+		File tmpFile = new File(p_path);
+		if (!tmpFile.exists())
+		{
+			m_loggerService.error(getClass(), "Cannot setup edge lists, path does not exist: " + p_path);
+			return list;
+		}
+		
+		if (!tmpFile.isDirectory())
+		{
+			m_loggerService.error(getClass(), "Cannot setup edge lists, path is not a directory: " + p_path);
+			return list;
+		}
+		
+		// iterate files in dir, filter by pattern
+		File[] files = tmpFile.listFiles(new FilenameFilter(){
+			@Override
+			public boolean accept(File dir, String name) 
+			{
+				String[] tokens = name.split("\\.");
+				
+				// looking for format xxx.oel or xxx.oel.<nidx>
+				if (tokens.length > 1) {
+					if (tokens[1].equals("oel")) {
+						return true;
+					}
+				} 
+				
+				return false;
+			}
+		});
+		
+		// add filtered files
+		for (File file : files) {
+			list.add(new OrderedEdgeListFile(file.getAbsolutePath()));
+		}
+		
+		// make sure our list is sorted by nodeIdx/localIdx
+		list.sort(new Comparator<OrderedEdgeList>(){
+			@Override
+			public int compare(final OrderedEdgeList p_lhs, final OrderedEdgeList p_rhs) {
+				if (p_lhs.getNodeIndex() < p_rhs.getNodeIndex()) {
+					return -1;
+				} else if (p_lhs.getNodeIndex() > p_rhs.getNodeIndex()) {
+					return 1;
+				} else {
+					return 0;
+				}
+		}});
+			
+		return list;
+	}
+	
+	protected boolean load(final OrderedEdgeList p_orderedEdgeList)
+	{
+		// loading all data of a graph on a single node
+		// -> we do not have to re-base the neighbor lists of each vertex
+		
+		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
+		int readCount = 0;
+		boolean loop = true;
+		while (loop)
+		{
+			while (readCount < vertexBuffer.length)
+			{
+				Vertex vertex = p_orderedEdgeList.readVertex();
+				if (vertex == null) {
+					break;
+				}
+				
+				// no re-basing of neighbors needed
+			
+				vertexBuffer[readCount] = vertex;
+				readCount++;
+			}
+			
+			// create an array which is filled without null padding at the end
+			// if necessary 
+			if (readCount != vertexBuffer.length) {
+				Vertex[] tmp = new Vertex[readCount];
+				for (int i = 0; i < readCount; i++) {
+					tmp[i] = vertexBuffer[i];
+				}
+				
+				vertexBuffer = tmp;
+				loop = false;
+			}
+			
+			if (m_chunkService.create(vertexBuffer) != vertexBuffer.length)
+			{
+				m_loggerService.error(getClass(), "Creating chunks for vertices failed.");
+				return false;
+			}
+			
+			if (m_chunkService.put(vertexBuffer) != vertexBuffer.length)
+			{
+				m_loggerService.error(getClass(), "Putting vertex data for chunks failed.");
+				return false;
+			}
+			
+			for (Vertex v : vertexBuffer)
+			{
+				System.out.println(v);
+			}
+		}
+		
+		return true;
+	}
+}
