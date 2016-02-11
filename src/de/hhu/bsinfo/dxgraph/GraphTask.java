@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.dxgraph;
 
-import java.util.List;
-
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
@@ -32,5 +30,6 @@ public abstract class GraphTask
 		m_bootService = p_dxram.getService(BootService.class);
 		m_chunkService = p_dxram.getService(ChunkService.class);
 		m_jobService = p_dxram.getService(JobService.class);
+		m_networkService = p_dxram.getService(NetworkService.class);
 	}	
 }

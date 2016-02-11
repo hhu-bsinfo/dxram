@@ -6,9 +6,11 @@ import java.util.concurrent.locks.Lock;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.GraphLoaderOrderedEdgeListMessages;
+import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderMasterBroadcastMessage;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderMasterSyncGraphIndexMessage;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderSlaveSignOnMessage;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 import de.hhu.bsinfo.utils.locks.SpinLock;
@@ -23,8 +25,13 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 
 	private boolean m_masterLoader = false;
 	private List<OrderedEdgeList> m_localEdgeLists = null;
-	private GraphIndex m_graphIndex = new GraphIndex();
+	private volatile GraphIndex m_graphIndex = new GraphIndex();
+	
+	// for master only
 	private Lock m_signOnMutex = new SpinLock();
+	
+	// for slaves only
+	private volatile short m_masterNodeID = NodeID.INVALID_ID;
 	
 	public GraphLoaderOrderedEdgeListMultiNode()
 	{
@@ -39,6 +46,15 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 	@Override
 	public boolean load(final String p_path, final int p_numNodes) 
 	{		
+		// network setup
+		m_networkService.registerMessageType(GraphLoaderOrderedEdgeListMessages.TYPE, GraphLoaderOrderedEdgeListMessages.SUBTYPE_SLAVE_SIGN_ON, LoaderSlaveSignOnMessage.class);
+		m_networkService.registerMessageType(GraphLoaderOrderedEdgeListMessages.TYPE, GraphLoaderOrderedEdgeListMessages.SUBTYPE_MASTER_SYNC_GRAPH_INDEX, LoaderMasterSyncGraphIndexMessage.class);
+		m_networkService.registerMessageType(GraphLoaderOrderedEdgeListMessages.TYPE, GraphLoaderOrderedEdgeListMessages.SUB_TYPE_MASTER_BROADCAST, LoaderMasterBroadcastMessage.class);
+		
+		m_networkService.registerReceiver(LoaderSlaveSignOnMessage.class, this);
+		m_networkService.registerReceiver(LoaderMasterSyncGraphIndexMessage.class, this);
+		m_networkService.registerReceiver(LoaderMasterBroadcastMessage.class, this);
+		
 		m_localEdgeLists = setupEdgeLists(p_path);
 		
 		if (m_localEdgeLists.size() != 1) {
@@ -56,11 +72,28 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 	
 	private boolean master(final OrderedEdgeList p_localEdgeLists, final int p_numSlaves)
 	{
+		m_loggerService.info(getClass(), "Running as master, waiting for " + p_numSlaves + " slaves to sign on...");
+		
 		// wait until all slaves signed on
 		while (m_graphIndex.getIndex().size() < p_numSlaves)
 		{
-			Thread.yield();
+			// broadcast to all peers, which are potential slaves
+			for (short peer : m_bootService.getAvailablePeerNodeIDs())
+			{
+				LoaderMasterBroadcastMessage message = new LoaderMasterBroadcastMessage(peer);
+				NetworkErrorCodes error = m_networkService.sendMessage(message);
+				if (error != NetworkErrorCodes.SUCCESS) {
+					m_loggerService.error(getClass(), "Sending broadcast message to peer " + peer + " failed: " + error);
+				} 
+			}
+
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+			}
 		}
+		
+		m_loggerService.info(getClass(), "All slaves signed on, distributing graph index...");
 		
 		// add master as well to complete the index
 		GraphIndex.Entry localEntry = new GraphIndex.Entry();
@@ -83,14 +116,51 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 			}
 		}
 		
-		return load(p_localEdgeLists);
+		m_loggerService.info(getClass(), "Starting local loading of graph...");
+		
+		return load(p_localEdgeLists, 0);
 	}
 	
 	private boolean slave(final OrderedEdgeList p_localEdgeLists)
 	{
+		m_loggerService.info(getClass(), "Running as slave, waiting for master broadcast...");
 		
+		// create index entry for sign on
+		GraphIndex.Entry localEntry = new GraphIndex.Entry();
+		localEntry.m_nodeIndex = p_localEdgeLists.getNodeIndex();
+		localEntry.m_vertexCount = p_localEdgeLists.getTotalVertexCount();
+		localEntry.m_nodeID = m_bootService.getNodeID();
 		
-		return load(p_localEdgeLists);
+		// invalidate for waiting later
+		m_graphIndex = null;
+		
+		// wait for master's broadcast message
+		while (m_masterNodeID == NodeID.INVALID_ID) 
+		{
+			Thread.yield();
+		}
+		
+		m_loggerService.info(getClass(), "Master broadcast received, signing on to " + m_masterNodeID + "...");
+		
+		// send sign on to master
+		LoaderSlaveSignOnMessage message = new LoaderSlaveSignOnMessage(m_masterNodeID, localEntry);
+		NetworkErrorCodes error = m_networkService.sendMessage(message);
+		if (error != NetworkErrorCodes.SUCCESS) {
+			m_loggerService.error(getClass(), "Sending sign on to " + m_masterNodeID+ " failed: " + error);
+			return false;
+		} 
+		
+		m_loggerService.info(getClass(), "Waiting to receive graph index from master...");
+		
+		// wait to receive full graph index
+		while (m_graphIndex == null)
+		{
+			Thread.yield();
+		}
+		
+		m_loggerService.info(getClass(), "Sign on successful, got graph index, starting local load...");
+		
+		return load(p_localEdgeLists, 0);
 	}
 	
 	
@@ -260,6 +330,9 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 				case GraphLoaderOrderedEdgeListMessages.SUBTYPE_MASTER_SYNC_GRAPH_INDEX:
 					incomingMasterSyncGraphIndex((LoaderMasterSyncGraphIndexMessage) p_message);
 					break;
+				case GraphLoaderOrderedEdgeListMessages.SUB_TYPE_MASTER_BROADCAST:
+					incomingMasterBroadcast((LoaderMasterBroadcastMessage) p_message);
+					break;
 				default:
 					break;
 				}
@@ -288,5 +361,15 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 	private void incomingMasterSyncGraphIndex(final LoaderMasterSyncGraphIndexMessage p_message) 
 	{
 		m_graphIndex = p_message.getIndex();
+	}
+	
+	/**
+	 * Handles an incoming LoaderMasterSyncGraphIndex
+	 * @param p_message
+	 *            the incoming message
+	 */
+	private void incomingMasterBroadcast(final LoaderMasterBroadcastMessage p_message) 
+	{
+		m_masterNodeID = p_message.getSource();
 	}
 }

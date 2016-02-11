@@ -105,17 +105,14 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 					// spawn further jobs for neighbours
 					List<Long> neighbours = v.getNeighbours();
 					int neighboursLeft = neighbours.size();
-					long[] batch = new long[m_vertexBatchCount];
 					while (true)
 					{
-						
 						if (neighboursLeft <= m_vertexBatchCount) {
 							// use an array that fits
-							batch = new long[neighboursLeft];
+							long[] batch = new long[neighboursLeft];
 							
 							for (int i = 0; i < neighboursLeft; i++) {
-								batch[i] = neighbours.get(neighbours.size() - 1);
-								neighbours.remove(neighbours.size() - 1);
+								batch[i] = neighbours.remove(neighbours.size() - 1);
 								// might yield better performance as the list does not have
 								// to be shifted
 							}
@@ -123,12 +120,13 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 							jobService.pushJob(new JobBFS(m_vertexBatchCount, batch));
 							break;
 						} else {
+							long[] batch = new long[m_vertexBatchCount];
 							for (int i = 0; i < batch.length; i++) {
-								batch[i] = neighbours.get(neighbours.size() - 1);
-								neighbours.remove(neighbours.size() - 1);
+								batch[i] = neighbours.remove(neighbours.size() - 1);
 								// might yield better performance as the list does not have
 								// to be shifted
 							}
+							neighboursLeft -= batch.length;
 							
 							jobService.pushJob(new JobBFS(m_vertexBatchCount, batch));
 						}

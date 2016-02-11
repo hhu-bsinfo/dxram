@@ -8,6 +8,7 @@ import java.util.List;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.GraphLoader;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 
 // this class can handle split files for multiple nodes, but
 // will only load them on a single/the current node
@@ -84,7 +85,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		return list;
 	}
 	
-	protected boolean load(final OrderedEdgeList p_orderedEdgeList)
+	protected boolean load(final OrderedEdgeList p_orderedEdgeList, final long p_vertexIDOffset)
 	{
 		// loading all data of a graph on a single node
 		// -> we do not have to re-base the neighbor lists of each vertex
@@ -101,7 +102,12 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 					break;
 				}
 				
-				// no re-basing of neighbors needed
+				// re-basing of neighbors needed for multiple files
+				// offset tells us how much to add
+				// also add current node ID
+				for (int i = 0; i < vertex.getNeighbours().size(); i++) {
+					vertex.getNeighbours().set(i, ChunkID.getChunkID(m_bootService.getNodeID(), p_vertexIDOffset + vertex.getNeighbours().get(i)));
+				}
 			
 				vertexBuffer[readCount] = vertex;
 				readCount++;

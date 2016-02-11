@@ -16,7 +16,8 @@ public class TestPipeline1 extends GraphTaskPipeline {
 		loader.setPath("graph");
 		pushTask(loader);
 		
-		GraphAlgorithm algorithm = new GraphAlgorithmBFS();
+		GraphAlgorithmBFS algorithm = new GraphAlgorithmBFS();
+		algorithm.setBatchCountPerJob(1);
 		algorithm.setEntryNodes(ChunkID.getChunkID(m_bootService.getNodeID(), 1));
 		pushTask(algorithm);
 		

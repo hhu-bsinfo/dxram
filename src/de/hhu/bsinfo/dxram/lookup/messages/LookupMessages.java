@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 public class LookupMessages {
 	// Constants
-	public static final byte TYPE = 20;
+	public static final byte TYPE = 5;
 	public static final byte SUBTYPE_JOIN_REQUEST = 1;
 	public static final byte SUBTYPE_JOIN_RESPONSE = 2;
 	public static final byte SUBTYPE_INIT_RANGE_REQUEST = 3;

@@ -14,7 +14,7 @@ import de.hhu.bsinfo.utils.main.Main;
 
 public class DXGraphPipeline extends DXRAMMain {
 
-	public static final Pair<String, String> ARG_PIPELINE = new Pair<String, String>("Pipeline", NullPipeline.class.getName());
+	public static final Pair<String, String> ARG_PIPELINE = new Pair<String, String>("pipeline", NullPipeline.class.getName());
 	
 	public static void main(final String[] args) {
 		Main main = new DXGraphPipeline();
@@ -38,11 +38,6 @@ public class DXGraphPipeline extends DXRAMMain {
 	@Override
 	protected int mainApplication(ArgumentList p_arguments) {
 		System.out.println("DXGraph Peer started");
-		
-		// Wait a moment
-		try {
-			Thread.sleep(3000);
-		} catch (final InterruptedException e) {}
 
 		// create pipeline using reflection
 		String pipelineName = p_arguments.getArgument(ARG_PIPELINE);

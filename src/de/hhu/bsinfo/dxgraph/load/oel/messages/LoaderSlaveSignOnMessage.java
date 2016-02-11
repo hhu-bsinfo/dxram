@@ -54,6 +54,7 @@ public class LoaderSlaveSignOnMessage extends AbstractMessage {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+		m_indexEntry = new GraphLoaderOrderedEdgeListMultiNode.GraphIndex.Entry();
 		importer.importObject(m_indexEntry);
 	}
 

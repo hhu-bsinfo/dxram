@@ -13,14 +13,23 @@ public abstract class TestPipeline2 extends GraphTaskPipeline {
 	@Override
 	public boolean setup() {
 		GraphLoaderOrderedEdgeListMultiNode loader = new GraphLoaderOrderedEdgeListMultiNode();
-		loader.setPath("graph");
+		if (isMaster()) {
+			loader.setPath("graph/master");
+		} else {
+			loader.setPath("graph/slave");
+		}
 		loader.setNumNodes(2);
 		loader.setMasterLoader(isMaster());
 		pushTask(loader);
 		
-		GraphAlgorithm algorithm = new GraphAlgorithmBFS();
-		algorithm.setEntryNodes(ChunkID.getChunkID(m_bootService.getNodeID(), 1));
-		pushTask(algorithm);
+		// TODO different entry nodes for master/slaves? -> use node ID for that?
+		// only have master run the computation for now
+		// TODO have GraphAlgorithmBFS which runs job remotely if the vertex is not on the current node
+		if (isMaster()) {
+			GraphAlgorithm algorithm = new GraphAlgorithmBFS();
+			algorithm.setEntryNodes(ChunkID.getChunkID(m_bootService.getNodeID(), 1));
+			pushTask(algorithm);
+		}
 		
 		return true;
 	}

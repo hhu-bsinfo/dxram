@@ -14,8 +14,11 @@ public class GraphLoaderOrderedEdgeListLocal extends GraphLoaderOrderedEdgeList 
 		// => we can iterate the list and start separate jobs
 		// for every list
 		
+		// add offset with each file we processed so we can concat multiple files
+		long vertexIDOffset = 0;
 		for (OrderedEdgeList edgeList : edgeLists) {	
-			load(edgeList);
+			load(edgeList, vertexIDOffset);
+			vertexIDOffset += edgeList.getTotalVertexCount();
 		}
 		
 		m_jobService.waitForLocalJobsToFinish();

@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class ChunkMessages {	
-	public static final byte TYPE = 10;
+	public static final byte TYPE = 1;
 	public static final byte SUBTYPE_GET_REQUEST = 1;
 	public static final byte SUBTYPE_GET_RESPONSE = 2;
 	public static final byte SUBTYPE_PUT_REQUEST = 3;

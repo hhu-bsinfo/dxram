@@ -53,6 +53,7 @@ public class LoaderMasterSyncGraphIndexMessage extends AbstractMessage {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+		m_index = new GraphLoaderOrderedEdgeListMultiNode.GraphIndex();
 		importer.importObject(m_index);
 	}
 
