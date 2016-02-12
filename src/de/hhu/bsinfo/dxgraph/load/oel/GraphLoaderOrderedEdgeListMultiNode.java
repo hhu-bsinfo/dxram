@@ -33,13 +33,9 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 	// for slaves only
 	private volatile short m_masterNodeID = NodeID.INVALID_ID;
 	
-	public GraphLoaderOrderedEdgeListMultiNode()
+	public GraphLoaderOrderedEdgeListMultiNode(final String p_path, final int p_numNodes, final int p_vertexBatchSize, final boolean p_masterLoader)
 	{
-		
-	}
-	
-	public void setMasterLoader(final boolean p_masterLoader)
-	{
+		super(p_path, p_numNodes, p_vertexBatchSize);
 		m_masterLoader = p_masterLoader;
 	}
 	

@@ -16,17 +16,11 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 
 	protected int m_vertexBatchSize = 100;
 	
-	public GraphLoaderOrderedEdgeList()
+	public GraphLoaderOrderedEdgeList(final String p_path, final int p_numNodes, final int p_vertexBatchSize)
 	{
-		
+		super(p_path, p_numNodes);
+		m_vertexBatchSize = p_vertexBatchSize;
 	}
-	
-	public void setVertexBatchSize(final int p_batchSize)
-	{
-		m_vertexBatchSize = p_batchSize;
-	}
-	
-
 
 	// returns edge list sorted by nodeIdx and localIdx
 	protected List<OrderedEdgeList> setupEdgeLists(final String p_path) {

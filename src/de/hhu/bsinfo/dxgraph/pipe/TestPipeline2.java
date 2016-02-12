@@ -1,8 +1,9 @@
 package de.hhu.bsinfo.dxgraph.pipe;
 
 import de.hhu.bsinfo.dxgraph.GraphTaskPipeline;
-import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithm;
 import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS;
+import de.hhu.bsinfo.dxgraph.coord.SyncBarrierMaster;
+import de.hhu.bsinfo.dxgraph.coord.SyncBarrierSlave;
 import de.hhu.bsinfo.dxgraph.load.oel.GraphLoaderOrderedEdgeListMultiNode;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 
@@ -12,23 +13,28 @@ public abstract class TestPipeline2 extends GraphTaskPipeline {
 	
 	@Override
 	public boolean setup() {
-		GraphLoaderOrderedEdgeListMultiNode loader = new GraphLoaderOrderedEdgeListMultiNode();
+		final int numNodes = 2;
+		final int numSlaves = numNodes - 1;
+		
+		recordTaskStatistics(true);
+		
 		if (isMaster()) {
-			loader.setPath("graph/master");
+			pushTask(new GraphLoaderOrderedEdgeListMultiNode("graph/master", numNodes, 100, false));
 		} else {
-			loader.setPath("graph/slave");
+			pushTask(new GraphLoaderOrderedEdgeListMultiNode("graph/slave", numNodes, 100, false));
+		}		
+		
+		if (isMaster()) {
+			pushTask(new SyncBarrierMaster(numSlaves, 3000));
+		} else {
+			pushTask(new SyncBarrierSlave());
 		}
-		loader.setNumNodes(2);
-		loader.setMasterLoader(isMaster());
-		pushTask(loader);
 		
 		// TODO different entry nodes for master/slaves? -> use node ID for that?
 		// only have master run the computation for now
 		// TODO have GraphAlgorithmBFS which runs job remotely if the vertex is not on the current node
 		if (isMaster()) {
-			GraphAlgorithm algorithm = new GraphAlgorithmBFS();
-			algorithm.setEntryNodes(ChunkID.getChunkID(m_bootService.getNodeID(), 1));
-			pushTask(algorithm);
+			pushTask(new GraphAlgorithmBFS(100, ChunkID.getChunkID(m_bootService.getNodeID(), 1)));
 		}
 		
 		return true;

@@ -1,7 +1,9 @@
 package de.hhu.bsinfo.dxgraph.coord;
 
 import de.hhu.bsinfo.dxgraph.coord.messages.CoordinatorMessages;
-import de.hhu.bsinfo.dxgraph.coord.messages.MasterSlaveSyncBarrierMessage;
+import de.hhu.bsinfo.dxgraph.coord.messages.MasterSyncBarrierBroadcastMessage;
+import de.hhu.bsinfo.dxgraph.coord.messages.MasterSyncBarrierReleaseMessage;
+import de.hhu.bsinfo.dxgraph.coord.messages.SlaveSyncBarrierSignOnMessage;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.GraphLoaderOrderedEdgeListMessages;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeID;
@@ -10,41 +12,46 @@ import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
 public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 
-	private short m_masterNodeID = NodeID.INVALID_ID;
+	private volatile short m_masterNodeID = NodeID.INVALID_ID;
+	private volatile boolean m_masterBarrierReleased = false;
+	
+	public SyncBarrierSlave() {
 
-	public void setMasterNodeID(final short p_nodeID) {
-		m_masterNodeID = p_nodeID;
 	}
 	
 	@Override
 	protected boolean setup() {
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SLAVE_SYNC_BARRIER, MasterSlaveSyncBarrierMessage.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
 		
-		m_networkService.registerReceiver(MasterSlaveSyncBarrierMessage.class, this);
+		m_networkService.registerReceiver(MasterSyncBarrierBroadcastMessage.class, this);
+		m_networkService.registerReceiver(MasterSyncBarrierReleaseMessage.class, this);
 		
 		return true;
 	}
 
 	@Override
 	protected boolean coordinate() {
-		m_loggerService.info(getClass(), "Synchronizing with master " + m_masterNodeID + "...");
 		
-		// TODO this needs a request response model, message not sufficient
-		// if slaves are faster than the master and they send the message, it will
-		// be received by the network handler, but not processed as there is no listener registered
-		// -> send sync request from slave to master
-		// if master is too slow or not ready yet, he can't respond -> timeout on slave
-		// slave has to retry after X seconds
-		// go message from master when all slaves have arrived is ok, does not have to be a request/respond
+		m_loggerService.info(getClass(), "Waiting to receive master broadcast...");
 		
-		while (true)
+		m_masterBarrierReleased = false;
+		
+		// wait until we got a broadcast by the master
+		while (m_masterNodeID == NodeID.INVALID_ID)
 		{
-			MasterSlaveSyncBarrierMessage message = new MasterSlaveSyncBarrierMessage(slavePeerID);
-			NetworkErrorCodes error = m_networkService.sendMessage(message);
-			if (error != NetworkErrorCodes.SUCCESS) {
-				m_loggerService.error(getClass(), "Sending sync to " + slavePeerID + " failed: " + error);
-			} 
+			Thread.yield();
 		}
+		
+		m_loggerService.info(getClass(), "Waiting for master " + m_masterNodeID + " to release barrier...");
+		
+		while (!m_masterBarrierReleased)
+		{
+			Thread.yield();
+		}
+
+		m_loggerService.info(getClass(), "Master barrier released.");
 		
 		return true;
 	}
@@ -54,8 +61,10 @@ public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == GraphLoaderOrderedEdgeListMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case CoordinatorMessages.SUBTYPE_MASTER_SLAVE_SYNC_BARRIER:
-					incomingMasterSlaveSyncBarrier((MasterSlaveSyncBarrierMessage) p_message);
+				case CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST:
+					incomingMasterSyncBarrierBroadcast((MasterSyncBarrierBroadcastMessage) p_message);
+				case CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE:
+					incomingMasterSyncBarrierRelease((MasterSyncBarrierReleaseMessage) p_message);
 					break;
 				default:
 					break;
@@ -64,8 +73,13 @@ public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 		}
 	}
 	
-	private void incomingMasterSlaveSyncBarrier(final MasterSlaveSyncBarrierMessage p_message) {
-		
+	private void incomingMasterSyncBarrierBroadcast(final MasterSyncBarrierBroadcastMessage p_message) {
+		m_loggerService.debug(getClass(), "Got master broadcast from " + p_message.getSource());
+		m_masterNodeID = p_message.getSource();
+	}
+	
+	private void incomingMasterSyncBarrierRelease(final MasterSyncBarrierReleaseMessage p_message) {
+		m_masterBarrierReleased = true;
 	}
 
 }

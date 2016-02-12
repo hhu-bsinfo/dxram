@@ -6,16 +6,11 @@ public abstract class GraphAlgorithm extends GraphTask {
 
 	private long[] m_entryNodes = new long[0];
 	
-	public GraphAlgorithm()
-	{
-		
-	}
-	
-	public void setEntryNodes(final long... p_entryNodes)
+	public GraphAlgorithm(final long... p_entryNodes)
 	{
 		m_entryNodes = p_entryNodes;
 	}
-	
+
 	@Override
 	public boolean execute() {
 		m_loggerService.debug(getClass(), "Executing algorithm with " + m_entryNodes.length + " entry nodes.");

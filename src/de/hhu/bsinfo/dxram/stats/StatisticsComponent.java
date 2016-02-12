@@ -123,6 +123,16 @@ public class StatisticsComponent extends DXRAMComponent {
 		return m_recorders;
 	}
 	
+	public StatisticsRecorder getRecorder(final Class<?> p_class) {
+		for (StatisticsRecorder recorder : m_recorders) {
+			if (p_class.getSimpleName().equals(recorder.getName())) {
+				return recorder;
+			}
+		}
+		
+		return null;
+	}
+	
 	@Override
 	protected void registerDefaultSettingsComponent(Settings p_settings) {
 		p_settings.setDefaultValue(StatisticsConfigurationValues.Component.RECORD);

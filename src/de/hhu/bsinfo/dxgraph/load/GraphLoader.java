@@ -9,18 +9,9 @@ public abstract class GraphLoader extends GraphTask
 	private String m_path = new String("");
 	private int m_numNodes = 1;
 	
-	public GraphLoader()
-	{
-		
-	}
-	
-	public void setPath(final String p_path)
+	public GraphLoader(final String p_path, final int p_numNodes)
 	{
 		m_path = p_path;
-	}
-	
-	public void setNumNodes(final int p_numNodes)
-	{
 		m_numNodes = p_numNodes;
 	}
 	

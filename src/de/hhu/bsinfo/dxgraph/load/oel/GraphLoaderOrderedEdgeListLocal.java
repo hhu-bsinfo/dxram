@@ -4,6 +4,11 @@ import java.util.List;
 
 public class GraphLoaderOrderedEdgeListLocal extends GraphLoaderOrderedEdgeList {
 
+	public GraphLoaderOrderedEdgeListLocal(final String p_path, final int p_numNodes, final int p_vertexBatchSize)
+	{
+		super(p_path, p_numNodes, p_vertexBatchSize);
+	}
+	
 	@Override
 	public boolean load(final String p_path, final int p_numNodes) 
 	{		

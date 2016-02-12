@@ -12,14 +12,10 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 
 	private int m_batchCountPerJob = 1;
 	
-	public GraphAlgorithmBFS()
+	public GraphAlgorithmBFS(final int p_batchCountPerJob, final long... p_entryNodes)
 	{
-		
-	}
-	
-	public void setBatchCountPerJob(final int p_batchCount)
-	{
-		m_batchCountPerJob = p_batchCount;
+		super(p_entryNodes);
+		m_batchCountPerJob = p_batchCountPerJob;
 	}
 	
 	@Override

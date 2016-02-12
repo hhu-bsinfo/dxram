@@ -25,6 +25,10 @@ public class StatisticsRecorder
 		return m_categoryId;
 	}
 	
+	public String getName() {
+		return m_categoryName;
+	}
+	
 	public boolean isEnabled() {
 		return m_enabled;
 	}

@@ -12,14 +12,10 @@ public class TestPipeline1 extends GraphTaskPipeline {
 	@Override
 	public boolean setup() 
 	{
-		GraphLoader loader = new GraphLoaderOrderedEdgeListLocal();
-		loader.setPath("graph");
-		pushTask(loader);
+		recordTaskStatistics(true);
 		
-		GraphAlgorithmBFS algorithm = new GraphAlgorithmBFS();
-		algorithm.setBatchCountPerJob(1);
-		algorithm.setEntryNodes(ChunkID.getChunkID(m_bootService.getNodeID(), 1));
-		pushTask(algorithm);
+		pushTask(new GraphLoaderOrderedEdgeListLocal("graph", 1, 100));
+		pushTask(new GraphAlgorithmBFS(1, ChunkID.getChunkID(m_bootService.getNodeID(), 1)));
 		
 		return true;
 	}
