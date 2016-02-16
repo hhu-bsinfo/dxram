@@ -34,6 +34,18 @@ public class Chunk implements DataStructure
 		m_chunkID = p_id;
 		m_data = ByteBuffer.allocate(p_bufferSize);
 	}
+	
+	/**
+	 * Constructor
+	 * Create the chunk with an external buffer.
+	 * @param p_id ID the chunk is assigned to.
+	 * @param p_buffer External buffer containing the data for the chunk. Be careful
+	 * 				with shared references of the ByteBuffer object.
+	 */
+	public Chunk(final long p_id, final ByteBuffer p_buffer) {
+		m_chunkID = p_id;
+		m_data = p_buffer;
+	}
 
 	/**
 	 * Gets the underlying byte buffer with the stored payload.

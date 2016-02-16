@@ -64,6 +64,7 @@ public class Vertex implements DataStructure
 		int numNeighbours;
 		
 		m_userData = p_importer.readInt();
+		m_neighbours.clear();
 		numNeighbours = p_importer.readInt();
 		for (int i = 0; i < numNeighbours; i++)
 			m_neighbours.add(p_importer.readLong());

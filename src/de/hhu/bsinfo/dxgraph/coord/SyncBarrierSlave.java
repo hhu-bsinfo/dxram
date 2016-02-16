@@ -4,7 +4,6 @@ import de.hhu.bsinfo.dxgraph.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxgraph.coord.messages.MasterSyncBarrierBroadcastMessage;
 import de.hhu.bsinfo.dxgraph.coord.messages.MasterSyncBarrierReleaseMessage;
 import de.hhu.bsinfo.dxgraph.coord.messages.SlaveSyncBarrierSignOnMessage;
-import de.hhu.bsinfo.dxgraph.load.oel.messages.GraphLoaderOrderedEdgeListMessages;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
@@ -12,6 +11,8 @@ import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 
 public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 
+	private static boolean ms_setupOnceDone = false;
+	
 	private volatile short m_masterNodeID = NodeID.INVALID_ID;
 	private volatile boolean m_masterBarrierReleased = false;
 	
@@ -21,9 +22,14 @@ public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 	
 	@Override
 	protected boolean setup() {
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
+		// register network messages once
+		if (!ms_setupOnceDone)
+		{
+			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
+			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
+			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
+			ms_setupOnceDone = true;
+		}
 		
 		m_networkService.registerReceiver(MasterSyncBarrierBroadcastMessage.class, this);
 		m_networkService.registerReceiver(MasterSyncBarrierReleaseMessage.class, this);
@@ -59,10 +65,11 @@ public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 	@Override
 	public void onIncomingMessage(AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == GraphLoaderOrderedEdgeListMessages.TYPE) {
+			if (p_message.getType() == CoordinatorMessages.TYPE) {
 				switch (p_message.getSubtype()) {
 				case CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST:
 					incomingMasterSyncBarrierBroadcast((MasterSyncBarrierBroadcastMessage) p_message);
+					break;
 				case CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE:
 					incomingMasterSyncBarrierRelease((MasterSyncBarrierReleaseMessage) p_message);
 					break;
@@ -76,6 +83,13 @@ public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 	private void incomingMasterSyncBarrierBroadcast(final MasterSyncBarrierBroadcastMessage p_message) {
 		m_loggerService.debug(getClass(), "Got master broadcast from " + p_message.getSource());
 		m_masterNodeID = p_message.getSource();
+		
+		// reply with sign on
+		SlaveSyncBarrierSignOnMessage message = new SlaveSyncBarrierSignOnMessage(m_masterNodeID);
+		NetworkErrorCodes error = m_networkService.sendMessage(message);
+		if (error != NetworkErrorCodes.SUCCESS) {
+			m_loggerService.error(getClass(), "Sending sign on to " + m_masterNodeID + " failed: " + error);
+		} 
 	}
 	
 	private void incomingMasterSyncBarrierRelease(final MasterSyncBarrierReleaseMessage p_message) {

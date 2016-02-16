@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram;
 
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -19,6 +20,7 @@ public class DXRAMCompat
 	private NameserviceService m_nameserviceService = null;
 	private LockService m_lockService = null;
 	private LocalMonitorService m_localMonitorService = null;
+	private BootService m_bootService = null;
 	
 	/**
 	 * Exception for failed DXRAM accesses
@@ -64,6 +66,15 @@ public class DXRAMCompat
 		m_nameserviceService = m_dxram.getService(NameserviceService.class);
 		m_lockService = m_dxram.getService(LockService.class);
 		m_localMonitorService = m_dxram.getService(LocalMonitorService.class);
+	}
+	
+	/**
+	 * Get the node ID of the current node on.
+	 * @return Local node ID.
+	 */
+	public short getNodeID()
+	{
+		return m_bootService.getNodeID();
 	}
 
 	/**

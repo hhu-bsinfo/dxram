@@ -127,7 +127,7 @@ public final class CIDTable {
 	public long get(final long p_chunkID) {
 		long ret;
 
-		ret = getEntry(ChunkID.getLocalID(p_chunkID), m_addressTableDirectory, LID_TABLE_LEVELS);
+		ret = getEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS);
 
 		return ret;
 	}
@@ -142,7 +142,7 @@ public final class CIDTable {
 	 *             If accessing memory to write the entry failed
 	 */
 	public void set(final long p_chunkID, final long p_addressChunk) {
-		setEntry(ChunkID.getLocalID(p_chunkID), p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
+		setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
 	}
 
 	/**
@@ -159,7 +159,7 @@ public final class CIDTable {
 	 */
 	public long delete(final long p_chunkID, final boolean p_flagZombie) {
 		long ret;
-		ret = deleteEntry(ChunkID.getLocalID(p_chunkID), m_addressTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
+		ret = deleteEntry(p_chunkID, m_addressTableDirectory, LID_TABLE_LEVELS, p_flagZombie);
 		return ret;
 	}
 

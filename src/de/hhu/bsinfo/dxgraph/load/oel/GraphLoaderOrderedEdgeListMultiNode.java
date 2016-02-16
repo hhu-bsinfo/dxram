@@ -1,6 +1,8 @@
 package de.hhu.bsinfo.dxgraph.load.oel;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
@@ -9,6 +11,7 @@ import de.hhu.bsinfo.dxgraph.load.oel.messages.GraphLoaderOrderedEdgeListMessage
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderMasterBroadcastMessage;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderMasterSyncGraphIndexMessage;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderSlaveSignOnMessage;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
@@ -98,6 +101,8 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 		localEntry.m_nodeID = m_bootService.getNodeID();
 		
 		m_graphIndex.getIndex().add(localEntry);
+		// ensure sorting for correct rebasing
+		m_graphIndex.sort();
 		
 		// now sync the index to all slaves
 		for (GraphIndex.Entry entry : m_graphIndex.getIndex()) {
@@ -114,7 +119,7 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 		
 		m_loggerService.info(getClass(), "Starting local loading of graph...");
 		
-		return load(p_localEdgeLists, 0);
+		return loadWithGraphIndex(p_localEdgeLists);
 	}
 	
 	private boolean slave(final OrderedEdgeList p_localEdgeLists)
@@ -156,7 +161,7 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 		
 		m_loggerService.info(getClass(), "Sign on successful, got graph index, starting local load...");
 		
-		return load(p_localEdgeLists, 0);
+		return loadWithGraphIndex(p_localEdgeLists);
 	}
 	
 	
@@ -180,7 +185,7 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 				// re-base neighbours
 				List<Long> neighbours = vertex.getNeighbours();
 				for (int i = 0; i < neighbours.size(); i++) {
-					neighbours.set(i, m_graphIndex.rebaseNeighborLocalID(neighbours.get(i), p_orderedEdgeList.getNodeIndex()));
+					neighbours.set(i, m_graphIndex.rebaseNeighborID(neighbours.get(i)));
 				}
 			
 				vertexBuffer[readCount] = vertex;
@@ -215,6 +220,19 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 			{
 				System.out.println(v);
 			}
+			
+			if (m_chunkService.get(vertexBuffer) != vertexBuffer.length)
+			{
+				m_loggerService.error(getClass(), "Getting vertex data for chunks failed.");
+				return false;
+			}
+			
+			System.out.println("-----------------------");
+			
+			for (Vertex v : vertexBuffer)
+			{
+				System.out.println(v);
+			}
 		}
 		
 		return true;
@@ -229,24 +247,40 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 			
 		}
 		
+		public void sort() {
+			// sort list by node index to ensure correct rebasing for neighbors
+			Collections.sort(m_index, new Comparator<Entry>() {
+				@Override
+				public int compare(Entry o1, Entry o2) {
+					if (o1.m_nodeIndex < o2.m_nodeIndex) { 
+						return -1;
+					} else if (o1.m_nodeIndex > o2.m_nodeIndex) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			});
+		}
+		
 		public List<Entry> getIndex() {
 			return m_index;
 		}
 		
-		public long rebaseNeighborLocalID(final long p_neighborID, final int p_curNodeIndex)
+		public long rebaseNeighborID(final long p_neighborID)
 		{
 			// find section the vertex (of the neighbor) is in
 			long globalVertexIDOffset = 0;
 			for (Entry entry : m_index) {
-				if (p_neighborID >= globalVertexIDOffset && p_neighborID < globalVertexIDOffset + entry.m_vertexCount) {
-					return p_neighborID - globalVertexIDOffset;
+				if (p_neighborID >= globalVertexIDOffset && p_neighborID <= globalVertexIDOffset + entry.m_vertexCount) {
+					return ChunkID.getChunkID(entry.m_nodeID, p_neighborID - globalVertexIDOffset);
 				}
 				
 				globalVertexIDOffset += entry.m_vertexCount;
 			}
 			
 			// out of range ID
-			return -1;
+			return ChunkID.INVALID_ID;
 		}
 		
 		public static class Entry implements Importable, Exportable

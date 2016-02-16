@@ -4,6 +4,7 @@ import java.util.List;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -85,6 +86,13 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 				return;
 			}
 		
+//			System.out.print(this + ", entry vertices: ");
+//			for (Vertex v : entryVertices)
+//			{
+//				System.out.print(Long.toHexString(v.getID()) + ", ");
+//			}
+//			System.out.println();
+			
 			for (Vertex v : entryVertices)
 			{
 				if (v.getUserData() == -1)
@@ -100,32 +108,22 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 					
 					// spawn further jobs for neighbours
 					List<Long> neighbours = v.getNeighbours();
-					int neighboursLeft = neighbours.size();
-					while (true)
+					int neightbourIndex = 0;
+					while (neightbourIndex < neighbours.size())
 					{
-						if (neighboursLeft <= m_vertexBatchCount) {
-							// use an array that fits
-							long[] batch = new long[neighboursLeft];
-							
-							for (int i = 0; i < neighboursLeft; i++) {
-								batch[i] = neighbours.remove(neighbours.size() - 1);
-								// might yield better performance as the list does not have
-								// to be shifted
-							}
-							
-							jobService.pushJob(new JobBFS(m_vertexBatchCount, batch));
-							break;
+						int neighbourCount = 0;
+						if (neightbourIndex + m_vertexBatchCount >= neighbours.size()) {
+							neighbourCount = neighbours.size() - neightbourIndex;
 						} else {
-							long[] batch = new long[m_vertexBatchCount];
-							for (int i = 0; i < batch.length; i++) {
-								batch[i] = neighbours.remove(neighbours.size() - 1);
-								// might yield better performance as the list does not have
-								// to be shifted
-							}
-							neighboursLeft -= batch.length;
-							
-							jobService.pushJob(new JobBFS(m_vertexBatchCount, batch));
+							neighbourCount = m_vertexBatchCount;
 						}
+						
+						long[] batch = new long[neighbourCount];
+						for (int i = 0; i < batch.length; i++) {
+							batch[i] = neighbours.get(neightbourIndex++);
+						}
+						
+						jobService.pushJob(new JobBFS(m_vertexBatchCount, batch));
 					}
 				}
 				else

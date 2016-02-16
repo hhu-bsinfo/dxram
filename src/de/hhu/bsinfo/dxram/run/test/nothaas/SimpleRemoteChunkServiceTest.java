@@ -10,7 +10,7 @@ import de.hhu.bsinfo.utils.main.Main;
 // before running this as a peer, start a superpeer and an additional storage peer
 public class SimpleRemoteChunkServiceTest extends Main
 {
-	public static final Pair<String, Integer> ARG_REMOTE_PEER_ID = new Pair<String, Integer>("remotePeerID", 22222);
+	public static final Pair<String, Integer> ARG_REMOTE_PEER_ID = new Pair<String, Integer>("remotePeerID", -15999);
 	
 	private DXRAM m_dxram;
 	private ChunkService m_chunkService;

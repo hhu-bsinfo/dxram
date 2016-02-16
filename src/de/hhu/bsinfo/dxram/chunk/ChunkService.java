@@ -384,13 +384,14 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// sort by local and remote data first
 		Map<Short, ArrayList<Long>> remoteChunksByPeers = new TreeMap<>();
 		ArrayList<Long> localChunks = new ArrayList<Long>();
+
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < p_chunkIDs.length; i++) {
 			if (m_memoryManager.exists(p_chunkIDs[i])) {
 				// local
 				localChunks.add(p_chunkIDs[i]);
 			} else {
-				// remote, figure out location and sort by peers
+				// remote or migrated, figure out location and sort by peers
 				Locations locations;
 				
 				locations = m_lookup.get(p_chunkIDs[i]);
@@ -444,7 +445,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				m_memoryManager.unlockManage();
 			} else {					
 				// Remote remove from specified peer
-				RemoveRequest request = new RemoveRequest(peer, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
+				RemoveRequest request = new RemoveRequest(peer, remoteChunks.toArray(new Long[0]));
 				NetworkErrorCodes error = m_network.sendSync(request);
 				if (error != NetworkErrorCodes.SUCCESS)
 				{
@@ -517,7 +518,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			if (m_memoryManager.exists(dataStructure.getID())) {
 				localChunks.add(dataStructure);
 			} else {
-				// remote, figure out location and sort by peers
+				// remote or migrated, figure out location and sort by peers
 				Locations locations = m_lookup.get(dataStructure.getID());
 				if (locations == null) {
 					continue;
@@ -629,13 +630,14 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// sort by local and remote data first
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
 		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
+		
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < p_dataStructures.length; i++) {
 			if (m_memoryManager.exists(p_dataStructures[i].getID())) {
 				// local
 				localChunks.add(p_dataStructures[i]);
 			} else {
-				// remote, figure out location and sort by peers
+				// remote or migrated, figure out location and sort by peers
 				Locations locations;
 				
 				locations = m_lookup.get(p_dataStructures[i].getID());
@@ -905,7 +907,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	private void incomingRemoveRequest(final RemoveRequest p_request) {
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingRemove, p_request.getChunkIDs().length);
 
-		long[] chunkIDs = p_request.getChunkIDs();
+		Long[] chunkIDs = p_request.getChunkIDs();
 		byte[] chunkStatusCodes = new byte[chunkIDs.length];
 		boolean allSuccessful = true;
 		
@@ -923,7 +925,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 					// remove successful
 					chunkStatusCodes[i] = 0;
 				} else {
-					// remove failed
+					// remove failed, might be removed recently by someone else
 					chunkStatusCodes[i] = -1;
 					allSuccessful = false;
 				}

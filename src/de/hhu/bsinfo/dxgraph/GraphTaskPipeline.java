@@ -29,7 +29,7 @@ public abstract class GraphTaskPipeline
 		m_loggerService.info(getClass(), "Executing pipeline with " + m_tasks.size() + " tasks...");
 		for (GraphTask task : m_tasks)
 		{
-			m_loggerService.debug(getClass(), "Executing task " + task + "...");
+			m_loggerService.info(getClass(), "Executing task " + task + "...");
 			task.setDXRAM(m_dxram);
 			if (!task.executeTask(m_recordTaskStatistics))
 			{

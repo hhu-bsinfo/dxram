@@ -156,9 +156,9 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 			// first, try to allocate. maybe early return
 			address = m_rawMemory.malloc(p_size);
 			if (address >= 0) {
-				// register new chunk
-				m_cidTable.set(lid, address);
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
+				// register new chunk
+				m_cidTable.set(chunkID, address);
 				
 				if (m_enableMemoryStatistics) {
 					MemoryStatistic.getInstance().malloc(p_size);
@@ -292,7 +292,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	// }
 
 	/**
-	 * Returns whether this Chunk is stored locally or not
+	 * Returns whether this Chunk is stored locally or not.
+	 * Only the LID is evaluated and checked. The NID is masked out.
 	 * This is an access call and has to be locked using lockAccess().
 	 * @param p_chunkID
 	 *            the ChunkID
@@ -304,7 +305,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		long address;
 
 		// Get the address from the CIDTable
-		address = m_cidTable.get(p_chunkID & 0xFFFFFFFFFFFFL);
+		address = m_cidTable.get(p_chunkID);
 
 		// If address <= 0, the Chunk does not exists in memory
 		return address > 0;

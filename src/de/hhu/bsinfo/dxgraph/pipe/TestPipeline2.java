@@ -19,7 +19,7 @@ public abstract class TestPipeline2 extends GraphTaskPipeline {
 		recordTaskStatistics(true);
 		
 		if (isMaster()) {
-			pushTask(new GraphLoaderOrderedEdgeListMultiNode("graph/master", numNodes, 100, false));
+			pushTask(new GraphLoaderOrderedEdgeListMultiNode("graph/master", numNodes, 100, true));
 		} else {
 			pushTask(new GraphLoaderOrderedEdgeListMultiNode("graph/slave", numNodes, 100, false));
 		}		
@@ -34,7 +34,13 @@ public abstract class TestPipeline2 extends GraphTaskPipeline {
 		// only have master run the computation for now
 		// TODO have GraphAlgorithmBFS which runs job remotely if the vertex is not on the current node
 		if (isMaster()) {
-			pushTask(new GraphAlgorithmBFS(100, ChunkID.getChunkID(m_bootService.getNodeID(), 1)));
+			pushTask(new GraphAlgorithmBFS(1, ChunkID.getChunkID(m_bootService.getNodeID(), 1)));
+		}
+		
+		if (isMaster()) {
+			pushTask(new SyncBarrierMaster(numSlaves, 3000));
+		} else {
+			pushTask(new SyncBarrierSlave());
 		}
 		
 		return true;

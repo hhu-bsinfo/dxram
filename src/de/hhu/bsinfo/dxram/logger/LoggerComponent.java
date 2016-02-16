@@ -238,49 +238,49 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	@Override
 	public void error(String p_header, String p_msg) {
 		if (LogLevel.ERROR.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg);
+			getLogger().error(p_header, p_msg);
 	}
 
 	@Override
 	public void error(String p_header, String p_msg, Exception p_e) {
 		if (LogLevel.ERROR.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg, p_e);
+			getLogger().error(p_header, p_msg, p_e);
 	}
 
 	@Override
 	public void warn(String p_header, String p_msg) {
 		if (LogLevel.WARN.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg);
+			getLogger().warn(p_header, p_msg);
 	}
 
 	@Override
 	public void warn(String p_header, String p_msg, Exception p_e) {
 		if (LogLevel.WARN.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg, p_e);
+			getLogger().warn(p_header, p_msg, p_e);
 	}
 
 	@Override
 	public void info(String p_header, String p_msg) {
 		if (LogLevel.INFO.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg);
+			getLogger().info(p_header, p_msg);
 	}
 
 	@Override
 	public void info(String p_header, String p_msg, Exception p_e) {
 		if (LogLevel.INFO.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg, p_e);
+			getLogger().info(p_header, p_msg, p_e);
 	}
 
 	@Override
 	public void debug(String p_header, String p_msg) {
 		if (LogLevel.DEBUG.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg);
+			getLogger().debug(p_header, p_msg);
 	}
 
 	@Override
 	public void debug(String p_header, String p_msg, Exception p_e) {
 		if (LogLevel.DEBUG.ordinal() <= m_defaultLogLevel.ordinal())
-			getLogger().trace(p_header, p_msg, p_e);
+			getLogger().debug(p_header, p_msg, p_e);
 	}
 
 	@Override
