@@ -92,7 +92,6 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
 	 * @param p_dataStructres Data structures to put/update.
-	 * @return Number of successfully updated data structures.
 	 */
 	public void put(final DataStructure... p_dataStructres) {
 		put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
@@ -102,7 +101,6 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 	 * Put/Update the contents of the provided data structures in the backend storage.
 	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
 	 * @param p_dataStructures Data structures to put/update.
-	 * @return Number of successfully updated data structures.
 	 */
 	public void put(final ChunkLockOperation p_chunkUnlockOperation, DataStructure... p_dataStructures)
 	{		
