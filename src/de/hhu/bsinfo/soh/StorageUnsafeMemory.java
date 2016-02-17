@@ -105,6 +105,7 @@ public class StorageUnsafeMemory implements Storage {
 
 		final byte[] array = new byte[p_length];
 
+		/// XXX quite inefficient way to write, but no other possibility (?)
 		for (int i = 0; i < p_length; i++) {
 			array[i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
 		}
@@ -120,6 +121,7 @@ public class StorageUnsafeMemory implements Storage {
 
 		int bytesRead = 0;
 		
+		/// XXX quite inefficient way to write, but no other possibility (?)
 		for (int i = 0; i < p_length; i++) {
 			p_array[p_arrayOffset + i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
 			bytesRead++;
@@ -141,7 +143,19 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
 
-		return UNSAFE.getShort(m_memoryBase + p_ptr);
+		// ensure correct endianness between
+		// JVM and native system
+		short val = UNSAFE.getShort(m_memoryBase + p_ptr);
+//		short val = 0;
+//		if (Endianness.getEndianness() > 0) {
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr) & 0xFF) << 8;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 1) & 0xFF);
+//		} else {
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr) & 0xFF);
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 1) & 0xFF) << 8;			
+//		}
+		
+		return val;
 	}
 
 	@Override
@@ -149,7 +163,23 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 
-		return UNSAFE.getInt(m_memoryBase + p_ptr);
+		// ensure correct endianness between
+		// JVM and native system
+		int val = UNSAFE.getInt(m_memoryBase + p_ptr);
+//		int val = 0;
+//		if (Endianness.getEndianness() > 0) {
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr) & 0xFF) << 24;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 1) & 0xFF) << 16;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 2) & 0xFF) << 8;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 3) & 0xFF);
+//		} else {
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr) & 0xFF);
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 1) & 0xFF) << 8;	
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 2) & 0xFF) << 16;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 3) & 0xFF) << 24;
+//		}
+		
+		return val;
 	}
 
 	@Override
@@ -157,7 +187,32 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
 
-		return UNSAFE.getLong(m_memoryBase + p_ptr);
+		// ensure correct endianness between
+		// JVM and native system
+
+		long val = UNSAFE.getLong(m_memoryBase + p_ptr);
+//		long val = 0;
+//		if (Endianness.getEndianness() > 0) {
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr) & 0xFF) << 56;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 1) & 0xFF) << 48;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 2) & 0xFF) << 40;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 3) & 0xFF) << 32;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 4) & 0xFF) << 24;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 5) & 0xFF) << 16;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 6) & 0xFF) << 8;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 7) & 0xFF);
+//		} else {
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr) & 0xFF);
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 1) & 0xFF) << 8;	
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 2) & 0xFF) << 16;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 3) & 0xFF) << 24;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 4) & 0xFF) << 32;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 5) & 0xFF) << 40;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 6) & 0xFF) << 48;
+//			val |= (UNSAFE.getByte(m_memoryBase + p_ptr + 7) & 0xFF) << 56;
+//		}
+		
+		return val;
 	}
 
 	@Override
@@ -172,6 +227,7 @@ public class StorageUnsafeMemory implements Storage {
 
 		int bytesWritten = 0;
 		
+		/// XXX quite inefficient way to write, but no other possibility (?)
 		for (int i = 0; i < p_length; i++) {
 			UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
 			bytesWritten++;
@@ -192,7 +248,17 @@ public class StorageUnsafeMemory implements Storage {
 	public void writeShort(final long p_ptr, final short p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
-
+		
+		// ensure correct endianness between
+		// JVM and native system
+//		if (Endianness.getEndianness() > 0) {
+//			UNSAFE.putByte(m_memoryBase + p_ptr, (byte) ((p_value >> 8) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 1, (byte) ((p_value) & 0xFF));
+//		} else {
+//			UNSAFE.putByte(m_memoryBase + p_ptr, (byte) ((p_value) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 1, (byte) ((p_value >> 8) & 0xFF));	
+//		}
+		
 		UNSAFE.putShort(m_memoryBase + p_ptr, p_value);
 	}
 
@@ -201,6 +267,20 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 
+		// ensure correct endianness between
+		// JVM and native system
+//		if (Endianness.getEndianness() > 0) {
+//			UNSAFE.putByte(m_memoryBase + p_ptr, (byte) ((p_value >> 24) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 1, (byte) ((p_value >> 16) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 2, (byte) ((p_value >> 8) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 3, (byte) ((p_value) & 0xFF));
+//		} else {
+//			UNSAFE.putByte(m_memoryBase + p_ptr, (byte) ((p_value) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 1, (byte) ((p_value >> 8) & 0xFF));	
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 2, (byte) ((p_value >> 16) & 0xFF));	
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 3, (byte) ((p_value >> 24) & 0xFF));	
+//		}
+		
 		UNSAFE.putInt(m_memoryBase + p_ptr, p_value);
 	}
 
@@ -209,6 +289,28 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
 
+		// ensure correct endianness between
+		// JVM and native system
+//		if (Endianness.getEndianness() > 0) {
+//			UNSAFE.putByte(m_memoryBase + p_ptr, (byte) ((p_value >> 56) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 1, (byte) ((p_value >> 48) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 2, (byte) ((p_value >> 40) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 3, (byte) ((p_value >> 32) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 4, (byte) ((p_value >> 24) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 5, (byte) ((p_value >> 16) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 6, (byte) ((p_value >> 8) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 7, (byte) ((p_value) & 0xFF));
+//		} else {
+//			UNSAFE.putByte(m_memoryBase + p_ptr, (byte) ((p_value) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 1, (byte) ((p_value >> 8) & 0xFF));	
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 2, (byte) ((p_value >> 16) & 0xFF));	
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 3, (byte) ((p_value >> 24) & 0xFF));	
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 4, (byte) ((p_value >> 32) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 5, (byte) ((p_value >> 40) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 6, (byte) ((p_value >> 48) & 0xFF));
+//			UNSAFE.putByte(m_memoryBase + p_ptr + 7, (byte) ((p_value >> 56) & 0xFF));
+//		}
+		
 		UNSAFE.putLong(m_memoryBase + p_ptr, p_value);
 	}
 

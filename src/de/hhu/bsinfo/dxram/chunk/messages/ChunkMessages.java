@@ -16,6 +16,7 @@ public class ChunkMessages {
 	public static final byte SUBTYPE_CREATE_RESPONSE = 8;
 	public static final byte SUBTYPE_STATUS_REQUEST = 9;
 	public static final byte SUBTYPE_STATUS_RESPONSE = 10;
+	public static final byte SUBTYPE_PUT_MESSAGE = 11;
 	
 	/**
 	 * Static class

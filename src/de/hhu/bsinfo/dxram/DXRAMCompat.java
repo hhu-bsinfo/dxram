@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.chunk.AsyncChunkService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -17,6 +18,7 @@ public class DXRAMCompat
 {	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
+	private AsyncChunkService m_asyncChunkService = null;
 	private NameserviceService m_nameserviceService = null;
 	private LockService m_lockService = null;
 	private LocalMonitorService m_localMonitorService = null;
@@ -63,9 +65,11 @@ public class DXRAMCompat
 	public DXRAMCompat(final DXRAM p_dxram) {
 		m_dxram = p_dxram;
 		m_chunkService = m_dxram.getService(ChunkService.class);
+		m_asyncChunkService = m_dxram.getService(AsyncChunkService.class);
 		m_nameserviceService = m_dxram.getService(NameserviceService.class);
 		m_lockService = m_dxram.getService(LockService.class);
 		m_localMonitorService = m_dxram.getService(LocalMonitorService.class);
+		m_bootService = m_dxram.getService(BootService.class);
 	}
 	
 	/**
@@ -281,7 +285,7 @@ public class DXRAMCompat
 	 */
 	public void put(final Chunk p_chunk, final boolean p_releaseLock) throws DXRAMException {
 
-		if (m_chunkService != null) {
+		if (m_asyncChunkService != null) {
 			ChunkLockOperation lockOp;
 			if (p_releaseLock) {
 				lockOp = ChunkLockOperation.WRITE_LOCK;
@@ -289,9 +293,7 @@ public class DXRAMCompat
 				lockOp = ChunkLockOperation.NO_LOCK_OPERATION;
 			}
 			
-			if (m_chunkService.put(lockOp, p_chunk) != 1) {
-				throw new DXRAMException("Putting chunk " + p_chunk + " failed.");
-			}
+			m_asyncChunkService.put(lockOp, p_chunk);
 		}
 	}
 
@@ -303,10 +305,8 @@ public class DXRAMCompat
 	 *             if the chunks could not be put
 	 */
 	public void put(final Chunk[] p_chunks) throws DXRAMException {
-		if (m_chunkService != null) {			
-			if (m_chunkService.put(p_chunks) != p_chunks.length) {
-				throw new DXRAMException("Putting chunks " + p_chunks[0] + "... failed.");
-			}
+		if (m_asyncChunkService != null) {			
+			m_asyncChunkService.put(p_chunks);
 		}
 	}
 

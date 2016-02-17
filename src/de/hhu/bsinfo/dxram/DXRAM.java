@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram;
 
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -53,7 +54,9 @@ public final class DXRAM
 	 */
 	public boolean initialize(final String p_configurationFile, final String p_overrideIp, 
 			final String p_overridePort, final NodeRole p_overrideRole) {
-		return m_engine.init(p_configurationFile, p_overrideIp, p_overridePort, p_overrideRole);
+		boolean ret = m_engine.init(p_configurationFile, p_overrideIp, p_overridePort, p_overrideRole);
+		printNodeInfo();
+		return ret;
 	}
 	
 	/**
@@ -71,6 +74,7 @@ public final class DXRAM
 		boolean ret = m_engine.init(p_configurationFile, p_overrideIp, p_overridePort, p_overrideRole);
 		if (ret & p_autoShutdown)
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+		printNodeInfo();
 		return ret;
 	}
 	
@@ -89,6 +93,18 @@ public final class DXRAM
 	 */
 	public void shutdown() {
 		m_engine.shutdown();
+	}
+	
+	/**
+	 * Print some information after init about our current node.
+	 */
+	private void printNodeInfo()
+	{
+		BootService bootService = m_engine.getService(BootService.class);
+		System.out.println(">>> DXRAM Node <<<");
+		short nodeId = bootService.getNodeID();
+		System.out.println("NodeID: " + Integer.toHexString(nodeId).substring(4) + " (" + nodeId + ")");
+		System.out.println("Role: " + bootService.getNodeRole(nodeId));
 	}
 	
 	/**

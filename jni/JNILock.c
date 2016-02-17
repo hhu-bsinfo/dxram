@@ -6,7 +6,7 @@
 
 #include <jni.h>
 #include <stdio.h>
-#include "JNILock.h"
+
 
 #define READER_BITMASK 0x7FFFFFFF
 #define WRITER_FLAG 0x80000000
