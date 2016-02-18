@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxgraph.algo;
 
-import de.hhu.bsinfo.dxgraph.GraphTask;
+import de.hhu.bsinfo.dxcompute.Task;
 
-public abstract class GraphAlgorithm extends GraphTask {
+public abstract class GraphAlgorithm extends Task {
 
 	private long[] m_entryNodes = new long[0];
 	

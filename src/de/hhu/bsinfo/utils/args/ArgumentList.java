@@ -48,12 +48,22 @@ public class ArgumentList {
 	}
 	
 	/**
-	 * Set an argument/default value.
+	 * Set an argument value.
 	 * @param p_default Pair of name of the argument and default value to set.
 	 */
 	public <T> void setArgument(final Pair<String, T> p_default)
 	{
-		setArgument(p_default.first(), p_default.second());
+		m_arguments.put(p_default.first(), p_default.second());
+	}
+	
+	/**
+	 * Set an argument value.
+	 * @param p_key Name of the argument.
+	 * @param p_value Value of the argument.
+	 */
+	public <T> void setArgument(final Pair<String, T> p_key, final T p_value)
+	{
+		m_arguments.put(p_key.first(), p_value);
 	}
 	
 	/**
@@ -72,6 +82,15 @@ public class ArgumentList {
 	public void clear()
 	{
 		m_arguments.clear();
+	}
+	
+	/**
+	 * Get the size of the argument list.
+	 * @return Number of arguments.
+	 */
+	public int size()
+	{
+		return m_arguments.size();
 	}
 	
 	@Override

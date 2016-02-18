@@ -1,5 +1,10 @@
-package de.hhu.bsinfo.dxgraph.coord.messages;
+package de.hhu.bsinfo.dxcompute.coord.messages;
 
+/**
+ * Different message types used for coordination.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+ *
+ */
 public class CoordinatorMessages {
 	public static final byte TYPE = 41;
 	public static final byte SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST = 1;

@@ -1,18 +1,26 @@
-package de.hhu.bsinfo.dxgraph.coord;
+package de.hhu.bsinfo.dxcompute.coord;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
-import de.hhu.bsinfo.dxgraph.coord.messages.CoordinatorMessages;
-import de.hhu.bsinfo.dxgraph.coord.messages.MasterSyncBarrierBroadcastMessage;
-import de.hhu.bsinfo.dxgraph.coord.messages.MasterSyncBarrierReleaseMessage;
-import de.hhu.bsinfo.dxgraph.coord.messages.SlaveSyncBarrierSignOnMessage;
+import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
+import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierBroadcastMessage;
+import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierReleaseMessage;
+import de.hhu.bsinfo.dxcompute.coord.messages.SlaveSyncBarrierSignOnMessage;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
 import de.hhu.bsinfo.utils.locks.SpinLock;
 
+/**
+ * Implementation for a sync barrier for multiple nodes with one master 
+ * and multiple slave nodes. The Master sends a broadcast message 
+ * periodically to catch slaves waiting at the barrier. When the master
+ * got enough slaves at the barrier, it sends a message to release them.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+ *
+ */
 public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 
 	private static boolean ms_setupOnceDone = false;
@@ -22,6 +30,11 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 	private ArrayList<Short> m_slavesSynced = new ArrayList<Short>();
 	private Lock m_slavesSyncedMutex = new SpinLock();
 	
+	/**
+	 * Constructor
+	 * @param p_numSlaves Num of slaves to expect for synchronization.
+	 * @param p_broadcastIntervalMs Interval in ms to broadcast a message message to catch slaves waiting for the barrier.
+	 */
 	public SyncBarrierMaster(final int p_numSlaves, final int p_broadcastIntervalMs) {
 		m_numSlaves = p_numSlaves;
 		m_broadcastIntervalMs = p_broadcastIntervalMs;
@@ -106,6 +119,10 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 		}
 	}
 	
+	/**
+	 * Handle incoming SlaveSyncBarrierSignOnMessage.
+	 * @param p_message Message to handle.
+	 */
 	private void incomingSlaveSyncBarrierSignOn(final SlaveSyncBarrierSignOnMessage p_message) {
 		m_slavesSyncedMutex.lock();
 		

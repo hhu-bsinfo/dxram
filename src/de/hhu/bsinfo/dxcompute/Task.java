@@ -1,16 +1,24 @@
-package de.hhu.bsinfo.dxgraph;
+package de.hhu.bsinfo.dxcompute;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.chunk.ChunkStatisticsRecorderIDs;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 
-public abstract class GraphTask 
+/**
+ * Base class for a computing task, which is part of a pipeline.
+ * Split your work into several modular tasks which can be
+ * reused with different pipelines. For example loading, data generation,
+ * actual computation/algorithms, verification...
+ * 
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+ *
+ */
+public abstract class Task 
 {
 	private DXRAM m_dxram = null;
 	protected LoggerService m_loggerService = null;
@@ -20,21 +28,36 @@ public abstract class GraphTask
 	protected NetworkService m_networkService = null;
 	protected StatisticsService m_statisticsService = null;
 	
-	private GraphTaskStatisticsRecorderIDs m_statisticsRecorderIDs = null;
+	private TaskStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 	
-	public GraphTask()
+	/**
+	 * Constructor
+	 */
+	public Task()
 	{
 		
 	}
 	
+	/**
+	 * Print all recorded statistics of this task to the console.
+	 */
 	public void printStatistics() {
 		m_statisticsService.printStatistics(getClass());
 	}
 	
+	/**
+	 * Get all recorded statistics of this task.
+	 * @return StatisticsRecorder containing all recorded statistics of this task.
+	 */
 	public StatisticsRecorder getStatistics() {
 		return m_statisticsService.getRecorder(getClass());
 	}
 	
+	/**
+	 * Execute the task in the current thread.
+	 * @param p_recordStatistics True to enable statistics recording for the task, false otherwise.
+	 * @return True if execution was successful, false otherwise.
+	 */
 	public boolean executeTask(final boolean p_recordStatistics)
 	{
 		m_statisticsService.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_execute);
@@ -43,8 +66,16 @@ public abstract class GraphTask
 		return ret;
 	}
 	
+	/**
+	 * Implement this call and add your code to be executed.
+	 * @return True if execution was successful, false otherwise.
+	 */
 	protected abstract boolean execute();
 	
+	/**
+	 * Used by the pipeline set DXRAM and get services.
+	 * @param p_dxram DXRAM instance to use.
+	 */
 	void setDXRAM(final DXRAM p_dxram)
 	{
 		m_dxram = p_dxram;
@@ -58,11 +89,14 @@ public abstract class GraphTask
 		registerStatisticsOperations();
 	}	
 	
+	/**
+	 * Register statistics to be recorded by the task itself (task only).
+	 */
 	private void registerStatisticsOperations() 
 	{
-		m_statisticsRecorderIDs = new GraphTaskStatisticsRecorderIDs();
+		m_statisticsRecorderIDs = new TaskStatisticsRecorderIDs();
 		m_statisticsRecorderIDs.m_id = m_statisticsService.createRecorder(this.getClass());
 		
-		m_statisticsRecorderIDs.m_operations.m_execute = m_statisticsService.createOperation(m_statisticsRecorderIDs.m_id, GraphTaskStatisticsRecorderIDs.Operations.MS_EXECUTE);
+		m_statisticsRecorderIDs.m_operations.m_execute = m_statisticsService.createOperation(m_statisticsRecorderIDs.m_id, TaskStatisticsRecorderIDs.Operations.MS_EXECUTE);
 	}
 }

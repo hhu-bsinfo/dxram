@@ -1,30 +1,39 @@
-package de.hhu.bsinfo.dxgraph.run;
+package de.hhu.bsinfo.dxcompute.run;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import de.hhu.bsinfo.dxgraph.DXGraph;
-import de.hhu.bsinfo.dxgraph.GraphTaskPipeline;
-import de.hhu.bsinfo.dxgraph.pipe.NullPipeline;
+import de.hhu.bsinfo.dxcompute.DXCompute;
+import de.hhu.bsinfo.dxcompute.NullPipeline;
+import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
 
-public class DXGraphPipeline extends DXRAMMain {
+/**
+ * Main entry point to start a computing pipeline with DXCompute.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+ *
+ */
+public class DXComputePipeline extends DXRAMMain {
 
 	public static final Pair<String, String> ARG_PIPELINE = new Pair<String, String>("pipeline", NullPipeline.class.getName());
 	
+	/**
+	 * Main entry point.
+	 * @param args Console arguments.
+	 */
 	public static void main(final String[] args) {
-		Main main = new DXGraphPipeline();
+		Main main = new DXComputePipeline();
 		main.run(args);
 	}
 	
 	/**
-	 * Creates an instance of Peer
+	 * Constructor
 	 */
-	protected DXGraphPipeline() 
+	protected DXComputePipeline() 
 	{
 		super(null, null, NodeRole.PEER);
 	}
@@ -37,18 +46,18 @@ public class DXGraphPipeline extends DXRAMMain {
 
 	@Override
 	protected int mainApplication(ArgumentList p_arguments) {
-		System.out.println("DXGraph Peer started");
+		System.out.println("DXCompute Peer started");
 
 		// create pipeline using reflection
 		String pipelineName = p_arguments.getArgument(ARG_PIPELINE);
 		System.out.println("Executing pipeline: " + pipelineName);
 		
-		GraphTaskPipeline pipeline = getPipeline(pipelineName);
+		Pipeline pipeline = getPipeline(pipelineName, p_arguments);
 		if (pipeline == null) {
 			return -1;
 		}
 		
-		DXGraph dxgraph = new DXGraph(getDXRAM());
+		DXCompute dxgraph = new DXCompute(getDXRAM());
 		if (!dxgraph.executePipeline(pipeline)) {
 			return -2;
 		}
@@ -56,7 +65,13 @@ public class DXGraphPipeline extends DXRAMMain {
 		return 0;
 	}
 	
-	private GraphTaskPipeline getPipeline(final String p_name) {
+	/**
+	 * Get a pipeline by its class name.
+	 * @param p_name Full class name (with package path). 
+	 * @param p_arguments Argument list for the pipeline.
+	 * @return If found, returns an instance to the pipeline, null otherwise.
+	 */
+	private Pipeline getPipeline(final String p_name, final ArgumentList p_arguments) {
 		Class<?> clazz = null;
 		try {
 			clazz = Class.forName(p_name);
@@ -68,15 +83,15 @@ public class DXGraphPipeline extends DXRAMMain {
 		Constructor<?> ctor = null;
 		
 		try {
-			ctor = clazz.getConstructor();
+			ctor = clazz.getConstructor(ArgumentList.class);
 		} catch (NoSuchMethodException | SecurityException e1) {
 			System.out.println("Could not get default constructor of pipeline " + p_name + ".");
 			return null;
 		}
 		
-		GraphTaskPipeline pipeline = null;
+		Pipeline pipeline = null;
 		try {
-			pipeline = (GraphTaskPipeline) ctor.newInstance();
+			pipeline = (Pipeline) ctor.newInstance(p_arguments);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			System.out.println("Could not create instance of pipeline " + p_name + ".");
 		}

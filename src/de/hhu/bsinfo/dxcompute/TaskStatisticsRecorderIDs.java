@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxgraph;
+package de.hhu.bsinfo.dxcompute;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 
@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
  *
  */
-public class GraphTaskStatisticsRecorderIDs {
+public class TaskStatisticsRecorderIDs {
 	public int m_id = StatisticsRecorder.INVALID_ID;
 	public Operations m_operations = new Operations();
 	

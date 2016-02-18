@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxgraph.coord.messages;
+package de.hhu.bsinfo.dxcompute.coord.messages;
 
 import de.hhu.bsinfo.menet.AbstractMessage;
 
