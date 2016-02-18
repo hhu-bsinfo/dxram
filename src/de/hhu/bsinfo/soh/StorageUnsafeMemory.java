@@ -12,21 +12,23 @@ import de.hhu.bsinfo.utils.unsafe.UnsafeHandler;
 /**
  * Implementation of a storage based on an unsafe allocated
  * block of memory.
+ * Note: This class is deprecated (replaced by JNINativeMemory),
+ * due to inefficiency and endianess bugs/issues.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.2015
  */
+@Deprecated
 public class StorageUnsafeMemory implements Storage {
 	private static final Unsafe UNSAFE = UnsafeHandler.getInstance().getUnsafe();
 
-	private long m_memoryBase;
-	private long m_memorySize;
+	private long m_memoryBase = -1;
+	private long m_memorySize = -1;
 
 	/**
 	 * Default constructor
 	 */
 	public StorageUnsafeMemory() {
-		m_memoryBase = -1;
-		m_memorySize = -1;
+
 	}
 
 	@Override
@@ -143,6 +145,9 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
 
+		// XXX causes problems if multiple ints
+		// are read as a byte array and then converted
+		// back to ints
 		// ensure correct endianness between
 		// JVM and native system
 		short val = UNSAFE.getShort(m_memoryBase + p_ptr);
@@ -163,6 +168,9 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 
+		// XXX causes problems if multiple ints
+		// are read as a byte array and then converted
+		// back to ints
 		// ensure correct endianness between
 		// JVM and native system
 		int val = UNSAFE.getInt(m_memoryBase + p_ptr);
@@ -190,6 +198,9 @@ public class StorageUnsafeMemory implements Storage {
 		// ensure correct endianness between
 		// JVM and native system
 
+		// XXX causes problems if multiple ints
+		// are read as a byte array and then converted
+		// back to ints
 		long val = UNSAFE.getLong(m_memoryBase + p_ptr);
 //		long val = 0;
 //		if (Endianness.getEndianness() > 0) {
@@ -249,6 +260,9 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
 		
+		// XXX causes problems if multiple ints
+		// are read as a byte array and then converted
+		// back to ints
 		// ensure correct endianness between
 		// JVM and native system
 //		if (Endianness.getEndianness() > 0) {
@@ -267,6 +281,9 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
 
+		// XXX causes problems if multiple ints
+		// are read as a byte array and then converted
+		// back to ints
 		// ensure correct endianness between
 		// JVM and native system
 //		if (Endianness.getEndianness() > 0) {
@@ -289,6 +306,9 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
 
+		// XXX causes problems if multiple ints
+		// are read as a byte array and then converted
+		// back to ints
 		// ensure correct endianness between
 		// JVM and native system
 //		if (Endianness.getEndianness() > 0) {

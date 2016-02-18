@@ -31,8 +31,10 @@
 	<target name="copy_jni" depends="create_base_dirs" description="copies the jni libs">
 		<copy file="${jni_dir}/libJNILock.so" todir="${build_proj_lib_dir}" />
 		<copy file="${jni_dir}/libJNIconsole.so" todir="${build_proj_lib_dir}" />
+		<copy file="${jni_dir}/libJNINativeMemory.so" todir="${build_proj_lib_dir}" />
 		<copy file="${jni_dir}/libJNILock.dylib" todir="${build_proj_lib_dir}" />
 		<copy file="${jni_dir}/libJNIconsole.dylib" todir="${build_proj_lib_dir}" />
+		<copy file="${jni_dir}/libJNINativeMemory.dylib" todir="${build_proj_lib_dir}" />
 	</target>
 
 	<target name="copy_config" depends="create_base_dirs" description="copies the config files">

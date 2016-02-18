@@ -8,7 +8,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
-import de.hhu.bsinfo.soh.StorageUnsafeMemory;
+import de.hhu.bsinfo.soh.StorageJNINativeMemory;
 import de.hhu.bsinfo.utils.StatisticsManager;
 import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
 
@@ -63,7 +63,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 		}
 
-		m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
+		m_rawMemory = new SmallObjectHeap(new StorageJNINativeMemory());
 		m_rawMemory.initialize(
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE),
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));

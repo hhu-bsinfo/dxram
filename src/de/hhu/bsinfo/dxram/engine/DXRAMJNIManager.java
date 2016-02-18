@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.dxram.util.logger.Logger;
+import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.locks.JNILock;
 import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
@@ -63,6 +64,13 @@ public class DXRAMJNIManager
 			m_logger.error(LOG_HEADER, "Missing path for JNIconsole.");
 		} else {
 			JNIconsole.load(path);
+		}
+		
+		path = p_settings.getValue("JNI/" + profile + "/JNINativeMemory", String.class);
+		if (path == null) {
+			m_logger.error(LOG_HEADER, "Missing path for JNINativeMemory.");
+		} else {
+			JNINativeMemory.load(path);
 		}
 	}
 }

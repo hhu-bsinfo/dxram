@@ -19,12 +19,12 @@ public abstract class GraphGenerator extends GraphTask
 	
 	@Override
 	public boolean execute() {
-		log("Executing graph generation for " + m_numNodes + " nodes.");
+		m_loggerService.debug(getClass(), "Executing graph generation for " + m_numNodes + " nodes.");
 		boolean ret = generate(m_numNodes);
 		if (ret) {
-			log("Executing graph generation successful.");
+			m_loggerService.debug(getClass(), "Executing graph generation successful.");
 		} else {
-			logError("Executing graph generation failed.");
+			m_loggerService.error(getClass(), "Executing graph generation failed.");
 		}
 		
 		return ret;

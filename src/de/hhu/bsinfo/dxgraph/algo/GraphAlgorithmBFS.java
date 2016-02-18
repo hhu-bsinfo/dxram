@@ -4,7 +4,6 @@ import java.util.List;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -104,7 +103,7 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 						continue;
 					}
 					
-					System.out.println(this + ", Visited: " + v);
+//					System.out.println(this + ", Visited: " + v);
 					
 					// spawn further jobs for neighbours
 					List<Long> neighbours = v.getNeighbours();
@@ -128,7 +127,7 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 				}
 				else
 				{
-					System.out.println(this + ", Already visited: " + v);
+//					System.out.println(this + ", Already visited: " + v);
 				}
 			}
 		}
