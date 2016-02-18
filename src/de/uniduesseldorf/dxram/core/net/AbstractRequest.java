@@ -187,6 +187,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 				System.out.println("wait-for-response time-out: " + print());
 				throw new NetworkException("Timeout Occurred");
 			}
+
 			try {
 				m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
 			} catch (final InterruptedException e) {}

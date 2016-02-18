@@ -15,7 +15,6 @@ import de.uniduesseldorf.dxram.utils.unsafe.UnsafeHandler;
 /**
  * Implementation of a storage based on an unsafe allocated
  * block of memory.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.2015
  */
 public class StorageUnsafeMemory implements Storage {
@@ -122,12 +121,12 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr + p_length <= m_memorySize;
 
 		int bytesRead = 0;
-		
+
 		for (int i = 0; i < p_length; i++) {
 			p_array[p_arrayOffset + i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
 			bytesRead++;
 		}
-		
+
 		return bytesRead;
 	}
 
@@ -175,12 +174,12 @@ public class StorageUnsafeMemory implements Storage {
 		assert p_ptr + p_length <= m_memorySize;
 
 		int bytesWritten = 0;
-		
+
 		for (int i = 0; i < p_length; i++) {
 			UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
 			bytesWritten++;
 		}
-		
+
 		return bytesWritten;
 	}
 

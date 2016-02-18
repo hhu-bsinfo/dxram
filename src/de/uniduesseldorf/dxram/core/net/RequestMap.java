@@ -1,8 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.net;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,7 +15,8 @@ import de.uniduesseldorf.dxram.utils.Contract;
 final class RequestMap {
 
 	// Attributes
-	private static Map<Long, AbstractRequest> m_pendingRequests = new HashMap<>();
+	// private static Map<Long, AbstractRequest> m_pendingRequests = new HashMap<>();
+	private static LinkedList<AbstractRequest> m_list = new LinkedList<AbstractRequest>();
 
 	private static Lock m_lock = new ReentrantLock(false);
 
@@ -37,7 +37,8 @@ final class RequestMap {
 
 		m_lock.lock();
 
-		m_pendingRequests.put(p_request.getRequestID(), p_request);
+		// m_pendingRequests.put(p_request.getRequestID(), p_request);
+		m_list.addLast(p_request);
 
 		m_lock.unlock();
 	}
@@ -49,11 +50,18 @@ final class RequestMap {
 	 * @return the removed Request
 	 */
 	protected static AbstractRequest remove(final long p_requestID) {
-		AbstractRequest ret;
+		AbstractRequest ret = null;
 
 		m_lock.lock();
 
-		ret = m_pendingRequests.remove(p_requestID);
+		for (int i = 0; i < m_list.size(); i++) {
+			ret = m_list.get(i);
+			if (ret.getRequestID() == p_requestID) {
+				m_list.remove(i);
+				break;
+			}
+		}
+		// m_pendingRequests.remove(p_requestID);
 
 		m_lock.unlock();
 
