@@ -133,7 +133,7 @@ public final class MemoryManager {
 		address = m_rawMemory.malloc(p_size);
 		if (address >= 0) {
 			// register new chunk
-			chunkID = ((long) m_nodeID << 48) + lid.getLocalID();
+			chunkID = (m_nodeID << 48) + lid.getLocalID();
 			m_cidTable.set(chunkID, address);
 		} else {
 			// put lid back
@@ -310,8 +310,8 @@ public final class MemoryManager {
 		if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
 			// detach reference to zombie
 			m_cidTable.delete(p_chunkID, false);
-		} 
-		
+		}
+
 		m_rawMemory.free(addressDeletedChunk);
 	}
 

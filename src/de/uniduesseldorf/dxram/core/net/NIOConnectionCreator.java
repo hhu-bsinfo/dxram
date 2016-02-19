@@ -73,6 +73,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		m_helper = Core.getNodesConfiguration();
 
 		m_worker = new Worker();
+		m_worker.setName("Network: Selector");
+		m_worker.init();
 		m_worker.start();
 	}
 
@@ -305,7 +307,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 			m_outgoingLock.lock();
 			// Change operation (read <-> write) and/or connection
-			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
+			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_WRITE)); // SelectionKey.OP_READ
+			// |
 
 			m_outgoing.offer(p_buffer);
 			m_outgoingLock.unlock();
@@ -319,7 +322,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		private void addBuffer(final ByteBuffer p_buffer) {
 			m_outgoingLock.lock();
 			// Change operation request to OP_READ to read before trying to send the buffer again
-			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ | SelectionKey.OP_WRITE));
+			m_worker.addOperationChangeRequest(new ChangeOperationsRequest(this, SelectionKey.OP_READ)); // |
+			// SelectionKey.OP_WRITE
 
 			m_outgoing.addFirst(p_buffer);
 			m_outgoingLock.unlock();
@@ -473,13 +477,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Manages the network connections
 	 * @author Florian Klein 18.03.2012
 	 */
-	private class Worker implements Runnable {
+	private class Worker extends Thread {
 
 		// Attributes
 		private ServerSocketChannel m_channel;
 		private Selector m_selector;
-
-		private final TaskExecutor m_executor;
 
 		private final Queue<ChangeOperationsRequest> m_changeRequests;
 		private final Queue<CloseConnectionRequest> m_closeRequests;
@@ -497,8 +499,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_channel = null;
 			m_selector = null;
 
-			m_executor = new TaskExecutor("NIO", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_NIO_THREAD_COUNT));
-
 			m_changeRequests = new ArrayDeque<>();
 			m_closeRequests = new ArrayDeque<>();
 
@@ -508,13 +508,10 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_closeLock = new ReentrantLock(false);
 		}
 
-		/**
-		 * Starts the worker
-		 */
-		public void start() {
+		public void init() {
 			IOException exception = null;
 
-			// Create Selector an ServerSocketChannel
+			// Create Selector on ServerSocketChannel
 			for (int i = 0; i < 10; i++) {
 				try {
 					m_selector = Selector.open();
@@ -524,8 +521,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 					m_channel.register(m_selector, SelectionKey.OP_ACCEPT);
 
 					m_running = true;
-
-					m_executor.execute(this);
 
 					exception = null;
 					break;
@@ -552,56 +547,45 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			Iterator<SelectionKey> iterator;
 			Set<SelectionKey> selected;
 			SelectionKey key;
-			final Selector selector = m_selector;
 
-			// Handle pending ChangeOperationsRequests
-			m_changeLock.lock();
-			while (!m_changeRequests.isEmpty()) {
-				changeRequest = m_changeRequests.poll();
-				changeOptions(changeRequest.m_connection, changeRequest.m_operations);
-			}
-			m_changeLock.unlock();
+			while (m_running) {
+				// Handle pending ChangeOperationsRequests
+				m_changeLock.lock();
+				while (!m_changeRequests.isEmpty()) {
+					changeRequest = m_changeRequests.poll();
+					changeOptions(changeRequest.m_connection, changeRequest.m_operations);
+				}
+				m_changeLock.unlock();
 
-			// Handle pending CloseConnectionRequests
-			m_closeLock.lock();
-			while (!m_closeRequests.isEmpty()) {
-				closeConnection(m_closeRequests.poll().m_connection);
-			}
-			m_closeLock.unlock();
+				// Handle pending CloseConnectionRequests
+				m_closeLock.lock();
+				while (!m_closeRequests.isEmpty()) {
+					closeConnection(m_closeRequests.poll().m_connection);
+				}
+				m_closeLock.unlock();
 
-			try {
-				// Wait for network action
-				if (selector.select() > 0 && selector.isOpen()) {
-					selected = selector.selectedKeys();
-					iterator = selected.iterator();
+				try {
+					// Wait for network action
+					if (m_selector.select() > 0 && m_selector.isOpen()) {
+						selected = m_selector.selectedKeys();
+						iterator = selected.iterator();
 
-					while (iterator.hasNext()) {
-						key = iterator.next();
-						if (key.isValid()) {
-							if (key.isAcceptable()) {
-								accept();
-							} else {
-								dispatch(key);
+						while (iterator.hasNext()) {
+							key = iterator.next();
+							iterator.remove();
+							if (key.isValid()) {
+								if (key.isAcceptable()) {
+									accept();
+								} else {
+									dispatch(key);
+								}
 							}
 						}
-						iterator.remove();
+
+						selected.clear();
 					}
-
-					selected.clear();
-				}
-			} catch (final Exception e) {
-				LOGGER.error("ERROR::Accessing the selector", e);
-			}
-
-			if (m_running) {
-				m_executor.execute(this);
-			}
-
-			if (!HIGH_PERFORMANCE) {
-				try {
-					Thread.sleep(1);
-				} catch (final InterruptedException e) {
-					e.printStackTrace();
+				} catch (final Exception e) {
+					LOGGER.error("ERROR::Accessing the selector", e);
 				}
 			}
 		}
@@ -617,12 +601,13 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			connection = (NIOConnection) p_key.attachment();
 			if (connection != null) {
 				if (connection.m_handler == null) {
-					connection.m_handler = new SelectionKeyHandler(p_key);
+					connection.m_handler = new SelectionKeyHandler();
 				}
-				m_executor.execute(connection.m_handler);
+
+				connection.m_handler.execute(p_key, connection);
 			} else {
 				// handle unknown events by itself
-				new SelectionKeyHandler(p_key).run();
+				new SelectionKeyHandler().execute(p_key, null);
 			}
 		}
 
@@ -706,7 +691,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		 */
 		protected void close() {
 			m_running = false;
-			m_executor.shutdown();
 
 			try {
 				m_channel.close();
@@ -772,9 +756,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Wrapper class to handle SelectionKeys asynchronously
 	 * @author Marc Ewert 03.09.2014
 	 */
-	private class SelectionKeyHandler implements Runnable {
+	private class SelectionKeyHandler {
 
-		private final SelectionKey m_key;
 		private final ByteBuffer m_readBuffer;
 		private final ByteBuffer m_writeBuffer;
 
@@ -784,36 +767,36 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		/**
 		 * Creates a new SelectionKeyHandler
-		 * @param p_key
-		 *            SelectionKey
 		 */
-		SelectionKeyHandler(final SelectionKey p_key) {
+		SelectionKeyHandler() {
 			m_readBuffer = ByteBuffer.allocateDirect(SEND_BYTES);
 			m_writeBuffer = ByteBuffer.allocateDirect(SEND_BYTES);
-			m_key = p_key;
 			m_connectionLock = new ReentrantLock(false);
 			m_bufferLock = new ReentrantLock(false);
 			m_writeLock = new ReentrantLock(false);
 		}
 
-		@Override
-		public void run() {
-			NIOConnection connection = null;
-
-			if (m_key.isValid()) {
+		/**
+		 * Execute key by creating a new connection, reading from channel or writing to channel
+		 * @param p_key
+		 *            the current key
+		 * @param p_connection
+		 *            the connection
+		 */
+		public void execute(final SelectionKey p_key, final NIOConnection p_connection) {
+			if (p_key.isValid()) {
 				try {
-					connection = (NIOConnection) m_key.attachment();
-
-					if (m_key.isReadable()) {
-						if (connection == null) {
-							createConnection((SocketChannel) m_key.channel());
+					if (p_key.isReadable()) {
+						if (p_connection == null) {
+							createConnection((SocketChannel) p_key.channel());
 						} else {
-							read(connection);
+							read(p_connection);
 						}
-					} else if (m_key.isWritable()) {
-						write(connection);
-					} else if (m_key.isConnectable()) {
-						connect(connection);
+					} else if (p_key.isWritable()) {
+						write(p_connection);
+						p_key.interestOps(SelectionKey.OP_READ);
+					} else if (p_key.isConnectable()) {
+						connect(p_connection);
 					}
 				} catch (final IOException e) {
 					LOGGER.debug("WARN::Accessing the channel");

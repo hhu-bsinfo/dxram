@@ -508,7 +508,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					for (int i = 0; i < list.size(); i++) {
 						ids[i] = list.get(i).getValue();
 					}
-
+					long start = System.currentTimeMillis();
 					// Remote get
 					request = new MultiGetRequest(peer, ids);
 					try {
@@ -1988,6 +1988,50 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 */
 	private void incomingMultiGetRequest(final MultiGetRequest p_request) {
 		long[] chunkIDs;
+
+		Operation.INCOMING_MULTI_GET.enter();
+
+		try {
+			// System.out.println("Got request at      " + System.nanoTime() / 1000 / 100);
+			chunkIDs = p_request.getChunkIDs();
+
+			// m_memoryManager.lockAccess();
+			int allSize = 0;
+			int[] sizes = new int[chunkIDs.length];
+			for (int i = 0; i < chunkIDs.length; i++) {
+				sizes[i] = m_memoryManager.getSize(chunkIDs[i]);
+				allSize += sizes[i] + 8 + 4;
+			}
+			byte[] buffer = new byte[allSize];
+			ByteBuffer bbuffer = ByteBuffer.wrap(buffer);
+			int offset = 0;
+			for (int i = 0; i < chunkIDs.length; i++) {
+				bbuffer.putLong(offset, chunkIDs[i]);
+				offset += 8;
+				bbuffer.putInt(offset, sizes[i]);
+				offset += 4;
+				offset += m_memoryManager.get(chunkIDs[i], buffer, offset, sizes[i]);
+			}
+			// m_memoryManager.unlockAccess();
+
+			// System.out.println("Answered request at " + System.nanoTime() / 1000 / 100);
+			new MultiGetResponse(p_request, buffer, chunkIDs.length).send(m_network);
+		} catch (final DXRAMException e) {
+			LOGGER.error("ERR::Could not handle request", e);
+
+			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
+		}
+
+		Operation.INCOMING_MULTI_GET.leave();
+	}
+
+	/**
+	 * Handles an incoming MultiGetRequest
+	 * @param p_request
+	 *            the MultiGetRequest
+	 */
+	/*-private void incomingMultiGetRequest(final MultiGetRequest p_request) {
+		long[] chunkIDs;
 		Chunk[] chunks;
 		int size;
 		int bytesRead;
@@ -2015,8 +2059,8 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
 
-		Operation.INCOMING_MULTI_GET.leave();
-	}
+	Operation.INCOMING_MULTI_GET.leave();
+	}*/
 
 	/**
 	 * Handles an incoming PutRequest

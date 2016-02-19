@@ -233,9 +233,6 @@ public final class Configuration {
 		// Class for creating new network connections (default creator uses Java NIO)
 		public static final ConfigurationEntry<String> NETWORK_CREATOR = new ConfigurationEntry<String>("network.creator", String.class,
 				"de.uniduesseldorf.dxram.core.net.NIOConnectionCreator");
-		// Number of threads to get data from or put data on channels
-		public static final ConfigurationEntry<Integer> NETWORK_NIO_THREAD_COUNT = new ConfigurationEntry<Integer>("network.nio_thread_count",
-				Integer.class, 1);
 		// Number of threads to aggregate buffers to dxram messages
 		public static final ConfigurationEntry<Integer> NETWORK_TASK_HANDLER_THREAD_COUNT = new ConfigurationEntry<Integer>(
 				"network.task_handler_thread_count", Integer.class, 10);
@@ -346,7 +343,6 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(NETWORK_CONNECTIONS);
 			CONFIGURATION_ENTRIES.add(NETWORK_BUFFER_SIZE);
 			CONFIGURATION_ENTRIES.add(NETWORK_CREATOR);
-			CONFIGURATION_ENTRIES.add(NETWORK_NIO_THREAD_COUNT);
 			CONFIGURATION_ENTRIES.add(NETWORK_TASK_HANDLER_THREAD_COUNT);
 			CONFIGURATION_ENTRIES.add(NETWORK_MAX_CACHE_SIZE);
 			CONFIGURATION_ENTRIES.add(NETWORK_HIGH_PERFORMANCE);
