@@ -1,8 +1,8 @@
 // compile:
 // linux:
-// gcc -shared -fpic -o libJNIconsole.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNIconsole.c -lreadline
+// gcc -O2 -shared -fpic -o libJNIconsole.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNIconsole.c -lreadline
 // mac:
-// gcc -shared -fpic -o libJNIconsole.dylib -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include/darwin JNIconsole.c -lreadline
+// gcc -O2 -shared -fpic -o libJNIconsole.dylib -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include/darwin JNIconsole.c -lreadline
 
 #include <jni.h>
 #include <stdlib.h>

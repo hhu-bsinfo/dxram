@@ -1,8 +1,8 @@
 // compile:
 // linux:
-// gcc -shared -fpic -o libJNILock.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNILock.c
+// gcc -O2 -shared -fpic -o libJNILock.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNILock.c
 // mac:
-// gcc -shared -fpic -o JNIconsole.dylib -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include/darwin JNILock.c
+// gcc -O2 -shared -fpic -o JNIconsole.dylib -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include/darwin JNILock.c
 
 #include <jni.h>
 #include <stdio.h>
