@@ -24,6 +24,10 @@ public interface NetworkInterface extends CoreComponent {
 	 */
 	void deactivateConnectionManager();
 
+	/**
+	 * Returns the exclusive lock for logging
+	 * @return the exclusive lock
+	 */
 	ReentrantLock getExclusiveLock();
 
 	/**

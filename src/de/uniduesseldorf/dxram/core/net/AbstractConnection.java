@@ -3,7 +3,6 @@ package de.uniduesseldorf.dxram.core.net;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
@@ -24,10 +23,9 @@ abstract class AbstractConnection {
 
 	// Attributes
 	private final DataHandler m_dataHandler;
-	private final MessageCreator m_messageCreator;
 	private final ByteStreamInterpreter m_streamInterpreter;
 
-	public short m_destination;
+	private short m_destination;
 
 	private boolean m_connected;
 
@@ -59,7 +57,6 @@ abstract class AbstractConnection {
 		NodeID.check(p_destination);
 
 		m_dataHandler = new DataHandler();
-		m_messageCreator = new MessageCreator();
 		m_streamInterpreter = new ByteStreamInterpreter();
 
 		m_destination = p_destination;
@@ -167,6 +164,7 @@ abstract class AbstractConnection {
 	 *             if the data could not be written
 	 */
 	public final void write(final AbstractMessage p_message) throws IOException {
+
 		doWrite(p_message);
 
 		m_timestamp = System.currentTimeMillis();
@@ -246,30 +244,6 @@ abstract class AbstractConnection {
 		return this.getClass().getSimpleName() + "[" + m_destination + ", " + m_connected + "]";
 	}
 
-	/*-public void execute(final ByteBuffer p_buffer) {
-		ByteStreamInterpreter streamInterpreter;
-		ByteBuffer messageBuffer;
-
-		streamInterpreter = m_streamInterpreter;
-
-		// could be null when an other thread has read the buffer before
-		if (p_buffer != null) {
-			while (p_buffer.hasRemaining()) {
-				// Update the MessageCreator
-				streamInterpreter.update(p_buffer);
-
-				if (streamInterpreter.isMessageComplete()) {
-					if (!streamInterpreter.isExceptionOccurred()) {
-						messageBuffer = streamInterpreter.getMessageBuffer();
-						m_messageCreator.newData(messageBuffer);
-					}
-
-					streamInterpreter.clear();
-				}
-			}
-		}
-	}*/
-
 	// Classes
 	/**
 	 * Manages for reacting to connections
@@ -304,6 +278,7 @@ abstract class AbstractConnection {
 			ByteStreamInterpreter streamInterpreter;
 			ByteBuffer buffer;
 			ByteBuffer messageBuffer;
+			AbstractMessage message;
 
 			try {
 				streamInterpreter = m_streamInterpreter;
@@ -318,7 +293,16 @@ abstract class AbstractConnection {
 						if (streamInterpreter.isMessageComplete()) {
 							if (!streamInterpreter.isExceptionOccurred()) {
 								messageBuffer = streamInterpreter.getMessageBuffer();
-								m_messageCreator.newData(messageBuffer);
+
+								message = createMessage(messageBuffer);
+
+								if (message != null) {
+									message.setDestination(NodeID.getLocalNodeID());
+									message.setSource(m_destination);
+
+									incRating(message.getRatingValue());
+									deliverMessage(message);
+								}
 							}
 
 							streamInterpreter.clear();
@@ -328,62 +312,6 @@ abstract class AbstractConnection {
 			} catch (final IOException e) {
 				LOGGER.error("ERROR::Could not access network connection", e);
 			}
-		}
-	}
-
-	/**
-	 * Creates messages from ByteBuffers
-	 * @author Marc Ewert 28.10.2014
-	 */
-	private class MessageCreator implements Runnable {
-
-		// Attributes
-		private final ArrayDeque<ByteBuffer> m_buffers;
-		private ReentrantLock m_buffersLock;
-
-		/**
-		 * Default constructor
-		 */
-		MessageCreator() {
-			m_buffers = new ArrayDeque<>();
-			m_buffersLock = new ReentrantLock(false);
-		}
-
-		/**
-		 * Append a new buffer to create a message
-		 * @param p_buffer
-		 *            new buffer
-		 */
-		public void newData(final ByteBuffer p_buffer) {
-			while (m_buffers.size() > 1000) {//
-				Thread.yield();
-			}
-
-			m_buffersLock.lock();
-			m_buffers.offer(p_buffer);
-			m_buffersLock.unlock();
-
-			EXECUTOR.execute(this);
-		}
-
-		@Override
-		public void run() {
-			AbstractMessage message;
-			ByteBuffer buffer;
-
-			m_buffersLock.lock();
-			buffer = m_buffers.poll();
-
-			message = createMessage(buffer);
-
-			if (message != null) {
-				message.setDestination(NodeID.getLocalNodeID());
-				message.setSource(m_destination);
-
-				incRating(message.getRatingValue());
-				deliverMessage(message);
-			}
-			m_buffersLock.unlock();
 		}
 
 		/**

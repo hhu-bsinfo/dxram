@@ -17,6 +17,7 @@ import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.log.LogMessages;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
+import de.uniduesseldorf.dxram.core.net.NIOConnection.FlowControlMessage;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages;
 import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
@@ -74,8 +75,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		m_lock.lock();
 		// Network Messages
-		networkType = NIOConnectionCreator.FlowControlMessage.TYPE;
-		MessageDirectory.register(networkType, NIOConnectionCreator.FlowControlMessage.SUBTYPE, NIOConnectionCreator.FlowControlMessage.class);
+		networkType = FlowControlMessage.TYPE;
+		MessageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
 
 		// Chunk Messages
 		chunkType = ChunkMessages.TYPE;
@@ -254,6 +255,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			if (p_message.getDestination() == NodeID.getLocalNodeID()) {
 				newMessage(p_message);
 			} else {
+				// System.out.println("\nNew message to send at " + System.nanoTime() / 1000 / 10);
 				try {
 					connection = m_manager.getConnection(p_message.getDestination());
 					if (null != connection) {
