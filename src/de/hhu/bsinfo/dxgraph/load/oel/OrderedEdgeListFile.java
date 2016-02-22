@@ -68,12 +68,15 @@ public class OrderedEdgeListFile implements OrderedEdgeList {
 		if (line == null)
 			return null;
 		
-		String[] neighbours = line.split(",");
-		for (String v : neighbours)
+		// empty line = vertex with no neighbours
+		if (!line.isEmpty())
 		{
-			vertex.getNeighbours().add(Long.parseLong(v));
+			String[] neighbours = line.split(",");
+			for (String v : neighbours)
+			{
+				vertex.getNeighbours().add(Long.parseLong(v));
+			}
 		}
-
 		
 		return vertex;
 	}

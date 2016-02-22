@@ -10,22 +10,24 @@ import de.hhu.bsinfo.utils.args.ArgumentListParser;
  */
 public abstract class Main
 {
+	private String m_description = new String();
 	private ArgumentList m_arguments = new ArgumentList();
 	private ArgumentListParser m_argumentsParser = new DefaultArgumentListParser();
 	
 	/**
 	 * Constructor
 	 */
-	protected Main() {
-		
+	protected Main(final String p_description) {
+		m_description = p_description;
 	}
 	
 	/**
 	 * Constructor
 	 * @param p_argumentsParser Provide a different parser for the program arguments.
 	 */
-	public Main(final ArgumentListParser p_argumentsParser) {
+	public Main(final ArgumentListParser p_argumentsParser, final String p_description) {
 		m_argumentsParser = p_argumentsParser;
+		m_description = p_description;
 	}
 	
 	/**
@@ -35,6 +37,14 @@ public abstract class Main
 	public void run(final String[] args) {
 		registerDefaultProgramArguments(m_arguments);
 		m_argumentsParser.parseArguments(args, m_arguments);
+		
+		if (!m_arguments.checkArguments())
+		{
+			String usage = m_arguments.createUsageDescription(getClass().getName());
+			System.out.println(getClass().getName() + ": " + m_description + "\n");
+			System.out.println(usage);
+			System.exit(-1);
+		}
 		
 		int exitCode = main(m_arguments);
 		

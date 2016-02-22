@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.utils.main;
 
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Example/Test implementation to show usage of the main application framwork.
@@ -10,9 +10,9 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
  */
 public class TestMain extends Main {
 
-	public static final Pair<String, Integer> PARAM_1 = new Pair<String, Integer>("param1", 10);
-	public static final Pair<String, String> PARAM_2 = new Pair<String, String>("param2", "test");
-	public static final Pair<String, Long> PARAM_3 = new Pair<String, Long>("param3", 1000L);
+	public static final Argument PARAM_1 = new Argument("param1", 10, true, "First parameter");
+	public static final Argument PARAM_2 = new Argument("param2", "test", true, "Second parameter");
+	public static final Argument PARAM_3 = new Argument("param3", 1000L, true, "Third parameter");
 	
 	/**
 	 * Java main function.
@@ -27,7 +27,7 @@ public class TestMain extends Main {
 	 * Constructor
 	 */
 	public TestMain() {
-		
+		super("Test application");
 	}
 	
 	@Override
