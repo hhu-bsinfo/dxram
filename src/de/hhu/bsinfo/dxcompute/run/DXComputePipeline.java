@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
 /**
@@ -19,7 +20,7 @@ import de.hhu.bsinfo.utils.main.Main;
  */
 public class DXComputePipeline extends DXRAMMain {
 
-	public static final Pair<String, String> ARG_PIPELINE = new Pair<String, String>("pipeline", NullPipeline.class.getName());
+	public static final Argument ARG_PIPELINE = new Argument("pipeline", null, false, "Full class name of the pipeline to execute");
 	
 	/**
 	 * Main entry point.
@@ -49,7 +50,7 @@ public class DXComputePipeline extends DXRAMMain {
 		System.out.println("DXCompute Peer started");
 
 		// create pipeline using reflection
-		String pipelineName = p_arguments.getArgument(ARG_PIPELINE);
+		String pipelineName = p_arguments.getArgument(ARG_PIPELINE).getValue(String.class);
 		System.out.println("Executing pipeline: " + pipelineName);
 		
 		Pipeline pipeline = getPipeline(pipelineName, p_arguments);
@@ -85,7 +86,7 @@ public class DXComputePipeline extends DXRAMMain {
 		try {
 			ctor = clazz.getConstructor(ArgumentList.class);
 		} catch (NoSuchMethodException | SecurityException e1) {
-			System.out.println("Could not get default constructor of pipeline " + p_name + ".");
+			System.out.println("Could not get constructor with argument list of pipeline " + p_name + ".");
 			return null;
 		}
 		

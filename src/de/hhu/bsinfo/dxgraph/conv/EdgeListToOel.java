@@ -5,20 +5,16 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxcompute.run.DXComputePipeline;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
 public class EdgeListToOel extends Main 
 {
-	private static final Argument ARG_INPUT = new Argument("in", "edge_list", false, "Edge list input file");
-	private static final Argument ARG_OUTPUT = new Argument("out", "out.oel", true, "Ordered edge list output file");
-	private static final Argument ARG_MAX_OUT_FILE_SIZE = new Argument("maxOutFileSize", 1024 * 1024 * 1024L, true, "Max output file size in bytes");
+	private static final Argument ARG_INPUT = new Argument("in", null, false, "Edge list input file");
+	private static final Argument ARG_OUTPUT = new Argument("out", "./", true, "Ordered edge list output file");
 	private static final Argument ARG_FILE_COUNT = new Argument("outFileCount", 1, true, "Split data into multiple files (each approx. same size)");;
 
 	/**
@@ -38,7 +34,6 @@ public class EdgeListToOel extends Main
 	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_INPUT);
 		p_arguments.setArgument(ARG_OUTPUT);
-		p_arguments.setArgument(ARG_MAX_OUT_FILE_SIZE);
 		p_arguments.setArgument(ARG_FILE_COUNT);
 	}
 
@@ -47,19 +42,19 @@ public class EdgeListToOel extends Main
 	{
 		String inputPath = p_arguments.getArgumentValue(ARG_INPUT);
 		String outputPath = p_arguments.getArgumentValue(ARG_OUTPUT);
-		long maxOutFileSize = p_arguments.getArgumentValue(ARG_MAX_OUT_FILE_SIZE);
 		int fileCount = p_arguments.getArgumentValue(ARG_FILE_COUNT);
 		
 		RandomAccessFile file = null;
 		try {
 			file = new RandomAccessFile(inputPath, "r");
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Opening input file " + inputPath + " failed: " + e.getMessage());
+			return -1;
 		}
 		
+		System.out.println("Caching input of edge list " + inputPath);
+		
 		VertexStorage storage = new VertexStorageHashMap();
-		ArrayList<Vertex> graph = new ArrayList<Vertex>(); 
 		
 		ByteBuffer buffer = ByteBuffer.allocate(1024 * 8 * 2);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -67,13 +62,7 @@ public class EdgeListToOel extends Main
 		try {
 			while (file.getFilePointer() != file.length())
 			{			
-				int read = 0;
-				try {
-					read = file.read(buffer.array());
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				file.read(buffer.array());
 			
 				while (buffer.hasRemaining())
 				{
@@ -106,18 +95,54 @@ public class EdgeListToOel extends Main
 				
 				buffer.clear();
 			}
+			
+			file.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Caching from input file failed: " + e.getMessage());
+			return -2;
 		}
 		
-		try {
-			storage.dumpOrdered(new RandomAccessFile("out.oel", "rw"));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		
+		// adjust output path
+		if (!outputPath.endsWith("/"))
+			outputPath += "/";
+		
+		// also equals vertex count
+		long highestId = storage.getHighestID();
+		long vertexCount = highestId;
+		long rangeStart = 0;
+		long rangeEnd = 0;
+		long processed = 1; // start with 1 based IDs
+		
+		System.out.println("Dumping " + vertexCount + " vertices to " + fileCount + " files...");
+		
+		for (int i = 0; i < fileCount; i++)
+		{
+			rangeStart = processed;
+			rangeEnd = rangeStart + (vertexCount / fileCount);
+			if (rangeEnd >= highestId)
+				rangeEnd = highestId + 1; // don't forget last id, would be excluded otherwise
+			
+			try {
+				file = new RandomAccessFile(outputPath + "out.oel." + i, "rw");
+				if (!storage.dumpOrdered(file, rangeStart, rangeEnd))
+				{
+					System.out.println("Dumping from vertex storage [" + rangeStart + ", " + rangeEnd + "] failed.");
+					continue;
+				}
+				
+				file.close();
+			} catch (IOException e) {
+				System.out.println("Dumping to out file failed: " + e.getMessage());
+				continue;
+			}
+			
+			processed += rangeEnd - rangeStart;
+			
+			System.out.println("Dumping [" + rangeStart + ", " + rangeEnd + "] to file done");
 		}
 		
+		System.out.println("Done converting, output in " + outputPath);
 		
 		return 0;
 	}

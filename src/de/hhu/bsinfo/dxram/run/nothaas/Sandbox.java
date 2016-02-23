@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import java.nio.ByteBuffer;
 
@@ -12,11 +12,6 @@ public class Sandbox {
 
 	public static void main(String[] args)
 	{		
-		SmallObjectHeap heap = new SmallObjectHeap(new StorageUnsafeMemory());
-		heap.initialize(1024, 1024);
-		
-		System.out.println(heap.malloc(981));
-		
-		System.out.println(HeapWalker.walk(heap));
+		System.out.println(Long.parseLong("-C181000000000001", 16));
 	}
 }

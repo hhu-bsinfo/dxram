@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -17,6 +17,8 @@ public class SimpleDXRAMTest extends Main {
 	
 	public SimpleDXRAMTest()
 	{
+		super("Simple test to verify if DXRAM starts and shuts down properly");
+		
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf", true);
 	}

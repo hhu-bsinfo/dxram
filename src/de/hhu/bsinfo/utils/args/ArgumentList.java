@@ -24,7 +24,11 @@ public class ArgumentList {
 	
 	@SuppressWarnings("unchecked")
 	public <T> T getArgumentValue(final String p_key) {
-		return (T) m_arguments.get(p_key).getValue();
+		Argument arg = m_arguments.get(p_key);
+		if (arg == null)
+			return null;
+		
+		return (T) arg.getValue();
 	}
 	
 	/**
@@ -62,8 +66,25 @@ public class ArgumentList {
 		}
 		else
 			arg = new Argument(p_key, p_value, false, "");
+	
+		m_arguments.put(p_key, arg);
 	}
 	
+	/**
+	 * Add/Override an argument's value.
+	 * @param p_argument Argument to add (takes the key).
+	 * @param p_value New value.
+	 */
+	public void setArgument(final Argument p_argument, final Object p_value)
+	{
+		p_argument.m_value = p_value;
+		m_arguments.put(p_argument.getKey(), p_argument);
+	}	
+	
+	/**
+	 * Add/Override an argument.
+	 * @param p_argument Argument to add.
+	 */
 	public void setArgument(final Argument p_argument)
 	{
 		m_arguments.put(p_argument.getKey(), p_argument);
@@ -101,6 +122,11 @@ public class ArgumentList {
 		return true;
 	}
 	
+	/**
+	 * Creates a usage description to printed to the console.
+	 * @param p_applicationName Name of the application.
+	 * @return Usage string with arguments and description.
+	 */
 	public String createUsageDescription(final String p_applicationName)
 	{
 		String str = new String();
@@ -155,6 +181,11 @@ public class ArgumentList {
 		return str;
 	}
 	
+	/**
+	 * A single argument of a argument list.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.02.16
+	 *
+	 */
 	public static class Argument
 	{
 		private String m_key = null;
@@ -162,12 +193,24 @@ public class ArgumentList {
 		private boolean m_isOptional = false;
 		private String m_description = new String();
 		
+		/**
+		 * Constructor
+		 * @param p_key Key identifying the argument (must be unique).
+		 * @param p_value Value of the argument
+		 */
 		public Argument(final String p_key, final Object p_value)
 		{
 			m_key = p_key;
 			m_value = p_value;
 		}
 		
+		/**
+		 * Constructor
+		 * @param p_key Key identifiying the argument (must be unique).
+		 * @param p_value Value of the argument.
+		 * @param p_isOptional True if the argument is optional, i.e. is allowed to be null, false otherwise.
+		 * @param p_description Description for the argument (used when creating usage string).
+		 */
 		public Argument(final String p_key, final Object p_value, final boolean p_isOptional, final String p_description)
 		{
 			m_key = p_key;
@@ -176,18 +219,34 @@ public class ArgumentList {
 			m_description = p_description;
 		}
 		
+		/**
+		 * Get the key.
+		 * @return Argument key.
+		 */
 		public String getKey()
 		{
 			return m_key;
 		}
 		
+		/**
+		 * Get the argument's value.
+		 * @return Value. 
+		 */
 		public Object getValue()
 		{
 			return m_value;
 		}
 		
+		/**
+		 * Get the arguments value.
+		 * @param p_class Type of the value to cast to.
+		 * @return Value.
+		 */
 		public <T> T getValue(final Class<T> p_class)
 		{
+			if (m_value == null)
+				return null;
+			
 			if (!p_class.isInstance(m_value))
 			{
 				assert 1 == 2;
@@ -197,21 +256,34 @@ public class ArgumentList {
 			return p_class.cast(m_value);
 		}
 		
+		/**
+		 * Is the argument optional.
+		 * @return True for optional.
+		 */
 		public boolean isOptional()
 		{
 			return m_isOptional;
 		}
 		
+		/**
+		 * Get the description of the argument.
+		 * @return Description string.
+		 */
 		public String getDescription()
 		{
 			return m_description;
 		}
 		
+		/**
+		 * Check if the value of the argument is available, i.e. non null.
+		 * @return True if available, false otherwise.
+		 */
 		public boolean isAvailable()
 		{
 			return m_value != null;
 		}
 		
+		@Override
 		public String toString()
 		{
 			return m_key + "[m_isOptional " + m_isOptional + ", m_description " + m_description + "]: " + m_value;

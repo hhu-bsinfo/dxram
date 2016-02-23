@@ -41,7 +41,7 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 		{
 			if (worker.pushJob(p_job))
 			{
-				m_logger.info(getClass(), "Submited job " + p_job + " to worker " + worker);
+				m_logger.debug(getClass(), "Submited job " + p_job + " to worker " + worker);
 				success = true;
 				break;
 			}

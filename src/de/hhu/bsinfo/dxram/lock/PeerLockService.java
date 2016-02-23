@@ -307,7 +307,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 		
 		// the host handles the timeout as we don't want to block the message receiver thread
 		// for too long, execute a tryLock instead	
-		success = m_lock.lock(p_request.getChunkID(), m_boot.getNodeID(), p_request.isWriteLockOperation(), m_remoteLockTryTimeoutMs);
+		success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(), p_request.isWriteLockOperation(), m_remoteLockTryTimeoutMs);
 		
 		if (success) {
 			m_network.sendMessage(new LockResponse(p_request, (byte) 0));
@@ -326,7 +326,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 	private void incomingUnlockMessage(final UnlockMessage p_message) {
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingUnlock);
 
-		m_lock.unlock(p_message.getChunkID(), m_boot.getNodeID(), p_message.isWriteLockOperation());
+		m_lock.unlock(ChunkID.getLocalID(p_message.getChunkID()), m_boot.getNodeID(), p_message.isWriteLockOperation());
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingUnlock);
 	}

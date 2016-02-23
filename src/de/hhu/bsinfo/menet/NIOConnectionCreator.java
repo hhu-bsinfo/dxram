@@ -461,7 +461,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			m_channel = null;
 			m_selector = null;
 
-			m_executor = new TaskExecutor("NIO");
+			// TODO Stefan -> Kevin: limit this to avoid spaming the jvm with hundreds of threads
+			// have this configurable
+			m_executor = new TaskExecutor("NIO", 4);
 
 			m_changeRequests = new ArrayDeque<>();
 			m_closeRequests = new ArrayDeque<>();

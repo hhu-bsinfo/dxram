@@ -28,7 +28,7 @@ public class TcmdNodeInfo extends TerminalCommand {
 	@Override
 	public boolean execute(final ArgumentList p_arguments)
 	{
-		Short nodeID = p_arguments.getArgument(MS_ARG_NODE_ID, Short.class);
+		Short nodeID = p_arguments.getArgumentValue(MS_ARG_NODE_ID);
 		BootComponent boot = getTerminalDelegate().getDXRAMComponent(BootComponent.class);
 		
 		if (nodeID == null)

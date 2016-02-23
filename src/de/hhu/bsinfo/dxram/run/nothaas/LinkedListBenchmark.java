@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
@@ -7,13 +7,14 @@ import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.Stopwatch;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 public class LinkedListBenchmark extends Main
 {
-	public static final Pair<String, Integer> ARG_ITEM_COUNT = new Pair<String, Integer>("itemCount", 100);
+	public static final Argument ARG_ITEM_COUNT = new Argument("itemCount", 100, true, "Number of items for the linked list");
 	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
@@ -27,6 +28,8 @@ public class LinkedListBenchmark extends Main
 	
 	public LinkedListBenchmark()
 	{
+		super("Small benchmark, which creates a linked list in DXRAM and iterates it");
+		
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
@@ -40,7 +43,7 @@ public class LinkedListBenchmark extends Main
 
 	@Override
 	protected int main(ArgumentList p_arguments) {
-		final int itemCount = p_arguments.getArgument(ARG_ITEM_COUNT);
+		final int itemCount = p_arguments.getArgument(ARG_ITEM_COUNT).getValue(Integer.class);
 		
 		System.out.println("Creating linked list with " + itemCount + " items.");
 		m_stopwatch.start();

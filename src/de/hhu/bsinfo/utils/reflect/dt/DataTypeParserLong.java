@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+import java.math.BigInteger;
+
 public class DataTypeParserLong implements DataTypeParser
 {
 	@Override
@@ -13,12 +15,13 @@ public class DataTypeParserLong implements DataTypeParser
 		if (p_str.length() > 1)
 		{
 			String tmp = p_str.substring(0, 2);
+			// oh java...no unsigned, why?
 			if (tmp.equals("0x"))
-				return java.lang.Long.parseLong(p_str.substring(2), 16);
+				return (new BigInteger(p_str.substring(2), 16)).longValue();
 			else if (tmp.equals("0b"))
-				return java.lang.Long.parseLong(p_str.substring(2), 2);
+				return (new BigInteger(p_str.substring(2), 2)).longValue();
 			else if (tmp.equals("0o"))
-				return java.lang.Long.parseLong(p_str.substring(2), 8);
+				return (new BigInteger(p_str.substring(2), 8)).longValue();
 		}
 		
 		return java.lang.Long.parseLong(p_str);

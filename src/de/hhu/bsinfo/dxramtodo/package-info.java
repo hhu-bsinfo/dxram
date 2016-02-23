@@ -2,5 +2,5 @@
  * This package contains test cases for DXRAM
  */
 
-package de.hhu.bsinfo.dxram.run.test;
+package de.hhu.bsinfo.dxramtodo;
 

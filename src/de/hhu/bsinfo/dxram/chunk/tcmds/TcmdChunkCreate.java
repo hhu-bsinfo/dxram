@@ -27,8 +27,8 @@ public class TcmdChunkCreate extends TerminalCommand {
 	@Override
 	public boolean execute(ArgumentList p_arguments) 
 	{
-		Integer size = p_arguments.getArgument(MS_ARG_SIZE, Integer.class);
-		Short nodeID = p_arguments.getArgument(MS_ARG_NODEID, Short.class);
+		Integer size = p_arguments.getArgumentValue(MS_ARG_SIZE);
+		Short nodeID = p_arguments.getArgumentValue(MS_ARG_NODEID);
 		
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
 		

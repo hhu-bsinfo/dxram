@@ -50,11 +50,11 @@ public class PutRequest extends AbstractRequest {
 			case NO_LOCK_OPERATION:
 				break;
 			case READ_LOCK:
-				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true); break;
 			case WRITE_LOCK:
-				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true); break;
 			default:
-				assert 1 == 2;
+				assert 1 == 2; break;
 		}
 		
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));

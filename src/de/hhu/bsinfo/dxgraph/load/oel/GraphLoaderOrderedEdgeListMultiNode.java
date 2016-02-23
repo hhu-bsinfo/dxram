@@ -173,8 +173,12 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
 		int readCount = 0;
 		boolean loop = true;
+		long totalVertexCount = p_orderedEdgeList.getTotalVertexCount();
+		long verticesProcessed = 0;
+		float previousProgress = 0.0f;
 		while (loop)
 		{
+			readCount = 0;
 			while (readCount < vertexBuffer.length)
 			{
 				Vertex vertex = p_orderedEdgeList.readVertex();
@@ -216,10 +220,10 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 				return false;
 			}
 			
-			for (Vertex v : vertexBuffer)
-			{
-				System.out.println(v);
-			}
+//			for (Vertex v : vertexBuffer)
+//			{
+//				System.out.println(v);
+//			}
 			
 			if (m_chunkService.get(vertexBuffer) != vertexBuffer.length)
 			{
@@ -227,12 +231,21 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 				return false;
 			}
 			
-			System.out.println("-----------------------");
+			verticesProcessed += readCount;
 			
-			for (Vertex v : vertexBuffer)
+			float curProgress = ((float) verticesProcessed) / totalVertexCount;
+			if (curProgress - previousProgress > 0.01)
 			{
-				System.out.println(v);
+				previousProgress = curProgress;
+				m_loggerService.info(getClass(), "Loading progress: " + (int)(curProgress * 100) + "%");
 			}
+			
+//			System.out.println("-----------------------");
+//			
+//			for (Vertex v : vertexBuffer)
+//			{
+//				System.out.println(v);
+//			}
 		}
 		
 		return true;

@@ -11,5 +11,5 @@ public interface VertexStorage {
 	
 	long getHighestID();
 	
-	void dumpOrdered(final RandomAccessFile p_file);
+	boolean dumpOrdered(final RandomAccessFile p_file, final long p_rangeStartIncl, final long p_rangeEndExcl);
 }

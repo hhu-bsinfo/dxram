@@ -1,11 +1,11 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
 
 import de.hhu.bsinfo.utils.JNINativeMemory;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
 /**
@@ -16,7 +16,7 @@ import de.hhu.bsinfo.utils.main.Main;
  */
 public class NativeMemoryTest extends Main {
 
-	public static final Pair<String, String> ARG_JNI_PATH = new Pair<String, String>("jniPath", "UNKNOWN");
+	public static final Argument ARG_JNI_PATH = new Argument("jniPath", null, false, "Path to JNI file with native memory implementation");
 	
 	public static void main(final String[] args) {
 		Main main = new NativeMemoryTest();
@@ -25,7 +25,7 @@ public class NativeMemoryTest extends Main {
 	
 	public NativeMemoryTest()
 	{
-
+		super("Testing JNI native memory implementation, especially if endianness is working correctly");
 	}
 	
 	@Override
@@ -36,7 +36,7 @@ public class NativeMemoryTest extends Main {
 	@Override
 	protected int main(ArgumentList p_arguments) 
 	{
-		final String jniPath = p_arguments.getArgument(ARG_JNI_PATH);
+		final String jniPath = p_arguments.getArgument(ARG_JNI_PATH).getValue(String.class);
 		
 		System.out.println("Loading jni file " + jniPath);
 		JNINativeMemory.load(jniPath);

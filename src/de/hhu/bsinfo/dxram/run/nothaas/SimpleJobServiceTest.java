@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import java.util.Random;
 
@@ -6,8 +6,8 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
 public class SimpleJobServiceTest extends Main {
@@ -44,10 +44,10 @@ public class SimpleJobServiceTest extends Main {
 		}
 	}
 	
-	private static final Pair<String, Boolean> ARG_REMOTE_PEER = new Pair<String, Boolean>("remotePeer", false);
-	private static final Pair<String, Integer> ARG_NUM_JOBS = new Pair<String, Integer>("numJobs", 10);
-	private static final Pair<String, Integer> ARG_NUM_REMOTE_JOBS = new Pair<String, Integer>("numRemoteJobs", 0);
-	private static final Pair<String, Short> ARG_REMOTE_NODE = new Pair<String, Short>("remoteNode", (short) -1);
+	private static final Argument ARG_REMOTE_PEER = new Argument("remotePeer", true, true, "Indicates if this is the remote peer waiting for other jobs to receive");
+	private static final Argument ARG_NUM_JOBS = new Argument("numJobs", 10, true, "Number of jobs to create for testing");
+	private static final Argument ARG_NUM_REMOTE_JOBS = new Argument("numRemoteJobs", 0, true, "Number of remote jobs to create");
+	private static final Argument ARG_REMOTE_NODE = new Argument("remoteNode", null, false, "Node ID of the remote node to send remote jobs to");
 	
 	private DXRAM m_dxram = null;
 	private JobService m_jobService = null;
@@ -59,6 +59,8 @@ public class SimpleJobServiceTest extends Main {
 	
 	public SimpleJobServiceTest() 
 	{
+		super("Testing the JobService and its remote job execution");
+		
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf", true);
 		m_jobService = m_dxram.getService(JobService.class);
@@ -72,10 +74,10 @@ public class SimpleJobServiceTest extends Main {
 
 	@Override
 	protected int main(ArgumentList p_arguments) {
-		boolean remotePeer = p_arguments.getArgument(ARG_REMOTE_PEER);
-		int numJobs = p_arguments.getArgument(ARG_NUM_JOBS);
-		int numRemoteJobs = p_arguments.getArgument(ARG_NUM_REMOTE_JOBS);
-		Short remoteNode = p_arguments.getArgument(ARG_REMOTE_NODE);
+		boolean remotePeer = p_arguments.getArgument(ARG_REMOTE_PEER).getValue(Boolean.class);
+		int numJobs = p_arguments.getArgument(ARG_NUM_JOBS).getValue(Integer.class);
+		int numRemoteJobs = p_arguments.getArgument(ARG_NUM_REMOTE_JOBS).getValue(Integer.class);
+		Short remoteNode = p_arguments.getArgument(ARG_REMOTE_NODE).getValue(Short.class);
 		
 		if (!remotePeer)
 		{

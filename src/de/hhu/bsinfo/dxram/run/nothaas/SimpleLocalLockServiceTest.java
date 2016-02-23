@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import java.util.Random;
 
@@ -8,13 +8,14 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.lock.LockService;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
 public class SimpleLocalLockServiceTest extends Main {
 	
-	public static final Pair<String, Integer> ARG_CHUNK_SIZE = new Pair<String, Integer>("chunkSize", 76);
-	public static final Pair<String, Integer> ARG_CHUNK_COUNT = new Pair<String, Integer>("chunkCount", 10);
-	public static final Pair<String, Integer> ARG_THREAD_COUNT = new Pair<String, Integer>("threadCount", 2);
+	public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", 76, true, "Size of the chunks for allocation");
+	public static final Argument ARG_CHUNK_COUNT = new Argument("chunkCount", 10, true, "Number of chunks to allocate");
+	public static final Argument ARG_THREAD_COUNT = new Argument("threadCount", 2, true, "Number of threads to run");
 	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
@@ -27,6 +28,8 @@ public class SimpleLocalLockServiceTest extends Main {
 	
 	public SimpleLocalLockServiceTest()
 	{
+		super("Simple test to verify if the local lock service is working");
+		
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
@@ -42,9 +45,9 @@ public class SimpleLocalLockServiceTest extends Main {
 
 	@Override
 	protected int main(ArgumentList p_arguments) {
-		final int size = p_arguments.getArgument(ARG_CHUNK_SIZE);
-		final int chunkCount = p_arguments.getArgument(ARG_CHUNK_COUNT);
-		final int threadCount = p_arguments.getArgument(ARG_THREAD_COUNT);
+		final int size = p_arguments.getArgument(ARG_CHUNK_SIZE).getValue(Integer.class);
+		final int chunkCount = p_arguments.getArgument(ARG_CHUNK_COUNT).getValue(Integer.class);
+		final int threadCount = p_arguments.getArgument(ARG_THREAD_COUNT).getValue(Integer.class);
 		
 		Chunk[] chunks = new Chunk[chunkCount];
 		int[] sizes = new int[chunkCount];

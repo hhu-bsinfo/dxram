@@ -36,9 +36,16 @@ public class VertexStorageHashMap implements VertexStorage {
 	}
 
 	@Override
-	public void dumpOrdered(RandomAccessFile p_file) 
+	public boolean dumpOrdered(final RandomAccessFile p_file, final long p_rangeStartIncl, final long p_rangeEndExcl) 
 	{
-		for (long i = 1; i <= m_highestID; i++)
+		// write header (count)
+		try {
+			p_file.writeBytes(Long.toString(p_rangeEndExcl - p_rangeStartIncl) + "\n");
+		} catch (IOException e) {
+			return false;
+		}
+		
+		for (long i = p_rangeStartIncl; i < p_rangeEndExcl; i++)
 		{
 			Vertex v = m_map.get(i);
 			if (v != null)
@@ -63,16 +70,19 @@ public class VertexStorageHashMap implements VertexStorage {
 				try {
 					p_file.writeBytes(str);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					return false;
 				}
-			} else
+			} 
+			else
+			{
 				try {
 					p_file.writeBytes("\n");
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					return false;
 				}
+			}				
 		}
+		
+		return true;
 	}
 }

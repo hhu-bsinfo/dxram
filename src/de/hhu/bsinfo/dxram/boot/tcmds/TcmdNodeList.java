@@ -30,7 +30,7 @@ public class TcmdNodeList extends TerminalCommand {
 	@Override
 	public boolean execute(ArgumentList p_arguments) 
 	{
-		String strRole = p_arguments.getArgument(MS_ARG_NODE_ID, String.class);
+		String strRole = p_arguments.getArgumentValue(MS_ARG_NODE_ID);
 		if (strRole != null)
 		{
 			NodeRole roleFilter = NodeRole.toNodeRole(strRole);

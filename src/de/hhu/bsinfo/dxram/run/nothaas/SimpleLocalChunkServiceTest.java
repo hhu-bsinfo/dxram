@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
@@ -19,6 +19,7 @@ public class SimpleLocalChunkServiceTest extends Main
 	
 	public SimpleLocalChunkServiceTest()
 	{
+		super("Simple test to verify if the local chunk service is working");
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf", true);
 		m_chunkService = m_dxram.getService(ChunkService.class);

@@ -2,7 +2,7 @@
 // linux:
 // gcc -O2 -shared -fpic -o libJNINativeMemory.so -I/usr/lib/jvm/java-8-openjdk/include/ -I/usr/lib/jvm/java-8-openjdk/include/linux JNINativeMemory.c
 // mac:
-// gcc -O2 -shared -fpic -o libJNINativeMemory.dylib -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include/darwin libJNINativeMemory.c
+// gcc -O2 -shared -fpic -o libJNINativeMemory.dylib -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include -I/Library/Java/JavaVirtualMachines/jdk1.8.0_60.jdk/Contents/Home/include/darwin JNINativeMemory.c
 
 #include <jni.h>
 #include <stdio.h>
@@ -11,8 +11,13 @@
 #include <errno.h>
 #include <string.h>
 
-
+// requres xcode command tools to be installed on mac osx
+#ifdef __APPLE__
+#include <machine/endian.h>
+#else
+// that's for linux
 #include <endian.h>
+#endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define LITTLE_ENDIAN_BYTE_ORDER
@@ -22,7 +27,16 @@
 #error "No byte order defined"
 #endif
 
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#define __bswap_16 OSSwapInt16
+#define __bswap_32 OSSwapInt32
+#define __bswap_64 OSSwapInt64
+#else
 #include <byteswap.h>
+#endif
+
+
 // to avoid trouble with endianess, mainly if a situation like storing
 // 4 ints with calling 4 times writeInt and reading them as one byte array (16 byte)
 // occurs, which results in mixing up the byte orders,

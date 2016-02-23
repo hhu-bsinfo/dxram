@@ -1,16 +1,17 @@
-package de.hhu.bsinfo.dxram.run.test.nothaas;
+package de.hhu.bsinfo.dxram.run.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
 // before running this as a peer, start a superpeer and an additional storage peer
 public class SimpleRemoteChunkServiceTest extends Main
 {
-	public static final Pair<String, Integer> ARG_REMOTE_PEER_ID = new Pair<String, Integer>("remotePeerID", -15999);
+	public static final Argument ARG_REMOTE_PEER_ID = new Argument("remotePeerID", -15999, true, "NodeID of the remote peer to create chunks on");
 	
 	private DXRAM m_dxram;
 	private ChunkService m_chunkService;
@@ -22,6 +23,8 @@ public class SimpleRemoteChunkServiceTest extends Main
 	
 	public SimpleRemoteChunkServiceTest()
 	{
+		super("Test creating chunks on a remote peer");
+		
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
@@ -34,7 +37,7 @@ public class SimpleRemoteChunkServiceTest extends Main
 
 	@Override
 	protected int main(ArgumentList p_arguments) {
-		final short remotePeerID = (short) (p_arguments.getArgument(ARG_REMOTE_PEER_ID) & 0xFFFF);
+		final short remotePeerID = (short) (p_arguments.getArgument(ARG_REMOTE_PEER_ID).getValue(Short.class) & 0xFFFF);
 		
 		int[] sizes = new int[] {155, 543, 99, 65, 233};
 		System.out.println("Creating remote chunks...");

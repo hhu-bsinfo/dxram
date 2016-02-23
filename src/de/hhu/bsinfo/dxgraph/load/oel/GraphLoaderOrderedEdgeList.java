@@ -87,8 +87,12 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
 		int readCount = 0;
 		boolean loop = true;
+		long totalVertexCount = p_orderedEdgeList.getTotalVertexCount();
+		long verticesProcessed = 0;
+		float previousProgress = 0.0f;
 		while (loop)
 		{
+			readCount = 0;
 			while (readCount < vertexBuffer.length)
 			{
 				Vertex vertex = p_orderedEdgeList.readVertex();
@@ -131,10 +135,19 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				return false;
 			}
 			
-			for (Vertex v : vertexBuffer)
+			verticesProcessed += readCount;
+			
+			float curProgress = ((float) verticesProcessed) / totalVertexCount;
+			if (curProgress - previousProgress > 0.01)
 			{
-				System.out.println(v);
+				previousProgress = curProgress;
+				m_loggerService.info(getClass(), "Loading progress: " + (int)(curProgress * 100) + "%");
 			}
+			
+//			for (Vertex v : vertexBuffer)
+//			{
+//				System.out.println(v);
+//			}
 		}
 		
 		return true;

@@ -30,9 +30,9 @@ public class TcmdChunkRemove extends TerminalCommand {
 
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
-		Long cid = p_arguments.getArgument(MS_ARG_CID, Long.class);
-		Long lid = p_arguments.getArgument(MS_ARG_LID, Long.class);
-		Short nid = p_arguments.getArgument(MS_ARG_NID, Short.class);
+		Long cid = p_arguments.getArgumentValue(MS_ARG_CID);
+		Long lid = p_arguments.getArgumentValue(MS_ARG_LID);
+		Short nid = p_arguments.getArgumentValue(MS_ARG_NID);
 		
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
 		BootComponent bootComp = getTerminalDelegate().getDXRAMComponent(BootComponent.class);
