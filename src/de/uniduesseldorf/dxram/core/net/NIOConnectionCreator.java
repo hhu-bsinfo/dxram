@@ -49,6 +49,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	public void initialize() {
 		m_nioSelector = new NIOSelector(this);
 		m_nioSelector.setName("Network: NIOSelector");
+		m_nioSelector.setPriority(Thread.MAX_PRIORITY);
 		m_nioSelector.start();
 	}
 

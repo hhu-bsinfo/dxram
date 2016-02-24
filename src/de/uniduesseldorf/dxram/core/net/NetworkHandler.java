@@ -31,6 +31,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(NetworkHandler.class);
+	private static final int NUMBER_OF_MESSAGE_HANDLER = 25;
 
 	// Attributes
 	private final TaskExecutor m_executor;
@@ -255,7 +256,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			if (p_message.getDestination() == NodeID.getLocalNodeID()) {
 				newMessage(p_message);
 			} else {
-				// System.out.println("\nNew message to send at " + System.nanoTime() / 1000 / 10);
 				try {
 					connection = m_manager.getConnection(p_message.getDestination());
 					if (null != connection) {
@@ -306,7 +306,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 * Creates an instance of MessageHandler
 		 */
 		MessageHandler() {
-			m_executor = new TaskExecutor("MessageHandler");
+			m_executor = new TaskExecutor("Network: MessageHandler", NUMBER_OF_MESSAGE_HANDLER);
 			m_defaultMessages = new ArrayDeque<>();
 			m_exclusiveMessages = new ArrayDeque<>();
 			m_defaultMessagesLock = new ReentrantLock(false);
@@ -321,7 +321,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			while (m_defaultMessages.size() + m_exclusiveMessages.size() > 25) {//
+			// Limit number of tasks to NUMBER_OF_MESSAGE_HANDLER
+			while (m_defaultMessages.size() + m_exclusiveMessages.size() > NUMBER_OF_MESSAGE_HANDLER) {
 				Thread.yield();
 			}
 
@@ -357,13 +358,12 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 				}
 			}
 
-			m_receiversLock.lock();
 			entry = m_receivers.get(message.getClass());
-			m_receiversLock.unlock();
 
 			if (entry != null) {
 				entry.newMessage(message);
 			}
+
 			if (isExclusive) {
 				m_exclusiveLock.unlock();
 			}

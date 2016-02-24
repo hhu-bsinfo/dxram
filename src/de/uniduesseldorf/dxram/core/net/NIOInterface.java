@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 
@@ -19,9 +18,6 @@ final class NIOInterface {
 	// Attributes
 	private static ByteBuffer m_readBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.SEND_BYTES);
 	private static ByteBuffer m_writeBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.SEND_BYTES);
-
-	private static ReentrantLock m_bufferLock = new ReentrantLock(false);
-	private static ReentrantLock m_writeLock = new ReentrantLock(false);
 
 	/**
 	 * Hidden constructor as this class only contains static members and methods
@@ -79,8 +75,6 @@ final class NIOInterface {
 		ByteBuffer buffer;
 		long readBytes = 0;
 
-		System.out.println("Got read operation at       " + System.nanoTime() / 1000 / 10);
-		m_bufferLock.lock();
 		try {
 			m_readBuffer.clear();
 			while (m_readBuffer.position() + NIOConnectionCreator.INCOMING_BUFFER_SIZE <= m_readBuffer.capacity()) {
@@ -108,15 +102,11 @@ final class NIOInterface {
 			}
 		} catch (final IOException e) {
 			System.out.println("WARN::Could not read from channel (" + p_connection.getDestination() + ")");
-			m_bufferLock.unlock();
 			throw e;
 		}
-		m_bufferLock.unlock();
 
 		return ret;
 	}
-
-	static long currentTime = 0;
 
 	/**
 	 * Writes to the given connection
@@ -132,13 +122,6 @@ final class NIOInterface {
 		ByteBuffer view;
 		ByteBuffer buffer;
 
-		if (System.nanoTime() - currentTime > 100000000) {
-			System.out.println("##############################################################");
-		}
-		currentTime = System.nanoTime();
-		System.out.println("Got write operation at       " + currentTime / 1000 / 10);
-
-		m_writeLock.lock();
 		buffer = p_connection.getOutgoingBytes(m_writeBuffer, NIOConnectionCreator.SEND_BYTES);
 		try {
 			if (buffer != null) {
@@ -199,15 +182,12 @@ final class NIOInterface {
 						}
 					}
 				}
-				// System.out.println("Wrote data at          " + System.nanoTime() / 1000 / 10);
 				// ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
 			}
 		} catch (final IOException e) {
 			System.out.println("WARN::Could not write to channel (" + p_connection.getDestination() + ")");
-			m_writeLock.unlock();
 			throw e;
 		}
-		m_writeLock.unlock();
 	}
 
 	/**

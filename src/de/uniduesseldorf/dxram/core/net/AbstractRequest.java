@@ -110,7 +110,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 * Get the requestID
 	 * @return the requestID
 	 */
-	public final long getRequestID() {
+	public final int getRequestID() {
 		return getMessageID();
 	}
 

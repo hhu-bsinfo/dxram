@@ -4,6 +4,8 @@ package de.uniduesseldorf.dxram.core.net;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
@@ -110,19 +112,16 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	}
 
 	/**
-	 * Dismiss the connection with the lowest rating
+	 * Dismiss the connection randomly
 	 */
+	@SuppressWarnings("unchecked")
 	private void dismissConnection() {
 		AbstractConnection dismiss = null;
-		int lowestRating = Integer.MAX_VALUE;
+		Random rand;
 
+		rand = new Random();
 		m_lock.lock();
-		for (AbstractConnection connection : m_connections.values()) {
-			if (connection.getRating() < lowestRating) {
-				dismiss = connection;
-				lowestRating = connection.getRating();
-			}
-		}
+		dismiss = ((Entry<Short, AbstractConnection>[]) m_connections.entrySet().toArray())[rand.nextInt(m_connections.size())].getValue();
 
 		if (dismiss != null) {
 			dismiss.close();

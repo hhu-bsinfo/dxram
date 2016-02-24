@@ -1,6 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.net;
 
+
 /**
  * Represents a Response to a Request
  * @author Florian Klein
@@ -41,7 +42,7 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 * Get the responseID
 	 * @return the responseID
 	 */
-	public final long getResponseID() {
+	public final int getResponseID() {
 		return getMessageID();
 	}
 
@@ -49,7 +50,7 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 * Get the requestID
 	 * @return the requestID
 	 */
-	public final long getRequestID() {
+	public final int getRequestID() {
 		return getMessageID();
 	}
 

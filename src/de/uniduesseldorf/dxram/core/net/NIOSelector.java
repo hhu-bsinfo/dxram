@@ -134,8 +134,6 @@ class NIOSelector extends Thread {
 							}
 						}
 					}
-
-					selected.clear();
 				}
 			} catch (final Exception e) {
 				System.out.println("ERROR::Accessing the selector");

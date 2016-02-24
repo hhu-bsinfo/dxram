@@ -1,12 +1,13 @@
 
 package de.uniduesseldorf.dxram.core.chunk.storage;
 
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import de.uniduesseldorf.dxram.core.chunk.storage.CIDTable.LIDElement;
 import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
-import de.uniduesseldorf.dxram.utils.locks.JNIReadWriteSpinLock;
 
 /**
  * Interface to access the local heap. Features for migration
@@ -25,7 +26,8 @@ public final class MemoryManager {
 	private long m_nodeID;
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
-	private JNIReadWriteSpinLock m_lock;
+	// private JNIReadWriteSpinLock m_lock;
+	private ReentrantReadWriteLock m_lock;
 
 	// Constructors
 	/**
@@ -63,7 +65,8 @@ public final class MemoryManager {
 		m_cidTable = new CIDTable(m_nodeID);
 		m_cidTable.initialize(m_rawMemory);
 
-		m_lock = new JNIReadWriteSpinLock();
+		// m_lock = new JNIReadWriteSpinLock();
+		m_lock = new ReentrantReadWriteLock(false);
 
 		return ret;
 	}

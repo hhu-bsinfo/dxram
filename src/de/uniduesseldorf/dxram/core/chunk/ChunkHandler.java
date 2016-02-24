@@ -14,8 +14,6 @@ import java.util.Vector;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
-
 import de.uniduesseldorf.dxram.commands.CmdUtils;
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.api.Core;
@@ -80,7 +78,7 @@ import de.uniduesseldorf.dxram.utils.unsafe.IntegerLongList;
 public final class ChunkHandler implements ChunkInterface, MessageReceiver, ConnectionLostListener {
 
 	// Constants
-	private static final Logger LOGGER = Logger.getLogger(ChunkHandler.class);
+	// private static final LOGGER LOGGER = LOGGER.getLOGGER(ChunkHandler.class);
 
 	private static final int INDEX_SIZE = 12016;
 
@@ -113,11 +111,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	private Lock m_migrationLock;
 	private Lock m_mappingLock;
 
-	@Override
-	public MemoryManager getMemoryManager() {
-		return m_memoryManager;
-	}
-
 	// Constructors
 	/**
 	 * Creates an instance of DataHandler
@@ -146,6 +139,12 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		m_migrationLock = null;
 		m_mappingLock = null;
+	}
+
+	// Getters
+	@Override
+	public MemoryManager getMemoryManager() {
+		return m_memoryManager;
 	}
 
 	// Setters
@@ -216,7 +215,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Operation.CREATE.enter();
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not create chunks");
+			// LOGGER.error("a superpeer must not create chunks");
 		} else {
 			m_memoryManager.lockManage();
 			chunkID = m_memoryManager.create(p_size);
@@ -244,7 +243,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Operation.MULTI_CREATE.enter();
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not create chunks");
+			// LOGGER.error("a superpeer must not create chunks");
 		} else {
 			chunkIDs = new long[p_sizes.length];
 
@@ -282,7 +281,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Chunk mapping;
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not create chunks");
+			// LOGGER.error("a superpeer must not create chunks");
 		} else {
 			final long chunkID = (long) m_nodeID << 48;
 			int size;
@@ -321,7 +320,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Chunk mapping;
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not create chunks");
+			// LOGGER.error("a superpeer must not create chunks");
 		} else {
 			final long chunkID = (long) m_nodeID << 48;
 			int size;
@@ -368,7 +367,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		ChunkID.check(p_chunkID);
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			m_memoryManager.lockAccess();
 			if (m_memoryManager.isResponsible(p_chunkID)) {
@@ -445,7 +444,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		ChunkID.check(p_chunkIDs);
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			ret = new Chunk[p_chunkIDs.length];
 
@@ -576,7 +575,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		ChunkID.check(p_chunkID);
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			if (m_memoryManager.isResponsible(p_chunkID)) {
 				// Local get
@@ -624,7 +623,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Contract.checkNotNull(p_chunk, "no chunk given");
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			if (m_memoryManager.isResponsible(p_chunk.getChunkID())) {
 				// Local put
@@ -711,7 +710,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Contract.checkNotNull(p_chunks, "no chunks given");
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			//LOGGER.error("a superpeer must not use chunks");
 		} else {
 			for (Chunk chunk : p_chunks) {
 				if (m_memoryManager.isResponsible(chunk.getChunkID())) {
@@ -795,7 +794,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Contract.checkNotNull(p_chunks, "no chunks given");
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			primaryMap = new HashMap<Short, ArrayList<Chunk>>();
 			backupMap = new HashMap<Long, ArrayList<Chunk>>();
@@ -865,10 +864,10 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 				while (true) {
 					try {
-						new MultiPutMessage(primaryPeer, chunks).send(m_network);
-						// MultiPutRequest req = new MultiPutRequest(primaryPeer, chunks);
-						// req.sendSync(m_network);
-						// req.getResponse(MultiPutResponse.class);
+						// new MultiPutMessage(primaryPeer, chunks).send(m_network);
+						MultiPutRequest req = new MultiPutRequest(primaryPeer, chunks);
+						req.sendSync(m_network);
+						req.getResponse(MultiPutResponse.class);
 					} catch (final NetworkException e) {
 						for (Chunk chunk : chunks) {
 							m_lookup.invalidate(chunk.getChunkID());
@@ -909,7 +908,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		ChunkID.check(p_chunkID);
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			success = deleteChunkData(p_chunkID);
 			m_lookup.remove(p_chunkID);
@@ -931,7 +930,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 		if (p_chunkIDs != null && p_chunkIDs.length > 0) {
 			if (NodeID.getRole().equals(Role.SUPERPEER)) {
-				LOGGER.error("a superpeer must not use chunks");
+				// LOGGER.error("a superpeer must not use chunks");
 			} else {
 				success = true;
 				for (long chunkID : p_chunkIDs) {
@@ -1055,7 +1054,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		ChunkID.check(p_chunkID);
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			if (m_memoryManager.isResponsible(p_chunkID)) {
 				int size;
@@ -1126,7 +1125,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		ChunkID.check(p_chunkID);
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			if (m_memoryManager.isResponsible(p_chunkID)) {
 				// Local release
@@ -1161,7 +1160,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		Contract.checkNotNull(p_chunks, "no chunks given");
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not use chunks");
+			// LOGGER.error("a superpeer must not use chunks");
 		} else {
 			putForeignChunks(p_chunks);
 		}
@@ -1252,7 +1251,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		NodeID.check(p_target);
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not store chunks");
+			// LOGGER.error("a superpeer must not store chunks");
 		} else {
 			m_migrationLock.lock();
 			if (p_target != m_nodeID && m_memoryManager.isResponsible(p_chunkID)) {
@@ -1268,7 +1267,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				m_memoryManager.unlockAccess();
 
 				if (chunk != null) {
-					LOGGER.trace("Send request to " + p_target);
+					// LOGGER.trace("Send request to " + p_target);
 
 					new DataMessage(p_target, new Chunk[] {chunk}).send(m_network);
 
@@ -1318,7 +1317,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		// TODO: Handle range properly
 
 		if (NodeID.getRole().equals(Role.SUPERPEER)) {
-			LOGGER.error("a superpeer must not store chunks");
+			// LOGGER.error("a superpeer must not store chunks");
 		} else {
 			if (p_startChunkID <= p_endChunkID) {
 				chunkIDs = new long[(int) (p_endChunkID - p_startChunkID + 1)];
@@ -1424,7 +1423,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			m_memoryManager.lockAccess();
 			// chunk = m_memoryManager.get(p_chunkID);
 			m_memoryManager.unlockAccess();
-			LOGGER.trace("Send request to " + p_target);
+			// LOGGER.trace("Send request to " + p_target);
 
 			if (m_lookup.creatorAvailable(creator)) {
 				// Migrate chunk back to owner
@@ -1491,7 +1490,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			m_memoryManager.unlockAccess();
 
 			if (chunk != null) {
-				LOGGER.trace("Send request to " + p_target);
+				// LOGGER.trace("Send request to " + p_target);
 
 				// This is not safe, but there is no other possibility unless
 				// the number of network threads is increased
@@ -1672,14 +1671,14 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		}
 
 		if (3 > numberOfPeers) {
-			LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
+			// LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
 
 			newBackupPeers = new short[numberOfPeers];
 			Arrays.fill(newBackupPeers, (short) -1);
 
 			insufficientPeers = true;
 		} else if (6 > numberOfPeers) {
-			LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
+			// LOGGER.warn("Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
 
 			oldBackupPeers = new short[REPLICATION_FACTOR];
 			Arrays.fill(oldBackupPeers, (short) -1);
@@ -1956,24 +1955,19 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	private void incomingGetRequest(final GetRequest p_request) {
 		Chunk chunk;
 		int size;
-		int bytesRead;
 
 		Operation.INCOMING_GET.enter();
 
 		try {
-			// TODO
-			chunk = null;
-			// chunk = m_memoryManager.get(p_request.getChunkID());
-
 			m_memoryManager.lockAccess();
 			size = m_memoryManager.getSize(p_request.getChunkID());
 			chunk = new Chunk(p_request.getChunkID(), size);
-			bytesRead = m_memoryManager.get(p_request.getChunkID(), chunk.getData().array(), 0, size);
+			m_memoryManager.get(p_request.getChunkID(), chunk.getData().array(), 0, size);
 			m_memoryManager.unlockAccess();
 
 			new GetResponse(p_request, chunk).send(m_network);
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle request", e);
+			// LOGGER.error("ERR::Could not handle request", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
@@ -2017,7 +2011,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			// System.out.println("Answered request at " + System.nanoTime() / 1000 / 100);
 			new MultiGetResponse(p_request, buffer, chunkIDs.length).send(m_network);
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle request", e);
+			// LOGGER.error("ERR::Could not handle request", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
@@ -2054,7 +2048,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 			new MultiGetResponse(p_request, chunks).send(m_network);
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle request", e);
+			//LOGGER.error("ERR::Could not handle request", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
@@ -2086,7 +2080,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 			new PutResponse(p_request, success).send(m_network);
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
+			// LOGGER.error("ERR::Could not handle message", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
@@ -2115,7 +2109,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					m_memoryManager.unlockAccess();
 				}
 			} catch (final DXRAMException e) {
-				LOGGER.error("ERR::Could not handle message", e);
+				// LOGGER.error("ERR::Could not handle message", e);
 
 				Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
 			}
@@ -2147,7 +2141,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 					success = true;
 				}
 			} catch (final DXRAMException e) {
-				LOGGER.error("ERR::Could not handle message", e);
+				// LOGGER.error("ERR::Could not handle message", e);
 
 				Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 			}
@@ -2229,7 +2223,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				}
 			}
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
+			// LOGGER.error("ERR::Could not handle message", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
@@ -2255,7 +2249,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			// object without variable to store it?
 			new LockResponse(p_request, lock.getChunk()).send(m_network);
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
+			// LOGGER.error("ERR::Could not handle message", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
@@ -2274,7 +2268,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		try {
 			m_lock.unlock(p_message.getChunkID(), p_message.getSource());
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
+			// LOGGER.error("ERR::Could not handle message", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
 		}
@@ -2293,7 +2287,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 			new DataResponse(p_request).send(m_network);
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle request", e);
+			// LOGGER.error("ERR::Could not handle request", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_request);
 		}
@@ -2308,7 +2302,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		try {
 			putForeignChunks(p_message.getChunks());
 		} catch (final DXRAMException e) {
-			LOGGER.error("ERR::Could not handle message", e);
+			// LOGGER.error("ERR::Could not handle message", e);
 
 			Core.handleException(e, ExceptionSource.DATA_INTERFACE, p_message);
 		}
@@ -2559,7 +2553,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
-		LOGGER.trace("Entering incomingMessage with: p_message=" + p_message);
+		// LOGGER.trace("Entering incomingMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
@@ -2606,7 +2600,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			}
 		}
 
-		LOGGER.trace("Exiting incomingMessage");
+		// LOGGER.trace("Exiting incomingMessage");
 	}
 
 	@Override
@@ -2653,7 +2647,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			GetResponse response;
 
 			if (p_request != null) {
-				LOGGER.trace("Request fulfilled: " + p_request);
+				// LOGGER.trace("Request fulfilled: " + p_request);
 
 				response = p_request.getResponse(GetResponse.class);
 				fireIncomingChunk(new IncomingChunkEvent(response.getSource(), response.getChunk()));
@@ -2726,7 +2720,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-									+ (m_backupPeers[0] & 0x000000000000FFFFL);
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {

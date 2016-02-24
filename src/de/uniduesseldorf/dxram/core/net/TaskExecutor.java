@@ -38,7 +38,8 @@ public final class TaskExecutor {
 	private ReentrantLock m_taskMapLock;
 
 	static {
-		m_defaultExecutor = new TaskExecutor("Default", Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_TASK_HANDLER_THREAD_COUNT));
+		m_defaultExecutor = new TaskExecutor("Network: MessageCreator",
+				Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_TASK_HANDLER_THREAD_COUNT));
 	}
 
 	// Constructors
@@ -57,20 +58,6 @@ public final class TaskExecutor {
 
 		LOGGER.info(m_name + ": Initialising " + p_threads + " threads");
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
-	}
-
-	/**
-	 * Creates a new TaskExecutor
-	 * @param p_name
-	 *            Identifier for debug prints
-	 */
-	public TaskExecutor(final String p_name) {
-		m_taskMap = new HashMap<>();
-		m_name = p_name;
-
-		m_taskMapLock = new ReentrantLock(false);
-
-		m_executor = Executors.newCachedThreadPool(new ExecutorThreadFactory());
 	}
 
 	// Methods

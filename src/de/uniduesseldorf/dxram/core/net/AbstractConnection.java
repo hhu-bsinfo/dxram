@@ -31,7 +31,6 @@ abstract class AbstractConnection {
 
 	private DataReceiver m_listener;
 
-	private int m_rating;
 	private long m_timestamp;
 
 	private ReentrantLock m_lock;
@@ -65,7 +64,6 @@ abstract class AbstractConnection {
 
 		m_listener = p_listener;
 
-		m_rating = 0;
 		m_timestamp = 0;
 
 		m_lock = new ReentrantLock(false);
@@ -92,14 +90,6 @@ abstract class AbstractConnection {
 	 */
 	public final short getDestination() {
 		return m_destination;
-	}
-
-	/**
-	 * Get the rating
-	 * @return the rating
-	 */
-	public final int getRating() {
-		return m_rating;
 	}
 
 	/**
@@ -168,8 +158,6 @@ abstract class AbstractConnection {
 		doWrite(p_message);
 
 		m_timestamp = System.currentTimeMillis();
-
-		incRating(p_message.getRatingValue());
 	}
 
 	/**
@@ -204,17 +192,6 @@ abstract class AbstractConnection {
 		} else {
 			EXECUTOR.purgeQueue(m_destination);
 		}
-	}
-
-	/**
-	 * Increases the rating
-	 * @param p_value
-	 *            the value to add to the rating
-	 */
-	final void incRating(final byte p_value) {
-		m_lock.lock();
-		m_rating += p_value;
-		m_lock.unlock();
 	}
 
 	/**
@@ -299,8 +276,6 @@ abstract class AbstractConnection {
 								if (message != null) {
 									message.setDestination(NodeID.getLocalNodeID());
 									message.setSource(m_destination);
-
-									incRating(message.getRatingValue());
 									deliverMessage(message);
 								}
 							}

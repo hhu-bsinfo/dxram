@@ -1049,7 +1049,6 @@ public final class ChunkMessages {
 	public static class MultiGetResponse extends AbstractResponse {
 
 		// Attributes
-		// private Chunk[] m_chunks;
 		private byte[] m_buffer;
 		private int m_numberOfChunks;
 		private Chunk[] m_chunks;
@@ -1061,7 +1060,6 @@ public final class ChunkMessages {
 		public MultiGetResponse() {
 			super();
 
-			// m_chunks = null;
 			m_buffer = null;
 			m_numberOfChunks = 0;
 		}
@@ -1070,16 +1068,14 @@ public final class ChunkMessages {
 		 * Creates an instance of MultiGetResponse
 		 * @param p_request
 		 *            the corresponding MultiGetRequest
-		 * @param p_chunks
-		 *            the requested Chunks
+		 * @param p_buffer
+		 *            the buffer with all requested Chunks
+		 * @param p_numberOfChunks
+		 *            the number of Chunks
 		 */
-		// public MultiGetResponse(final MultiGetRequest p_request, final Chunk... p_chunks) {
 		public MultiGetResponse(final MultiGetRequest p_request, final byte[] p_buffer, final int p_numberOfChunks) {
 			super(p_request, SUBTYPE_MULTIGET_RESPONSE);
 
-			// Contract.checkNotNull(p_chunks, "no chunks given");
-
-			// m_chunks = p_chunks;
 			m_buffer = p_buffer;
 			m_numberOfChunks = p_numberOfChunks;
 		}
@@ -1089,9 +1085,6 @@ public final class ChunkMessages {
 		 * Get the requested Chunks
 		 * @return the requested Chunks
 		 */
-		/*-public final Chunk[] getChunks() {
-			return m_chunks;
-		}*/
 		public final Chunk[] getChunks() {
 			return m_chunks;
 		}
@@ -1100,23 +1093,18 @@ public final class ChunkMessages {
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
 			p_buffer.putInt(m_numberOfChunks);
-			p_buffer.putInt(m_buffer.length);
 			p_buffer.put(m_buffer);
-			// OutputHelper.writeChunks(p_buffer, m_chunks);
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
+			int i = 0;
+			int size;
+			long chunkID;
+			Chunk chunk;
+
 			m_numberOfChunks = p_buffer.getInt();
 			m_chunks = new Chunk[m_numberOfChunks];
-
-			long chunkID;
-			int size;
-			Chunk chunk;
-			byte[] data;
-
-			int i = 0;
-			int length = p_buffer.getInt();
 			while (i < m_numberOfChunks) {
 				chunkID = p_buffer.getLong();
 				size = p_buffer.getInt();
@@ -1124,13 +1112,11 @@ public final class ChunkMessages {
 				p_buffer.get(chunk.getData().array());
 				m_chunks[i++] = chunk;
 			}
-			// m_chunks = InputHelper.readChunks(p_buffer);
 		}
 
 		@Override
 		protected final int getPayloadLength() {
-			// return OutputHelper.getChunksWriteLength(m_chunks);
-			return 4 + 4 + m_buffer.length;
+			return 4 + m_buffer.length;
 		}
 
 	}

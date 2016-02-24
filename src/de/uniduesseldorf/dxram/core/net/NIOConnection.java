@@ -21,6 +21,9 @@ import de.uniduesseldorf.dxram.core.util.NodeID;
  */
 public class NIOConnection extends AbstractConnection {
 
+	// Constants
+	private static final int NUMBER_OF_BUFFERS = 250;
+
 	// Attributes
 	private SocketChannel m_channel;
 	private NIOSelector m_nioSelector;
@@ -30,6 +33,7 @@ public class NIOConnection extends AbstractConnection {
 	private final ArrayDeque<ByteBuffer> m_incoming;
 	private final ArrayDeque<ByteBuffer> m_outgoing;
 	private ReentrantLock m_incomingLock;
+	private ReentrantLock m_outgoingAllLock;
 	private ReentrantLock m_outgoingLock;
 
 	private int m_unconfirmedBytes;
@@ -84,6 +88,7 @@ public class NIOConnection extends AbstractConnection {
 		m_flowControlCondLock = new ReentrantLock(false);
 		m_flowControlCond = m_flowControlCondLock.newCondition();
 		m_incomingLock = new ReentrantLock(false);
+		m_outgoingAllLock = new ReentrantLock(false);
 		m_outgoingLock = new ReentrantLock(false);
 	}
 
@@ -118,6 +123,7 @@ public class NIOConnection extends AbstractConnection {
 		m_flowControlCondLock = new ReentrantLock(false);
 		m_flowControlCond = m_flowControlCondLock.newCondition();
 		m_incomingLock = new ReentrantLock(false);
+		m_outgoingAllLock = new ReentrantLock(false);
 		m_outgoingLock = new ReentrantLock(false);
 	}
 
@@ -162,8 +168,8 @@ public class NIOConnection extends AbstractConnection {
 	 *            the ByteBuffer
 	 */
 	protected void addIncoming(final ByteBuffer p_buffer) {
-		// Avoid congestion by not allowing more than 1000 buffers to be cached for reading
-		while (m_incoming.size() > 1000) {//
+		// Avoid congestion by not allowing more than NUMBER_OF_BUFFERS buffers to be cached for reading
+		while (m_incoming.size() > NUMBER_OF_BUFFERS) {
 			Thread.yield();
 		}
 		m_incomingLock.lock();
@@ -204,17 +210,19 @@ public class NIOConnection extends AbstractConnection {
 	 *            Buffer
 	 */
 	private void writeToChannel(final ByteBuffer p_buffer) {
-		// Avoid congestion by not allowing more than 1000 messages to be buffered for writing
-		while (m_outgoing.size() > 1000) {
+		// Avoid congestion by not allowing more than NUMBER_OF_BUFFERS messages to be buffered for writing
+		while (m_outgoing.size() > NUMBER_OF_BUFFERS) {
 			Thread.yield();
 		}
 
-		m_outgoingLock.lock();
+		m_outgoingAllLock.lock();
 		// Change operation (read <-> write) and/or connection
 		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_WRITE);
 
+		m_outgoingLock.lock();
 		m_outgoing.offer(p_buffer);
 		m_outgoingLock.unlock();
+		m_outgoingAllLock.unlock();
 	}
 
 	/**
@@ -245,8 +253,12 @@ public class NIOConnection extends AbstractConnection {
 		ByteBuffer buffer;
 		ByteBuffer ret = null;
 
-		while (!m_outgoing.isEmpty()) {
+		while (true) {
 			m_outgoingLock.lock();
+			if (m_outgoing.isEmpty()) {
+				m_outgoingLock.unlock();
+				break;
+			}
 			buffer = m_outgoing.poll();
 			m_outgoingLock.unlock();
 
