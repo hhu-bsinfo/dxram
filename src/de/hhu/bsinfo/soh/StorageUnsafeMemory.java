@@ -375,4 +375,94 @@ public class StorageUnsafeMemory implements Storage {
 			}
 		}
 	}
+
+	@Override
+	public short[] readShorts(long p_ptr, int p_length) {
+		short[] array = new short[p_length];
+		readShorts(p_ptr, array, 0, p_length);
+		return array;
+	}
+
+	@Override
+	public int[] readInts(long p_ptr, int p_length) {
+		int[] array = new int[p_length];
+		readInts(p_ptr, array, 0, p_length);
+		return array;
+	}
+
+	@Override
+	public long[] readLongs(long p_ptr, int p_length) {
+		long[] array = new long[p_length];
+		readLongs(p_ptr, array, 0, p_length);
+		return array;
+	}
+
+	@Override
+	public int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+		for (int i = 0; i < p_length; i++) {
+			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Short.BYTES);
+		}
+
+		return p_length;
+	}
+
+	@Override
+	public int readInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+		for (int i = 0; i < p_length; i++) {
+			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Integer.BYTES);
+		}
+
+		return p_length;
+	}
+
+	@Override
+	public int readLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+		for (int i = 0; i < p_length; i++) {
+			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Long.BYTES);
+		}
+
+		return p_length;
+	}
+
+	@Override
+	public int writeShorts(long p_ptr, short[] p_array) {
+		return writeShorts(p_ptr, p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeInts(long p_ptr, int[] p_array) {
+		return writeInts(p_ptr, p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeLongs(long p_ptr, long[] p_array) {
+		return writeLongs(p_ptr, p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+		for (int i = 0; i < p_length; i++) {
+			writeShort(p_ptr + i * Short.BYTES, p_array[i + p_arrayOffset]);
+		}
+
+		return p_length;
+	}
+
+	@Override
+	public int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+		for (int i = 0; i < p_length; i++) {
+			writeInt(p_ptr + i * Integer.BYTES, p_array[i + p_arrayOffset]);
+		}
+
+		return p_length;
+	}
+
+	@Override
+	public int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+		for (int i = 0; i < p_length; i++) {
+			writeLong(p_ptr + i * Long.BYTES, p_array[i + p_arrayOffset]);
+		}
+
+		return p_length;
+	}
 }

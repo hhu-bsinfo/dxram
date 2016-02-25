@@ -148,6 +148,33 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_write(JNIEnv *p_
 	(*p_env)->ReleaseByteArrayElements(p_env, p_array, array, 0);
 }
 
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeShorts(JNIEnv *p_env, jclass p_class, jlong p_addr, jshortArray p_array, jint p_arrayOffset, jint p_length) 
+{
+	jshort* array = (*p_env)->GetShortArrayElements(p_env, p_array, NULL);
+
+	memcpy((void*) p_addr, (void*) (array + p_arrayOffset), p_length * sizeof(jshort));
+
+	(*p_env)->ReleaseShortArrayElements(p_env, p_array, array, 0);
+}
+
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeInts(JNIEnv *p_env, jclass p_class, jlong p_addr, jintArray p_array, jint p_arrayOffset, jint p_length) 
+{
+	jint* array = (*p_env)->GetIntArrayElements(p_env, p_array, NULL);
+
+	memcpy((void*) p_addr, (void*) (array + p_arrayOffset), p_length * sizeof(jint));
+
+	(*p_env)->ReleaseIntArrayElements(p_env, p_array, array, 0);
+}
+
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeLongs(JNIEnv *p_env, jclass p_class, jlong p_addr, jlongArray p_array, jint p_arrayOffset, jint p_length) 
+{
+	jlong* array = (*p_env)->GetLongArrayElements(p_env, p_array, NULL);
+
+	memcpy((void*) p_addr, (void*) (array + p_arrayOffset), p_length * sizeof(jlong));
+
+	(*p_env)->ReleaseLongArrayElements(p_env, p_array, array, 0);
+}
+
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_read(JNIEnv *p_env, jclass p_class, jlong p_addr, jbyteArray p_array, jint p_arrayOffset, jint p_length) 
 {
 	jbyte* array = (*p_env)->GetByteArrayElements(p_env, p_array, NULL);
@@ -155,6 +182,33 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_read(JNIEnv *p_e
 	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length);
 
 	(*p_env)->ReleaseByteArrayElements(p_env, p_array, array, 0);
+}
+
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readShorts(JNIEnv *p_env, jclass p_class, jlong p_addr, jshortArray p_array, jint p_arrayOffset, jint p_length) 
+{
+	jshort* array = (*p_env)->GetShortArrayElements(p_env, p_array, NULL);
+
+	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length * sizeof(jshort));
+
+	(*p_env)->ReleaseShortArrayElements(p_env, p_array, array, 0);
+}
+
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readInts(JNIEnv *p_env, jclass p_class, jlong p_addr, jintArray p_array, jint p_arrayOffset, jint p_length) 
+{
+	jint* array = (*p_env)->GetIntArrayElements(p_env, p_array, NULL);
+
+	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length * sizeof(jint));
+
+	(*p_env)->ReleaseIntArrayElements(p_env, p_array, array, 0);
+}
+
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readLongs(JNIEnv *p_env, jclass p_class, jlong p_addr, jlongArray p_array, jint p_arrayOffset, jint p_length) 
+{
+	jlong* array = (*p_env)->GetLongArrayElements(p_env, p_array, NULL);
+
+	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length * sizeof(jlong));
+
+	(*p_env)->ReleaseLongArrayElements(p_env, p_array, array, 0);
 }
 
 JNIEXPORT jbyte JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readByte(JNIEnv *p_env, jclass p_class, jlong p_addr) 
@@ -277,9 +331,6 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeValue(JNIEn
 	p_value = byteSwap64(p_value);
 	memcpy((void*) p_addr, (void*) &((uint8_t*)&p_value)[8 - p_byteCount], p_byteCount);
 }
-
-
-
 
 
 

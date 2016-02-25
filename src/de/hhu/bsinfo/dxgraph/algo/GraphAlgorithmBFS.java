@@ -81,7 +81,11 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 			
 			Vertex[] entryVertices = new Vertex[p_chunkIDs.length];
 			for (int i = 0; i < p_chunkIDs.length; i++) {
-				entryVertices[i] = new Vertex(p_chunkIDs[i]);
+				if (p_chunkIDs[i] == 0) {
+					loggerService.warn(getClass(), "Invalid vertix with id 0 found, filtering.");
+				} else {
+					entryVertices[i] = new Vertex(p_chunkIDs[i]);
+				}
 			}
 			
 			if (chunkService.get(entryVertices) != entryVertices.length)

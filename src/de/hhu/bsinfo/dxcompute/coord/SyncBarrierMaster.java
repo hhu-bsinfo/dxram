@@ -30,14 +30,18 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 	private ArrayList<Short> m_slavesSynced = new ArrayList<Short>();
 	private Lock m_slavesSyncedMutex = new SpinLock();
 	
+	private int m_barrierIdentifer = -1;
+	
 	/**
 	 * Constructor
 	 * @param p_numSlaves Num of slaves to expect for synchronization.
 	 * @param p_broadcastIntervalMs Interval in ms to broadcast a message message to catch slaves waiting for the barrier.
+	 * @param p_barrierIdentifier Token to identify this barrier (if using multiple barriers), which is used as a sync token.
 	 */
-	public SyncBarrierMaster(final int p_numSlaves, final int p_broadcastIntervalMs) {
+	public SyncBarrierMaster(final int p_numSlaves, final int p_broadcastIntervalMs, final int p_barrierIdentifier) {
 		m_numSlaves = p_numSlaves;
 		m_broadcastIntervalMs = p_broadcastIntervalMs;
+		m_barrierIdentifer = p_barrierIdentifier;
 	}
 
 	@Override
@@ -71,7 +75,7 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 				// don't send to ourselves
 				if (peer != m_bootService.getNodeID())
 				{
-					MasterSyncBarrierBroadcastMessage message = new MasterSyncBarrierBroadcastMessage(peer);
+					MasterSyncBarrierBroadcastMessage message = new MasterSyncBarrierBroadcastMessage(peer, m_barrierIdentifer);
 					NetworkErrorCodes error = m_networkService.sendMessage(message);
 					if (error != NetworkErrorCodes.SUCCESS) {
 						m_loggerService.error(getClass(), "Sending broadcast message to peer " + peer + " failed: " + error);
@@ -91,7 +95,7 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 		for (short slavePeerID : m_slavesSynced)
 		{
 			m_loggerService.debug(getClass(), "Releasing slave " + slavePeerID);
-			MasterSyncBarrierReleaseMessage message = new MasterSyncBarrierReleaseMessage(slavePeerID);
+			MasterSyncBarrierReleaseMessage message = new MasterSyncBarrierReleaseMessage(slavePeerID, m_barrierIdentifer);
 			NetworkErrorCodes error = m_networkService.sendMessage(message);
 			if (error != NetworkErrorCodes.SUCCESS) {
 				m_loggerService.error(getClass(), "Sending release to " + slavePeerID + " failed: " + error);
@@ -124,6 +128,11 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 	 * @param p_message Message to handle.
 	 */
 	private void incomingSlaveSyncBarrierSignOn(final SlaveSyncBarrierSignOnMessage p_message) {
+		// from different sync call
+		if (p_message.getSyncToken() != m_barrierIdentifer) {
+			return;
+		}
+		
 		m_slavesSyncedMutex.lock();
 		
 		// avoid dupes

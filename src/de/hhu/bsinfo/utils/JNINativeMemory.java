@@ -68,6 +68,33 @@ public final class JNINativeMemory {
 	public static native void read(final long p_addr, byte[] p_array, final int p_arrayOffset, final int p_length);
 	
 	/**
+	 * Read from main memory.
+	 * @param p_addr Address to start reading from.
+	 * @param p_array Target array to read data into.
+	 * @param p_arrayOffset Startoffset in array.
+	 * @param p_length Number of shorts to read.
+	 */
+	public static native void readShorts(final long p_addr, short[] p_array, final int p_arrayOffset, final int p_length);
+	
+	/**
+	 * Read from main memory.
+	 * @param p_addr Address to start reading from.
+	 * @param p_array Target array to read data into.
+	 * @param p_arrayOffset Startoffset in array.
+	 * @param p_length Number of ints to read.
+	 */
+	public static native void readInts(final long p_addr, int[] p_array, final int p_arrayOffset, final int p_length);
+	
+	/**
+	 * Read from main memory.
+	 * @param p_addr Address to start reading from.
+	 * @param p_array Target array to read data into.
+	 * @param p_arrayOffset Startoffset in array.
+	 * @param p_length Number of longs to read.
+	 */
+	public static native void readLongs(final long p_addr, long[] p_array, final int p_arrayOffset, final int p_length);
+	
+	/**
 	 * Write data from a byte array to main memory.
 	 * @param p_addr Target startaddress to write to.
 	 * @param p_array Array with data to write.
@@ -75,6 +102,33 @@ public final class JNINativeMemory {
 	 * @param p_length Number of bytes to write.
 	 */
 	public static native void write(final long p_addr, byte[] p_array, final int p_arrayOffset, final int p_length);
+	
+	/**
+	 * Write data from a short array to main memory.
+	 * @param p_addr Target startaddress to write to.
+	 * @param p_array Array with data to write.
+	 * @param p_arrayOffset Startoffset within array.
+	 * @param p_length Number of shorts to write.
+	 */
+	public static native void writeShorts(final long p_addr, short[] p_array, final int p_arrayOffset, final int p_length);
+	
+	/**
+	 * Write data from an int array to main memory.
+	 * @param p_addr Target startaddress to write to.
+	 * @param p_array Array with data to write.
+	 * @param p_arrayOffset Startoffset within array.
+	 * @param p_length Number of ints to write.
+	 */
+	public static native void writeInts(final long p_addr, int[] p_array, final int p_arrayOffset, final int p_length);
+	
+	/**
+	 * Write data from a long array to main memory.
+	 * @param p_addr Target startaddress to write to.
+	 * @param p_array Array with data to write.
+	 * @param p_arrayOffset Startoffset within array.
+	 * @param p_length Number of longs to write.
+	 */
+	public static native void writeLongs(final long p_addr, long[] p_array, final int p_arrayOffset, final int p_length);
 
 	/**
 	 * Read a byte from memory.
@@ -147,5 +201,4 @@ public final class JNINativeMemory {
 	 * @param Number of bytes to write.
 	 */
 	public static native void writeValue(final long p_addr, final long p_value, final int p_byteCount);
-	
 }

@@ -81,9 +81,39 @@ public interface Exporter
 	 *  export call to write data to the target.
 	 *  
 	 * @param p_array Array to write.
-	 * @return Number of written bytes of the array.
+	 * @return Number of written elements.
 	 */
 	int writeBytes(final byte[] p_array);
+	
+	/** Write a short array to the target.
+	 * 
+	 *  Use this call in your exportable object in the
+	 *  export call to write data to the target.
+	 *  
+	 * @param p_array Array to write.
+	 * @return Number of written elements.
+	 */
+	int writeShorts(final short[] p_array);
+	
+	/** Write an int array to the target.
+	 * 
+	 *  Use this call in your exportable object in the
+	 *  export call to write data to the target.
+	 *  
+	 * @param p_array Array to write.
+	 * @return Number of written elements.
+	 */
+	int writeInts(final int[] p_array);
+	
+	/** Write a long array to the target.
+	 * 
+	 *  Use this call in your exportable object in the
+	 *  export call to write data to the target.
+	 *  
+	 * @param p_array Array to write.
+	 * @return Number of written elements.
+	 */
+	int writeLongs(final long[] p_array);
 	
 	/** Write a byte array to the target.
 	 * 
@@ -92,8 +122,44 @@ public interface Exporter
 	 *  
 	 * @param p_array Array to write.
 	 * @param p_offset Offset to start writing from.
-	 * @param p_length Number of bytes to write.
-	 * @return Number of written bytes of the array.
+	 * @param p_length Number of elements to write.
+	 * @return Number of written elements.
 	 */
 	int writeBytes(final byte[] p_array, final int p_offset, final int p_length);
+	
+	/** Write a short array to the target.
+	 * 
+	 *  Use this call in your exportable object in the
+	 *  export call to write data to the target.
+	 *  
+	 * @param p_array Array to write.
+	 * @param p_offset Offset to start writing from.
+	 * @param p_length Number of elements to write.
+	 * @return Number of written elements.
+	 */
+	int writeShorts(final short[] p_array, final int p_offset, final int p_length);
+	
+	/** Write an int array to the target.
+	 * 
+	 *  Use this call in your exportable object in the
+	 *  export call to write data to the target.
+	 *  
+	 * @param p_array Array to write.
+	 * @param p_offset Offset to start writing from.
+	 * @param p_length Number of elements to write.
+	 * @return Number of written elements.
+	 */
+	int writeInts(final int[] p_array, final int p_offset, final int p_length);
+	
+	/** Write a long array to the target.
+	 * 
+	 *  Use this call in your exportable object in the
+	 *  export call to write data to the target.
+	 *  
+	 * @param p_array Array to write.
+	 * @param p_offset Offset to start writing from.
+	 * @param p_length Number of elements to write.
+	 * @return Number of written elements.
+	 */
+	int writeLongs(final long[] p_array, final int p_offset, final int p_length);
 }

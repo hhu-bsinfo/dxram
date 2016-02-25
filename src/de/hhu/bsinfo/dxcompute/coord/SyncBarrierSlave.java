@@ -22,11 +22,14 @@ public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 	private volatile short m_masterNodeID = NodeID.INVALID_ID;
 	private volatile boolean m_masterBarrierReleased = false;
 	
+	private int m_barrierIdentifer = -1;
+	
 	/**
 	 * Constructor
+	 * @param p_barrierIdentifier Token to identify this barrier (if using multiple barriers), which is used as a sync token.
 	 */
-	public SyncBarrierSlave() {
-
+	public SyncBarrierSlave(final int p_barrierIdentifier) {
+		m_barrierIdentifer = p_barrierIdentifier;
 	}
 	
 	@Override
@@ -98,7 +101,7 @@ public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
 		m_masterNodeID = p_message.getSource();
 		
 		// reply with sign on
-		SlaveSyncBarrierSignOnMessage message = new SlaveSyncBarrierSignOnMessage(m_masterNodeID);
+		SlaveSyncBarrierSignOnMessage message = new SlaveSyncBarrierSignOnMessage(m_masterNodeID, m_barrierIdentifer);
 		NetworkErrorCodes error = m_networkService.sendMessage(message);
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_loggerService.error(getClass(), "Sending sign on to " + m_masterNodeID + " failed: " + error);

@@ -364,7 +364,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	/**
 	 * Remove chunks/data structures from the storage (by handle/ID).
-	 * @param p_chunkIDs ChunkIDs/Handles of the data structures to remove.
+	 * @param p_chunkIDs ChunkIDs/Handles of the data structures to remove. Invalid values are ignored.
 	 * @return Number of successfully removed data structures.
 	 */
 	public int remove(final long... p_chunkIDs) {
@@ -387,6 +387,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < p_chunkIDs.length; i++) {
+			// invalid values allowed -> filter
+			if (p_chunkIDs[i] == ChunkID.INVALID_ID) {
+				continue;
+			}
+			
 			if (m_memoryManager.exists(p_chunkIDs[i])) {
 				// local
 				localChunks.add(p_chunkIDs[i]);
@@ -481,7 +486,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_dataStructres Data structures to put/update.
+	 * @param p_dataStructres Data structures to put/update. Null values are ignored.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final DataStructure... p_dataStructres) {
@@ -491,7 +496,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
 	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures Data structures to put/update.
+	 * @param p_dataStructures Data structures to put/update. Null values are ignored.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final ChunkLockOperation p_chunkUnlockOperation, DataStructure... p_dataStructures)
@@ -501,7 +506,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_dataStructures.length == 0)
 			return chunksPut;
 		
-		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		if (p_dataStructures[0] == null) {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+		} else {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not put chunks");
@@ -515,6 +524,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// sort by local/remote chunks
 		m_memoryManager.lockAccess();
 		for (DataStructure dataStructure : p_dataStructures) {
+			// allowing nulls -> filter
+			if (dataStructure == null) {
+				continue;
+			}
+			
 			if (m_memoryManager.exists(dataStructure.getID())) {
 				localChunks.add(dataStructure);
 			} else {
@@ -603,14 +617,18 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);		
 		
-		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + chunksPut);
+		if (p_dataStructures[0] == null) {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...] -> " + chunksPut);
+		} else {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + chunksPut);
+		}
 		
 		return chunksPut;
 	}
 	
 	/**
 	 * Get/Read the data stored in the backend storage in the provided data structures.
-	 * @param p_dataStructures Data structures to read the stored data into.
+	 * @param p_dataStructures Data structures to read the stored data into. Null values are ignored.
 	 * @return Number of successfully read data structures.
 	 */
 	public int get(DataStructure... p_dataStructures) {
@@ -619,7 +637,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_dataStructures.length == 0)
 			return totalChunksGot;
 		
-		m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		if (p_dataStructures[0] == null) {
+			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...]");
+		} else {
+			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not get chunks");
@@ -633,6 +655,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < p_dataStructures.length; i++) {
+			// filter null values
+			if (p_dataStructures[i] == null) {
+				continue;
+			}
+			
 			if (m_memoryManager.exists(p_dataStructures[i].getID())) {
 				// local
 				localChunks.add(p_dataStructures[i]);
@@ -708,7 +735,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);	
 		
-		m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + totalChunksGot);
+		if (p_dataStructures[0] == null) {
+			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+		} else {
+			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + totalChunksGot);
+		}
 
 		return totalChunksGot;
 	}

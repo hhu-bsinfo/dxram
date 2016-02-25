@@ -141,4 +141,124 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 		return size;
 	}
 
+	@Override
+	public int writeShorts(short[] p_array) {
+		return writeShorts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeInts(int[] p_array) {
+		return writeInts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeLongs(long[] p_array) {
+		return writeLongs(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeShorts(short[] p_array, int p_offset, int p_length) {
+		int count = p_length;
+		
+		if (count * Short.BYTES > m_messageBuffer.remaining()) {
+			count = m_messageBuffer.remaining() / Short.BYTES;
+		}
+		
+		for (int i = 0; i < count; i++) {
+			m_messageBuffer.putShort(p_array[p_offset + i]);
+		}
+		
+		return count;
+	}
+
+	@Override
+	public int writeInts(int[] p_array, int p_offset, int p_length) {
+		int count = p_length;
+		
+		if (count * Integer.BYTES > m_messageBuffer.remaining()) {
+			count = m_messageBuffer.remaining() / Integer.BYTES;
+		}
+		
+		for (int i = 0; i < count; i++) {
+			m_messageBuffer.putInt(p_array[p_offset + i]);
+		}
+		
+		return count;
+	}
+
+	@Override
+	public int writeLongs(long[] p_array, int p_offset, int p_length) {
+		int count = p_length;
+		
+		if (count * Long.BYTES > m_messageBuffer.remaining()) {
+			count = m_messageBuffer.remaining() / Long.BYTES;
+		}
+		
+		for (int i = 0; i < count; i++) {
+			m_messageBuffer.putLong(p_array[p_offset + i]);
+		}
+		
+		return count;
+	}
+
+	@Override
+	public int readShorts(short[] p_array) {
+		return readShorts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int readInts(int[] p_array) {
+		return readInts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int readLongs(long[] p_array) {
+		return readLongs(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int readShorts(short[] p_array, int p_offset, int p_length) {
+		int count = p_length;
+		
+		if (count * Short.BYTES > m_messageBuffer.remaining()) {
+			count = m_messageBuffer.remaining() / Short.BYTES;
+		}
+		
+		for (int i = 0; i < count; i++) {
+			p_array[p_offset + i] = m_messageBuffer.getShort();
+		}
+		
+		return count;
+	}
+
+	@Override
+	public int readInts(int[] p_array, int p_offset, int p_length) {
+		int count = p_length;
+		
+		if (count * Integer.BYTES > m_messageBuffer.remaining()) {
+			count = m_messageBuffer.remaining() / Integer.BYTES;
+		}
+		
+		for (int i = 0; i < count; i++) {
+			p_array[p_offset + i] = m_messageBuffer.getShort();
+		}
+		
+		return count;
+	}
+
+	@Override
+	public int readLongs(long[] p_array, int p_offset, int p_length) {
+		int count = p_length;
+		
+		if (count * Long.BYTES > m_messageBuffer.remaining()) {
+			count = m_messageBuffer.remaining() / Long.BYTES;
+		}
+		
+		for (int i = 0; i < count; i++) {
+			p_array[p_offset + i] = m_messageBuffer.getShort();
+		}
+		
+		return count;
+	}
+
 }

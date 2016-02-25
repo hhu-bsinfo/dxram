@@ -82,9 +82,39 @@ public interface Importer
 	 *  import call to read data from the target.
 	 *  
 	 * @param p_array Array to read into.
-	 * @return Number of read bytes into the array.
+	 * @return Number of bytes read.
 	 */
 	int readBytes(final byte[] p_array);
+	
+	/** Read data into a short array from target.
+	 * 
+	 *  Use this call in your importable object in the
+	 *  import call to read data from the target.
+	 *  
+	 * @param p_array Array to read into.
+	 * @return Number of shorts read;
+	 */
+	int readShorts(final short[] p_array);
+	
+	/** Read data into an int array from target.
+	 * 
+	 *  Use this call in your importable object in the
+	 *  import call to read data from the target.
+	 *  
+	 * @param p_array Array to read into.
+	 * @return Number of ints read;
+	 */
+	int readInts(final int[] p_array);
+	
+	/** Read data into a long array from target.
+	 * 
+	 *  Use this call in your importable object in the
+	 *  import call to read data from the target.
+	 *  
+	 * @param p_array Array to read into.
+	 * @return Number of longs read;
+	 */
+	int readLongs(final long[] p_array);
 	
 	/** Read data into a byte array from target.
 	 * 
@@ -94,7 +124,43 @@ public interface Importer
 	 * @param p_array Array to read into.
 	 * @param p_offset Offset to start in the array for reading into.
 	 * @param p_length Number of bytes to read.
-	 * @return Number of read bytes into the array.
+	 * @return Number of bytes read.
 	 */
 	int readBytes(final byte[] p_array, final int p_offset, int p_length);
+
+	/** Read data into a short array from target.
+	 * 
+	 *  Use this call in your importable object in the
+	 *  import call to read data from the target.
+	 *  
+	 * @param p_array Array to read into.
+	 * @param p_offset Offset to start in the array for reading into.
+	 * @param p_length Number of shorts to read.
+	 * @return Number of shorts read.
+	 */
+	int readShorts(final short[] p_array, final int p_offset, int p_length);
+	
+	/** Read data into an int array from target.
+	 * 
+	 *  Use this call in your importable object in the
+	 *  import call to read data from the target.
+	 *  
+	 * @param p_array Array to read into.
+	 * @param p_offset Offset to start in the array for reading into.
+	 * @param p_length Number of ints to read.
+	 * @return Number of ints read.
+	 */
+	int readInts(final int[] p_array, final int p_offset, int p_length);
+	
+	/** Read data into a long array from target.
+	 * 
+	 *  Use this call in your importable object in the
+	 *  import call to read data from the target.
+	 *  
+	 * @param p_array Array to read into.
+	 * @param p_offset Offset to start in the array for reading into.
+	 * @param p_length Number of longs to read.
+	 * @return Number of longs read.
+	 */
+	int readLongs(final long[] p_array, final int p_offset, int p_length);
 }
