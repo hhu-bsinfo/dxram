@@ -10,8 +10,8 @@ package de.hhu.bsinfo.utils;
  *            second attribute
  */
 public class Pair<T, K> {
-	private T m_first;
-	private K m_second;
+	public T m_first;
+	public K m_second;
 
 	/**
 	 * Creates an instance of Pair

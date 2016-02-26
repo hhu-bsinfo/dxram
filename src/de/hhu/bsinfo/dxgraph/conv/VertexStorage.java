@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.utils.Pair;
 
 public interface VertexStorage 
 {
@@ -21,6 +21,6 @@ public interface VertexStorage
 	long getTotalEdgeCount();
 	
 	// getting vertices for exporting
-	Vertex getVertex(final long p_vertexId);
+	Pair<Long, String> getVertexNeighbourList(final long p_vertexId);
 	
 }

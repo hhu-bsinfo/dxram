@@ -4,9 +4,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
@@ -165,45 +164,19 @@ public abstract class Converter extends Main
 		long vertexCount = 0;
 		for (long i = p_rangeStartIncl; i < p_rangeEndExcl; i++)
 		{
-			Vertex v = m_storage.getVertex(i);
-			if (v != null)
-			{
-				String str = new String();
-				
-				//str += v.getID() + ":";
-				
-				boolean first = true;
-				List<Long> neighbours = v.getNeighbours();
-				for (long neighbourId : neighbours)
-				{
-					if (first)
-						first = false;
-					else
-						str += ",";
-					
-					str += neighbourId;
-					edgeCount++;
-				}
-				
-				str += "\n";
-				
-				try {
-					p_file.write(str);
-				} catch (IOException e) {
-					return false;
-				}
-				
-				vertexCount++;
-				updateProgress("TotalVerticesToFiles", vertexCount, p_rangeEndExcl - p_rangeStartIncl);
-			} 
-			else
-			{
-				try {
-					p_file.write("\n");
-				} catch (IOException e) {
-					return false;
-				}
-			}				
+			Pair<Long, String> vertexNeighbourList = m_storage.getVertexNeighbourList(i);
+	
+			try {
+				//p_file.write(Long.toString(i) + ": ");
+				p_file.write(vertexNeighbourList.m_second);
+				p_file.write("\n");
+			} catch (IOException e) {
+				return false;
+			}
+			
+			edgeCount += vertexNeighbourList.m_first;
+			vertexCount++;
+			updateProgress("TotalVerticesToFiles", vertexCount, p_rangeEndExcl - p_rangeStartIncl);
 		}
 		
 		try {

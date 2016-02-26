@@ -43,9 +43,15 @@ public class BinaryEdgeListToOel extends Converter
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		
 		try {
-			while (file.getFilePointer() != file.length())
+			long fileLength = file.length();
+			long bytesRead = 0;
+			do
 			{			
-				file.read(buffer.array());
+				int read = file.read(buffer.array());
+				if (read == -1)
+					break;
+				
+				bytesRead += read;
 			
 				while (buffer.hasRemaining())
 				{
@@ -53,11 +59,14 @@ public class BinaryEdgeListToOel extends Converter
 					Long destNode = buffer.getLong();
 					
 					processEdge(srcNode, destNode);
-					updateProgress("BinaryDataReading", file.getFilePointer(), file.length());
+					updateProgress("BinaryDataReading", bytesRead, fileLength);
 				}
 				
 				buffer.clear();
+				
+				
 			}
+			while (bytesRead < fileLength);
 			
 			file.close();
 		} catch (IOException e) {
