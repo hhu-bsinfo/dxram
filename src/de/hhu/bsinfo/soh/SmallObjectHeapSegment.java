@@ -512,19 +512,7 @@ public final class SmallObjectHeapSegment {
 
 		m_memory.set(p_address + lengthFieldSize, p_size, p_value);
 	}
-
-	/**
-	 * Read a single byte from the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @return Byte read.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public byte readByte(final long p_address) {
-		return readByte(p_address, 0);
-	}
-
+	
 	/**
 	 * Read a single byte from the specified address + offset.
 	 * @param p_address
@@ -554,18 +542,6 @@ public final class SmallObjectHeapSegment {
 	}
 
 	/**
-	 * Read a single short from the specified address.
-	 * @param p_address
-	 *            Address
-	 * @return Short read.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public short readShort(final long p_address) {
-		return readShort(p_address, 0);
-	}
-
-	/**
 	 * Read a single short from the specified address + offset.
 	 * @param p_address
 	 *            Address.
@@ -592,19 +568,6 @@ public final class SmallObjectHeapSegment {
 
 		return m_memory.readShort(p_address + lengthFieldSize + p_offset);
 	}
-
-	/**
-	 * Read a single int from the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @return Int read.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public int readInt(final long p_address) {
-		return readInt(p_address, 0);
-	}
-
 	/**
 	 * Read a single int from the specified address + offset.
 	 * @param p_address
@@ -632,19 +595,7 @@ public final class SmallObjectHeapSegment {
 
 		return m_memory.readInt(p_address + lengthFieldSize + p_offset);
 	}
-
-	/**
-	 * Read a long from the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @return Long read.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public long readLong(final long p_address) {
-		return readLong(p_address, 0);
-	}
-
+	
 	/**
 	 * Read a long from the specified address + offset.
 	 * @param p_address
@@ -672,50 +623,16 @@ public final class SmallObjectHeapSegment {
 		
 		return m_memory.readLong(p_address + lengthFieldSize + p_offset);
 	}
-
-	/**
-	 * Reads a block of bytes from the memory
-	 * @param p_address
-	 *            the address to start reading
-	 * @return the read bytes
-	 * @throws MemoryException
-	 *             if the bytes could not be read
-	 */
-	public byte[] readBytes(final long p_address) {
-		return readBytes(p_address, 0);
-	}
-
-	/**
-	 * Read a block from memory. This will read bytes until the end
-	 * of the allocated block, starting address + offset.
-	 * @param p_address
-	 *            Address of allocated block.
-	 * @param p_offset
-	 *            Offset added to address for start address to read from.
-	 * @return Byte array with read data.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public byte[] readBytes(final long p_address, final long p_offset) {
-		assert assertSegmentBounds(p_address, p_offset);
-
-		byte[] ret;
-		int lengthFieldSize;
-		int size;
-		long readStartOffset;
-
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-		size = (int) read(p_address, lengthFieldSize);
-
-		assert p_offset < size;
-		readStartOffset = p_address + lengthFieldSize + p_offset;
-
-		ret = new byte[(int) (size - p_offset)];
-		m_memory.readBytes(readStartOffset, ret, 0, ret.length);
-
-		return ret;
-	}
 	
+	/**
+	 * Read data into a byte array.
+	 * @param p_address Address in heap to start at.
+	 * @param p_offset Offset to add to start address.
+	 * @param p_buffer Buffer to read into.
+	 * @param p_offsetArray Offset within the buffer.
+	 * @param p_length Number of elements to read.
+	 * @return Number of elements read.
+	 */
 	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, int p_offsetArray, int p_length) 
 	{
 		assert assertSegmentBounds(p_address, p_offset);
@@ -729,24 +646,102 @@ public final class SmallObjectHeapSegment {
 		size = (int) read(p_address, lengthFieldSize);
 
 		assert p_offset < size;
+		assert p_offset + p_length * Byte.BYTES <= size;
 		readStartOffset = p_address + lengthFieldSize + p_offset;
 
 		bytesRead = m_memory.readBytes(readStartOffset, p_buffer, p_offsetArray, p_length);
 
 		return bytesRead;
 	}
-
+	
 	/**
-	 * Write a single byte to the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @param p_value
-	 *            Byte to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
+	 * Read data into a short array.
+	 * @param p_address Address in heap to start at.
+	 * @param p_offset Offset to add to start address.
+	 * @param p_buffer Buffer to read into.
+	 * @param p_offsetArray Offset within the buffer.
+	 * @param p_length Number of elements to read.
+	 * @return Number of elements read.
 	 */
-	public void writeByte(final long p_address, final byte p_value) {
-		writeByte(p_address, 0, p_value);
+	public int readShorts(final long p_address, final long p_offset, final short[] p_buffer, int p_offsetArray, int p_length) 
+	{
+		assert assertSegmentBounds(p_address, p_offset);
+
+		int itemsRead = -1;
+		int lengthFieldSize;
+		int size;
+		long readStartOffset;
+
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
+
+		assert p_offset < size;
+		assert p_offset + p_length * Short.BYTES <= size;
+		readStartOffset = p_address + lengthFieldSize + p_offset;
+
+		itemsRead = m_memory.readShorts(readStartOffset, p_buffer, p_offsetArray, p_length);
+
+		return itemsRead;
+	}
+	
+	/**
+	 * Read data into an int array.
+	 * @param p_address Address in heap to start at.
+	 * @param p_offset Offset to add to start address.
+	 * @param p_buffer Buffer to read into.
+	 * @param p_offsetArray Offset within the buffer.
+	 * @param p_length Number of elements to read.
+	 * @return Number of elements read.
+	 */
+	public int readInts(final long p_address, final long p_offset, final int[] p_buffer, int p_offsetArray, int p_length) 
+	{
+		assert assertSegmentBounds(p_address, p_offset);
+
+		int itemsRead = -1;
+		int lengthFieldSize;
+		int size;
+		long readStartOffset;
+
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
+
+		assert p_offset < size;
+		assert p_offset + p_length * Integer.BYTES <= size;
+		readStartOffset = p_address + lengthFieldSize + p_offset;
+
+		itemsRead = m_memory.readInts(readStartOffset, p_buffer, p_offsetArray, p_length);
+
+		return itemsRead;
+	}
+	
+	/**
+	 * Read data into a long array.
+	 * @param p_address Address in heap to start at.
+	 * @param p_offset Offset to add to start address.
+	 * @param p_buffer Buffer to read into.
+	 * @param p_offsetArray Offset within the buffer.
+	 * @param p_length Number of elements to read.
+	 * @return Number of elements read.
+	 */
+	public int readLongs(final long p_address, final long p_offset, final long[] p_buffer, int p_offsetArray, int p_length) 
+	{
+		assert assertSegmentBounds(p_address, p_offset);
+
+		int itemsRead = -1;
+		int lengthFieldSize;
+		int size;
+		long readStartOffset;
+
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
+
+		assert p_offset < size;
+		assert p_offset + p_length * Long.BYTES <= size;
+		readStartOffset = p_address + lengthFieldSize + p_offset;
+
+		itemsRead = m_memory.readLongs(readStartOffset, p_buffer, p_offsetArray, p_length);
+
+		return itemsRead;
 	}
 
 	/**
@@ -777,19 +772,6 @@ public final class SmallObjectHeapSegment {
 	}
 
 	/**
-	 * Write a single short to the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @param p_value
-	 *            Short to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public void writeShort(final long p_address, final short p_value) {
-		writeShort(p_address, 0, p_value);
-	}
-
-	/**
 	 * Write a short to the spcified address + offset.
 	 * @param p_address
 	 *            Address.
@@ -814,19 +796,6 @@ public final class SmallObjectHeapSegment {
 		assert size >= Short.BYTES && p_offset + Short.BYTES <= size;
 
 		m_memory.writeShort(p_address + lengthFieldSize + p_offset, p_value);
-	}
-
-	/**
-	 * Write a single int to the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @param p_value
-	 *            Int to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public void writeInt(final long p_address, final int p_value) {
-		writeInt(p_address, 0, p_value);
 	}
 
 	/**
@@ -857,19 +826,6 @@ public final class SmallObjectHeapSegment {
 	}
 
 	/**
-	 * Write a long value to the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @param p_value
-	 *            Long value to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public void writeLong(final long p_address, final long p_value) {
-		writeLong(p_address, 0, p_value);
-	}
-
-	/**
 	 * Write a long value to the specified address + offset.
 	 * @param p_address
 	 *            Address.
@@ -897,34 +853,6 @@ public final class SmallObjectHeapSegment {
 	}
 
 	/**
-	 * Write an array of bytes to the specified address.
-	 * @param p_address
-	 *            Address.
-	 * @param p_value
-	 *            Bytes to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public int writeBytes(final long p_address, final byte[] p_value) {
-		return writeBytes(p_address, 0, p_value);
-	}
-
-	/**
-	 * Write an array of bytes to the specified address + offset.
-	 * @param p_address
-	 *            Address.
-	 * @param p_offset
-	 *            Offset to add to the address.
-	 * @param p_value
-	 *            Bytes to write.
-	 * @throws MemoryException
-	 *             If accessing memory failed.
-	 */
-	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value) {
-		return writeBytes(p_address, p_offset, p_value, 0, p_value.length);
-	}
-
-	/**
 	 * Write an array of bytes to the specified address + offset.
 	 * @param p_address
 	 *            Address.
@@ -949,7 +877,7 @@ public final class SmallObjectHeapSegment {
 		size = (int) read(p_address, lengthFieldSize);
 
 		assert p_offset < size;
-		assert p_offset + p_length <= size;
+		assert p_offset + p_length * Byte.BYTES <= size;
 
 		offset = p_address + lengthFieldSize + p_offset;
 			
@@ -957,6 +885,97 @@ public final class SmallObjectHeapSegment {
 		
 		return bytesWritten;
 	}
+	
+	/**
+	 * Write an array of shorts to the heap.
+	 * @param p_address Address of an allocated block of memory.
+	 * @param p_offset Offset within the block of memory to start at.
+	 * @param p_value Array to write.
+	 * @param p_offsetArray Offset within the array.
+	 * @param p_length Number of elements to write.
+	 * @return Number of elements written.
+	 */
+	public int writeShorts(final long p_address, final long p_offset, final short[] p_value, final int p_offsetArray, final int p_length) {
+		assert assertSegmentBounds(p_address, p_offset);
+
+		int bytesWritten = -1;
+		int lengthFieldSize;
+		int size;
+		long offset;
+
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
+
+		assert p_offset < size;
+		assert p_offset + p_length * Short.BYTES <= size;
+
+		offset = p_address + lengthFieldSize + p_offset;
+			
+		bytesWritten = m_memory.writeShorts(offset, p_value, p_offsetArray, p_length);
+		
+		return bytesWritten;
+	}
+	
+	/**
+	 * Write an array of ints to the heap.
+	 * @param p_address Address of an allocated block of memory.
+	 * @param p_offset Offset within the block of memory to start at.
+	 * @param p_value Array to write.
+	 * @param p_offsetArray Offset within the array.
+	 * @param p_length Number of elements to write.
+	 * @return Number of elements written.
+	 */
+	public int writeInts(final long p_address, final long p_offset, final int[] p_value, final int p_offsetArray, final int p_length) {
+		assert assertSegmentBounds(p_address, p_offset);
+
+		int bytesWritten = -1;
+		int lengthFieldSize;
+		int size;
+		long offset;
+
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
+
+		assert p_offset < size;
+		assert p_offset + p_length * Integer.BYTES <= size;
+
+		offset = p_address + lengthFieldSize + p_offset;
+			
+		bytesWritten = m_memory.writeInts(offset, p_value, p_offsetArray, p_length);
+		
+		return bytesWritten;
+	}
+	
+	/**
+	 * Write an array of longs to the heap.
+	 * @param p_address Address of an allocated block of memory.
+	 * @param p_offset Offset within the block of memory to start at.
+	 * @param p_value Array to write.
+	 * @param p_offsetArray Offset within the array.
+	 * @param p_length Number of elements to write.
+	 * @return Number of elements written.
+	 */
+	public int writeLongs(final long p_address, final long p_offset, final long[] p_value, final int p_offsetArray, final int p_length) {
+		assert assertSegmentBounds(p_address, p_offset);
+
+		int bytesWritten = -1;
+		int lengthFieldSize;
+		int size;
+		long offset;
+
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		size = (int) read(p_address, lengthFieldSize);
+
+		assert p_offset < size;
+		assert p_offset + p_length * Long.BYTES <= size;
+
+		offset = p_address + lengthFieldSize + p_offset;
+			
+		bytesWritten = m_memory.writeLongs(offset, p_value, p_offsetArray, p_length);
+		
+		return bytesWritten;
+	}
+	
 
 	/**
 	 * Get the user definable state of a specified address referring

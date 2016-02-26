@@ -95,13 +95,6 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 			}
 			
 			// -----------------------------------------------------------------------------------
-		
-//			System.out.print(this + ", entry vertices: ");
-//			for (Vertex v : entryVertices)
-//			{
-//				System.out.print(Long.toHexString(v.getID()) + ", ");
-//			}
-//			System.out.println();
 			
 			for (Vertex v : entryVertices)
 			{
@@ -113,8 +106,6 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 						loggerService.error(getClass(), "Marking vertex " + v + " as visited failed.");
 						continue;
 					}
-					
-//					System.out.println(this + ", Visited: " + v);
 					
 					// spawn further jobs for neighbours
 					List<Long> neighbours = v.getNeighbours();
@@ -137,10 +128,6 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 							loggerService.error(getClass(), "Creating job for neighbours of vertex " + v + " failed.");
 						}
 					}
-				}
-				else
-				{
-//					System.out.println(this + ", Already visited: " + v);
 				}
 			}
 		}

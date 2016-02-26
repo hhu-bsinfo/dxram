@@ -128,24 +128,6 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public byte[] readBytes(final long p_ptr, final int p_length) {
-		assert p_ptr >= 0;
-		assert p_ptr < m_size;
-		assert p_ptr + p_length <= m_size;
-
-		final byte[] data = new byte[p_length];
-
-		try {
-			m_file.seek(p_ptr);
-			m_file.read(data);
-		} catch (final IOException e) {
-			throw new MemoryRuntimeException("reading bytes failed " + e);
-		}
-
-		return data;
-	}
-
-	@Override
 	public int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
@@ -229,24 +211,6 @@ public class StorageRandomAccessFile implements Storage {
 		}
 
 		return value;
-	}
-
-	@Override
-	public int writeBytes(final long p_ptr, final byte[] p_array) {
-		assert p_ptr >= 0;
-		assert p_ptr + p_array.length <= m_size;
-
-		int bytesWritten = -1;
-		
-		try {
-			m_file.seek(p_ptr);
-			m_file.write(p_array);
-			bytesWritten = p_array.length;
-		} catch (final IOException e) {
-			throw new MemoryRuntimeException("writing failed " + e);
-		}
-		
-		return bytesWritten;
 	}
 
 	@Override
@@ -378,27 +342,6 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public short[] readShorts(long p_ptr, int p_length) {
-		short[] array = new short[p_length];
-		readShorts(p_ptr, array, 0, p_length);
-		return array;
-	}
-
-	@Override
-	public int[] readInts(long p_ptr, int p_length) {
-		int[] array = new int[p_length];
-		readInts(p_ptr, array, 0, p_length);
-		return array;
-	}
-
-	@Override
-	public long[] readLongs(long p_ptr, int p_length) {
-		long[] array = new long[p_length];
-		readLongs(p_ptr, array, 0, p_length);
-		return array;
-	}
-
-	@Override
 	public int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
 		for (int i = 0; i < p_length; i++) {
 			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Short.BYTES);
@@ -423,21 +366,6 @@ public class StorageRandomAccessFile implements Storage {
 		}
 
 		return p_length;
-	}
-
-	@Override
-	public int writeShorts(long p_ptr, short[] p_array) {
-		return writeShorts(p_ptr, p_array, 0, p_array.length);
-	}
-
-	@Override
-	public int writeInts(long p_ptr, int[] p_array) {
-		return writeInts(p_ptr, p_array, 0, p_array.length);
-	}
-
-	@Override
-	public int writeLongs(long p_ptr, long[] p_array) {
-		return writeLongs(p_ptr, p_array, 0, p_array.length);
 	}
 
 	@Override

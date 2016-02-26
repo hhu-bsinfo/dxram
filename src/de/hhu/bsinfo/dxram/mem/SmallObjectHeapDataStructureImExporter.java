@@ -74,7 +74,7 @@ public class SmallObjectHeapDataStructureImExporter implements Importer, Exporte
 	public int writeBytes(final byte[] p_array, final int p_offset, final int p_length) {
 		int written = m_heap.writeBytes(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
 		if (written != -1) {
-			m_offset += written;
+			m_offset += written * Byte.BYTES;
 		}
 		return written;
 	}
@@ -131,7 +131,88 @@ public class SmallObjectHeapDataStructureImExporter implements Importer, Exporte
 	public int readBytes(final byte[] p_array, final int p_offset, final int p_length) {
 		int read = m_heap.readBytes(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
 		if (read != -1)
-			m_offset += read;
+			m_offset += read * Byte.BYTES;
 		return read;		
+	}
+
+	@Override
+	public int writeShorts(short[] p_array) {
+		return writeShorts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeInts(int[] p_array) {
+		return writeInts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeLongs(long[] p_array) {
+		return writeLongs(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int writeShorts(short[] p_array, int p_offset, int p_length) {
+		int written = m_heap.writeShorts(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+		if (written != -1) {
+			m_offset += written * Short.BYTES;
+		}
+		return written;
+	}
+
+	@Override
+	public int writeInts(int[] p_array, int p_offset, int p_length) {
+		int written = m_heap.writeInts(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+		if (written != -1) {
+			m_offset += written * Integer.BYTES;
+		}
+		return written;
+	}
+
+	@Override
+	public int writeLongs(long[] p_array, int p_offset, int p_length) {
+		int written = m_heap.writeLongs(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+		if (written != -1) {
+			m_offset += written * Long.BYTES;
+		}
+		return written;
+	}
+
+	@Override
+	public int readShorts(short[] p_array) {
+		return readShorts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int readInts(int[] p_array) {
+		return readInts(p_array, 0, p_array.length);
+	}
+
+	@Override
+	public int readLongs(long[] p_array) {
+		return readLongs(p_array, 0, p_array.length);
+	}
+	
+	@Override
+	public int readShorts(short[] p_array, int p_offset, int p_length) {
+		int read = m_heap.readShorts(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+		if (read != -1)
+			m_offset += read * Short.BYTES;
+		return read;	
+	}
+
+	@Override
+	public int readInts(int[] p_array, int p_offset, int p_length) {
+		int read = m_heap.readInts(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+		if (read != -1)
+			m_offset += read * Integer.BYTES;
+		return read;	
+	}
+
+	@Override
+	public int readLongs(long[] p_array, int p_offset, int p_length) {
+		int read = m_heap.readLongs(m_allocatedMemoryStartAddress, m_offset, p_array, p_offset, p_length);
+		if (read != -1)
+			m_offset += read * Long.BYTES;
+		return read;	
 	}
 }

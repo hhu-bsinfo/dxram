@@ -148,6 +148,23 @@ public class NativeMemoryTest extends Main {
 			}
 		}
 		
+		{
+			long[] testArray = new long[5];
+			long[] arrayRead = new long[5];
+			for (int i = 0; i < 5; i++) {
+				testArray[i] = 1;
+			}
+			
+			JNINativeMemory.writeLongs(addr, testArray, 0, testArray.length);
+			JNINativeMemory.readLongs(addr, arrayRead, 0, arrayRead.length);
+			
+			for (int i = 0; i < 5; i++) {
+				if (testArray[i] != arrayRead[i]) {
+					System.out.println("ERROR: Endianess test arrays: " + arrayRead[i] + " != " + testArray[i]);
+					return -8;
+				}
+			}
+		}
 		System.out.println("Test readValue/writeValue...");
 		{
 			final long value = 0x1122334455667788L;
@@ -160,7 +177,7 @@ public class NativeMemoryTest extends Main {
 				if (testValue != testValue2)
 				{
 					System.out.println("ERROR: readValue/writeValue test(" + i + "): " + Long.toHexString(testValue) + " != " + Long.toHexString(testValue2));
-					return -8;
+					return -9;
 				}
 			}
 		}

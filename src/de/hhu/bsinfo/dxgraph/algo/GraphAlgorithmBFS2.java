@@ -1,8 +1,6 @@
 package de.hhu.bsinfo.dxgraph.algo;
 
-import java.util.List;
-
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
@@ -79,12 +77,12 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 			JobService jobService = getService(JobService.class);
 			LoggerService loggerService = getService(LoggerService.class);
 			
-			Vertex[] entryVertices = new Vertex[p_chunkIDs.length];
+			Vertex2[] entryVertices = new Vertex2[p_chunkIDs.length];
 			for (int i = 0; i < p_chunkIDs.length; i++) {
 				if (p_chunkIDs[i] == 0) {
 					loggerService.warn(getClass(), "Invalid vertix with id 0 found, filtering.");
 				} else {
-					entryVertices[i] = new Vertex(p_chunkIDs[i]);
+					entryVertices[i] = new Vertex2(p_chunkIDs[i]);
 				}
 			}
 			
@@ -105,20 +103,20 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 					entryVertices[i].setUserData(0);
 					
 					// spawn further jobs for neighbours
-					List<Long> neighbours = entryVertices[i].getNeighbours();
+					long[] neighbours = entryVertices[i].getNeighbours();
 					int neightbourIndex = 0;
-					while (neightbourIndex < neighbours.size())
+					while (neightbourIndex < neighbours.length)
 					{
 						int neighbourCount = 0;
-						if (neightbourIndex + m_vertexBatchCount >= neighbours.size()) {
-							neighbourCount = neighbours.size() - neightbourIndex;
+						if (neightbourIndex + m_vertexBatchCount >= neighbours.length) {
+							neighbourCount = neighbours.length - neightbourIndex;
 						} else {
 							neighbourCount = m_vertexBatchCount;
 						}
 						
 						long[] batch = new long[neighbourCount];
 						for (int j = 0; j < batch.length; j++) {
-							batch[j] = neighbours.get(neightbourIndex++);
+							batch[j] = neighbours[neightbourIndex++];
 						}
 						
 						if (!jobService.pushJob(new JobBFS(m_vertexBatchCount, batch))) {

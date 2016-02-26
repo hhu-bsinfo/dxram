@@ -58,46 +58,6 @@ public interface Storage {
 	 * Read data from the storage into a byte array.
 	 *
 	 * @param p_ptr Start position in storage.
-	 * @param p_length Number of bytes to read from specified start.
-	 * @return New byte array with read data.
-	 * @throws MemoryException If reading fails.
-	 */
-	byte[] readBytes(final long p_ptr, final int p_length);
-	
-	/**
-	 * Read data from the storage into a short array.
-	 *
-	 * @param p_ptr Start position in storage.
-	 * @param p_length Number of shorts to read from specified start.
-	 * @return New byte array with read data.
-	 * @throws MemoryException If reading fails.
-	 */
-	short[] readShorts(final long p_ptr, final int p_length);
-	
-	/**
-	 * Read data from the storage into an int array.
-	 *
-	 * @param p_ptr Start position in storage.
-	 * @param p_length Number of ints to read from specified start.
-	 * @return New byte array with read data.
-	 * @throws MemoryException If reading fails.
-	 */
-	int[] readInts(final long p_ptr, final int p_length);
-	
-	/**
-	 * Read data from the storage into a long array.
-	 *
-	 * @param p_ptr Start position in storage.
-	 * @param p_length Number of longs to read from specified start.
-	 * @return New byte array with read data.
-	 * @throws MemoryException If reading fails.
-	 */
-	long[] readLongs(final long p_ptr, final int p_length);
-
-	/**
-	 * Read data from the storage into a byte array.
-	 *
-	 * @param p_ptr Start position in storage.
 	 * @param p_array Array to read the data into.
 	 * @param p_arrayOffset Start offset in array to start writing the bytes to.
 	 * @param p_length Number of bytes to read from specified start.
@@ -173,42 +133,6 @@ public interface Storage {
 	 * @throws MemoryException If reading fails.
 	 */
 	long readLong(final long p_ptr);
-
-	/**
-	 * Write an array of bytes to the storage.
-	 *
-	 * @param p_ptr Start address to write to.
-	 * @param p_array Array with data to write.
-	 * @throws MemoryException If writing fails.
-	 */
-	int writeBytes(final long p_ptr, final byte[] p_array);
-	
-	/**
-	 * Write an array of shorts to the storage.
-	 *
-	 * @param p_ptr Start address to write to.
-	 * @param p_array Array with data to write.
-	 * @throws MemoryException If writing fails.
-	 */
-	int writeShorts(final long p_ptr, final short[] p_array);
-	
-	/**
-	 * Write an array of ints to the storage.
-	 *
-	 * @param p_ptr Start address to write to.
-	 * @param p_array Array with data to write.
-	 * @throws MemoryException If writing fails.
-	 */
-	int writeInts(final long p_ptr, final int[] p_array);
-	
-	/**
-	 * Write an array of longs to the storage.
-	 *
-	 * @param p_ptr Start address to write to.
-	 * @param p_array Array with data to write.
-	 * @throws MemoryException If writing fails.
-	 */
-	int writeLongs(final long p_ptr, final long[] p_array);
 
 	/**
 	 * Write an array of bytes to the storage.
