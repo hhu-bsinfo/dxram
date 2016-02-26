@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
@@ -96,7 +97,9 @@ public class PutMessage extends AbstractMessage {
 			p_buffer.putLong(dataStructure.getID());
 			exporter.setPayloadSize(size);
 			p_buffer.putInt(size);
+			p_buffer.order(ByteOrder.nativeOrder());
 			exporter.exportObject(dataStructure);
+			p_buffer.order(ByteOrder.BIG_ENDIAN);
 		}
 	}
 
@@ -113,7 +116,9 @@ public class PutMessage extends AbstractMessage {
 			
 			importer.setPayloadSize(size);
 			m_dataStructures[i] = new Chunk(id, size);
+			p_buffer.order(ByteOrder.nativeOrder());
 			importer.importObject(m_dataStructures[i]);
+			p_buffer.order(ByteOrder.BIG_ENDIAN);
 		}
 	}
 

@@ -43,6 +43,7 @@ public abstract class GraphBFSDistributedPipeline extends Pipeline {
 		}		
 		
 		pushTask(new PrintMemoryStatusToConsoleTask());
+		pushTask(new PrintStatisticsToConsoleTask());
 		
 		if (isMaster()) {
 			pushTask(new SyncBarrierMaster(numSlaves, 3000, 1));

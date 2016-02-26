@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoader;
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxgraph.load.RebaseVertexID;
 
 // this class can handle split files for multiple nodes, but
 // will only load them on a single/the current node
@@ -60,7 +60,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		
 		// add filtered files
 		for (File file : files) {
-			list.add(new OrderedEdgeListFile(file.getAbsolutePath()));
+			list.add(new OrderedEdgeListFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
 		}
 		
 		// make sure our list is sorted by nodeIdx/localIdx
@@ -79,23 +79,23 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		return list;
 	}
 	
-	protected boolean load(final OrderedEdgeList p_orderedEdgeList, final long p_vertexIDOffset)
+	protected boolean load(final OrderedEdgeList p_orderedEdgeList, final RebaseVertexID p_rebase)
 	{
-		// loading all data of a graph on a single node
-		// -> we do not have to re-base the neighbor lists of each vertex
-		
-		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
+		Vertex2[] vertexBuffer = new Vertex2[m_vertexBatchSize];
 		int readCount = 0;
 		boolean loop = true;
 		long totalVertexCount = p_orderedEdgeList.getTotalVertexCount();
 		long verticesProcessed = 0;
 		float previousProgress = 0.0f;
+		
+		m_loggerService.info(getClass(), "Loading started, vertex count: " + totalVertexCount);
+		
 		while (loop)
 		{
 			readCount = 0;
 			while (readCount < vertexBuffer.length)
 			{
-				Vertex vertex = p_orderedEdgeList.readVertex();
+				Vertex2 vertex = p_orderedEdgeList.readVertex();
 				if (vertex == null) {
 					break;
 				}
@@ -103,9 +103,8 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				// re-basing of neighbors needed for multiple files
 				// offset tells us how much to add
 				// also add current node ID
-				for (int i = 0; i < vertex.getNeighbours().size(); i++) {
-					vertex.getNeighbours().set(i, ChunkID.getChunkID(m_bootService.getNodeID(), p_vertexIDOffset + vertex.getNeighbours().get(i)));
-				}
+				long[] neighbours = vertex.getNeighbours();
+				p_rebase.rebase(neighbours);
 			
 				vertexBuffer[readCount] = vertex;
 				readCount++;
@@ -114,7 +113,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 			// create an array which is filled without null padding at the end
 			// if necessary 
 			if (readCount != vertexBuffer.length) {
-				Vertex[] tmp = new Vertex[readCount];
+				Vertex2[] tmp = new Vertex2[readCount];
 				for (int i = 0; i < readCount; i++) {
 					tmp[i] = vertexBuffer[i];
 				}
@@ -143,12 +142,9 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				previousProgress = curProgress;
 				m_loggerService.info(getClass(), "Loading progress: " + (int)(curProgress * 100) + "%");
 			}
-			
-//			for (Vertex v : vertexBuffer)
-//			{
-//				System.out.println(v);
-//			}
 		}
+		
+		m_loggerService.info(getClass(), "Loading done, vertex count: " + totalVertexCount);
 		
 		return true;
 	}

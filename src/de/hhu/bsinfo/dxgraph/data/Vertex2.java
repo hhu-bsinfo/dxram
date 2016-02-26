@@ -45,7 +45,7 @@ public class Vertex2 implements DataStructure
 	public void setNeighbourCount(final int p_count) {
 		if (p_count != m_neighbours.length) {
 			// grow or shrink array
-			Arrays.copyOf(m_neighbours, p_count);
+			m_neighbours = Arrays.copyOf(m_neighbours, p_count);
 		}
 	}
 	

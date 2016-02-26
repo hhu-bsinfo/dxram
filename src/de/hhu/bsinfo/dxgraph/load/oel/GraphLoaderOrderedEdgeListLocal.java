@@ -2,6 +2,8 @@ package de.hhu.bsinfo.dxgraph.load.oel;
 
 import java.util.List;
 
+import de.hhu.bsinfo.dxgraph.load.RebaseVertexIDLocal;
+
 public class GraphLoaderOrderedEdgeListLocal extends GraphLoaderOrderedEdgeList {
 
 	public GraphLoaderOrderedEdgeListLocal(final String p_path, final int p_numNodes, final int p_vertexBatchSize)
@@ -22,7 +24,7 @@ public class GraphLoaderOrderedEdgeListLocal extends GraphLoaderOrderedEdgeList 
 		// add offset with each file we processed so we can concat multiple files
 		long vertexIDOffset = 0;
 		for (OrderedEdgeList edgeList : edgeLists) {	
-			load(edgeList, vertexIDOffset);
+			load(edgeList, new RebaseVertexIDLocal(m_bootService.getNodeID(), vertexIDOffset));
 			vertexIDOffset += edgeList.getTotalVertexCount();
 		}
 		

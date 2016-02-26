@@ -240,7 +240,7 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 		}
 		
 		for (int i = 0; i < count; i++) {
-			p_array[p_offset + i] = m_messageBuffer.getShort();
+			p_array[p_offset + i] = m_messageBuffer.getInt();
 		}
 		
 		return count;
@@ -255,7 +255,7 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 		}
 		
 		for (int i = 0; i < count; i++) {
-			p_array[p_offset + i] = m_messageBuffer.getShort();
+			p_array[p_offset + i] = m_messageBuffer.getLong();
 		}
 		
 		return count;

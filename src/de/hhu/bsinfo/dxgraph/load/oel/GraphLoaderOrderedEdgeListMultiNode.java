@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.load.RebaseVertexID;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.GraphLoaderOrderedEdgeListMessages;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderMasterBroadcastMessage;
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderMasterSyncGraphIndexMessage;
@@ -119,7 +119,7 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 		
 		m_loggerService.info(getClass(), "Starting local loading of graph...");
 		
-		return loadWithGraphIndex(p_localEdgeLists);
+		return load(p_localEdgeLists, m_graphIndex);
 	}
 	
 	private boolean slave(final OrderedEdgeList p_localEdgeLists)
@@ -161,97 +161,10 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 		
 		m_loggerService.info(getClass(), "Sign on successful, got graph index, starting local load...");
 		
-		return loadWithGraphIndex(p_localEdgeLists);
+		return load(p_localEdgeLists, m_graphIndex);
 	}
 	
-	
-	protected boolean loadWithGraphIndex(final OrderedEdgeList p_orderedEdgeList)
-	{
-		// loading our own local data
-		// re-basing neighbour entries using the graph index
-		
-		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
-		int readCount = 0;
-		boolean loop = true;
-		long totalVertexCount = p_orderedEdgeList.getTotalVertexCount();
-		long verticesProcessed = 0;
-		float previousProgress = 0.0f;
-		while (loop)
-		{
-			readCount = 0;
-			while (readCount < vertexBuffer.length)
-			{
-				Vertex vertex = p_orderedEdgeList.readVertex();
-				if (vertex == null) {
-					break;
-				}
-				
-				// re-base neighbours
-				List<Long> neighbours = vertex.getNeighbours();
-				for (int i = 0; i < neighbours.size(); i++) {
-					neighbours.set(i, m_graphIndex.rebaseNeighborID(neighbours.get(i)));
-				}
-			
-				vertexBuffer[readCount] = vertex;
-				readCount++;
-			}
-			
-			// create an array which is filled without null padding at the end
-			// if necessary 
-			if (readCount != vertexBuffer.length) {
-				Vertex[] tmp = new Vertex[readCount];
-				for (int i = 0; i < readCount; i++) {
-					tmp[i] = vertexBuffer[i];
-				}
-				
-				vertexBuffer = tmp;
-				loop = false;
-			}
-			
-			if (m_chunkService.create(vertexBuffer) != vertexBuffer.length)
-			{
-				m_loggerService.error(getClass(), "Creating chunks for vertices failed.");
-				return false;
-			}
-			
-			if (m_chunkService.put(vertexBuffer) != vertexBuffer.length)
-			{
-				m_loggerService.error(getClass(), "Putting vertex data for chunks failed.");
-				return false;
-			}
-			
-//			for (Vertex v : vertexBuffer)
-//			{
-//				System.out.println(v);
-//			}
-			
-			if (m_chunkService.get(vertexBuffer) != vertexBuffer.length)
-			{
-				m_loggerService.error(getClass(), "Getting vertex data for chunks failed.");
-				return false;
-			}
-			
-			verticesProcessed += readCount;
-			
-			float curProgress = ((float) verticesProcessed) / totalVertexCount;
-			if (curProgress - previousProgress > 0.01)
-			{
-				previousProgress = curProgress;
-				m_loggerService.info(getClass(), "Loading progress: " + (int)(curProgress * 100) + "%");
-			}
-			
-//			System.out.println("-----------------------");
-//			
-//			for (Vertex v : vertexBuffer)
-//			{
-//				System.out.println(v);
-//			}
-		}
-		
-		return true;
-	}
-	
-	public static class GraphIndex implements Importable, Exportable
+	public static class GraphIndex implements Importable, Exportable, RebaseVertexID
 	{
 		private List<Entry> m_index = new ArrayList<Entry>();
 		
@@ -280,13 +193,13 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 			return m_index;
 		}
 		
-		public long rebaseNeighborID(final long p_neighborID)
-		{
+		@Override
+		public long rebase(long p_id) {
 			// find section the vertex (of the neighbor) is in
 			long globalVertexIDOffset = 0;
 			for (Entry entry : m_index) {
-				if (p_neighborID >= globalVertexIDOffset && p_neighborID <= globalVertexIDOffset + entry.m_vertexCount) {
-					return ChunkID.getChunkID(entry.m_nodeID, p_neighborID - globalVertexIDOffset);
+				if (p_id >= globalVertexIDOffset && p_id <= globalVertexIDOffset + entry.m_vertexCount) {
+					return ChunkID.getChunkID(entry.m_nodeID, p_id - globalVertexIDOffset);
 				}
 				
 				globalVertexIDOffset += entry.m_vertexCount;
@@ -294,6 +207,28 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 			
 			// out of range ID
 			return ChunkID.INVALID_ID;
+		}
+
+		@Override
+		public void rebase(long[] p_ids) {
+			// utilize locality instead of calling function
+			for (int i = 0; i < p_ids.length; i++) {
+				// out of range ID, default assign if not found in loop
+				long tmp = ChunkID.INVALID_ID;
+				
+				// find section the vertex (of the neighbor) is in
+				long globalVertexIDOffset = 0;
+				for (Entry entry : m_index) {
+					if (p_ids[i] >= globalVertexIDOffset && p_ids[i] <= globalVertexIDOffset + entry.m_vertexCount) {
+						tmp = ChunkID.getChunkID(entry.m_nodeID, p_ids[i] - globalVertexIDOffset);
+						break;
+					}
+					
+					globalVertexIDOffset += entry.m_vertexCount;
+				}
+				
+				p_ids[i] = tmp;
+			}
 		}
 		
 		public static class Entry implements Importable, Exportable

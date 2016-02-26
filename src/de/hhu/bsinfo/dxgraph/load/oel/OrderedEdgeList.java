@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxgraph.load.oel;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.Vertex2;
 
 // interface for an ordered edge list
 // which contains lists of neighbors for each vertex
@@ -15,5 +15,5 @@ public interface OrderedEdgeList {
 
 	// read vertex data. does not re-base 
 	// the ids of the neighbors or modify the read data
-	public Vertex readVertex();
+	public Vertex2 readVertex();
 }

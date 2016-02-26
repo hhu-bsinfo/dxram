@@ -18,10 +18,10 @@ public abstract class GraphLoader extends Task
 	@Override
 	public boolean execute()
 	{
-		m_loggerService.debug(getClass(), "Loading graph, path '" + m_path + "' to " + m_numNodes + " nodes...");
+		m_loggerService.info(getClass(), "Loading graph, path '" + m_path + "' to " + m_numNodes + " nodes...");
 		boolean ret = load(m_path, m_numNodes);
 		if (ret) {
-			m_loggerService.debug(getClass(), "Loading graph, path '" + m_path + "' successful.");
+			m_loggerService.info(getClass(), "Loading graph, path '" + m_path + "' successful.");
 		} else {
 			m_loggerService.error(getClass(), "Loading graph, path '" + m_path + "' failed.");
 		}

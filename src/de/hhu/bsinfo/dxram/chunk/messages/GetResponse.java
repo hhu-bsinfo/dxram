@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -68,7 +69,9 @@ public class GetResponse extends AbstractResponse {
 			//p_buffer.putLong(dataStructure.getID());
 			exporter.setPayloadSize(size);
 			p_buffer.putInt(size);
+			p_buffer.order(ByteOrder.nativeOrder());
 			exporter.exportObject(dataStructure);
+			p_buffer.order(ByteOrder.BIG_ENDIAN);
 		}
 	}
 
@@ -82,7 +85,9 @@ public class GetResponse extends AbstractResponse {
 		GetRequest request = (GetRequest) getCorrespondingRequest();
 		for (DataStructure dataStructure : request.getDataStructures()) {
 			importer.setPayloadSize(p_buffer.getInt());
+			p_buffer.order(ByteOrder.nativeOrder());
 			importer.importObject(dataStructure);
+			p_buffer.order(ByteOrder.BIG_ENDIAN);
 		}
 	}
 

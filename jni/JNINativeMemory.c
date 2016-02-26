@@ -19,14 +19,6 @@
 #include <endian.h>
 #endif
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define LITTLE_ENDIAN_BYTE_ORDER
-#elif __BYTE_ORDER == __BIG_ENDIAN
-#define BIG_ENDIAN_BYTE_ORDER
-#else
-#error "No byte order defined"
-#endif
-
 #ifdef __APPLE__
 #include <libkern/OSByteOrder.h>
 #define __bswap_16 OSSwapInt16
@@ -36,21 +28,12 @@
 #include <byteswap.h>
 #endif
 
-
-// to avoid trouble with endianess, mainly if a situation like storing
-// 4 ints with calling 4 times writeInt and reading them as one byte array (16 byte)
-// occurs, which results in mixing up the byte orders,
-// we store everything as big endian on the native system, which allows keeping the
-// byte order correct if short, int or long values are read as a byte buffer
-#ifdef LITTLE_ENDIAN_BYTE_ORDER
-#define byteSwap64(x) __bswap_64(x)
-#define byteSwap32(x) __bswap_32(x)
-#define byteSwap16(x) __bswap_16(x)
-#elif BIG_ENDIAN_BYTE_ORDER
-#define byteSwap64(x) x
-#define byteSwap32(x) x
-#define byteSwap16(x) x
-#endif
+// important note: in your java application, make sure to cover the following situation correctly:
+// for example, if you write single longs (or a primitive long array) using this class to native memory
+// and you read it back using a byte array which you put into a byte buffer, keep in mind that the data
+// read into the byte buffer has the same endianess as your system (i.e. most likely little) but
+// in your java code, you operate on big endian(ess). Make sure to set the byte order when using a 
+// ByteBuffer to nativeOrder. Otherwise you read corrupted data.
 
 JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_alloc(JNIEnv *p_env, jclass p_class, jlong p_size) 
 {
@@ -230,7 +213,7 @@ JNIEXPORT jshort JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readShort(JNIE
 		return 0;
 	}
 
-	return byteSwap16(*((jshort*) p_addr));
+	return *((jshort*) p_addr);
 }
 
 JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readInt(JNIEnv *p_env, jclass p_class, jlong p_addr) 
@@ -241,7 +224,7 @@ JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readInt(JNIEnv *
 		return 0;
 	}
 
-	return byteSwap32(*((jint*) p_addr));
+	return *((jint*) p_addr);
 }
 
 JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readLong(JNIEnv *p_env, jclass p_class, jlong p_addr) 
@@ -252,7 +235,7 @@ JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readLong(JNIEnv
 		return 0;
 	}
 
-	return byteSwap64(*((jlong*) p_addr));
+	return *((jlong*) p_addr);
 }
 
 JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readValue(JNIEnv *p_env, jclass p_class, jlong p_addr, jint p_byteCount) 
@@ -269,7 +252,9 @@ JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readValue(JNIEn
 
 	jlong ret = 0;
 	memcpy((void*) &((uint8_t*) &ret)[8 - p_byteCount], (void*) p_addr, p_byteCount);
-	return byteSwap64(ret);
+	// because this is never used with reading from an array of values
+	// we have to swap the order on little endian to deliver the correct value
+	return __bswap_64(ret);
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeByte(JNIEnv *p_env, jclass p_class, jlong p_addr, jbyte p_value) 
@@ -291,7 +276,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeShort(JNIEn
 		return;
 	}
 
-	*((jshort*) p_addr) = byteSwap16(p_value);
+	*((jshort*) p_addr) = p_value;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeInt(JNIEnv *p_env, jclass p_class, jlong p_addr, jint p_value) 
@@ -302,7 +287,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeInt(JNIEnv 
 		return;
 	}
 
-	*((jint*) p_addr) = byteSwap32(p_value);
+	*((jint*) p_addr) = p_value;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeLong(JNIEnv *p_env, jclass p_class, jlong p_addr, jlong p_value) 
@@ -313,7 +298,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeLong(JNIEnv
 		return;
 	}
 
-	*((jlong*) p_addr) = byteSwap64(p_value);
+	*((jlong*) p_addr) = p_value;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeValue(JNIEnv *p_env, jclass p_class, jlong p_addr, jlong p_value, jint p_byteCount) 
@@ -328,7 +313,9 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeValue(JNIEn
 	if (p_byteCount > 8)
 		p_byteCount = 8;
 
-	p_value = byteSwap64(p_value);
+	// because this is never used with reading from an array of values
+	// we have to swap the order on little endian to deliver the correct value
+	p_value = __bswap_64(p_value);
 	memcpy((void*) p_addr, (void*) &((uint8_t*)&p_value)[8 - p_byteCount], p_byteCount);
 }
 
