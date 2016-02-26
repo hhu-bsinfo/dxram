@@ -11,6 +11,7 @@ import java.nio.charset.Charset;
 
 import de.uniduesseldorf.dxram.core.chunk.Chunk;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
+import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Location;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.utils.Contract;
@@ -646,18 +647,60 @@ public final class OutputHelper {
 	 * Get the length of a Location
 	 * @return the length of a Location
 	 */
-	public static int getLocationsWriteLength() {
-		return 24;
+	public static int getLocationWriteLength() {
+		return 18;
 	}
 
 	/**
 	 * Writes a location
 	 * @param p_output
 	 *            the output
-	 * @param p_locations
+	 * @param p_location
 	 *            the location
 	 * @throws IOException
 	 *             if the location could not be written
+	 */
+	public static void writeLocation(final DataOutput p_output, final Location p_location) throws IOException {
+		Contract.checkNotNull(p_output, "no output given");
+		Contract.checkNotNull(p_location, "no location given");
+
+		p_output.writeShort(p_location.getPrimaryPeer());
+		p_output.writeLong(p_location.getStartID());
+		p_output.writeLong(p_location.getEndID());
+	}
+
+	/**
+	 * Writes a location
+	 * @param p_buffer
+	 *            the buffer
+	 * @param p_location
+	 *            the location
+	 */
+	public static void writeLocation(final ByteBuffer p_buffer, final Location p_location) {
+		Contract.checkNotNull(p_buffer, "no buffer given");
+		Contract.checkNotNull(p_location, "no location given");
+
+		p_buffer.putShort(p_location.getPrimaryPeer());
+		p_buffer.putLong(p_location.getStartID());
+		p_buffer.putLong(p_location.getEndID());
+	}
+
+	/**
+	 * Get the length of Locations
+	 * @return the length of Locations
+	 */
+	public static int getLocationsWriteLength() {
+		return 24;
+	}
+
+	/**
+	 * Writes locations
+	 * @param p_output
+	 *            the output
+	 * @param p_locations
+	 *            the location
+	 * @throws IOException
+	 *             if the locations could not be written
 	 */
 	public static void writeLocations(final DataOutput p_output, final Locations p_locations) throws IOException {
 		Contract.checkNotNull(p_output, "no output given");
@@ -669,7 +712,7 @@ public final class OutputHelper {
 	}
 
 	/**
-	 * Writes a location
+	 * Writes locations
 	 * @param p_buffer
 	 *            the buffer
 	 * @param p_locations

@@ -39,7 +39,7 @@ public final class TaskExecutor {
 
 	static {
 		m_defaultExecutor = new TaskExecutor("Network: MessageCreator",
-				Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_TASK_HANDLER_THREAD_COUNT));
+				Core.getConfiguration().getIntValue(ConfigurationConstants.NETWORK_MESSAGE_CREATOR_THREAD_COUNT));
 	}
 
 	// Constructors

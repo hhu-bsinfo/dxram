@@ -11,6 +11,7 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
+import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Location;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.lookup.storage.CacheTree;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
@@ -86,15 +87,15 @@ public final class CachedTreeLookup implements LookupInterface {
 	}
 
 	@Override
-	public Locations get(final long p_chunkID) throws LookupException {
-		Locations ret;
+	public Location get(final long p_chunkID) throws LookupException {
+		Location ret;
 
 		ret = m_chunkIDCacheTree.getMetadata(p_chunkID);
 		if (ret == null) {
 			ret = m_lookup.get(p_chunkID);
 			if (ret != null) {
 				m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
-						((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer(), ret.getBackupPeers());
+						((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer());
 			}
 		}
 		return ret;

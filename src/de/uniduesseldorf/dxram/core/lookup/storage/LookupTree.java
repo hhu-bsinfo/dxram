@@ -4,7 +4,7 @@ package de.uniduesseldorf.dxram.core.lookup.storage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
+import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Location;
 import de.uniduesseldorf.dxram.utils.Contract;
 
 /**
@@ -214,8 +214,8 @@ public final class LookupTree implements Serializable {
 	 *            ChunkID of requested object
 	 * @return the first and last ChunkID of the range
 	 */
-	public Locations getMetadata(final long p_chunkID) {
-		Locations ret = null;
+	public Location getMetadata(final long p_chunkID) {
+		Location ret = null;
 		long[] range;
 		short nodeID;
 		int index;
@@ -248,7 +248,7 @@ public final class LookupTree implements Serializable {
 			} else {
 				range[0] = 0;
 			}
-			ret = new Locations(nodeID, getBackupPeers(p_chunkID, m_creator != nodeID), range);
+			ret = new Location(nodeID, range);
 		}
 
 		return ret;

@@ -6,6 +6,7 @@ import java.util.List;
 import de.uniduesseldorf.dxram.core.CoreComponent;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
+import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Location;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 
 /**
@@ -24,7 +25,7 @@ public interface LookupInterface extends CoreComponent {
 	 * @throws LookupException
 	 *             if the NodeID could not be get
 	 */
-	Locations get(long p_chunkID) throws LookupException;
+	Location get(long p_chunkID) throws LookupException;
 
 	/**
 	 * Returns all backup ranges (RangeID + backup peers) for given node

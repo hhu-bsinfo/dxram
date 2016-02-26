@@ -29,10 +29,12 @@ import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 public final class ClusterLogTest3 {
 
 	// Constants
-	protected static final long UTILIZATION = 3221225472L;
+	protected static final long BYTES_TO_LOAD = 5196002400L;
+	protected static final long BYTES_TO_UPDATE = 6000128000L;
 	protected static final int CHUNK_SIZE = 100;
-	protected static final int CHUNKS_PER_PUT = 1000;
-	protected static final int CHUNKS_PER_UPDATE = 75;
+	protected static final int CHUNKS_PER_PUT = 100;
+	protected static final int CHUNKS_PER_UPDATE = 500;
+	protected static final int THREADS = 4;
 
 	// Attributes
 	// Workload: 0 -> uniform, 1 -> zipfian
@@ -55,7 +57,22 @@ public final class ClusterLogTest3 {
 		} else if (p_arguments[0].equals("master")) {
 			new Master().start();
 		} else if (p_arguments[0].equals("benchmark")) {
-			new Benchmark().start();
+			// Initialize DXRAM
+			try {
+				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
+						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
+			} catch (final DXRAMException e1) {
+				e1.printStackTrace();
+			}
+
+			Benchmark currentThread = null;
+			for (int i = 0; i < THREADS; i++) {
+				currentThread = new Benchmark();
+				currentThread.start();
+			}
+			try {
+				currentThread.join();
+			} catch (final InterruptedException e) {}
 		}
 	}
 
@@ -96,7 +113,7 @@ public final class ClusterLogTest3 {
 			Arrays.fill(sizes, CHUNK_SIZE);
 
 			start = System.currentTimeMillis();
-			while (counter < UTILIZATION) {
+			while (counter < BYTES_TO_LOAD) {
 				try {
 					// Create array of Chunks
 					chunks = Core.createNewChunks(sizes);
@@ -104,16 +121,16 @@ public final class ClusterLogTest3 {
 					// Store them in-memory and replicate them on backups' SSD
 					Core.put(chunks);
 
-					counter += CHUNKS_PER_PUT * CHUNK_SIZE;
+					counter += CHUNK_SIZE * CHUNKS_PER_PUT;
 				} catch (final DXRAMException e) {
 					e.printStackTrace();
 					break;
 				}
-				if (counter % 7500000 == 0) {
-					System.out.println("Created 7500000 bytes and replicated them. All: " + counter);
+				if (counter % (100 * 1000 * 1000) == 0) {
+					System.out.println("Created 100.000.000 bytes and replicated them. All: " + counter);
 				}
 			}
-			System.out.println("Time to create " + UTILIZATION + " bytes of payload: " + (System.currentTimeMillis() - start));
+			System.out.println("Time to create " + BYTES_TO_LOAD + " bytes of payload: " + (System.currentTimeMillis() - start));
 		}
 	}
 
@@ -121,7 +138,7 @@ public final class ClusterLogTest3 {
 	 * @author Kevin Beineke
 	 *         22.01.2016
 	 */
-	private static class Benchmark {
+	private static class Benchmark extends Thread {
 
 		// Constructors
 		/**
@@ -133,22 +150,15 @@ public final class ClusterLogTest3 {
 		/**
 		 * Starts the client
 		 */
-		public void start() {
-			final short nodeID = 320;
-			long offset;
-			long[] chunkIDs;
+		@Override
+		public void run() {
+			final short nodeID = 1728;
+			long start;
+			long counter = 0;
 			Chunk[] chunks;
 
 			Random rand;
 			FastZipfGenerator zipf;
-
-			// Initialize DXRAM
-			try {
-				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-			} catch (final DXRAMException e1) {
-				e1.printStackTrace();
-			}
 
 			// Create array of Chunks
 			chunks = new Chunk[CHUNKS_PER_UPDATE];
@@ -156,14 +166,15 @@ public final class ClusterLogTest3 {
 				chunks[i] = new Chunk(0, new byte[CHUNK_SIZE]);
 			}
 
+			start = System.currentTimeMillis();
 			// Send updates to master
 			if (m_workload == 0) {
 				rand = new Random();
 
-				while (true) {
+				while (counter < BYTES_TO_UPDATE / THREADS) {
 					// offset = nextLong(rand, UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT) + 1;
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-						chunks[i].setChunkID(((long) nodeID << 48) + nextLong(rand, UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
+						chunks[i].setChunkID(((long) nodeID << 48) + nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
 					}
 
 					try {
@@ -171,13 +182,17 @@ public final class ClusterLogTest3 {
 					} catch (final DXRAMException e) {
 						e.printStackTrace();
 					}
-					System.out.println("Wrote " + CHUNKS_PER_UPDATE + " on " + nodeID + " with random distribution.");
+
+					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
+					if (counter % (10 * 1000 * 1000) == 0) {
+						System.out.println("Updated 10.000.000 bytes on: " + nodeID + " with random distribution. All: " + counter);
+					}
 				}
 			} else {
 				System.out.println("Initializing ZipfGenerator. This might take a little.");
-				zipf = new FastZipfGenerator((int) (UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT + 1), 0.5);
+				zipf = new FastZipfGenerator((int) (BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT + 1), 0.5);
 
-				while (true) {
+				while (counter < BYTES_TO_UPDATE / THREADS) {
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
 						chunks[i].setChunkID(((long) nodeID << 48) + zipf.next());
 					}
@@ -187,9 +202,14 @@ public final class ClusterLogTest3 {
 					} catch (final DXRAMException e) {
 						e.printStackTrace();
 					}
-					System.out.println("Wrote " + CHUNKS_PER_UPDATE + " on " + nodeID + " with zipfian distribution.");
+
+					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
+					if (counter % (10 * 1000 * 1000) == 0) {
+						System.out.println("Updated 10.000.000 bytes on: " + nodeID + " with zipfian distribution. All: " + counter);
+					}
 				}
 			}
+			System.out.println("Time to update " + BYTES_TO_UPDATE + " bytes of payload: " + (System.currentTimeMillis() - start));
 		}
 
 		long nextLong(final Random rng, final long n) {

@@ -832,6 +832,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		 */
 		private SecondaryLog chooseLog() {
 			SecondaryLog ret = null;
+			int numberOfLogs = 0;
 			long max = 0;
 			long current;
 			LogCatalog cat;
@@ -845,6 +846,10 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				if (cat != null) {
 					cats.add(cat);
 				}
+			}
+
+			for (LogCatalog ct : cats) {
+				numberOfLogs += ct.getNumberOfLogs();
 			}
 
 			/*
@@ -873,7 +878,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 			} else {
 				m_counter = 0;
 			}
-			if (ret == null && !cats.isEmpty()) {
+			if (ret == null && !cats.isEmpty() && numberOfLogs > 1) {
 				m_isRandomChoice = true;
 				// Choose one secondary log randomly
 				cat = cats.get(Tools.getRandomValue(cats.size() - 1));

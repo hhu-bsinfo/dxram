@@ -248,8 +248,8 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	@Override
-	public Locations get(final long p_chunkID) throws LookupException {
-		Locations ret = null;
+	public Location get(final long p_chunkID) throws LookupException {
+		Location ret = null;
 		short nodeID;
 		short responsibleSuperpeer;
 		boolean check = false;
@@ -279,7 +279,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				}
 				response = request.getResponse(LookupResponse.class);
 
-				ret = response.getLocations();
+				ret = response.getLocation();
 			}
 		}
 
@@ -1361,7 +1361,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	 */
 	private void incomingLookupRequest(final LookupRequest p_lookupRequest) {
 		long chunkID;
-		Locations result = null;
+		Location result = null;
 		LookupTree tree;
 
 		LOGGER.trace("Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource());
@@ -1822,7 +1822,7 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		long chunkID;
 		String[] arguments;
 		LookupTree tree;
-		Locations locations;
+		Location location;
 
 		arguments = p_cmd.split(" ");
 		if (arguments == null) {
@@ -1841,12 +1841,12 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 				ret = "  error: no CIDtree found for given NodeID=" + nodeID;
 			} else {
 				// get meta-data from tree
-				locations = tree.getMetadata(chunkID);
-				if (locations == null) {
+				location = tree.getMetadata(chunkID);
+				if (location == null) {
 					System.out.println(" tree.getMetadata failed");
 					ret = "  error: tree.getMetadata failed";
 				} else {
-					ret = "  Stored on peer=" + locations.toString();
+					ret = "  Stored on peer=" + location.toString();
 				}
 			}
 		}
@@ -3725,6 +3725,92 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 	}
 
 	/**
+	 * Stores the location
+	 * @author Kevin Beineke
+	 *         03.09.2013
+	 */
+	public static final class Location {
+
+		// Attributes
+		private short m_primaryPeer;
+		private long[] m_range;
+
+		// Constructors
+		/**
+		 * Creates an instance of Locations
+		 * @param p_primaryPeer
+		 *            the primary peer
+		 * @param p_range
+		 *            the range's beginning and ending
+		 */
+		public Location(final short p_primaryPeer, final long[] p_range) {
+			super();
+
+			m_primaryPeer = p_primaryPeer;
+			m_range = p_range;
+		}
+
+		// Getter
+		/**
+		 * Get primary peer
+		 * @return the primary peer
+		 */
+		public short getPrimaryPeer() {
+			return m_primaryPeer;
+		}
+
+		/**
+		 * Get range
+		 * @return the beginning and ending of range
+		 */
+		public long[] getRange() {
+			return m_range;
+		}
+
+		/**
+		 * Get the start LocalID
+		 * @return the start LocalID
+		 */
+		public long getStartID() {
+			return m_range[0];
+		}
+
+		/**
+		 * Get the end LocalID
+		 * @return the end LocalID
+		 */
+		public long getEndID() {
+			return m_range[1];
+		}
+
+		// Setter
+		/**
+		 * Set primary peer
+		 * @param p_primaryPeer
+		 *            the primary peer
+		 */
+		public void setPrimaryPeer(final short p_primaryPeer) {
+			m_primaryPeer = p_primaryPeer;
+		}
+
+		// Methods
+		/**
+		 * Prints the location
+		 * @return String interpretation of location
+		 */
+		@Override
+		public String toString() {
+			String ret;
+
+			ret = m_primaryPeer + "";
+			if (null != m_range) {
+				ret += ", (" + m_range[0] + ", " + m_range[1] + ")";
+			}
+			return ret;
+		}
+	}
+
+	/**
 	 * Stores locations
 	 * @author Kevin Beineke
 	 *         03.09.2013
@@ -3785,6 +3871,30 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 		}
 
 		/**
+		 * Get range
+		 * @return the beginning and ending of range
+		 */
+		public long[] getRange() {
+			return m_range;
+		}
+
+		/**
+		 * Get the start LocalID
+		 * @return the start LocalID
+		 */
+		public long getStartID() {
+			return m_range[0];
+		}
+
+		/**
+		 * Get the end LocalID
+		 * @return the end LocalID
+		 */
+		public long getEndID() {
+			return m_range[1];
+		}
+
+		/**
 		 * Get backup peers
 		 * @return the backup peers
 		 */
@@ -3811,30 +3921,6 @@ public final class LookupHandler implements LookupInterface, MessageReceiver, Co
 			}
 
 			return ret;
-		}
-
-		/**
-		 * Get range
-		 * @return the beginning and ending of range
-		 */
-		public long[] getRange() {
-			return m_range;
-		}
-
-		/**
-		 * Get the start LocalID
-		 * @return the start LocalID
-		 */
-		public long getStartID() {
-			return m_range[0];
-		}
-
-		/**
-		 * Get the end LocalID
-		 * @return the end LocalID
-		 */
-		public long getEndID() {
-			return m_range[1];
 		}
 
 		// Setter

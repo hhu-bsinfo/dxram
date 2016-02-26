@@ -22,7 +22,7 @@ public final class ClusterLogTest2 {
 
 	// Constants
 	protected static final int CHUNK_SIZE = 100;
-	protected static final int CHUNKS_PER_PUT = 1000;
+	protected static final int CHUNKS_PER_PUT = 100;
 
 	// Constructors
 	/**
@@ -83,7 +83,7 @@ public final class ClusterLogTest2 {
 					Core.put(chunks);
 
 					counter += CHUNKS_PER_PUT * CHUNK_SIZE;
-					System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
+					// System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
 				} catch (final DXRAMException e) {
 					e.printStackTrace();
 					break;

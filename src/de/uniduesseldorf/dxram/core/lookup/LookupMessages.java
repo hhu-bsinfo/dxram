@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.io.InputHelper;
 import de.uniduesseldorf.dxram.core.io.OutputHelper;
-import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
+import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Location;
 import de.uniduesseldorf.dxram.core.lookup.storage.LookupTree;
 import de.uniduesseldorf.dxram.core.net.AbstractMessage;
 import de.uniduesseldorf.dxram.core.net.AbstractRequest;
@@ -453,7 +453,7 @@ public final class LookupMessages {
 	public static class LookupResponse extends AbstractResponse {
 
 		// Attributes
-		private Locations m_locations;
+		private Location m_location;
 
 		// Constructors
 		/**
@@ -462,46 +462,46 @@ public final class LookupMessages {
 		public LookupResponse() {
 			super();
 
-			m_locations = null;
+			m_location = null;
 		}
 
 		/**
 		 * Creates an instance of LookupResponse
 		 * @param p_request
 		 *            the corresponding LookupRequest
-		 * @param p_locations
+		 * @param p_location
 		 *            the primary peer, backup peers and range
 		 */
-		public LookupResponse(final LookupRequest p_request, final Locations p_locations) {
+		public LookupResponse(final LookupRequest p_request, final Location p_location) {
 			super(p_request, SUBTYPE_LOOKUP_RESPONSE);
 
-			m_locations = p_locations;
+			m_location = p_location;
 		}
 
 		// Getters
 		/**
-		 * Get locations
-		 * @return the locations
+		 * Get location
+		 * @return the location
 		 */
-		public final Locations getLocations() {
-			return m_locations;
+		public final Location getLocation() {
+			return m_location;
 		}
 
 		// Methods
 		@Override
 		protected final void writePayload(final ByteBuffer p_buffer) {
-			if (m_locations == null) {
+			if (m_location == null) {
 				OutputHelper.writeBoolean(p_buffer, false);
 			} else {
 				OutputHelper.writeBoolean(p_buffer, true);
-				OutputHelper.writeLocations(p_buffer, m_locations);
+				OutputHelper.writeLocation(p_buffer, m_location);
 			}
 		}
 
 		@Override
 		protected final void readPayload(final ByteBuffer p_buffer) {
 			if (InputHelper.readBoolean(p_buffer)) {
-				m_locations = InputHelper.readLocations(p_buffer);
+				m_location = InputHelper.readLocation(p_buffer);
 			}
 		}
 
@@ -509,10 +509,10 @@ public final class LookupMessages {
 		protected final int getPayloadLength() {
 			int ret;
 
-			if (m_locations == null) {
+			if (m_location == null) {
 				ret = OutputHelper.getBooleanWriteLength();
 			} else {
-				ret = OutputHelper.getBooleanWriteLength() + OutputHelper.getLocationsWriteLength();
+				ret = OutputHelper.getBooleanWriteLength() + OutputHelper.getLocationWriteLength();
 			}
 
 			return ret;

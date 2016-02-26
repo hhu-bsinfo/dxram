@@ -9,6 +9,7 @@ import de.uniduesseldorf.dxram.core.api.config.NodesConfiguration.Role;
 import de.uniduesseldorf.dxram.core.chunk.ChunkHandler.BackupRange;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
 import de.uniduesseldorf.dxram.core.exceptions.LookupException;
+import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Location;
 import de.uniduesseldorf.dxram.core.lookup.LookupHandler.Locations;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 import de.uniduesseldorf.dxram.core.util.NodeID;
@@ -29,7 +30,7 @@ public final class CachedLookup implements LookupInterface {
 
 	// Attributes
 	private LookupInterface m_lookup;
-	private Cache<Long, Long> m_chunkIDCache;
+	private Cache<Long, Short> m_chunkIDCache;
 	private Cache<Long, Long> m_applicationIDCache;
 
 	// Constructors
@@ -37,7 +38,7 @@ public final class CachedLookup implements LookupInterface {
 	 * Creates an instance of CachedLookup
 	 */
 	public CachedLookup() {
-		this(new LookupHandler(), new Cache<Long, Long>(POLICY.LRU));
+		this(new LookupHandler(), new Cache<Long, Short>(POLICY.LRU));
 	}
 
 	/**
@@ -46,7 +47,7 @@ public final class CachedLookup implements LookupInterface {
 	 *            the underlying LookupInterface
 	 */
 	public CachedLookup(final LookupInterface p_lookup) {
-		this(p_lookup, new Cache<Long, Long>());
+		this(p_lookup, new Cache<Long, Short>());
 	}
 
 	/**
@@ -57,7 +58,7 @@ public final class CachedLookup implements LookupInterface {
 	 *            the maximum of cached elements
 	 */
 	public CachedLookup(final LookupInterface p_lookup, final int p_maxSize) {
-		this(p_lookup, new Cache<Long, Long>(p_maxSize));
+		this(p_lookup, new Cache<Long, Short>(p_maxSize));
 	}
 
 	/**
@@ -67,8 +68,8 @@ public final class CachedLookup implements LookupInterface {
 	 * @param p_policy
 	 *            the eviction policy
 	 */
-	public CachedLookup(final LookupInterface p_lookup, final EvictionPolicy<Long, Long> p_policy) {
-		this(p_lookup, new Cache<Long, Long>(p_policy));
+	public CachedLookup(final LookupInterface p_lookup, final EvictionPolicy<Long, Short> p_policy) {
+		this(p_lookup, new Cache<Long, Short>(p_policy));
 	}
 
 	/**
@@ -80,8 +81,8 @@ public final class CachedLookup implements LookupInterface {
 	 * @param p_policy
 	 *            the eviction policy
 	 */
-	public CachedLookup(final LookupInterface p_lookup, final int p_maxSize, final EvictionPolicy<Long, Long> p_policy) {
-		this(p_lookup, new Cache<Long, Long>(p_maxSize, p_policy));
+	public CachedLookup(final LookupInterface p_lookup, final int p_maxSize, final EvictionPolicy<Long, Short> p_policy) {
+		this(p_lookup, new Cache<Long, Short>(p_maxSize, p_policy));
 	}
 
 	/**
@@ -91,7 +92,7 @@ public final class CachedLookup implements LookupInterface {
 	 * @param p_cache
 	 *            the cache
 	 */
-	public CachedLookup(final LookupInterface p_lookup, final Cache<Long, Long> p_cache) {
+	public CachedLookup(final LookupInterface p_lookup, final Cache<Long, Short> p_cache) {
 		Contract.checkNotNull(p_lookup, "no lookup service given");
 		Contract.checkNotNull(p_cache, "no cache given");
 
@@ -119,7 +120,7 @@ public final class CachedLookup implements LookupInterface {
 	}
 
 	@Override
-	public Locations get(final long p_chunkID) throws LookupException {
+	public Location get(final long p_chunkID) throws LookupException {
 		return get(p_chunkID, false);
 	}
 
@@ -138,21 +139,21 @@ public final class CachedLookup implements LookupInterface {
 	 * @throws LookupException
 	 *             if the NodeID could not be get
 	 */
-	public Locations get(final long p_chunkID, final boolean p_force) throws LookupException {
-		Long locations;
-		Locations ret;
+	public Location get(final long p_chunkID, final boolean p_force) throws LookupException {
+		Short primaryPeer = -1;
+		Location ret;
 
 		ChunkID.check(p_chunkID);
 
-		locations = m_chunkIDCache.get(p_chunkID);
-		if (p_force || null == locations) {
+		primaryPeer = m_chunkIDCache.get(p_chunkID);
+		if (p_force || -1 == primaryPeer) {
 			LOGGER.trace("value not cached: " + p_chunkID);
 
 			ret = m_lookup.get(p_chunkID);
 
-			m_chunkIDCache.put(p_chunkID, ret.convertToLong());
+			m_chunkIDCache.put(p_chunkID, ret.getPrimaryPeer());
 		} else {
-			ret = new Locations(locations.longValue());
+			ret = new Location(primaryPeer, new long[] {-1, -1});
 		}
 
 		return ret;

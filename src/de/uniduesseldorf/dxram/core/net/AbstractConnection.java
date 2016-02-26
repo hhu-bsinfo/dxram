@@ -409,8 +409,13 @@ abstract class AbstractConnection {
 		 *            the ByteBuffer with the data
 		 */
 		private void readHeader(final ByteBuffer p_buffer) {
-			while (m_headerBytes.hasRemaining() && p_buffer.hasRemaining()) {
-				m_headerBytes.put(p_buffer.get());
+			final int remaining = m_headerBytes.remaining();
+
+			if (p_buffer.remaining() <= remaining) {
+				m_headerBytes.put(p_buffer);
+			} else {
+				m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+				p_buffer.position(p_buffer.position() + remaining);
 			}
 
 			if (!m_headerBytes.hasRemaining()) {
@@ -453,8 +458,13 @@ abstract class AbstractConnection {
 		 *            the ByteBuffer with the data
 		 */
 		private void readPayload(final ByteBuffer p_buffer) {
-			while (m_messageBytes.hasRemaining() && p_buffer.hasRemaining()) {
-				m_messageBytes.put(p_buffer.get());
+			final int remaining = m_messageBytes.remaining();
+
+			if (p_buffer.remaining() <= remaining) {
+				m_messageBytes.put(p_buffer);
+			} else {
+				m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+				p_buffer.position(p_buffer.position() + remaining);
 			}
 
 			if (!m_messageBytes.hasRemaining()) {

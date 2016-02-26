@@ -31,7 +31,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(NetworkHandler.class);
-	private static final int NUMBER_OF_MESSAGE_HANDLER = 25;
+	private static final int NUMBER_OF_MESSAGE_HANDLER = 4;
 
 	// Attributes
 	private final TaskExecutor m_executor;
@@ -322,7 +322,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 */
 		public void newMessage(final AbstractMessage p_message) {
 			// Limit number of tasks to NUMBER_OF_MESSAGE_HANDLER
-			while (m_defaultMessages.size() + m_exclusiveMessages.size() > NUMBER_OF_MESSAGE_HANDLER) {
+			while (m_defaultMessages.size() + m_exclusiveMessages.size() > NUMBER_OF_MESSAGE_HANDLER * 10) {
 				Thread.yield();
 			}
 
@@ -362,6 +362,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 			if (entry != null) {
 				entry.newMessage(message);
+			} else {
+				System.out.println("Got no message!!!");
 			}
 
 			if (isExclusive) {

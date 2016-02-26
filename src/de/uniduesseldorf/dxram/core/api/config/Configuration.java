@@ -234,8 +234,8 @@ public final class Configuration {
 		public static final ConfigurationEntry<String> NETWORK_CREATOR = new ConfigurationEntry<String>("network.creator", String.class,
 				"de.uniduesseldorf.dxram.core.net.NIOConnectionCreator");
 		// Number of threads to aggregate buffers to dxram messages
-		public static final ConfigurationEntry<Integer> NETWORK_TASK_HANDLER_THREAD_COUNT = new ConfigurationEntry<Integer>(
-				"network.task_handler_thread_count", Integer.class, 10);
+		public static final ConfigurationEntry<Integer> NETWORK_MESSAGE_CREATOR_THREAD_COUNT = new ConfigurationEntry<Integer>(
+				"network.message_creator_thread_count", Integer.class, 1);
 		//
 		public static final ConfigurationEntry<Integer> NETWORK_MAX_CACHE_SIZE = new ConfigurationEntry<Integer>("network.max_cache_size", Integer.class,
 				128 * 1024 * 1024);
@@ -343,7 +343,7 @@ public final class Configuration {
 			CONFIGURATION_ENTRIES.add(NETWORK_CONNECTIONS);
 			CONFIGURATION_ENTRIES.add(NETWORK_BUFFER_SIZE);
 			CONFIGURATION_ENTRIES.add(NETWORK_CREATOR);
-			CONFIGURATION_ENTRIES.add(NETWORK_TASK_HANDLER_THREAD_COUNT);
+			CONFIGURATION_ENTRIES.add(NETWORK_MESSAGE_CREATOR_THREAD_COUNT);
 			CONFIGURATION_ENTRIES.add(NETWORK_MAX_CACHE_SIZE);
 			CONFIGURATION_ENTRIES.add(NETWORK_HIGH_PERFORMANCE);
 			CONFIGURATION_ENTRIES.add(RAM_SIZE);

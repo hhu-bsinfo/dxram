@@ -55,6 +55,14 @@ public final class LogCatalog {
 	}
 
 	/**
+	 * Gets the number of logs in this catalog
+	 * @return the number of logs
+	 */
+	public int getNumberOfLogs() {
+		return m_creatorLogs.size() + m_migrationLogs.size();
+	}
+
+	/**
 	 * Returns whether there is already a secondary log with given identifier
 	 * @param p_chunkID
 	 *            the ChunkID

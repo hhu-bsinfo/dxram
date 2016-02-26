@@ -23,6 +23,7 @@ public class NIOConnection extends AbstractConnection {
 
 	// Constants
 	private static final int NUMBER_OF_BUFFERS = 250;
+	private static final int FLOW_CONTROL_LIMIT = 1 * 1024 * 1024;
 
 	// Attributes
 	private SocketChannel m_channel;
@@ -154,7 +155,7 @@ public class NIOConnection extends AbstractConnection {
 		m_receivedBytes += ret.remaining();
 
 		m_flowControlCondLock.lock();
-		if (m_receivedBytes > NIOConnectionCreator.MAX_OUTSTANDING_BYTES / 8) {
+		if (m_receivedBytes > FLOW_CONTROL_LIMIT * 0.8) {
 			sendFlowControlMessage();
 		}
 		m_flowControlCondLock.unlock();
@@ -192,7 +193,7 @@ public class NIOConnection extends AbstractConnection {
 
 		buffer = p_message.getBuffer();
 		m_flowControlCondLock.lock();
-		while (m_unconfirmedBytes > NIOConnectionCreator.MAX_OUTSTANDING_BYTES) {
+		while (m_unconfirmedBytes > FLOW_CONTROL_LIMIT) {
 			try {
 				m_flowControlCond.await();
 			} catch (final InterruptedException e) { /* ignore */}
@@ -216,12 +217,12 @@ public class NIOConnection extends AbstractConnection {
 		}
 
 		m_outgoingAllLock.lock();
-		// Change operation (read <-> write) and/or connection
-		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_WRITE);
-
 		m_outgoingLock.lock();
 		m_outgoing.offer(p_buffer);
 		m_outgoingLock.unlock();
+
+		// Change operation (read <-> write) and/or connection
+		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_WRITE);
 		m_outgoingAllLock.unlock();
 	}
 
@@ -381,6 +382,7 @@ public class NIOConnection extends AbstractConnection {
 	private void handleFlowControlMessage(final FlowControlMessage p_message) {
 		m_flowControlCondLock.lock();
 		m_unconfirmedBytes -= p_message.getConfirmedBytes();
+		// m_unconfirmedBytes = 0;
 
 		m_flowControlCond.signalAll();
 		m_flowControlCondLock.unlock();
