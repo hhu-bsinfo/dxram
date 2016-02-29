@@ -107,7 +107,11 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 		if (p_dataStructures.length == 0)
 			return;
 		
-		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		if (p_dataStructures[0] == null) {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+		} else {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not put chunks");
@@ -121,6 +125,11 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 		// sort by local/remote chunks
 		m_memoryManager.lockAccess();
 		for (DataStructure dataStructure : p_dataStructures) {
+			// allowing nulls -> filter
+			if (dataStructure == null) {
+				continue;
+			}
+			
 			if (m_memoryManager.exists(dataStructure.getID())) {
 				localChunks.add(dataStructure);
 			} else {
@@ -190,8 +199,11 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 			
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync);		
 		
-		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
-		
+		if (p_dataStructures[0] == null) {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+		} else {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+		}
 		return;
 	}
 

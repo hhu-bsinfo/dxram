@@ -1,9 +1,7 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -16,11 +14,17 @@ public abstract class Converter extends Main
 	private static final Argument ARG_OUTPUT = new Argument("out", "./", true, "Ordered edge list output file location");
 	private static final Argument ARG_FILE_COUNT = new Argument("outFileCount", 1, true, "Split data into multiple files (each approx. same size)");
 	private static final Argument ARG_INPUT_DIRECTED_EDGES = new Argument("inputDirectedEdges", true, true, "Specify if the input file contains directed or undirected edges");
+	private static final Argument ARG_NUM_CONV_THREADS = new Argument("numConvThreads", 4, true, "Number of threads converting the data");
+	private static final Argument ARG_MAX_BUFFER_QUEUE_SIZE = new Argument("maxBufferQueueSize", 100000, true, "Max size of the buffer queue for the file reader");
 	
 	private VertexStorage m_storage = null;
 	private boolean m_isDirected = false;
-	
-	private float m_prevProgress = 0;
+	private int m_numConverterThreads = -1;
+	private int m_maxBufferQueueSize = -1;
+	private ConcurrentLinkedQueue<Pair<Long, Long>> m_sharedBufferQueue = new ConcurrentLinkedQueue<Pair<Long, Long>>();
+	private ArrayList<FileReaderThread> m_fileReaderThreads = new ArrayList<FileReaderThread>();
+	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<BufferToStorageThread>();
+	private ArrayList<FileWriterThread> m_fileWriterThreads = new ArrayList<FileWriterThread>();
 	
 	protected Converter(final String p_description) {
 		super(p_description);
@@ -32,32 +36,8 @@ public abstract class Converter extends Main
 		p_arguments.setArgument(ARG_OUTPUT);
 		p_arguments.setArgument(ARG_FILE_COUNT);
 		p_arguments.setArgument(ARG_INPUT_DIRECTED_EDGES);
-	}
-	
-	protected abstract int parse(final String p_inputPath);
-	
-	protected void processEdge(final long p_hashValueSrcVertex, final long p_hashValueDestVertex)
-	{
-		long srcVertexId = m_storage.getVertexId(p_hashValueSrcVertex);
-		long destVertexId = m_storage.getVertexId(p_hashValueDestVertex);
-		
-		m_storage.putNeighbour(srcVertexId, destVertexId);
-		if (m_isDirected) {
-			m_storage.putNeighbour(destVertexId, srcVertexId);
-		}
-	}
-	
-	protected void updateProgress(final String p_msg, final long p_curCount, final long p_totalCount)
-	{
-		float curProgress = ((float) p_curCount) / p_totalCount;
-		if (curProgress - m_prevProgress > 0.01)
-		{
-			if (curProgress > 1.0f) {
-				curProgress = 1.0f;
-			}
-			m_prevProgress = curProgress;
-			System.out.println("Progress(" + p_msg + "): " + (int)(curProgress * 100) + "%\r");
-		}
+		p_arguments.setArgument(ARG_NUM_CONV_THREADS);
+		p_arguments.setArgument(ARG_MAX_BUFFER_QUEUE_SIZE);
 	}
 
 	@Override
@@ -67,6 +47,8 @@ public abstract class Converter extends Main
 		String outputPath = p_arguments.getArgumentValue(ARG_OUTPUT);
 		int fileCount = p_arguments.getArgumentValue(ARG_FILE_COUNT);
 		m_isDirected = p_arguments.getArgumentValue(ARG_INPUT_DIRECTED_EDGES);
+		m_numConverterThreads = p_arguments.getArgumentValue(ARG_NUM_CONV_THREADS);
+		m_maxBufferQueueSize = p_arguments.getArgumentValue(ARG_MAX_BUFFER_QUEUE_SIZE);
 		
 		m_storage = new VertexStorageSimple();
 		
@@ -79,8 +61,6 @@ public abstract class Converter extends Main
 			return ret;
 		}
 		
-		resetProgress();
-		
 		System.out.println("Parsing done, " + m_storage.getTotalVertexCount() + " vertices and " + m_storage.getTotalEdgeCount() + " edges");
 		
 		dumpToFiles(outputPath, fileCount);
@@ -90,9 +70,57 @@ public abstract class Converter extends Main
 		return 0;
 	}
 	
-	private void resetProgress()
-	{
-		m_prevProgress = 0;	
+	protected abstract FileReaderThread createReaderInstance(String p_inputPath, final ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize);
+	
+	private int parse(final String... p_inputPaths) {
+				
+		System.out.println("Starting file reader threads...");
+		
+		for (String inputPath : p_inputPaths) {
+			FileReaderThread thread = createReaderInstance(inputPath, m_sharedBufferQueue, m_maxBufferQueueSize);
+			thread.start();
+			m_fileReaderThreads.add(thread);
+		}
+		
+		System.out.println("Starting converter threads...");
+		
+		for (int i = 0; i < m_numConverterThreads; i++) {
+			BufferToStorageThread thread = new BufferToStorageThread(i, m_storage, m_isDirected, m_sharedBufferQueue);
+			thread.start();
+			m_converterThreads.add(thread);
+		}
+		
+		System.out.println("Waiting for file reader threads to finish...");
+		
+		// wait for file readers to finish and notify buffer threads afterwards
+		for (FileReaderThread thread : m_fileReaderThreads) {
+			try {
+				thread.join();
+			} catch (InterruptedException e) {
+				System.out.println("Joining thread " + thread + " interrupted");
+				return -9;
+			}
+			if (thread.getErrorCode() != 0) {
+				return thread.getErrorCode();
+			}
+		}
+		
+		System.out.println("Waiting for buffer threads to finish...");
+		
+		for (BufferToStorageThread thread : m_converterThreads) {
+			thread.setRunning(false);
+		}
+		
+		for (BufferToStorageThread thread : m_converterThreads) {
+			try {
+				thread.join();
+			} catch (InterruptedException e) {
+				System.out.println("Joining thread " + thread + " interrupted");
+				return -10;
+			}
+		}
+		
+		return 0;
 	}
 	
 	private void dumpToFiles(final String p_outputPath, final int p_fileCount)
@@ -118,74 +146,20 @@ public abstract class Converter extends Main
 			if (rangeEnd >= vertexCount)
 				rangeEnd = vertexCount;
 			
-			try {
-				File file = new File(outputPath + "out.oel." + i);
-				if (file.exists())
-					file.delete();
-				
-				File fileInfo = new File(outputPath + "out.ioel." + i);
-				if (fileInfo.exists())
-					fileInfo.delete();
-				
-				BufferedWriter raf = new BufferedWriter(new FileWriter(file));
-				BufferedWriter raf2 = new BufferedWriter(new FileWriter(fileInfo));
-				if (!dumpOrdered(raf, raf2, rangeStart, rangeEnd))
-				{
-					System.out.println("Dumping from vertex storage [" + rangeStart + ", " + rangeEnd + "] failed.");
-					raf.close();
-					raf2.close();
-					continue;
-				}
-				
-				raf.close();
-				raf2.close();
-			} catch (IOException e) {
-				System.out.println("Dumping to out file failed: " + e.getMessage());
-				continue;
-			}
+			FileWriterThread thread = new FileWriterThread(outputPath, i, rangeStart, rangeEnd, m_storage);
+			thread.start();
+			m_fileWriterThreads.add(thread);
 			
 			processed += rangeEnd - rangeStart;
-			
-			System.out.println("Dumping [" + rangeStart + ", " + rangeEnd + "] to file done");
-		}
-	}
-	
-	private boolean dumpOrdered(final BufferedWriter p_file, final BufferedWriter p_infoFile, final long p_rangeStartIncl, final long p_rangeEndExcl)
-	{
-		// write header (count)
-		try {
-			p_file.write(Long.toString(p_rangeEndExcl - p_rangeStartIncl) + "\n");
-			p_infoFile.write("Vertices: " + Long.toString(p_rangeEndExcl - p_rangeStartIncl) + "\n");
-		} catch (IOException e) {
-			return false;
 		}
 		
-		long edgeCount = 0;
-		long vertexCount = 0;
-		for (long i = p_rangeStartIncl; i < p_rangeEndExcl; i++)
-		{
-			Pair<Long, String> vertexNeighbourList = m_storage.getVertexNeighbourList(i);
-	
+		// wait for all writers to finish
+		for (FileWriterThread thread : m_fileWriterThreads) {
 			try {
-				//p_file.write(Long.toString(i) + ": ");
-				p_file.write(vertexNeighbourList.m_second);
-				p_file.write("\n");
-			} catch (IOException e) {
-				return false;
+				thread.join();
+			} catch (InterruptedException e) {
+				System.out.println("Joining thread " + thread + " failed.");
 			}
-			
-			edgeCount += vertexNeighbourList.m_first;
-			vertexCount++;
-			updateProgress("TotalVerticesToFiles", vertexCount, p_rangeEndExcl - p_rangeStartIncl);
 		}
-		
-		try {
-			p_infoFile.write("Edges: " + Long.toString(edgeCount) + "\n");
-			p_file.flush();
-			p_infoFile.flush();
-		} catch (IOException e) {
-		}
-		
-		return true;		
 	}
 }

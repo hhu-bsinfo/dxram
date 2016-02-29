@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxgraph.algo;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
+import de.hhu.bsinfo.dxram.chunk.AsyncChunkService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
@@ -73,6 +74,7 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 
 		@Override
 		protected void execute(short p_nodeID, long[] p_chunkIDs) {
+			AsyncChunkService asyncChunkService = getService(AsyncChunkService.class);
 			ChunkService chunkService = getService(ChunkService.class);
 			JobService jobService = getService(JobService.class);
 			LoggerService loggerService = getService(LoggerService.class);
@@ -95,7 +97,6 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 			
 			// -----------------------------------------------------------------------------------
 			
-			int verticesToUpdate = 0;
 			for (int i = 0; i < entryVertices.length; i++)
 			{
 				if (entryVertices[i].getUserData() == -1)
@@ -123,8 +124,6 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 							loggerService.error(getClass(), "Creating job for neighbours of vertex " + entryVertices[i] + " failed.");
 						}
 					}
-					
-					verticesToUpdate++;
 				}
 				else
 				{
@@ -132,10 +131,7 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 				}
 			}
 			
-			if (chunkService.put(entryVertices) != verticesToUpdate)
-			{
-				loggerService.error(getClass(), "Marking " + verticesToUpdate + " vertices as visited failed.");
-			}
+			asyncChunkService.put(entryVertices);
 		}
 	}
 }

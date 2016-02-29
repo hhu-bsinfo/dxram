@@ -1,13 +1,13 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.utils.Pair;
-import de.hhu.bsinfo.utils.locks.SpinLock;
 
 // not thread safe, single threaded only
 public class VertexStorageSimple implements VertexStorage {
@@ -16,8 +16,7 @@ public class VertexStorageSimple implements VertexStorage {
 	{
 		public Pair<Long, String> m_neighbourList = new Pair<Long, String>(0L, new String());
 
-		// TODO use cheaper lock
-		public Lock m_mutex = new SpinLock();
+		public Lock m_mutex = new ReentrantLock(false);
 		
 		public NeighbourListVertex()
 		{
@@ -26,11 +25,11 @@ public class VertexStorageSimple implements VertexStorage {
 	}
 	
 	private Map<Long, Long> m_idMapping = new HashMap<Long, Long>();
-	private Vector<NeighbourListVertex> m_neighbourListsVertices = new Vector<NeighbourListVertex>();
+	private ArrayList<NeighbourListVertex> m_neighbourListsVertices = new ArrayList<NeighbourListVertex>();
 	
 	private AtomicLong m_totalEdgeCount = new AtomicLong(0L);
 	
-	private Lock m_mutex = new SpinLock();
+	private Lock m_mutex = new ReentrantLock(false);
 	
 	public VertexStorageSimple()
 	{
@@ -66,7 +65,7 @@ public class VertexStorageSimple implements VertexStorage {
 		neighbourList.m_mutex.lock();
 		
 		if (!neighbourList.m_neighbourList.m_second.isEmpty()) {
-			neighbourList.m_neighbourList.m_second += ", ";
+			neighbourList.m_neighbourList.m_second += ",";
 		}
 		neighbourList.m_neighbourList.m_second += Long.toString(p_neighbourVertexId);
 		neighbourList.m_neighbourList.m_first++;

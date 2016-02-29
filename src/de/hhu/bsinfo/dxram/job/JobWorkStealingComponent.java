@@ -41,7 +41,8 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 		{
 			if (worker.pushJob(p_job))
 			{
-				m_logger.debug(getClass(), "Submited job " + p_job + " to worker " + worker);
+				// causes the garbage collector to crazy if too many jobs are pushed very quickly
+				//m_logger.debug(getClass(), "Submited job " + p_job + " to worker " + worker);
 				success = true;
 				break;
 			}
