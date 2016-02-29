@@ -3,6 +3,7 @@ package de.uniduesseldorf.dxram.core.net;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -57,6 +58,25 @@ final class ConnectionManager implements ConnectionCreatorListener {
 		m_deactivated = false;
 
 		m_lock = new ReentrantLock(false);
+	}
+
+	/**
+	 * Checks if there is a congested connection
+	 * @return whether there is congested connection or not
+	 */
+	public boolean atLeastOneConnectionIsCongested() {
+		boolean ret = false;
+		Iterator<AbstractConnection> iter;
+
+		iter = m_connections.values().iterator();
+		while (iter.hasNext()) {
+			if (iter.next().isCongested()) {
+				ret = true;
+				break;
+			}
+		}
+
+		return ret;
 	}
 
 	/**

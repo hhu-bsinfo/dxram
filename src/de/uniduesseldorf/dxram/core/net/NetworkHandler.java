@@ -17,7 +17,7 @@ import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 import de.uniduesseldorf.dxram.core.log.LogMessages;
 import de.uniduesseldorf.dxram.core.lookup.LookupMessages;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
-import de.uniduesseldorf.dxram.core.net.NIOConnection.FlowControlMessage;
+import de.uniduesseldorf.dxram.core.net.AbstractConnection.FlowControlMessage;
 import de.uniduesseldorf.dxram.core.recovery.RecoveryMessages;
 import de.uniduesseldorf.dxram.core.util.NodeID;
 import de.uniduesseldorf.dxram.utils.StatisticsManager;
@@ -322,7 +322,12 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 */
 		public void newMessage(final AbstractMessage p_message) {
 			// Limit number of tasks to NUMBER_OF_MESSAGE_HANDLER
-			while (m_defaultMessages.size() + m_exclusiveMessages.size() > NUMBER_OF_MESSAGE_HANDLER * 10) {
+			while (m_defaultMessages.size() + m_exclusiveMessages.size() > NUMBER_OF_MESSAGE_HANDLER * 2) {
+				if (m_manager.atLeastOneConnectionIsCongested()) {
+					// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
+					// than limit) messages to task queue until flow control message arrives
+					break;
+				}
 				Thread.yield();
 			}
 

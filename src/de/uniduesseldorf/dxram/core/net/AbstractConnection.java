@@ -3,6 +3,7 @@ package de.uniduesseldorf.dxram.core.net;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
@@ -20,20 +21,23 @@ abstract class AbstractConnection {
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(AbstractConnection.class);
 	private static final TaskExecutor EXECUTOR = TaskExecutor.getDefaultExecutor();
+	protected static final int FLOW_CONTROL_LIMIT = 1 * 1024 * 1024;
 
 	// Attributes
 	private final DataHandler m_dataHandler;
 	private final ByteStreamInterpreter m_streamInterpreter;
 
 	private short m_destination;
-
 	private boolean m_connected;
-
 	private DataReceiver m_listener;
-
 	private long m_timestamp;
-
 	private ReentrantLock m_lock;
+
+	private int m_unconfirmedBytes;
+	private int m_receivedBytes;
+
+	private ReentrantLock m_flowControlCondLock;
+	private Condition m_flowControlCond;
 
 	// Constructors
 	/**
@@ -59,12 +63,12 @@ abstract class AbstractConnection {
 		m_streamInterpreter = new ByteStreamInterpreter();
 
 		m_destination = p_destination;
-
 		m_connected = false;
-
 		m_listener = p_listener;
-
 		m_timestamp = 0;
+
+		m_flowControlCondLock = new ReentrantLock(false);
+		m_flowControlCond = m_flowControlCondLock.newCondition();
 
 		m_lock = new ReentrantLock(false);
 	}
@@ -82,6 +86,14 @@ abstract class AbstractConnection {
 		m_lock.unlock();
 
 		return ret;
+	}
+
+	/**
+	 * Checks if the connection is connected
+	 * @return true if the connection is connected, false otherwise
+	 */
+	public final boolean isCongested() {
+		return m_unconfirmedBytes > FLOW_CONTROL_LIMIT * 0.9; // Too conservative?
 	}
 
 	/**
@@ -133,6 +145,13 @@ abstract class AbstractConnection {
 
 		ret = doRead();
 
+		m_receivedBytes += ret.remaining();
+		m_flowControlCondLock.lock();
+		if (m_receivedBytes > FLOW_CONTROL_LIMIT * 0.8) {
+			sendFlowControlMessage();
+		}
+		m_flowControlCondLock.unlock();
+
 		m_timestamp = System.currentTimeMillis();
 
 		return ret;
@@ -154,6 +173,15 @@ abstract class AbstractConnection {
 	 *             if the data could not be written
 	 */
 	public final void write(final AbstractMessage p_message) throws IOException {
+		m_flowControlCondLock.lock();
+		while (m_unconfirmedBytes > FLOW_CONTROL_LIMIT) {
+			try {
+				m_flowControlCond.await();
+			} catch (final InterruptedException e) { /* ignore */}
+		}
+
+		m_unconfirmedBytes += p_message.getBuffer().remaining();
+		m_flowControlCondLock.unlock();
 
 		doWrite(p_message);
 
@@ -167,7 +195,7 @@ abstract class AbstractConnection {
 	 * @throws IOException
 	 *             if the data could not be written
 	 */
-	protected abstract void doWrite(final AbstractMessage p_message) throws IOException;
+	protected abstract void doWrite(final AbstractMessage p_message);
 
 	/**
 	 * Closes the connection
@@ -200,8 +228,12 @@ abstract class AbstractConnection {
 	 *            the new message
 	 */
 	protected void deliverMessage(final AbstractMessage p_message) {
-		if (m_listener != null) {
-			m_listener.newMessage(p_message);
+		if (p_message instanceof FlowControlMessage) {
+			handleFlowControlMessage((FlowControlMessage) p_message);
+		} else {
+			if (m_listener != null) {
+				m_listener.newMessage(p_message);
+			}
 		}
 	}
 
@@ -210,6 +242,38 @@ abstract class AbstractConnection {
 	 */
 	protected final void newData() {
 		EXECUTOR.execute(m_destination, m_dataHandler);
+	}
+
+	/**
+	 * Confirm received bytes for the other node
+	 */
+	private void sendFlowControlMessage() {
+		FlowControlMessage message;
+		ByteBuffer messageBuffer;
+
+		message = new FlowControlMessage(m_receivedBytes);
+		messageBuffer = message.getBuffer();
+
+		// add sending bytes for consistency
+		m_unconfirmedBytes += messageBuffer.remaining();
+
+		doWrite(message);
+
+		// reset received bytes counter
+		m_receivedBytes = 0;
+	}
+
+	/**
+	 * Handles a received FlowControlMessage
+	 * @param p_message
+	 *            FlowControlMessage
+	 */
+	private void handleFlowControlMessage(final FlowControlMessage p_message) {
+		m_flowControlCondLock.lock();
+		m_unconfirmedBytes -= p_message.getConfirmedBytes();
+
+		m_flowControlCond.signalAll();
+		m_flowControlCondLock.unlock();
 	}
 
 	/**
@@ -491,6 +555,57 @@ abstract class AbstractConnection {
 			// Constants
 			READ_HEADER, READ_PAYLOAD_SIZE, READ_PAYLOAD, DONE
 
+		}
+	}
+
+	/**
+	 * Used to confirm received bytes
+	 * @author Marc Ewert 14.10.2014
+	 */
+	public static final class FlowControlMessage extends AbstractMessage {
+
+		public static final byte TYPE = 0;
+		public static final byte SUBTYPE = 1;
+
+		private int m_confirmedBytes;
+
+		/**
+		 * Default constructor for serialization
+		 */
+		FlowControlMessage() {}
+
+		/**
+		 * Create a new Message for confirming received bytes.
+		 * @param p_confirmedBytes
+		 *            number of received bytes
+		 */
+		FlowControlMessage(final int p_confirmedBytes) {
+			super((short) 0, TYPE, SUBTYPE, true);
+			m_confirmedBytes = p_confirmedBytes;
+		}
+
+		/**
+		 * Get number of confirmed bytes
+		 * @return
+		 *         the number of confirmed bytes
+		 */
+		public int getConfirmedBytes() {
+			return m_confirmedBytes;
+		}
+
+		@Override
+		protected void readPayload(final ByteBuffer p_buffer) {
+			m_confirmedBytes = p_buffer.getInt();
+		}
+
+		@Override
+		protected void writePayload(final ByteBuffer p_buffer) {
+			p_buffer.putInt(m_confirmedBytes);
+		}
+
+		@Override
+		protected int getPayloadLength() {
+			return 4;
 		}
 	}
 }
