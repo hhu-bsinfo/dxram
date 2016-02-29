@@ -52,7 +52,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 *            the message type
 	 */
 	public AbstractRequest(final short p_destination, final byte p_type) {
-		this(p_destination, p_type, DEFAULT_SUBTYPE);
+		this(p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_EXCLUSIVITY_VALUE);
 	}
 
 	/**
@@ -65,7 +65,22 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 *            the message subtype
 	 */
 	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype) {
-		super(p_destination, p_type, p_subtype);
+		this(p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE);
+	}
+
+	/**
+	 * Creates an instance of Request
+	 * @param p_destination
+	 *            the destination
+	 * @param p_type
+	 *            the message type
+	 * @param p_subtype
+	 *            the message subtype
+	 * @param p_exclusivity
+	 *            whether this request type allows parallel execution
+	 */
+	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+		super(p_destination, p_type, p_subtype, p_exclusivity);
 
 		m_fulfilled = false;
 		m_fulfillAction = null;
@@ -91,7 +106,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 * Get the requestID
 	 * @return the requestID
 	 */
-	public final long getRequestID() {
+	public final int getRequestID() {
 		return getMessageID();
 	}
 
@@ -164,7 +179,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 		while (!m_fulfilled && !m_aborted) {
 			timeNow = System.currentTimeMillis();
-			if (timeNow - timeStart > 1200 && !m_ignoreTimeout) {
+			if (timeNow - timeStart > 5000 && !m_ignoreTimeout) {
 				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
 				success = false;
 				break;

@@ -19,7 +19,7 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
+import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.

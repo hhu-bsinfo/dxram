@@ -14,27 +14,26 @@ public abstract class AbstractMessage {
 	// Constants
 	static final byte BYTES_PAYLOAD_SIZE = 4;
 
-	public static final long INVALID_MESSAGE_ID = -1;
+	public static final int INVALID_MESSAGE_ID = -1;
 	public static final byte DEFAULT_TYPE = 0;
 	public static final byte DEFAULT_SUBTYPE = 0;
 	public static final byte DEFAULT_STATUS_CODE = 0;
+	public static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
 	public static final byte DEFAULT_RATING_VALUE = 1;
 
-	public static final byte HEADER_SIZE = 16;
+	public static final byte HEADER_SIZE = 11;
 
 	// Attributes
-	private long m_messageID;
+	private int m_messageID;
 	private short m_source;
 	private short m_destination;
 	private byte m_type;
 	private byte m_subtype;
-
-	private byte m_ratingValue;
-	
+	private boolean m_exclusivity;
 	// status code for all messages to indicate success, errors etc.
 	private byte m_statusCode;
 
-	private static long m_nextMessageID = 1;
+	private static int m_nextMessageID = 1;
 	private static ReentrantLock m_lock = new ReentrantLock(false);
 
 	// Constructors
@@ -48,7 +47,7 @@ public abstract class AbstractMessage {
 		m_type = DEFAULT_TYPE;
 		m_subtype = DEFAULT_SUBTYPE;
 
-		m_ratingValue = DEFAULT_RATING_VALUE;
+		m_exclusivity = DEFAULT_EXCLUSIVITY_VALUE;
 		
 		m_statusCode = 0;
 	}
@@ -61,7 +60,7 @@ public abstract class AbstractMessage {
 	 *            the message type
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type) {
-		this(getNextMessageID(), p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_RATING_VALUE, DEFAULT_STATUS_CODE);
+		this(getNextMessageID(), p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
 	}
 
 	/**
@@ -74,7 +73,22 @@ public abstract class AbstractMessage {
 	 *            the message subtype
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype) {
-		this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE, DEFAULT_STATUS_CODE);
+		this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
+	}
+
+	/**
+	 * Creates an instance of Message
+	 * @param p_destination
+	 *            the destination
+	 * @param p_type
+	 *            the message type
+	 * @param p_subtype
+	 *            the message subtype
+	 * @param p_exclusivity
+	 *            whether this message type allows parallel execution
+	 */
+	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+		this(getNextMessageID(), p_destination, p_type, p_subtype, p_exclusivity, DEFAULT_STATUS_CODE);
 	}
 
 	/**
@@ -88,8 +102,8 @@ public abstract class AbstractMessage {
 	 * @param p_ratingValue
 	 *            the rating value of the message
 	 */
-	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue, final byte p_statusCode) {
-		this(getNextMessageID(), p_destination, p_type, p_subtype, p_ratingValue, p_statusCode);
+	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue, final boolean p_exclusivity, final byte p_statusCode) {
+		this(getNextMessageID(), p_destination, p_type, p_subtype, p_exclusivity, p_statusCode);
 	}
 
 	/**
@@ -103,8 +117,8 @@ public abstract class AbstractMessage {
 	 * @param p_subtype
 	 *            the message subtype
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
-		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_RATING_VALUE, DEFAULT_STATUS_CODE);
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
+		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
 	}
 
 	/**
@@ -120,7 +134,7 @@ public abstract class AbstractMessage {
 	 * @param p_ratingValue
 	 *            the rating value of the message
 	 */
-	protected AbstractMessage(final long p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue, final byte p_statusCode) {
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity, final byte p_statusCode) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_messageID = p_messageID;
@@ -129,8 +143,7 @@ public abstract class AbstractMessage {
 		m_type = p_type;
 		m_subtype = p_subtype;
 		
-		m_ratingValue = p_ratingValue;
-
+		m_exclusivity = p_exclusivity;
 		m_statusCode = p_statusCode;
 	}
 
@@ -139,7 +152,7 @@ public abstract class AbstractMessage {
 	 * Get the messageID
 	 * @return the messageID
 	 */
-	public final long getMessageID() {
+	public final int getMessageID() {
 		return m_messageID;
 	}
 
@@ -184,22 +197,14 @@ public abstract class AbstractMessage {
 	}
 
 	/**
-	 * Get the rating value
-	 * @return the rating value
+	 * Returns whether this message type allows parallel execution
+	 * @return the exclusivity
 	 */
-	public final byte getRatingValue() {
-		return m_ratingValue;
+	public final boolean isExclusive() {
+		return m_exclusivity;
 	}
 
 	// Setters
-	/**
-	 * Set the rating value
-	 * @param p_ratingValue
-	 *            the rating value
-	 */
-	public final void setRatingValue(final byte p_ratingValue) {
-		m_ratingValue = p_ratingValue;
-	}
 	
 	/**
 	 * Set the status code (definable error, success,...)
@@ -276,10 +281,18 @@ public abstract class AbstractMessage {
 	 * @return filled ByteBuffer
 	 */
 	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) {
-		p_buffer.putLong(m_messageID);
+		// Put 3 byte message ID
+		p_buffer.put((byte) (m_messageID >>> 16));
+		p_buffer.put((byte) (m_messageID >>> 8));
+		p_buffer.put((byte) m_messageID);
+
 		p_buffer.put(m_type);
 		p_buffer.put(m_subtype);
-		p_buffer.put(m_ratingValue);
+		if (m_exclusivity) {
+			p_buffer.put((byte) 1);
+		} else {
+			p_buffer.put((byte) 0);
+		}
 		p_buffer.put(m_statusCode);
 		p_buffer.putInt(p_payloadSize);
 
@@ -292,8 +305,8 @@ public abstract class AbstractMessage {
 	 * Get next free messageID
 	 * @return next free messageID
 	 */
-	private static long getNextMessageID() {
-		long ret;
+	private static int getNextMessageID() {
+		int ret;
 
 		m_lock.lock();
 		ret = m_nextMessageID++;
@@ -322,10 +335,10 @@ public abstract class AbstractMessage {
 	 */
 	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer, final MessageDirectory p_messageDirectory) throws NetworkException {
 		AbstractMessage ret = null;
-		long messageID;
+		int messageID;
 		byte type;
 		byte subtype;
-		byte ratingValue;
+		boolean exclusivity;
 		byte statusCode;
 
 		assert p_buffer != null;
@@ -334,10 +347,10 @@ public abstract class AbstractMessage {
 			throw new NetworkException("Incomplete header");
 		}
 
-		messageID = p_buffer.getLong();
+		messageID = ((p_buffer.get() & 0xFF) << 16) + ((p_buffer.get() & 0xFF) << 8) + (p_buffer.get() & 0xFF);
 		type = p_buffer.get();
 		subtype = p_buffer.get();
-		ratingValue = p_buffer.get();
+		exclusivity = p_buffer.get() == 1;
 		statusCode = p_buffer.get();
 		
 		try {
@@ -349,7 +362,7 @@ public abstract class AbstractMessage {
 		ret.m_messageID = messageID;
 		ret.m_type = type;
 		ret.m_subtype = subtype;
-		ret.m_ratingValue = ratingValue;
+		ret.m_exclusivity = exclusivity;
 		ret.m_statusCode = statusCode;
 
 		return ret;

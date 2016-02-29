@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
 import de.hhu.bsinfo.utils.StatisticsManager;
 import de.hhu.bsinfo.utils.log.LoggerInterface;
@@ -19,7 +18,7 @@ import de.hhu.bsinfo.utils.log.LoggerNull;
  * @author Florian Klein 18.03.2012
  * @author Marc Ewert 14.08.2014
  */
-public final class NetworkHandler implements NetworkInterface, DataReceiver {
+public final class NetworkHandler implements DataReceiver {
 
 	// Attributes
 	private final TaskExecutor m_executor;
@@ -40,20 +39,20 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	/**
 	 * Creates an instance of NetworkHandler
 	 */
-	public NetworkHandler(final int p_numTaskThreadsNetworkHandler, final int p_numTaskThreadsMessageHandler, 
+	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads, 
 			final boolean p_enableStatisticsThroughput, final boolean p_enableStatisticsRequests) {
 		final byte networkType;
 		
-		m_executor = new TaskExecutor("NetworkHandler", p_numTaskThreadsNetworkHandler);
+		m_executor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
 		m_receivers = new HashMap<>();
 		m_receiversLock = new ReentrantLock(false);
-		m_messageHandler = new MessageHandler(p_numTaskThreadsMessageHandler);
+		m_messageHandler = new MessageHandler(p_numMessageHandlerThreads);
 
 		m_messageDirectory = new MessageDirectory();
 		
 		// Network Messages
-		networkType = NIOConnectionCreator.FlowControlMessage.TYPE;
-		m_messageDirectory.register(networkType, NIOConnectionCreator.FlowControlMessage.SUBTYPE, NIOConnectionCreator.FlowControlMessage.class);
+		networkType = FlowControlMessage.TYPE;
+		m_messageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
 
 		m_lock = new ReentrantLock(false);
 		
@@ -69,6 +68,10 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		ms_logger = p_logger;
 	}
 	
+	public ReentrantLock getExclusiveLock() {
+		return m_messageHandler.m_exclusiveLock;
+	}
+	
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class)
 	{
 		m_lock.lock();
@@ -77,14 +80,14 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	}
 
 	// Methods
-	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes) {
+	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes, final int p_numberOfBuffers) {
 		ms_logger.trace(getClass().getSimpleName(), "Entering initialize");
 		
 		m_lock.lock();
 		
 		m_nodeMap = p_nodeMap;
 		
-		AbstractConnectionCreator connectionCreator = new NIOConnectionCreator(m_executor, m_messageDirectory, p_nodeMap, p_maxOutstandingBytes);
+		AbstractConnectionCreator connectionCreator = new NIOConnectionCreator(m_executor, m_messageDirectory, m_nodeMap, p_maxOutstandingBytes, p_numberOfBuffers);
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
 
@@ -93,14 +96,12 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		ms_logger.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
 
-	@Override
 	public void activateConnectionManager() {
 		m_lock.lock();
 		m_manager.activate();
 		m_lock.unlock();
 	}
 
-	@Override
 	public void deactivateConnectionManager() {
 		m_lock.lock();
 		m_manager.deactivate();
@@ -118,7 +119,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		ms_logger.trace(getClass().getSimpleName(), "Exiting close");
 	}
 
-	@Override
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
 
@@ -136,7 +136,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		}
 	}
 
-	@Override
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
 
@@ -152,7 +151,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		}
 	}
 
-	@Override
 	public int sendMessage(final AbstractMessage p_message) {
 		AbstractConnection connection;
 
@@ -201,13 +199,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		
 		return 0;
 	}
-	
-	@Override
-	public int forwardMessage(short p_destination, AbstractMessage p_message) {
-		p_message.setDestination(p_destination);
-		
-		return sendMessage(p_message);
-	}
 
 	/**
 	 * Handles an incoming Message
@@ -235,20 +226,24 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		// Attributes
 		private final ArrayDeque<AbstractMessage> m_defaultMessages;
 		private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
+		private int m_numMessageHandlerThreads;
 		private final TaskExecutor m_executor;
-		private ReentrantLock m_messagesLock;
+		private ReentrantLock m_defaultMessagesLock;
 		private ReentrantLock m_exclusiveLock;
+		private ReentrantLock m_exclusiveMessagesLock;
 
 		// Constructors
 		/**
 		 * Creates an instance of MessageHandler
 		 */
 		MessageHandler(final int p_numMessageHandlerThreads) {
-			m_executor = new TaskExecutor("MessageHandler", p_numMessageHandlerThreads);
+			m_numMessageHandlerThreads = p_numMessageHandlerThreads;
+			m_executor = new TaskExecutor("MessageHandler", m_numMessageHandlerThreads);
 			m_defaultMessages = new ArrayDeque<>();
 			m_exclusiveMessages = new ArrayDeque<>();
-			m_messagesLock = new ReentrantLock(false);
+			m_defaultMessagesLock = new ReentrantLock(false);
 			m_exclusiveLock = new ReentrantLock(false);
+			m_exclusiveMessagesLock = new ReentrantLock(false);
 		}
 
 		// Methods
@@ -258,15 +253,24 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			// TODO LogMessage.TYPE has to vanish
-			if (p_message.getType() == LogMessages.TYPE) {
-				m_messagesLock.lock();
-				m_exclusiveMessages.offer(p_message);
-				m_messagesLock.unlock();
-			} else {
-				m_messagesLock.lock();
+			// Limit number of tasks to NUMBER_OF_MESSAGE_HANDLER
+			while (m_defaultMessages.size() + m_exclusiveMessages.size() > m_numMessageHandlerThreads * 2) {
+				if (m_manager.atLeastOneConnectionIsCongested()) {
+					// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
+					// than limit) messages to task queue until flow control message arrives
+					break;
+				}
+				Thread.yield();
+			}
+
+			if (!p_message.isExclusive()) {
+				m_defaultMessagesLock.lock();
 				m_defaultMessages.offer(p_message);
-				m_messagesLock.unlock();
+				m_defaultMessagesLock.unlock();
+			} else {
+				m_exclusiveMessagesLock.lock();
+				m_exclusiveMessages.offer(p_message);
+				m_exclusiveMessagesLock.unlock();
 			}
 
 			m_executor.execute(this);
@@ -274,28 +278,52 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		@Override
 		public void run() {
-			AbstractMessage message;
+			AbstractMessage message = null;
+			boolean isExclusive = false;
 			Entry entry;
 
-			m_messagesLock.lock();
-			message = m_defaultMessages.poll();
-			if (message == null) {
-				message = m_exclusiveMessages.poll();
-				m_exclusiveLock.lock();//
+			while (message == null) {
+				if (m_exclusiveMessages.size() > m_defaultMessages.size() && m_exclusiveLock.tryLock()) {
+					isExclusive = true;
+					m_exclusiveMessagesLock.lock();
+					message = m_exclusiveMessages.poll();
+					m_exclusiveMessagesLock.unlock();
+				} else {
+					m_defaultMessagesLock.lock();
+					message = m_defaultMessages.poll();
+					m_defaultMessagesLock.unlock();
+				}
 			}
-			m_messagesLock.unlock();
 
-			m_receiversLock.lock();
 			entry = m_receivers.get(message.getClass());
-			m_receiversLock.unlock();
 
 			if (entry != null) {
 				entry.newMessage(message);
-				if (message.getType() == LogMessages.TYPE) {
-					m_exclusiveLock.unlock();
-				}
+			} else {
+				System.out.println("Got no message!!!");
+			}
+
+			if (isExclusive) {
+				m_exclusiveLock.unlock();
 			}
 		}
+	}
+	
+	/**
+	 * Methods for reacting on incoming Messages
+	 * @author Florian Klein
+	 *         09.03.2012
+	 */
+	public interface MessageReceiver {
+
+		// Methods
+		/**
+		 * Handles an incoming Message
+		 * @param p_message
+		 *            the Message
+		 */
+		void onIncomingMessage(AbstractMessage p_message);
+
 	}
 
 	/**

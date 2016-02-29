@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.net;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.AbstractRequest;
-import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
+import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 
 public class NetworkService extends DXRAMService {
 

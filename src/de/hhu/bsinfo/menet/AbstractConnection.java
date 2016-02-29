@@ -4,6 +4,7 @@ package de.hhu.bsinfo.menet;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -13,23 +14,30 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class AbstractConnection {
 
+	protected static final int FLOW_CONTROL_LIMIT = 1 * 1024 * 1024;
+	
 	// Attributes
 	private final DataHandler m_dataHandler;
-	private final MessageCreator m_messageCreator;
 	private final ByteStreamInterpreter m_streamInterpreter;
 
 	private short m_destination;
-	private NodeMap m_nodeMap;
+	protected NodeMap m_nodeMap;
 	private final TaskExecutor m_taskExecutor;
+	private MessageDirectory m_messageDirectory;
 
 	private boolean m_connected;
 
 	private DataReceiver m_listener;
 
-	private int m_rating;
 	private long m_timestamp;
 
 	private ReentrantLock m_lock;
+
+	private int m_unconfirmedBytes;
+	private int m_receivedBytes;
+
+	private ReentrantLock m_flowControlCondLock;
+	private Condition m_flowControlCond;
 
 	// Constructors
 	/**
@@ -52,19 +60,21 @@ public abstract class AbstractConnection {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_dataHandler = new DataHandler();
-		m_messageCreator = new MessageCreator(p_messageDirectory);
 		m_streamInterpreter = new ByteStreamInterpreter();
 
 		m_destination = p_destination;
 		m_nodeMap = p_nodeMap;
 		m_taskExecutor = p_taskExecutor;
+		m_messageDirectory = p_messageDirectory;
 		
 		m_connected = false;
 
 		m_listener = p_listener;
 
-		m_rating = 0;
 		m_timestamp = 0;
+
+		m_flowControlCondLock = new ReentrantLock(false);
+		m_flowControlCond = m_flowControlCondLock.newCondition();
 
 		m_lock = new ReentrantLock(false);
 	}
@@ -85,19 +95,19 @@ public abstract class AbstractConnection {
 	}
 
 	/**
+	 * Checks if the connection is connected
+	 * @return true if the connection is connected, false otherwise
+	 */
+	public final boolean isCongested() {
+		return m_unconfirmedBytes > FLOW_CONTROL_LIMIT * 0.9; // Too conservative?
+	}
+
+	/**
 	 * Get the destination
 	 * @return the destination
 	 */
 	public final short getDestination() {
 		return m_destination;
-	}
-
-	/**
-	 * Get the rating
-	 * @return the rating
-	 */
-	public final int getRating() {
-		return m_rating;
 	}
 
 	/**
@@ -141,6 +151,13 @@ public abstract class AbstractConnection {
 
 		ret = doRead();
 
+		m_receivedBytes += ret.remaining();
+		m_flowControlCondLock.lock();
+		if (m_receivedBytes > FLOW_CONTROL_LIMIT * 0.8) {
+			sendFlowControlMessage();
+		}
+		m_flowControlCondLock.unlock();
+
 		m_timestamp = System.currentTimeMillis();
 
 		return ret;
@@ -162,11 +179,19 @@ public abstract class AbstractConnection {
 	 *             if the data could not be written
 	 */
 	public final void write(final AbstractMessage p_message) throws IOException {
+		m_flowControlCondLock.lock();
+		while (m_unconfirmedBytes > FLOW_CONTROL_LIMIT) {
+			try {
+				m_flowControlCond.await();
+			} catch (final InterruptedException e) { /* ignore */}
+		}
+
+		m_unconfirmedBytes += p_message.getBuffer().remaining();
+		m_flowControlCondLock.unlock();
+
 		doWrite(p_message);
 
 		m_timestamp = System.currentTimeMillis();
-
-		incRating(p_message.getRatingValue());
 	}
 
 	/**
@@ -176,7 +201,7 @@ public abstract class AbstractConnection {
 	 * @throws IOException
 	 *             if the data could not be written
 	 */
-	protected abstract void doWrite(final AbstractMessage p_message) throws IOException;
+	protected abstract void doWrite(final AbstractMessage p_message);
 
 	/**
 	 * Closes the connection
@@ -204,24 +229,17 @@ public abstract class AbstractConnection {
 	}
 
 	/**
-	 * Increases the rating
-	 * @param p_value
-	 *            the value to add to the rating
-	 */
-	final void incRating(final byte p_value) {
-		m_lock.lock();
-		m_rating += p_value;
-		m_lock.unlock();
-	}
-
-	/**
 	 * Informs the ConnectionListener about a new message
 	 * @param p_message
 	 *            the new message
 	 */
 	protected void deliverMessage(final AbstractMessage p_message) {
-		if (m_listener != null) {
-			m_listener.newMessage(p_message);
+		if (p_message instanceof FlowControlMessage) {
+			handleFlowControlMessage((FlowControlMessage) p_message);
+		} else {
+			if (m_listener != null) {
+				m_listener.newMessage(p_message);
+			}
 		}
 	}
 
@@ -230,6 +248,37 @@ public abstract class AbstractConnection {
 	 */
 	protected final void newData() {
 		m_taskExecutor.execute(m_destination, m_dataHandler);
+	}
+	/**
+	 * Confirm received bytes for the other node
+	 */
+	private void sendFlowControlMessage() {
+		FlowControlMessage message;
+		ByteBuffer messageBuffer;
+
+		message = new FlowControlMessage(m_receivedBytes);
+		messageBuffer = message.getBuffer();
+
+		// add sending bytes for consistency
+		m_unconfirmedBytes += messageBuffer.remaining();
+
+		doWrite(message);
+
+		// reset received bytes counter
+		m_receivedBytes = 0;
+	}
+
+	/**
+	 * Handles a received FlowControlMessage
+	 * @param p_message
+	 *            FlowControlMessage
+	 */
+	private void handleFlowControlMessage(final FlowControlMessage p_message) {
+		m_flowControlCondLock.lock();
+		m_unconfirmedBytes -= p_message.getConfirmedBytes();
+
+		m_flowControlCond.signalAll();
+		m_flowControlCondLock.unlock();
 	}
 
 	/**
@@ -275,6 +324,7 @@ public abstract class AbstractConnection {
 			ByteStreamInterpreter streamInterpreter;
 			ByteBuffer buffer;
 			ByteBuffer messageBuffer;
+			AbstractMessage message;
 
 			try {
 				streamInterpreter = m_streamInterpreter;
@@ -289,7 +339,14 @@ public abstract class AbstractConnection {
 						if (streamInterpreter.isMessageComplete()) {
 							if (!streamInterpreter.isExceptionOccurred()) {
 								messageBuffer = streamInterpreter.getMessageBuffer();
-								m_messageCreator.newData(messageBuffer);
+
+								message = createMessage(messageBuffer);
+
+								if (message != null) {
+									message.setDestination(m_nodeMap.getOwnNodeID());
+									message.setSource(m_destination);
+									deliverMessage(message);
+								}
 							}
 
 							streamInterpreter.clear();
@@ -297,61 +354,7 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final IOException e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not access network connection", e);
-			}
-		}
-	}
-
-	/**
-	 * Creates messages from ByteBuffers
-	 * @author Marc Ewert 28.10.2014
-	 */
-	private class MessageCreator implements Runnable {
-
-		// Attributes
-		private MessageDirectory m_messageDirectory;
-		private final ArrayDeque<ByteBuffer> m_buffers;
-		private ReentrantLock m_buffersLock;
-
-		/**
-		 * Default constructor
-		 */
-		MessageCreator(final MessageDirectory p_messageDirectory) {
-			m_messageDirectory = p_messageDirectory;
-			m_buffers = new ArrayDeque<>();
-			m_buffersLock = new ReentrantLock(false);
-		}
-
-		/**
-		 * Append a new buffer to create a message
-		 * @param p_buffer
-		 *            new buffer
-		 */
-		public void newData(final ByteBuffer p_buffer) {
-			m_buffersLock.lock();
-			m_buffers.offer(p_buffer);
-			m_buffersLock.unlock();
-
-			m_taskExecutor.execute(this);
-		}
-
-		@Override
-		public void run() {
-			AbstractMessage message;
-			ByteBuffer buffer;
-
-			m_buffersLock.lock();
-			buffer = m_buffers.poll();
-			m_buffersLock.unlock();
-
-			message = createMessage(buffer);
-
-			if (message != null) {
-				message.setDestination(m_nodeMap.getOwnNodeID());
-				message.setSource(m_destination);
-
-				incRating(message.getRatingValue());
-				deliverMessage(message);
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "ERROR::Could not access network connection", e);
 			}
 		}
 
@@ -488,8 +491,13 @@ public abstract class AbstractConnection {
 		 *            the ByteBuffer with the data
 		 */
 		private void readHeader(final ByteBuffer p_buffer) {
-			while (m_headerBytes.hasRemaining() && p_buffer.hasRemaining()) {
-				m_headerBytes.put(p_buffer.get());
+			final int remaining = m_headerBytes.remaining();
+
+			if (p_buffer.remaining() <= remaining) {
+				m_headerBytes.put(p_buffer);
+			} else {
+				m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+				p_buffer.position(p_buffer.position() + remaining);
 			}
 
 			if (!m_headerBytes.hasRemaining()) {
@@ -532,8 +540,13 @@ public abstract class AbstractConnection {
 		 *            the ByteBuffer with the data
 		 */
 		private void readPayload(final ByteBuffer p_buffer) {
-			while (m_messageBytes.hasRemaining() && p_buffer.hasRemaining()) {
-				m_messageBytes.put(p_buffer.get());
+			final int remaining = m_messageBytes.remaining();
+
+			if (p_buffer.remaining() <= remaining) {
+				m_messageBytes.put(p_buffer);
+			} else {
+				m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
+				p_buffer.position(p_buffer.position() + remaining);
 			}
 
 			if (!m_messageBytes.hasRemaining()) {

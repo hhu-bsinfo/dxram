@@ -62,7 +62,7 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
+import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.CRC16;
 
 public class DefaultLookupComponent extends LookupComponent implements MessageReceiver {

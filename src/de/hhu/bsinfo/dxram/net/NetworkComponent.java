@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.AbstractRequest;
 import de.hhu.bsinfo.menet.NetworkHandler;
-import de.hhu.bsinfo.menet.NetworkInterface.MessageReceiver;
+import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 
 /**
  * 
@@ -62,31 +62,6 @@ public class NetworkComponent extends DXRAMComponent {
 		return errCode;
 	}
 	
-	
-	public NetworkErrorCodes forwardMessage(final short p_destination, final AbstractMessage p_message) {
-		m_logger.trace(getClass(), "Forwarding message " + p_message);
-		int res = m_networkHandler.forwardMessage(p_destination, p_message);
-		
-		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
-		
-		switch (res) {
-			case 0:
-				errCode = NetworkErrorCodes.SUCCESS; break;
-			case -1:
-				errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE; break;
-			case -2:
-				errCode = NetworkErrorCodes.SEND_DATA; break;
-			default:
-				assert 1 == 2; break;
-		}
-		
-		if (errCode != NetworkErrorCodes.SUCCESS) {
-			m_logger.error(this.getClass(), "Forwarding message " + p_message + " failed: " + errCode);
-		}
-		
-		return errCode;
-	}
-	
 	/**
 	 * Send the Request and wait for fulfillment (wait for response).
 	 * @param p_request The request to send.
@@ -120,9 +95,10 @@ public class NetworkComponent extends DXRAMComponent {
 
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.MSG_BUFFER_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_TASK_HANDLER);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.MAX_OUTSTANDING_BYTES);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS);
 	}
@@ -134,17 +110,17 @@ public class NetworkComponent extends DXRAMComponent {
 		m_boot = getDependentComponent(BootComponent.class);
 		
 		m_networkHandler = new NetworkHandler(
-				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_TASK_HANDLER),
+				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR),
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER),
 				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT),
 				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS));
 		
 		m_networkHandler.setLogger(m_logger);
-		
 		m_networkHandler.initialize(
 				m_boot.getNodeID(), 
 				new NodeMappings(m_boot), 
-				p_settings.getValue(NetworkConfigurationValues.Component.MSG_BUFFER_SIZE));
+				p_settings.getValue(NetworkConfigurationValues.Component.MAX_OUTSTANDING_BYTES),
+				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS));
 		
 		return true;
 	}

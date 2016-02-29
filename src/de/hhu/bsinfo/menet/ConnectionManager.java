@@ -3,7 +3,10 @@ package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
@@ -45,6 +48,25 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		m_deactivated = false;
 
 		m_lock = new ReentrantLock(false);
+	}
+
+	/**
+	 * Checks if there is a congested connection
+	 * @return whether there is congested connection or not
+	 */
+	public boolean atLeastOneConnectionIsCongested() {
+		boolean ret = false;
+		Iterator<AbstractConnection> iter;
+
+		iter = m_connections.values().iterator();
+		while (iter.hasNext()) {
+			if (iter.next().isCongested()) {
+				ret = true;
+				break;
+			}
+		}
+
+		return ret;
 	}
 
 	/**
@@ -100,19 +122,16 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	}
 
 	/**
-	 * Dismiss the connection with the lowest rating
+	 * Dismiss the connection randomly
 	 */
+	@SuppressWarnings("unchecked")
 	private void dismissConnection() {
 		AbstractConnection dismiss = null;
-		int lowestRating = Integer.MAX_VALUE;
+		Random rand;
 
+		rand = new Random();
 		m_lock.lock();
-		for (AbstractConnection connection : m_connections.values()) {
-			if (connection.getRating() < lowestRating) {
-				dismiss = connection;
-				lowestRating = connection.getRating();
-			}
-		}
+		dismiss = ((Entry<Short, AbstractConnection>[]) m_connections.entrySet().toArray())[rand.nextInt(m_connections.size())].getValue();
 
 		if (dismiss != null) {
 			dismiss.close();
