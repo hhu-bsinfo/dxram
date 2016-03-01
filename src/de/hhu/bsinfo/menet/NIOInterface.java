@@ -35,7 +35,7 @@ final class NIOInterface {
 	protected static NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers) throws IOException {
 		NIOConnection connection = null;
 		ByteBuffer buffer;
-
+		
 		m_readBuffer.clear();
 
 		if (p_channel.read(m_readBuffer) == -1) {

@@ -25,6 +25,8 @@ public class Worker extends Thread
 	 */
 	public Worker(final int p_id, final WorkerDelegate p_workerDelegate)
 	{
+		super("JobWorker " + p_id);
+		
 		m_id = p_id;
 		m_workerDelegate = p_workerDelegate;
 	}

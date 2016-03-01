@@ -21,6 +21,7 @@ public class OrderedEdgeListFileThreadBuffering extends Thread implements Ordere
 	// for a single file, node index default to 0
 	public OrderedEdgeListFileThreadBuffering(final String p_path, final int p_bufferLimit)
 	{
+		super("OrderedEdgeListFileBuffering " + p_path);
 		m_bufferLimit = p_bufferLimit;
 		
 		String file = p_path;
