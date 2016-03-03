@@ -496,44 +496,54 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
 	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures Data structures to put/update. Null values are ignored.
+	 * @param p_dataStructures Data structures to put/update. Null values or chunks with invalid IDs are ignored.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final ChunkLockOperation p_chunkUnlockOperation, DataStructure... p_dataStructures)
+	{
+		return put(p_chunkUnlockOperation, p_dataStructures, 0, p_dataStructures.length);
+	}
+	
+	/**
+	 * Put/Update the contents of the provided data structures in the backend storage.
+	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures Data structures to put/update. Null values or chunks with invalid IDs are ignored.
+	 * @param p_offset Start offset within the array.
+	 * @param p_count Number of items to put.
+	 * @return Number of successfully updated data structures.
+	 */
+	public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure[] p_dataStructures, int p_offset, int p_count)
 	{
 		int chunksPut = 0;
 		
 		if (p_dataStructures.length == 0)
 			return chunksPut;
 		
-		if (p_dataStructures[0] == null) {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
-		} else {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
-		}
+		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not put chunks");
 		}
 		
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put, p_dataStructures.length);
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put, p_count);
 		
-		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
+		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>(p_count);
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
 		
 		// sort by local/remote chunks
 		m_memoryManager.lockAccess();
-		for (DataStructure dataStructure : p_dataStructures) {
-			// allowing nulls -> filter
-			if (dataStructure == null) {
+		for (int i = 0; i < p_count; i++) {
+			// filter null values
+			if (p_dataStructures[i + p_offset] == null 
+			|| p_dataStructures[i + p_offset].getID() == ChunkID.INVALID_ID) {
 				continue;
 			}
 			
-			if (m_memoryManager.exists(dataStructure.getID())) {
-				localChunks.add(dataStructure);
+			if (m_memoryManager.exists(p_dataStructures[i + p_offset].getID())) {
+				localChunks.add(p_dataStructures[i + p_offset]);
 			} else {
 				// remote or migrated, figure out location and sort by peers
-				Locations locations = m_lookup.get(dataStructure.getID());
+				Locations locations = m_lookup.get(p_dataStructures[i + p_offset].getID());
 				if (locations == null) {
 					continue;
 				} else {
@@ -544,7 +554,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 						remoteChunksOfPeer = new ArrayList<DataStructure>();
 						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
 					}
-					remoteChunksOfPeer.add(dataStructure);
+					remoteChunksOfPeer.add(p_dataStructures[i + p_offset]);
 				}
 			}
 		}
@@ -617,57 +627,62 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);		
 		
-		if (p_dataStructures[0] == null) {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...] -> " + chunksPut);
-		} else {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + chunksPut);
-		}
+		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...] -> " + chunksPut);
 		
 		return chunksPut;
 	}
 	
 	/**
-	 * Get/Read the data stored in the backend storage in the provided data structures.
-	 * @param p_dataStructures Data structures to read the stored data into. Null values are ignored.
+	 * Get/Read the data stored in the backend storage into the provided data structures.
+	 * @param p_dataStructures Data structures to read the stored data into. Null values or invalid IDs are ignored.
 	 * @return Number of successfully read data structures.
 	 */
 	public int get(DataStructure... p_dataStructures) {
+		return get(p_dataStructures, 0, p_dataStructures.length);
+	}
+	
+	/**
+	 * Get/Read the data stored in the backend storage into the provided data structures.
+	 * @param p_dataStructures Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
+	 * @param p_offset Start offset within the array.
+	 * @param p_count Number of elements to read.
+	 * @return Number of successfully read data structures.
+	 */
+	public int get(final DataStructure[] p_dataStructures, int p_offset, int p_count) {
 		int totalChunksGot = 0;
 		
-		if (p_dataStructures.length == 0)
+		if (p_dataStructures.length == 0) {
 			return totalChunksGot;
-		
-		if (p_dataStructures[0] == null) {
-			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...]");
-		} else {
-			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
 		}
+		
+		m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not get chunks");
 		}
 		
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get, p_dataStructures.length);	
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get, p_count);	
 
 		// sort by local and remote data first
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
-		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
+		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>(p_count);
 		
 		m_memoryManager.lockAccess();
-		for (int i = 0; i < p_dataStructures.length; i++) {
+		for (int i = 0; i < p_count; i++) {
 			// filter null values
-			if (p_dataStructures[i] == null) {
+			if (p_dataStructures[i + p_offset] == null 
+			|| p_dataStructures[i + p_offset].getID() == ChunkID.INVALID_ID) {
 				continue;
 			}
 			
-			if (m_memoryManager.exists(p_dataStructures[i].getID())) {
+			if (m_memoryManager.exists(p_dataStructures[i + p_offset].getID())) {
 				// local
-				localChunks.add(p_dataStructures[i]);
+				localChunks.add(p_dataStructures[i + p_offset]);
 			} else {
 				// remote or migrated, figure out location and sort by peers
 				Locations locations;
 				
-				locations = m_lookup.get(p_dataStructures[i].getID());
+				locations = m_lookup.get(p_dataStructures[i + p_offset].getID());
 				if (locations == null) {
 					continue;
 				} else {
@@ -678,7 +693,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 						remoteChunksOfPeer = new ArrayList<DataStructure>();
 						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
 					}
-					remoteChunksOfPeer.add(p_dataStructures[i]);
+					remoteChunksOfPeer.add(p_dataStructures[i + p_offset]);
 				}
 			}
 		}
@@ -735,11 +750,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);	
 		
-		if (p_dataStructures[0] == null) {
-			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
-		} else {
-			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...] -> " + totalChunksGot);
-		}
+		m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
 
 		return totalChunksGot;
 	}

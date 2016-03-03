@@ -4,6 +4,7 @@ import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS;
+import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3;
 import de.hhu.bsinfo.dxgraph.load.oel.GraphLoaderOrderedEdgeListLocal;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -47,7 +48,7 @@ public class GraphBFSLocalPipeline extends Pipeline {
 		
 		pushTask(new GraphLoaderOrderedEdgeListLocal(graphLoadDataPath, nodeCount, graphLoadVertexBatchSize));
 		pushTask(new PrintMemoryStatusToConsoleTask());
-		pushTask(new GraphAlgorithmBFS(graphBfsNodeCountPerJob, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
+		pushTask(new GraphAlgorithmBFS3(graphBfsNodeCountPerJob, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
 		pushTask(new PrintStatisticsToConsoleTask());
 		
 		return true;

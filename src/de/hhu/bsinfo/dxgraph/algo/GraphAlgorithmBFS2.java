@@ -58,29 +58,13 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 		static {
 			registerType(MS_TYPE_ID, JobBFS.class);
 		}
-
-		private static Vertex2[][] m_vertexBufferCache = null;
 		
 		private int m_vertexBatchCount = 1;
-		
-		static void initializeBufferCaches(final int p_totalWorkerCount)
-		{
-			m_vertexBufferCache = new Vertex2[p_totalWorkerCount][];
-		}
 		
 		public JobBFS(final int p_vertexBatchCount, final long... p_parameterChunkIDs)
 		{
 			super(p_parameterChunkIDs);
 			m_vertexBatchCount = p_vertexBatchCount;
-			
-			if (m_vertexBufferCache[(int) getID()] == null)
-			{
-				// bufer not initialized yet
-				m_vertexBufferCache[(int) getID()] = new Vertex2[p_vertexBatchCount];
-				for (int i = 0; i < p_vertexBatchCount; i++) {
-					m_vertexBufferCache[(int) getID()][i] = new Vertex2();
-				}
-			}
 		}
 
 		@Override
@@ -95,11 +79,12 @@ public class GraphAlgorithmBFS2 extends GraphAlgorithm {
 			JobService jobService = getService(JobService.class);
 			LoggerService loggerService = getService(LoggerService.class);
 			
+			Vertex2[] entryVertices = new Vertex2[p_chunkIDs.length];
 			for (int i = 0; i < p_chunkIDs.length; i++) {
 				if (p_chunkIDs[i] == 0) {
 					loggerService.warn(getClass(), "Invalid vertix with id 0 found, filtering.");
 				} else {
-					m_vertexBufferCache[(int) getID()][i].setID(p_chunkIDs[i]);
+					entryVertices[i] = new Vertex2(p_chunkIDs[i]);
 				}
 			}
 			
