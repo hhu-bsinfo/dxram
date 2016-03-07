@@ -1,122 +1,61 @@
 package de.hhu.bsinfo.dxgraph.algo;
 
+import de.hhu.bsinfo.dxgraph.algo.bfs.BitVector;
+import de.hhu.bsinfo.dxgraph.algo.bfs.BitVectorOptimized;
+import de.hhu.bsinfo.dxgraph.algo.bfs.BulkFifo;
+import de.hhu.bsinfo.dxgraph.algo.bfs.BulkFifoNaive;
+import de.hhu.bsinfo.dxgraph.algo.bfs.FrontierList;
+import de.hhu.bsinfo.dxgraph.algo.bfs.TreeSetFifo;
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
+import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 
-public class GraphAlgorithmBFS4 extends GraphAlgorithm {
+public class GraphAlgorithmBFSLocalSingleThreaded extends GraphAlgorithm {
 
 	private int m_batchCountPerJob = 1;
+	private Class<? extends FrontierList> m_frontierListType = null;
 	
-	public GraphAlgorithmBFS4(final int p_batchCountPerJob, final long... p_entryNodes)
+	public GraphAlgorithmBFSLocalSingleThreaded(final int p_batchCountPerJob, final Class<? extends FrontierList> p_frontierListType, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
-		super(p_entryNodes);
+		super(p_loaderResultsDelegate, p_entryNodes);
 		m_batchCountPerJob = p_batchCountPerJob;
+		m_frontierListType = p_frontierListType;
 	}
 	
 	@Override
 	protected boolean execute(long[] p_entryNodes) 
 	{
-		BFSThread[] threads = new BFSThread[p_entryNodes.length];
+		BFSThread thread = new BFSThread(
+				0, 
+				m_loggerService, 
+				m_chunkService, 
+				m_batchCountPerJob,
+				m_bootService.getNodeID(),
+				getGraphLoaderResultDelegate().getTotalVertexCount(), 
+				m_frontierListType,
+				p_entryNodes[0]);
 		
-		for (int i = 0; i < threads.length; i++) {
-			// TODO hardcoded vertex count -> we need a pass through from the loading phase (vertex count, edge count?)
-			threads[i] = new BFSThread(i, m_loggerService, m_chunkService, m_batchCountPerJob, 244631, m_bootService.getNodeID(), p_entryNodes[i]);
-		}
+		m_loggerService.info(getClass(), "Starting BFS with 1 thread.");
 		
-		m_loggerService.info(getClass(), "Starting BFS with " + threads.length + " threads.");
-		
-		for (BFSThread thread : threads) {
-			thread.start();
-		}
+		thread.start();
 		
 		try {
 			Thread.sleep(3000);
 		} catch (InterruptedException e1) {
 		}
 		
-		for (BFSThread thread : threads) {
-			try {
-				thread.join();
-			} catch (InterruptedException e) {
-			}
+		try {
+			thread.join();
+		} catch (InterruptedException e) {
 		}
 		
 		m_loggerService.info(getClass(), "Finished BFS.");
 		return true;
 	}
-	
-	private static class GraphBitVector
-	{
-		private long[] m_vector = null;		
-		
-		private int m_itPos = 0;
-		private long m_itBit = 0;
-		
-		private long m_count = 0;
-		
-		public GraphBitVector(final long p_vertexCount)
-		{
-			m_vector = new long[(int) ((p_vertexCount / 64L) + 1L)];
-		}
-		
-		public void set(final long p_index)
-		{
-			long tmp = (1L << (p_index % 64L));
-			if ((m_vector[(int) (p_index / 64L)] & tmp) == 0)
-			{				
-				m_count++;
-				m_vector[(int) (p_index / 64L)] |= tmp;
-			}
-		}
-		
-		public boolean isEmpty()
-		{
-			return m_count == 0;
-		}
-		
-		public void resetIterator()
-		{
-			m_itPos = 0;
-			m_itBit = 0;
-			m_count = 0;
-			for (int i = 0; i < m_vector.length; i++) {
-				m_vector[i] = 0;
-			}
-		}
-		
-		public long getNextIndexSet()
-		{
-			while (m_count > 0)
-			{
-				if (m_vector[m_itPos] != 0)
-				{
-					while (m_itBit < 64L)
-					{
-						if (((m_vector[m_itPos] >> m_itBit) & 1L) != 0)
-						{
-							m_count--;
-							return m_itPos * 64L + m_itBit++;
-						}
-						
-						m_itBit++;
-					}
-					
-					m_itBit = 0;
-				}
-				
-				m_itPos++;
-			}
-			
-			return -1;
-		}
-	}
 
-	// TODO have proper base class within a
-	// worker system -> simplified version of job system
-	// with fixed amount of threads.
 	private static class BFSThread extends Thread {
 		
 		private int m_id = -1;
@@ -126,16 +65,23 @@ public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 		
 		private int m_vertexBatchCount = 1;
 		private short m_nodeId = -1;
-		private GraphBitVector m_curFrontier = null;
-		private GraphBitVector m_nextFrontier = null;
+		private FrontierList m_curFrontier = null;
+		private FrontierList m_nextFrontier = null;
 		
 		private Vertex2[] m_vertexBatch = null;
 		private long m_previousRunParentId = ChunkID.INVALID_ID;
 		
 		private long m_visitedCounter = 0;
 		
-		public BFSThread(final int p_id, final LoggerService p_loggerService, final ChunkService p_chunkService, 
-				final int p_vertexBatchCount, final long p_totalVertexCount, final short p_nodeId, final long... p_parameterChunkIDs)
+		public BFSThread(
+				final int p_id, 
+				final LoggerService p_loggerService, 
+				final ChunkService p_chunkService, 
+				final int p_vertexBatchCount, 
+				final short p_nodeId, 
+				final long p_totalVertexCount,
+				final Class<? extends FrontierList> p_class,
+				final long... p_parameterChunkIDs)
 		{
 			super("BFSThread-" + p_id);
 			
@@ -147,8 +93,35 @@ public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 			m_vertexBatchCount = p_vertexBatchCount;
 			m_nodeId = p_nodeId;
 			
-			m_curFrontier = new GraphBitVector(p_totalVertexCount);
-			m_nextFrontier = new GraphBitVector(p_totalVertexCount);
+			if (p_class == BitVector.class)
+			{
+				m_curFrontier = new BitVector(p_totalVertexCount);
+				m_nextFrontier = new BitVector(p_totalVertexCount);
+			}
+			else if (p_class == BitVectorOptimized.class)
+			{
+				m_curFrontier = new BitVectorOptimized(p_totalVertexCount);
+				m_nextFrontier = new BitVectorOptimized(p_totalVertexCount);
+			}
+			else if (p_class == BulkFifoNaive.class)
+			{
+				m_curFrontier = new BulkFifoNaive();
+				m_nextFrontier = new BulkFifoNaive();
+			}
+			else if (p_class == BulkFifo.class)
+			{
+				m_curFrontier = new BulkFifo();
+				m_nextFrontier = new BulkFifo();
+			}
+			else if (p_class == TreeSetFifo.class)
+			{
+				m_curFrontier = new TreeSetFifo();
+				m_nextFrontier = new TreeSetFifo();
+			}
+			else
+			{
+				throw new RuntimeException("Cannot create instance of FrontierList type " + p_class);
+			}
 			
 			// pool init
 			m_vertexBatch = new Vertex2[m_vertexBatchCount];
@@ -158,7 +131,7 @@ public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 			
 			// initial root set
 			for (int i = 0; i < p_parameterChunkIDs.length; i++) {
-				m_curFrontier.set(ChunkID.getLocalID(p_parameterChunkIDs[i]));
+				m_curFrontier.pushBack(ChunkID.getLocalID(p_parameterChunkIDs[i]));
 			}
 		}
 		
@@ -173,7 +146,7 @@ public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 				{
 					int curBatchSize = 0;
 					for (int i = 0; i < m_vertexBatchCount; i++) {
-						long tmp = m_curFrontier.getNextIndexSet();
+						long tmp = m_curFrontier.popFront();
 						if (tmp != -1)
 						{
 							// don't walk back
@@ -200,7 +173,7 @@ public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 						// check first if visited
 						if (m_vertexBatch[i].getUserData() == -1) {							
 							writeBackCount++;
-							// TODO set depth level?
+							// set depth level
 							m_vertexBatch[i].setUserData(curIterationLevel);
 							m_visitedCounter++;
 							long[] neighbours = m_vertexBatch[i].getNeighbours();
@@ -213,7 +186,7 @@ public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 									// which are stored locally
 									// -> send remote nodes to their owner and have it processed there
 									
-									m_nextFrontier.set(ChunkID.getLocalID(neighbour));
+									m_nextFrontier.pushBack(ChunkID.getLocalID(neighbour));
 								}
 							}
 						} else {
@@ -240,10 +213,10 @@ public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 				}
 				
 				// swap buffers at the end of the round when iteration level done
-				GraphBitVector tmp = m_curFrontier;
+				FrontierList tmp = m_curFrontier;
 				m_curFrontier = m_nextFrontier;
 				m_nextFrontier = tmp;
-				m_nextFrontier.resetIterator();
+				m_nextFrontier.reset();
 				curIterationLevel++;
 			}
 			

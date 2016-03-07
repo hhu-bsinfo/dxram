@@ -3,9 +3,13 @@ package de.hhu.bsinfo.dxgraph.pipe;
 import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
-import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS;
-import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3;
-import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS4;
+import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFSLocalSingleThreaded;
+import de.hhu.bsinfo.dxgraph.algo.bfs.BitVector;
+import de.hhu.bsinfo.dxgraph.algo.bfs.BitVectorOptimized;
+import de.hhu.bsinfo.dxgraph.algo.bfs.BulkFifo;
+import de.hhu.bsinfo.dxgraph.algo.bfs.FrontierList;
+import de.hhu.bsinfo.dxgraph.algo.bfs.TreeSetFifo;
+import de.hhu.bsinfo.dxgraph.load.GraphLoader;
 import de.hhu.bsinfo.dxgraph.load.oel.GraphLoaderOrderedEdgeListLocal;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -47,9 +51,12 @@ public class GraphBFSLocalPipeline extends Pipeline {
 		final int graphBfsNodeCountPerJob = p_arguments.getArgument(ARG_GRAPH_BFS_NODE_COUNT_PER_JOB).getValue(Integer.class);
 		final long graphBfsEntryNodeLocal = p_arguments.getArgument(ARG_GRAPH_BFS_ENTRY_NODE_LOCAL).getValue(Long.class);
 		
-		pushTask(new GraphLoaderOrderedEdgeListLocal(graphLoadDataPath, nodeCount, graphLoadVertexBatchSize));
+		Class<? extends FrontierList> frontierClass = TreeSetFifo.class;
+		
+		GraphLoader loader = new GraphLoaderOrderedEdgeListLocal(graphLoadDataPath, nodeCount, graphLoadVertexBatchSize);
+		pushTask(loader);
 		pushTask(new PrintMemoryStatusToConsoleTask());
-		pushTask(new GraphAlgorithmBFS3(graphBfsNodeCountPerJob, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
+		pushTask(new GraphAlgorithmBFSLocalSingleThreaded(graphBfsNodeCountPerJob, frontierClass, loader, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
 		pushTask(new PrintStatisticsToConsoleTask());
 		
 		return true;
