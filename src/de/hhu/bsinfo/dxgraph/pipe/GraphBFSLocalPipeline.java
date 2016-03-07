@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS;
 import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3;
+import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS4;
 import de.hhu.bsinfo.dxgraph.load.oel.GraphLoaderOrderedEdgeListLocal;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.args.ArgumentList;

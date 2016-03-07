@@ -6,13 +6,11 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 
-// single threaded bfs impl with simple lists for frontier current and next
-public class GraphAlgorithmBFS3 extends GraphAlgorithm {
+public class GraphAlgorithmBFS4 extends GraphAlgorithm {
 
 	private int m_batchCountPerJob = 1;
 	
-	
-	public GraphAlgorithmBFS3(final int p_batchCountPerJob, final long... p_entryNodes)
+	public GraphAlgorithmBFS4(final int p_batchCountPerJob, final long... p_entryNodes)
 	{
 		super(p_entryNodes);
 		m_batchCountPerJob = p_batchCountPerJob;
@@ -24,7 +22,8 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 		BFSThread[] threads = new BFSThread[p_entryNodes.length];
 		
 		for (int i = 0; i < threads.length; i++) {
-			threads[i] = new BFSThread(i, m_loggerService, m_chunkService, m_batchCountPerJob, p_entryNodes[i]);
+			// TODO hardcoded vertex count -> we need a pass through from the loading phase (vertex count, edge count?)
+			threads[i] = new BFSThread(i, m_loggerService, m_chunkService, m_batchCountPerJob, 244631, m_bootService.getNodeID(), p_entryNodes[i]);
 		}
 		
 		m_loggerService.info(getClass(), "Starting BFS with " + threads.length + " threads.");
@@ -49,117 +48,69 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 		return true;
 	}
 	
-	private static class BulkFifo
+	private static class GraphBitVector
 	{
-		private int m_bulkSize = 16 * 1024 * 1024 / Long.BYTES;
-		// TODO dynamically grow the blocks also in grow section
-		private long[][] m_chainedFifo = new long[100000][];
+		private long[] m_vector = null;		
 		
-		private int m_posBack = 0;
-		private int m_blockBack = 0;
+		private int m_itPos = 0;
+		private long m_itBit = 0;
 		
-		private int m_posFront = 0;
-		private int m_blockFront = 0;
+		private long m_count = 0;
 		
-		public static class EmptyException extends Exception
+		public GraphBitVector(final long p_vertexCount)
 		{
-			private static final long serialVersionUID = -2491644239410657262L;
+			m_vector = new long[(int) ((p_vertexCount / 64L) + 1L)];
 		}
 		
-		public BulkFifo()
+		public void set(final long p_index)
 		{
-			m_chainedFifo[0] = new long[m_bulkSize];
-		}
-		
-		public BulkFifo(final int p_bulkSize)
-		{
-			m_bulkSize = p_bulkSize;
-			m_chainedFifo[0] = new long[m_bulkSize];
-		}
-		
-		public int size()
-		{
-			if (m_blockFront == m_blockBack) {
-				return m_posBack - m_posFront;
-			} else {
-				int size = 0;
-				size += m_bulkSize - m_posFront;
-				size += m_bulkSize * (m_blockBack - m_blockFront + 1);
-				size += m_posBack;
-				return size;
+			long tmp = (1L << (p_index % 64L));
+			if ((m_vector[(int) (p_index / 64L)] & tmp) == 0)
+			{				
+				m_count++;
+				m_vector[(int) (p_index / 64L)] |= tmp;
 			}
-		}
-		
-		public boolean contains(final long p_val)
-		{
-			int curBlock = m_blockFront;
-			int curPos = m_posFront;
-			
-			do
-			{
-				int posEnd = m_bulkSize;
-				if (curBlock == m_blockBack)
-					posEnd = m_posBack;
-				
-				for (int i = curPos; i < posEnd; i++)
-				{
-					if (m_chainedFifo[curBlock][i] == p_val)
-						return true;
-				}
-				
-				curBlock++;
-				curPos = 0;
-			}
-			while (curBlock < m_blockBack);
-			
-			return false;
-		}
-		
-		public void reset()
-		{
-			m_posBack = 0;
-			m_blockBack = 0;
-			
-			m_posFront = 0;
-			m_blockFront = 0;
-		}
-		
-		// TODO have optimized version for bulk push back using memcopy as well
-		public void pushBack(final long p_val)
-		{
-			if (m_posBack == m_bulkSize) {
-				// grow back
-				m_chainedFifo[++m_blockBack] = new long[m_bulkSize];
-				m_posBack = 0;
-			}
-			
-			if (m_posBack < m_bulkSize)
-				m_chainedFifo[m_blockBack][m_posBack++] = p_val;
 		}
 		
 		public boolean isEmpty()
 		{
-			return m_blockBack == m_blockFront && m_posBack == m_posFront;
+			return m_count == 0;
 		}
 		
-		public long popFront() throws EmptyException
+		public void resetIterator()
 		{
-			if (m_blockBack == m_blockFront && m_posBack == m_posFront)
-				throw new EmptyException();
-			
-			long tmp = m_chainedFifo[m_blockFront][m_posFront++];
-			// go to next block, jump if necessary
-			if (m_posFront == m_bulkSize)
+			m_itPos = 0;
+			m_itBit = 0;
+			m_count = 0;
+			for (int i = 0; i < m_vector.length; i++) {
+				m_vector[i] = 0;
+			}
+		}
+		
+		public long getNextIndexSet()
+		{
+			while (m_count > 0)
 			{
-				// TODO auto shrink doesn't work with reset...new idea?
-//				// auto shrink
-//				m_chainedFifo[m_blockFront] = null;
+				if (m_vector[m_itPos] != 0)
+				{
+					while (m_itBit < 64L)
+					{
+						if (((m_vector[m_itPos] >> m_itBit) & 1L) != 0)
+						{
+							m_count--;
+							return m_itPos * 64L + m_itBit++;
+						}
+						
+						m_itBit++;
+					}
+					
+					m_itBit = 0;
+				}
 				
-				m_blockFront++;
-				m_posFront = 0;
+				m_itPos++;
 			}
 			
-			return tmp;
+			return -1;
 		}
 	}
 
@@ -174,15 +125,17 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 		private ChunkService m_chunkService = null;
 		
 		private int m_vertexBatchCount = 1;
-		private BulkFifo m_curFrontier = new BulkFifo();
-		private BulkFifo m_nextFrontier = new BulkFifo();
+		private short m_nodeId = -1;
+		private GraphBitVector m_curFrontier = null;
+		private GraphBitVector m_nextFrontier = null;
 		
 		private Vertex2[] m_vertexBatch = null;
 		private long m_previousRunParentId = ChunkID.INVALID_ID;
 		
 		private long m_visitedCounter = 0;
 		
-		public BFSThread(final int p_id, final LoggerService p_loggerService, final ChunkService p_chunkService, final int p_vertexBatchCount, final long... p_parameterChunkIDs)
+		public BFSThread(final int p_id, final LoggerService p_loggerService, final ChunkService p_chunkService, 
+				final int p_vertexBatchCount, final long p_totalVertexCount, final short p_nodeId, final long... p_parameterChunkIDs)
 		{
 			super("BFSThread-" + p_id);
 			
@@ -192,6 +145,10 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 			m_chunkService = p_chunkService;
 			
 			m_vertexBatchCount = p_vertexBatchCount;
+			m_nodeId = p_nodeId;
+			
+			m_curFrontier = new GraphBitVector(p_totalVertexCount);
+			m_nextFrontier = new GraphBitVector(p_totalVertexCount);
 			
 			// pool init
 			m_vertexBatch = new Vertex2[m_vertexBatchCount];
@@ -201,7 +158,7 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 			
 			// initial root set
 			for (int i = 0; i < p_parameterChunkIDs.length; i++) {
-				m_curFrontier.pushBack(p_parameterChunkIDs[i]);
+				m_curFrontier.set(ChunkID.getLocalID(p_parameterChunkIDs[i]));
 			}
 		}
 		
@@ -210,24 +167,25 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 		{
 			int curIterationLevel = 0;
 			while (true)
-			{				
+			{			
 				boolean iterationLevelDone = false;
 				while (!iterationLevelDone)
 				{
 					int curBatchSize = 0;
 					for (int i = 0; i < m_vertexBatchCount; i++) {
-						try {
-							long tmp = m_curFrontier.popFront();
+						long tmp = m_curFrontier.getNextIndexSet();
+						if (tmp != -1)
+						{
 							// don't walk back
 							if (tmp != m_previousRunParentId) {
-								m_vertexBatch[i].setID(tmp);
+								m_vertexBatch[i].setID(ChunkID.getChunkID(m_nodeId, tmp));
+								curBatchSize++;
 							}
-						} catch (de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3.BulkFifo.EmptyException e) {
-							iterationLevelDone = true;
-							break;
 						}
-
-						curBatchSize++;
+						else
+						{
+							iterationLevelDone = true;
+						}
 					}
 				
 					int gett = m_chunkService.get(m_vertexBatch, 0, curBatchSize);
@@ -240,18 +198,22 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 					int writeBackCount = 0;
 					for (int i = 0; i < gett; i++) {
 						// check first if visited
-						if (m_vertexBatch[i].getUserData() == -1) {
+						if (m_vertexBatch[i].getUserData() == -1) {							
 							writeBackCount++;
+							// TODO set depth level?
 							m_vertexBatch[i].setUserData(curIterationLevel);
 							m_visitedCounter++;
 							long[] neighbours = m_vertexBatch[i].getNeighbours();
 							
-							for (long neighbour : neighbours) {
+							for (long neighbour : neighbours) {								
 								// don't walk back
-								if (neighbour != m_previousRunParentId) {
-									// check if already inserted
-									if (!m_nextFrontier.contains(neighbour))
-										m_nextFrontier.pushBack(neighbour);
+								if (neighbour != m_previousRunParentId) {									
+									
+									// TODO check if vertex is on current node as we can only process nodes
+									// which are stored locally
+									// -> send remote nodes to their owner and have it processed there
+									
+									m_nextFrontier.set(ChunkID.getLocalID(neighbour));
 								}
 							}
 						} else {
@@ -278,10 +240,10 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 				}
 				
 				// swap buffers at the end of the round when iteration level done
-				BulkFifo tmp = m_curFrontier;
+				GraphBitVector tmp = m_curFrontier;
 				m_curFrontier = m_nextFrontier;
 				m_nextFrontier = tmp;
-				m_nextFrontier.reset();
+				m_nextFrontier.resetIterator();
 				curIterationLevel++;
 			}
 			
