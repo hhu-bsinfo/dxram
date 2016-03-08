@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import java.util.Arrays;
-
 public class BulkFifo extends BulkFifoNaive {
 	
 	public BulkFifo()

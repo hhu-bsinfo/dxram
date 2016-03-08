@@ -11,6 +11,7 @@ import de.hhu.bsinfo.utils.main.Main;
 public abstract class Converter extends Main 
 {
 	private static final Argument ARG_INPUT = new Argument("in", null, false, "Input file of specific format");
+	private static final Argument ARG_INPUT_ROOTS = new Argument("inRoots", null, true, "Input file of specific format with BFS roots");
 	private static final Argument ARG_OUTPUT = new Argument("out", "./", true, "Ordered edge list output file location");
 	private static final Argument ARG_FILE_COUNT = new Argument("outFileCount", 1, true, "Split data into multiple files (each approx. same size)");
 	private static final Argument ARG_INPUT_DIRECTED_EDGES = new Argument("inputDirectedEdges", true, true, "Specify if the input file contains directed or undirected edges");
@@ -33,6 +34,7 @@ public abstract class Converter extends Main
 	@Override
 	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_INPUT);
+		p_arguments.setArgument(ARG_INPUT_ROOTS);
 		p_arguments.setArgument(ARG_OUTPUT);
 		p_arguments.setArgument(ARG_FILE_COUNT);
 		p_arguments.setArgument(ARG_INPUT_DIRECTED_EDGES);
@@ -44,6 +46,7 @@ public abstract class Converter extends Main
 	protected int main(ArgumentList p_arguments) 
 	{
 		String inputPath = p_arguments.getArgumentValue(ARG_INPUT);
+		String inputRootsPath = p_arguments.getArgumentValue(ARG_INPUT_ROOTS);
 		String outputPath = p_arguments.getArgumentValue(ARG_OUTPUT);
 		int fileCount = p_arguments.getArgumentValue(ARG_FILE_COUNT);
 		m_isDirected = p_arguments.getArgumentValue(ARG_INPUT_DIRECTED_EDGES);
@@ -67,10 +70,19 @@ public abstract class Converter extends Main
 		
 		System.out.println("Done converting, output in " + outputPath);
 		
+		if (inputRootsPath != null)
+		{
+			System.out.println("Converting roots list...");
+			convertBFSRootList(outputPath, inputRootsPath, m_storage);
+			System.out.println("Converting roots list done");
+		}
+		
 		return 0;
 	}
 	
 	protected abstract FileReaderThread createReaderInstance(String p_inputPath, final ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize);
+	
+	protected abstract void convertBFSRootList(final String p_outputPath, final String p_inputRootFile, final VertexStorage p_storage);
 	
 	private int parse(final String... p_inputPaths) {
 				

@@ -30,6 +30,12 @@ public class TextEdgeListToOel extends Converter
 			ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, int p_maxQueueSize) {
 		return new FileReaderTextThread(p_inputPath, p_bufferQueue, p_maxQueueSize);
 	}
+	
+	@Override
+	protected void convertBFSRootList(final String p_outputPath, final String p_inputRootFile, final VertexStorage p_storage)
+	{
+		// TODO
+	}
 
 	private static class FileReaderTextThread extends FileReaderThread
 	{

@@ -1,6 +1,8 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -36,6 +38,70 @@ public class BinaryEdgeListToOel extends Converter
 			ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, int p_maxQueueSize) {
 		return new FileReaderBinaryThread(p_inputPath, p_bufferQueue, p_maxQueueSize);
 	}
+	
+	@Override
+	protected void convertBFSRootList(final String p_outputPath, final String p_inputRootFile, final VertexStorage p_storage)
+	{
+		// adjust output path
+		String outputPath = p_outputPath;
+		
+		if (!outputPath.endsWith("/"))
+			outputPath += "/";
+		
+		BufferedWriter writer = null;
+		try {
+			writer = new BufferedWriter(new FileWriter(outputPath + "out.roel"));
+		} catch (IOException e1) {
+			System.out.println("Opening buffered reader failed: " + e1.getMessage());
+			return;
+		}
+		
+		RandomAccessFile file = null;
+		try {
+			file = new RandomAccessFile(p_inputRootFile, "r");
+		} catch (FileNotFoundException e) {
+			System.out.println("Opening input file " + p_inputRootFile + " failed: " + e.getMessage());
+			try {
+				writer.close();
+			} catch (IOException e1) {
+			}
+			return;
+		}
+		
+		ByteBuffer buffer = ByteBuffer.allocate(1024 * 8 * 2);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		
+		try {
+			long fileLength = file.length();
+			long bytesRead = 0;
+			do
+			{			
+				int read = file.read(buffer.array());
+				if (read == -1)
+					break;
+				
+				bytesRead += read;
+				buffer.limit(read);
+				
+				while (buffer.hasRemaining())
+				{
+					Long node = buffer.getLong();
+					
+					long vertexId = p_storage.getVertexId(node);
+					
+					writer.write(Long.toString(vertexId) + "\n");
+				}
+				
+				writer.flush();
+				buffer.clear();
+			}
+			while (bytesRead < fileLength);
+			
+			file.close();
+		} catch (IOException e) {
+			System.out.println("Reading from input file failed: " + e.getMessage());
+		}
+	}
 
 	private static class FileReaderBinaryThread extends FileReaderThread
 	{
@@ -67,6 +133,7 @@ public class BinaryEdgeListToOel extends Converter
 						break;
 					
 					bytesRead += read;
+					buffer.limit(read);
 				
 					while (buffer.hasRemaining())
 					{

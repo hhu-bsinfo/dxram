@@ -31,13 +31,13 @@ public class BulkFifoNaive implements FrontierList
 		if (m_posBack == m_bulkSize) {
 			// grow back
 			// check if next bulk block exists
-			if (m_blockBack + 1 > m_chainedFifo.length)
+			if (++m_blockBack >= m_chainedFifo.length)
 			{
 				// grow bulk block
 				m_chainedFifo = Arrays.copyOf(m_chainedFifo, m_chainedFifo.length + MS_BULK_BLOCK_GROWTH);
 			}
 			
-			m_chainedFifo[++m_blockBack] = new long[m_bulkSize];
+			m_chainedFifo[m_blockBack] = new long[m_bulkSize];
 			m_posBack = 0;
 		}
 		

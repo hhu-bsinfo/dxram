@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFSLocalSingleThreaded;
 import de.hhu.bsinfo.dxgraph.algo.bfs.BitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.BitVectorOptimized;
 import de.hhu.bsinfo.dxgraph.algo.bfs.BulkFifo;
+import de.hhu.bsinfo.dxgraph.algo.bfs.BulkFifoNaive;
 import de.hhu.bsinfo.dxgraph.algo.bfs.FrontierList;
 import de.hhu.bsinfo.dxgraph.algo.bfs.TreeSetFifo;
 import de.hhu.bsinfo.dxgraph.load.GraphLoader;
