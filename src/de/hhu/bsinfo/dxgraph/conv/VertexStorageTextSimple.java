@@ -9,8 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.utils.Pair;
 
-// not thread safe, single threaded only
-public class VertexStorageSimple implements VertexStorage {
+public class VertexStorageTextSimple implements VertexStorageText {
 
 	private static class NeighbourListVertex
 	{
@@ -31,7 +30,7 @@ public class VertexStorageSimple implements VertexStorage {
 	
 	private Lock m_mutex = new ReentrantLock(false);
 	
-	public VertexStorageSimple()
+	public VertexStorageTextSimple()
 	{
 		
 	}

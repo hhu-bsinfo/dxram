@@ -53,7 +53,7 @@ public abstract class Converter extends Main
 		m_numConverterThreads = p_arguments.getArgumentValue(ARG_NUM_CONV_THREADS);
 		m_maxBufferQueueSize = p_arguments.getArgumentValue(ARG_MAX_BUFFER_QUEUE_SIZE);
 		
-		m_storage = new VertexStorageSimple();
+		m_storage = createVertexStorageInstance();
 		
 		System.out.println("Parsing input " + inputPath + "...");
 		
@@ -80,7 +80,11 @@ public abstract class Converter extends Main
 		return 0;
 	}
 	
+	protected abstract VertexStorage createVertexStorageInstance();
+	
 	protected abstract FileReaderThread createReaderInstance(String p_inputPath, final ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize);
+	
+	protected abstract FileWriterThread createWriterInstance(final String p_outputPath, final int p_id, final long p_idRangeStartIncl, final long p_idRangeEndExcl, final VertexStorage p_storage);
 	
 	protected abstract void convertBFSRootList(final String p_outputPath, final String p_inputRootFile, final VertexStorage p_storage);
 	
@@ -158,7 +162,7 @@ public abstract class Converter extends Main
 			if (rangeEnd >= vertexCount)
 				rangeEnd = vertexCount;
 			
-			FileWriterThread thread = new FileWriterThread(outputPath, i, rangeStart, rangeEnd, m_storage);
+			FileWriterThread thread = createWriterInstance(outputPath, i, rangeStart, rangeEnd, m_storage);
 			thread.start();
 			m_fileWriterThreads.add(thread);
 			

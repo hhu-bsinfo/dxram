@@ -62,7 +62,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				
 				// looking for format xxx.oel or xxx.oel.<nidx>
 				if (tokens.length > 1) {
-					if (tokens[1].equals("oel")) {
+					if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
 						return true;
 					}
 				} 
@@ -73,7 +73,19 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		
 		// add filtered files
 		for (File file : files) {
-			list.add(new OrderedEdgeListFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+			String[] tokens = file.getName().split("\\.");
+			
+			// looking for format xxx.oel or xxx.oel.<nidx>
+			if (tokens.length > 1) {
+				if (tokens[1].equals("oel"))
+				{
+					list.add(new OrderedEdgeListTextFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+				}
+				else if (tokens[1].equals("boel"))
+				{
+					list.add(new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+				}
+			} 
 		}
 		
 		// make sure our list is sorted by nodeIdx/localIdx

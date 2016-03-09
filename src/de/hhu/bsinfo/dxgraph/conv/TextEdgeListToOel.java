@@ -32,6 +32,18 @@ public class TextEdgeListToOel extends Converter
 	}
 	
 	@Override
+	protected FileWriterThread createWriterInstance(String p_outputPath, int p_id, long p_idRangeStartIncl,
+			long p_idRangeEndExcl, VertexStorage p_storage) {
+		return new FileWriterTextThread(p_outputPath, p_id, p_idRangeStartIncl, p_idRangeEndExcl, p_storage);
+	}
+	
+	@Override
+	protected VertexStorage createVertexStorageInstance()
+	{
+		return new VertexStorageTextSimple();
+	}
+	
+	@Override
 	protected void convertBFSRootList(final String p_outputPath, final String p_inputRootFile, final VertexStorage p_storage)
 	{
 		// TODO

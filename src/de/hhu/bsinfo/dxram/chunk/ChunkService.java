@@ -61,6 +61,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 	
+	private boolean m_logActive = false;
+	private boolean m_firstBackupRangeInitialized = false;
+	
 	/**
 	 * Constructor
 	 */
@@ -91,6 +94,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_terminal.registerCommand(new TcmdChunkCreate());
 		m_terminal.registerCommand(new TcmdChunkRemove());
 
+		m_logActive = false;
+		m_firstBackupRangeInitialized = false;
+		
 //		if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
 //			m_backup.registerPeer();
 //		}
@@ -203,7 +209,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
 		// by other peers
 		for (int i = 0; i < p_count; i++) {
-			m_lookup.initRange(chunkIDs[i], new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+			initBackupRange(chunkIDs[i], p_size);
 		}
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
@@ -254,7 +260,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// by other peers
 		for (int i = 0; i < p_dataStructures.length; i++) {
 			if (p_dataStructures[i].getID() != ChunkID.INVALID_ID) {
-				m_lookup.initRange(p_dataStructures[i].getID(), new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+				initBackupRange(p_dataStructures[i].getID(), p_dataStructures[i].sizeofObject());
 			}
 		}
 
@@ -298,7 +304,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
 		// by other peers
 		for (int i = 0; i < p_sizes.length; i++) {
-			m_lookup.initRange(chunkIDs[i], new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+			initBackupRange(chunkIDs[i], p_sizes[i]);
 		}
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
@@ -838,6 +844,44 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	}
 	
 	// -----------------------------------------------------------------------------------
+	
+	/**
+	 * Initializes the backup range for current locations
+	 * and determines new backup peers if necessary
+	 * @param p_localID
+	 *            the current LocalID
+	 * @param p_size
+	 *            the size of the new created chunk
+	 * @throws LookupException
+	 *             if range could not be initialized
+	 */
+	private void initBackupRange(final long p_localID, final int p_size) {
+		int size;
+
+		if (m_logActive) {
+//			size = p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
+//			if (!m_firstRangeInitialized && p_localID == 1) {
+//				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
+//				// This is the first put and p_localID is not reused
+//				determineBackupPeers(0);
+//				m_lookup.initRange((long) m_nodeID << 48, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+//				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
+//				m_rangeSize = size;
+//				m_firstRangeInitialized = true;
+//			} else if (m_rangeSize + size > SECONDARY_LOG_SIZE / 2) {
+//				determineBackupPeers(p_localID);
+//				m_lookup.initRange(((long) m_nodeID << 48) + p_localID, new Locations(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+//				m_log.initBackupRange(((long) m_nodeID << 48) + p_localID, m_currentBackupRange.getBackupPeers());
+//				m_rangeSize = size;
+//			} else {
+//				m_rangeSize += size;
+//			}
+		} else if (!m_firstBackupRangeInitialized && p_localID == 1) {
+			short nodeId = m_boot.getNodeID();
+			m_lookup.initRange(((long) nodeId << 48) + 0xFFFFFFFFFFFFL, new Locations(nodeId, new short[] {-1, -1, -1}, null));
+			m_firstBackupRangeInitialized = true;
+		}
+	}
 	
 	/**
 	 * Handles an incoming GetRequest

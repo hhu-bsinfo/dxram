@@ -52,7 +52,7 @@ public class GraphBFSLocalPipeline extends Pipeline {
 		final int graphBfsNodeCountPerJob = p_arguments.getArgument(ARG_GRAPH_BFS_NODE_COUNT_PER_JOB).getValue(Integer.class);
 		final long graphBfsEntryNodeLocal = p_arguments.getArgument(ARG_GRAPH_BFS_ENTRY_NODE_LOCAL).getValue(Long.class);
 		
-		Class<? extends FrontierList> frontierClass = TreeSetFifo.class;
+		Class<? extends FrontierList> frontierClass = BitVector.class;
 		
 		GraphLoader loader = new GraphLoaderOrderedEdgeListLocal(graphLoadDataPath, nodeCount, graphLoadVertexBatchSize);
 		pushTask(loader);
