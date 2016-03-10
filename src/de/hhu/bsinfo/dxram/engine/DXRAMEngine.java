@@ -13,8 +13,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxram.util.logger.LogLevel;
-import de.hhu.bsinfo.dxram.util.logger.Logger;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.conf.Configuration;
 import de.hhu.bsinfo.utils.conf.ConfigurationException;
@@ -22,6 +20,11 @@ import de.hhu.bsinfo.utils.conf.ConfigurationParser;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoader;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoaderFile;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
+import de.hhu.bsinfo.utils.log.LogDestination;
+import de.hhu.bsinfo.utils.log.LogDestinationConsole;
+import de.hhu.bsinfo.utils.log.LogDestinationFile;
+import de.hhu.bsinfo.utils.log.LogLevel;
+import de.hhu.bsinfo.utils.log.Logger;
 
 /**
  * Main class to run DXRAM with components and services.
@@ -347,6 +350,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor
         m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down components done.");
 
         m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down engine done.");
+        
+        m_logger.close();
 
         m_isInitilized = false;
 
@@ -530,8 +535,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.IP);
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.PORT);
 		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.ROLE);
-		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER);
-		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOG_LEVEL);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER_LEVEL);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER_FILE_LEVEL);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER_FILE_PATH);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER_FILE_BACKUPOLD);
+		m_settings.setDefaultValue(DXRAMEngineConfigurationValues.LOGGER_CONSOLE_LEVEL);
 	}
 	
 	/**
@@ -634,43 +642,24 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 	 */
 	private void setupLogger()
 	{
-		String logger = m_settings.getValue(DXRAMEngineConfigurationValues.LOGGER);
-		String logLevel = m_settings.getValue(DXRAMEngineConfigurationValues.LOG_LEVEL);
+		String loggerLevel = m_settings.getValue(DXRAMEngineConfigurationValues.LOGGER_LEVEL);
+		String loggerFileLevel = m_settings.getValue(DXRAMEngineConfigurationValues.LOGGER_FILE_LEVEL);
+		String loggerFilePath = m_settings.getValue(DXRAMEngineConfigurationValues.LOGGER_FILE_PATH);
+		String loggerConsoleLevel = m_settings.getValue(DXRAMEngineConfigurationValues.LOGGER_CONSOLE_LEVEL);
+		Boolean loggerFileBackupOld = m_settings.getValue(DXRAMEngineConfigurationValues.LOGGER_FILE_BACKUPOLD);
 		
-		Class<?> clazz = null;
-		try {
-			clazz = Class.forName(logger);
-		} catch (ClassNotFoundException e) {
-			throw new DXRAMRuntimeException("Could not find class " + logger + " to create logger instance.");
-		}
-		
-		boolean implementsInterface = false;
-		for (Class<?> interfaces : clazz.getInterfaces())
+		m_logger = new Logger();
+		m_logger.setLogLevel(LogLevel.toLogLevel(loggerLevel));
 		{
-			if (interfaces.equals(Logger.class)) {
-				implementsInterface = true;
-				break;
-			}
+			LogDestination logDest = new LogDestinationConsole();
+			logDest.setLogLevel(LogLevel.toLogLevel(loggerConsoleLevel));
+			m_logger.addLogDestination(logDest);
 		}
-		
-		if (!implementsInterface)
-			throw new DXRAMRuntimeException(logger + " does not implement interface DXRAMLogger.");
-		
-		Constructor<?> ctor = null;
-		
-		try {
-			ctor = clazz.getConstructor();
-		} catch (NoSuchMethodException | SecurityException e1) {
-			throw new DXRAMRuntimeException("Could not get default constructor of logger " + logger + ".", e1);
+		{
+			LogDestination logDest = new LogDestinationFile(loggerFilePath, loggerFileBackupOld);
+			logDest.setLogLevel(LogLevel.toLogLevel(loggerFileLevel));
+			m_logger.addLogDestination(logDest);
 		}
-		
-		try {
-			m_logger = (Logger) ctor.newInstance();
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new DXRAMRuntimeException("Could not create instance of logger " + logger + ".", e);
-		}
-		
-		m_logger.setLogLevel(LogLevel.toLogLevel(logLevel));
 	}
 	
 	/**

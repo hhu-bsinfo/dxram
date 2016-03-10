@@ -76,7 +76,8 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 		m_ownPort = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PORT);
 		m_zookeeper = new ZooKeeperHandler(p_settings.getValue(ZookeeperBootConfigurationValues.Component.PATH), 
 											p_settings.getValue(ZookeeperBootConfigurationValues.Component.CONNECTION_STRING), 
-											p_settings.getValue(ZookeeperBootConfigurationValues.Component.TIMEOUT));
+											p_settings.getValue(ZookeeperBootConfigurationValues.Component.TIMEOUT),
+											m_logger);
 		m_isStarting = true;
 		m_zookeeperBitfieldSize = p_settings.getValue(ZookeeperBootConfigurationValues.Component.BITFIELD_SIZE);
 		

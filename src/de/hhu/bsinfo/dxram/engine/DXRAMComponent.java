@@ -3,9 +3,9 @@ package de.hhu.bsinfo.dxram.engine;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.util.logger.Logger;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.conf.Configuration;
+import de.hhu.bsinfo.utils.log.Logger;
 
 /**
  * Base class for all components in DXRAM. A component serves the engine as a building block

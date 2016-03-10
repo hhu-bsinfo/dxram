@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.util.logger;
+package de.hhu.bsinfo.utils.log;
 
 /**
  * List of different log levels available for logging.

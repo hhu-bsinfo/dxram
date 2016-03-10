@@ -1,10 +1,10 @@
 package de.hhu.bsinfo.dxram.engine;
 
-import de.hhu.bsinfo.dxram.util.logger.Logger;
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.locks.JNILock;
 import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
+import de.hhu.bsinfo.utils.log.Logger;
 
 /**
  * Separate class to avoid further bloating of DXRAMEngine to setup JNI related things (used by DXRAMEngine).

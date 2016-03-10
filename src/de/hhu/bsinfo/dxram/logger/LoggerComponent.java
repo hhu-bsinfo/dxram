@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.util.logger.LogLevel;
+import de.hhu.bsinfo.utils.log.LogLevel;
 import de.hhu.bsinfo.utils.log.LoggerInterface;
 
 /**
@@ -293,5 +293,10 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	public void trace(String p_header, String p_msg, Exception p_e) {		
 		if (LogLevel.TRACE.ordinal() <= m_defaultLogLevel.ordinal())
 			getLogger().trace(p_header, p_msg, p_e);
+	}
+
+	@Override
+	public void setLogLevel(LogLevel p_logLevel) {
+		// don't support this
 	}
 }

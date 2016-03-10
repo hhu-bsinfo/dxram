@@ -4,7 +4,6 @@ package de.hhu.bsinfo.utils;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
@@ -16,30 +15,31 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
+import de.hhu.bsinfo.utils.log.LoggerInterface;
+
 /**
  * Class for accessing ZooKeeper
  * @author Florian Klein 02.12.2013
  */
 public final class ZooKeeperHandler {
 
-	// Constants
-	private static final Logger LOGGER = Logger.getLogger(ZooKeeperHandler.class);
-
 	// Attributes
 	private ZooKeeper m_zookeeper;
 	private String m_path;
 	private String m_connection;
 	private int m_timeout;
+	private LoggerInterface m_logger;
 
 	// Constructors
 	/**
 	 * Creates an instance of ZooKeeperHandler
 	 */
-	public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout) 
+	public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout, final LoggerInterface p_logger) 
 	{
 		m_path = p_path;
 		m_connection = p_connection;
 		m_timeout = p_timeout;
+		m_logger = p_logger;
 	}
 
 	// Methods
@@ -49,7 +49,7 @@ public final class ZooKeeperHandler {
 	 *             if ZooKeeper could not accessed
 	 */
 	public synchronized void connect() throws ZooKeeperException {
-		LOGGER.trace("Entering connect");
+		m_logger.trace(getClass().getName(), "Entering connect");
 
 		if (m_zookeeper == null) {
 			try {
@@ -59,23 +59,23 @@ public final class ZooKeeperHandler {
 					m_zookeeper.create(m_path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 				}
 			} catch (final IOException e) {
-				LOGGER.error("ERR:Could not initialize ZooKeeper", e);
+				m_logger.error(getClass().getName(), "ERR:Could not initialize ZooKeeper", e);
 
 				throw new ZooKeeperException("Could not initialize ZooKeeper", e);
 			} catch (final KeeperException e) {
 				if (e.code() != KeeperException.Code.NODEEXISTS) {
-					LOGGER.error("ERR:Could not access ZooKeeper", e);
+					m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 					throw new ZooKeeperException("Could not access ZooKeeper", e);
 				}
 			} catch (final InterruptedException e) {
-				LOGGER.error("ERR:Could not access ZooKeeper", e);
+				m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 				throw new ZooKeeperException("Could not access ZooKeeper", e);
 			}
 		}
 
-		LOGGER.trace("Exiting connect");
+		m_logger.trace(getClass().getName(), "Exiting connect");
 	}
 
 	/**
@@ -95,7 +95,7 @@ public final class ZooKeeperHandler {
 	 *             if ZooKeeper could not accessed
 	 */
 	public synchronized void close(final boolean p_delete) throws ZooKeeperException {
-		LOGGER.trace("Entering close");
+		m_logger.trace(getClass().getName(), "Entering close");
 
 		if (m_zookeeper != null) {
 			try {
@@ -104,14 +104,14 @@ public final class ZooKeeperHandler {
 				}
 				m_zookeeper.close();
 			} catch (final InterruptedException | KeeperException e) {
-				LOGGER.error("ERR:Could not access ZooKeeper", e);
+				m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 				throw new ZooKeeperException("Could not access ZooKeeper", e);
 			}
 			m_zookeeper = null;
 		}
 
-		LOGGER.trace("Exiting close");
+		m_logger.trace(getClass().getName(), "Exiting close");
 	}
 
 	/**
@@ -186,7 +186,7 @@ public final class ZooKeeperHandler {
 				ret = m_zookeeper.exists(m_path, p_watcher);
 			}
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -283,7 +283,7 @@ public final class ZooKeeperHandler {
 			}
 			m_zookeeper.delete(m_path + "/" + p_path, p_version);
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -364,7 +364,7 @@ public final class ZooKeeperHandler {
 
 			ret = m_zookeeper.getChildren(m_path + "/" + p_path, p_watcher);
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -434,7 +434,7 @@ public final class ZooKeeperHandler {
 				
 			ret = m_zookeeper.getData(m_path + "/" + p_path, p_watcher, p_status);
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -477,7 +477,7 @@ public final class ZooKeeperHandler {
 
 			m_zookeeper.setData(m_path + "/" + p_path, p_data, p_version);
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -500,7 +500,7 @@ public final class ZooKeeperHandler {
 
 			m_zookeeper.exists(p_path, p_watcher);
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -523,7 +523,7 @@ public final class ZooKeeperHandler {
 
 			m_zookeeper.getData(p_path, p_watcher, null);
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -546,7 +546,7 @@ public final class ZooKeeperHandler {
 
 			m_zookeeper.getChildren(m_path + "/" + p_path, p_watcher);
 		} catch (final KeeperException | InterruptedException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -567,7 +567,7 @@ public final class ZooKeeperHandler {
 
 			m_zookeeper.multi(p_operations);
 		} catch (final InterruptedException | KeeperException e) {
-			LOGGER.error("ERR:Could not access ZooKeeper", e);
+			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);
 
 			throw new ZooKeeperException("Could not access ZooKeeper", e);
 		}
@@ -590,7 +590,7 @@ public final class ZooKeeperHandler {
 		@Override
 		public void process(final WatchedEvent p_event) {
 			if (p_event.getType() == Event.EventType.None && p_event.getState() == KeeperState.Expired) {
-				LOGGER.error("ERR:ZooKeeper state expired");
+				m_logger.error(getClass().getName(), "ERR:ZooKeeper state expired");
 			}
 		}
 

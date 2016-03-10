@@ -9,6 +9,12 @@ package de.hhu.bsinfo.utils.log;
  */
 public interface LoggerInterface {
 	/**
+	 * Set the log level for the logger.
+	 * @param p_logLevel New log level to be set.
+	 */
+	public void setLogLevel(final LogLevel p_logLevel);
+	
+	/**
 	 * Log an error message.
 	 * @param p_header Message header like instance ID, class the message comes from, filename, ...
 	 * @param p_msg Actual log message.

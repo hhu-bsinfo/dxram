@@ -3,6 +3,10 @@ package de.hhu.bsinfo.utils.log;
 public class LoggerNull implements LoggerInterface {
 
 	@Override
+	public void setLogLevel(LogLevel p_logLevel) {
+	}
+	
+	@Override
 	public void error(String p_header, String p_msg) {
 	}
 
@@ -41,5 +45,4 @@ public class LoggerNull implements LoggerInterface {
 	@Override
 	public void trace(String p_header, String p_msg, Exception p_e) {
 	}
-
 }

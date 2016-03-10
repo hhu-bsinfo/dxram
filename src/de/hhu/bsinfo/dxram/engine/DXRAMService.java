@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxram.engine;
 
-import de.hhu.bsinfo.dxram.util.logger.Logger;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.conf.Configuration;
+import de.hhu.bsinfo.utils.log.Logger;
 
 /**
  * Base class for all services in DXRAM. All services in DXRAM form the API for the user.

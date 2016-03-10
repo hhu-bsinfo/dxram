@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.dxram.lookup;
 
-import org.apache.log4j.Logger;
-
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 
@@ -9,8 +7,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMService;
 // - network message handling
 // - connection lost handling
 public class LookupService extends DXRAMService {
-
-	private final Logger LOGGER = Logger.getLogger(LookupService.class);
 	
 	public LookupService() {
 	}
