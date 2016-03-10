@@ -50,17 +50,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 *            the destination
 	 * @param p_type
 	 *            the message type
-	 */
-	public AbstractRequest(final short p_destination, final byte p_type) {
-		this(p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_EXCLUSIVITY_VALUE);
-	}
-
-	/**
-	 * Creates an instance of Request
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
 	 * @param p_subtype
 	 *            the message subtype
 	 */
@@ -168,9 +157,10 @@ public abstract class AbstractRequest extends AbstractMessage {
 	// Methods
 	/**
 	 * Wait until the Request is fulfilled or aborted
+	 * @param p_timeoutMs Max amount of time to wait for response.
 	 * @returns False if message timed out, true if response received.
 	 */
-	public final boolean waitForResponses() {
+	public final boolean waitForResponses(final int p_timeoutMs) {
 		boolean success = true;
 		long timeStart;
 		long timeNow;
@@ -179,7 +169,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 		while (!m_fulfilled && !m_aborted) {
 			timeNow = System.currentTimeMillis();
-			if (timeNow - timeStart > 5000 && !m_ignoreTimeout) {
+			if (timeNow - timeStart > p_timeoutMs && !m_ignoreTimeout) {
 				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
 				success = false;
 				break;

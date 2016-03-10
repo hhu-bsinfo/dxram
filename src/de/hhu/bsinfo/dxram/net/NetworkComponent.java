@@ -19,7 +19,8 @@ public class NetworkComponent extends DXRAMComponent {
 	private BootComponent m_boot = null;
 	
 	// Attributes
-	private NetworkHandler m_networkHandler;
+	private NetworkHandler m_networkHandler = null;
+	private int m_requestTimeoutMs = -1;
 	
 	public NetworkComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -72,7 +73,7 @@ public class NetworkComponent extends DXRAMComponent {
 		NetworkErrorCodes err = sendMessage(p_request);
 		if (err == NetworkErrorCodes.SUCCESS) {
 			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
-			if (!p_request.waitForResponses()) {
+			if (!p_request.waitForResponses(m_requestTimeoutMs)) {
 				m_logger.error(this.getClass(), "Sending sync, waiting for responses " + p_request + " failed, timeout.");
 				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
 			} else {		
@@ -101,6 +102,7 @@ public class NetworkComponent extends DXRAMComponent {
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 	}
 	
 	@Override
@@ -121,6 +123,8 @@ public class NetworkComponent extends DXRAMComponent {
 				new NodeMappings(m_boot), 
 				p_settings.getValue(NetworkConfigurationValues.Component.MAX_OUTSTANDING_BYTES),
 				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS));
+		
+		m_requestTimeoutMs = p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 		
 		return true;
 	}

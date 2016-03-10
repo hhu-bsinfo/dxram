@@ -22,17 +22,6 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 * Creates an instance of Response
 	 * @param p_request
 	 *            the corresponding Request
-	 */
-	public AbstractResponse(final AbstractRequest p_request) {
-		super(p_request.getMessageID(), p_request.getSource(), p_request.getType(), DEFAULT_SUBTYPE);
-	
-		m_correspondingRequest = p_request;
-	}
-
-	/**
-	 * Creates an instance of Response
-	 * @param p_request
-	 *            the corresponding Request
 	 * @param p_subtype
 	 *            the message subtype
 	 */

@@ -58,17 +58,6 @@ public abstract class AbstractMessage {
 	 *            the destination
 	 * @param p_type
 	 *            the message type
-	 */
-	public AbstractMessage(final short p_destination, final byte p_type) {
-		this(getNextMessageID(), p_destination, p_type, DEFAULT_SUBTYPE, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
-	}
-
-	/**
-	 * Creates an instance of Message
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
 	 * @param p_subtype
 	 *            the message subtype
 	 */
@@ -89,21 +78,6 @@ public abstract class AbstractMessage {
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
 		this(getNextMessageID(), p_destination, p_type, p_subtype, p_exclusivity, DEFAULT_STATUS_CODE);
-	}
-
-	/**
-	 * Creates an instance of Message
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
-	 * @param p_subtype
-	 *            the message subtype
-	 * @param p_ratingValue
-	 *            the rating value of the message
-	 */
-	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final byte p_ratingValue, final boolean p_exclusivity, final byte p_statusCode) {
-		this(getNextMessageID(), p_destination, p_type, p_subtype, p_exclusivity, p_statusCode);
 	}
 
 	/**
