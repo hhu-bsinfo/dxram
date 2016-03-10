@@ -111,13 +111,12 @@ public abstract class BinaryEdgeListTo extends Converter
 				return -1;
 			}
 			
-			ByteBuffer buffer = ByteBuffer.allocate(1024 * 8 * 2);
+			ByteBuffer buffer = ByteBuffer.allocate(4 * 1024 * 8 * 2);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 			
 			try {
 				long fileLength = file.length();
 				long bytesRead = 0;
-				long checkCounter = 0;
 				do
 				{			
 					int read = file.read(buffer.array());
@@ -132,18 +131,13 @@ public abstract class BinaryEdgeListTo extends Converter
 						Long srcNode = buffer.getLong();
 						Long destNode = buffer.getLong();
 
-						// slows things down a lot
-						if (checkCounter > m_maxQueueSize)
+						// size() performs really bad
+						while (m_bufferQueue.size() > m_maxQueueSize)
 						{
-							while (m_bufferQueue.size() > m_maxQueueSize)
-							{
-								Thread.yield();
-							}
-							checkCounter = m_bufferQueue.size();
+							Thread.yield();
 						}
 						
 						m_bufferQueue.add(new Pair<Long, Long>(srcNode, destNode));
-						checkCounter++;
 						
 						updateProgress("BinaryDataReading", bytesRead, fileLength);
 					}

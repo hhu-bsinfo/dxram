@@ -14,8 +14,6 @@ public class VertexStorageBinarySimple implements VertexStorageBinary {
 	{
 		public ConcurrentLinkedQueue<Long> m_neighbourList = new ConcurrentLinkedQueue<Long>();
 
-		//public Lock m_mutex = new ReentrantLock(false);
-		
 		public NeighbourListVertex()
 		{
 		
@@ -60,11 +58,7 @@ public class VertexStorageBinarySimple implements VertexStorageBinary {
 	{
 		NeighbourListVertex neighbourList = m_neighbourListsVertices.get((int) p_vertexId - 1);
 		
-		//neighbourList.m_mutex.lock();
-		
 		neighbourList.m_neighbourList.add(p_neighbourVertexId);
-		
-		//neighbourList.m_mutex.unlock();
 		
 		m_totalEdgeCount.incrementAndGet();
 	}
