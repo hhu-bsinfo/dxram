@@ -1,16 +1,18 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.utils.Pair;
-import de.hhu.bsinfo.utils.main.Main;
 
 /**
  * Single threaded converter, expecting edge list in binary form:
@@ -26,7 +28,7 @@ public abstract class BinaryEdgeListTo extends Converter
 	
 	@Override
 	protected FileReaderThread createReaderInstance(String p_inputPath,
-			ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, int p_maxQueueSize) {
+			Queue<Pair<Long, Long>> p_bufferQueue, int p_maxQueueSize) {
 		return new FileReaderBinaryThread(p_inputPath, p_bufferQueue, p_maxQueueSize);
 	}
 	
@@ -96,13 +98,13 @@ public abstract class BinaryEdgeListTo extends Converter
 
 	protected static class FileReaderBinaryThread extends FileReaderThread
 	{
-		public FileReaderBinaryThread(String p_inputPath, ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue,
+		public FileReaderBinaryThread(String p_inputPath, Queue<Pair<Long, Long>> p_bufferQueue,
 				int p_maxQueueSize) {
 			super(p_inputPath, p_bufferQueue, p_maxQueueSize);
 		}
 		
 		@Override
-		public int parse() {
+		public int parse() {			
 			RandomAccessFile file = null;
 			try {
 				file = new RandomAccessFile(m_inputPath, "r");
@@ -111,7 +113,7 @@ public abstract class BinaryEdgeListTo extends Converter
 				return -1;
 			}
 			
-			ByteBuffer buffer = ByteBuffer.allocate(4 * 1024 * 8 * 2);
+			ByteBuffer buffer = ByteBuffer.allocate(1024 * 8 * 2);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 			
 			try {
@@ -126,25 +128,27 @@ public abstract class BinaryEdgeListTo extends Converter
 					bytesRead += read;
 					buffer.limit(read);
 				
+					// size() performs really bad here, so try to call it very rarely
+					// by adding an addition
+					int size = m_bufferQueue.size();
 					while (buffer.hasRemaining())
 					{
 						Long srcNode = buffer.getLong();
 						Long destNode = buffer.getLong();
-
-						// size() performs really bad
-						while (m_bufferQueue.size() > m_maxQueueSize)
+						
+						if (size > m_maxQueueSize)
 						{
 							Thread.yield();
+							size = m_bufferQueue.size();
 						}
 						
 						m_bufferQueue.add(new Pair<Long, Long>(srcNode, destNode));
+						size++;
 						
 						updateProgress("BinaryDataReading", bytesRead, fileLength);
 					}
 					
 					buffer.clear();
-					
-					
 				}
 				while (bytesRead < fileLength);
 				
@@ -153,6 +157,21 @@ public abstract class BinaryEdgeListTo extends Converter
 				System.out.println("Reading from input file failed: " + e.getMessage());
 				return -2;
 			}
+			
+			// wait until queue is empty
+			int queueSize = 0;
+			do
+			{
+				queueSize = m_bufferQueue.size();
+				System.out.println("BufferQueue remaining: " + m_bufferQueue.size());
+				System.out.flush();
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			while (queueSize > 0);
 			
 			return 0;
 		}

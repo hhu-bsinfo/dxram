@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.utils.Pair;
@@ -8,10 +9,10 @@ public class BufferToStorageThread extends ConverterThread
 {
 	private VertexStorage m_storage = null;
 	private boolean m_isDirected = false;
-	private ConcurrentLinkedQueue<Pair<Long, Long>> m_buffer = null;
+	private Queue<Pair<Long, Long>> m_buffer = null;
 	private boolean m_running = true;
 	
-	public BufferToStorageThread(final int p_id, final VertexStorage p_storage, final boolean p_isDirected, final ConcurrentLinkedQueue<Pair<Long, Long>> p_buffer) {
+	public BufferToStorageThread(final int p_id, final VertexStorage p_storage, final boolean p_isDirected, final Queue<Pair<Long, Long>> p_buffer) {
 		super("BufferToStorage " + p_id);
 		
 		m_storage = p_storage;

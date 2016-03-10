@@ -1,6 +1,10 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.utils.Pair;
@@ -22,7 +26,7 @@ public abstract class Converter extends Main
 	private boolean m_isDirected = false;
 	private int m_numConverterThreads = -1;
 	private int m_maxBufferQueueSize = -1;
-	private ConcurrentLinkedQueue<Pair<Long, Long>> m_sharedBufferQueue = new ConcurrentLinkedQueue<Pair<Long, Long>>();
+	private Queue<Pair<Long, Long>> m_sharedBufferQueue = new ConcurrentLinkedQueue<Pair<Long, Long>>();
 	private ArrayList<FileReaderThread> m_fileReaderThreads = new ArrayList<FileReaderThread>();
 	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<BufferToStorageThread>();
 	private ArrayList<FileWriterThread> m_fileWriterThreads = new ArrayList<FileWriterThread>();
@@ -82,7 +86,7 @@ public abstract class Converter extends Main
 	
 	protected abstract VertexStorage createVertexStorageInstance();
 	
-	protected abstract FileReaderThread createReaderInstance(String p_inputPath, final ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize);
+	protected abstract FileReaderThread createReaderInstance(String p_inputPath, final Queue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize);
 	
 	protected abstract FileWriterThread createWriterInstance(final String p_outputPath, final int p_id, final long p_idRangeStartIncl, final long p_idRangeEndExcl, final VertexStorage p_storage);
 	

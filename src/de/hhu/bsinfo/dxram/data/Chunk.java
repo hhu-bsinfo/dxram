@@ -19,6 +19,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public class Chunk implements DataStructure
 {
 	public static final long INVALID_CHUNKID = ChunkID.INVALID_ID;
+	public static final int MAX_CHUNK_SIZE = 1024 * 1024 * 16;
 
 	private long m_chunkID = INVALID_CHUNKID;
 	private ByteBuffer m_data = null;

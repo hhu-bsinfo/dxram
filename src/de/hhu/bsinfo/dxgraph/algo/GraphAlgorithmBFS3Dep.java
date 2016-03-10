@@ -7,13 +7,13 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 
-// single threaded bfs impl with simple lists for frontier current and next
-public class GraphAlgorithmBFS3 extends GraphAlgorithm {
+@Deprecated
+public class GraphAlgorithmBFS3Dep extends GraphAlgorithm {
 
 	private int m_batchCountPerJob = 1;
 	
 	
-	public GraphAlgorithmBFS3(final int p_batchCountPerJob, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
+	public GraphAlgorithmBFS3Dep(final int p_batchCountPerJob, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
 		super(p_loaderResultsDelegate, p_entryNodes);
 		m_batchCountPerJob = p_batchCountPerJob;
@@ -223,7 +223,7 @@ public class GraphAlgorithmBFS3 extends GraphAlgorithm {
 							if (tmp != m_previousRunParentId) {
 								m_vertexBatch[i].setID(tmp);
 							}
-						} catch (de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3.BulkFifo.EmptyException e) {
+						} catch (de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3Dep.BulkFifo.EmptyException e) {
 							iterationLevelDone = true;
 							break;
 						}

@@ -2,24 +2,25 @@ package de.hhu.bsinfo.dxgraph.algo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 
-import de.hhu.bsinfo.dxgraph.data.Counter;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.Counter;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
+import de.hhu.bsinfo.dxram.lock.LockService;
+import de.hhu.bsinfo.dxram.lock.LockService.ErrorCode;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
-import de.hhu.bsinfo.utils.locks.SpinLock;
 
-public class GraphAlgorithmBFSSingleThread extends GraphAlgorithm {
+@Deprecated
+public class GraphAlgorithmBFSLockedDep extends GraphAlgorithm {
 
 	private int m_batchCountPerJob = 1;
 	
-	public GraphAlgorithmBFSSingleThread(final int p_batchCountPerJob, final long... p_entryNodes)
+	public GraphAlgorithmBFSLockedDep(final int p_batchCountPerJob, final long... p_entryNodes)
 	{
-		super(p_entryNodes);
+		super(null, p_entryNodes);
 		m_batchCountPerJob = p_batchCountPerJob;
 	}
 	
@@ -89,8 +90,7 @@ public class GraphAlgorithmBFSSingleThread extends GraphAlgorithm {
 		}
 		
 		private int m_vertexBatchCount = 1;
-		private long m_chunkIDVisitedCount = ChunkID.INVALID_ID;
-		private Lock m_mutex = new SpinLock();
+		private long m_chunkIDVisitedCount = -1;
 		
 		public JobBFS(final int p_vertexBatchCount, final long p_chunkIDVisitedCount, final long... p_parameterChunkIDs)
 		{
@@ -109,6 +109,7 @@ public class GraphAlgorithmBFSSingleThread extends GraphAlgorithm {
 			ChunkService chunkService = getService(ChunkService.class);
 			JobService jobService = getService(JobService.class);
 			LoggerService loggerService = getService(LoggerService.class);
+			LockService lockService = getService(LockService.class);
 			
 			Vertex[] entryVertices = new Vertex[p_chunkIDs.length];
 			for (int i = 0; i < p_chunkIDs.length; i++) {
@@ -119,28 +120,36 @@ public class GraphAlgorithmBFSSingleThread extends GraphAlgorithm {
 				}
 			}
 			
-			// don't let multiple workers execute this
-			// this harms performance a lot but we want this
-			// to be fully accurate for verification reasons
-			m_mutex.lock();
+			ArrayList<Vertex> lockedVertices = new ArrayList<Vertex>();
+			ArrayList<Vertex> failedLockedVertices = new ArrayList<Vertex>();
 			
+			for (int i = 0; i < entryVertices.length; i++)
+			{
+				if (lockService.lock(true, 500, entryVertices[i]) != ErrorCode.SUCCESS) {
+					failedLockedVertices.add(entryVertices[i]);
+				} else {
+					lockedVertices.add(entryVertices[i]);
+				}
+			}
+			
+			entryVertices = lockedVertices.toArray(new Vertex[0]);
 			if (chunkService.get(entryVertices) != entryVertices.length)
 			{
 				loggerService.error(getClass(), "Getting vertices failed.");
 				return;
 			}
-			
+	
 			// -----------------------------------------------------------------------------------
 			
-			ArrayList<Vertex> visited = new ArrayList<Vertex>();
+			long visited = 0;
 			for (Vertex v : entryVertices)
 			{
 				if (v.getUserData() == -1)
 				{
 					v.setUserData(0);
-					
-					visited.add(v);
 
+					visited++;
+					
 					// spawn further jobs for neighbours
 					List<Long> neighbours = v.getNeighbours();
 					int neightbourIndex = 0;
@@ -165,14 +174,21 @@ public class GraphAlgorithmBFSSingleThread extends GraphAlgorithm {
 				}
 			}
 			
+			// put back data and unlock all
+			if (chunkService.put(ChunkLockOperation.WRITE_LOCK, entryVertices) != entryVertices.length)
+			{
+				loggerService.error(getClass(), "Putting vertices failed.");
+			}
+			
 			// -----------------------------------------------------------------------------------
 			
-			if (visited.size() > 0)
-			{				
-				// put back data
-				if (chunkService.put(visited.toArray(new Vertex[0])) != visited.size())
+			if (visited > 0)
+			{
+				// update visited count
+				if (lockService.lock(true, 30000, m_chunkIDVisitedCount) != ErrorCode.SUCCESS)
 				{
-					loggerService.error(getClass(), "Putting visited vertices failed.");
+					loggerService.error(getClass(), "Locking visited counter chunk " + Long.toHexString(m_chunkIDVisitedCount) + " failed.");
+					return;
 				}
 				
 				Counter counter = new Counter(m_chunkIDVisitedCount);
@@ -182,15 +198,30 @@ public class GraphAlgorithmBFSSingleThread extends GraphAlgorithm {
 					return;
 				}
 				
-				counter.incrementCounter(visited.size());
+				counter.incrementCounter(visited);
+				System.out.println(counter);
 				
-				if (chunkService.put(counter) != 1)
+				if (chunkService.put(ChunkLockOperation.WRITE_LOCK, counter) != 1)
 				{
 					loggerService.error(getClass(), "Upadting counter failed.");
 				}
 			}
 			
-			m_mutex.unlock();
+			// -----------------------------------------------------------------------------------
+			
+			// spawn separate job for vertices that failed to lock
+			if (failedLockedVertices.size() > 0)
+			{
+				long[] failedChunkIDs = new long[failedLockedVertices.size()];
+				for (int i = 0; i < failedChunkIDs.length; i++) {
+					failedChunkIDs[i] = failedLockedVertices.get(i).getID();
+				}
+			
+				if (!jobService.pushJob(new JobBFS(m_vertexBatchCount, m_chunkIDVisitedCount, failedChunkIDs)))
+				{
+					loggerService.error(getClass(), "Creating job for failed vertices failed.");
+				}
+			}
 		}
 	}
 }

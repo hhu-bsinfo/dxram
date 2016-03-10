@@ -5,7 +5,7 @@ import de.hhu.bsinfo.dxcompute.coord.SyncBarrierMaster;
 import de.hhu.bsinfo.dxcompute.coord.SyncBarrierSlave;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
-import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3;
+import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3Dep;
 import de.hhu.bsinfo.dxgraph.load.oel.GraphLoaderOrderedEdgeListMultiNode;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.args.ArgumentList;

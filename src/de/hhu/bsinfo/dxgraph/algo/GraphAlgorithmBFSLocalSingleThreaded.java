@@ -15,13 +15,13 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 
 public class GraphAlgorithmBFSLocalSingleThreaded extends GraphAlgorithm {
 
-	private int m_batchCountPerJob = 1;
+	private int m_vertexBatchCount = 1000;
 	private Class<? extends FrontierList> m_frontierListType = null;
 	
-	public GraphAlgorithmBFSLocalSingleThreaded(final int p_batchCountPerJob, final Class<? extends FrontierList> p_frontierListType, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
+	public GraphAlgorithmBFSLocalSingleThreaded(final int p_vertexBatchCount, final Class<? extends FrontierList> p_frontierListType, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
 		super(p_loaderResultsDelegate, p_entryNodes);
-		m_batchCountPerJob = p_batchCountPerJob;
+		m_vertexBatchCount = p_vertexBatchCount;
 		m_frontierListType = p_frontierListType;
 	}
 	
@@ -32,7 +32,7 @@ public class GraphAlgorithmBFSLocalSingleThreaded extends GraphAlgorithm {
 				0, 
 				m_loggerService, 
 				m_chunkService, 
-				m_batchCountPerJob,
+				m_vertexBatchCount,
 				m_bootService.getNodeID(),
 				getGraphLoaderResultDelegate().getTotalVertexCount(), 
 				m_frontierListType,

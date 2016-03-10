@@ -9,11 +9,12 @@ import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 
-public class GraphAlgorithmBFS extends GraphAlgorithm {
+@Deprecated
+public class GraphAlgorithmBFSDep extends GraphAlgorithm {
 
 	private int m_batchCountPerJob = 1;
 	
-	public GraphAlgorithmBFS(final int p_batchCountPerJob, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
+	public GraphAlgorithmBFSDep(final int p_batchCountPerJob, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
 		super(p_loaderResultsDelegate, p_entryNodes);
 		m_batchCountPerJob = p_batchCountPerJob;

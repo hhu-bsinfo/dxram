@@ -14,6 +14,7 @@ public class ChunkStatisticsRecorderIDs {
 	public static class Operations {
 		public static final String MS_CREATE = "Create";
 		public static final String MS_REMOTE_CREATE = "RemoteCreate";
+		public static final String MS_SIZE = "Size";
 		public static final String MS_GET = "Get";
 		public static final String MS_PUT = "Put";
 		public static final String MS_REMOVE = "Remove";
@@ -26,6 +27,7 @@ public class ChunkStatisticsRecorderIDs {
 		
 		public int m_create = StatisticsRecorder.Operation.INVALID_ID;
 		public int m_remoteCreate = StatisticsRecorder.Operation.INVALID_ID;
+		public int m_size = StatisticsRecorder.Operation.INVALID_ID;
 		public int m_get = StatisticsRecorder.Operation.INVALID_ID;
 		public int m_put = StatisticsRecorder.Operation.INVALID_ID;
 		public int m_remove = StatisticsRecorder.Operation.INVALID_ID;

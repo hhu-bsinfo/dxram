@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.utils.Pair;
@@ -27,7 +28,7 @@ public class TextEdgeListToOel extends Converter
 	
 	@Override
 	protected FileReaderThread createReaderInstance(String p_inputPath,
-			ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue, int p_maxQueueSize) {
+			Queue<Pair<Long, Long>> p_bufferQueue, int p_maxQueueSize) {
 		return new FileReaderTextThread(p_inputPath, p_bufferQueue, p_maxQueueSize);
 	}
 	
@@ -51,7 +52,7 @@ public class TextEdgeListToOel extends Converter
 
 	private static class FileReaderTextThread extends FileReaderThread
 	{
-		public FileReaderTextThread(String p_inputPath, ConcurrentLinkedQueue<Pair<Long, Long>> p_bufferQueue,
+		public FileReaderTextThread(String p_inputPath, Queue<Pair<Long, Long>> p_bufferQueue,
 				int p_maxQueueSize) {
 			super(p_inputPath, p_bufferQueue, p_maxQueueSize);
 		}

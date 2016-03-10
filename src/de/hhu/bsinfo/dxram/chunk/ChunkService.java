@@ -353,7 +353,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		return chunkIDs;
 	}
-	
+
 	/**
 	 * Remove chunks/data structures from the storage.
 	 * @param p_dataStructures Data structures to remove from the storage.
@@ -834,6 +834,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		m_statisticsRecorderIDs.m_operations.m_create = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_CREATE);
 		m_statisticsRecorderIDs.m_operations.m_remoteCreate = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_REMOTE_CREATE);
+		m_statisticsRecorderIDs.m_operations.m_size = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_SIZE);
 		m_statisticsRecorderIDs.m_operations.m_get = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_GET);
 		m_statisticsRecorderIDs.m_operations.m_put = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_PUT);
 		m_statisticsRecorderIDs.m_operations.m_remove = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_REMOVE);
