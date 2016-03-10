@@ -16,10 +16,23 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 
 	protected int m_vertexBatchSize = 100;
 	
+	private long m_totalVerticesLoaded = 0;
+	private long m_totalEdgesLoaded = 0;
+	
 	public GraphLoaderOrderedEdgeList(final String p_path, final int p_numNodes, final int p_vertexBatchSize)
 	{
 		super(p_path, p_numNodes);
 		m_vertexBatchSize = p_vertexBatchSize;
+	}
+	
+	@Override
+	public long getTotalVertexCount() {
+		return m_totalVerticesLoaded;
+	}
+
+	@Override
+	public long getTotalEdgeCount() {
+		return m_totalEdgesLoaded;
 	}
 
 	// returns edge list sorted by nodeIdx and localIdx
@@ -49,7 +62,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				
 				// looking for format xxx.oel or xxx.oel.<nidx>
 				if (tokens.length > 1) {
-					if (tokens[1].equals("oel")) {
+					if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
 						return true;
 					}
 				} 
@@ -60,7 +73,19 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		
 		// add filtered files
 		for (File file : files) {
-			list.add(new OrderedEdgeListFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+			String[] tokens = file.getName().split("\\.");
+			
+			// looking for format xxx.oel or xxx.oel.<nidx>
+			if (tokens.length > 1) {
+				if (tokens[1].equals("oel"))
+				{
+					list.add(new OrderedEdgeListTextFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+				}
+				else if (tokens[1].equals("boel"))
+				{
+					list.add(new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+				}
+			} 
 		}
 		
 		// make sure our list is sorted by nodeIdx/localIdx
@@ -84,11 +109,13 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		Vertex2[] vertexBuffer = new Vertex2[m_vertexBatchSize];
 		int readCount = 0;
 		boolean loop = true;
-		long totalVertexCount = p_orderedEdgeList.getTotalVertexCount();
+		
 		long verticesProcessed = 0;
 		float previousProgress = 0.0f;
 		
-		m_loggerService.info(getClass(), "Loading started, vertex count: " + totalVertexCount);
+		m_totalVerticesLoaded = p_orderedEdgeList.getTotalVertexCount();
+		
+		m_loggerService.info(getClass(), "Loading started, vertex count: " + m_totalVerticesLoaded);
 		
 		while (loop)
 		{
@@ -108,6 +135,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 			
 				vertexBuffer[readCount] = vertex;
 				readCount++;
+				m_totalEdgesLoaded += neighbours.length;
 			}
 			
 			// create an array which is filled without null padding at the end
@@ -136,7 +164,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 			
 			verticesProcessed += readCount;
 			
-			float curProgress = ((float) verticesProcessed) / totalVertexCount;
+			float curProgress = ((float) verticesProcessed) / m_totalVerticesLoaded;
 			if (curProgress - previousProgress > 0.01)
 			{
 				previousProgress = curProgress;
@@ -144,7 +172,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 			}
 		}
 		
-		m_loggerService.info(getClass(), "Loading done, vertex count: " + totalVertexCount);
+		m_loggerService.info(getClass(), "Loading done, vertex count: " + m_totalVerticesLoaded);
 		
 		return true;
 	}

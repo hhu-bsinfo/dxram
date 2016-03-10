@@ -1,9 +1,6 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
-import de.hhu.bsinfo.utils.Pair;
-
-public interface VertexStorage 
-{
+public interface VertexStorage {
 	// always return a vertex for the specified ID
 	// the id given does not have to be a continuous ID
 	// and should NOT be the ID assigned to the vertex.
@@ -19,8 +16,4 @@ public interface VertexStorage
 	long getTotalVertexCount();
 	
 	long getTotalEdgeCount();
-	
-	// getting vertices for exporting
-	Pair<Long, String> getVertexNeighbourList(final long p_vertexId);
-	
 }

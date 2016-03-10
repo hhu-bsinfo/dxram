@@ -6,7 +6,6 @@ import de.hhu.bsinfo.dxcompute.coord.SyncBarrierSlave;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3;
-import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFSSingleThread;
 import de.hhu.bsinfo.dxgraph.load.oel.GraphLoaderOrderedEdgeListMultiNode;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -50,20 +49,22 @@ public abstract class GraphBFSDistributedPipeline extends Pipeline {
 			pushTask(new SyncBarrierSlave(1));
 		}
 		
+		// TODO fix this later
+		
 		if (!graphBfsCountVertsSingleThread)
 		{
-			// run algorithm on both master and slave(s) if entry node provided
-			if (graphBfsEntryNodeLocal != null) {
-				pushTask(new GraphAlgorithmBFS3(graphBfsNodeCountPerJob, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
-			}
+//			// run algorithm on both master and slave(s) if entry node provided
+//			if (graphBfsEntryNodeLocal != null) {
+//				pushTask(new GraphAlgorithmBFS3(graphBfsNodeCountPerJob, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
+//			}
 		}
 		else
 		{
-			if (isMaster()) {
-				if (graphBfsEntryNodeLocal != null) {
-					pushTask(new GraphAlgorithmBFSSingleThread(graphBfsNodeCountPerJob, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
-				}	
-			}
+//			if (isMaster()) {
+//				if (graphBfsEntryNodeLocal != null) {
+//					pushTask(new GraphAlgorithmBFSSingleThread(graphBfsNodeCountPerJob, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
+//				}	
+//			}
 		}
 		
 		if (isMaster()) {

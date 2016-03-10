@@ -1,13 +1,16 @@
 package de.hhu.bsinfo.dxgraph.algo;
 
 import de.hhu.bsinfo.dxcompute.Task;
+import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 
 public abstract class GraphAlgorithm extends Task {
 
+	private GraphLoaderResultDelegate m_loaderResultDelegate;
 	private long[] m_entryNodes = new long[0];
 	
-	public GraphAlgorithm(final long... p_entryNodes)
+	public GraphAlgorithm(final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
+		m_loaderResultDelegate = p_loaderResultsDelegate;
 		m_entryNodes = p_entryNodes;
 	}
 
@@ -22,6 +25,11 @@ public abstract class GraphAlgorithm extends Task {
 		}
 		
 		return ret;
+	}
+	
+	protected GraphLoaderResultDelegate getGraphLoaderResultDelegate()
+	{
+		return m_loaderResultDelegate;
 	}
 
 	protected abstract boolean execute(final long[] p_entryNodes);

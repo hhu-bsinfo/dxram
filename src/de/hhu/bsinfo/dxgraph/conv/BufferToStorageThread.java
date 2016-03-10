@@ -27,10 +27,10 @@ public class BufferToStorageThread extends ConverterThread
 	public void run() {
 		while (true)
 		{
-			if (!m_running && m_buffer.isEmpty())
+			Pair<Long, Long> pair = m_buffer.poll();
+			if (!m_running && pair == null)
 				break;
 			
-			Pair<Long, Long> pair = m_buffer.poll();
 			if (pair != null)
 			{
 				long srcVertexId = m_storage.getVertexId(pair.first());

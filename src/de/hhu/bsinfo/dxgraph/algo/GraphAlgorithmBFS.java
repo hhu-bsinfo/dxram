@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxgraph.algo;
 import java.util.List;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
@@ -12,9 +13,9 @@ public class GraphAlgorithmBFS extends GraphAlgorithm {
 
 	private int m_batchCountPerJob = 1;
 	
-	public GraphAlgorithmBFS(final int p_batchCountPerJob, final long... p_entryNodes)
+	public GraphAlgorithmBFS(final int p_batchCountPerJob, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
-		super(p_entryNodes);
+		super(p_loaderResultsDelegate, p_entryNodes);
 		m_batchCountPerJob = p_batchCountPerJob;
 	}
 	

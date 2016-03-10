@@ -1,17 +1,12 @@
 package de.hhu.bsinfo.dxgraph.load.oel;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 
-public class OrderedEdgeListFileThreadBuffering extends Thread implements OrderedEdgeList {
+public abstract class OrderedEdgeListThreadBuffering extends Thread implements OrderedEdgeList {
 	
 	private int m_nodeIndex = -1;
-	private BufferedReader m_file = null;
 	private long m_fileVertexCount = -1;
 	private int m_bufferLimit = 1000;
 	
@@ -19,7 +14,7 @@ public class OrderedEdgeListFileThreadBuffering extends Thread implements Ordere
 	
 	// expecting filename: "xxx.oel" for single file or "xxx.oel.0", "xxx.oel.1" etc for split
 	// for a single file, node index default to 0
-	public OrderedEdgeListFileThreadBuffering(final String p_path, final int p_bufferLimit)
+	public OrderedEdgeListThreadBuffering(final String p_path, final int p_bufferLimit)
 	{
 		super("OrderedEdgeListFileBuffering " + p_path);
 		m_bufferLimit = p_bufferLimit;
@@ -37,23 +32,14 @@ public class OrderedEdgeListFileThreadBuffering extends Thread implements Ordere
 		} else {
 			m_nodeIndex = Integer.parseInt(tokens[2]);
 		}
-			
-		try {
-			m_file = new BufferedReader(new FileReader(p_path));
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException("Cannot load graph from file '" + p_path + "', does not exist.");
-		}
 		
-		// first line is the total vertex/line count of the file
-		try {
-			m_fileVertexCount = Long.parseLong(m_file.readLine());
-		} catch (NumberFormatException | IOException e) {
-			throw new RuntimeException("Cannot read vertex count (first line) from file '" + p_path + ".");
-		}
+		setupFile(p_path);
+			
+		m_fileVertexCount = readTotalVertexCount(p_path);
 		
 		start();
 	}
-
+	
 	@Override
 	public int getNodeIndex() {
 		return m_nodeIndex;
@@ -88,30 +74,17 @@ public class OrderedEdgeListFileThreadBuffering extends Thread implements Ordere
 				Thread.yield();
 			}
 			
-			Vertex2 vertex = new Vertex2();
-			
-			String line;
-			try {
-				line = m_file.readLine();
-			} catch (IOException e) {
+			Vertex2 vertex = readFileVertex();
+			if (vertex == null)
 				return;
-			}
-			// eof
-			if (line == null)
-				return;
-			
-			// empty line = vertex with no neighbours
-			if (!line.isEmpty())
-			{
-				String[] neighboursStr = line.split(",");
-				vertex.setNeighbourCount(neighboursStr.length);
-				long[] neighbours = vertex.getNeighbours();
-				for (int i = 0; i < neighboursStr.length; i++) {
-					neighbours[i] = Long.parseLong(neighboursStr[i]);
-				}
-			}
 			
 			m_vertexBuffer.add(vertex);
 		}
 	}
+	
+	protected abstract void setupFile(final String p_path);
+	
+	protected abstract long readTotalVertexCount(final String p_path);
+
+	protected abstract Vertex2 readFileVertex();
 }
