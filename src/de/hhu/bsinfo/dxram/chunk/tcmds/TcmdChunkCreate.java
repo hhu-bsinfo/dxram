@@ -46,7 +46,7 @@ public class TcmdChunkCreate extends TerminalCommand {
 		}
 		
 		if (chunkIDs != null) {
-			System.out.println("Created chunk " + Long.toHexString(chunkIDs[0]));
+			System.out.println("Created chunk 0x" + Long.toHexString(chunkIDs[0]));
 		} else {
 			System.out.println("Creating chunk failed.");
 		}
