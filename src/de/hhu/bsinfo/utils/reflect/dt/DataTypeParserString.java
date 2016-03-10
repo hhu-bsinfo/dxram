@@ -6,6 +6,11 @@ public class DataTypeParserString implements DataTypeParser
 	public java.lang.String getTypeIdentifer() {
 		return "str";
 	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return String.class;
+	}
 
 	@Override
 	public Object parse(java.lang.String p_str) {

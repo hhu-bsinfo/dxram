@@ -8,6 +8,11 @@ public class DataTypeParserLong implements DataTypeParser
 	public java.lang.String getTypeIdentifer() {
 		return "long";
 	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Long.class;
+	}
 
 	@Override
 	public Object parse(java.lang.String p_str) 

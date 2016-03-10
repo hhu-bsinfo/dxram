@@ -32,28 +32,14 @@ public class DefaultArgumentListParser implements ArgumentListParser {
 	private static final String UNIT_PREFIX = "{";
 	private static final String UNIT_POSTFIX = "}";
 	
-	private Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
-	private Map<String, UnitConverter> m_unitConverters = new HashMap<String, UnitConverter>();
+	
+	
 	
 	/**
 	 * Constructor
 	 */
 	public DefaultArgumentListParser() {
-		// add default type parsers
-		addDataTypeParser(new DataTypeParserString());
-		addDataTypeParser(new DataTypeParserByte());
-		addDataTypeParser(new DataTypeParserShort());
-		addDataTypeParser(new DataTypeParserInt());
-		addDataTypeParser(new DataTypeParserLong());
-		addDataTypeParser(new DataTypeParserFloat());
-		addDataTypeParser(new DataTypeParserDouble());
-		addDataTypeParser(new DataTypeParserBool());
-		addDataTypeParser(new DataTypeParserBoolean());
-		
-		// add default unit converters
-		addUnitConverter(new UnitConverterKBToByte());
-		addUnitConverter(new UnitConverterMBToByte());
-		addUnitConverter(new UnitConverterGBToByte());
+
 	}
 
 	@Override

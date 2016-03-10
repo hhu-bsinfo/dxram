@@ -8,6 +8,11 @@ public class DataTypeParserByte implements DataTypeParser
 	}
 
 	@Override
+	public Class<?> getClassToConvertTo() {
+		return Byte.class;
+	}
+	
+	@Override
 	public Object parse(java.lang.String p_str) {		
 		if (p_str.length() > 1)
 		{

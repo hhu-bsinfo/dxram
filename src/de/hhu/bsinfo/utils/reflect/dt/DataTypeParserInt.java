@@ -8,6 +8,11 @@ public class DataTypeParserInt implements DataTypeParser
 	}
 
 	@Override
+	public Class<?> getClassToConvertTo() {
+		return Integer.class;
+	}
+	
+	@Override
 	public Object parse(java.lang.String p_str) 
 	{
 		if (p_str.length() > 1)

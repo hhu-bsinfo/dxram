@@ -4,6 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParser;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBool;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBoolean;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserByte;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserDouble;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserFloat;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserInt;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserLong;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserShort;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserString;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverter;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverterGBToByte;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverterKBToByte;
+import de.hhu.bsinfo.utils.reflect.unit.UnitConverterMBToByte;
+
 /**
  * Easier to handle argument list/map within an application.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
@@ -189,19 +204,56 @@ public class ArgumentList {
 	public static class Argument
 	{
 		private String m_key = null;
-		private Object m_value = null;
+		private String m_value = null;
+		private String m_convert = new String();
 		private boolean m_isOptional = false;
 		private String m_description = new String();
+		
+		private static Map<Class<?>, DataTypeParser> ms_dataTypeParsers = new HashMap<Class<?>, DataTypeParser>();
+		private static Map<String, UnitConverter> ms_unitConverters = new HashMap<String, UnitConverter>();
+		static 
+		{
+			ms_dataTypeParsers.put(String.class, new DataTypeParserString());
+			ms_dataTypeParsers.put(Byte.class, new DataTypeParserByte());
+			ms_dataTypeParsers.put(Short.class, new DataTypeParserShort());
+			ms_dataTypeParsers.put(Integer.class, new DataTypeParserInt());
+			ms_dataTypeParsers.put(Long.class, new DataTypeParserLong());
+			ms_dataTypeParsers.put(Float.class, new DataTypeParserFloat());
+			ms_dataTypeParsers.put(Double.class, new DataTypeParserDouble());
+			ms_dataTypeParsers.put(Boolean.class, new DataTypeParserBool());
+			
+			// add default unit converters
+			addUnitConverter(new UnitConverterKBToByte());
+			addUnitConverter(new UnitConverterMBToByte());
+			addUnitConverter(new UnitConverterGBToByte());
+		}
 		
 		/**
 		 * Constructor
 		 * @param p_key Key identifying the argument (must be unique).
+		 * @param p_type Type string identifying the value for conversion.
 		 * @param p_value Value of the argument
 		 */
-		public Argument(final String p_key, final Object p_value)
+		public Argument(final String p_key, final String p_type, final String p_value)
 		{
 			m_key = p_key;
 			m_value = p_value;
+			m_type = p_type;
+		}
+		
+		/**
+		 * Constructor
+		 * @param p_key Key identifying the argument (must be unique).
+		 * @param p_type Type string identifying the value for conversion.
+		 * @param p_convert String to tell if the value needs conversion.
+		 * @param p_value Value of the argument
+		 */
+		public Argument(final String p_key, final String p_type, final String p_convert, final String p_value)
+		{
+			m_key = p_key;
+			m_value = p_value;
+			m_type = p_type;
+			m_convert = p_convert;
 		}
 		
 		/**
@@ -211,7 +263,7 @@ public class ArgumentList {
 		 * @param p_isOptional True if the argument is optional, i.e. is allowed to be null, false otherwise.
 		 * @param p_description Description for the argument (used when creating usage string).
 		 */
-		public Argument(final String p_key, final Object p_value, final boolean p_isOptional, final String p_description)
+		public Argument(final String p_key, final String p_value, final boolean p_isOptional, final String p_description)
 		{
 			m_key = p_key;
 			m_value = p_value;
@@ -229,15 +281,6 @@ public class ArgumentList {
 		}
 		
 		/**
-		 * Get the argument's value.
-		 * @return Value. 
-		 */
-		public Object getValue()
-		{
-			return m_value;
-		}
-		
-		/**
 		 * Get the arguments value.
 		 * @param p_class Type of the value to cast to.
 		 * @return Value.
@@ -246,6 +289,8 @@ public class ArgumentList {
 		{
 			if (m_value == null)
 				return null;
+		
+			
 			
 			if (!p_class.isInstance(m_value))
 			{
@@ -287,6 +332,15 @@ public class ArgumentList {
 		public String toString()
 		{
 			return m_key + "[m_isOptional " + m_isOptional + ", m_description " + m_description + "]: " + m_value;
+		}
+		
+		/**
+		 * Add a unit converter to allow unit conversion of arguments.
+		 * @param p_converter Unit converter to add.
+		 */
+		public static void addUnitConverter(final UnitConverter p_converter)
+		{
+			ms_unitConverters.put(p_converter.getUnitIdentifier(), p_converter);
 		}
 	}
 }

@@ -6,6 +6,11 @@ public class DataTypeParserFloat implements DataTypeParser
 	public java.lang.String getTypeIdentifer() {
 		return "float";
 	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Float.class;
+	}
 
 	@Override
 	public Object parse(java.lang.String p_str) {

@@ -8,6 +8,11 @@ public class DataTypeParserBool implements DataTypeParser
 	}
 
 	@Override
+	public Class<?> getClassToConvertTo() {
+		return Boolean.class;
+	}
+	
+	@Override
 	public Object parse(java.lang.String p_str) {
 		// allow 0 and 1 as well
 		if (p_str.equals("0")) {

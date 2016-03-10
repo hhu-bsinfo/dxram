@@ -6,6 +6,11 @@ public class DataTypeParserDouble implements DataTypeParser
 	public java.lang.String getTypeIdentifer() {
 		return "double";
 	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Double.class;
+	}
 
 	@Override
 	public Object parse(java.lang.String p_str) {

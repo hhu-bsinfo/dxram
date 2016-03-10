@@ -6,6 +6,11 @@ public class DataTypeParserShort implements DataTypeParser
 	public java.lang.String getTypeIdentifer() {
 		return "short";
 	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Short.class;
+	}
 
 	@Override
 	public Object parse(java.lang.String p_str) 
