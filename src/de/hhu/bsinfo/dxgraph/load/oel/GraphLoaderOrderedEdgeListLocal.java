@@ -27,8 +27,6 @@ public class GraphLoaderOrderedEdgeListLocal extends GraphLoaderOrderedEdgeList 
 			load(edgeList, new RebaseVertexIDLocal(m_bootService.getNodeID(), vertexIDOffset));
 			vertexIDOffset += edgeList.getTotalVertexCount();
 		}
-		
-		m_jobService.waitForLocalJobsToFinish();
 	
 		return true;
 	}
