@@ -11,20 +11,21 @@ public class TcmdEchoMessage extends TerminalCommand{
 	public String getName() {
 		return "echo";
 	}
-
+	
 	@Override
-	public String getUsageMessage() {
-		return "echo message[String]:MESSAGE";
-	}
-
-	@Override
-	public String getHelpMessage() {
+	public String getDescription() {
 		return "echo Command in DxRam Shell";
+	}
+	
+	@Override
+	public void registerArguments(final ArgumentList p_arguments)
+	{
+		// TODO mike
 	}
 
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
-		String echo_message = p_arguments.getArgumentValue("message");
+		String echo_message = p_arguments.getArgumentValue("message", String.class);
 		
 		System.out.println(echo_message);
 		return true;

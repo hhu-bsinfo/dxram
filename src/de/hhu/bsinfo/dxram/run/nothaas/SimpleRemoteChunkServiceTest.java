@@ -11,7 +11,7 @@ import de.hhu.bsinfo.utils.main.Main;
 // before running this as a peer, start a superpeer and an additional storage peer
 public class SimpleRemoteChunkServiceTest extends Main
 {
-	public static final Argument ARG_REMOTE_PEER_ID = new Argument("remotePeerID", -15999, true, "NodeID of the remote peer to create chunks on");
+	public static final Argument ARG_REMOTE_PEER_ID = new Argument("remotePeerID", "-15999", true, "NodeID of the remote peer to create chunks on");
 	
 	private DXRAM m_dxram;
 	private ChunkService m_chunkService;

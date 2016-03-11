@@ -103,7 +103,7 @@ public final class DXRAM
 		BootService bootService = m_engine.getService(BootService.class);
 		System.out.println(">>> DXRAM Node <<<");
 		short nodeId = bootService.getNodeID();
-		System.out.println("NodeID: " + Integer.toHexString(nodeId).substring(4) + " (" + nodeId + ")");
+		System.out.println("NodeID: 0x" + Integer.toHexString(nodeId).substring(4).toUpperCase() + " (" + nodeId + ")");
 		System.out.println("Role: " + bootService.getNodeRole(nodeId));
 	}
 	

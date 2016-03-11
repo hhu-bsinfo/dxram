@@ -13,17 +13,12 @@ public abstract class TerminalCommand
 	public abstract String getName();
 
 	/**
-	 * Get usage message of command.
-	 * @return the usage message
+	 * Get a description of the command.
+	 * @return Description message.
 	 */
-	public abstract String getUsageMessage();
+	public abstract String getDescription();
 
-	/**
-	 * Get help message of command.
-	 * @return the help message
-	 */
-	public abstract String getHelpMessage();
-	
+	public abstract void registerArguments(final ArgumentList p_arguments);
 
 	public abstract boolean execute(final ArgumentList p_arguments);
 	

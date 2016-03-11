@@ -44,9 +44,9 @@ public class SimpleJobServiceTest extends Main {
 		}
 	}
 	
-	private static final Argument ARG_REMOTE_PEER = new Argument("remotePeer", true, true, "Indicates if this is the remote peer waiting for other jobs to receive");
-	private static final Argument ARG_NUM_JOBS = new Argument("numJobs", 10, true, "Number of jobs to create for testing");
-	private static final Argument ARG_NUM_REMOTE_JOBS = new Argument("numRemoteJobs", 0, true, "Number of remote jobs to create");
+	private static final Argument ARG_REMOTE_PEER = new Argument("remotePeer", "true", true, "Indicates if this is the remote peer waiting for other jobs to receive");
+	private static final Argument ARG_NUM_JOBS = new Argument("numJobs", "10", true, "Number of jobs to create for testing");
+	private static final Argument ARG_NUM_REMOTE_JOBS = new Argument("numRemoteJobs", "0", true, "Number of remote jobs to create");
 	private static final Argument ARG_REMOTE_NODE = new Argument("remoteNode", null, false, "Node ID of the remote node to send remote jobs to");
 	
 	private DXRAM m_dxram = null;

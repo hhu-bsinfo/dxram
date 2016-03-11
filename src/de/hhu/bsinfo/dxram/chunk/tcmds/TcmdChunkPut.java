@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
+//TODO mike refactoring: refer to chunk create/remove commands
 public class TcmdChunkPut extends TerminalCommand{
 	
 	private final static String MS_ARG_CID = "cid";
@@ -20,24 +21,24 @@ public class TcmdChunkPut extends TerminalCommand{
 	}
 	
 	@Override
-	public String getUsageMessage() 
-	{
-		return "chunkput cid[long]:CID data[String]:STR";
-	}
-	
-	@Override
-	public String getHelpMessage() 
+	public String getDescription() 
 	{
 		return 		"Put a String in the specified chunk."
 				+ 	"If the specified string is too long it will be trunced";
 	}
 	
 	@Override
+	public void registerArguments(final ArgumentList p_arguments)
+	{
+		// TODO mike
+	}
+	
+	@Override
 	public boolean execute(ArgumentList p_arguments) 
 	{
 		
-		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID);
-		String 	data  = p_arguments.getArgumentValue(MS_ARG_DAT);
+		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		String 	data  = p_arguments.getArgumentValue(MS_ARG_DAT, String.class);
 		
 		if(cid == null || data == null)
 			return false;

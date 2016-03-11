@@ -20,13 +20,12 @@ public class TerminalCommandQuit extends TerminalCommand {
 	}
 
 	@Override
-	public String getUsageMessage() {
-		return "quit";
-	}
-
-	@Override
-	public String getHelpMessage() {
+	public String getDescription() {
 		return "Quit console and shutdown node.";
+	}
+	
+	@Override
+	public void registerArguments(ArgumentList p_arguments) {
 	}
 
 	// called after parameter have been checked

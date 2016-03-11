@@ -5,12 +5,13 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 public class TcmdChunkRemove extends TerminalCommand {
 
-	private final static String MS_ARG_CID = "cid";
-	private final static String MS_ARG_LID = "lid";
-	private final static String MS_ARG_NID = "nid";
+	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Full chunk id of the chunk to remove");
+	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local id of the chunk to remove. If missing node id, current node is assumed");
+	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node id to remove the chunk with specified local id");
 	
 	@Override
 	public String getName() {
@@ -18,21 +19,24 @@ public class TcmdChunkRemove extends TerminalCommand {
 	}
 
 	@Override
-	public String getUsageMessage() {
-		return "chunkremove cid[long]:CID or chunkremove lid[long]:LID [nid[short]:NID]";
+	public String getDescription() {
+		return "Remove an existing chunk. Usable with either full chunk id or split into lid and nid with nid being"
+				+ " optional. Not providing the nid will default to the current node's id.";
 	}
-
+	
 	@Override
-	public String getHelpMessage() {
-		return "Remove an existing chunk. Usable with either full chunkID or split into LID and NID, where NID"
-				+ " is optional. Not providing the NID will default to the current node's ID.";
+	public void registerArguments(final ArgumentList p_arguments)
+	{
+		p_arguments.setArgument(MS_ARG_CID);
+		p_arguments.setArgument(MS_ARG_LID);
+		p_arguments.setArgument(MS_ARG_NID);
 	}
 
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
-		Long cid = p_arguments.getArgumentValue(MS_ARG_CID);
-		Long lid = p_arguments.getArgumentValue(MS_ARG_LID);
-		Short nid = p_arguments.getArgumentValue(MS_ARG_NID);
+		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
+		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
 		
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
 		BootComponent bootComp = getTerminalDelegate().getDXRAMComponent(BootComponent.class);

@@ -1,11 +1,10 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
 import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -17,10 +16,10 @@ public abstract class Converter extends Main
 	private static final Argument ARG_INPUT = new Argument("in", null, false, "Input file of specific format");
 	private static final Argument ARG_INPUT_ROOTS = new Argument("inRoots", null, true, "Input file of specific format with BFS roots");
 	private static final Argument ARG_OUTPUT = new Argument("out", "./", true, "Ordered edge list output file location");
-	private static final Argument ARG_FILE_COUNT = new Argument("outFileCount", 1, true, "Split data into multiple files (each approx. same size)");
-	private static final Argument ARG_INPUT_DIRECTED_EDGES = new Argument("inputDirectedEdges", true, true, "Specify if the input file contains directed or undirected edges");
-	private static final Argument ARG_NUM_CONV_THREADS = new Argument("numConvThreads", 4, true, "Number of threads converting the data");
-	private static final Argument ARG_MAX_BUFFER_QUEUE_SIZE = new Argument("maxBufferQueueSize", 100000, true, "Max size of the buffer queue for the file reader");
+	private static final Argument ARG_FILE_COUNT = new Argument("outFileCount", "1", true, "Split data into multiple files (each approx. same size)");
+	private static final Argument ARG_INPUT_DIRECTED_EDGES = new Argument("inputDirectedEdges", "true", true, "Specify if the input file contains directed or undirected edges");
+	private static final Argument ARG_NUM_CONV_THREADS = new Argument("numConvThreads", "4", true, "Number of threads converting the data");
+	private static final Argument ARG_MAX_BUFFER_QUEUE_SIZE = new Argument("maxBufferQueueSize", "100000", true, "Max size of the buffer queue for the file reader");
 	
 	private VertexStorage m_storage = null;
 	private boolean m_isDirected = false;
@@ -49,13 +48,13 @@ public abstract class Converter extends Main
 	@Override
 	protected int main(ArgumentList p_arguments) 
 	{
-		String inputPath = p_arguments.getArgumentValue(ARG_INPUT);
-		String inputRootsPath = p_arguments.getArgumentValue(ARG_INPUT_ROOTS);
-		String outputPath = p_arguments.getArgumentValue(ARG_OUTPUT);
-		int fileCount = p_arguments.getArgumentValue(ARG_FILE_COUNT);
-		m_isDirected = p_arguments.getArgumentValue(ARG_INPUT_DIRECTED_EDGES);
-		m_numConverterThreads = p_arguments.getArgumentValue(ARG_NUM_CONV_THREADS);
-		m_maxBufferQueueSize = p_arguments.getArgumentValue(ARG_MAX_BUFFER_QUEUE_SIZE);
+		String inputPath = p_arguments.getArgumentValue(ARG_INPUT, String.class);
+		String inputRootsPath = p_arguments.getArgumentValue(ARG_INPUT_ROOTS, String.class);
+		String outputPath = p_arguments.getArgumentValue(ARG_OUTPUT, String.class);
+		int fileCount = p_arguments.getArgumentValue(ARG_FILE_COUNT, Integer.class);
+		m_isDirected = p_arguments.getArgumentValue(ARG_INPUT_DIRECTED_EDGES, Boolean.class);
+		m_numConverterThreads = p_arguments.getArgumentValue(ARG_NUM_CONV_THREADS, Integer.class);
+		m_maxBufferQueueSize = p_arguments.getArgumentValue(ARG_MAX_BUFFER_QUEUE_SIZE, Integer.class);
 		
 		m_storage = createVertexStorageInstance();
 		

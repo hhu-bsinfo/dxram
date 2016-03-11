@@ -14,10 +14,10 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 public class GraphBFSLocalPipeline extends Pipeline {
 
 	protected static final Argument ARG_GRAPH_LOAD_DATA_PATH = new Argument("graphLoadDataPath", ".", true, "Path containing graph data files to laod"); 
-	protected static final Argument ARG_NODE_COUNT = new Argument("nodeCount", 1, true, "Total number of nodes involved (master and slaves)"); 
-	protected static final Argument ARG_GRAPH_LOAD_VERTEX_BATCH_SIZE = new Argument("graphLoadVertexBatchSize", 100, true, "Batch size for loading vertices from the file");
+	protected static final Argument ARG_NODE_COUNT = new Argument("nodeCount", "1", true, "Total number of nodes involved (master and slaves)"); 
+	protected static final Argument ARG_GRAPH_LOAD_VERTEX_BATCH_SIZE = new Argument("graphLoadVertexBatchSize", "100", true, "Batch size for loading vertices from the file");
 	protected static final Argument ARG_GRAPH_BFS_FRONTIER = new Argument("graphLoadBfsFrontier", "BitVector", true, "Data structure used for the frontiers");
-	protected static final Argument ARG_GRAPH_BFS_VERTEX_BATCH_SIZE = new Argument("graphBfsVertexBatchSize", 100, true, "Number of nodes per batch to process within a BFS thread"); 
+	protected static final Argument ARG_GRAPH_BFS_VERTEX_BATCH_SIZE = new Argument("graphBfsVertexBatchSize", "100", true, "Number of nodes per batch to process within a BFS thread"); 
 	protected static final Argument ARG_GRAPH_BFS_ENTRY_NODE_LOCAL = new Argument("graphBfsEntryNodeLocal", null, false, "Local ID of entry node for BFS algorithm"); 
 	
 	public GraphBFSLocalPipeline(final ArgumentList p_arguments)

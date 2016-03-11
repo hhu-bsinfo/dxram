@@ -20,13 +20,12 @@ public class TerminalCommandClear extends TerminalCommand {
 	}
 
 	@Override
-	public String getUsageMessage() {
-		return "clear";
-	}
-
-	@Override
-	public String getHelpMessage() {
+	public String getDescription() {
 		return "Clears the console.";
+	}
+	
+	@Override
+	public void registerArguments(ArgumentList p_arguments) {
 	}
 
 	// called after parameter have been checked
@@ -36,5 +35,5 @@ public class TerminalCommandClear extends TerminalCommand {
 		System.out.print("\033[H\033[2J");
 		System.out.flush();
 		return true;
-	}
+	}	
 }

@@ -13,9 +13,9 @@ import de.hhu.bsinfo.utils.main.Main;
 
 public class SimpleLocalLockServiceTest extends Main {
 	
-	public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", 76, true, "Size of the chunks for allocation");
-	public static final Argument ARG_CHUNK_COUNT = new Argument("chunkCount", 10, true, "Number of chunks to allocate");
-	public static final Argument ARG_THREAD_COUNT = new Argument("threadCount", 2, true, "Number of threads to run");
+	public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "76", true, "Size of the chunks for allocation");
+	public static final Argument ARG_CHUNK_COUNT = new Argument("chunkCount", "10", true, "Number of chunks to allocate");
+	public static final Argument ARG_THREAD_COUNT = new Argument("threadCount", "2", true, "Number of threads to run");
 	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;

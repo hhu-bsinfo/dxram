@@ -10,6 +10,7 @@ import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentListParser;
 import de.hhu.bsinfo.utils.args.DefaultArgumentListParser;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 public class TerminalService extends DXRAMService implements TerminalDelegate
 {
@@ -34,9 +35,10 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 		System.out.println("Running on node " + m_boot.getNodeID() + ", role " + m_boot.getNodeRole());
 		System.out.println("Enter '?' to list all available commands.");
 		System.out.println("Use '? <command>' to get information about a command.");
+		System.out.println("Use '!' or '! <command>' for interactive mode.");
 
 		while (m_loop) {
-			arr = JNIconsole.readline("$" + m_boot.getNodeID() + "> ");
+			arr = JNIconsole.readline("$0x" + Integer.toHexString(m_boot.getNodeID()).substring(4).toUpperCase() + "> ");
 			if (arr != null) {
 				command = new String(arr, 0, arr.length);
 				arguments = command.split(" ");
@@ -47,10 +49,46 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 						if (c == null) {
 							System.out.println("error: unknown command");
 						} else {
-							printHelpMessage(c);
+							printUsage(c);
 						}
 					} else {
+						System.out.println("Available commands:");
 						System.out.println(getAvailableCommands());
+					}
+				} else if (arguments[0].equals("!") || arguments[0].equals("!")) {
+					String cmdStr = null;
+					if (arguments.length < 2)
+					{
+						System.out.println("Specify command for interactive mode:");
+						cmdStr = promptForUserInput("command");
+					} else {
+						cmdStr = arguments[1];
+					}
+					final TerminalCommand c = m_terminal.getRegisteredCommands().get(cmdStr);
+					if (c == null) {
+						System.out.println("error: unknown command");
+					} else {
+						argsList.clear();
+						c.registerArguments(argsList);
+						
+						// trigger interactive mode
+						System.out.println("Interactive argument input for '" + c.getName() + "':");
+						if (!interactiveArgumentMode(argsList))
+						{
+							System.out.println("error entering arguments");
+						}
+						
+						if (!argsList.checkArguments())
+						{
+							printUsage(c);
+						}
+						else
+						{
+							c.setTerminalDelegate(this);
+							if (!c.execute(argsList)) {
+								printUsage(c);
+							}
+						}
 					}
 				} else {
 					final TerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[0]);
@@ -58,10 +96,19 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 						System.out.println("error: unknown command");
 					} else {
 						argsList.clear();
+						c.registerArguments(argsList);
 						argsParser.parseArguments(arguments, argsList);
-						c.setTerminalDelegate(this);
-						if (!c.execute(argsList)) {
+
+						if (!argsList.checkArguments())
+						{
 							printUsage(c);
+						}
+						else
+						{
+							c.setTerminalDelegate(this);
+							if (!c.execute(argsList)) {
+								printUsage(c);
+							}
 						}
 					}	
 				}
@@ -131,6 +178,21 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 
 		return ret;
 	}
+	
+	@Override
+	public String promptForUserInput(final String p_header) 
+	{
+		byte[] arr = JNIconsole.readline(p_header + "> ");
+		if (arr != null) 
+		{
+			if (arr.length == 0)
+				return null;
+			else
+				return new String(arr, 0, arr.length);
+		}
+		else
+			return null;
+	}
 
 	@Override
 	public <T extends DXRAMService> T getDXRAMService(Class<T> p_class) {
@@ -152,23 +214,42 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 	}
 	
 	private void printUsage(final TerminalCommand p_command) {
-		System.out.println("  usage: " + p_command.getUsageMessage());
+		ArgumentList argList = new ArgumentList();
+		// create default argument list
+		p_command.registerArguments(argList);
+
+		System.out.println("Command '" + p_command.getName() + "':");
+		System.out.println(p_command.getDescription());
+		System.out.println(argList.createUsageDescription(p_command.getName()));
 	}
 	
-	private void printHelpMessage(final TerminalCommand p_command) {
-		String[] lines;
-
-		System.out.println("  usage:       " + p_command.getUsageMessage());
-		System.out.println();
-
-		lines = p_command.getHelpMessage().split("\n");
-		// we should never end up here
-		if (lines == null) {
-			return;
+	private boolean interactiveArgumentMode(final ArgumentList p_arguments)
+	{
+		// ask for non optional entries first
+		for (Entry<String, Argument> entry : p_arguments.getArgumentMap().entrySet())
+		{
+			Argument arg = entry.getValue();
+			if (!arg.isOptional())
+			{
+				String input = promptForUserInput("<" + arg.getKey() + "> ");
+				if (input == null)
+					return false;
+				p_arguments.setArgument(arg.getKey(), input, "");
+			}
 		}
-		System.out.println("  description: " + lines[0]);
-		for (int i = 1; i < lines.length; i++) {
-			System.out.println("               " + lines[i]);
+		
+		// now go for optional entries
+		for (Entry<String, Argument> entry : p_arguments.getArgumentMap().entrySet())
+		{
+			Argument arg = entry.getValue();
+			if (arg.isOptional())
+			{
+				String input = promptForUserInput("[" + arg.getKey() + "] ");
+				if (input != null)
+					p_arguments.setArgument(arg.getKey(), input, "");
+			}
 		}
+		
+		return true;
 	}
 }

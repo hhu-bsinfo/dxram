@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParser;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBool;
-import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBoolean;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserByte;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserDouble;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserFloat;
@@ -24,7 +23,8 @@ import de.hhu.bsinfo.utils.reflect.unit.UnitConverterMBToByte;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public class ArgumentList {
+public class ArgumentList
+{
 	private Map<String, Argument> m_arguments = new HashMap<String, Argument>();
 	
 	/**
@@ -37,13 +37,17 @@ public class ArgumentList {
 		return m_arguments.get(p_key);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public <T> T getArgumentValue(final String p_key) {
+	public <T> T getArgumentValue(final String p_key, final Class<T> p_class) {
 		Argument arg = m_arguments.get(p_key);
 		if (arg == null)
 			return null;
 		
-		return (T) arg.getValue();
+		return arg.getValue(p_class);
+	}
+	
+	public int getSize()
+	{
+		return m_arguments.size();
 	}
 	
 	/**
@@ -61,26 +65,24 @@ public class ArgumentList {
 		return arg;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public <T> T getArgumentValue(final Argument p_default) {
-		return (T) getArgument(p_default).getValue();
+	public <T> T getArgumentValue(final Argument p_default, final Class<T> p_class) {
+		return getArgument(p_default).getValue(p_class);
 	}
 	
 	/**
-	 * Add an argument to the list.
-	 * This will check if a default argument is set and replace its value if available.
-	 * Otherwise it creates a new argument.
-	 * @param p_argument Argument to add.
+	 * Set the value of an argument.
+	 * If the argument does not exist, it will be created and added.
+	 * @param p_key Key of the argument.
+	 * @param p_value Value for the argument.
+	 * @param p_unit Unit to this value is stored as. Used for converting.
 	 */
-	public void setArgument(final String p_key, final Object p_value)
+	public void setArgument(final String p_key, final String p_value, final String p_unit)
 	{
 		Argument arg = m_arguments.get(p_key);
 		if (arg != null)
-		{
-			arg.m_value = p_value;
-		}
+			arg = new Argument(arg.getKey(), p_value, p_unit, arg.isOptional(), arg.getDescription());
 		else
-			arg = new Argument(p_key, p_value, false, "");
+			arg = new Argument(p_key, p_value, p_unit, false, "");
 	
 		m_arguments.put(p_key, arg);
 	}
@@ -92,8 +94,9 @@ public class ArgumentList {
 	 */
 	public void setArgument(final Argument p_argument, final Object p_value)
 	{
-		p_argument.m_value = p_value;
-		m_arguments.put(p_argument.getKey(), p_argument);
+		Argument arg = new Argument(p_argument);
+		arg.m_value = p_value.toString();
+		m_arguments.put(arg.getKey(), arg);
 	}	
 	
 	/**
@@ -129,7 +132,7 @@ public class ArgumentList {
 	public boolean checkArguments()
 	{
 		for (Entry<String, Argument> entry : m_arguments.entrySet()) {
-			if (!entry.getValue().isAvailable()) {
+			if (!entry.getValue().isAvailable() && !entry.getValue().isOptional()) {
 				return false;
 			}
 		}
@@ -160,7 +163,7 @@ public class ArgumentList {
 			Argument arg = entry.getValue();
 			
 			if (arg.isOptional()) {
-				str += " [" + arg.getKey() + ":" + arg.getValue() + "]";
+				str += " [" + arg.getKey() + ":value]";
 			}
 		}
 		
@@ -177,7 +180,7 @@ public class ArgumentList {
 			Argument arg = entry.getValue();
 			
 			if (arg.isOptional()) {
-				str += "\n\t" + arg.getKey() + "[" + arg.getValue() + "]: " + arg.getDescription();
+				str += "\n\t" + arg.getKey() + ": " + arg.getDescription();
 			}
 		}
 		
@@ -194,6 +197,11 @@ public class ArgumentList {
 		}
 		
 		return str;
+	}
+	
+	public Map<String, Argument> getArgumentMap()
+	{
+		return m_arguments;
 	}
 	
 	/**
@@ -229,30 +237,44 @@ public class ArgumentList {
 		}
 		
 		/**
-		 * Constructor
-		 * @param p_key Key identifying the argument (must be unique).
-		 * @param p_type Type string identifying the value for conversion.
-		 * @param p_value Value of the argument
+		 * Add a data type converter to allow converting of values to different types.
+		 * @param p_converter Data type converter converter to add.
 		 */
-		public Argument(final String p_key, final String p_type, final String p_value)
+		public static void addDataTypeConverter(final DataTypeParser p_converter)
 		{
-			m_key = p_key;
-			m_value = p_value;
-			m_type = p_type;
+			ms_dataTypeParsers.put(p_converter.getClassToConvertTo(), p_converter);
+		}
+		
+		/**
+		 * Add a unit converter to allow unit conversion of arguments.
+		 * @param p_converter Unit converter to add.
+		 */
+		public static void addUnitConverter(final UnitConverter p_converter)
+		{
+			ms_unitConverters.put(p_converter.getUnitIdentifier(), p_converter);
 		}
 		
 		/**
 		 * Constructor
 		 * @param p_key Key identifying the argument (must be unique).
-		 * @param p_type Type string identifying the value for conversion.
-		 * @param p_convert String to tell if the value needs conversion.
 		 * @param p_value Value of the argument
 		 */
-		public Argument(final String p_key, final String p_type, final String p_convert, final String p_value)
+		public Argument(final String p_key, final String p_value)
 		{
 			m_key = p_key;
 			m_value = p_value;
-			m_type = p_type;
+		}
+		
+		/**
+		 * Constructor
+		 * @param p_key Key identifying the argument (must be unique).
+		 * @param p_value Value of the argument
+		 * @param p_convert String to tell if the value needs conversion.
+		 */
+		public Argument(final String p_key, final String p_value, final String p_convert)
+		{
+			m_key = p_key;
+			m_value = p_value;
 			m_convert = p_convert;
 		}
 		
@@ -272,6 +294,36 @@ public class ArgumentList {
 		}
 		
 		/**
+		 * Constructor
+		 * @param p_key Key identifiying the argument (must be unique).
+		 * @param p_value Value of the argument.
+		 * @param p_convert String to tell if the value needs conversion.
+		 * @param p_isOptional True if the argument is optional, i.e. is allowed to be null, false otherwise.
+		 * @param p_description Description for the argument (used when creating usage string).
+		 */
+		public Argument(final String p_key, final String p_value, final String p_convert, final boolean p_isOptional, final String p_description)
+		{
+			m_key = p_key;
+			m_value = p_value;
+			m_convert = p_convert;
+			m_isOptional = p_isOptional;
+			m_description = p_description;
+		}
+		
+		/**
+		 * Copy constructor
+		 * @param p_argument Argument to copy
+		 */
+		public Argument(final Argument p_argument)
+		{
+			m_key = p_argument.m_key;
+			m_value = p_argument.m_value;
+			m_convert = p_argument.m_convert;
+			m_isOptional = p_argument.m_isOptional;
+			m_description = p_argument.m_description;
+		}
+		
+		/**
 		 * Get the key.
 		 * @return Argument key.
 		 */
@@ -281,7 +333,7 @@ public class ArgumentList {
 		}
 		
 		/**
-		 * Get the arguments value.
+		 * Get the arguments value converter.
 		 * @param p_class Type of the value to cast to.
 		 * @return Value.
 		 */
@@ -290,15 +342,31 @@ public class ArgumentList {
 			if (m_value == null)
 				return null;
 		
+			DataTypeParser parser = ms_dataTypeParsers.get(p_class);
+			Object val = parser.parse(m_value);
 			
+			if (!m_convert.isEmpty())
+			{
+				UnitConverter converter = ms_unitConverters.get(m_convert);
+				val = converter.convert(val);
+			}
 			
-			if (!p_class.isInstance(m_value))
+			if (!p_class.isInstance(val))
 			{
 				assert 1 == 2;
 				return null;
 			}
 			
-			return p_class.cast(m_value);
+			return p_class.cast(val);
+		}
+		
+		/**
+		 * Get the unconverted value as string.
+		 * @return Value.
+		 */
+		public String getValue()
+		{
+			return m_value;
 		}
 		
 		/**
@@ -332,15 +400,6 @@ public class ArgumentList {
 		public String toString()
 		{
 			return m_key + "[m_isOptional " + m_isOptional + ", m_description " + m_description + "]: " + m_value;
-		}
-		
-		/**
-		 * Add a unit converter to allow unit conversion of arguments.
-		 * @param p_converter Unit converter to add.
-		 */
-		public static void addUnitConverter(final UnitConverter p_converter)
-		{
-			ms_unitConverters.put(p_converter.getUnitIdentifier(), p_converter);
 		}
 	}
 }
