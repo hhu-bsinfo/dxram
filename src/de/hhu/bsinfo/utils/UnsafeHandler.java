@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.utils.unsafe;
+package de.hhu.bsinfo.utils;
 
 import java.lang.reflect.Field;
 

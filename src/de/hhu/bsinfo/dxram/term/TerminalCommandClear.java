@@ -28,7 +28,6 @@ public class TerminalCommandClear extends TerminalCommand {
 	public void registerArguments(ArgumentList p_arguments) {
 	}
 
-	// called after parameter have been checked
 	@Override
 	public boolean execute(final ArgumentList p_arguments) {
 		// ANSI escape codes (clear screen, move cursor to first row and first column)
