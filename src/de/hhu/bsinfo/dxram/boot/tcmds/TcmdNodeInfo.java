@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.boot.tcmds;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -28,7 +29,7 @@ public class TcmdNodeInfo extends TerminalCommand {
 	public boolean execute(final ArgumentList p_arguments)
 	{
 		Short nodeID = p_arguments.getArgumentValue(MS_ARG_NODE_ID, Short.class);
-		BootComponent boot = getTerminalDelegate().getDXRAMComponent(BootComponent.class);
+		BootService boot = getTerminalDelegate().getDXRAMService(BootService.class);
 		
 		if (nodeID == null)
 		{

@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.boot.tcmds;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -33,7 +34,7 @@ public class TcmdNodeList extends TerminalCommand {
 		if (strRole != null)
 		{
 			NodeRole roleFilter = NodeRole.toNodeRole(strRole);
-			BootComponent boot = getTerminalDelegate().getDXRAMComponent(BootComponent.class);
+			BootService boot = getTerminalDelegate().getDXRAMService(BootService.class);
 			List<Short> nodeIDs = boot.getAvailableNodeIDs();
 			System.out.println("Filtering by role " + roleFilter);
 			System.out.println("Total available nodes (" + nodeIDs.size() + "):");
@@ -46,7 +47,7 @@ public class TcmdNodeList extends TerminalCommand {
 		}
 		else
 		{
-			BootComponent boot = getTerminalDelegate().getDXRAMComponent(BootComponent.class);
+			BootService boot = getTerminalDelegate().getDXRAMService(BootService.class);
 			List<Short> nodeIDs = boot.getAvailableNodeIDs();
 			System.out.println("Available nodes (" + nodeIDs.size() + "):");
 			for (short nodeId : nodeIDs) {

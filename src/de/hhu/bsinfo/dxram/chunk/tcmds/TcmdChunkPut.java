@@ -44,7 +44,6 @@ public class TcmdChunkPut extends TerminalCommand{
 			return false;
 		
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		BootComponent bootComp		= getTerminalDelegate().getDXRAMComponent(BootComponent.class);
 		BootService   bootService 	= getTerminalDelegate().getDXRAMService(BootService.class);
 		
 		Chunk chunk = new Chunk(cid, DFLT_SIZE); // Todo?

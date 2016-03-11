@@ -118,6 +118,10 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return true;
 	}
 	
+	/**
+	 * Get the status of the chunk service.
+	 * @return Status object with current status of the service.
+	 */
 	public Status getStatus()
 	{
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -135,6 +139,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return status;
 	}
 	
+	/**
+	 * Get the status of a remote node specified by a node id.
+	 * @param p_nodeID Node id to get the status from.
+	 * @return Status object with status information of the remote node.
+	 */
 	public Status getStatus(final short p_nodeID)
 	{
 		Status status = null;
@@ -863,6 +872,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	private void initBackupRange(final long p_localID, final int p_size) {
 		int size;
 
+		// TODO Kevin: fix this
 		if (m_logActive) {
 //			size = p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
 //			if (!m_firstRangeInitialized && p_localID == 1) {
@@ -1116,21 +1126,37 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 	}
 	
+	/**
+	 * Status object for the chunk service containing various information
+	 * about it.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
+	 */
 	public static class Status implements Importable, Exportable
 	{
 		private long m_freeMemoryBytes = -1;
 		private long m_totalMemoryBytes = -1;
 		
+		/**
+		 * Default constructor
+		 */
 		public Status()
 		{
 			
 		}
 		
+		/**
+		 * Get the amount of free memory in bytes.
+		 * @return Free memory in bytes.
+		 */
 		public long getFreeMemory()
 		{
 			return m_freeMemoryBytes;
 		}
 		
+		/**
+		 * Get the total amount of memory in bytes available.
+		 * @return Total amount of memory in bytes.
+		 */
 		public long getTotalMemory()
 		{
 			return m_totalMemoryBytes;

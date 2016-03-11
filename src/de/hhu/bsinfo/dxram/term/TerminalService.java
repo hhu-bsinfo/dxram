@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.term;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.JNIconsole;
@@ -12,6 +11,12 @@ import de.hhu.bsinfo.utils.args.ArgumentListParser;
 import de.hhu.bsinfo.utils.args.DefaultArgumentListParser;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * Service providing an interactive terminal running on a DXRAM instance.
+ * Allows access to implemented services, triggering commands, getting information
+ * about current or remote DXRAM instances.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
+ */
 public class TerminalService extends DXRAMService implements TerminalDelegate
 {
 	private LoggerComponent m_logger = null;
@@ -20,7 +25,10 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 	
 	private boolean m_loop = true;
 	
-	// only returns if terminal was exited
+	/**
+	 * Run the terminal loop.
+	 * Only returns if terminal was exited.
+	 */
 	public void loop()
 	{
 		String command;
@@ -198,12 +206,11 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 	public <T extends DXRAMService> T getDXRAMService(Class<T> p_class) {
 		return getServiceAccessor().getService(p_class);
 	}
-
-	@Override
-	public <T extends DXRAMComponent> T getDXRAMComponent(Class<T> p_class) {
-		return getComponent(p_class);
-	}
 	
+	/**
+	 * Get a list of available/registered commands.
+	 * @return List of registered commands.
+	 */
 	private String getAvailableCommands() {
 		String str = new String();
 		for (Entry<String, TerminalCommand> entry : m_terminal.getRegisteredCommands().entrySet()) {
@@ -213,6 +220,10 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 		return str;
 	}
 	
+	/**
+	 * Print a usage message for the specified terminal command.
+	 * @param p_command Terminal command to print usage message of.
+	 */
 	private void printUsage(final TerminalCommand p_command) {
 		ArgumentList argList = new ArgumentList();
 		// create default argument list
@@ -223,6 +234,11 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 		System.out.println(argList.createUsageDescription(p_command.getName()));
 	}
 	
+	/**
+	 * Execute interactive argument mode to allow the user entering arguments for a command one by one.
+	 * @param p_arguments List of arguments with arguments that need values to be entered.
+	 * @return If user entered arguments properly, false otherwise.
+	 */
 	private boolean interactiveArgumentMode(final ArgumentList p_arguments)
 	{
 		// ask for non optional entries first

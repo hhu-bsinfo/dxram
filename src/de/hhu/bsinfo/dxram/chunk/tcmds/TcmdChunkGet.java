@@ -50,7 +50,6 @@ public class TcmdChunkGet extends TerminalCommand{
 			return false;
 		
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		BootComponent bootComp		= getTerminalDelegate().getDXRAMComponent(BootComponent.class);
 		BootService   bootService 	= getTerminalDelegate().getDXRAMService(BootService.class);
 		
 		if(size == null)

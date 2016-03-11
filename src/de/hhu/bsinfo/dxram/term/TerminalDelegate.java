@@ -1,14 +1,22 @@
 package de.hhu.bsinfo.dxram.term;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 
-// we allow the commands to have some special "rights"
-// and grant access to both components and services to allow
-// easier development of new commands for gathering information etc
+/**
+ * Delegate to allow terminal commands to access certain features of the
+ * terminal for command execution.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
+ */
 public interface TerminalDelegate {
+	/**
+	 * Prompt a "Are you sure?" message on the terminal and ask for confirmation.
+	 * @return True if the answer was yes, false if no.
+	 */
 	public boolean areYouSure();
 	
+	/**
+	 * Trigger an exit of the terminal.
+	 */
 	public void exitTerminal();
 	
 	/**
@@ -18,7 +26,10 @@ public interface TerminalDelegate {
 	 */
 	public String promptForUserInput(final String p_header);
 	
+	/**
+	 * Get a service from the DXRAM engine.
+	 * @param p_class Class of the service to get.
+	 * @return DXRAMService or null if service not available.
+	 */
 	public <T extends DXRAMService> T getDXRAMService(final Class<T> p_class);
-	
-	public <T extends DXRAMComponent> T getDXRAMComponent(final Class<T> p_class);
 }

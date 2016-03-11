@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
@@ -39,7 +39,7 @@ public class TcmdChunkRemove extends TerminalCommand {
 		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
 		
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
-		BootComponent bootComp = getTerminalDelegate().getDXRAMComponent(BootComponent.class);
+		BootService bootService = getTerminalDelegate().getDXRAMService(BootService.class);
 		
 		// we favor full cid
 		if (cid != null)
@@ -56,7 +56,7 @@ public class TcmdChunkRemove extends TerminalCommand {
 			{
 				// check for remote id, otherwise we assume local
 				if (nid == null) {
-					nid = bootComp.getNodeID();
+					nid = bootService.getNodeID();
 				}
 				
 				// create cid

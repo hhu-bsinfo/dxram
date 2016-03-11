@@ -37,6 +37,12 @@ public class ArgumentList
 		return m_arguments.get(p_key);
 	}
 	
+	/**
+	 * Get a value from the argument list and convert it to the specified data type.
+	 * @param p_key Key to get the value of.
+	 * @param p_class Class to convert the value to.
+	 * @return Converted object of the value the key was associated with or null if missing or converting failed.
+	 */
 	public <T> T getArgumentValue(final String p_key, final Class<T> p_class) {
 		Argument arg = m_arguments.get(p_key);
 		if (arg == null)
@@ -45,6 +51,10 @@ public class ArgumentList
 		return arg.getValue(p_class);
 	}
 	
+	/**
+	 * Get the size of the argument list.
+	 * @return Number of arguments on the list.
+	 */
 	public int getSize()
 	{
 		return m_arguments.size();
@@ -199,6 +209,11 @@ public class ArgumentList
 		return str;
 	}
 	
+	/**
+	 * Get the backend argument map. There are situations when we have to iterate
+	 * the argument list. Otherwise don't use this call.
+	 * @return Map with arguments.
+	 */
 	public Map<String, Argument> getArgumentMap()
 	{
 		return m_arguments;
