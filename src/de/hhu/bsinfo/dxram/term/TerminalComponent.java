@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.term;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdEchoMessage;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
@@ -62,7 +61,7 @@ public class TerminalComponent extends DXRAMComponent {
 		// register built in commands
 		registerCommand(new TerminalCommandClear());
 		registerCommand(new TerminalCommandQuit());
-		registerCommand(new TcmdEchoMessage());
+		registerCommand(new TerminalCommandPrint());
 		
 		return true;
 	}

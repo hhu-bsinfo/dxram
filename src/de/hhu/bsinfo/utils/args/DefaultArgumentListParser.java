@@ -21,12 +21,50 @@ public class DefaultArgumentListParser implements ArgumentListParser {
 
 	@Override
 	public void parseArguments(final String[] p_args, final ArgumentList p_arguments) {		
-		for (String arg : p_args) 
+		for (int i = 0; i < p_args.length; i++)
 		{
-			String[] keyVal = splitKeyValue(arg);
+			String[] keyVal = splitKeyValue(p_args[i]);
 			// ignore invalid format
 			if (keyVal == null)
 				continue; 
+			
+			// allow strings within " "
+			if (keyVal[1].charAt(0) == '"')
+			{
+				// concat args within astring
+				// don't count if quote is escpaed
+				while (keyVal[1].charAt(keyVal[1].length() - 1) != '"')
+				{
+					if (i + 1 < p_args.length)
+					{
+						keyVal[1] += p_args[i + 1];
+						i++;
+					}
+					else
+						break;
+				}
+				
+				// remove quotes
+				if (keyVal[1].charAt(0) == '"')
+					keyVal[1] = keyVal[1].substring(1);
+				if (keyVal[1].charAt(keyVal[1].length() - 1) == '"')
+					keyVal[1] = keyVal[1].substring(0, keyVal[1].length() - 1);
+			}
+			else
+			{
+				// concat args which have escpaed spaces
+				while (keyVal[1].charAt(keyVal[1].length() - 1) == '\\')
+				{
+					if (i + 1 < p_args.length)
+					{
+						keyVal[1] = keyVal[1].substring(0, keyVal[1].length() - 1);
+						keyVal[1] += p_args[i + 1];
+						i++;
+					}
+					else
+						break;
+				}
+			}
 			
 			String keyName = getKeyName(keyVal[0]);
 			String unit = getKeyUnit(keyVal[0]);
