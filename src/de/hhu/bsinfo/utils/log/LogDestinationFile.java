@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * Implementation to log to a file.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class LogDestinationFile implements LogDestination {
 
 	private LogLevel m_logLevel = LogLevel.DEBUG;

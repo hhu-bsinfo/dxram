@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+/**
+ * Implementation of an int parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserInt implements DataTypeParser
 {
 	@Override

@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+/**
+ * Implementation of a float parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserFloat implements DataTypeParser
 {
 	@Override

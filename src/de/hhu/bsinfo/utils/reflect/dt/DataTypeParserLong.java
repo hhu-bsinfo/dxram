@@ -2,6 +2,10 @@ package de.hhu.bsinfo.utils.reflect.dt;
 
 import java.math.BigInteger;
 
+/**
+ * Implementation of a long parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserLong implements DataTypeParser
 {
 	@Override

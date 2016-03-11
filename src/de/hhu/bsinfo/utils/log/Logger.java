@@ -2,16 +2,20 @@ package de.hhu.bsinfo.utils.log;
 
 import java.util.ArrayList;
 
+/**
+ * Implementation of a simple logger for error, warning and debug messages.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
+ */
 public class Logger implements LoggerInterface
 {
 	private ArrayList<LogDestination> m_logDestinations = new ArrayList<LogDestination>();
 	private LogLevel m_logLevel = LogLevel.DEBUG;
 	
-	public Logger()
-	{
-		
-	}
-	
+	/**
+	 * Add a log destination to the logger. The log messages will be sent to 
+	 * every registered destination.
+	 * @param dest Destination to be added.
+	 */
 	public void addLogDestination(LogDestination dest)
 	{ 
 		m_logDestinations.add(dest); 
@@ -20,6 +24,11 @@ public class Logger implements LoggerInterface
 		}
 	}
 	
+	/**
+	 * Remove a already registered destination from the logger.
+	 * @param dest Destination to remove.
+	 * @return True if removed, false if not found.
+	 */
 	public boolean removeLogDestination(LogDestination dest)
 	{
 	    if (m_logDestinations.remove(dest))
@@ -31,6 +40,10 @@ public class Logger implements LoggerInterface
 	    return false;
 	}
 	
+	/**
+	 * Properly shut down the logger and have all registered log destinations shut down as well.
+	 * This also clears all log destinations.
+	 */
 	public void close()
 	{
 		for (LogDestination dest : m_logDestinations) {

@@ -1,5 +1,10 @@
 package de.hhu.bsinfo.utils.log;
 
+/**
+ * Interface for a destination to write log data to (console, file,...)
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ *
+ */
 public interface LogDestination {
 	/** Gets called when the log level changes.
 	 * 
