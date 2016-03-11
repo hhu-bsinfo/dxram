@@ -170,7 +170,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 		while (!m_fulfilled && !m_aborted) {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > p_timeoutMs && !m_ignoreTimeout) {
-				RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
+				//RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
 				success = false;
 				break;
 			}
@@ -199,7 +199,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	final void fulfill(final AbstractResponse p_response) {
 		assert p_response != null;
 
-		RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
+		//RequestStatistic.getInstance().responseReceived(getRequestID(), getClass());
 
 		m_response = p_response;
 
@@ -226,7 +226,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	public final void abort() {
 		RequestMap.remove(getRequestID());
 
-		RequestStatistic.getInstance().requestAborted(getRequestID(), getClass());
+		//RequestStatistic.getInstance().requestAborted(getRequestID(), getClass());
 
 		m_aborted = true;
 		m_wait.release();
@@ -243,7 +243,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 	@Override
 	protected final void afterSend() {
-		RequestStatistic.getInstance().requestSend(getRequestID());
+		//RequestStatistic.getInstance().requestSend(getRequestID());
 	}
 
 }

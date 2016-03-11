@@ -8,8 +8,6 @@ public class NetworkConfigurationValues {
 		public static final Pair<String, Integer> THREAD_COUNT_MSG_CREATOR = new Pair<String, Integer>("ThreadCountMessageCreator", 1);
 		public static final Pair<String, Integer> MAX_OUTSTANDING_BYTES = new Pair<String, Integer>("MaxOutstandingBytes", 128 * 1024 * 1024);
 		public static final Pair<String, Integer> NUMBER_OF_BUFFERS = new Pair<String, Integer>("NumberOfBuffers", 256);
-		public static final Pair<String, Boolean> STATISTICS_THROUGHPUT = new Pair<String, Boolean>("StatisticsThroughput", true);
-		public static final Pair<String, Boolean> STATISTICS_REQUESTS = new Pair<String, Boolean>("StatisticsRequests", true);
 		public static final Pair<String, Integer> REQUEST_TIMEOUT_MS = new Pair<String, Integer>("RequestTimeoutMs", 2000);
 	}
 }

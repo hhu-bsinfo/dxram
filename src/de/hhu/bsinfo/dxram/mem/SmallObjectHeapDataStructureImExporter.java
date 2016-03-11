@@ -6,6 +6,12 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Importer/Exporter wrapper to allow Importables/Exportables to be directly written 
+ * to the SmallObjectHeap.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
+ *
+ */
 public class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
 
 	private SmallObjectHeap m_heap = null;

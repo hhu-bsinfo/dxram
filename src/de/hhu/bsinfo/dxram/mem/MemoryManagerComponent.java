@@ -7,9 +7,9 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageJNINativeMemory;
-import de.hhu.bsinfo.utils.StatisticsManager;
 import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
 
 /**
@@ -25,14 +25,15 @@ import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
  */
 public final class MemoryManagerComponent extends DXRAMComponent {
 	
-	// Attributes
-	private boolean m_enableMemoryStatistics;
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	private JNIReadWriteSpinLock m_lock;
 
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
+	private StatisticsComponent m_statistics = null;
+	
+	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 
 	// Constructors
 	/**
@@ -48,7 +49,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
 		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE);
-		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.STATISTICS);
 	}
 	
 	@Override
@@ -56,23 +56,18 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	{
 		m_boot = getDependentComponent(BootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
+		m_statistics = getDependentComponent(StatisticsComponent.class);
+
+		registerStatisticsOperations();
 		
-		m_enableMemoryStatistics = p_settings.getValue(MemoryManagerConfigurationValues.Component.STATISTICS);
-
-		if (m_enableMemoryStatistics) {
-			StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
-		}
-
 		m_rawMemory = new SmallObjectHeap(new StorageJNINativeMemory());
 		m_rawMemory.initialize(
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE),
 				p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
-		m_cidTable = new CIDTable(m_boot.getNodeID(), m_enableMemoryStatistics, m_logger);
+		m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
-		
-		MemoryStatistic.getInstance().initMemory(p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE));
 		
 		return true;
 	}
@@ -154,15 +149,13 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		else
 		{			
 			// first, try to allocate. maybe early return
+			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, p_size);
 			address = m_rawMemory.malloc(p_size);
+			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 			if (address >= 0) {
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
 				// register new chunk
 				m_cidTable.set(chunkID, address);
-				
-				if (m_enableMemoryStatistics) {
-					MemoryStatistic.getInstance().malloc(p_size);
-				}
 			} else {
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
@@ -273,23 +266,16 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 				// no space for zombie in LID store, keep him "alive" in table
 			}
 			
+			size = m_rawMemory.getSizeBlock(addressDeletedChunk);
+			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);
 			m_rawMemory.free(addressDeletedChunk);
-			if (m_enableMemoryStatistics) {
-				size = m_rawMemory.getSizeBlock(addressDeletedChunk);
-				MemoryStatistic.getInstance().free(size);
-			}
+			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free);
 			
 			ret = true;
 		}
 		
 		return ret;
 	}
-
-	// TODO
-	// public int resize(final long p_chunkID, final int p_newSize)
-	// {
-	//
-	// }
 
 	/**
 	 * Returns whether this Chunk is stored locally or not.
@@ -351,6 +337,20 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		{
 			return m_freeMemoryBytes;
 		}
+	}
+	
+	/**
+	 * Register statistics operations for this component.
+	 */
+	private void registerStatisticsOperations() 
+	{
+		m_statisticsRecorderIDs = new MemoryStatisticsRecorderIDs();
+		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
+		
+		m_statisticsRecorderIDs.m_operations.m_createNIDTable = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_CREATE_NID_TABLE);
+		m_statisticsRecorderIDs.m_operations.m_createLIDTable = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_CREATE_LID_TABLE);
+		m_statisticsRecorderIDs.m_operations.m_malloc = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_MALLOC);
+		m_statisticsRecorderIDs.m_operations.m_free = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_FREE);
 	}
 
 	// FIXME take back in

@@ -100,8 +100,6 @@ public class NetworkComponent extends DXRAMComponent {
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.MAX_OUTSTANDING_BYTES);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 	}
 	
@@ -113,9 +111,7 @@ public class NetworkComponent extends DXRAMComponent {
 		
 		m_networkHandler = new NetworkHandler(
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR),
-				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER),
-				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_THROUGHPUT),
-				p_settings.getValue(NetworkConfigurationValues.Component.STATISTICS_REQUESTS));
+				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER));
 		
 		m_networkHandler.setLogger(m_logger);
 		m_networkHandler.initialize(
