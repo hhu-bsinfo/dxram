@@ -4,10 +4,7 @@ package de.uniduesseldorf.dxram.core.log.storage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Skeleton for a log
@@ -16,17 +13,13 @@ import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConsta
  */
 public abstract class AbstractLog {
 
-	// Constants
-	protected static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
-
 	// Attributes
-	// m_logFileSize must be a multiple of a flash page!
 	private final long m_logFileSize;
 	private long m_totalUsableSpace;
 	private int m_logFileHeaderSize;
 	private File m_logFile;
 	private RandomAccessFile m_randomAccessFile;
-	private ReentrantReadWriteLock m_lock;
+	private ReentrantLock m_lock;
 
 	// Constructors
 	/**
@@ -46,7 +39,7 @@ public abstract class AbstractLog {
 
 		m_randomAccessFile = null;
 
-		m_lock = new ReentrantReadWriteLock(false);
+		m_lock = new ReentrantLock(false);
 	}
 
 	/**
@@ -143,7 +136,7 @@ public abstract class AbstractLog {
 
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.readLock().lock();
+				m_lock.lock();
 			}
 
 			assert p_length <= bytesUntilEnd;
@@ -152,7 +145,7 @@ public abstract class AbstractLog {
 			m_randomAccessFile.readFully(p_data, 0, p_length);
 
 			if (p_accessed) {
-				m_lock.readLock().unlock();
+				m_lock.unlock();
 			}
 		}
 	}
@@ -203,6 +196,7 @@ public abstract class AbstractLog {
 		long ret;
 		final long bytesUntilEnd;
 
+		System.out.println("PRIMLOG-Writing: " + p_length);
 		if (p_writePos + p_length <= m_totalUsableSpace) {
 			m_randomAccessFile.seek(m_logFileHeaderSize + p_writePos);
 			m_randomAccessFile.write(p_data, p_bufferOffset, p_length);
@@ -240,9 +234,10 @@ public abstract class AbstractLog {
 	protected final int writeToSecondaryLog(final byte[] p_data, final int p_bufferOffset, final long p_readPos, final int p_length, final boolean p_accessed)
 			throws IOException {
 
+		System.out.println("SECLOG-Writing: " + p_length);
 		if (p_length > 0) {
 			if (p_accessed) {
-				m_lock.writeLock().lock();
+				m_lock.lock();
 			}
 
 			assert p_readPos + p_length <= m_totalUsableSpace;
@@ -251,7 +246,7 @@ public abstract class AbstractLog {
 			m_randomAccessFile.write(p_data, p_bufferOffset, p_length);
 
 			if (p_accessed) {
-				m_lock.writeLock().unlock();
+				m_lock.unlock();
 			}
 		}
 		return p_length;

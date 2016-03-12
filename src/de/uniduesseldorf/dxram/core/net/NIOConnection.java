@@ -201,9 +201,10 @@ public class NIOConnection extends AbstractConnection {
 	 *            Buffer
 	 */
 	void addBuffer(final ByteBuffer p_buffer) {
+		System.out.println("got here");
 		m_outgoingLock.lock();
 		// Change operation request to OP_READ to read before trying to send the buffer again
-		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_READ);
+		// m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_WRITE);
 
 		m_outgoing.addFirst(p_buffer);
 		m_outgoingLock.unlock();
@@ -219,6 +220,7 @@ public class NIOConnection extends AbstractConnection {
 	 */
 	protected ByteBuffer getOutgoingBytes(final ByteBuffer p_buffer, final int p_bytes) {
 		int length = 0;
+		int startPos = 0;
 		boolean abort = false;
 		ByteBuffer buffer;
 		ByteBuffer ret = null;
@@ -234,9 +236,11 @@ public class NIOConnection extends AbstractConnection {
 
 			// This is a left-over (see addBuffer())
 			if (buffer.remaining() != 0 && buffer.position() != 0) {
-				ret = buffer;
+				startPos = buffer.position();
+				length += buffer.remaining();
+				ret = buffer.duplicate();
+				ret.limit(ret.capacity());
 				abort = true;
-				break;
 			}
 
 			// Skip when buffer is completed
@@ -245,7 +249,7 @@ public class NIOConnection extends AbstractConnection {
 			}
 
 			// Append when limit will not be reached
-			if (length + buffer.remaining() <= p_bytes) {
+			if (length + buffer.remaining() + startPos <= p_bytes) {
 				length += buffer.remaining();
 
 				if (ret == null) {

@@ -36,7 +36,7 @@ public final class SecondaryLogBuffer {
 		m_secondaryLog = p_secondaryLog;
 
 		m_bytesInBuffer = 0;
-		m_buffer = new byte[FLASHPAGE_SIZE];
+		m_buffer = new byte[FLASHPAGE_SIZE * 256];
 	}
 
 	// Getter
@@ -83,20 +83,26 @@ public final class SecondaryLogBuffer {
 	 *             if the secondary log could not be written or buffer be read
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
+	 * @return whether the buffer was flushed or not
 	 */
-	public void bufferData(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
+	public boolean bufferData(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
+		boolean ret = false;
 		byte[] buffer;
 
 		// Trim log entries (removes all NodeIDs)
 		buffer = processBuffer(p_buffer, p_bufferOffset, p_entryOrRangeSize);
-		if (m_bytesInBuffer + buffer.length >= FLASHPAGE_SIZE) {
+		if (m_bytesInBuffer + buffer.length >= FLASHPAGE_SIZE * 256) {
 			// Merge current secondary log buffer and new buffer and write to secondary log
+
 			flushAllDataToSecLog(buffer, p_bufferOffset, buffer.length);
+			ret = true;
 		} else {
 			// Append buffer to secondary log buffer
 			System.arraycopy(buffer, 0, m_buffer, m_bytesInBuffer, buffer.length);
 			m_bytesInBuffer += buffer.length;
 		}
+
+		return ret;
 	}
 
 	/**

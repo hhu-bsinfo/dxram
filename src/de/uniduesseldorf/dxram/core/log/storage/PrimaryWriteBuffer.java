@@ -3,6 +3,7 @@ package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -73,6 +74,8 @@ public class PrimaryWriteBuffer {
 
 	private ReentrantLock m_exclusiveLock;
 
+	private ArrayList<byte[]> m_segmentPool = new ArrayList<byte[]>();
+
 	// Constructors
 	/**
 	 * Creates an instance of PrimaryWriteBuffer with user-specific
@@ -107,6 +110,11 @@ public class PrimaryWriteBuffer {
 		} catch (DXRAMException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+
+		// Creates some buffers for segment pooling
+		for (int i = 0; i < 10; i++) {
+			m_segmentPool.add(new byte[SECLOG_SEGMENT_SIZE]);
 		}
 
 		m_writerThread = new PrimaryLogWriterThread();
@@ -300,7 +308,7 @@ public class PrimaryWriteBuffer {
 	private final class PrimaryLogWriterThread extends Thread {
 
 		// Constants
-		private static final long WRITERTHREAD_TIMEOUTTIME = 100L;
+		private static final long WRITERTHREAD_TIMEOUTTIME = 250L;
 
 		// Attributes
 		private long m_time;
@@ -494,7 +502,7 @@ public class PrimaryWriteBuffer {
 					entry = iter.next();
 					rangeID = entry.getKey();
 					segmentLength = entry.getValue();
-					if (segmentLength < FLASHPAGE_SIZE) {
+					if (segmentLength < FLASHPAGE_SIZE * 256) {
 						// There is less than 4 KB data from this node -> store buffer in primary log (later)
 						primaryLogBufferSize += segmentLength;
 						bufferNode = new BufferNode(segmentLength, false);
@@ -560,22 +568,27 @@ public class PrimaryWriteBuffer {
 					entry2 = iter2.next();
 					rangeID = entry2.getKey();
 					bufferNode = entry2.getValue();
-					bufferNode.trimLastSegment();
+					// bufferNode.trimLastSegment();
 					bufferLength = bufferNode.getBufferLength();
 					source = bufferNode.getSource();
 
 					segment = bufferNode.getData(i);
 					segmentLength = bufferNode.getSegmentLength(i);
-					while (segment != null) {
-						if (bufferLength < FLASHPAGE_SIZE) {
+					while (segment != null && segmentLength > 0) {
+						if (bufferLength < FLASHPAGE_SIZE * 256) {
 							// 1. Buffer in secondary log buffer
-							bufferLogEntryInSecondaryLogBuffer(segment, 0, segmentLength, rangeID, source);
-							// 2. Copy log entry/range to write it in primary log subsequently
-							System.arraycopy(segment, 0, primaryLogBuffer, primaryLogBufferOffset, segmentLength);
-							primaryLogBufferOffset += segmentLength;
+							if (!bufferLogEntryInSecondaryLogBuffer(segment, 0, segmentLength, rangeID, source)) {
+								// 2. Copy log entry/range to write it in primary log subsequently if the buffer was not flushed during appending
+								System.arraycopy(segment, 0, primaryLogBuffer, primaryLogBufferOffset, segmentLength);
+								primaryLogBufferOffset += segmentLength;
+							}
 						} else {
-							// Segment is larger than one flash page -> skip primary log
+							// Segment is larger than one flash page * 256 -> skip primary log
 							writeDirectlyToSecondaryLog(segment, 0, segmentLength, rangeID, source);
+						}
+						// Return byte array to segment pool
+						if (m_segmentPool.size() < 10 && segment.length == SECLOG_SEGMENT_SIZE) {
+							m_segmentPool.add(segment);
 						}
 						segment = bufferNode.getData(++i);
 						segmentLength = bufferNode.getSegmentLength(i);
@@ -585,8 +598,7 @@ public class PrimaryWriteBuffer {
 				}
 
 				if (primaryLogBufferSize > 0) {
-					// Write all log entries, that were not written to secondary log, in primary log with one write
-					// access
+					// Write all log entries, that were not written to secondary log, in primary log with one write access
 					m_primaryLog.appendData(primaryLogBuffer, 0, primaryLogBufferOffset);
 				}
 			}
@@ -611,20 +623,23 @@ public class PrimaryWriteBuffer {
 		 *             if secondary log buffer could not be written
 		 * @throws InterruptedException
 		 *             if caller is interrupted
+		 * @return whether the buffer was flushed or not
 		 */
-		private void bufferLogEntryInSecondaryLogBuffer(final byte[] p_buffer, final int p_bufferOffset, final int p_logEntrySize, final long p_chunkID,
+		private boolean bufferLogEntryInSecondaryLogBuffer(final byte[] p_buffer, final int p_bufferOffset, final int p_logEntrySize, final long p_chunkID,
 				final short p_source) throws IOException, InterruptedException {
+			boolean ret;
 
 			if (ChunkID.getCreatorID(p_chunkID) == -1) {
-				m_logHandler.getSecondaryLogBuffer(p_chunkID, p_source, (byte) p_chunkID).bufferData(p_buffer, p_bufferOffset, p_logEntrySize);
+				ret = m_logHandler.getSecondaryLogBuffer(p_chunkID, p_source, (byte) p_chunkID).bufferData(p_buffer, p_bufferOffset, p_logEntrySize);
 			} else {
-				m_logHandler.getSecondaryLogBuffer(p_chunkID, p_source, (byte) -1).bufferData(p_buffer, p_bufferOffset, p_logEntrySize);
+				ret = m_logHandler.getSecondaryLogBuffer(p_chunkID, p_source, (byte) -1).bufferData(p_buffer, p_bufferOffset, p_logEntrySize);
 			}
+			return ret;
 		}
 
 		/**
 		 * Writes a log entry/range directly to secondary log buffer if longer than
-		 * one flash page Has to flush the corresponding secondary log buffer if not
+		 * one flash page * 256 Has to flush the corresponding secondary log buffer if not
 		 * empty to maintain order
 		 * @param p_buffer
 		 *            data block
@@ -677,6 +692,8 @@ public class PrimaryWriteBuffer {
 		 *            wether the log entry headers have to be converted or not
 		 */
 		private BufferNode(final int p_length, final boolean p_convert) {
+			int length = p_length;
+
 			m_source = -1;
 
 			m_numberOfSegments = (int) Math.ceil((double) p_length / SECLOG_SEGMENT_SIZE);
@@ -689,7 +706,13 @@ public class PrimaryWriteBuffer {
 			m_segments = new byte[m_numberOfSegments][];
 
 			for (int i = 0; i < m_segments.length; i++) {
-				m_segments[i] = new byte[SECLOG_SEGMENT_SIZE];
+				if (m_segmentPool.size() > 0) {
+					m_segments[i] = m_segmentPool.remove(m_segmentPool.size() - 1);
+					length -= SECLOG_SEGMENT_SIZE;
+				} else {
+					m_segments[i] = new byte[Math.min(length, SECLOG_SEGMENT_SIZE)];
+					length -= m_segments[i].length;
+				}
 			}
 		}
 
@@ -700,20 +723,6 @@ public class PrimaryWriteBuffer {
 		 */
 		private int getBufferLength() {
 			return m_bufferLength;
-		}
-
-		/**
-		 * Returns the number of written bytes in all segments
-		 * @return the number of written bytes in all segments
-		 */
-		private int getSize() {
-			int ret = 0;
-
-			for (int i = 0; i < m_numberOfSegments; i++) {
-				ret += m_writtenBytesPerSegment[i];
-			}
-
-			return ret;
 		}
 
 		/**
@@ -809,13 +818,12 @@ public class PrimaryWriteBuffer {
 			}
 
 			if (m_convert) {
-				// More than one page for this node: Convert primary log entry header to secondary log header and append
+				// More than 256 pages for this node: Convert primary log entry header to secondary log header and append
 				// entry to node buffer
 				m_writtenBytesPerSegment[index] += AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
 						m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
 			} else {
-				// Less than one page for this node: Just append entry to node buffer without converting the log entry
-				// header
+				// Less than 256 pages for this node: Just append entry to node buffer without converting the log entry header
 				if (p_logEntrySize <= p_bytesUntilEnd) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
 				} else {
@@ -825,22 +833,6 @@ public class PrimaryWriteBuffer {
 				m_writtenBytesPerSegment[index] += p_logEntrySize;
 			}
 
-		}
-
-		/**
-		 * Trims the last segment
-		 */
-		private void trimLastSegment() {
-			int length;
-
-			length = m_writtenBytesPerSegment[m_numberOfSegments - 1];
-			if (length == 0) {
-				m_segments = Arrays.copyOf(m_segments, --m_numberOfSegments);
-				m_writtenBytesPerSegment = Arrays.copyOf(m_writtenBytesPerSegment, m_numberOfSegments);
-				trimLastSegment();
-			} else {
-				m_segments[m_numberOfSegments - 1] = Arrays.copyOf(m_segments[m_numberOfSegments - 1], length);
-			}
 		}
 	}
 }

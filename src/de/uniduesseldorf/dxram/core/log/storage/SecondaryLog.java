@@ -34,7 +34,7 @@ public class SecondaryLog extends AbstractLog {
 	private static final byte[] SECLOG_HEADER = "DXRAMSecLogv1".getBytes(Charset.forName("UTF-8"));
 
 	private static final long SECLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
-	private static final int SECLOG_MIN_SIZE = 1024 * FLASHPAGE_SIZE;
+	private static final int SECLOG_MIN_SIZE = 1024 * Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
 	private static final int REORG_UTILIZATION_THRESHOLD = Core.getConfiguration().getIntValue(ConfigurationConstants.REORG_UTILIZATION_THRESHOLD);
 	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
 
@@ -58,6 +58,7 @@ public class SecondaryLog extends AbstractLog {
 	private SegmentHeader m_reorgSegment;
 	private ReentrantLock m_lock;
 
+	private byte[] m_reorgSegmentData;
 	private byte[] m_reorgVector;
 	private int m_segmentReorgCounter;
 
@@ -98,14 +99,14 @@ public class SecondaryLog extends AbstractLog {
 
 		m_numberOfDeletesInLog = new AtomicInteger(0);
 
-		m_versionsBuffer = new VersionsBuffer(VERSIONS_BUFFER_CAPACITY * 4, 0.9f, BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID() + "_" + SECLOG_PREFIX_FILENAME
-				+ p_nodeID + "_" + p_rangeIdentification + ".ver");
+		m_versionsBuffer = new VersionsBuffer(VERSIONS_BUFFER_CAPACITY * 4, 0.9f, BACKUP_DIRECTORY + "N" + NodeID.getLocalNodeID()
+				+ "_" + SECLOG_PREFIX_FILENAME + p_nodeID + "_" + p_rangeIdentification + ".ver");
 
 		m_reorganizationThread = p_reorganizationThread;
 
 		m_secondaryLogReorgThreshold = (int) (SECLOG_SIZE * ((double) REORG_UTILIZATION_THRESHOLD / 100));
 		m_segmentReorgCounter = 0;
-
+		m_reorgSegmentData = new byte[SECLOG_SEGMENT_SIZE];
 		m_segmentHeaders = new SegmentHeader[(int) (SECLOG_SIZE / SECLOG_SEGMENT_SIZE)];
 		m_reorgVector = new byte[(int) (SECLOG_SIZE / SECLOG_SEGMENT_SIZE)];
 
@@ -289,11 +290,12 @@ public class SecondaryLog extends AbstractLog {
 		int length = p_length;
 		int logEntrySize;
 		int rangeSize = 0;
+		boolean isSignaled = false;
 		SegmentHeader header;
 		AbstractLogEntryHeader logEntryHeader;
 
 		if (length <= 0 || length > SECLOG_SIZE) {
-			throw new IllegalArgumentException("Error: Invalid data size");
+			throw new IllegalArgumentException("Error: Invalid data size (" + length + ")");
 		} else {
 			while (SECLOG_SIZE - determineLogSize() < length) {
 				System.out.println("Secondary log for " + getNodeID() + " is full. Initializing reorganization and awaiting execution.");
@@ -326,7 +328,9 @@ public class SecondaryLog extends AbstractLog {
 					}
 				} else {
 					// Force reorganization thread to flush all versions (even though it is reorganizing this log currently -> high update rate)
+					System.out.println("Delegating flushing of versions to Reorganization Thread");
 					signalReorganization();
+					isSignaled = true;
 				}
 			}
 
@@ -400,9 +404,9 @@ public class SecondaryLog extends AbstractLog {
 			}
 		}
 
-		if (determineLogSize() >= m_secondaryLogReorgThreshold) {
+		if (determineLogSize() >= m_secondaryLogReorgThreshold && !isSignaled) {
 			signalReorganization();
-			System.out.println("Threshold breached for secondary log of " + getNodeID() + ". Initializing reorganization.");
+			// System.out.println("Threshold breached for secondary log of " + getNodeID() + ". Initializing reorganization.");
 		}
 
 		return p_length - length;
@@ -825,7 +829,9 @@ public class SecondaryLog extends AbstractLog {
 
 	/**
 	 * Returns given segment of secondary log
-	 * @param p_segment
+	 * @param p_data
+	 *            the buffer to read data into
+	 * @param p_segmentIndex
 	 *            the segment
 	 * @throws IOException
 	 *             if the secondary log could not be read
@@ -834,18 +840,16 @@ public class SecondaryLog extends AbstractLog {
 	 * @return the segment's data
 	 * @note executed only by reorganization thread
 	 */
-	private byte[] readSegment(final int p_segment) throws IOException, InterruptedException {
-		byte[] result = null;
+	private int readSegment(final byte[] p_data, final int p_segmentIndex) throws IOException, InterruptedException {
+		int ret = 0;
 		SegmentHeader header;
-		int length;
 
-		header = m_segmentHeaders[p_segment];
+		header = m_segmentHeaders[p_segmentIndex];
 		if (header != null) {
-			length = header.getUsedBytes();
-			result = new byte[length];
-			readFromSecondaryLog(result, length, p_segment * SECLOG_SEGMENT_SIZE, true);
+			ret = header.getUsedBytes();
+			readFromSecondaryLog(p_data, ret, p_segmentIndex * SECLOG_SEGMENT_SIZE, true);
 		}
-		return result;
+		return ret;
 	}
 
 	/**
@@ -880,7 +884,7 @@ public class SecondaryLog extends AbstractLog {
 
 	/**
 	 * Frees segment
-	 * @param p_segment
+	 * @param p_segmentIndex
 	 *            the segment
 	 * @throws IOException
 	 *             if the secondary log could not be read
@@ -888,11 +892,11 @@ public class SecondaryLog extends AbstractLog {
 	 *             if the caller was interrupted
 	 * @note executed only by reorganization thread
 	 */
-	private void freeSegment(final int p_segment) throws IOException, InterruptedException {
+	private void freeSegment(final int p_segmentIndex) throws IOException, InterruptedException {
 
 		// Mark the end of the segment (a log entry header cannot start with a zero)
-		writeToSecondaryLog(new byte[] {0}, 0, (long) p_segment * SECLOG_SEGMENT_SIZE, 1, true);
-		m_segmentHeaders[p_segment] = null;
+		writeToSecondaryLog(new byte[] {0}, 0, (long) p_segmentIndex * SECLOG_SEGMENT_SIZE, 1, true);
+		m_segmentHeaders[p_segmentIndex] = null;
 	}
 
 	@Override
@@ -954,6 +958,7 @@ public class SecondaryLog extends AbstractLog {
 		int readBytes = 0;
 		int writtenBytes = 0;
 		int removedObjects = 0;
+		int segmentLength;
 		long chunkID;
 		byte[] segmentData;
 		byte[] newData;
@@ -1039,11 +1044,12 @@ public class SecondaryLog extends AbstractLog {
 				m_reorgSegment = m_segmentHeaders[p_segmentIndex];
 				m_lock.unlock();
 				try {
-					segmentData = readSegment(p_segmentIndex);
-					if (segmentData != null) {
+					segmentData = m_reorgSegmentData;
+					segmentLength = readSegment(segmentData, p_segmentIndex);
+					if (segmentLength > 0) {
 						newData = new byte[SECLOG_SEGMENT_SIZE];
 
-						while (readBytes < segmentData.length) {
+						while (readBytes < segmentLength) {
 							logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segmentData, readBytes, m_storesMigrations);
 							length = logEntryHeader.getHeaderSize(segmentData, readBytes) + logEntryHeader.getLength(segmentData, readBytes);
 							chunkID = logEntryHeader.getCID(segmentData, readBytes);

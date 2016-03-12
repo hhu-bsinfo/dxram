@@ -22,7 +22,7 @@ public final class PrimaryLog extends AbstractLog {
 	private static final String PRIMLOG_SUFFIX_FILENAME = "prim.log";
 	private static final byte[] PRIMLOG_HEADER = "DXRAMPrimLogv1".getBytes(Charset.forName("UTF-8"));
 	private static final long PRIMLOG_SIZE = Core.getConfiguration().getLongValue(ConfigurationConstants.PRIMARY_LOG_SIZE);
-	private static final int PRIMLOG_MIN_SIZE = 65535 * FLASHPAGE_SIZE;
+	private static final int PRIMLOG_MIN_SIZE = 65535 * Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
 
 	// Attributes
 	private LogHandler m_logHandler;

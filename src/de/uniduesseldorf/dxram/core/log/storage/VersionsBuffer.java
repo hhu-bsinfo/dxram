@@ -57,10 +57,10 @@ public class VersionsBuffer {
 		m_count = 0;
 		m_elementCapacity = p_initialElementCapacity;
 		m_threshold = (int) (m_elementCapacity * p_loadFactor);
-		m_intCapacity = m_elementCapacity * 4;
+		m_intCapacity = m_elementCapacity * 3;
 
 		if (m_elementCapacity == 0) {
-			m_table = new int[4];
+			m_table = new int[3];
 		} else {
 			m_table = new int[m_intCapacity];
 		}
@@ -145,15 +145,15 @@ public class VersionsBuffer {
 					buffer = ByteBuffer.allocate(count * SSD_ENTRY_SIZE);
 
 					// Iterate over all entries (4 bytes per cell)
-					for (int i = 0; i < oldTable.length; i += 4) {
-						chunkID = (long) oldTable[i] << 32 | (long) oldTable[i + 1] & 0xFFFFFFFFL;
+					for (int i = 0; i < oldTable.length; i += 3) {
+						chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
 						if (chunkID != 0) {
 							// ChunkID (-1 because 1 is added before putting to avoid LID 0)
 							buffer.putLong(chunkID - 1);
-							// Epoch (4 Bytes in hashtable, 2 in persistent table)
-							buffer.putShort((short) oldTable[i + 2]);
+							// Epoch (4 Bytes in hashtable, 2 in persistent table; was incremented before!)
+							buffer.putShort((short) (m_epoch - 1 + (m_eon << 15)));
 							// Version (4 Bytes in hashtable, 3 in persistent table)
-							version = oldTable[i + 3];
+							version = oldTable[i + 2];
 							buffer.put((byte) (version >>> 16));
 							buffer.put((byte) (version >>> 8));
 							buffer.put((byte) version);
@@ -182,6 +182,7 @@ public class VersionsBuffer {
 	public final void readAll(final VersionsHashTable p_allVersions) {
 		int length;
 		int version;
+		boolean update = false;
 		long chunkID;
 		byte[] data;
 		int[] newTable;
@@ -206,6 +207,11 @@ public class VersionsBuffer {
 				for (int i = 0; i * SSD_ENTRY_SIZE < length; i++) {
 					p_allVersions.put(buffer.getLong(), buffer.getShort(), buffer.get() << 16 | buffer.get() << 8 | buffer.get());
 				}
+
+				if (p_allVersions.size() * SSD_ENTRY_SIZE < length) {
+					// Versions log was not empty -> compact
+					update = true;
+				}
 			} else {
 				// There is nothing on SSD yet
 			}
@@ -222,40 +228,42 @@ public class VersionsBuffer {
 				incrementEpoch();
 				m_accessLock.unlock();
 
-				for (int i = 0; i < oldTable.length; i += 4) {
-					chunkID = (long) oldTable[i] << 32 | (long) oldTable[i + 1] & 0xFFFFFFFFL;
+				for (int i = 0; i < oldTable.length; i += 3) {
+					chunkID = (long) oldTable[i] << 32 | oldTable[i + 1] & 0xFFFFFFFFL;
 					if (chunkID != 0) {
-						// ChunkID: -1 because 1 is added before putting to avoid LID 0
-						p_allVersions.put(chunkID - 1, oldTable[i + 2], oldTable[i + 3]);
+						// ChunkID: -1 because 1 is added before putting to avoid LID 0; epoch was incremented before
+						p_allVersions.put(chunkID - 1, (short) (m_epoch - 1 + (m_eon << 15)), oldTable[i + 2]);
 					}
 				}
+				update = true;
 			} else {
 				m_accessLock.unlock();
 			}
 
-			// Write back current hashtable compactified
-			data = new byte[p_allVersions.size() * SSD_ENTRY_SIZE];
-			buffer = ByteBuffer.wrap(data);
+			if (update) {
+				// Write back current hashtable compactified
+				data = new byte[p_allVersions.size() * SSD_ENTRY_SIZE];
+				buffer = ByteBuffer.wrap(data);
 
-			hashTable = p_allVersions.getTable();
-			for (int i = 0; i < hashTable.length; i += 4) {
-				chunkID = (long) hashTable[i] << 32 | (long) hashTable[i + 1] & 0xFFFFFFFFL;
-				if (chunkID != 0) {
-					// ChunkID (-1 because 1 is added before putting to avoid LID 0)
-					buffer.putLong(chunkID - 1);
-					// Epoch (4 Bytes in hashtable, 2 in persistent table)
-					buffer.putShort((short) hashTable[i + 2]);
-					// Version (4 Bytes in hashtable, 3 in persistent table)
-					version = hashTable[i + 3];
-					buffer.put((byte) (version >>> 16));
-					buffer.put((byte) (version >>> 8));
-					buffer.put((byte) version);
+				hashTable = p_allVersions.getTable();
+				for (int i = 0; i < hashTable.length; i += 4) {
+					chunkID = (long) hashTable[i] << 32 | hashTable[i + 1] & 0xFFFFFFFFL;
+					if (chunkID != 0) {
+						// ChunkID (-1 because 1 is added before putting to avoid LID 0)
+						buffer.putLong(chunkID - 1);
+						// Epoch (4 Bytes in hashtable, 2 in persistent table)
+						buffer.putShort((short) hashTable[i + 2]);
+						// Version (4 Bytes in hashtable, 3 in persistent table)
+						version = hashTable[i + 3];
+						buffer.put((byte) (version >>> 16));
+						buffer.put((byte) (version >>> 8));
+						buffer.put((byte) version);
+					}
 				}
+				m_versionsFile.seek(0);
+				m_versionsFile.write(data);
+				m_versionsFile.setLength(data.length);
 			}
-			m_versionsFile.seek(0);
-			m_versionsFile.write(data);
-			m_versionsFile.setLength(data.length);
-
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
@@ -307,7 +315,7 @@ public class VersionsBuffer {
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				ret = new EpochVersion((short) getEpoch(index), getVersion(index));
+				ret = new EpochVersion((short) (m_epoch + (m_eon << 15)), getVersion(index));
 				break;
 			}
 			iter = getKey(++index);
@@ -419,24 +427,14 @@ public class VersionsBuffer {
 	/**
 	 * Gets the key at given index
 	 * @param p_index
-	 *            the index in table (-> 4 indices per element)
+	 *            the index in table (-> 3 indices per element)
 	 * @return the key
 	 */
 	private long getKey(final int p_index) {
 		int index;
 
-		index = p_index % m_elementCapacity * 4;
+		index = p_index % m_elementCapacity * 3;
 		return (long) m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
-	}
-
-	/**
-	 * Gets the epoch at given index
-	 * @param p_index
-	 *            the index
-	 * @return the epoch
-	 */
-	private int getEpoch(final int p_index) {
-		return m_table[p_index % m_elementCapacity * 4 + 2];
 	}
 
 	/**
@@ -446,7 +444,7 @@ public class VersionsBuffer {
 	 * @return the version
 	 */
 	private int getVersion(final int p_index) {
-		return m_table[p_index % m_elementCapacity * 4 + 3];
+		return m_table[p_index % m_elementCapacity * 3 + 2];
 	}
 
 	/**
@@ -463,11 +461,10 @@ public class VersionsBuffer {
 	private void set(final int p_index, final long p_key, final int p_epoch, final int p_version) {
 		int index;
 
-		index = p_index % m_elementCapacity * 4;
+		index = p_index % m_elementCapacity * 3;
 		m_table[index] = (int) (p_key >> 32);
 		m_table[index + 1] = (int) p_key;
-		m_table[index + 2] = p_epoch;
-		m_table[index + 3] = p_version;
+		m_table[index + 2] = p_version;
 	}
 
 	/**
@@ -501,12 +498,12 @@ public class VersionsBuffer {
 
 		h1 ^= 8;
 		h1 ^= h1 >>> 16;
-		h1 *= 0x85ebca6b;
-		h1 ^= h1 >>> 13;
-		h1 *= 0xc2b2ae35;
-		h1 ^= h1 >>> 16;
+				h1 *= 0x85ebca6b;
+				h1 ^= h1 >>> 13;
+					h1 *= 0xc2b2ae35;
+					h1 ^= h1 >>> 16;
 
-		return h1;
+					return h1;
 	}
 
 }

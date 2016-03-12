@@ -7,8 +7,6 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
 import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 
 /**
@@ -19,14 +17,11 @@ import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	// Constants
-	protected static final int INCOMING_BUFFER_SIZE = 65536 * 2;
-	protected static final int OUTGOING_BUFFER_SIZE = 65536;
-	protected static final int SEND_BYTES = 1024 * 1024;
+	protected static final int INCOMING_BUFFER_SIZE = (int) (512 * 1024 * 1.2); // 1024 * 1024 * 2;// 65536 * 2;
+	protected static final int OUTGOING_BUFFER_SIZE = 512 * 1024; // 1024 * 1024;// 65536;
+	protected static final int RECEIVE_BYTES = (int) (512 * 1024 * 1.2); // 1024 * 1024;
+	protected static final int SEND_BYTES = 512 * 1024; // 1024 * 1024;
 	protected static final int CONNECTION_TIMEOUT = 200;
-
-	protected static final int MAX_OUTSTANDING_BYTES = BufferCache.MAX_MEMORY_CACHED;
-
-	protected static final boolean HIGH_PERFORMANCE = Core.getConfiguration().getBooleanValue(ConfigurationConstants.NETWORK_HIGH_PERFORMANCE);
 
 	// Attributes
 	private NIOSelector m_nioSelector;

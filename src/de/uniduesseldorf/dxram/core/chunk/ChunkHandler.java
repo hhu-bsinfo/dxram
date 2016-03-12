@@ -642,6 +642,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 						for (int i = 0; i < backupPeers.length; i++) {
 							if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
 								new LogMessage(backupPeers[i], new Chunk[] {p_chunk}).send(m_network);
+								/*-LogRequest req = new LogRequest(backupPeers[i], new Chunk[] {p_chunk});
+								req.sendSync(m_network);
+								req.getResponse(MultiPutResponse.class);*/
 							}
 						}
 					}
@@ -777,7 +780,11 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_nodeID && backupPeers[i] != -1) {
 						// System.out.println("Logging " + chunks.length + " Chunks to " + backupPeers[i]);
+
 						new LogMessage(backupPeers[i], chunks).send(m_network);
+						/*-LogRequest req = new LogRequest(backupPeers[i], chunks);
+						req.sendSync(m_network);
+						req.getResponse(MultiPutResponse.class);*/
 					}
 				}
 			}
@@ -1549,13 +1556,18 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 		} catch (final ZooKeeperException e) {
 			System.out.println("Could not access ZooKeeper!");
 		}
-		allPeers = new short[peers.size() - 1];
+		allPeers = new short[3];
+		allPeers[0] = -15615;
+		allPeers[1] = 960;
+		allPeers[2] = 640;
+		numberOfPeers = 3;
+		/*-allPeers = new short[peers.size() - 1];
 		for (int i = 0; i < peers.size(); i++) {
 			peer = Short.parseShort(peers.get(i));
 			if (peer != NodeID.getLocalNodeID()) {
 				allPeers[numberOfPeers++] = peer;
 			}
-		}
+		}*/
 
 		if (3 > numberOfPeers) {
 			// LOGGER.warn("Less than three peers for backup available. Replication will be incomplete!");
@@ -1572,14 +1584,19 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 			newBackupPeers = new short[REPLICATION_FACTOR];
 			Arrays.fill(newBackupPeers, (short) -1);
-		} else if (null != m_currentBackupRange.getBackupPeers()) {
-			oldBackupPeers = new short[REPLICATION_FACTOR];
-			for (int i = 0; i < REPLICATION_FACTOR; i++) {
-				if (p_localID > -1) {
-					oldBackupPeers[i] = m_currentBackupRange.getBackupPeers()[i];
-				} else {
-					oldBackupPeers[i] = m_currentMigrationBackupRange.getBackupPeers()[i];
+		} else {
+			if (null != m_currentBackupRange) {
+				oldBackupPeers = new short[REPLICATION_FACTOR];
+				for (int i = 0; i < REPLICATION_FACTOR; i++) {
+					if (p_localID > -1) {
+						oldBackupPeers[i] = m_currentBackupRange.getBackupPeers()[i];
+					} else {
+						oldBackupPeers[i] = m_currentMigrationBackupRange.getBackupPeers()[i];
+					}
 				}
+			} else {
+				oldBackupPeers = new short[REPLICATION_FACTOR];
+				Arrays.fill(oldBackupPeers, (short) -1);
 			}
 
 			newBackupPeers = new short[REPLICATION_FACTOR];
@@ -1646,6 +1663,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			} else {
 				m_migrationBackupRanges.add(m_currentMigrationBackupRange);
 			}
+		}
+		for (int i = 0; i < 3; i++) {
+			System.out.println(newBackupPeers[i]);
 		}
 	}
 
@@ -2700,7 +2720,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 				if (m_backupPeers.length == 3) {
 					ret =
 							((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-									+ (m_backupPeers[0] & 0x000000000000FFFFL);
+							+ (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else if (m_backupPeers.length == 2) {
 					ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 				} else {

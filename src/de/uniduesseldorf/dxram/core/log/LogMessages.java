@@ -25,6 +25,8 @@ public final class LogMessages {
 	public static final byte SUBTYPE_INIT_RESPONSE = 4;
 	public static final byte SUBTYPE_LOG_COMMAND_REQUEST = 5;
 	public static final byte SUBTYPE_LOG_COMMAND_RESPONSE = 6;
+	public static final byte SUBTYPE_LOG_REQUEST = 7;
+	public static final byte SUBTYPE_LOG_RESPONSE = 8;
 
 	// Constructors
 	/**
@@ -457,6 +459,153 @@ public final class LogMessages {
 		@Override
 		protected final int getPayloadLength() {
 			return OutputHelper.getStringsWriteLength(m_answer);
+		}
+
+	}
+
+	public static class LogRequest extends AbstractRequest {
+
+		// Attributes
+		private byte m_rangeID;
+		private Chunk[] m_chunks;
+		private ByteBuffer m_buffer;
+
+		// Constructors
+		/**
+		 * Creates an instance of LogRequest
+		 */
+		public LogRequest() {
+			super();
+
+			m_rangeID = -1;
+			m_chunks = null;
+			m_buffer = null;
+		}
+
+		/**
+		 * Creates an instance of LogRequest
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunks
+		 *            the Chunks to store
+		 */
+		public LogRequest(final short p_destination, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_LOG_REQUEST, true);
+
+			Contract.checkNotNull(p_chunks, "no chunks given");
+
+			m_rangeID = -1;
+			m_chunks = p_chunks;
+		}
+
+		/**
+		 * Creates an instance of LogMessage
+		 * @param p_destination
+		 *            the destination
+		 * @param p_chunks
+		 *            the Chunks to store
+		 * @param p_rangeID
+		 *            the RangeID
+		 */
+		public LogRequest(final short p_destination, final byte p_rangeID, final Chunk[] p_chunks) {
+			super(p_destination, TYPE, SUBTYPE_LOG_REQUEST, true);
+
+			Contract.checkNotNull(p_chunks, "no chunks given");
+
+			m_rangeID = p_rangeID;
+			m_chunks = p_chunks;
+		}
+
+		// Getters
+		/**
+		 * Get the message buffer
+		 * @return the message buffer
+		 */
+		public final ByteBuffer getMessageBuffer() {
+			return m_buffer;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			p_buffer.put(m_rangeID);
+
+			p_buffer.putInt(m_chunks.length);
+			for (int i = 0; i < m_chunks.length; i++) {
+				p_buffer.putLong(m_chunks[i].getChunkID());
+				p_buffer.putInt(m_chunks[i].getSize());
+				p_buffer.put(m_chunks[i].getData());
+			}
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_buffer = p_buffer;
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			int ret = 5;
+
+			for (Chunk chunk : m_chunks) {
+				ret += 12 + chunk.getSize();
+			}
+
+			return ret;
+		}
+	}
+
+	public static class LogResponse extends AbstractResponse {
+
+		// Attributes
+		private boolean m_success;
+
+		// Constructors
+		/**
+		 * Creates an instance of LogResponse
+		 */
+		public LogResponse() {
+			super();
+
+			m_success = false;
+		}
+
+		/**
+		 * Creates an instance of InitResponse
+		 * @param p_request
+		 *            the request
+		 * @param p_success
+		 *            true if remove was successful
+		 */
+		public LogResponse(final LogRequest p_request, final boolean p_success) {
+			super(p_request, SUBTYPE_LOG_RESPONSE);
+
+			m_success = p_success;
+		}
+
+		// Getters
+		/**
+		 * Get the status
+		 * @return true if remove was successful
+		 */
+		public final boolean getStatus() {
+			return m_success;
+		}
+
+		// Methods
+		@Override
+		protected final void writePayload(final ByteBuffer p_buffer) {
+			OutputHelper.writeBoolean(p_buffer, m_success);
+		}
+
+		@Override
+		protected final void readPayload(final ByteBuffer p_buffer) {
+			m_success = InputHelper.readBoolean(p_buffer);
+		}
+
+		@Override
+		protected final int getPayloadLength() {
+			return OutputHelper.getBooleanWriteLength();
 		}
 
 	}

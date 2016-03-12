@@ -34,7 +34,7 @@ public final class ClusterLogTest3 {
 	protected static final int CHUNK_SIZE = 100;
 	protected static final int CHUNKS_PER_PUT = 100;
 	protected static final int CHUNKS_PER_UPDATE = 500;
-	protected static final int THREADS = 4;
+	protected static final int THREADS = 8;
 
 	// Attributes
 	// Workload: 0 -> uniform, 1 -> zipfian
@@ -152,7 +152,9 @@ public final class ClusterLogTest3 {
 		 */
 		@Override
 		public void run() {
-			final short nodeID = 1728;
+			final short[] nodeIDs = new short[2];
+			nodeIDs[0] = -15807;
+			nodeIDs[1] = -14847;
 			long start;
 			long counter = 0;
 			Chunk[] chunks;
@@ -167,14 +169,17 @@ public final class ClusterLogTest3 {
 			}
 
 			start = System.currentTimeMillis();
+			rand = new Random();
 			// Send updates to master
 			if (m_workload == 0) {
-				rand = new Random();
 
 				while (counter < BYTES_TO_UPDATE / THREADS) {
-					// offset = nextLong(rand, UTILIZATION / CHUNK_SIZE - CHUNKS_PER_PUT) + 1;
+					/*-long offset = nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1;
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-						chunks[i].setChunkID(((long) nodeID << 48) + nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
+						chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(2)] << 48) + offset + i);
+					}*/
+					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
+						chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(2)] << 48) + nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
 					}
 
 					try {
@@ -185,7 +190,7 @@ public final class ClusterLogTest3 {
 
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
 					if (counter % (10 * 1000 * 1000) == 0) {
-						System.out.println("Updated 10.000.000 bytes on: " + nodeID + " with random distribution. All: " + counter);
+						System.out.println("Updated 10.000.000 bytes with random distribution. All: " + counter);
 					}
 				}
 			} else {
@@ -194,7 +199,7 @@ public final class ClusterLogTest3 {
 
 				while (counter < BYTES_TO_UPDATE / THREADS) {
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-						chunks[i].setChunkID(((long) nodeID << 48) + zipf.next());
+						chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(2)] << 48) + zipf.next());
 					}
 
 					try {
@@ -205,7 +210,7 @@ public final class ClusterLogTest3 {
 
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
 					if (counter % (10 * 1000 * 1000) == 0) {
-						System.out.println("Updated 10.000.000 bytes on: " + nodeID + " with zipfian distribution. All: " + counter);
+						System.out.println("Updated 10.000.000 bytes with zipfian distribution. All: " + counter);
 					}
 				}
 			}

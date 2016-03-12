@@ -6,6 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -24,6 +26,8 @@ import de.uniduesseldorf.dxram.core.log.LogMessages.InitResponse;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandRequest;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogCommandResponse;
 import de.uniduesseldorf.dxram.core.log.LogMessages.LogMessage;
+import de.uniduesseldorf.dxram.core.log.LogMessages.LogRequest;
+import de.uniduesseldorf.dxram.core.log.LogMessages.LogResponse;
 import de.uniduesseldorf.dxram.core.log.LogMessages.RemoveMessage;
 import de.uniduesseldorf.dxram.core.log.header.AbstractLogEntryHeader;
 import de.uniduesseldorf.dxram.core.log.header.DefaultPrimLogEntryHeader;
@@ -106,6 +110,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	public void initialize() throws DXRAMException {
 		m_network = CoreComponentFactory.getNetworkInterface();
 		m_network.register(LogMessage.class, this);
+		m_network.register(LogRequest.class, this);
 		m_network.register(RemoveMessage.class, this);
 		m_network.register(InitRequest.class, this);
 		m_network.register(LogCommandRequest.class, this);
@@ -654,6 +659,62 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		}
 	}
 
+	private void incomingLogRequest(final LogRequest p_message) {
+		long chunkID;
+		int length;
+		int position;
+		byte[] logEntryHeader;
+		byte[] payload;
+		final ByteBuffer buffer = p_message.getMessageBuffer();
+		final short source = p_message.getSource();
+		final byte rangeID = buffer.get();
+		final int size = buffer.getInt();
+		SecondaryLog secLog;
+
+		for (int i = 0; i < size; i++) {
+			chunkID = buffer.getLong();
+			length = buffer.getInt();
+
+			assert length > 0;
+
+			try {
+				secLog = getSecondaryLog(chunkID, source, rangeID);
+				if (USE_CHECKSUM) {
+					// Get the payload for calculating the checksum (position is not adjusted)
+					position = buffer.position();
+					payload = new byte[length];
+					buffer.get(payload, 0, length);
+					buffer.position(position);
+
+					if (rangeID == -1) {
+						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), payload, (byte) -1, (short) -1);
+					} else {
+						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), payload, rangeID, source);
+					}
+				} else {
+					if (rangeID == -1) {
+						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), null, (byte) -1, (short) -1);
+					} else {
+						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+								secLog.getNextVersion(chunkID), null, rangeID, source);
+					}
+				}
+
+				m_writeBuffer.putLogData(logEntryHeader, buffer, length);
+			} catch (final IOException | InterruptedException e) {
+				System.out.println("Error during logging (" + chunkID + ")!");
+			}
+		}
+		try {
+			new LogResponse(p_message, true).send(m_network);
+		} catch (final NetworkException e) {
+			System.out.println("ERROR: Could not acknowledge initilization of backup range");
+		}
+	}
+
 	/**
 	 * Handles an incoming RemoveMessage
 	 * @param p_message
@@ -757,6 +818,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 				case LogMessages.SUBTYPE_LOG_MESSAGE:
 					incomingLogMessage((LogMessage) p_message);
 					break;
+				case LogMessages.SUBTYPE_LOG_REQUEST:
+					incomingLogRequest((LogRequest) p_message);
+					break;
 				case LogMessages.SUBTYPE_REMOVE_MESSAGE:
 					incomingRemoveMessage((RemoveMessage) p_message);
 					break;
@@ -788,6 +852,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		// Attributes
 		private VersionsHashTable m_allVersions;
+		private final LinkedHashSet<SecondaryLog> m_reorganizationRequests;
+		private ReentrantLock m_requestLock;
+
 		private SecondaryLog m_secLog;
 		private byte m_counter;
 		private boolean m_isRandomChoice;
@@ -799,6 +866,9 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		public SecondaryLogsReorgThread() {
 			final long secLogSize = Core.getConfiguration().getLongValue(ConfigurationConstants.SECONDARY_LOG_SIZE);
 			m_allVersions = new VersionsHashTable((int) (secLogSize / 75 * 0.75));
+			m_reorganizationRequests = new LinkedHashSet<SecondaryLog>();
+			m_requestLock = new ReentrantLock(false);
+
 			m_counter = 0;
 		}
 
@@ -814,15 +884,20 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 		 */
 		public void setLogToReorgImmediately(final SecondaryLog p_secLog, final boolean p_await) throws InterruptedException {
 
-			while (!m_reorganizationLock.tryLock()) {
-				// Grant access for reorganization thread to avoid deadlock
-				grantReorgThreadAccessToCurrentLog();
-			}
-			m_secLog = p_secLog;
 			if (p_await) {
+				while (!m_reorganizationLock.tryLock()) {
+					// Grant access for reorganization thread to avoid deadlock
+					grantReorgThreadAccessToCurrentLog();
+				}
+				m_secLog = p_secLog;
 				m_reorganizationFinishedCondition.await();
+				System.out.println("got here");
+				m_reorganizationLock.unlock();
+			} else {
+				m_requestLock.lock();
+				m_reorganizationRequests.add(p_secLog);
+				m_requestLock.unlock();
 			}
-			m_reorganizationLock.unlock();
 		}
 
 		// Methods
@@ -894,18 +969,17 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 		@Override
 		public void run() {
-			final int iterationsPerLog = 10;
+			final int iterationsPerLog = 60;
 			int counter = 0;
 			// long start;
 			// long mid;
+			Iterator<SecondaryLog> iter;
 			SecondaryLog secondaryLog = null;
 
 			while (!m_isShuttingDown) {
-
-				m_reorganizationLock.lock();
-				// Check if there is a reorganization request -> reorganize complete secondary log
+				// Check if there is an urgent reorganization request -> reorganize complete secondary log and signal
 				if (m_secLog != null) {
-					// Reorganization thread was signaled -> process given log completely
+					// Leave current secondary log
 					if (counter > 0) {
 						secondaryLog.resetReorgSegment();
 						leaveSecLog(secondaryLog);
@@ -913,18 +987,51 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 						counter = 0;
 					}
 
-					getAccessToSecLog(m_secLog);
-					m_secLog.getCurrentVersions(m_allVersions);
-					m_secLog.reorganizeAll(m_allVersions);
-					m_secLog.resetReorgSegment();
-					leaveSecLog(m_secLog);
-					m_allVersions.clear();
+					// Reorganize complete secondary log
+					secondaryLog = m_secLog;
 					m_secLog = null;
+
+					getAccessToSecLog(secondaryLog);
+					secondaryLog.getCurrentVersions(m_allVersions);
+					secondaryLog.reorganizeAll(m_allVersions);
+					secondaryLog.resetReorgSegment();
+					leaveSecLog(secondaryLog);
+					m_allVersions.clear();
+
+					m_reorganizationLock.lock();
 					m_reorganizationFinishedCondition.signal();
 					m_reorganizationLock.unlock();
 					continue;
-				} else {
-					m_reorganizationLock.unlock();
+				}
+
+				// Check if there are normal reorganization requests -> reorganize complete secondary logs
+				if (!m_reorganizationRequests.isEmpty()) {
+					// Leave current secondary log
+					if (counter > 0) {
+						secondaryLog.resetReorgSegment();
+						leaveSecLog(secondaryLog);
+						m_allVersions.clear();
+						counter = 0;
+					}
+
+					// Process all reorganization requests
+					while (!m_reorganizationRequests.isEmpty()) {
+						m_requestLock.lock();
+						System.out.println("Getting reorganization request. Size: " + m_reorganizationRequests.size());
+						iter = m_reorganizationRequests.iterator();
+						secondaryLog = iter.next();
+						iter.remove();
+						m_requestLock.unlock();
+
+						// Reorganize complete secondary log
+						getAccessToSecLog(secondaryLog);
+						secondaryLog.getCurrentVersions(m_allVersions);
+						secondaryLog.reorganizeAll(m_allVersions);
+						secondaryLog.resetReorgSegment();
+						leaveSecLog(secondaryLog);
+						m_allVersions.clear();
+					}
+					continue;
 				}
 
 				if (counter == 0) {

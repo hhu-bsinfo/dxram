@@ -110,6 +110,8 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_INIT_RESPONSE, LogMessages.InitResponse.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_COMMAND_REQUEST, LogMessages.LogCommandRequest.class);
 		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_COMMAND_RESPONSE, LogMessages.LogCommandResponse.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_REQUEST, LogMessages.LogRequest.class);
+		MessageDirectory.register(logType, LogMessages.SUBTYPE_LOG_RESPONSE, LogMessages.LogResponse.class);
 
 		// Lookup Messages
 		lookupType = LookupMessages.TYPE;

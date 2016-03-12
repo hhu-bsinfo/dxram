@@ -16,7 +16,7 @@ import de.uniduesseldorf.dxram.core.io.InputHelper;
 final class NIOInterface {
 
 	// Attributes
-	private static ByteBuffer m_readBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.SEND_BYTES);
+	private static ByteBuffer m_readBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.RECEIVE_BYTES);
 	private static ByteBuffer m_writeBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.SEND_BYTES);
 
 	/**
@@ -72,13 +72,13 @@ final class NIOInterface {
 	 */
 	protected static boolean read(final NIOConnection p_connection) throws IOException {
 		boolean ret = true;
-		ByteBuffer buffer;
 		long readBytes = 0;
+		ByteBuffer buffer;
 
 		try {
 			m_readBuffer.clear();
-			while (m_readBuffer.position() + NIOConnectionCreator.INCOMING_BUFFER_SIZE <= m_readBuffer.capacity()) {
-				m_readBuffer.limit(m_readBuffer.position() + NIOConnectionCreator.INCOMING_BUFFER_SIZE);
+			while (m_readBuffer.position() < m_readBuffer.capacity()) {
+				// m_readBuffer.limit(m_readBuffer.position() + Math.min(NIOConnectionCreator.INCOMING_BUFFER_SIZE, m_readBuffer.remaining()));
 
 				try {
 					readBytes = p_connection.getChannel().read(m_readBuffer);
@@ -87,9 +87,11 @@ final class NIOInterface {
 					break;
 				}
 				if (readBytes == -1) {
+					// Connection closed
 					ret = false;
 					break;
 				} else if (readBytes == 0 && m_readBuffer.position() != 0) {
+					// There is nothing more to read at the moment
 					m_readBuffer.limit(m_readBuffer.position());
 					m_readBuffer.position(0);
 
@@ -114,8 +116,10 @@ final class NIOInterface {
 	 *            the connection
 	 * @throws IOException
 	 *             if the data could not be written
+	 * @return whether the interest should be set to read again or not
 	 */
-	protected static void write(final NIOConnection p_connection) throws IOException {
+	protected static boolean write(final NIOConnection p_connection) throws IOException {
+		boolean ret = true;
 		int length = 0;
 		int bytes;
 		int size;
@@ -141,11 +145,12 @@ final class NIOInterface {
 								length -= bytes;
 
 								if (bytes == 0) {
-									if (++tries == 1000000) {
+									if (++tries == 10000) {
 										System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
 										buffer.position(buffer.position() + size - length);
 										view = buffer.slice();
 										p_connection.addBuffer(view);
+										ret = false;
 
 										break outerloop;
 									}
@@ -168,9 +173,10 @@ final class NIOInterface {
 							length -= bytes;
 
 							if (bytes == 0) {
-								if (++tries == 1000000) {
+								if (++tries == 10000) {
 									System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
 									p_connection.addBuffer(buffer);
+									ret = false;
 									break;
 								}
 							} else {
@@ -188,6 +194,8 @@ final class NIOInterface {
 			System.out.println("WARN::Could not write to channel (" + p_connection.getDestination() + ")");
 			throw e;
 		}
+
+		return ret;
 	}
 
 	/**
