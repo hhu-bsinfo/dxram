@@ -71,15 +71,78 @@ public abstract class AbstractLogEntryHeader {
 	 *            the payload length
 	 * @param p_version
 	 *            the version
-	 * @param p_data
-	 *            the payload (null if checksums disabled)
 	 * @param p_rangeID
 	 *            the RangeID
 	 * @param p_source
 	 *            the source NodeID
 	 * @return the log entry
 	 */
-	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, EpochVersion p_version, byte[] p_data, byte p_rangeID, short p_source);
+	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, EpochVersion p_version, byte p_rangeID, short p_source);
+
+	/**
+	 * Adds checksum to entry header
+	 * @param p_buffer
+	 *            the byte array
+	 * @param p_offset
+	 *            the offset within buffer
+	 * @param p_size
+	 *            the size of the complete log entry
+	 * @param p_logEntryHeader
+	 *            the LogEntryHeader
+	 * @param p_bytesUntilEnd
+	 *            number of bytes until wrap around
+	 */
+	public static void addChecksum(final byte[] p_buffer, final int p_offset, final int p_size, final AbstractLogEntryHeader p_logEntryHeader,
+			final int p_bytesUntilEnd) {
+		final short headerSize = p_logEntryHeader.getHeaderSize(p_buffer, p_offset);
+		final short crcOffset = p_logEntryHeader.getCRCOffset(p_buffer, p_offset);
+		int checksum;
+
+		CRC.reset();
+		if (p_size <= p_bytesUntilEnd) {
+			CRC.update(p_buffer, p_offset + headerSize, p_size - headerSize);
+			checksum = (int) CRC.getValue();
+
+			for (int i = 0; i < LOG_ENTRY_CRC_SIZE; i++) {
+				p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
+			}
+		} else {
+			if (p_bytesUntilEnd < headerSize) {
+				CRC.update(p_buffer, headerSize - p_bytesUntilEnd, p_size - headerSize);
+				checksum = (int) CRC.getValue();
+
+				if (p_bytesUntilEnd <= crcOffset) {
+					for (int i = 0; i < LOG_ENTRY_CRC_SIZE; i++) {
+						p_buffer[crcOffset - p_bytesUntilEnd + i] = (byte) (checksum >> i * 8 & 0xff);
+					}
+				} else {
+					for (int i = 0; i < LOG_ENTRY_CRC_SIZE; i++) {
+						if (p_bytesUntilEnd - crcOffset - i > 0) {
+							p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
+						} else {
+							p_buffer[i] = (byte) (checksum >> i * 8 & 0xff);
+						}
+					}
+				}
+			} else if (p_bytesUntilEnd > headerSize) {
+				CRC.update(p_buffer, p_offset + headerSize, p_bytesUntilEnd - headerSize);
+				CRC.update(p_buffer, 0, p_size - headerSize - (p_bytesUntilEnd - headerSize));
+				checksum = (int) CRC.getValue();
+
+				for (int i = 0; i < LOG_ENTRY_CRC_SIZE; i++) {
+					p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
+				}
+			} else {
+				CRC.update(p_buffer, 0, p_size - headerSize);
+				checksum = (int) CRC.getValue();
+
+				for (int i = 0; i < LOG_ENTRY_CRC_SIZE; i++) {
+					p_buffer[p_offset + crcOffset + i] = (byte) (checksum >> i * 8 & 0xff);
+				}
+			}
+		}
+
+	}
 
 	/**
 	 * Returns the type of a log entry
@@ -362,7 +425,8 @@ public abstract class AbstractLogEntryHeader {
 	}
 
 	/**
-	 * Returns the approximated log entry header size for secondary log (the version size can only be determined on backup -> 1 byte as average value)
+	 * Returns the approximated log entry header size for secondary log (the version size can only be determined on
+	 * backup -> 1 byte as average value)
 	 * @param p_logStoresMigrations
 	 *            whether the entry is in a secondary log for migrations or not
 	 * @param p_localID
@@ -372,8 +436,10 @@ public abstract class AbstractLogEntryHeader {
 	 * @return the maximum log entry header size for secondary log
 	 */
 	public static short getAproxSecLogHeaderSize(final boolean p_logStoresMigrations, final long p_localID, final int p_size) {
-		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation because the
-		// actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be bigger at some point)
+		// Sizes for type, LocalID, length, epoch and checksum is precise, 1 byte for version is an approximation
+		// because the
+		// actual version is determined during logging on backup peer (at creation time it's size is 0 but it might be
+		// bigger at some point)
 		short ret = (short) (LOG_ENTRY_TYP_SIZE + getSizeForLocalIDField(p_localID) + getSizeForLengthField(p_size)
 				+ LOG_ENTRY_EPO_SIZE + 1 + LOG_ENTRY_CRC_SIZE);
 
@@ -583,7 +649,7 @@ public abstract class AbstractLogEntryHeader {
 	}
 
 	/**
-	 * Puts length of log entry in log entry header
+	 * Puts checksum of log entry in log entry header
 	 * @param p_logEntry
 	 *            log entry
 	 * @param p_checksum

@@ -611,9 +611,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private void incomingLogMessage(final LogMessage p_message) {
 		long chunkID;
 		int length;
-		int position;
 		byte[] logEntryHeader;
-		byte[] payload;
 		final ByteBuffer buffer = p_message.getMessageBuffer();
 		final short source = p_message.getSource();
 		final byte rangeID = buffer.get();
@@ -628,28 +626,12 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 			try {
 				secLog = getSecondaryLog(chunkID, source, rangeID);
-				if (USE_CHECKSUM) {
-					// Get the payload for calculating the checksum (position is not adjusted)
-					position = buffer.position();
-					payload = new byte[length];
-					buffer.get(payload, 0, length);
-					buffer.position(position);
-
-					if (rangeID == -1) {
-						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), payload, (byte) -1, (short) -1);
-					} else {
-						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), payload, rangeID, source);
-					}
+				if (rangeID == -1) {
+					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), (byte) -1, (short) -1);
 				} else {
-					if (rangeID == -1) {
-						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), null, (byte) -1, (short) -1);
-					} else {
-						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), null, rangeID, source);
-					}
+					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), rangeID, source);
 				}
 
 				m_writeBuffer.putLogData(logEntryHeader, buffer, length);
@@ -662,9 +644,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 	private void incomingLogRequest(final LogRequest p_message) {
 		long chunkID;
 		int length;
-		int position;
 		byte[] logEntryHeader;
-		byte[] payload;
 		final ByteBuffer buffer = p_message.getMessageBuffer();
 		final short source = p_message.getSource();
 		final byte rangeID = buffer.get();
@@ -679,28 +659,12 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 
 			try {
 				secLog = getSecondaryLog(chunkID, source, rangeID);
-				if (USE_CHECKSUM) {
-					// Get the payload for calculating the checksum (position is not adjusted)
-					position = buffer.position();
-					payload = new byte[length];
-					buffer.get(payload, 0, length);
-					buffer.position(position);
-
-					if (rangeID == -1) {
-						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), payload, (byte) -1, (short) -1);
-					} else {
-						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), payload, rangeID, source);
-					}
+				if (rangeID == -1) {
+					logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), (byte) -1, (short) -1);
 				} else {
-					if (rangeID == -1) {
-						logEntryHeader = DEFAULT_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), null, (byte) -1, (short) -1);
-					} else {
-						logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
-								secLog.getNextVersion(chunkID), null, rangeID, source);
-					}
+					logEntryHeader = MIGRATION_PRIM_LOG_ENTRY_HEADER.createLogEntryHeader(chunkID, length,
+							secLog.getNextVersion(chunkID), rangeID, source);
 				}
 
 				m_writeBuffer.putLogData(logEntryHeader, buffer, length);
@@ -1038,7 +1002,7 @@ public final class LogHandler implements LogInterface, MessageReceiver, Connecti
 					// start = System.currentTimeMillis();
 					// This is the first iteration -> choose secondary log and gather versions
 					secondaryLog = chooseLog();
-					if (null != secondaryLog && (secondaryLog.getOccupiedSpace() > (SECLOG_SIZE / 2) || m_isRandomChoice)) {
+					if (null != secondaryLog && (secondaryLog.getOccupiedSpace() > SECLOG_SIZE / 2 || m_isRandomChoice)) {
 						getAccessToSecLog(secondaryLog);
 						// mid = System.currentTimeMillis();
 						secondaryLog.getCurrentVersions(m_allVersions);

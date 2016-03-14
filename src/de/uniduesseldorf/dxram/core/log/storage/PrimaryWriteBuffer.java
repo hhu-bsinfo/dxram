@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
@@ -40,10 +39,9 @@ public class PrimaryWriteBuffer {
 	private static final int WRITE_BUFFER_MAX_SIZE = Integer.MAX_VALUE;
 	private static final int FLASHPAGE_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.FLASHPAGE_SIZE);
 	// Must be smaller than 1/2 of WRITE_BUFFER_SIZE
-	private static final int SIGNAL_ON_BYTE_COUNT = 64 * 1024 * 1024;
-	private static final int MAX_BYTE_COUNT = 80 * 1024 * 1024;
-	private static final boolean PARALLEL_BUFFERING = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_PARALLEL_BUFFERING);
+	private static final int SIGNAL_ON_BYTE_COUNT = 12 * 1024 * 1024;
 	private static final int SECLOG_SEGMENT_SIZE = Core.getConfiguration().getIntValue(ConfigurationConstants.LOG_SEGMENT_SIZE);
+	protected static final boolean USE_CHECKSUM = Core.getConfiguration().getBooleanValue(ConfigurationConstants.LOG_CHECKSUM);
 
 	// Attributes
 	private LogHandler m_logHandler;
@@ -61,20 +59,17 @@ public class PrimaryWriteBuffer {
 	private int m_bytesInWriteBuffer;
 	private boolean m_isShuttingDown;
 
-	// private AtomicBoolean m_dataAvailable;
 	private boolean m_dataAvailable;
 	private boolean m_flushingComplete;
 
-	private boolean m_writerThreadRequestsAccessToBuffer = false;
-	private boolean m_writerThreadAccessesBuffer = false;
-
-	private Semaphore m_metaDataLock;
-	private int m_writingNetworkThreads;
-	private boolean m_writerThreadWantsToFlush;
+	private boolean m_writerThreadRequestsAccessToBuffer;
+	private boolean m_writerThreadAccessesBuffer;
 
 	private ReentrantLock m_exclusiveLock;
 
-	private ArrayList<byte[]> m_segmentPool = new ArrayList<byte[]>();
+	private ArrayList<byte[]> m_segmentPoolLarge = new ArrayList<byte[]>();
+	private ArrayList<byte[]> m_segmentPoolMedium = new ArrayList<byte[]>();
+	private ArrayList<byte[]> m_segmentPoolSmall = new ArrayList<byte[]>();
 
 	// Constructors
 	/**
@@ -103,18 +98,23 @@ public class PrimaryWriteBuffer {
 			m_lengthByBackupRange = new HashMap<Long, Integer>();
 			m_isShuttingDown = false;
 		}
-		m_metaDataLock = new Semaphore(1, false);
 
 		try {
 			m_exclusiveLock = CoreComponentFactory.getNetworkInterface().getExclusiveLock();
-		} catch (DXRAMException e) {
-			// TODO Auto-generated catch block
+		} catch (final DXRAMException e) {
 			e.printStackTrace();
 		}
 
-		// Creates some buffers for segment pooling
-		for (int i = 0; i < 10; i++) {
-			m_segmentPool.add(new byte[SECLOG_SEGMENT_SIZE]);
+		// Creates some buffers for segment pooling (2 * 8 MB, 16 * 1 MB, 32 * 0.5 MB, total: 48 MB)
+		// TODO: Configuration
+		for (int i = 0; i < 2; i++) {
+			m_segmentPoolLarge.add(new byte[SECLOG_SEGMENT_SIZE]);
+		}
+		for (int i = 0; i < 16; i++) {
+			m_segmentPoolMedium.add(new byte[SECLOG_SEGMENT_SIZE / 8]);
+		}
+		for (int i = 0; i < 32; i++) {
+			m_segmentPoolSmall.add(new byte[SECLOG_SEGMENT_SIZE / 16]);
 		}
 
 		m_writerThread = new PrimaryLogWriterThread();
@@ -191,6 +191,9 @@ public class PrimaryWriteBuffer {
 			bytesToWrite = logEntryHeader.getHeaderSize(p_header, 0) + p_payloadLength;
 		}
 
+		if (p_payloadLength <= 0) {
+			throw new IllegalArgumentException("No payload for log entry!");
+		}
 		if (bytesToWrite > m_ringBufferSize) {
 			throw new IllegalArgumentException("Data to write exceeds buffer size!");
 		}
@@ -235,10 +238,7 @@ public class PrimaryWriteBuffer {
 				// Write header
 				System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
 				// Write payload
-				if (p_payloadLength > 0) {
-					// System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, payloadLength);
-					p_buffer.get(m_buffer, writePointer + p_header.length, p_payloadLength);
-				}
+				p_buffer.get(m_buffer, writePointer + p_header.length, p_payloadLength);
 			} else {
 				// Twofold cyclic write access
 				if (bytesUntilEnd < p_header.length) {
@@ -246,30 +246,22 @@ public class PrimaryWriteBuffer {
 					System.arraycopy(p_header, 0, m_buffer, writePointer, bytesUntilEnd);
 					System.arraycopy(p_header, bytesUntilEnd, m_buffer, 0, p_header.length - bytesUntilEnd);
 					// Write payload
-					if (p_payloadLength > 0) {
-						// System.arraycopy(p_payload, 0, m_buffer, p_header.length - bytesUntilEnd, payloadLength);
-						p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, p_payloadLength);
-					}
+					p_buffer.get(m_buffer, p_header.length - bytesUntilEnd, p_payloadLength);
 				} else if (bytesUntilEnd > p_header.length) {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
-					bytesUntilEnd -= p_header.length;
 					// Write payload
-					if (p_payloadLength > 0) {
-						// System.arraycopy(p_payload, 0, m_buffer, writePointer + p_header.length, bytesUntilEnd);
-						p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd);
-						// System.arraycopy(p_payload, bytesUntilEnd, m_buffer, 0, payloadLength - bytesUntilEnd);
-						p_buffer.get(m_buffer, 0, p_payloadLength - bytesUntilEnd);
-					}
+					p_buffer.get(m_buffer, writePointer + p_header.length, bytesUntilEnd - p_header.length);
+					p_buffer.get(m_buffer, 0, p_payloadLength - (bytesUntilEnd - p_header.length));
 				} else {
 					// Write header
 					System.arraycopy(p_header, 0, m_buffer, writePointer, p_header.length);
 					// Write payload
-					if (p_payloadLength > 0) {
-						// System.arraycopy(p_payload, 0, m_buffer, 0, payloadLength);
-						p_buffer.get(m_buffer, 0, p_payloadLength);
-					}
+					p_buffer.get(m_buffer, 0, p_payloadLength);
 				}
+			}
+			if (USE_CHECKSUM) {
+				AbstractLogEntryHeader.addChecksum(m_buffer, writePointer, bytesToWrite, logEntryHeader, bytesUntilEnd);
 			}
 
 			if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
@@ -308,7 +300,7 @@ public class PrimaryWriteBuffer {
 	private final class PrimaryLogWriterThread extends Thread {
 
 		// Constants
-		private static final long WRITERTHREAD_TIMEOUTTIME = 250L;
+		private static final long WRITERTHREAD_TIMEOUTTIME = 100L;
 
 		// Attributes
 		private long m_time;
@@ -420,7 +412,6 @@ public class PrimaryWriteBuffer {
 
 			m_writerThreadRequestsAccessToBuffer = false;
 			m_writerThreadAccessesBuffer = false;
-			m_writerThreadWantsToFlush = false;
 			if (locked) {
 				m_exclusiveLock.unlock();
 			}
@@ -502,7 +493,7 @@ public class PrimaryWriteBuffer {
 					entry = iter.next();
 					rangeID = entry.getKey();
 					segmentLength = entry.getValue();
-					if (segmentLength < FLASHPAGE_SIZE * 256) {
+					if (segmentLength < FLASHPAGE_SIZE * 32) {
 						// There is less than 4 KB data from this node -> store buffer in primary log (later)
 						primaryLogBufferSize += segmentLength;
 						bufferNode = new BufferNode(segmentLength, false);
@@ -575,21 +566,27 @@ public class PrimaryWriteBuffer {
 					segment = bufferNode.getData(i);
 					segmentLength = bufferNode.getSegmentLength(i);
 					while (segment != null && segmentLength > 0) {
-						if (bufferLength < FLASHPAGE_SIZE * 256) {
+						if (bufferLength < FLASHPAGE_SIZE * 32) {
 							// 1. Buffer in secondary log buffer
 							if (!bufferLogEntryInSecondaryLogBuffer(segment, 0, segmentLength, rangeID, source)) {
-								// 2. Copy log entry/range to write it in primary log subsequently if the buffer was not flushed during appending
+								// 2. Copy log entry/range to write it in primary log subsequently if the buffer was not
+								// flushed during appending
 								System.arraycopy(segment, 0, primaryLogBuffer, primaryLogBufferOffset, segmentLength);
 								primaryLogBufferOffset += segmentLength;
 							}
 						} else {
-							// Segment is larger than one flash page * 256 -> skip primary log
+							// Segment is larger than one flash page * 32 -> skip primary log
 							writeDirectlyToSecondaryLog(segment, 0, segmentLength, rangeID, source);
 						}
 						// Return byte array to segment pool
-						if (m_segmentPool.size() < 10 && segment.length == SECLOG_SEGMENT_SIZE) {
-							m_segmentPool.add(segment);
+						if (segment.length == SECLOG_SEGMENT_SIZE && m_segmentPoolLarge.size() < 2) {
+							m_segmentPoolLarge.add(segment);
+						} else if (segment.length == SECLOG_SEGMENT_SIZE / 8 && m_segmentPoolMedium.size() < 16) {
+							m_segmentPoolMedium.add(segment);
+						} else if (segment.length == SECLOG_SEGMENT_SIZE / 16 && m_segmentPoolSmall.size() < 32) {
+							m_segmentPoolSmall.add(segment);
 						}
+
 						segment = bufferNode.getData(++i);
 						segmentLength = bufferNode.getSegmentLength(i);
 					}
@@ -598,7 +595,8 @@ public class PrimaryWriteBuffer {
 				}
 
 				if (primaryLogBufferSize > 0) {
-					// Write all log entries, that were not written to secondary log, in primary log with one write access
+					// Write all log entries, that were not written to secondary log, in primary log with one write
+					// access
 					m_primaryLog.appendData(primaryLogBuffer, 0, primaryLogBufferOffset);
 				}
 			}
@@ -639,7 +637,7 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Writes a log entry/range directly to secondary log buffer if longer than
-		 * one flash page * 256 Has to flush the corresponding secondary log buffer if not
+		 * one flash page * 32 Has to flush the corresponding secondary log buffer if not
 		 * empty to maintain order
 		 * @param p_buffer
 		 *            data block
@@ -706,12 +704,33 @@ public class PrimaryWriteBuffer {
 			m_segments = new byte[m_numberOfSegments][];
 
 			for (int i = 0; i < m_segments.length; i++) {
-				if (m_segmentPool.size() > 0) {
-					m_segments[i] = m_segmentPool.remove(m_segmentPool.size() - 1);
-					length -= SECLOG_SEGMENT_SIZE;
+				if (length > SECLOG_SEGMENT_SIZE / 8) {
+					if (m_segmentPoolLarge.size() > 0) {
+						m_segments[i] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
+						length -= SECLOG_SEGMENT_SIZE;
+					} else {
+						m_segments[i] = new byte[Math.min(length, SECLOG_SEGMENT_SIZE)];
+						length -= m_segments[i].length;
+					}
+				} else if (length > SECLOG_SEGMENT_SIZE / 16) {
+					if (m_segmentPoolMedium.size() > 0) {
+						m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
+						length -= SECLOG_SEGMENT_SIZE / 8;
+					} else {
+						m_segments[i] = new byte[length];
+						length -= m_segments[i].length;
+					}
 				} else {
-					m_segments[i] = new byte[Math.min(length, SECLOG_SEGMENT_SIZE)];
-					length -= m_segments[i].length;
+					if (m_segmentPoolSmall.size() > 0) {
+						m_segments[i] = m_segmentPoolSmall.remove(m_segmentPoolSmall.size() - 1);
+						length -= SECLOG_SEGMENT_SIZE / 16;
+					} else if (m_segmentPoolMedium.size() > 0) {
+						m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
+						length -= SECLOG_SEGMENT_SIZE / 8;
+					} else {
+						m_segments[i] = new byte[length];
+						length -= m_segments[i].length;
+					}
 				}
 			}
 		}
@@ -818,12 +837,13 @@ public class PrimaryWriteBuffer {
 			}
 
 			if (m_convert) {
-				// More than 256 pages for this node: Convert primary log entry header to secondary log header and append
+				// More than 32 pages for this node: Convert primary log entry header to secondary log header and append
 				// entry to node buffer
 				m_writtenBytesPerSegment[index] += AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
 						m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
 			} else {
-				// Less than 256 pages for this node: Just append entry to node buffer without converting the log entry header
+				// Less than 32 pages for this node: Just append entry to node buffer without converting the log entry
+				// header
 				if (p_logEntrySize <= p_bytesUntilEnd) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);
 				} else {

@@ -36,7 +36,7 @@ public final class SecondaryLogBuffer {
 		m_secondaryLog = p_secondaryLog;
 
 		m_bytesInBuffer = 0;
-		m_buffer = new byte[FLASHPAGE_SIZE * 256];
+		m_buffer = new byte[FLASHPAGE_SIZE * 32];
 	}
 
 	// Getter
@@ -91,7 +91,7 @@ public final class SecondaryLogBuffer {
 
 		// Trim log entries (removes all NodeIDs)
 		buffer = processBuffer(p_buffer, p_bufferOffset, p_entryOrRangeSize);
-		if (m_bytesInBuffer + buffer.length >= FLASHPAGE_SIZE * 256) {
+		if (m_bytesInBuffer + buffer.length >= FLASHPAGE_SIZE * 32) {
 			// Merge current secondary log buffer and new buffer and write to secondary log
 
 			flushAllDataToSecLog(buffer, p_bufferOffset, buffer.length);

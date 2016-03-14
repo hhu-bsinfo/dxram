@@ -26,8 +26,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final EpochVersion p_version,
-			final byte[] p_data, final byte p_rangeID, final short p_source) {
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final EpochVersion p_version, final byte p_rangeID, final short p_source) {
 		byte[] result;
 		byte lengthSize;
 		byte localIDSize;
@@ -66,10 +65,6 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 			putVersion(result, (short) p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
 		} else if (versionSize > 2) {
 			putVersion(result, p_version.getVersion(), (short) (getVEROffset(result, 0) + LOG_ENTRY_EPO_SIZE));
-		}
-
-		if (checksumSize > 0) {
-			putChecksum(result, calculateChecksumOfPayload(p_data), getCRCOffset(result, 0));
 		}
 
 		return result;
@@ -270,7 +265,7 @@ public class DefaultPrimLogEntryHeader extends AbstractLogEntryHeader {
 	@Override
 	protected short getCRCOffset(final byte[] p_buffer, final int p_offset) {
 		short ret = (short) (getVEROffset(p_buffer, p_offset) + LOG_ENTRY_EPO_SIZE);
-		final byte versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT));
+		final byte versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 
 		if (USE_CHECKSUM) {
 			ret += versionSize;

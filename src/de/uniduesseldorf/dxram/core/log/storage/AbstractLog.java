@@ -57,7 +57,7 @@ public abstract class AbstractLog {
 	 * @return number of successfully written bytes
 	 */
 	abstract int appendData(final byte[] p_data, final int p_offset, final int p_length) throws IOException,
-			InterruptedException;
+	InterruptedException;
 
 	/**
 	 * Returns the number of bytes in log
@@ -196,7 +196,7 @@ public abstract class AbstractLog {
 		long ret;
 		final long bytesUntilEnd;
 
-		System.out.println("PRIMLOG-Writing: " + p_length);
+		// System.out.println("PRIMLOG-Writing: " + p_length);
 		if (p_writePos + p_length <= m_totalUsableSpace) {
 			m_randomAccessFile.seek(m_logFileHeaderSize + p_writePos);
 			m_randomAccessFile.write(p_data, p_bufferOffset, p_length);
@@ -234,7 +234,7 @@ public abstract class AbstractLog {
 	protected final int writeToSecondaryLog(final byte[] p_data, final int p_bufferOffset, final long p_readPos, final int p_length, final boolean p_accessed)
 			throws IOException {
 
-		System.out.println("SECLOG-Writing: " + p_length);
+		// System.out.println("SECLOG-Writing: " + p_length);
 		if (p_length > 0) {
 			if (p_accessed) {
 				m_lock.lock();
