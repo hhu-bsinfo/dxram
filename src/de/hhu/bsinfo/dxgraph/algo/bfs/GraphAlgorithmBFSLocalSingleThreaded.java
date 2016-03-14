@@ -1,11 +1,11 @@
-package de.hhu.bsinfo.dxgraph.algo;
+package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import de.hhu.bsinfo.dxgraph.algo.bfs.BitVector;
-import de.hhu.bsinfo.dxgraph.algo.bfs.BitVectorOptimized;
-import de.hhu.bsinfo.dxgraph.algo.bfs.BulkFifo;
-import de.hhu.bsinfo.dxgraph.algo.bfs.BulkFifoNaive;
-import de.hhu.bsinfo.dxgraph.algo.bfs.FrontierList;
-import de.hhu.bsinfo.dxgraph.algo.bfs.TreeSetFifo;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.BitVector;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.BitVectorOptimized;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.BulkFifo;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.BulkFifoNaive;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.TreeSetFifo;
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;

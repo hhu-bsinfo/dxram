@@ -1,16 +1,20 @@
 package de.hhu.bsinfo.dxram.run.nothaas;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxram.job.JobService;
+import de.hhu.bsinfo.dxram.job.event.JobEventListener;
+import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
-public class SimpleJobServiceTest extends Main {
+public class SimpleJobServiceTest extends Main implements JobEventListener {
 
 	public static class JobTest extends Job
 	{
@@ -51,6 +55,9 @@ public class SimpleJobServiceTest extends Main {
 	
 	private DXRAM m_dxram = null;
 	private JobService m_jobService = null;
+	private BootService m_bootService = null;
+	
+	private AtomicInteger m_remoteJobCount = new AtomicInteger(0);
 	
 	public static void main(final String[] args) {
 		Main main = new SimpleJobServiceTest();
@@ -64,7 +71,24 @@ public class SimpleJobServiceTest extends Main {
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf", true);
 		m_jobService = m_dxram.getService(JobService.class);
+		m_bootService = m_dxram.getService(BootService.class);
 		m_jobService.registerJobType(JobTest.MS_TYPE_ID, JobTest.class);
+	}
+	
+	@Override
+	public byte getJobEventBitMask() {
+		return JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID |
+				JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID |
+				JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID;
+	}
+
+	@Override
+	public void jobEventTriggered(byte p_eventId, long p_jobId, short p_sourceNodeId) 
+	{
+		System.out.println("JobEvent: " + p_eventId + " | " + Long.toHexString(p_jobId) + " | " + Integer.toHexString(p_sourceNodeId));
+		if (p_eventId == JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID && p_sourceNodeId != m_bootService.getNodeID()) {
+			m_remoteJobCount.decrementAndGet();
+		}
 	}
 	
 	@Override
@@ -90,13 +114,24 @@ public class SimpleJobServiceTest extends Main {
 			{
 				if (remoteNode != -1 && numRemoteJobs > 0) {
 					numRemoteJobs--;
-					m_jobService.pushJobRemote(new JobTest(ran.nextInt(10) * 500), remoteNode);
+					m_remoteJobCount.incrementAndGet();
+					Job job = new JobTest(ran.nextInt(10) * 500);
+					job.registerEventListener(this);
+					m_jobService.pushJobRemote(job, remoteNode);
 				} else {
-					m_jobService.pushJob(new JobTest(ran.nextInt(10) * 500));
+					Job job = new JobTest(ran.nextInt(10) * 500);
+					job.registerEventListener(this);
+					m_jobService.pushJob(job);
 				}
 			}
 			
 			m_jobService.waitForLocalJobsToFinish();
+			
+			while (m_remoteJobCount.get() > 0)
+			{
+				Thread.yield();
+			}
+			
 			System.out.println("All jobs finished.");
 		}
 		else
@@ -109,5 +144,4 @@ public class SimpleJobServiceTest extends Main {
 
 		return 0;
 	}
-
 }

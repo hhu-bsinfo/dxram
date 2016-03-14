@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxgraph.algo.bfs;
+package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
 import java.util.Arrays;
 

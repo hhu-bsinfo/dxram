@@ -4,22 +4,18 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.job.Job;
-import de.hhu.bsinfo.menet.AbstractRequest;
+import de.hhu.bsinfo.menet.AbstractMessage;
 
-/**
- * Message to send a job to a remote node for execution.
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
- *
- */
-public class PushJobQueueRequest extends AbstractRequest {
-	
+public class PushJobQueueMessage extends AbstractMessage
+{
 	private Job m_job = null;
+	private byte m_callbackJobEventBitMask = 0;
 	
 	/**
 	 * Creates an instance of PushJobQueueRequest.
 	 * This constructor is used when receiving this message.
 	 */
-	public PushJobQueueRequest() {
+	public PushJobQueueMessage() {
 		super();
 	}
 
@@ -29,10 +25,11 @@ public class PushJobQueueRequest extends AbstractRequest {
 	 * @param p_destination
 	 *            the destination node id.
 	 */
-	public PushJobQueueRequest(final short p_destination, final Job p_job) {
-		super(p_destination, JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_REQUEST);
+	public PushJobQueueMessage(final short p_destination, final Job p_job, final byte p_callbackJobEventBitMask) {
+		super(p_destination, JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE);
 
 		m_job = p_job;
+		m_callbackJobEventBitMask = p_callbackJobEventBitMask;
 	}
 	
 	/**
@@ -43,10 +40,21 @@ public class PushJobQueueRequest extends AbstractRequest {
 		return m_job;
 	}
 	
+	/**
+	 * Get the bitmask to be used when initiating callbacks to the remote
+	 * side sending this message.
+	 * @return BitMask for callbacks to remote.
+	 */
+	public byte getCallbackJobEventBitMask()
+	{
+		return m_callbackJobEventBitMask;
+	}
+	
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		
+		p_buffer.put(m_callbackJobEventBitMask);
 		p_buffer.putShort(m_job.getTypeID());
 		exporter.exportObject(m_job);
 	}
@@ -55,6 +63,7 @@ public class PushJobQueueRequest extends AbstractRequest {
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 		
+		m_callbackJobEventBitMask = p_buffer.get();
 		m_job = Job.createInstance(p_buffer.getShort());
 		
 		importer.importObject(m_job);
@@ -62,6 +71,6 @@ public class PushJobQueueRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return Short.BYTES + m_job.sizeofObject();
+		return Byte.BYTES + Short.BYTES + m_job.sizeofObject();
 	}
 }

@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxgraph.algo;
+package de.hhu.bsinfo.dxgraph.algo.bfs;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
@@ -223,7 +223,7 @@ public class GraphAlgorithmBFS3Dep extends GraphAlgorithm {
 							if (tmp != m_previousRunParentId) {
 								m_vertexBatch[i].setID(tmp);
 							}
-						} catch (de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3Dep.BulkFifo.EmptyException e) {
+						} catch (de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFS3Dep.BulkFifo.EmptyException e) {
 							iterationLevelDone = true;
 							break;
 						}

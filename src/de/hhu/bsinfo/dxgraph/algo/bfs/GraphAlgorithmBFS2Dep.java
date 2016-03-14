@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxgraph.algo;
+package de.hhu.bsinfo.dxgraph.algo.bfs;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;

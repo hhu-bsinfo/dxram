@@ -14,7 +14,7 @@ public class Worker extends Thread
 	private volatile boolean m_shutdown = false;
 	private volatile boolean m_isIdle = false;
 	
-	private WorkStealingQueueMutex m_queue = new WorkStealingQueueMutex();
+	private WorkStealingQueue m_queue = new WorkStealingQueueConcurrentDeque();
 	
 	private WorkerDelegate m_workerDelegate = null;
 	
@@ -115,6 +115,7 @@ public class Worker extends Thread
 			{
 				m_isIdle = false;
 				m_workerDelegate.getLoggerComponent().debug(getClass(), "Worker " + m_id + ": Executing job " + job + " from queue.");
+				m_workerDelegate.executingJob(job);
 				job.execute(m_workerDelegate.getNodeID());
 				m_workerDelegate.finishedJob(job);
 				continue;
@@ -125,6 +126,7 @@ public class Worker extends Thread
 			{
 				m_isIdle = false;
 				m_workerDelegate.getLoggerComponent().debug(getClass(), "Worker " + m_id + ": Executing stolen job " + job);
+				m_workerDelegate.executingJob(job);
 				job.execute(m_workerDelegate.getNodeID());
 				m_workerDelegate.finishedJob(job);
 				continue;

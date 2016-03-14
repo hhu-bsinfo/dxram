@@ -1,12 +1,17 @@
 package de.hhu.bsinfo.dxram.job;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.job.event.JobEventListener;
+import de.hhu.bsinfo.dxram.job.event.JobEvents;
+import de.hhu.bsinfo.dxram.job.messages.JobEventTriggeredMessage;
 import de.hhu.bsinfo.dxram.job.messages.JobMessages;
-import de.hhu.bsinfo.dxram.job.messages.PushJobQueueRequest;
-import de.hhu.bsinfo.dxram.job.messages.PushJobQueueResponse;
+import de.hhu.bsinfo.dxram.job.messages.PushJobQueueMessage;
 import de.hhu.bsinfo.dxram.job.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.job.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -16,6 +21,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -28,7 +34,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public class JobService extends DXRAMService implements MessageReceiver {
+public class JobService extends DXRAMService implements MessageReceiver, JobEventListener {
 
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
@@ -37,6 +43,10 @@ public class JobService extends DXRAMService implements MessageReceiver {
 	private NetworkComponent m_network = null;
 	
 	private JobStatisticsRecorderIDs m_statisticsRecorderIDs = null;
+	
+	private AtomicLong m_jobIDCounter = new AtomicLong(0);
+	
+	private Map<Long, Pair<Byte, Job>> m_remoteJobCallbackMap = new HashMap<Long, Pair<Byte, Job>>();
 	
 	/**
 	 * Register a new implementation/type of Job class.
@@ -55,63 +65,84 @@ public class JobService extends DXRAMService implements MessageReceiver {
 	 * @param p_job Job to be scheduled for execution.
 	 * @return True if scheduling was successful, false otherwise.
 	 */
-	public boolean pushJob(final Job p_job)
+	public long pushJob(final Job p_job)
 	{
 		// early return
 		if (m_boot.getNodeRole() == NodeRole.SUPERPEER)
 		{
 			m_logger.error(getClass(), "A superpeer is not allowed to submit jobs.");
-			return false;
+			return JobID.INVALID_ID;
 		}
 		
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
 				
+		long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
+		
 		// nasty way to access the services...feel free to have a better solution for this
 		p_job.setServiceAccessor(getServiceAccessor());
-		boolean success = m_job.pushJob(p_job);
+		p_job.setID(jobId);
+		if (!m_job.pushJob(p_job))
+		{
+			jobId = JobID.INVALID_ID;
+			p_job.setID(jobId);
+		}
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_submit);
 		
-		return success;
+		return jobId;
 	}	
 	
 	/**
 	 * Schedule a job for remote execution. The job is sent to the node specified and
-	 * scheduled for exeuction there.
+	 * scheduled for execution there.
 	 * @param p_job Job to schedule.
 	 * @param p_nodeID ID of the node to schedule the job on.
-	 * @return True of scheduling the job on the specified ID was successful, false otherwise.
+	 * @return Valid job ID assigned to the submitted job, false otherwise.
 	 */
-	public boolean pushJobRemote(final Job p_job , final short p_nodeID)
+	public long pushJobRemote(final Job p_job, final short p_nodeID)
 	{
 		// early return
 		if (m_boot.getNodeRole() == NodeRole.SUPERPEER)
 		{
 			m_logger.error(getClass(), "A superpeer is not allowed to submit remote jobs.");
-			return false;
+			return JobID.INVALID_ID;
 		}
-		
-		boolean success = false;
 		
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteSubmit);
 		
-		PushJobQueueRequest request = new PushJobQueueRequest(p_nodeID, p_job);
-		NetworkErrorCodes error = m_network.sendSync(request);
-		if (error != NetworkErrorCodes.SUCCESS) {
-			m_logger.error(getClass(), "Sending push job queue request to node " + p_nodeID + " failed: " + error);
-		} else {
-			PushJobQueueResponse response = request.getResponse(PushJobQueueResponse.class);
-			byte statusCode = response.getStatusCode();
-			if (statusCode != 0) {
-				m_logger.error(getClass(), "Submitting remote job failed, remote node " + p_nodeID + " responded with error: " + statusCode);
-			} else {
-				success = true;
+		long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
+		p_job.setID(jobId);
+		
+		byte mergedCallbackBitMask = 0;
+		// check if we got any listeners assigned
+		// -> have to register for remote callbacks
+		// otherwise don't even bother with it to save time
+		if (!p_job.m_eventListeners.isEmpty())
+		{
+			// register for remote callbacks by or'ing all
+			// bit vectors of registered listeners
+			// this is used to send each event only once 
+			// over the network and then scattering it to
+			// all registered listeners locally
+			for (JobEventListener listener : p_job.m_eventListeners) {
+				mergedCallbackBitMask |= listener.getJobEventBitMask();
 			}
+			
+			m_remoteJobCallbackMap.put(jobId, new Pair<Byte, Job>(mergedCallbackBitMask, p_job));
+		}
+		
+		PushJobQueueMessage message = new PushJobQueueMessage(p_nodeID, p_job, mergedCallbackBitMask);
+		NetworkErrorCodes error = m_network.sendMessage(message);
+		if (error != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(), "Sending push job queue message to node " + p_nodeID + " failed: " + error);
+			jobId = JobID.INVALID_ID;
 		}
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteSubmit);
 		
-		return success;
+		// set jobid again to mark possible failure
+		p_job.setID(jobId);
+		return jobId;
 	}
 	
 	/**
@@ -182,17 +213,63 @@ public class JobService extends DXRAMService implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == JobMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case JobMessages.SUBTYPE_PUSH_JOB_QUEUE_REQUEST:
-					incomingPushJobQueueRequest((PushJobQueueRequest) p_message);
-					break;
-				case JobMessages.SUBTYPE_STATUS_REQUEST:
-					incomingStatusRequest((StatusRequest) p_message);
-					break;
+					case JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE:
+						incomingPushJobQueueMessage((PushJobQueueMessage) p_message);
+						break;
+					case JobMessages.SUBTYPE_STATUS_REQUEST:
+						incomingStatusRequest((StatusRequest) p_message);
+						break;
+					case JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE:
+						incomingJobEventTriggeredMessage((JobEventTriggeredMessage) p_message);
+						break;
 				}
 			}
 		}
 
 		m_logger.trace(getClass(), "Exiting incomingMessage");
+	}
+
+	//--------------------------------------------------------------------------------------------
+
+	@Override
+	public byte getJobEventBitMask() {
+		// we need this to redirect callbacks for jobs, which got
+		// submitted by a remote instance to us
+		return JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID |
+				JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID | 
+				JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID;
+	}
+	
+	@Override
+	public void jobEventTriggered(byte p_eventId, long p_jobId, short p_sourceNodeId) {
+		Pair<Byte, Job> job = m_remoteJobCallbackMap.get(p_jobId);
+		if (job != null)
+		{		
+			// check if any remote source is interested in this
+			if ((job.m_first & p_eventId) > 0)
+			{		
+				// we have to redirect this to the remote source
+				// clear the event we are triggering
+				job.m_first = (byte) (job.m_first & (~p_eventId));
+				if (job.m_first == 0)
+				{
+					// no further events to trigger for remote, remove from map
+					m_remoteJobCallbackMap.remove(p_jobId);
+				}
+				
+				JobEventTriggeredMessage message = new JobEventTriggeredMessage(JobID.getCreatorID(p_jobId), p_jobId, p_eventId);
+				NetworkErrorCodes error = m_network.sendMessage(message);
+				if (error != NetworkErrorCodes.SUCCESS) {
+					m_logger.error(getClass(), "Triggering job event '" + p_eventId + "' for job " + job.m_second + "' failed: " + error);
+				}
+			}
+		}
+		else
+		{
+			m_logger.error(getClass(), 
+					"Getting stored callbacks from map for callback to job id '" 
+					+ Long.toHexString(p_jobId) + "' failed.");
+		}
 	}
 	
 	// --------------------------------------------------------------------------------------------
@@ -244,10 +321,10 @@ public class JobService extends DXRAMService implements MessageReceiver {
 	 */
 	private void registerNetworkMessages()
 	{
-		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_REQUEST, PushJobQueueRequest.class);
-		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_RESPONSE, PushJobQueueResponse.class);
+		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE, PushJobQueueMessage.class);
 		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_STATUS_REQUEST, StatusRequest.class);
 		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_STATUS_RESPONSE, StatusResponse.class);
+		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE, JobEventTriggeredMessage.class);
 	}
 	
 	/**
@@ -255,8 +332,9 @@ public class JobService extends DXRAMService implements MessageReceiver {
 	 */
 	private void registerNetworkMessageListener()
 	{
-		m_network.register(PushJobQueueRequest.class, this);
+		m_network.register(PushJobQueueMessage.class, this);
 		m_network.register(StatusRequest.class, this);
+		m_network.register(JobEventTriggeredMessage.class, this);
 	}
 	
 	/**
@@ -276,27 +354,21 @@ public class JobService extends DXRAMService implements MessageReceiver {
 	 * Handle incoming push queue request.
 	 * @param p_request Incoming request.
 	 */
-	private void incomingPushJobQueueRequest(final PushJobQueueRequest p_request)
+	private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request)
 	{
-		boolean success = false;
-	
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingSubmit);
 		
 		Job job = p_request.getJob();
 		job.setServiceAccessor(getServiceAccessor());
 		
-		m_job.pushJob(job);
+		// register ourselves as listener to event callbacks
+		// and redirect them to the remote source
+		job.registerEventListener(this);
+		m_remoteJobCallbackMap.put(job.getID(), new Pair<Byte, Job>(p_request.getCallbackJobEventBitMask(), job));
 		
-		PushJobQueueResponse response;
-		if (success)
-			response = new PushJobQueueResponse(p_request, (byte) 0);
-		else
-			response = new PushJobQueueResponse(p_request, (byte) -1);
-		
-		NetworkErrorCodes error = m_network.sendMessage(response);
-		if (error != NetworkErrorCodes.SUCCESS)
-		{
-			m_logger.error(getClass(), "Sending PushJobQueueResponse for " + p_request.getJob() + " failed: " + error);
+		if(!m_job.pushJob(job)) {
+			m_logger.error(getClass(), "Scheduling job " + job + " failed.");
+			m_remoteJobCallbackMap.remove(job.getID());
 		}
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingSubmit);
@@ -316,6 +388,57 @@ public class JobService extends DXRAMService implements MessageReceiver {
 		if (error != NetworkErrorCodes.SUCCESS)
 		{
 			m_logger.error(getClass(), "Sending StatusResponse for " + p_request + " failed: " + error);
+		}
+	}
+	
+	private void incomingJobEventTriggeredMessage(final JobEventTriggeredMessage p_message) {
+		Pair<Byte, Job> job = m_remoteJobCallbackMap.get(p_message.getJobID());
+		if (job != null)
+		{
+			// check if we really registered for what we got from the remote instance
+			if ((job.m_first & p_message.getEventId()) > 0)
+			{		
+				// redirect the remote event triggering to our locally
+				// registered listeners
+				
+				// clear the event we are triggering
+				job.m_first = (byte) (job.m_first & (~p_message.getEventId()));
+				if (job.m_first == 0)
+				{
+					// no further events to trigger for remote, remove from map
+					m_remoteJobCallbackMap.remove(p_message.getJobID());
+				}
+				
+				// TODO use event system here to avoid blocking the network thread for too long?
+				switch (p_message.getEventId())
+				{
+					case JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID:
+						job.m_second.notifyListenersJobScheduledForExecution(p_message.getSource());
+						break;
+					case JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID:
+						job.m_second.notifyListenersJobStartsExecution(p_message.getSource());
+						break;
+					case JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID:
+						job.m_second.notifyListenersJobFinishedExecution(p_message.getSource());
+						break;
+					default:
+						assert 1 == 2;
+						break;
+				}
+			}
+			else
+			{
+				// should not happen, because we registered for specific events, only
+				m_logger.error(getClass(), 
+						"Getting remote callback for unregistered event '" + p_message.getEventId() + "' on job id '" 
+						+ Long.toHexString(p_message.getJobID()) + "'.");
+			}
+		}
+		else
+		{
+			m_logger.error(getClass(), 
+					"Getting stored callbacks from map for callback to job id '" 
+					+ Long.toHexString(p_message.getJobID()) + "' failed.");
 		}
 	}
 	

@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxgraph.algo;
+package de.hhu.bsinfo.dxgraph.algo.bfs;
 
 import de.hhu.bsinfo.dxcompute.Task;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
