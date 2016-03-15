@@ -1,199 +1,307 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.BitVector;
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.BitVectorOptimized;
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.BulkFifo;
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.BulkFifoNaive;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.TreeSetFifo;
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
-import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.Pair;
 
-public class GraphAlgorithmBFSLocalMultiThreaded extends GraphAlgorithm implements MessageReceiver {
+public class GraphAlgorithmBFSLocalMultiThreaded extends GraphAlgorithm {
 
-	private int m_vertexBatchCount = 1000;
+	private int m_vertexBatchCountPerThread = 100;
 
 	private FrontierList m_curFrontier = null;
 	private FrontierList m_nextFrontier = null;
 	
 	private Vertex2[] m_vertexBatch = null;
+	private BFSThread[] m_threads = null;
 	
-	private long m_visitedCounter = 0;
-	
-	public GraphAlgorithmBFSLocalMultiThreaded(final int p_vertexBatchCount, final Class<? extends FrontierList> p_frontierListType, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
+	public GraphAlgorithmBFSLocalMultiThreaded(final int p_vertexBatchCountPerThread, final int p_threadCount, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
 		super(p_loaderResultsDelegate, p_entryNodes);
-		m_vertexBatchCount = p_vertexBatchCount;
-
-		if (p_frontierListType == BitVector.class)
-		{
-			long totalVertexCount = getGraphLoaderResultDelegate().getTotalVertexCount();
-			m_curFrontier = new BitVector(totalVertexCount);
-			m_nextFrontier = new BitVector(totalVertexCount);
-		}
-		else if (p_frontierListType == BitVectorOptimized.class)
-		{
-			long totalVertexCount = getGraphLoaderResultDelegate().getTotalVertexCount();
-			m_curFrontier = new BitVectorOptimized(totalVertexCount);
-			m_nextFrontier = new BitVectorOptimized(totalVertexCount);
-		}
-		else if (p_frontierListType == BulkFifoNaive.class)
-		{
-			m_curFrontier = new BulkFifoNaive();
-			m_nextFrontier = new BulkFifoNaive();
-		}
-		else if (p_frontierListType == BulkFifo.class)
-		{
-			m_curFrontier = new BulkFifo();
-			m_nextFrontier = new BulkFifo();
-		}
-		else if (p_frontierListType == TreeSetFifo.class)
-		{
-			m_curFrontier = new TreeSetFifo();
-			m_nextFrontier = new TreeSetFifo();
-		}
-		else
-		{
-			throw new RuntimeException("Cannot create instance of FrontierList type " + p_frontierListType);
-		}
+		m_vertexBatchCountPerThread = p_vertexBatchCountPerThread;
 		
-		// pool init
-		m_vertexBatch = new Vertex2[m_vertexBatchCount];
+		m_vertexBatch = new Vertex2[m_vertexBatchCountPerThread * p_threadCount];
 		for (int i = 0; i < m_vertexBatch.length; i++) {
 			m_vertexBatch[i] = new Vertex2(ChunkID.INVALID_ID);
 		}
+		
+		m_threads = new BFSThread[p_threadCount];
 	}
 	
 	@Override
 	protected boolean execute(long[] p_entryNodes) 
 	{
-		// execute a full BFS for each node
-		for (long entryNode : p_entryNodes)
-		{
-			long iterationDepth = runBFS(entryNode);
-			
+		m_loggerService.info(getClass(), "Starting " + m_threads.length + " BFS Threads...");
+		
+		long totalVertexCount = getGraphLoaderResultDelegate().getTotalVertexCount();
+		m_curFrontier = new ConcurrentBitVector(totalVertexCount);
+		m_nextFrontier = new ConcurrentBitVector(totalVertexCount);
+		
+		for (int i = 0; i < m_threads.length; i++) {
+			m_threads[i] = new BFSThread(i, m_loggerService, m_chunkService);
+			m_threads[i].start();
 		}
 		
+		// execute a full BFS for each node
+		int bfsIteration = 0;
+		for (long entryNode : p_entryNodes)
+		{
+			m_loggerService.info(getClass(), "Executing BFS iteration (" + bfsIteration + ") with root node " + Long.toHexString(entryNode));
+			m_curFrontier.pushBack(ChunkID.getLocalID(entryNode));
+			Pair<Long, Integer> results = runBFS(bfsIteration);
+			m_loggerService.info(getClass(), "Results BFS iteration (" + bfsIteration + ") for root node " + Long.toHexString(entryNode) + ": Iteration depth " + results.second() + ", total visited vertices " + results.first());
 		
+			bfsIteration++;
+		}
 		
+		for (int i = 0; i < m_threads.length; i++) {
+			m_threads[i].exitThread();
+		}
+		
+		m_loggerService.info(getClass(), "Joining BFS threads...");
+		for (int i = 0; i < m_threads.length; i++) {
+			try {
+				m_threads[i].join();
+			} catch (InterruptedException e) {
+			}
+		}
 
 		m_loggerService.info(getClass(), "Finished BFS.");
 		return true;
 	}
 	
-	private long runBFS(long p_entryNode)
-	{
-		// TODO for entry node, check if local, otherwise 
-		// push to remote node 
+	private static class BFSThread extends Thread {
 		
-		// initial root set
-//		for (int i = 0; i < p_parameterChunkIDs.length; i++) {
-//			m_curFrontier.pushBack(ChunkID.getLocalID(p_parameterChunkIDs[i]));
-//		}
+		private int m_id = -1;
 		
-		return 0;
+		private LoggerService m_loggerService = null;
+		private ChunkService m_chunkService = null;
+		
+		private Vertex2[] m_vertexBatch = null;
+		private int m_vertexBatchStartOffset = 0;
+		private int m_currentBatchSize = 0;
+		private int m_currentActualBatchSize = 0;
+		
+		private long m_previousRunParentId = ChunkID.INVALID_ID;
+		private int m_currentIterationLevel = 0;
+		private FrontierList m_nextFrontier = null;
+		
+		private volatile int m_visitedCounterRun = 0;
+		private volatile boolean m_oneRun = false;
+		private volatile boolean m_exitThread = false;
+		
+		public BFSThread(
+				final int p_id, 
+				final LoggerService p_loggerService, 
+				final ChunkService p_chunkService)
+		{
+			super("BFSThread-" + p_id);
+			
+			m_id = p_id;
+			
+			m_loggerService = p_loggerService;
+			m_chunkService = p_chunkService;
+		}
+		
+		public void setVertexBatch(final Vertex2[] p_array, final int p_startOffset, final int p_size, final int p_actualBatchSize) {
+			m_vertexBatch = p_array;
+			m_vertexBatchStartOffset = p_startOffset;
+			m_currentBatchSize = p_size;
+			m_currentActualBatchSize = p_actualBatchSize;
+		}
+		
+		public void setPreviousRunParentId(final long p_parentId) {
+			m_previousRunParentId = p_parentId;
+		}
+		
+		public void setCurrentIterationLevel(final int p_iterationLevel) {
+			m_currentIterationLevel = p_iterationLevel;
+		}
+		
+		public void setNextFrontierShared(final FrontierList p_nextFrontier) {
+			m_nextFrontier = p_nextFrontier;
+		}
+		
+		public void executeOneRun() {
+			m_oneRun = true;
+		}
+		
+		public boolean isRunDone() {
+			return !m_oneRun;
+		}
+		
+		public int getVisitedCountLastRun() {
+			return m_visitedCounterRun;
+		}
+		
+		public void exitThread() {
+			m_exitThread = true;
+		}
+		
+		@Override
+		public void run() 
+		{
+			while (true)
+			{
+				while (!m_oneRun)
+				{
+					if (m_exitThread)
+						return;
+					
+					Thread.yield();
+				}
+				m_visitedCounterRun = 0;
+				
+				int gett = m_chunkService.get(m_vertexBatch, m_vertexBatchStartOffset, m_currentBatchSize);
+				if (gett != m_currentActualBatchSize)
+				{
+					m_loggerService.error(getClass(), "Getting vertices in BFS Thread " + m_id + " failed: " + gett + " != " + m_currentActualBatchSize);
+					return;
+				}
+				
+				int writeBackCount = 0;
+				for (int i = 0; i < m_currentBatchSize; i++) {
+					// check first if visited
+					Vertex2 vertex = m_vertexBatch[i + m_vertexBatchStartOffset];
+					
+					// skip vertices that were already marked invalid before
+					if (vertex.getID() == ChunkID.INVALID_ID) {
+						continue;
+					}
+					
+					if (vertex.getUserData() != m_currentIterationLevel) {							
+						writeBackCount++;
+						// set depth level
+						vertex.setUserData(m_currentIterationLevel);
+						m_visitedCounterRun++;
+						long[] neighbours = vertex.getNeighbours();
+						
+						for (long neighbour : neighbours) {								
+							// don't walk back
+							if (neighbour != m_previousRunParentId) {									
+								m_nextFrontier.pushBack(ChunkID.getLocalID(neighbour));
+							}
+						}
+					} else {
+						// already visited, don't have to put back to storage
+						vertex.setID(ChunkID.INVALID_ID);
+					}
+				}
+				
+				// write back changes 
+				int put = m_chunkService.put(ChunkLockOperation.NO_LOCK_OPERATION, m_vertexBatch, m_vertexBatchStartOffset, m_currentBatchSize);
+				if (put != writeBackCount)
+				{
+					m_loggerService.error(getClass(), "Putting vertices in BFS Thread " + m_id + " failed: " + put + " != " + writeBackCount);
+					return; 
+				}
+				
+				m_oneRun = false;
+			}
+		}
 	}
+
 	
-	private void runBFSJob()
+	private Pair<Long, Integer> runBFS(final int p_bfsIteration)
 	{
+		long visitedCounter = 0;
 		int curIterationLevel = 0;
 		long previousRunParentId = ChunkID.INVALID_ID;
 		short nodeId = m_bootService.getNodeID();
 		
 		while (true)
 		{			
+			m_loggerService.debug(getClass(), "Iteration level " + curIterationLevel + " cur frontier size: " + m_curFrontier.size());
+			
 			boolean iterationLevelDone = false;
 			while (!iterationLevelDone)
 			{
-				int curBatchSize = 0;
-				for (int i = 0; i < m_vertexBatchCount; i++) {
-					long tmp = m_curFrontier.popFront();
-					if (tmp != -1)
-					{
-						// don't walk back
-						if (tmp != previousRunParentId) {
-							m_vertexBatch[i].setID(ChunkID.getChunkID(nodeId, tmp));
-							curBatchSize++;
-						}
-					}
-					else
-					{
-						iterationLevelDone = true;
-					}
+				long curItVertexCount = m_curFrontier.size();
+				int perThreadCount = 0;
+				if (curItVertexCount - m_vertexBatchCountPerThread * m_threads.length >= 0) {
+					perThreadCount = m_vertexBatchCountPerThread;
+				} else {
+					// if we have less vertices available to fill up the threads
+					// make sure to equally distribute them
+					perThreadCount = (int) (curItVertexCount / m_threads.length + 1);
 				}
-			
-				int gett = m_chunkService.get(m_vertexBatch, 0, curBatchSize);
-				if (gett != curBatchSize)
-				{
-					m_loggerService.error(getClass(), "Getting vertices failed.");
-					return; // TODO proper error handling
-				}
-				
-				int writeBackCount = 0;
-				for (int i = 0; i < gett; i++) {
-					// check first if visited
-					if (m_vertexBatch[i].getUserData() == -1) {							
-						writeBackCount++;
-						// set depth level
-						m_vertexBatch[i].setUserData(curIterationLevel);
-						m_visitedCounter++;
-						long[] neighbours = m_vertexBatch[i].getNeighbours();
-						
-						for (long neighbour : neighbours) {								
+		
+				int threadBatchStartOffset = 0;
+				for (int t = 0; t < m_threads.length; t++) {				
+					int validVertsInBatch = 0;
+					for (int i = 0; i < perThreadCount; i++) {
+						long tmp = m_curFrontier.popFront();
+						if (tmp != -1)
+						{
 							// don't walk back
-							if (neighbour != previousRunParentId) {									
-								
-								// TODO check if vertex is on current node as we can only process nodes
-								// which are stored locally
-								// -> send remote nodes to their owner and have it processed there
-								
-								m_nextFrontier.pushBack(ChunkID.getLocalID(neighbour));
+							if (tmp != previousRunParentId) {
+								m_vertexBatch[i + threadBatchStartOffset].setID(ChunkID.getChunkID(nodeId, tmp));
+								validVertsInBatch++;
+							} else {
+								m_vertexBatch[i + threadBatchStartOffset].setID(ChunkID.INVALID_ID);
 							}
 						}
-					} else {
-						// already visited, don't have to put back to storage
-						m_vertexBatch[i].setID(ChunkID.INVALID_ID);
+						else
+						{
+							iterationLevelDone = true;
+							// mark remaining vertices invalid
+							m_vertexBatch[i + threadBatchStartOffset].setID(ChunkID.INVALID_ID);
+						}
+					}
+					
+					// don't waste a thread on non valid vertices
+					if (validVertsInBatch > 0)
+					{
+						m_threads[t].setVertexBatch(m_vertexBatch, threadBatchStartOffset, perThreadCount, validVertsInBatch);
+						m_threads[t].setPreviousRunParentId(previousRunParentId);
+						m_threads[t].setCurrentIterationLevel(p_bfsIteration);
+						m_threads[t].setNextFrontierShared(m_nextFrontier);
+						m_threads[t].executeOneRun();
+					}
+					
+					threadBatchStartOffset += perThreadCount;
+					
+					if (iterationLevelDone) {
+						break;
 					}
 				}
 				
-				// write back changes 
-				int put = m_chunkService.put(ChunkLockOperation.NO_LOCK_OPERATION, m_vertexBatch, 0, gett);
-				if (put != writeBackCount)
-				{
-					m_loggerService.error(getClass(), "Putting vertices failed.");
-					return; // TODO proper error handling
+				// join forked threads
+				int i = 0;
+				long tmpVisitedCounter = 0;
+				while (i < m_threads.length) {
+					if (!m_threads[i].isRunDone()) {
+						Thread.yield();
+						continue;
+					}
+					tmpVisitedCounter += m_threads[i].getVisitedCountLastRun();
+					i++;
 				}
+				
+				visitedCounter += tmpVisitedCounter;
 			}
 			
-			// check if we got anything to process in next
-			// TODO: later have work stealing from other threads
-			if (m_nextFrontier.isEmpty())
-			{
-				m_loggerService.info(getClass(), "Thread finished.");
-				break;
-			}
+			m_loggerService.debug(getClass(), "Finished iteration of level " + curIterationLevel);
 			
 			// swap buffers at the end of the round when iteration level done
 			FrontierList tmp = m_curFrontier;
 			m_curFrontier = m_nextFrontier;
 			m_nextFrontier = tmp;
 			m_nextFrontier.reset();
+			
+			if (m_curFrontier.isEmpty())
+			{
+				break;
+			}
+			
 			curIterationLevel++;
 		}
 		
-		m_loggerService.info(getClass(), "Iteration depth " + curIterationLevel + ", total visited vertices " + m_visitedCounter);
-	
-	}
-
-	@Override
-	public void onIncomingMessage(AbstractMessage p_message) {
-		// TODO Auto-generated method stub
-		
+		return new Pair<Long, Integer>(visitedCounter, curIterationLevel);
 	}
 }

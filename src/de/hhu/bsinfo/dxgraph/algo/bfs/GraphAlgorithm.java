@@ -17,7 +17,14 @@ public abstract class GraphAlgorithm extends Task {
 	@Override
 	public boolean execute() {
 		m_loggerService.debug(getClass(), "Executing algorithm with " + m_entryNodes.length + " entry nodes.");
-		boolean ret = execute(m_entryNodes);
+		// have arguments override roots list loaded from file
+		boolean ret;
+		if (m_entryNodes.length != 0) {
+			ret = execute(m_entryNodes);
+		} else {
+			ret = execute(m_loaderResultDelegate.getRoots());
+		}
+		 
 		if (ret) {
 			m_loggerService.debug(getClass(), "Executing graph algorithm successful.");
 		} else {

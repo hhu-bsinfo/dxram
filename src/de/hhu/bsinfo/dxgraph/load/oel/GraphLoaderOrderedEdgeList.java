@@ -9,6 +9,7 @@ import java.util.List;
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoader;
 import de.hhu.bsinfo.dxgraph.load.RebaseVertexID;
+import de.hhu.bsinfo.utils.Pair;
 
 // this class can handle split files for multiple nodes, but
 // will only load them on a single/the current node
@@ -18,11 +19,17 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 	
 	private long m_totalVerticesLoaded = 0;
 	private long m_totalEdgesLoaded = 0;
+	private long[] m_roots = null;
 	
 	public GraphLoaderOrderedEdgeList(final String p_path, final int p_numNodes, final int p_vertexBatchSize)
 	{
 		super(p_path, p_numNodes);
 		m_vertexBatchSize = p_vertexBatchSize;
+	}
+	
+	@Override
+	public long[] getRoots() {
+		return m_roots;
 	}
 	
 	@Override
@@ -36,21 +43,22 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 	}
 
 	// returns edge list sorted by nodeIdx and localIdx
-	protected List<OrderedEdgeList> setupEdgeLists(final String p_path) {
-		List<OrderedEdgeList> list = new ArrayList<OrderedEdgeList>();
+	protected Pair<List<OrderedEdgeList>, OrderedEdgeListRoots> setupEdgeLists(final String p_path) {
+		Pair<List<OrderedEdgeList>, OrderedEdgeListRoots> lists = 
+				new	Pair<List<OrderedEdgeList>, OrderedEdgeListRoots>(new ArrayList<OrderedEdgeList>(), null);
 		
 		// check if directory
 		File tmpFile = new File(p_path);
 		if (!tmpFile.exists())
 		{
 			m_loggerService.error(getClass(), "Cannot setup edge lists, path does not exist: " + p_path);
-			return list;
+			return lists;
 		}
 		
 		if (!tmpFile.isDirectory())
 		{
 			m_loggerService.error(getClass(), "Cannot setup edge lists, path is not a directory: " + p_path);
-			return list;
+			return lists;
 		}
 		
 		// iterate files in dir, filter by pattern
@@ -62,7 +70,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				
 				// looking for format xxx.oel or xxx.oel.<nidx>
 				if (tokens.length > 1) {
-					if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
+					if (tokens[1].equals("oel") || tokens[1].equals("boel") || tokens[1].equals("roel")) {
 						return true;
 					}
 				} 
@@ -79,17 +87,21 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 			if (tokens.length > 1) {
 				if (tokens[1].equals("oel"))
 				{
-					list.add(new OrderedEdgeListTextFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+					lists.m_first.add(new OrderedEdgeListTextFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
 				}
 				else if (tokens[1].equals("boel"))
 				{
-					list.add(new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+					lists.m_first.add(new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(), m_vertexBatchSize * 1000));
+				}
+				else if (tokens[1].equals("roel"))
+				{
+					lists.m_second = new OrderedEdgeListRootsTextFile(file.getAbsolutePath());
 				}
 			} 
 		}
 		
 		// make sure our list is sorted by nodeIdx/localIdx
-		list.sort(new Comparator<OrderedEdgeList>(){
+		lists.m_first.sort(new Comparator<OrderedEdgeList>(){
 			@Override
 			public int compare(final OrderedEdgeList p_lhs, final OrderedEdgeList p_rhs) {
 				if (p_lhs.getNodeIndex() < p_rhs.getNodeIndex()) {
@@ -101,7 +113,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				}
 		}});
 			
-		return list;
+		return lists;
 	}
 	
 	protected boolean load(final OrderedEdgeList p_orderedEdgeList, final RebaseVertexID p_rebase)
@@ -150,15 +162,17 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				loop = false;
 			}
 			
-			if (m_chunkService.create(vertexBuffer) != vertexBuffer.length)
+			int count = m_chunkService.create(vertexBuffer);
+			if (count != vertexBuffer.length)
 			{
-				m_loggerService.error(getClass(), "Creating chunks for vertices failed.");
+				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + vertexBuffer.length);
 				return false;
 			}
 			
+			count = m_chunkService.put(vertexBuffer);
 			if (m_chunkService.put(vertexBuffer) != vertexBuffer.length)
 			{
-				m_loggerService.error(getClass(), "Putting vertex data for chunks failed.");
+				m_loggerService.error(getClass(), "Putting vertex data for chunks failed: " + count + " != " + vertexBuffer.length);
 				return false;
 			}
 			
@@ -174,6 +188,29 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		
 		m_loggerService.info(getClass(), "Loading done, vertex count: " + m_totalVerticesLoaded);
 		
+		return true;
+	}
+	
+	protected boolean loadRoots(final OrderedEdgeListRoots p_orderedEdgeListRoots, final RebaseVertexID p_rebase)
+	{
+		ArrayList<Long> tmp = new ArrayList<Long>();
+		m_loggerService.info(getClass(), "Loading roots started");
+		
+		while (true)
+		{
+			long root = p_orderedEdgeListRoots.getRoot();
+			if (root == -1)
+				break;
+			
+			tmp.add(p_rebase.rebase(root));
+		}
+		
+		m_roots = new long[tmp.size()];
+		for (int i = 0; i < tmp.size(); i++) {
+			m_roots[i] = tmp.get(i);
+		}
+		
+		m_loggerService.info(getClass(), "Loading roots done, count: " + m_roots.length);
 		return true;
 	}
 }
