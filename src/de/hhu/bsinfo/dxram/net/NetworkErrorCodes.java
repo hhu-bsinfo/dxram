@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.net;
 
-public enum NetworkErrorCodes {
+public enum NetworkErrorCodes 
+{
 	SUCCESS,
 	UNKNOWN,
 	DESTINATION_UNREACHABLE,

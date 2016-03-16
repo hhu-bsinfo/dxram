@@ -35,6 +35,16 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	
 	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 
+	public enum MemoryErrorCodes
+	{
+		SUCCESS,
+		UNKNOWN,
+		DOES_NOT_EXIST,
+		READ,
+		WRITE,
+		OUT_OF_MEMORY,
+	}
+	
 	// Constructors
 	/**
 	 * Creates an instance of MemoryManager
@@ -190,18 +200,22 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @param p_dataStructure Data structure to write the data of its specified ID to.
 	 * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.l
 	 */
-	public boolean get(final DataStructure p_dataStructure)
+	public MemoryErrorCodes get(final DataStructure p_dataStructure)
 	{
 		long address;
-		boolean ret = false;
+		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
 			SmallObjectHeapDataStructureImExporter importer = new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (importer.importObject(p_dataStructure) >= 0) {
-				ret = true;
-			}
+			if (importer.importObject(p_dataStructure) < 0) {
+				ret = MemoryErrorCodes.READ;
+			} 
+		}
+		else
+		{
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
 		
 		return ret;
@@ -224,20 +238,22 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @throws MemoryException
 	 *             If writing data failed.
 	 */
-	public boolean put(final DataStructure p_dataStructure)
+	public MemoryErrorCodes put(final DataStructure p_dataStructure)
 	{
 		long address;
-		boolean ret = false;
+		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
 			SmallObjectHeapDataStructureImExporter exporter = new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (exporter.exportObject(p_dataStructure) >= 0) {
-				ret = true;
+			if (exporter.exportObject(p_dataStructure) < 0) {
+				ret = MemoryErrorCodes.WRITE;
 			}
+		} else {
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
-
+		
 		return ret;
 	}
 
@@ -249,10 +265,10 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public boolean remove(final long p_chunkID) {
+	public MemoryErrorCodes remove(final long p_chunkID) {
 		long addressDeletedChunk;
 		int size;
-		boolean ret = false;
+		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 
 		// Get and delete the address from the CIDTable, mark as zombie first
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
@@ -270,8 +286,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);
 			m_rawMemory.free(addressDeletedChunk);
 			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free);
-			
-			ret = true;
+		} else {
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
 		
 		return ret;

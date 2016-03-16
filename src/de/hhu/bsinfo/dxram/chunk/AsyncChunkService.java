@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.Locations;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
@@ -119,7 +120,6 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 		
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync, p_dataStructures.length);
 		
-		ArrayList<DataStructure> localChunks = new ArrayList<DataStructure>();
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
 		
 		// sort by local/remote chunks
@@ -130,44 +130,49 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 				continue;
 			}
 			
-			if (m_memoryManager.exists(dataStructure.getID())) {
-				localChunks.add(dataStructure);
-			} else {
-				// remote or migrated, figure out location and sort by peers
-				Locations locations = m_lookup.get(dataStructure.getID());
-				if (locations == null) {
-					continue;
-				} else {
-					short peer = locations.getPrimaryPeer();
-
-					ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
-					if (remoteChunksOfPeer == null) {
-						remoteChunksOfPeer = new ArrayList<DataStructure>();
-						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
+			MemoryErrorCodes err = m_memoryManager.put(dataStructure);
+			switch (err)
+			{
+				case SUCCESS:
+				{
+					// unlock chunks
+					if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
+						boolean writeLock = false;
+						if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
+							writeLock = true;
+						}
+						
+						m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
 					}
-					remoteChunksOfPeer.add(dataStructure);
+					break;
+				}
+				case DOES_NOT_EXIST:
+				{
+					// remote or migrated, figure out location and sort by peers
+					Locations locations = m_lookup.get(dataStructure.getID());
+					if (locations == null) {
+						continue;
+					} else {
+						short peer = locations.getPrimaryPeer();
+	
+						ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+						if (remoteChunksOfPeer == null) {
+							remoteChunksOfPeer = new ArrayList<DataStructure>();
+							remoteChunksByPeers.put(peer, remoteChunksOfPeer);
+						}
+						remoteChunksOfPeer.add(dataStructure);
+					}
+					break;
+				}
+				default:
+				{
+					m_logger.error(getClass(), "Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+					break;
 				}
 			}
 		}
-		
-		// have local puts first
-		for (DataStructure dataStructure : localChunks) {
-			if (!m_memoryManager.put(dataStructure))
-				m_logger.error(getClass(), "Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
-		}
+
 		m_memoryManager.unlockAccess();
-		
-		// unlock chunks
-		if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
-			boolean writeLock = false;
-			if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
-				writeLock = true;
-			}
-			
-			for (DataStructure dataStructure : localChunks) {
-				m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
-			}
-		}
 	
 		// go for remote chunks
 		for (Entry<Short, ArrayList<DataStructure>> entry : remoteChunksByPeers.entrySet()) {
@@ -177,7 +182,7 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 				// local put, migrated data to current node
 				m_memoryManager.lockAccess();
 				for (final DataStructure dataStructure : entry.getValue()) {
-					if (!m_memoryManager.put(dataStructure))
+					if (m_memoryManager.put(dataStructure) != MemoryErrorCodes.SUCCESS)
 						m_logger.error(getClass(), "Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
 				}
 				m_memoryManager.unlockAccess();
@@ -270,14 +275,10 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 		
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < chunks.length; i++) {
-			if (m_memoryManager.exists(chunks[i].getID())) {
-				if (!m_memoryManager.put(chunks[i])) {
-					// does not exist (anymore)
-					m_logger.warn(getClass(), "Putting chunk " + Long.toHexString(chunks[i].getID()) + " failed, does not exist.");
-				}
-			} else {
-				// got migrated, not responsible anymore
-				m_logger.warn(getClass(), "Putting chunk " + Long.toHexString(chunks[i].getID()) + " failed, was migrated.");
+			MemoryErrorCodes err = m_memoryManager.put(chunks[i]);
+			if (err != MemoryErrorCodes.SUCCESS) {
+				// does not exist (anymore)
+				m_logger.warn(getClass(), "Putting chunk " + Long.toHexString(chunks[i].getID()) + " failed: " + err);
 			}
 		}
 		m_memoryManager.unlockAccess();
