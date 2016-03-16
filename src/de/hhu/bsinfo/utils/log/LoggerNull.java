@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.utils.log;
 
+/**
+ * Null logger/dummy stubbing all log calls. To be used if you don't want to use any logging.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class LoggerNull implements LoggerInterface {
 
 	@Override

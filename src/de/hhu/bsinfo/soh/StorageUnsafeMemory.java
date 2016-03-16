@@ -7,7 +7,7 @@ import java.io.RandomAccessFile;
 
 import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.Endianness;
-import de.hhu.bsinfo.utils.unsafe.UnsafeHandler;
+import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
  * Implementation of a storage based on an unsafe allocated

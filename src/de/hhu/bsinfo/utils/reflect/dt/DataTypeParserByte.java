@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+/**
+ * Implementation of a byte parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserByte implements DataTypeParser
 {
 	@Override
@@ -7,6 +11,11 @@ public class DataTypeParserByte implements DataTypeParser
 		return "byte";
 	}
 
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Byte.class;
+	}
+	
 	@Override
 	public Object parse(java.lang.String p_str) {		
 		if (p_str.length() > 1)

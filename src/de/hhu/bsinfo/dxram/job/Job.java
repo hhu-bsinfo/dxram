@@ -1,17 +1,20 @@
 package de.hhu.bsinfo.dxram.job;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.job.event.JobEventListener;
+import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Base class for an job that can be exeucted by the
+ * Base class for an job that can be executed by the
  * JobService/JobComponent.
  * Jobs can either be used internally by DXRAM, pushed through
  * the JobComponent, or externally by the user, pushed through
@@ -25,11 +28,12 @@ public abstract class Job implements Importable, Exportable
 	private long m_ID = JobID.INVALID_ID;
 	private long[] m_parameterChunkIDs = null;
 
+	// allow the job system to access the listeners
+	ArrayList<JobEventListener> m_eventListeners = new ArrayList<JobEventListener>();
+	
 	// nasty, but the only way to get access to services/the API for 
 	// external/user code
 	private DXRAMServiceAccessor m_serviceAccessor = null;
-	
-	protected static int MS_JOB_TYPE_ID_COUNTER = 0;
 	
 	private static Map<Short, Class<? extends Job>> m_registeredJobTypes = new HashMap<Short, Class<? extends Job>>();
 	
@@ -126,6 +130,15 @@ public abstract class Job implements Importable, Exportable
 		return "Job[m_ID " + Long.toHexString(m_ID) + "]";
 	}
 	
+	/**
+	 * Register a listener, which receives events specified by the bit mask it
+	 * returns.
+	 * @param p_listener Listener to register to listen to job events.
+	 */
+	public void registerEventListener(final JobEventListener p_listener) {
+		m_eventListeners.add(p_listener);
+	}
+	
 	// -------------------------------------------------------------------
 	
 	@Override
@@ -187,6 +200,42 @@ public abstract class Job implements Importable, Exportable
 	void setServiceAccessor(final DXRAMServiceAccessor p_serviceAccessor)
 	{
 		m_serviceAccessor = p_serviceAccessor;
+	}
+	
+	/**
+	 * Called when the job is scheduled for execution by the system.
+	 */
+	void notifyListenersJobScheduledForExecution(final short p_sourceNodeId)
+	{
+		for (JobEventListener listener : m_eventListeners) {
+			if ((listener.getJobEventBitMask() & JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID) > 0) {
+				listener.jobEventTriggered(JobEvents.MS_JOB_SCHEDULED_FOR_EXECUTION_EVENT_ID, m_ID, p_sourceNodeId);
+			}
+		}
+	}
+	
+	/**
+	 * Called when the job got assigned to a worker and is in before getting executed.
+	 */
+	void notifyListenersJobStartsExecution(final short p_sourceNodeId)
+	{
+		for (JobEventListener listener : m_eventListeners) {
+			if ((listener.getJobEventBitMask() & JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID) > 0) {
+				listener.jobEventTriggered(JobEvents.MS_JOB_STARTED_EXECUTION_EVENT_ID, m_ID, p_sourceNodeId);
+			}
+		}
+	}
+	
+	/**
+	 * Called when a job has finished execution by a worker.
+	 */
+	void notifyListenersJobFinishedExecution(final short p_sourceNodeId)
+	{
+		for (JobEventListener listener : m_eventListeners) {
+			if ((listener.getJobEventBitMask() & JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID) > 0) {
+				listener.jobEventTriggered(JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID, m_ID, p_sourceNodeId);
+			}
+		}
 	}
 	
 	// -------------------------------------------------------------------

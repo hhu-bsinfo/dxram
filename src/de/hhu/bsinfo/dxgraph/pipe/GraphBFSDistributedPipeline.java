@@ -5,7 +5,6 @@ import de.hhu.bsinfo.dxcompute.coord.SyncBarrierMaster;
 import de.hhu.bsinfo.dxcompute.coord.SyncBarrierSlave;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
-import de.hhu.bsinfo.dxgraph.algo.GraphAlgorithmBFS3Dep;
 import de.hhu.bsinfo.dxgraph.load.oel.GraphLoaderOrderedEdgeListMultiNode;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -14,12 +13,12 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 public abstract class GraphBFSDistributedPipeline extends Pipeline {
 
 	protected static final Argument ARG_GRAPH_LOAD_DATA_PATH = new Argument("graphLoadDataPath", ".", true, "Path containing graph data files to laod"); 
-	protected static final Argument ARG_NODE_COUNT = new Argument("nodeCount", 2, true, "Total number of nodes involved (master and slaves)"); 
-	protected static final Argument ARG_GRAPH_LOAD_VERTEX_BATCH_SIZE = new Argument("graphLoadVertexBatchSize", 100, true, "Batch size for loading vertices from the file");
+	protected static final Argument ARG_NODE_COUNT = new Argument("nodeCount", "2", true, "Total number of nodes involved (master and slaves)"); 
+	protected static final Argument ARG_GRAPH_LOAD_VERTEX_BATCH_SIZE = new Argument("graphLoadVertexBatchSize", "100", true, "Batch size for loading vertices from the file");
 	
-	protected static final Argument ARG_GRAPH_BFS_NODE_COUNT_PER_JOB = new Argument("graphBfsNodeCountPerJob", 100, true, "Number of nodes to process within a single BFS job"); 
+	protected static final Argument ARG_GRAPH_BFS_NODE_COUNT_PER_JOB = new Argument("graphBfsNodeCountPerJob", "100", true, "Number of nodes to process within a single BFS job"); 
 	protected static final Argument ARG_GRAPH_BFS_ENTRY_NODE_LOCAL = new Argument("graphBfsEntryNodeLocal", null, true, "Local ID of entry node for BFS algorithm"); 
-	protected static final Argument ARG_GRAPH_BFS_COUNT_VERTS_SINGLE_THREAD = new Argument("graphBfsCountVertsSingleThread", false, true, "Instead of running the normal BFS algorithm, run a single threaded version which counts the vertices (used to determine size of connected graph)"); 
+	protected static final Argument ARG_GRAPH_BFS_COUNT_VERTS_SINGLE_THREAD = new Argument("graphBfsCountVertsSingleThread", "false", true, "Instead of running the normal BFS algorithm, run a single threaded version which counts the vertices (used to determine size of connected graph)"); 
 	
 	@Override
 	public boolean setup(final ArgumentList p_arguments) {		

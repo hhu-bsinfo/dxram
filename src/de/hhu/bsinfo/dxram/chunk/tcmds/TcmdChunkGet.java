@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
+// TODO mike refactoring: refer to chunk create/remove commands
 public class TcmdChunkGet extends TerminalCommand{
 	
 	private final static String MS_ARG_CID = "cid";
@@ -28,39 +29,29 @@ public class TcmdChunkGet extends TerminalCommand{
 	{
 		return "chunkget";
 	}
-	
 
 	@Override
-	public String getUsageMessage() 
-	{
-		return 	  "chunkget cid[long]:CID "
-				+ "size[int]:SIZ "
-				+ "[offset[int]:OFF] "
-				+ "[length[int]:LEN] "
-				+ "[printHex[boolean]:HEX]"
-				+ " or "
-				+ "chunkget lid[long]:LID "
-				+ "[nid[short]:NID] "
-				+ "[offset[int]: OFF] "
-				+ "[length[int]: LEN] "
-				+ "[printHex[boolean]: HEX]";
-	}
-
-	@Override
-	public String getHelpMessage()
+	public String getDescription()
 	{
 		return "Searches chunk which matches the specified CID";
+
+	}
+	
+	@Override
+	public void registerArguments(final ArgumentList p_arguments)
+	{
+		// TODO mike
 	}
 
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
-		Long 	cid   	= p_arguments.getArgumentValue(MS_ARG_CID);
-		Long 	lid   	= p_arguments.getArgumentValue(MS_ARG_LID);
-		Short 	nid   	= p_arguments.getArgumentValue(MS_ARG_NID);
-		Integer	size  	= p_arguments.getArgumentValue(MS_ARG_SIZ);
-		Integer	off   	= p_arguments.getArgumentValue(MS_ARG_OFF);
-		Integer	len   	= p_arguments.getArgumentValue(MS_ARG_LEN);
-		Boolean printHex = p_arguments.getArgumentValue(MS_ARG_HEX);
+
+		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
+		Integer	size  = p_arguments.getArgumentValue(MS_ARG_SIZ, Integer.class);
+		Integer	off   = p_arguments.getArgumentValue(MS_ARG_OFF, Integer.class);
+		Integer	len   = p_arguments.getArgumentValue(MS_ARG_LEN, Integer.class);
+		Boolean isHex = p_arguments.getArgumentValue(MS_ARG_HEX, Boolean.class);
 		
 		if(cid == null && lid == null)
 			return false;
@@ -69,7 +60,6 @@ public class TcmdChunkGet extends TerminalCommand{
 			printHex = false;
 		
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		BootComponent bootComp		= getTerminalDelegate().getDXRAMComponent(BootComponent.class);
 		BootService   bootService 	= getTerminalDelegate().getDXRAMService(BootService.class);
 		
 		if(size == null)

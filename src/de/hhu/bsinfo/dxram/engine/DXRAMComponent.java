@@ -179,13 +179,13 @@ public abstract class DXRAMComponent
 		if (Modifier.isAbstract(this.getClass().getSuperclass().getModifiers()) &&
 				!this.getClass().getSuperclass().equals(DXRAMComponent.class))
 		{
-			componentInterfaceIdentifier = this.getClass().getSuperclass().getName();
+			componentInterfaceIdentifier = this.getClass().getSuperclass().getSimpleName();
 		}
 		
 		m_settings = new Settings(	m_parentEngine.getConfiguration(), 
 				m_parentEngine.getLogger(),
 				componentInterfaceIdentifier, 
-				this.getClass().getName());
+				this.getClass().getSimpleName());
 		
 		registerDefaultSettingsComponent(m_settings);
 		

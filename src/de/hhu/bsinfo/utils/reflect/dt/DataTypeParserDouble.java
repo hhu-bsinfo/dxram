@@ -1,10 +1,19 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+/**
+ * Implementation of a double parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserDouble implements DataTypeParser
 {
 	@Override
 	public java.lang.String getTypeIdentifer() {
 		return "double";
+	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Double.class;
 	}
 
 	@Override

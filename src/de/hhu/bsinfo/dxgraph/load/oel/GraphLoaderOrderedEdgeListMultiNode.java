@@ -16,6 +16,7 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.locks.SpinLock;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -27,7 +28,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeList implements MessageReceiver {
 
 	private boolean m_masterLoader = false;
-	private List<OrderedEdgeList> m_localEdgeLists = null;
+	private Pair<List<OrderedEdgeList>, OrderedEdgeListRoots> m_localEdgeLists = null;
 	private volatile GraphIndex m_graphIndex = new GraphIndex();
 	
 	// for master only
@@ -56,16 +57,16 @@ public class GraphLoaderOrderedEdgeListMultiNode extends GraphLoaderOrderedEdgeL
 		
 		m_localEdgeLists = setupEdgeLists(p_path);
 		
-		if (m_localEdgeLists.size() != 1) {
+		if (m_localEdgeLists.first().size() != 1) {
 			m_loggerService.error(getClass(), "Having more than one edge list file (or none), expecting exactly one.");
 			return false;
 		}
 		
 		if (m_masterLoader) {
 			// node count without master = slaves
-			return master(m_localEdgeLists.get(0), p_numNodes - 1); 
+			return master(m_localEdgeLists.first().get(0), p_numNodes - 1); 
 		} else {
-			return slave(m_localEdgeLists.get(0));
+			return slave(m_localEdgeLists.first().get(0));
 		}
 	}
 	

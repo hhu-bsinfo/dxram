@@ -1,10 +1,19 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+/**
+ * Implementation of a short parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserShort implements DataTypeParser
 {
 	@Override
 	public java.lang.String getTypeIdentifer() {
 		return "short";
+	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Short.class;
 	}
 
 	@Override

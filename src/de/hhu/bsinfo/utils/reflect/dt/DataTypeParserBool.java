@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+/**
+ * Implementation of a bool parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserBool implements DataTypeParser
 {
 	@Override
@@ -7,6 +11,11 @@ public class DataTypeParserBool implements DataTypeParser
 		return "bool";
 	}
 
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Boolean.class;
+	}
+	
 	@Override
 	public Object parse(java.lang.String p_str) {
 		// allow 0 and 1 as well

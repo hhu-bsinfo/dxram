@@ -65,6 +65,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	private boolean m_logActive = false;
 	private boolean m_firstBackupRangeInitialized = false;
+	private boolean m_removePerformanceCriticalSection = false;
 	
 	/**
 	 * Constructor
@@ -75,11 +76,14 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	
 	@Override
 	protected void registerDefaultSettingsService(Settings p_settings) {
+		p_settings.setDefaultValue(ChunkConfigurationValues.Service.REMOVE_PERFORMANCE_CRITICAL_SECTIONS);
 	}
 	
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
 	{
+		m_removePerformanceCriticalSection = p_settings.getValue(ChunkConfigurationValues.Service.REMOVE_PERFORMANCE_CRITICAL_SECTIONS);
+		
 		m_boot = getComponent(BootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
@@ -118,6 +122,10 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return true;
 	}
 	
+	/**
+	 * Get the status of the chunk service.
+	 * @return Status object with current status of the service.
+	 */
 	public Status getStatus()
 	{
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -135,6 +143,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		return status;
 	}
 	
+	/**
+	 * Get the status of a remote node specified by a node id.
+	 * @param p_nodeID Node id to get the status from.
+	 * @return Status object with status information of the remote node.
+	 */
 	public Status getStatus(final short p_nodeID)
 	{
 		Status status = null;
@@ -191,7 +204,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			return null;
 		}
 		
-		m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not create chunks");
@@ -218,7 +233,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 		
-		m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
+		}
 		
 		return chunkIDs;
 	}
@@ -237,7 +254,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_dataStructures.length == 0)
 			return count;
 
-		m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not create chunks");
@@ -270,7 +289,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 		
-		m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ") " + p_dataStructures[0].sizeofObject() + ", ...] -> " + Long.toHexString(p_dataStructures[0].getID()) + ", ...");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ") " + p_dataStructures[0].sizeofObject() + ", ...] -> " + Long.toHexString(p_dataStructures[0].getID()) + ", ...");
+		}
 		
 		return count;
 	}
@@ -286,7 +307,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_sizes.length == 0)
 			return new long[0];
 
-		m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not create chunks");
@@ -313,7 +336,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 		
-		m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
+		}
 		
 		return chunkIDs;
 	}
@@ -330,7 +355,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_sizes.length == 0)
 			return new long[0];
 
-		m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not create chunks");
@@ -350,10 +377,12 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteCreate);
 		
-		if (chunkIDs != null)
-			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
-		else
-			m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> -1");
+		if (!m_removePerformanceCriticalSection) {
+			if (chunkIDs != null)
+				m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> " + Long.toHexString(chunkIDs[0]) + ", ...");
+			else
+				m_logger.trace(getClass(), "create[peer " + Integer.toHexString(p_peer & 0xFFFF) + ", sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> -1");
+		}
 		
 		return chunkIDs;
 	}
@@ -383,7 +412,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_chunkIDs.length == 0)
 			return chunksRemoved;
 		
-		m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") " + Long.toHexString(p_chunkIDs[0]) + ", ...]");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") " + Long.toHexString(p_chunkIDs[0]) + ", ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not remove chunks");
@@ -489,7 +520,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
 		
-		m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") " + Long.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") " + Long.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
+		}
 		
 		return chunksRemoved;
 	}
@@ -529,7 +562,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_dataStructures.length == 0)
 			return chunksPut;
 		
-		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not put chunks");
@@ -637,7 +672,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);		
 		
-		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...] -> " + chunksPut);
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...] -> " + chunksPut);
+		}
 		
 		return chunksPut;
 	}
@@ -665,7 +702,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			return totalChunksGot;
 		}
 		
-		m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
+		}
 		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not get chunks");
@@ -760,16 +799,20 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);	
 		
-		m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
-
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+		}
+		
 		return totalChunksGot;
 	}
 
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
-		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
-
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		}
+		
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
@@ -794,7 +837,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 			}
 		}
 
-		m_logger.trace(getClass(), "Exiting incomingMessage");
+		if (!m_removePerformanceCriticalSection) {
+			m_logger.trace(getClass(), "Exiting incomingMessage");
+		}
 	}
 	
 	// -----------------------------------------------------------------------------------
@@ -863,6 +908,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	private void initBackupRange(final long p_localID, final int p_size) {
 		int size;
 
+		// TODO Kevin: fix this
 		if (m_logActive) {
 //			size = p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
 //			if (!m_firstRangeInitialized && p_localID == 1) {
@@ -1116,21 +1162,37 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 	}
 	
+	/**
+	 * Status object for the chunk service containing various information
+	 * about it.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
+	 */
 	public static class Status implements Importable, Exportable
 	{
 		private long m_freeMemoryBytes = -1;
 		private long m_totalMemoryBytes = -1;
 		
+		/**
+		 * Default constructor
+		 */
 		public Status()
 		{
 			
 		}
 		
+		/**
+		 * Get the amount of free memory in bytes.
+		 * @return Free memory in bytes.
+		 */
 		public long getFreeMemory()
 		{
 			return m_freeMemoryBytes;
 		}
 		
+		/**
+		 * Get the total amount of memory in bytes available.
+		 * @return Total amount of memory in bytes.
+		 */
 		public long getTotalMemory()
 		{
 			return m_totalMemoryBytes;

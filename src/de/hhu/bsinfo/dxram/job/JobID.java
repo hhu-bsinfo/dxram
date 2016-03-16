@@ -40,4 +40,17 @@ public class JobID {
 
 		return p_jobID & LOCALID_BITMASK;
 	}
+	
+	/**
+	 * Create a job id.
+	 * @param p_node Node id part.
+	 * @param p_id Local job id part.
+	 * @return Job id.
+	 */
+	public static long createJobID(final short p_node, final long p_id) {
+		assert p_node != INVALID_ID;
+		assert p_id != INVALID_ID;
+		
+		return (((long) p_node << 48) | p_id);
+	}
 }

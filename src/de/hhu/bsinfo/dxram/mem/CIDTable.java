@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 
 /**
@@ -34,26 +35,27 @@ public final class CIDTable {
 	protected static final long FULL_FLAG = BIT_FLAG;
 	protected static final long DELETED_FLAG = BIT_FLAG;
 
-	// Attributes
 	private short m_ownNodeID = -1;
-	private boolean m_memoryStatisticsEnabled = false;
 	private long m_addressTableDirectory = -1;
 	private SmallObjectHeap m_rawMemory = null;
 
 	private LIDStore m_store = null;
 
 	private LoggerComponent m_logger = null;
+	private StatisticsComponent m_statistics = null;
 
-	// Attributes
+	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
+	
 	private AtomicLong m_nextLocalID = null;
 
 	// Constructors
 	/**
 	 * Creates an instance of CIDTable
 	 */
-	public CIDTable(final short p_ownNodeID, final boolean p_enableMemoryStastics, final LoggerComponent p_logger) {
+	public CIDTable(final short p_ownNodeID, final StatisticsComponent p_statistics, final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs, final LoggerComponent p_logger) {
 		m_ownNodeID = p_ownNodeID;
-		m_memoryStatisticsEnabled = p_enableMemoryStastics;
+		m_statistics = p_statistics;
+		m_statisticsRecorderIDs = p_statisticsRecorderIDs;
 		m_logger = p_logger;
 	}
 
@@ -207,13 +209,15 @@ public final class CIDTable {
 	 */
 	private long createNIDTable() {
 		long ret;
+		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable, NID_TABLE_SIZE);
 
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, NID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 		m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
-
-		if (m_memoryStatisticsEnabled) {
-			MemoryStatistic.getInstance().newCIDTable();
-		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable);
 			
 		return ret;
 	}
@@ -226,13 +230,15 @@ public final class CIDTable {
 	 */
 	private long createLIDTable() {
 		long ret;
+		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable, LID_TABLE_SIZE);
 
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, LID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 		m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
-
-		if (m_memoryStatisticsEnabled) {
-			MemoryStatistic.getInstance().newCIDTable();
-		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable);
 		
 		return ret;
 	}

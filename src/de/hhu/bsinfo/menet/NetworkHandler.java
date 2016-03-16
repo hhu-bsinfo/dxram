@@ -9,7 +9,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
-import de.hhu.bsinfo.utils.StatisticsManager;
 import de.hhu.bsinfo.utils.log.LoggerInterface;
 import de.hhu.bsinfo.utils.log.LoggerNull;
 
@@ -39,8 +38,7 @@ public final class NetworkHandler implements DataReceiver {
 	/**
 	 * Creates an instance of NetworkHandler
 	 */
-	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads, 
-			final boolean p_enableStatisticsThroughput, final boolean p_enableStatisticsRequests) {
+	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads) {
 		final byte networkType;
 		
 		m_executor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
@@ -55,13 +53,6 @@ public final class NetworkHandler implements DataReceiver {
 		m_messageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
 
 		m_lock = new ReentrantLock(false);
-		
-		if (p_enableStatisticsThroughput) {
-			StatisticsManager.registerStatistic("Throughput", ThroughputStatistic.getInstance());
-		}
-		if (p_enableStatisticsRequests) {
-			StatisticsManager.registerStatistic("Request", RequestStatistic.getInstance());
-		}
 	}
 	
 	public void setLogger(final LoggerInterface p_logger) {

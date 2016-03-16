@@ -24,6 +24,12 @@ public interface WorkerDelegate
 	public void scheduledJob(final Job p_job);
 	
 	/**
+	 * A job is right before getting executed by a worker.
+	 * @param p_job Job getting executed.
+	 */
+	public void executingJob(final Job p_job);
+	
+	/**
 	 * Execution of a job finished by a worker.
 	 * @param p_job Job that finished execution.
 	 */

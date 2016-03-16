@@ -41,16 +41,18 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 		{
 			if (worker.pushJob(p_job))
 			{
-				// causes the garbage collector to crazy if too many jobs are pushed very quickly
-				//m_logger.debug(getClass(), "Submited job " + p_job + " to worker " + worker);
+				// causes the garbage collector to go crazy if too many jobs are pushed very quickly
+				//m_logger.debug(getClass(), "Submitted job " + p_job + " to worker " + worker);
 				success = true;
 				break;
 			}
 		}
 		
 		if (!success)
+		{
 			m_logger.warn(getClass(), "Submiting job " + p_job + " failed.");
-			
+		}	
+		
 		return success;
 	}
 
@@ -130,7 +132,6 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	public Job stealJobLocal(Worker p_thief) {
 		Job job = null;
 		
-		// TODO have better pattern for stealing?
 		for (Worker worker : m_workers)
 		{
 			// don't steal from own queue
@@ -140,7 +141,7 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 			job = worker.stealJob();
 			if (job != null)
 			{
-				m_logger.debug(getClass(), "Job " + job + " stolen from worker " + worker);
+				m_logger.trace(getClass(), "Job " + job + " stolen from worker " + worker);
 				break;
 			}
 		}
@@ -150,13 +151,19 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 
 	@Override
 	public void scheduledJob(final Job p_job) {
-		long id = m_unfinishedJobs.incrementAndGet();
-		p_job.setID(((long) m_boot.getNodeID() << 48) | id);
+		m_unfinishedJobs.incrementAndGet();
+		p_job.notifyListenersJobScheduledForExecution(m_boot.getNodeID());
+	}
+	
+	@Override
+	public void executingJob(Job p_job) {
+		p_job.notifyListenersJobStartsExecution(m_boot.getNodeID());
 	}
 
 	@Override
 	public void finishedJob(final Job p_job) {
 		m_unfinishedJobs.decrementAndGet();
+		p_job.notifyListenersJobFinishedExecution(m_boot.getNodeID());
 	}
 
 	@Override

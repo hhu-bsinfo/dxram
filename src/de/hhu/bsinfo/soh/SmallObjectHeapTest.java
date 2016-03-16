@@ -8,8 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import de.hhu.bsinfo.dxram.mem.MemoryStatistic;
-import de.hhu.bsinfo.utils.StatisticsManager;
 import de.hhu.bsinfo.utils.locks.JNILock;
 import sun.misc.Lock;
 
@@ -66,8 +64,6 @@ public class SmallObjectHeapTest
 		m_blockSizeMin = p_blockSizeMin;
 		m_blockSizeMax = p_blockSizeMax;
 		m_debugPrint = p_debugPrint;
-		
-		StatisticsManager.registerStatistic("Memory", MemoryStatistic.getInstance());
 	}
 	
 	public void run()
@@ -101,8 +97,6 @@ public class SmallObjectHeapTest
 	
 		System.out.println("All workers finished.");
 		System.out.println("Final memory status:\n" + m_memory);
-		
-		System.out.println(StatisticsManager.getStatistics());
 		
 		HeapWalker.Results results = HeapWalker.walk(m_memory);
 		System.out.println(results);

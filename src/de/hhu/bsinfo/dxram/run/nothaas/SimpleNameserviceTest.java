@@ -15,8 +15,8 @@ import de.hhu.bsinfo.utils.main.Main;
 //before running this as a peer, start one superpeer
 public class SimpleNameserviceTest extends Main {
 	
-	public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", 76, true, "Chunk size for allocation");
-	public static final Argument ARG_CHUNK_COUNT = new Argument("chunkCount", 10, true, "Number of chunks to allocate");
+	public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "76", true, "Chunk size for allocation");
+	public static final Argument ARG_CHUNK_COUNT = new Argument("chunkCount", "10", true, "Number of chunks to allocate");
 	
 	private DXRAM m_dxram;
 	private ChunkService m_chunkService;

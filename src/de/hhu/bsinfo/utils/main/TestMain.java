@@ -10,9 +10,9 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
  */
 public class TestMain extends Main {
 
-	public static final Argument PARAM_1 = new Argument("param1", 10, true, "First parameter");
+	public static final Argument PARAM_1 = new Argument("param1", "10", true, "First parameter");
 	public static final Argument PARAM_2 = new Argument("param2", "test", true, "Second parameter");
-	public static final Argument PARAM_3 = new Argument("param3", 1000L, true, "Third parameter");
+	public static final Argument PARAM_3 = new Argument("param3", "1000", true, "Third parameter");
 	
 	/**
 	 * Java main function.

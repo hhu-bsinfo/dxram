@@ -3,6 +3,11 @@ package de.hhu.bsinfo.utils.log;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * Implementation to log to the console.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ *
+ */
 public class LogDestinationConsole implements LogDestination {
 
 	private LogLevel m_logLevel = LogLevel.DEBUG;

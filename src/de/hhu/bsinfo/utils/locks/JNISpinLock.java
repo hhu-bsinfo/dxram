@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
-import de.hhu.bsinfo.utils.unsafe.UnsafeHandler;
+import de.hhu.bsinfo.utils.UnsafeHandler;
 import sun.misc.Unsafe;
 
 /**

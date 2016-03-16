@@ -4,7 +4,6 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.Stopwatch;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -14,7 +13,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 public class LinkedListBenchmark extends Main
 {
-	public static final Argument ARG_ITEM_COUNT = new Argument("itemCount", 100, true, "Number of items for the linked list");
+	public static final Argument ARG_ITEM_COUNT = new Argument("itemCount", "100", true, "Number of items for the linked list");
 	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;

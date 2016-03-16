@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxgraph.load.oel;
 import java.util.List;
 
 import de.hhu.bsinfo.dxgraph.load.RebaseVertexIDLocal;
+import de.hhu.bsinfo.utils.Pair;
 
 public class GraphLoaderOrderedEdgeListLocal extends GraphLoaderOrderedEdgeList {
 
@@ -14,18 +15,28 @@ public class GraphLoaderOrderedEdgeListLocal extends GraphLoaderOrderedEdgeList 
 	@Override
 	public boolean load(final String p_path, final int p_numNodes) 
 	{		
-		List<OrderedEdgeList> edgeLists = setupEdgeLists(p_path);
+		Pair<List<OrderedEdgeList>, OrderedEdgeListRoots> edgeLists = setupEdgeLists(p_path);
 		
 		// we have to assume that the data order matches
 		// the nodeIdx/localIdx sorting
-		// => we can iterate the list and start separate jobs
-		// for every list
 		
 		// add offset with each file we processed so we can concat multiple files
 		long vertexIDOffset = 0;
-		for (OrderedEdgeList edgeList : edgeLists) {	
-			load(edgeList, new RebaseVertexIDLocal(m_bootService.getNodeID(), vertexIDOffset));
+		boolean somethingLoaded = false;
+		for (OrderedEdgeList edgeList : edgeLists.first()) {
+			somethingLoaded = true;
+			m_loggerService.info(getClass(), "Loading from edge list " + edgeList);
+			if (!load(edgeList, new RebaseVertexIDLocal(m_bootService.getNodeID(), vertexIDOffset)))
+				return false;
 			vertexIDOffset += edgeList.getTotalVertexCount();
+		}
+		
+		if (!loadRoots(edgeLists.second(), new RebaseVertexIDLocal(m_bootService.getNodeID(), 0))) {
+			m_loggerService.warn(getClass(), "Loading roots failed.");
+		}
+		
+		if (!somethingLoaded) {
+			m_loggerService.warn(getClass(), "There were no ordered edge lists to load.");
 		}
 	
 		return true;

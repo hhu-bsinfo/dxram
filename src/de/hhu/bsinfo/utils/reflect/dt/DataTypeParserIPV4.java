@@ -2,11 +2,20 @@ package de.hhu.bsinfo.utils.reflect.dt;
 
 import java.net.InetSocketAddress;
 
+/**
+ * Implementation of an IPV4 address parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserIPV4 implements DataTypeParser
 {
 	@Override
 	public java.lang.String getTypeIdentifer() {
 		return "inetv4";
+	}
+	
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return InetSocketAddress.class;
 	}
 
 	@Override

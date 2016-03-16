@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.utils.reflect.dt;
 
+/**
+ * Implementation of an int parser.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
+ */
 public class DataTypeParserInt implements DataTypeParser
 {
 	@Override
@@ -7,6 +11,11 @@ public class DataTypeParserInt implements DataTypeParser
 		return "int";
 	}
 
+	@Override
+	public Class<?> getClassToConvertTo() {
+		return Integer.class;
+	}
+	
 	@Override
 	public Object parse(java.lang.String p_str) 
 	{

@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
+//TODO mike refactoring: refer to chunk create/remove commands
 public class TcmdChunkPut extends TerminalCommand{
 	
 	private final static String MS_ARG_CID = "cid";
@@ -25,32 +26,26 @@ public class TcmdChunkPut extends TerminalCommand{
 	}
 	
 	@Override
-	public String getUsageMessage() 
+	public String getDescription() 
 	{
-		return 	  "chunkput cid[long]:CID data[Str]:STR"
-				+ " or "
-				+ "chunkput lid[long]:LID "
-				+ "[nid[short]:NID] "
-				+ "data[String]:STR";
-	}
-	
-	@Override
-	public String getHelpMessage() 
-	{
+
 		return 		"Put a String in the specified chunk."
 				+ 	"If the specified string is too long it will be trunced";
 	}
 	
 	@Override
+	public void registerArguments(final ArgumentList p_arguments)
+	{
+		// TODO mike
+	}
+	
+	@Override
 	public boolean execute(ArgumentList p_arguments) 
 	{
+		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		String 	data  = p_arguments.getArgumentValue(MS_ARG_DAT, String.class);
 		
-		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID);
-		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID);
-		Short 	nid   = p_arguments.getArgumentValue(MS_ARG_NID);
-		String 	data  = p_arguments.getArgumentValue(MS_ARG_DAT);
-		
-		
+/*		
 		System.out.println("data:" + data);
 		System.out.println("cid: "+ cid.longValue());
 		
@@ -61,7 +56,6 @@ public class TcmdChunkPut extends TerminalCommand{
 			return false;
 		
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		BootComponent bootComp		= getTerminalDelegate().getDXRAMComponent(BootComponent.class);
 		BootService   bootService 	= getTerminalDelegate().getDXRAMService(BootService.class);
 		
 		
@@ -85,7 +79,7 @@ public class TcmdChunkPut extends TerminalCommand{
 		num = chunkService.put(chunk);
 		if(num == 0)
 			System.out.println("Putting Chunk with id '"+ cid +"' failed");
-		
+		*/
 		return true;
 	}
 }
