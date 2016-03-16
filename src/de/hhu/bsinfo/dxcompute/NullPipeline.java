@@ -8,13 +8,13 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
  *
  */
 public class NullPipeline extends Pipeline {
-	
+
 	@Override
 	public boolean setup(final ArgumentList p_arguments) {
 		pushTask(new NullTask());
 		pushTask(new NullTask());
 		pushTask(new NullTask());
-		
+
 		return true;
 	}
 }

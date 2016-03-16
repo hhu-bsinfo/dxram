@@ -1,5 +1,0 @@
-#Classes
-DefaultLock - Represents a Lock
-DefaultLockHandler - Default implementation of the LockInterface
-LockInterface - API of the lock service
-ReadWriteLockHandler - Implementation of the LockInterface using read-write locks
