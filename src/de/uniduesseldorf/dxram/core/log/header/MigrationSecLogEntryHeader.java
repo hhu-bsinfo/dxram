@@ -1,7 +1,7 @@
 
 package de.uniduesseldorf.dxram.core.log.header;
 
-import de.uniduesseldorf.dxram.core.log.EpochVersion;
+import de.uniduesseldorf.dxram.core.log.Version;
 
 /**
  * Extends AbstractLogEntryHeader for a migration log entry header (secondary log)
@@ -24,7 +24,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Methods
 	@Override
-	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final EpochVersion p_version, final byte p_rangeID, final short p_source) {
+	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final byte p_rangeID, final short p_source) {
 		System.out.println("Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
 		return null;
 	}
@@ -106,7 +106,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 	}
 
 	@Override
-	public EpochVersion getVersion(final byte[] p_buffer, final int p_offset) {
+	public Version getVersion(final byte[] p_buffer, final int p_offset) {
 		final int offset = p_offset + getVEROffset(p_buffer, p_offset);
 		final byte length = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 		short epoch;
@@ -122,7 +122,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 					+ ((p_buffer[offset + LOG_ENTRY_EPO_SIZE + 2] & 0xff) << 16);
 		}
 
-		return new EpochVersion(epoch, version);
+		return new Version(epoch, version);
 	}
 
 	@Override
@@ -239,7 +239,7 @@ public class MigrationSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public void print(final byte[] p_buffer, final int p_offset) {
-		final EpochVersion version = getVersion(p_buffer, p_offset);
+		final Version version = getVersion(p_buffer, p_offset);
 
 		System.out.println("********************Secondary Log Entry Header (Normal)********************");
 		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));

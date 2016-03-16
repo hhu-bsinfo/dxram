@@ -156,6 +156,7 @@ public class PrimaryWriteBuffer {
 	 * Grant the writer thread access to buffer meta-data
 	 */
 	public void grantAccessToWriterThread() {
+		m_dataAvailable = true;
 		m_writerThreadAccessesBuffer = true;
 	}
 
@@ -205,7 +206,7 @@ public class PrimaryWriteBuffer {
 
 			// Wait if write buffer is nearly full
 			while (m_bytesInWriteBuffer > WRITE_BUFFER_SIZE * 0.8) {
-				m_dataAvailable = true;
+				// Grant writer thread access to meta-data (data available) and wait
 				grantAccessToWriterThread();
 
 				Thread.yield();
@@ -264,14 +265,14 @@ public class PrimaryWriteBuffer {
 				AbstractLogEntryHeader.addChecksum(m_buffer, writePointer, bytesToWrite, logEntryHeader, bytesUntilEnd);
 			}
 
+			// Grant writer thread access to meta-data (data available)
 			if (m_bytesInWriteBuffer >= SIGNAL_ON_BYTE_COUNT) {
-				// "Wake-up" writer thread if more than SIGNAL_ON_BYTE_COUNT is written
-				m_dataAvailable = true;
+				grantAccessToWriterThread();
 			}
 
-			// Grant the writer thread access to the meta-data
+			// Grant writer thread access to meta-data (time-out)
 			if (m_writerThreadRequestsAccessToBuffer) {
-				grantAccessToWriterThread();
+				m_writerThreadAccessesBuffer = true;
 			}
 		}
 		return bytesToWrite;
@@ -333,32 +334,24 @@ public class PrimaryWriteBuffer {
 			long timeStart;
 
 			for (;;) {
-				try {
-					if (m_isShuttingDown) {
-						// Shutdown signal -> directly flush all data to primary
-						// log and shut down
-						flushDataToPrimaryLog();
-						break;
-					}
-
-					timeStart = System.currentTimeMillis();
-					while (!m_dataAvailable) {
-						m_logHandler.grantReorgThreadAccessToCurrentLog();
-						if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
-							// Time-out
-							break;
-						} else {
-							// Wait until enough data is available to flush
-							Thread.sleep(10);
-							// Thread.yield();
-						}
-					}
+				if (m_isShuttingDown) {
+					// Shutdown signal -> directly flush all data to primary log and shut down
 					flushDataToPrimaryLog();
-					m_logHandler.grantReorgThreadAccessToCurrentLog();
-				} catch (final InterruptedException e) {
-					System.out.println("Error: Writer thread is interrupted. Directly shuting down!");
 					break;
 				}
+
+				timeStart = System.currentTimeMillis();
+				while (!m_dataAvailable) {
+					m_logHandler.grantReorgThreadAccessToCurrentLog();
+					if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
+						// Time-out
+						m_writerThreadRequestsAccessToBuffer = true;
+						break;
+					}
+					Thread.yield();
+				}
+				flushDataToPrimaryLog();
+				m_logHandler.grantReorgThreadAccessToCurrentLog();
 			}
 		}
 
@@ -385,12 +378,11 @@ public class PrimaryWriteBuffer {
 			// Request access and wait for acknowledgement by message handler (lock-free)
 			// If after 100ms the access has not been granted (no log message has arrived) -> try to block all message
 			// handler
-			final long timestamp = System.currentTimeMillis();
+			final long timeStart = System.currentTimeMillis();
 			boolean locked = false;
-			m_writerThreadRequestsAccessToBuffer = true;
 			while (!m_writerThreadAccessesBuffer) {
 				m_logHandler.grantReorgThreadAccessToCurrentLog();
-				if (System.currentTimeMillis() - timestamp > 100) {
+				if (System.currentTimeMillis() > timeStart + WRITERTHREAD_TIMEOUTTIME) {
 					if (m_exclusiveLock.tryLock()) {
 						locked = true;
 						break;
@@ -404,13 +396,13 @@ public class PrimaryWriteBuffer {
 			lengthByBackupRange = m_lengthByBackupRange.entrySet();
 
 			m_bufferReadPointer = m_bufferWritePointer;
-			m_bytesInWriteBuffer = 0;
 			m_lengthByBackupRange = new HashMap<Long, Integer>();
 
 			m_dataAvailable = false;
 			m_flushingComplete = false;
 
 			m_writerThreadRequestsAccessToBuffer = false;
+			m_bytesInWriteBuffer = 0;
 			m_writerThreadAccessesBuffer = false;
 			if (locked) {
 				m_exclusiveLock.unlock();

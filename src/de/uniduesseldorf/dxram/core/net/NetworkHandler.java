@@ -370,7 +370,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 			if (entry != null) {
 				entry.newMessage(message);
 			} else {
-				System.out.println("Got no message!!!");
+				System.out.println("ERROR: Both message queues empty!");
 			}
 
 			if (isExclusive) {

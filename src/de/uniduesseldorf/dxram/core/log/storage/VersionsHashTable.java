@@ -3,7 +3,7 @@ package de.uniduesseldorf.dxram.core.log.storage;
 
 import java.util.Arrays;
 
-import de.uniduesseldorf.dxram.core.log.EpochVersion;
+import de.uniduesseldorf.dxram.core.log.Version;
 
 /**
  * HashTable to store versions (Linear probing)
@@ -71,8 +71,8 @@ public class VersionsHashTable {
 	 *            the searched key (is incremented before insertion to avoid 0)
 	 * @return the value to which the key is mapped in VersionsHashTable
 	 */
-	public final EpochVersion get(final long p_key) {
-		EpochVersion ret = null;
+	protected final Version get(final long p_key) {
+		Version ret = null;
 		int index;
 		long iter;
 		final long key = p_key + 1;
@@ -82,7 +82,7 @@ public class VersionsHashTable {
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				ret = new EpochVersion((short) getEpoch(index), getVersion(index));
+				ret = new Version((short) getEpoch(index), getVersion(index));
 				break;
 			}
 			iter = getKey(++index);

@@ -1557,9 +1557,9 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 			System.out.println("Could not access ZooKeeper!");
 		}
 		allPeers = new short[3];
-		allPeers[0] = -15615;
-		allPeers[1] = 960;
-		allPeers[2] = 640;
+		allPeers[0] = -15999;
+		allPeers[1] = 320;
+		allPeers[2] = -15615;
 		numberOfPeers = 3;
 		/*-allPeers = new short[peers.size() - 1];
 		for (int i = 0; i < peers.size(); i++) {

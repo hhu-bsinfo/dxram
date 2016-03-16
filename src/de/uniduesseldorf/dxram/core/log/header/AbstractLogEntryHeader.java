@@ -6,7 +6,7 @@ import java.util.zip.Checksum;
 
 import de.uniduesseldorf.dxram.core.api.Core;
 import de.uniduesseldorf.dxram.core.api.config.Configuration.ConfigurationConstants;
-import de.uniduesseldorf.dxram.core.log.EpochVersion;
+import de.uniduesseldorf.dxram.core.log.Version;
 import de.uniduesseldorf.dxram.core.util.ChunkID;
 
 /**
@@ -77,7 +77,7 @@ public abstract class AbstractLogEntryHeader {
 	 *            the source NodeID
 	 * @return the log entry
 	 */
-	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, EpochVersion p_version, byte p_rangeID, short p_source);
+	public abstract byte[] createLogEntryHeader(long p_chunkID, int p_size, Version p_version, byte p_rangeID, short p_source);
 
 	/**
 	 * Adds checksum to entry header
@@ -212,7 +212,7 @@ public abstract class AbstractLogEntryHeader {
 	 *            offset in buffer
 	 * @return the epoch and version
 	 */
-	public abstract EpochVersion getVersion(final byte[] p_buffer, final int p_offset);
+	public abstract Version getVersion(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns the checksum of a log entry's payload

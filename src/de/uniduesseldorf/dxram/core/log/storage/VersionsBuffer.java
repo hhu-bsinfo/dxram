@@ -6,13 +6,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.uniduesseldorf.dxram.core.CoreComponentFactory;
 import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
-import de.uniduesseldorf.dxram.core.log.EpochVersion;
 import de.uniduesseldorf.dxram.core.log.LogInterface;
+import de.uniduesseldorf.dxram.core.log.Version;
 
 /**
  * HashTable to store versions (Linear probing)
@@ -51,7 +50,7 @@ public class VersionsBuffer {
 	 * @param p_path
 	 *            the versions file's path
 	 */
-	public VersionsBuffer(final int p_initialElementCapacity, final float p_loadFactor, final String p_path) {
+	protected VersionsBuffer(final int p_initialElementCapacity, final float p_loadFactor, final String p_path) {
 		super();
 
 		m_count = 0;
@@ -94,7 +93,7 @@ public class VersionsBuffer {
 	 * Returns the number of keys in VersionsHashTable
 	 * @return the number of keys in VersionsHashTable
 	 */
-	public final int size() {
+	protected final int size() {
 		return m_count;
 	}
 
@@ -102,7 +101,7 @@ public class VersionsBuffer {
 	 * Returns the current epoch
 	 * @return the current epoch
 	 */
-	public final short getEpoch() {
+	protected final short getEpoch() {
 		return m_epoch;
 	}
 
@@ -110,7 +109,7 @@ public class VersionsBuffer {
 	 * Returns the current eon
 	 * @return the current eon
 	 */
-	public final byte getEon() {
+	protected final byte getEon() {
 		return m_eon;
 	}
 
@@ -118,7 +117,7 @@ public class VersionsBuffer {
 	 * Write all versions to SSD and clear hash table
 	 * @return whether an overflow during incrementation of epoch occurred or not
 	 */
-	public final boolean flush() {
+	protected final boolean flush() {
 		boolean ret = false;
 		long chunkID;
 		int version;
@@ -179,7 +178,7 @@ public class VersionsBuffer {
 	 * @param p_allVersions
 	 *            the VersionsHashTable to put all current versions in
 	 */
-	public final void readAll(final VersionsHashTable p_allVersions) {
+	protected final void readAll(final VersionsHashTable p_allVersions) {
 		int length;
 		int version;
 		boolean update = false;
@@ -270,14 +269,6 @@ public class VersionsBuffer {
 		m_flushLock.unlock();
 	}
 
-	/**
-	 * Checks if VersionsHashTable is empty
-	 * @return true if VersionsHashTable maps no keys to values, false otherwise
-	 */
-	public final boolean isEmpty() {
-		return m_count == 0;
-	}
-
 	// Methods
 	/**
 	 * Increments the epoch
@@ -303,8 +294,8 @@ public class VersionsBuffer {
 	 *            the searched key (is incremented before insertion to avoid 0)
 	 * @return the value to which the key is mapped in VersionsHashTable
 	 */
-	public final EpochVersion get(final long p_key) {
-		EpochVersion ret = null;
+	protected final Version get(final long p_key) {
+		Version ret = null;
 		int index;
 		long iter;
 		final long key = p_key + 1;
@@ -315,7 +306,7 @@ public class VersionsBuffer {
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				ret = new EpochVersion((short) (m_epoch + (m_eon << 15)), getVersion(index));
+				ret = new Version((short) (m_epoch + (m_eon << 15)), getVersion(index));
 				break;
 			}
 			iter = getKey(++index);
@@ -331,8 +322,8 @@ public class VersionsBuffer {
 	 *            the searched key (is incremented before insertion to avoid 0)
 	 * @return the 1 + value to which the key is mapped in VersionsHashTable
 	 */
-	public final EpochVersion getNext(final long p_key) {
-		EpochVersion ret = null;
+	protected final Version getNext(final long p_key) {
+		Version ret = null;
 		int index;
 		long iter;
 		final long key = p_key + 1;
@@ -349,7 +340,7 @@ public class VersionsBuffer {
 		iter = getKey(index);
 		while (iter != 0) {
 			if (iter == key) {
-				ret = new EpochVersion((short) (m_epoch + (m_eon << 15)), getVersion(index) + 1);
+				ret = new Version((short) (m_epoch + (m_eon << 15)), getVersion(index) + 1);
 				set(index, key, ret.getEpoch(), ret.getVersion());
 				break;
 			}
@@ -357,7 +348,7 @@ public class VersionsBuffer {
 		}
 		if (iter == 0) {
 			// First version for this epoch
-			ret = new EpochVersion((short) (m_epoch + (m_eon << 15)), 1);
+			ret = new Version((short) (m_epoch + (m_eon << 15)), 1);
 			set(index, key, ret.getEpoch(), ret.getVersion());
 			m_count++;
 		}
@@ -373,7 +364,7 @@ public class VersionsBuffer {
 	 * @param p_version
 	 *            the version
 	 */
-	public final void put(final long p_key, final int p_version) {
+	protected final void put(final long p_key, final int p_version) {
 		// Avoid rehashing by waiting
 		while (m_count == m_threshold) {
 			m_logHandler.grantAccessToWriterThread();
@@ -392,7 +383,7 @@ public class VersionsBuffer {
 	 * @param p_version
 	 *            the version
 	 */
-	public void put(final long p_key, final int p_epoch, final int p_version) {
+	protected void put(final long p_key, final int p_epoch, final int p_version) {
 		int index;
 		long iter;
 		final long key = p_key + 1;
@@ -414,14 +405,6 @@ public class VersionsBuffer {
 			m_count++;
 		}
 		m_accessLock.unlock();
-	}
-
-	/**
-	 * Clears hashtable
-	 */
-	public final void clear() {
-		Arrays.fill(m_table, 0);
-		m_count = 0;
 	}
 
 	/**
@@ -498,12 +481,12 @@ public class VersionsBuffer {
 
 		h1 ^= 8;
 		h1 ^= h1 >>> 16;
-				h1 *= 0x85ebca6b;
-				h1 ^= h1 >>> 13;
-					h1 *= 0xc2b2ae35;
-					h1 ^= h1 >>> 16;
+		h1 *= 0x85ebca6b;
+		h1 ^= h1 >>> 13;
+		h1 *= 0xc2b2ae35;
+		h1 ^= h1 >>> 16;
 
-					return h1;
+		return h1;
 	}
 
 }
