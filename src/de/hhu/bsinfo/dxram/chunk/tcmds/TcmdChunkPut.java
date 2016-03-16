@@ -9,15 +9,15 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 //TODO mike refactoring: refer to chunk create/remove commands
 public class TcmdChunkPut extends TerminalCommand{
+		
+	private static final Argument MS_ARG_CID = new Argument("cid", null, false, "Chunk ID");
+	private static final Argument MS_ARG_DAT = new Argument("data", null, false, "Data string to store");
+	private static final Argument MS_ARG_SIZ = new Argument("size", null, false, "Size of the specified chunk");
 	
-	private final static String MS_ARG_CID = "cid";
-	private final static String MS_ARG_LID = "lid";
-	private final static String MS_ARG_NID = "nid";
-	private final static String MS_ARG_DAT = "data";
-	private final static int 	DFLT_SIZE  = 1024*1024*16;
 	
 	@Override
 	public String getName() 
@@ -36,7 +36,9 @@ public class TcmdChunkPut extends TerminalCommand{
 	@Override
 	public void registerArguments(final ArgumentList p_arguments)
 	{
-		// TODO mike
+		p_arguments.setArgument(MS_ARG_CID);
+		p_arguments.setArgument(MS_ARG_DAT);
+		p_arguments.setArgument(MS_ARG_SIZ);
 	}
 	
 	@Override
@@ -44,31 +46,14 @@ public class TcmdChunkPut extends TerminalCommand{
 	{
 		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
 		String 	data  = p_arguments.getArgumentValue(MS_ARG_DAT, String.class);
+		Integer	size  = p_arguments.getArgumentValue(MS_ARG_SIZ, Integer.class);
 		
-/*		
-		System.out.println("data:" + data);
-		System.out.println("cid: "+ cid.longValue());
-		
-		if(cid == null && lid == null)
-			return false;
-		
-		if(data == null)
-			return false;
-		
+		System.out.println("data\n " + data + "\nput in "+ cid.longValue());
+				
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		BootService   bootService 	= getTerminalDelegate().getDXRAMService(BootService.class);
 		
 		
-		if(cid == null)
-		{
-			if (nid == null) {
-				nid = bootComp.getNodeID();
-			}	
-			// create cid
-			cid = ChunkID.getChunkID(nid, lid);
-		}
-		
-		Chunk chunk = new Chunk(cid, DFLT_SIZE); // Todo Size
+		Chunk chunk = new Chunk(cid, size); 
 		
 		int num = chunkService.get(chunk);
 		if(num == 0)
@@ -79,7 +64,7 @@ public class TcmdChunkPut extends TerminalCommand{
 		num = chunkService.put(chunk);
 		if(num == 0)
 			System.out.println("Putting Chunk with id '"+ cid +"' failed");
-		*/
+		
 		return true;
 	}
 }

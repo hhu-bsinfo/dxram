@@ -3075,6 +3075,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 					m_boot.reportNodeFailure(p_failedNode, false);
 
 					m_failureLock.unlock();
+					
+					m_logger.info(getClass(), "Recovery of node " + p_failedNode + " complete");
 				}
 			}
 		}
