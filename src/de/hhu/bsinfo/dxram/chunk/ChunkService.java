@@ -9,6 +9,8 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
@@ -140,6 +142,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		status.m_freeMemoryBytes = memManStatus.getFreeMemory();
 		status.m_totalMemoryBytes = memManStatus.getTotalMemory();
+		status.m_numberOfActiveChunks = m_memoryManager.getNumberOfActiveChunks();
 		
 		return status;
 	}
@@ -147,7 +150,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	/**
 	 * Get the status of a remote node specified by a node id.
 	 * @param p_nodeID Node id to get the status from.
-	 * @return Status object with status information of the remote node.
+	 * @return Status object with status information of the remote node or null if getting status failed.
 	 */
 	public Status getStatus(final short p_nodeID)
 	{
@@ -162,7 +165,15 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		if (p_nodeID == m_boot.getNodeID()) {
 			status = getStatus();
 		} else {
-			
+			// grab from remote
+			StatusRequest request = new StatusRequest(p_nodeID);
+			NetworkErrorCodes err = m_network.sendSync(request);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(getClass(), "Sending get status request to peer " + Integer.toHexString(p_nodeID & 0xFFFF) + " failed: " + err);
+			} else {
+				StatusResponse response = request.getResponse(StatusResponse.class);
+				status = response.getStatus();
+			}
 		}
 		
 		return status;
@@ -795,7 +806,36 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		
 		return totalChunksGot;
 	}
-
+	
+	public ArrayList<Long> getAllLocalChunkIDRanges() {
+		ArrayList<Long> list = null;
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must have local chunk ID ranges");
+		}
+		
+		m_memoryManager.lockAccess();
+		list = m_memoryManager.getCIDrangesOfAllLocalChunks();
+		m_memoryManager.unlockAccess();
+		
+		return list;
+	}
+	
+	public ArrayList<Long> getAllLocalChunkIDRanges(final short p_nodeID) {
+		ArrayList<Long> list = null;
+		
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must have local chunk ID ranges");
+		}
+		
+		if (p_nodeID == m_boot.getNodeID()) {
+			list = getAllLocalChunkIDRanges();
+		} else {
+			
+		}
+		
+		return list;
+	}
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
@@ -820,6 +860,9 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 					break;
 				case ChunkMessages.SUBTYPE_STATUS_REQUEST:
 					incomingStatusRequest((StatusRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
+					incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
 					break;
 				default:
 					break;
@@ -849,6 +892,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_RESPONSE, CreateResponse.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_STATUS_REQUEST, StatusRequest.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_STATUS_RESPONSE, StatusResponse.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST, GetLocalChunkIDRangesRequest.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE, GetLocalChunkIDRangesResponse.class);
 	}
 	
 	/**
@@ -861,6 +906,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_network.register(RemoveRequest.class, this);
 		m_network.register(CreateRequest.class, this);
 		m_network.register(StatusRequest.class, this);
+		m_network.register(GetLocalChunkIDRangesRequest.class, this);
 	}
 	
 	/**
@@ -1137,6 +1183,25 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 	}
 	
+	private void incomingGetLocalChunkIDRangesRequest(final GetLocalChunkIDRangesRequest p_request) {
+		ArrayList<Long> cidRangesLocalChunks = null;
+		
+		m_memoryManager.lockAccess();
+		cidRangesLocalChunks = m_memoryManager.getCIDrangesOfAllLocalChunks();
+		m_memoryManager.unlockAccess();
+		
+		if (cidRangesLocalChunks == null) {
+			cidRangesLocalChunks = new ArrayList<Long>(0);
+			m_logger.error(getClass(), "Getting local chunk id ranges failed, sending back empty range.");		
+		}
+		
+		GetLocalChunkIDRangesResponse response = new GetLocalChunkIDRangesResponse(p_request, cidRangesLocalChunks);
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		if (error != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(), "Responding to local chunk id ranges request " + p_request + " failed: " + error);
+		}
+	}
+	
 	/**
 	 * Status object for the chunk service containing various information
 	 * about it.
@@ -1146,6 +1211,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	{
 		private long m_freeMemoryBytes = -1;
 		private long m_totalMemoryBytes = -1;
+		private long m_numberOfActiveChunks = -1;
 		
 		/**
 		 * Default constructor
@@ -1172,10 +1238,18 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		{
 			return m_totalMemoryBytes;
 		}
+		
+		/**
+		 * Get number of currently active/allocated chunks.
+		 * @return Number of active chunks.
+		 */
+		public long getNumberOfActiveChunks() {
+			return m_numberOfActiveChunks;
+		}
 
 		@Override
 		public int sizeofObject() {
-			return Long.BYTES * 2;
+			return Long.BYTES * 3;
 		}
 
 		@Override
@@ -1187,6 +1261,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		public int exportObject(Exporter p_exporter, int p_size) {
 			p_exporter.writeLong(m_freeMemoryBytes);
 			p_exporter.writeLong(m_totalMemoryBytes);
+			p_exporter.writeLong(m_numberOfActiveChunks);
 			return sizeofObject();
 		}
 
@@ -1194,6 +1269,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		public int importObject(Importer p_importer, int p_size) {
 			m_freeMemoryBytes = p_importer.readLong();
 			m_totalMemoryBytes = p_importer.readLong();
+			m_numberOfActiveChunks = p_importer.readLong();
 			return sizeofObject();
 		}
 	}

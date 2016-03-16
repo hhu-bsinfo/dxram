@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.mem;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -28,6 +30,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	private JNIReadWriteSpinLock m_lock;
+	private long m_numActiveChunks;
 
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
@@ -78,6 +81,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
+		
+		m_numActiveChunks = 0;
 		
 		return true;
 	}
@@ -166,6 +171,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
 				// register new chunk
 				m_cidTable.set(chunkID, address);
+				m_numActiveChunks++;
 			} else {
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
@@ -286,11 +292,20 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);
 			m_rawMemory.free(addressDeletedChunk);
 			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free);
+			m_numActiveChunks--;
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * Get the number of currently active chunks/allocated blocks.
+	 * @return Number of currently active chunks.
+	 */
+	public long getNumberOfActiveChunks() {
+		return m_numActiveChunks;
 	}
 
 	/**
@@ -334,6 +349,26 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_cidTable.putChunkIDForReuse(p_chunkID);
 	}
 	
+//	/**
+//	 * Returns the ChunkIDs of all migrated Chunks
+//	 * @return the ChunkIDs of all migrated Chunks
+//	 * @throws MemoryException
+//	 * if the CIDTable could not be completely accessed
+//	 */
+//	public ArrayList<Long> getCIDOfAllMigratedChunks() {
+//		return m_cidTable.getCIDOfAllMigratedChunks();
+//	}
+	
+	/**
+	 * Returns the ChunkID ranges of all locally stored Chunks
+	 * @return the ChunkID ranges in an ArrayList
+	 * @throws MemoryException
+	 * if the CIDTable could not be completely accessed
+	 */
+	public ArrayList<Long> getCIDrangesOfAllLocalChunks() {
+		return m_cidTable.getCIDrangesOfAllLocalChunks();
+	}
+	
 	public static class Status
 	{
 		private long m_totalMemoryBytes = -1;
@@ -368,25 +403,4 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_statisticsRecorderIDs.m_operations.m_malloc = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_MALLOC);
 		m_statisticsRecorderIDs.m_operations.m_free = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_FREE);
 	}
-
-	// FIXME take back in
-	// /**
-	// * Returns the ChunkIDs of all migrated Chunks
-	// * @return the ChunkIDs of all migrated Chunks
-	// * @throws MemoryException
-	// * if the CIDTable could not be completely accessed
-	// */
-	// public ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
-	// return m_cidTable.getCIDOfAllMigratedChunks();
-	// }
-	//
-	// /**
-	// * Returns the ChunkID ranges of all locally stored Chunks
-	// * @return the ChunkID ranges in an ArrayList
-	// * @throws MemoryException
-	// * if the CIDTable could not be completely accessed
-	// */
-	// public ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
-	// return m_cidTable.getCIDrangesOfAllLocalChunks();
-	// }
 }
