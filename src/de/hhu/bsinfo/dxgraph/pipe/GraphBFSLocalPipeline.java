@@ -4,6 +4,7 @@ import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalMultiThreaded;
+import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalMultiThreaded2;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalSingleThreaded;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.load.GraphLoader;
@@ -65,9 +66,9 @@ public class GraphBFSLocalPipeline extends Pipeline {
 		pushTask(new PrintMemoryStatusToConsoleTask());
 		if (threadCount > 1) {
 			if (graphBfsEntryNodeLocal != null) {
-				pushTask(new GraphAlgorithmBFSLocalMultiThreaded(graphBfsVertexBatchCount, threadCount, loader, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
+				pushTask(new GraphAlgorithmBFSLocalMultiThreaded2(graphBfsVertexBatchCount, threadCount, loader, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
 			} else {
-				pushTask(new GraphAlgorithmBFSLocalMultiThreaded(graphBfsVertexBatchCount, threadCount, loader));
+				pushTask(new GraphAlgorithmBFSLocalMultiThreaded2(graphBfsVertexBatchCount, threadCount, loader));
 			}
 			
 		} else {
