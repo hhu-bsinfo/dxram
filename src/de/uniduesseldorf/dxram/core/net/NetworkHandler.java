@@ -6,6 +6,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
@@ -34,33 +35,27 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	private static final int NUMBER_OF_MESSAGE_HANDLER = 4;
 
 	// Attributes
-	private final TaskExecutor m_executor;
 	private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
-
-	private final MessageHandler m_messageHandler;
-
-	private ConnectionManager m_manager;
 	private ReentrantLock m_receiversLock;
 
-	private ReentrantLock m_lock;
+	private final DefaultMessageHandler m_defaultMessageHandler;
+	private final ExclusiveMessageHandler m_exclusiveMessageHandler;
+
+	private ConnectionManager m_manager;
 
 	// Constructors
 	/**
 	 * Creates an instance of NetworkHandler
 	 */
 	public NetworkHandler() {
-		m_executor = TaskExecutor.getDefaultExecutor();
 		m_receivers = new HashMap<>();
 		m_receiversLock = new ReentrantLock(false);
-		m_messageHandler = new MessageHandler();
 
-		m_lock = new ReentrantLock(false);
-	}
+		m_defaultMessageHandler = new DefaultMessageHandler();
 
-	// Getter
-	@Override
-	public ReentrantLock getExclusiveLock() {
-		return m_messageHandler.m_exclusiveLock;
+		m_exclusiveMessageHandler = new ExclusiveMessageHandler();
+		m_exclusiveMessageHandler.setName("Network: ExclusiveMessageHandler");
+		m_exclusiveMessageHandler.start();
 	}
 
 	// Methods
@@ -74,7 +69,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 
 		LOGGER.trace("Entering initialize");
 
-		m_lock.lock();
 		// Network Messages
 		networkType = FlowControlMessage.TYPE;
 		MessageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
@@ -171,33 +165,26 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		if (Core.getConfiguration().getBooleanValue(ConfigurationConstants.STATISTIC_REQUEST)) {
 			StatisticsManager.registerStatistic("Request", RequestStatistic.getInstance());
 		}
-		m_lock.unlock();
 
 		LOGGER.trace("Exiting initialize");
 	}
 
 	@Override
 	public void activateConnectionManager() {
-		m_lock.lock();
 		m_manager.activate();
-		m_lock.unlock();
 	}
 
 	@Override
 	public void deactivateConnectionManager() {
-		m_lock.lock();
 		m_manager.deactivate();
-		m_lock.unlock();
 	}
 
 	@Override
 	public void close() {
 		LOGGER.trace("Entering close");
 
-		m_lock.lock();
-		m_executor.shutdown();
-		m_messageHandler.m_executor.shutdown();
-		m_lock.unlock();
+		m_defaultMessageHandler.m_executor.shutdown();
+		m_exclusiveMessageHandler.shutdown();
 
 		LOGGER.trace("Exiting close");
 	}
@@ -284,7 +271,31 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);
 		} else {
-			m_messageHandler.newMessage(p_message);
+			if (!p_message.isExclusive()) {
+				// Limit number of open tasks
+				while (m_defaultMessageHandler.getQueueSize() > (NUMBER_OF_MESSAGE_HANDLER - 1) * 2) {
+					if (m_manager.atLeastOneConnectionIsCongested()) {
+						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more than limit) messages
+						// to task queue until flow control message arrives
+						break;
+					}
+					Thread.yield();
+				}
+
+				m_defaultMessageHandler.newMessage(p_message);
+			} else {
+				// Limit number of open tasks
+				while (m_exclusiveMessageHandler.getQueueSize() > 4) {
+					if (m_manager.atLeastOneConnectionIsCongested()) {
+						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more than limit) messages
+						// to task queue until flow control message arrives
+						break;
+					}
+					Thread.yield();
+				}
+
+				m_exclusiveMessageHandler.newMessage(p_message);
+			}
 		}
 	}
 
@@ -293,27 +304,35 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	 * Distributes incoming messages
 	 * @author Marc Ewert 17.09.2014
 	 */
-	private class MessageHandler implements Runnable {
+	private class DefaultMessageHandler implements Runnable {
 
 		// Attributes
 		private final ArrayDeque<AbstractMessage> m_defaultMessages;
-		private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
-		private final TaskExecutor m_executor;
 		private ReentrantLock m_defaultMessagesLock;
-		private ReentrantLock m_exclusiveLock;
-		private ReentrantLock m_exclusiveMessagesLock;
+		private final TaskExecutor m_executor;
 
 		// Constructors
 		/**
 		 * Creates an instance of MessageHandler
 		 */
-		MessageHandler() {
-			m_executor = new TaskExecutor("Network: MessageHandler", NUMBER_OF_MESSAGE_HANDLER);
+		@SuppressWarnings("unused")
+		DefaultMessageHandler() {
 			m_defaultMessages = new ArrayDeque<>();
-			m_exclusiveMessages = new ArrayDeque<>();
 			m_defaultMessagesLock = new ReentrantLock(false);
-			m_exclusiveLock = new ReentrantLock(false);
-			m_exclusiveMessagesLock = new ReentrantLock(false);
+
+			if (NUMBER_OF_MESSAGE_HANDLER <= 1) {
+				System.out.println("WARNING: Number of message handlers must be at least 2. Creating two message handlers.");
+			}
+			m_executor = new TaskExecutor("Network: DefaultMessageHandler", NUMBER_OF_MESSAGE_HANDLER - 1);
+		}
+
+		// Getter
+		/**
+		 * Returns the number of messages in default message queue
+		 * @return the number of scheduled messages
+		 */
+		public int getQueueSize() {
+			return m_defaultMessages.size();
 		}
 
 		// Methods
@@ -323,25 +342,9 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			// Limit number of tasks to NUMBER_OF_MESSAGE_HANDLER
-			while (m_defaultMessages.size() + m_exclusiveMessages.size() > NUMBER_OF_MESSAGE_HANDLER * 2) {
-				if (m_manager.atLeastOneConnectionIsCongested()) {
-					// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
-					// than limit) messages to task queue until flow control message arrives
-					break;
-				}
-				Thread.yield();
-			}
-
-			if (!p_message.isExclusive()) {
-				m_defaultMessagesLock.lock();
-				m_defaultMessages.offer(p_message);
-				m_defaultMessagesLock.unlock();
-			} else {
-				m_exclusiveMessagesLock.lock();
-				m_exclusiveMessages.offer(p_message);
-				m_exclusiveMessagesLock.unlock();
-			}
+			m_defaultMessagesLock.lock();
+			m_defaultMessages.offer(p_message);
+			m_defaultMessagesLock.unlock();
 
 			m_executor.execute(this);
 		}
@@ -349,32 +352,105 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		@Override
 		public void run() {
 			AbstractMessage message = null;
-			boolean isExclusive = false;
 			Entry entry;
 
-			while (message == null) {
-				if (m_exclusiveMessages.size() > m_defaultMessages.size() && m_exclusiveLock.tryLock()) {
-					isExclusive = true;
-					m_exclusiveMessagesLock.lock();
-					message = m_exclusiveMessages.poll();
-					m_exclusiveMessagesLock.unlock();
-				} else {
-					m_defaultMessagesLock.lock();
-					message = m_defaultMessages.poll();
-					m_defaultMessagesLock.unlock();
-				}
-			}
+			m_defaultMessagesLock.lock();
+			message = m_defaultMessages.poll();
+			m_defaultMessagesLock.unlock();
 
 			entry = m_receivers.get(message.getClass());
 
 			if (entry != null) {
 				entry.newMessage(message);
 			} else {
-				System.out.println("ERROR: Both message queues empty!");
+				System.out.println("ERROR: Default message queue is empty!");
 			}
+		}
+	}
 
-			if (isExclusive) {
-				m_exclusiveLock.unlock();
+	/**
+	 * Distributes incoming messages
+	 * @author Marc Ewert 17.09.2014
+	 */
+	private class ExclusiveMessageHandler extends Thread {
+
+		// Attributes
+		private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
+		private ReentrantLock m_exclusiveMessagesLock;
+		private Condition m_messageAvailable;
+		private boolean m_shutdown;
+
+		// Constructors
+		/**
+		 * Creates an instance of MessageHandler
+		 */
+		ExclusiveMessageHandler() {
+			m_exclusiveMessages = new ArrayDeque<>();
+			m_exclusiveMessagesLock = new ReentrantLock(false);
+			m_messageAvailable = m_exclusiveMessagesLock.newCondition();
+		}
+
+		// Getter
+		/**
+		 * Returns the number of messages in default message queue
+		 * @return the number of scheduled messages
+		 */
+		public int getQueueSize() {
+			return m_exclusiveMessages.size();
+		}
+
+		// Methods
+		/**
+		 * Closes the handler
+		 */
+		public void shutdown() {
+			m_shutdown = true;
+		}
+
+		/**
+		 * Enqueue a new message for delivering
+		 * @param p_message
+		 *            the message
+		 */
+		public void newMessage(final AbstractMessage p_message) {
+			m_exclusiveMessagesLock.lock();
+			m_exclusiveMessages.offer(p_message);
+
+			if (m_exclusiveMessages.size() == 1) {
+				m_messageAvailable.signal();
+			}
+			m_exclusiveMessagesLock.unlock();
+		}
+
+		@Override
+		public void run() {
+			AbstractMessage message = null;
+			Entry entry;
+
+			while (!m_shutdown) {
+				while (message == null) {
+					m_exclusiveMessagesLock.lock();
+
+					if (m_exclusiveMessages.size() == 0) {
+						try {
+							m_messageAvailable.await();
+						} catch (final InterruptedException e) {
+							continue;
+						}
+					}
+
+					message = m_exclusiveMessages.poll();
+					m_exclusiveMessagesLock.unlock();
+				}
+
+				entry = m_receivers.get(message.getClass());
+
+				if (entry != null) {
+					entry.newMessage(message);
+				} else {
+					System.out.println("ERROR: Exclusive message queue is empty!");
+				}
+				message = null;
 			}
 		}
 	}

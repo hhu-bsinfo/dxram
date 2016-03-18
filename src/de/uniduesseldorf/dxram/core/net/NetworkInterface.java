@@ -1,8 +1,6 @@
 
 package de.uniduesseldorf.dxram.core.net;
 
-import java.util.concurrent.locks.ReentrantLock;
-
 import de.uniduesseldorf.dxram.core.CoreComponent;
 import de.uniduesseldorf.dxram.core.exceptions.NetworkException;
 
@@ -23,12 +21,6 @@ public interface NetworkInterface extends CoreComponent {
 	 * Deactivates the ConnectionManager
 	 */
 	void deactivateConnectionManager();
-
-	/**
-	 * Returns the exclusive lock for logging
-	 * @return the exclusive lock
-	 */
-	ReentrantLock getExclusiveLock();
 
 	/**
 	 * Sends a Message

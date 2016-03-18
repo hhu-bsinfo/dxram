@@ -21,7 +21,7 @@ abstract class AbstractConnection {
 	// Constants
 	private static final Logger LOGGER = Logger.getLogger(AbstractConnection.class);
 	private static final TaskExecutor EXECUTOR = TaskExecutor.getDefaultExecutor();
-	protected static final int FLOW_CONTROL_LIMIT = 65536;// 1 * 1024 * 1024;
+	protected static final int FLOW_CONTROL_LIMIT = 2 * 65536;// 1 * 1024 * 1024;
 
 	// Attributes
 	private final DataHandler m_dataHandler;
