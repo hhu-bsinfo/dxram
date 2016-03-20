@@ -43,6 +43,8 @@ public class TcmdChunkGet extends TerminalCommand{
 	public void registerArguments(final ArgumentList p_arguments)
 	{
 		p_arguments.setArgument(MS_ARG_CID);
+		p_arguments.setArgument(MS_ARG_LID);
+		p_arguments.setArgument(MS_ARG_NID);
 		p_arguments.setArgument(MS_ARG_SIZ);
 		p_arguments.setArgument(MS_ARG_OFF);
 		p_arguments.setArgument(MS_ARG_LEN);
@@ -64,7 +66,7 @@ public class TcmdChunkGet extends TerminalCommand{
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
 		
 		if (__checkIDandSize(size, cid, lid))	// check if size, cid and lid are valid
-			return true;
+			return true;						// if the values are not valid the function will do nothing and returns
 		
 		cid = __getCid(cid, lid, nid);
 		
