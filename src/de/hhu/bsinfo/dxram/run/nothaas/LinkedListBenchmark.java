@@ -13,7 +13,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 public class LinkedListBenchmark extends Main
 {
-	public static final Argument ARG_ITEM_COUNT = new Argument("itemCount", "100", true, "Number of items for the linked list");
+	private static final Argument ARG_ITEM_COUNT = new Argument("itemCount", "100", true, "Number of items for the linked list");
 	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
@@ -47,13 +47,15 @@ public class LinkedListBenchmark extends Main
 		System.out.println("Creating linked list with " + itemCount + " items.");
 		m_stopwatch.start();
 		long listHead = createLinkedList(itemCount);
-		m_stopwatch.printAndStop();
+		m_stopwatch.stop();
+		m_stopwatch.print("create", true);
 		System.out.println("Done creating linked list.");
 		
 		System.out.println("Walking linked list, head " + listHead);
 		m_stopwatch.start();
 		long itemsTouched = walkLinkedList(listHead);
-		m_stopwatch.printAndStop();
+		m_stopwatch.stop();
+		m_stopwatch.print("walk", true);
 		System.out.println("Walking linked list done, total elements touched: " + itemsTouched);
 		
 		System.out.println("Done");

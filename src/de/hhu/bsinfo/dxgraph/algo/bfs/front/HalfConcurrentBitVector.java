@@ -1,6 +1,5 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
@@ -8,8 +7,7 @@ public class HalfConcurrentBitVector implements FrontierList
 {
 	private AtomicLongArray m_vector = null;		
 	
-	private int m_itPos = 0;
-	private int m_itBit = 0;
+	private long m_itPos = 0;
 	
 	private AtomicLong m_count = new AtomicLong(0);
 	
@@ -54,7 +52,6 @@ public class HalfConcurrentBitVector implements FrontierList
 	public void reset()
 	{
 		m_itPos = 0;
-		m_itBit = 0;
 		m_count.set(0);
 		for (int i = 0; i < m_vector.length(); i++) {
 			m_vector.set(i, 0);
@@ -66,25 +63,23 @@ public class HalfConcurrentBitVector implements FrontierList
 	{
 		while (m_count.get() > 0)
 		{
-			if (m_vector.get(m_itPos) != 0)
+			if ((m_vector.get((int) (m_itPos / 64L)) & (1L << m_itPos % 64L)) != 0)
 			{
-				while (m_itBit < 64L)
-				{
-					if (((m_vector.get(m_itPos) >> m_itBit) & 1L) != 0)
-					{
-						m_count.decrementAndGet();
-						return m_itPos * 64L + m_itBit++;
-					}
-					
-					m_itBit++;
-				}
-				
-				m_itBit = 0;
+				long tmp = m_itPos;
+				m_itPos++;	
+				m_count.decrementAndGet();
+				return tmp;
 			}
-			
+
 			m_itPos++;
 		}
 		
 		return -1;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "[m_count " + m_count + ", m_itPos " + m_itPos + "]"; 
 	}
 }

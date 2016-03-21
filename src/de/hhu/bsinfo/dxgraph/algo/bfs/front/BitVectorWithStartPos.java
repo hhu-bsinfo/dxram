@@ -1,13 +1,14 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
-public class BitVector implements FrontierList
+public class BitVectorWithStartPos implements FrontierList
 {
 	private long[] m_vector = null;		
 	
 	private long m_itPos = 0;
 	private long m_count = 0;
+	private long m_firstValuePos = -1;
 	
-	public BitVector(final long p_vertexCount)
+	public BitVectorWithStartPos(final long p_vertexCount)
 	{
 		m_vector = new long[(int) ((p_vertexCount / 64L) + 1L)];
 	}
@@ -21,6 +22,9 @@ public class BitVector implements FrontierList
 		{				
 			m_count++;
 			m_vector[idx] |= tmp;
+			if (m_firstValuePos > p_index) {
+				m_firstValuePos = p_index;
+			}
 		}
 	}
 	
@@ -41,6 +45,7 @@ public class BitVector implements FrontierList
 	{
 		m_itPos = 0;
 		m_count = 0;
+		m_firstValuePos = m_vector.length * 64L;
 		for (int i = 0; i < m_vector.length; i++) {
 			m_vector[i] = 0;
 		}
@@ -51,6 +56,11 @@ public class BitVector implements FrontierList
 	{		
 		while (m_count > 0)
 		{
+			// speed things up for first value, jump
+			if (m_firstValuePos > m_itPos) {
+				m_itPos = m_firstValuePos;
+			}
+			
 			if ((m_vector[(int) (m_itPos / 64L)] & (1L << m_itPos % 64L)) != 0)
 			{
 				long tmp = m_itPos;

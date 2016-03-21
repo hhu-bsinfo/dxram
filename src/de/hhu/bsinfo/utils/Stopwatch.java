@@ -9,8 +9,9 @@ package de.hhu.bsinfo.utils;
 public final class Stopwatch {
 
 	// Attributes
-	private long m_time;
-
+	private long m_startTime;
+	private long m_endTime;
+	
 	// Constructors
 	/**
 	 * Creates an instance of Stopwatch
@@ -21,21 +22,22 @@ public final class Stopwatch {
 	/**
 	 * Starts the stop watch
 	 */
-	public synchronized void start() {
-		m_time = System.nanoTime();
+	public void start() {
+		m_endTime = -1;
+		m_startTime = System.nanoTime();
 	}
 
 	/**
 	 * Stops the stop watch
 	 */
-	public synchronized void stop() {
-		m_time = 0;
+	public void stop() {
+		m_endTime = System.nanoTime();
 	}
 
 	/**
 	 * Prints the current time
 	 */
-	public synchronized void print() {
+	public void print(final String p_header, final boolean p_printReadable) {
 		long time;
 		long nanoseconds;
 		long microseconds;
@@ -44,7 +46,11 @@ public final class Stopwatch {
 		long minutes;
 		long hours;
 
-		time = System.nanoTime() - m_time;
+		if (m_endTime == -1) {
+			m_endTime = System.nanoTime();
+		}
+		
+		time = m_endTime - m_startTime;
 
 		nanoseconds = time % 1000;
 		time = time / 1000;
@@ -63,15 +69,10 @@ public final class Stopwatch {
 
 		hours = time;
 
-		System.out.println("*\nTime:\t" + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns\n*");
+		if (p_printReadable) {
+			System.out.println("[" + p_header + "]: " + hours + "h " + minutes + "m " + seconds + "s " + milliseconds + "ms " + microseconds + "µs " + nanoseconds + "ns");
+		} else {
+			System.out.println("[" + p_header + "]: " + (m_endTime - m_startTime));
+		}
 	}
-
-	/**
-	 * Prints the current time and stops the stop watch
-	 */
-	public synchronized void printAndStop() {
-		print();
-		stop();
-	}
-
 }

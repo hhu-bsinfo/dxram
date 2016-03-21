@@ -112,7 +112,12 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 			m_nextFrontier = p_nextFrontierShared;
 		}
 		
+		public void setCurrentBFSIterationLevel(final int p_iterationLevel) {
+			m_currentIterationLevel = p_iterationLevel;
+		}
+		
 		public void triggerNextIteration() {
+			m_visitedCounterRun = 0;
 			m_iterationLevelDone = false;
 		}
 		
@@ -122,6 +127,12 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 		
 		public int getVisitedCountLastRun() {
 			return m_visitedCounterRun;
+		}
+		
+		public void triggerFrontierSwap() {
+			FrontierList tmp = m_curFrontier;
+			m_curFrontier = m_nextFrontier;
+			m_nextFrontier = tmp;
 		}
 		
 		public void exitThread() {
@@ -134,7 +145,7 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 			while (true)
 			{
 				while (m_iterationLevelDone)
-				{
+				{						
 					if (m_exitThread)
 						return;
 					
@@ -151,15 +162,17 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 					}
 					else
 					{
-						m_iterationLevelDone = true;
+						if (validVertsInBatch == 0) {
+							break;
+						}
+						m_vertexBatch[i].setID(ChunkID.INVALID_ID);
 					}
 				}
 				
 				if (validVertsInBatch == 0) {
+					m_iterationLevelDone = true;
 					continue;
 				}
-				
-				m_visitedCounterRun = 0;
 				
 				int gett = m_chunkService.get(m_vertexBatch, 0, validVertsInBatch);
 				if (gett != validVertsInBatch)
@@ -206,38 +219,41 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 	}
 
 	
-	private Pair<Long, Integer> runBFS(final int p_bfsIteration)
+	private Pair<Long, Integer> runBFS(final int p_currentBFSIteration)
 	{
 		long visitedCounter = 0;
 		int curIterationLevel = 0;
 		
+		// make sure the threads are marking the vertices with different values on every iteration
+		for (int t = 0; t < m_threads.length; t++) {	
+			m_threads[t].setCurrentBFSIterationLevel(p_currentBFSIteration);
+		}
+		
 		while (true)
-		{			
+		{
 			m_loggerService.debug(getClass(), "Iteration level " + curIterationLevel + " cur frontier size: " + m_curFrontier.size());
 			
-			boolean iterationLevelDone = false;
-			while (!iterationLevelDone)
-			{
-				// kick off threads with current frontier
-				for (int t = 0; t < m_threads.length; t++) {	
-					m_threads[t].triggerNextIteration();
-				}
-				
-				// join forked threads
-				int i = 0;
-				long tmpVisitedCounter = 0;
-				while (i < m_threads.length) {
-					if (!m_threads[i].isIterationLevelDone()) {
-						Thread.yield();
-						continue;
-					}
-					tmpVisitedCounter += m_threads[i].getVisitedCountLastRun();
-					i++;
-				}
-				
-				visitedCounter += tmpVisitedCounter;
+			
+			// kick off threads with current frontier
+			for (int t = 0; t < m_threads.length; t++) {	
+				m_threads[t].triggerNextIteration();
 			}
 			
+			// join forked threads
+			int i = 0;
+			long tmpVisitedCounter = 0;
+			while (i < m_threads.length) {
+				if (!m_threads[i].isIterationLevelDone()) {
+					Thread.yield();
+					continue;
+				}
+				tmpVisitedCounter += m_threads[i].getVisitedCountLastRun();
+				i++;
+			}
+			
+			visitedCounter += tmpVisitedCounter;
+		
+		
 			m_loggerService.debug(getClass(), "Finished iteration of level " + curIterationLevel);
 			
 			// swap buffers at the end of the round when iteration level done
@@ -245,6 +261,11 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 			m_curFrontier = m_nextFrontier;
 			m_nextFrontier = tmp;
 			m_nextFrontier.reset();
+			
+			// also swap them for threads!
+			for (int t = 0; t < m_threads.length; t++) {	
+				m_threads[t].triggerFrontierSwap();
+			}
 			
 			if (m_curFrontier.isEmpty())
 			{

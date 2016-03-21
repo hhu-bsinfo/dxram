@@ -1,17 +1,15 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
-public class BitVectorOptimized implements FrontierList
+public class BitVectorMultiLevel implements FrontierList
 {
 	private long[] m_vectorL0 = null;		
 	private long[] m_vectorL1 = null;
 	
-	private int m_itVecBit = 0;
-	private int m_itVecL0 = 0;
-	private int m_itVecL1 = 0;
+	private long m_itPos = 0;
 	
 	private long m_count = 0;
 	
-	public BitVectorOptimized(final long p_vertexCount)
+	public BitVectorMultiLevel(final long p_vertexCount)
 	{
 		m_vectorL0 = new long[(int) ((p_vertexCount / 64L) + 1L)];
 		m_vectorL1 = new long[(int) ((m_vectorL0.length / 64L) + 1)];
@@ -45,9 +43,7 @@ public class BitVectorOptimized implements FrontierList
 	@Override
 	public void reset()
 	{
-		m_itVecBit = 0;
-		m_itVecL0 = 0;
-		m_itVecL1 = 0;
+		m_itPos = 0;
 		m_count = 0;
 		for (int i = 0; i < m_vectorL0.length; i++) {
 			m_vectorL0[i] = 0;
@@ -62,36 +58,43 @@ public class BitVectorOptimized implements FrontierList
 	{
 		while (m_count > 0)
 		{
-			if (m_vectorL1[m_itVecL1] != 0)
+			if (m_vectorL1[(int) (m_itPos / 4096L)] != 0)
 			{
-				while (m_itVecL0 < 64)
+				for (int idxL1 = 0; idxL1 < 64; idxL1++)
 				{
-					int idxL0 = m_itVecL1 * 64 + m_itVecL0;
-					if (m_vectorL0[idxL0] != 0)
+					if ((m_vectorL1[(int) (m_itPos / 4096L)] & (1L << idxL1)) != 0)
 					{
-						while (m_itVecBit < 64)
+						for (int idxL0 = 0; idxL0 < 64; idxL0++)
 						{
-							if (((m_vectorL0[idxL0] >> m_itVecBit) & 1L) != 0)
+							if ((m_vectorL0[(int) (m_itPos / 64L)] & (1L << (m_itPos % 64L))) != 0)
 							{
+								long tmp = m_itPos;
+								m_itPos++;	
 								m_count--;
-								return idxL0 * 64L + m_itVecBit++;
+								return tmp;
 							}
-							
-							m_itVecBit++;
+
+							m_itPos++;
 						}
-						
-						m_itVecBit = 0;
 					}
-					
-					m_itVecL0++;
-				}		
-				
-				m_itVecL0 = 0;
+					else
+					{
+						m_itPos += 64L;
+					}
+				}
 			}
-			
-			m_itVecL1++;
+			else
+			{
+				m_itPos += 4096L;
+			}
 		}
 		
 		return -1;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "[m_count " + m_count + ", m_itPos " + m_itPos + "]"; 
 	}
 }

@@ -82,11 +82,7 @@ public class BulkFifoNaive implements FrontierList
 		long tmp = m_chainedFifo[m_blockFront][m_posFront++];
 		// go to next block, jump if necessary
 		if (m_posFront == m_bulkSize)
-		{
-			// TODO auto shrink doesn't work with reset...new idea?
-//			// auto shrink
-//			m_chainedFifo[m_blockFront] = null;
-			
+		{			
 			m_blockFront++;
 			m_posFront = 0;
 		}
