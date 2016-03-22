@@ -51,7 +51,7 @@ public class BitVector implements FrontierList
 	{		
 		while (m_count > 0)
 		{
-			if ((m_vector[(int) (m_itPos / 64L)] & (1L << m_itPos % 64L)) != 0)
+			if ((m_vector[(int) (m_itPos / 64L)] & (1L << (m_itPos % 64L))) != 0)
 			{
 				long tmp = m_itPos;
 				m_itPos++;	

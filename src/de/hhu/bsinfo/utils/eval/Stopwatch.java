@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.utils;
+package de.hhu.bsinfo.utils.eval;
 
 /**
  * Methods to stop time
@@ -32,6 +32,14 @@ public final class Stopwatch {
 	 */
 	public void stop() {
 		m_endTime = System.nanoTime();
+	}
+	
+	public long getTime() {
+		return m_endTime - m_startTime;
+	}
+	
+	public String getTimeStr() {
+		return Long.toString(m_endTime - m_startTime);
 	}
 
 	/**

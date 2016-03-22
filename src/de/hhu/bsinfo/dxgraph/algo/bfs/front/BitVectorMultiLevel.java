@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
 public class BitVectorMultiLevel implements FrontierList
 {
-	private long[] m_vectorL0 = null;		
-	private long[] m_vectorL1 = null;
+	private long[] m_vectorL0;		
+	private long[] m_vectorL1;
 	
 	private long m_itPos = 0;
 	
@@ -55,26 +55,31 @@ public class BitVectorMultiLevel implements FrontierList
 	
 	@Override
 	public long popFront()
-	{
+	{		
 		while (m_count > 0)
 		{
-			if (m_vectorL1[(int) (m_itPos / 4096L)] != 0)
+			final int posL1 = (int) (m_itPos / 4096L);
+			if (m_vectorL1[posL1] != 0)
 			{
-				for (int idxL1 = 0; idxL1 < 64; idxL1++)
+				final int bitPosL1 = (int) ((m_itPos % 4096) / 64);
+				for (int idxL1 = bitPosL1; idxL1 < 64; idxL1++)
 				{
-					if ((m_vectorL1[(int) (m_itPos / 4096L)] & (1L << idxL1)) != 0)
+					if ((m_vectorL1[posL1] & (1L << idxL1)) != 0)
 					{
-						for (int idxL0 = 0; idxL0 < 64; idxL0++)
+						final int posL0 = (int) (m_itPos / 64L);
+						for (int idxL0 = (int) (m_itPos % 64); idxL0 < 64; idxL0++)
 						{
-							if ((m_vectorL0[(int) (m_itPos / 64L)] & (1L << (m_itPos % 64L))) != 0)
+							if ((m_vectorL0[posL0] & (1L << idxL0)) != 0)
 							{
 								long tmp = m_itPos;
 								m_itPos++;	
 								m_count--;
 								return tmp;
 							}
-
-							m_itPos++;
+							else
+							{
+								m_itPos++;
+							}
 						}
 					}
 					else

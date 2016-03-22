@@ -13,9 +13,10 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.HalfConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.TreeSetFifo;
-import de.hhu.bsinfo.utils.Stopwatch;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
+import de.hhu.bsinfo.utils.eval.SimpleTables;
+import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.main.Main;
 
 public class BitVectorBenchmarks extends Main {
@@ -27,6 +28,8 @@ public class BitVectorBenchmarks extends Main {
 			+ "distribution if value is < 1.0 and > 0.0 when pushing items and defines the fill rate for the vector with 1.0 being 100%, i.e. full vector"); 
 	
 	private static final boolean MS_PRINT_READABLE_TIME = false; 
+	
+	private SimpleTables m_tables = null;
 	
 	public static void main(final String[] args) {
 		Main main = new BitVectorBenchmarks();
@@ -52,16 +55,28 @@ public class BitVectorBenchmarks extends Main {
 		int threads = p_arguments.getArgument(ARG_THREADS).getValue(Integer.class);
 		float randDistributionFillRate = p_arguments.getArgument(ARG_ITEM_COUNT_RAND_FILL_RATE).getValue(Float.class);
 		
+		prepareTable();
+		
 		//main(itemCount, threads, randDistributionFillRate);
 		
-		for (int j = 100; j <= 1000000; j *= 10)
+		// eval
+		for (int i = 100; i <= 1000000; i *= 10)
 		{
-			for (int i = 1; i <= 10; i++)
-			{
-				main(j, threads, i / 10.f);
-			}
+			// don't use a for loop, because floating point arithmetic
+			// causes rounding issues
+			main(i, threads, 0.1f);
+			main(i, threads, 0.2f);
+			main(i, threads, 0.3f);
+			main(i, threads, 0.4f);
+			main(i, threads, 0.5f);
+			main(i, threads, 0.6f);
+			main(i, threads, 0.7f);
+			main(i, threads, 0.8f);
+			main(i, threads, 0.9f);
+			main(i, threads, 1.0f);
 		}
-
+		
+		System.out.println(m_tables.toCsv(true, "\t"));
 		
 		return 0;
 	}
@@ -73,15 +88,53 @@ public class BitVectorBenchmarks extends Main {
 		long[] testData = createTestData(p_itemCount, p_randDistFillRate);
 		long testVector = createTestVector(testData);
 		
-		if (!doSingleThreaded(p_itemCount, testData, testVector)) {
+		if (!doSingleThreaded(p_itemCount, testData, testVector, "SingleThreaded/" + p_itemCount, Float.toString(p_randDistFillRate))) {
 			return;
 		}
 		
-//		if (!doMultiThreaded(p_itemCount, p_threads, testData, testVector)) {
+//		if (!doMultiThreaded(p_itemCount, p_threads, testData, testVector, "MultiThreaded/" + p_itemCount, Float.toString(p_randDistFillRate))) {
 //			return;
 //		}
 		
 		System.out.println("Execution done.");
+		System.out.println("--------------------------");
+	}
+	
+	private void prepareTable()
+	{
+		m_tables = new SimpleTables(12, 8, 10);
+		m_tables.setTableName(0, "SingleThreaded/100/pushBack");
+		m_tables.setTableName(1, "SingleThreaded/1000/pushBack");
+		m_tables.setTableName(2, "SingleThreaded/10000/pushBack");
+		m_tables.setTableName(3, "SingleThreaded/100000/pushBack");
+		m_tables.setTableName(4, "SingleThreaded/1000000/pushBack");
+		m_tables.setTableName(5, "SingleThreaded/100/popFront");
+		m_tables.setTableName(6, "SingleThreaded/1000/popFront");
+		m_tables.setTableName(7, "SingleThreaded/10000/popFront");
+		m_tables.setTableName(8, "SingleThreaded/100000/popFront");
+		m_tables.setTableName(9, "SingleThreaded/1000000/popFront");
+		
+		m_tables.setIntersectTopCornerNames("DataStructure");
+		
+		m_tables.setColumnNames(0, "0.1");
+		m_tables.setColumnNames(1, "0.2");
+		m_tables.setColumnNames(2, "0.3");
+		m_tables.setColumnNames(3, "0.4");
+		m_tables.setColumnNames(4, "0.5");
+		m_tables.setColumnNames(5, "0.6");
+		m_tables.setColumnNames(6, "0.7");
+		m_tables.setColumnNames(7, "0.8");
+		m_tables.setColumnNames(8, "0.9");
+		m_tables.setColumnNames(9, "1.0");
+
+		m_tables.setRowNames(0, "BulkFifoNaive");
+		m_tables.setRowNames(1, "BulkFifo");
+		m_tables.setRowNames(2, "TreeSetFifo");
+		m_tables.setRowNames(3, "BitVector");
+		m_tables.setRowNames(4, "BitVectorWithStartPos");
+		m_tables.setRowNames(5, "BitVectorMultiLevel");
+		m_tables.setRowNames(6, "HalfConcurrentBitVector");
+		m_tables.setRowNames(7, "ConcurrentBitVector");
 	}
 	
 	private ArrayList<FrontierList> prepareTestsSingleThreaded(final long p_itemCount)
@@ -115,7 +168,7 @@ public class BitVectorBenchmarks extends Main {
 		return list;
 	}
 
-	private long executeTestSingleThreaded(final FrontierList p_frontierList, final long[] testData) {
+	private long executeTestSingleThreaded(final FrontierList p_frontierList, final long[] testData, final String p_table, final String p_column) {
 		Stopwatch stopWatch = new Stopwatch();
 				
 		System.out.println("Pushing back data...");
@@ -125,6 +178,7 @@ public class BitVectorBenchmarks extends Main {
 				p_frontierList.pushBack(testData[i]);
 			}
 			stopWatch.stop();
+			m_tables.set(p_table + "/pushBack", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
 			stopWatch.print(p_frontierList.getClass().getSimpleName() + " pushBack", MS_PRINT_READABLE_TIME);
 		}
 		System.out.println("Data pushed, ratio added items/total items: " + p_frontierList.size() / (float) testData.length);
@@ -137,13 +191,14 @@ public class BitVectorBenchmarks extends Main {
 				vals += p_frontierList.popFront();
 			}
 			stopWatch.stop();
+			m_tables.set(p_table + "/popFront", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
 			stopWatch.print(p_frontierList.getClass().getSimpleName() + " popFront", MS_PRINT_READABLE_TIME);
 		}
 
 		return vals;
 	}
 	
-	private long executeTestMultiThreaded(final FrontierList p_frontierList, final int p_threadCount, final long[] testData) {
+	private long executeTestMultiThreaded(final FrontierList p_frontierList, final int p_threadCount, final long[] testData, final String p_table, final String p_column) {
 		Stopwatch stopWatch = new Stopwatch();
 		
 		System.out.println("Pushing back data...");
@@ -177,6 +232,7 @@ public class BitVectorBenchmarks extends Main {
 				}
 			}
 			stopWatch.stop();
+			m_tables.set(p_table + "/pushBack", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
 			stopWatch.print(p_frontierList.getClass().getSimpleName() + " pushBack", MS_PRINT_READABLE_TIME);
 		}
 		System.out.println("Data pushed, ratio added items/total items: " + p_frontierList.size() / (float) testData.length);
@@ -205,13 +261,14 @@ public class BitVectorBenchmarks extends Main {
 				}
 			}
 			stopWatch.stop();
+			m_tables.set(p_table + "/popFront", p_frontierList.getClass().getSimpleName(), p_column, stopWatch.getTimeStr());
 			stopWatch.print(p_frontierList.getClass().getSimpleName() + " popFront", MS_PRINT_READABLE_TIME);
 		}
 		
 		return val;
 	}
 	
-	private boolean doSingleThreaded(final int p_itemCount, final long[] p_testData, final long p_testVector) {
+	private boolean doSingleThreaded(final int p_itemCount, final long[] p_testData, final long p_testVector, final String p_table, final String p_column) {
 		System.out.println("---------------------------------------------------");
 		System.out.println("Single threaded tests");
 		ArrayList<FrontierList> frontiersToTest = prepareTestsSingleThreaded(p_itemCount);
@@ -219,26 +276,26 @@ public class BitVectorBenchmarks extends Main {
 		for (FrontierList frontier : frontiersToTest) {
 			System.out.println("-------------");
 			System.out.println("Testing frontier " + frontier.getClass().getSimpleName());
-			long resVector = executeTestSingleThreaded(frontier, p_testData);
+			long resVector = executeTestSingleThreaded(frontier, p_testData, p_table, p_column);
 			
 			System.out.println("Data validation...");
 			if (resVector != p_testVector) {
 				System.out.println("ERROR: validation of " + frontier.getClass().getSimpleName() + " failed: " + resVector + " != " + p_testVector);
-				//return false;
+				return false;
 			}
 		}
 		
 		return true;
 	}
 	
-	private boolean doMultiThreaded(final int p_itemCount, final int p_threadCount, final long[] p_testData, final long p_testVector) {
+	private boolean doMultiThreaded(final int p_itemCount, final int p_threadCount, final long[] p_testData, final long p_testVector, final String p_table, final String p_column) {
 		System.out.println("---------------------------------------------------");
 		System.out.println("Multi threaded tests, threads: " + p_threadCount);
 		ArrayList<FrontierList> frontiersToTest = prepareTestsMultiThreaded(p_itemCount);
 		
 		for (FrontierList frontier : frontiersToTest) {
 			System.out.println("Testing frontier " + frontier.getClass().getSimpleName());
-			long resVector = executeTestMultiThreaded(frontier, p_threadCount, p_testData);
+			long resVector = executeTestMultiThreaded(frontier, p_threadCount, p_testData, p_table, p_column);
 			
 			System.out.println("Data validation...");
 			if (resVector != p_testVector) {
