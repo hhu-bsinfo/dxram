@@ -155,6 +155,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		long chunkID = -1;
 		long lid = -1;
 		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		
 		// get new LID from CIDTable
 		lid = m_cidTable.getFreeLID();
 		if (lid == -1)
@@ -177,6 +179,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 				m_cidTable.putChunkIDForReuse(lid);
 			}
 		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 
 		return chunkID;
 	}
@@ -211,6 +215,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		long address;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
@@ -223,6 +229,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		{
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 		
 		return ret;
 	}
@@ -249,6 +257,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		long address;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
@@ -259,6 +269,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
 		
 		return ret;
 	}
@@ -276,6 +288,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		int size;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		
 		// Get and delete the address from the CIDTable, mark as zombie first
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
 		if (addressDeletedChunk != -1)
@@ -296,6 +310,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
 		
 		return ret;
 	}
@@ -402,5 +418,9 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_statisticsRecorderIDs.m_operations.m_createLIDTable = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_CREATE_LID_TABLE);
 		m_statisticsRecorderIDs.m_operations.m_malloc = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_MALLOC);
 		m_statisticsRecorderIDs.m_operations.m_free = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_FREE);
+		m_statisticsRecorderIDs.m_operations.m_get = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_GET);
+		m_statisticsRecorderIDs.m_operations.m_put = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_PUT);
+		m_statisticsRecorderIDs.m_operations.m_create = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_CREATE);
+		m_statisticsRecorderIDs.m_operations.m_remove = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_REMOVE);
 	}
 }

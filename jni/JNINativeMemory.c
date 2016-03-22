@@ -218,11 +218,13 @@ JNIEXPORT jshort JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readShort(JNIE
 
 JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readInt(JNIEnv *p_env, jclass p_class, jlong p_addr) 
 {
+	/*
 	if (p_addr == 0)
 	{
 		printf("Native memory NULL pointer.\n");
 		return 0;
 	}
+	*/
 
 	return *((jint*) p_addr);
 }
@@ -281,11 +283,13 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeShort(JNIEn
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeInt(JNIEnv *p_env, jclass p_class, jlong p_addr, jint p_value) 
 {
+	/*
 	if (p_addr == 0)
 	{
 		printf("Native memory NULL pointer.\n");
 		return;
 	}
+	*/
 
 	*((jint*) p_addr) = p_value;
 }
