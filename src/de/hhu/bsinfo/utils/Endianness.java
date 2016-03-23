@@ -1,5 +1,10 @@
 package de.hhu.bsinfo.utils;
 
+/**
+ * Detect endianness of the runtime.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
 public class Endianness 
 {
 	/**

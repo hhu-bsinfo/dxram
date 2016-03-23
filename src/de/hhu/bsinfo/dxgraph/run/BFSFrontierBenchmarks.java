@@ -15,7 +15,7 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.front.HalfConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.TreeSetFifo;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.eval.SimpleTables;
+import de.hhu.bsinfo.utils.eval.EvaluationTables;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.main.Main;
 
@@ -34,7 +34,7 @@ public class BFSFrontierBenchmarks extends Main {
 	
 	private static final boolean MS_PRINT_READABLE_TIME = false; 
 	
-	private SimpleTables m_tables = null;
+	private EvaluationTables m_tables = null;
 	
 	/**
 	 * Java main entry point.
@@ -131,7 +131,7 @@ public class BFSFrontierBenchmarks extends Main {
 	 */
 	private void prepareTable()
 	{
-		m_tables = new SimpleTables(12, 8, 10);
+		m_tables = new EvaluationTables(12, 8, 10);
 		m_tables.setTableName(0, "SingleThreaded/100/pushBack");
 		m_tables.setTableName(1, "SingleThreaded/1000/pushBack");
 		m_tables.setTableName(2, "SingleThreaded/10000/pushBack");

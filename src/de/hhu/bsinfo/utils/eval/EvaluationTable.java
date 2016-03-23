@@ -3,7 +3,14 @@ package de.hhu.bsinfo.utils.eval;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimpleTable 
+/**
+ * Simple table for recording data for an evaluation and
+ * printing it in a csv formated manner for easy copy/pasting
+ * to other programs.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ *
+ */
+public class EvaluationTable 
 {
 	private String m_intersectTopCornerName = new String("");
 	private String[][] m_tableValues;
@@ -12,7 +19,12 @@ public class SimpleTable
 	private String[] m_columnNames;
 	private Map<String, Integer> m_columnNameMapping = new HashMap<String, Integer>();
 	
-	public SimpleTable(final int p_rows, final int p_columns)
+	/**
+	 * Constructor
+	 * @param p_rows Number of rows for the data (don't count descriptions).
+	 * @param p_columns Number of columns for the data (don't count descriptions).
+	 */
+	public EvaluationTable(final int p_rows, final int p_columns)
 	{
 		m_tableValues = new String[p_rows][p_columns];		
 		for (int i = 0; i < m_tableValues.length; i++)
@@ -36,23 +48,44 @@ public class SimpleTable
 		}
 	}
 	
+	/**
+	 * Sets the name of the top right corner cell intersecting
+	 * rows and columns.
+	 * @param p_name Name to set.
+	 */
 	public void setIntersectTopCornerName(final String p_name)
 	{
 		m_intersectTopCornerName = new String(p_name);
 	}
 	
+	/**
+	 * Set the description/name of a row.
+	 * @param p_row Row index.
+	 * @param p_name Row name.
+	 */
 	public void setRowName(final int p_row, final String p_name)
 	{
 		m_rowNames[p_row] = new String(p_name);
 		m_rowNameMapping.put(p_name, p_row);
 	}
 	
+	/**
+	 * Set the description/name of a column.
+	 * @param p_row Column index.
+	 * @param p_name Column name.
+	 */
 	public void setColumnName(final int p_col, final String p_name)
 	{
 		m_columnNames[p_col] = new String(p_name);
 		m_columnNameMapping.put(p_name, p_col);
 	}
 	
+	/**
+	 * Set data/value for a specific cell.
+	 * @param p_row Name of the row.
+	 * @param p_column Name of the column.
+	 * @param p_value Value/Data to set.
+	 */
 	public void set(final String p_row, final String p_column, final String p_value)
 	{
 		int rowIdx = m_rowNameMapping.get(p_row);
@@ -60,16 +93,32 @@ public class SimpleTable
 		m_tableValues[rowIdx][colIdx] = new String(p_value);
 	}
 	
+	/**
+	 * Set data/value for a specific cell.
+	 * @param p_row Row index.
+	 * @param p_column Column index.
+	 * @param p_value Value/Data to set.
+	 */
 	public void set(final int p_row, final int p_column, final String p_value)
 	{
 		m_tableValues[p_row][p_column] = new String(p_value);
 	}
 	
+	/**
+	 * Create a string containing the table as formated csv separated by ;
+	 * @return Csv formated table.
+	 */
 	public String toCsv()
 	{
 		return toCsv(true, ";");
 	}
 	
+	/**
+	 * Create a string containing the table as formated csv
+	 * @param p_description Description/Header for the table
+	 * @param p_delimiter Delimiter to use to separate cells
+	 * @return Csv formated table.
+	 */
 	public String toCsv(final boolean p_description, final String p_delimiter)
 	{
 		String str = new String();
@@ -99,6 +148,7 @@ public class SimpleTable
 		return str;
 	}
 	
+	@Override
 	public String toString()
 	{
 		return toCsv(false, ",");

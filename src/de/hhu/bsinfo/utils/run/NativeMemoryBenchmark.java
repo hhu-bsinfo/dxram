@@ -4,7 +4,7 @@ import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.eval.SimpleTable;
+import de.hhu.bsinfo.utils.eval.EvaluationTable;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.main.Main;
 
@@ -21,7 +21,7 @@ public class NativeMemoryBenchmark extends Main
 	private static final Argument ARG_NUM_RUNS = new Argument("numRuns", "100000", true, "Number of runs to execute for the final result");
 	private static final Argument ARG_PATH_JNI_NATIVE_MEMORY = new Argument("pathJNINativeMemory", null, false, "Absolute path to the compiled JNINativeMemory library files");
 	
-	private SimpleTable m_table;
+	private EvaluationTable m_table;
 	
 	/**
 	 * Java main entry point.
@@ -100,7 +100,7 @@ public class NativeMemoryBenchmark extends Main
 	 */
 	private void prepareTableEval()
 	{
-		m_table = new SimpleTable(10, 6);
+		m_table = new EvaluationTable(10, 6);
 		
 		m_table.setIntersectTopCornerName("Memory");
 		
