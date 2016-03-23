@@ -14,17 +14,37 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
+/**
+ * Test of the JobService. 
+ * Run this as a peer, start one superpeer and an additional 
+ * peer service as remote instancing receiving remote jobs if this
+ * options was selected.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+ *
+ */
 public class SimpleJobServiceTest extends Main implements JobEventListener {
 
+	/**
+	 * Implementation of a job for this test.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+	 *
+	 */
 	public static class JobTest extends Job
 	{
 		public static final short MS_TYPE_ID = 1;
 		
+		/**
+		 * Constructor
+		 */
 		public JobTest()
 		{
 			super();
 		}
 		
+		/**
+		 * Constructor
+		 * @param p_parameterChunkIDs ChunkIDs to pass to the job.
+		 */
 		public JobTest(final long... p_parameterChunkIDs)
 		{
 			super(p_parameterChunkIDs);
@@ -59,11 +79,18 @@ public class SimpleJobServiceTest extends Main implements JobEventListener {
 	
 	private AtomicInteger m_remoteJobCount = new AtomicInteger(0);
 	
+	/**
+	 * Java main entry point.
+	 * @param args Main arguments.
+	 */
 	public static void main(final String[] args) {
 		Main main = new SimpleJobServiceTest();
 		main.run(args);
 	}
 	
+	/**
+	 * Constructor
+	 */
 	public SimpleJobServiceTest() 
 	{
 		super("Testing the JobService and its remote job execution");

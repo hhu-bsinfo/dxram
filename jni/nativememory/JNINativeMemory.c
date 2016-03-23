@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <assert.h>
 
 // requres xcode command tools to be installed on mac osx
 #ifdef __APPLE__
@@ -28,8 +29,11 @@
 #include <byteswap.h>
 #endif
 
+// disable asserts
+#define NDEBUG
+
 // important note: in your java application, make sure to cover the following situation correctly:
-// for example, if you write single longs (or a primitive long array) using this class to native memory
+// if you write single longs (or a primitive long array) using this class to native memory
 // and you read it back using a byte array which you put into a byte buffer, keep in mind that the data
 // read into the byte buffer has the same endianess as your system (i.e. most likely little) but
 // in your java code, you operate on big endian(ess). Make sure to set the byte order when using a 
@@ -41,32 +45,20 @@ JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_alloc(JNIEnv *p
 	if (mem == NULL)
 		return 0;
 
-	//printf("alloc %d %p\n", p_size, mem);
-
 	return (jlong) mem;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_free(JNIEnv *p_env, jclass p_class, jlong p_addr) 
 {	
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
-
-	//printf("free %p\n", p_addr);
+	assert(p_addr != 0);
 
 	free((void*) p_addr);
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_dump(JNIEnv *p_env, jclass p_class, jlong p_addr, jlong p_length, jstring p_path) 
 {	
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
-	
+	assert(p_addr != 0);
+
 	const char* path = (*p_env)->GetStringUTFChars(p_env, p_path, NULL);
 
 	FILE* file = fopen(path, "w+");
@@ -102,28 +94,22 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_dump(JNIEnv *p_e
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_set(JNIEnv *p_env, jclass p_class, jlong p_addr, jbyte p_value, jlong p_size) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
+	assert(p_addr != 0);
 
 	memset((void*) p_addr, p_value, p_size);	
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_copy(JNIEnv *p_env, jclass p_class, jlong p_addrDest, jlong p_addrSrc, jlong p_size) 
 {
-	if (p_addrDest == 0 || p_addrSrc == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
+	assert(p_addrDest != 0);
+	assert(p_addrSrc != 0);
 
 	memcpy((void*) p_addrDest, (void*) p_addrSrc, p_size);		
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_write(JNIEnv *p_env, jclass p_class, jlong p_addr, jbyteArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jbyte* array = (*p_env)->GetByteArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) p_addr, (void*) (array + p_arrayOffset), p_length);
@@ -133,6 +119,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_write(JNIEnv *p_
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeShorts(JNIEnv *p_env, jclass p_class, jlong p_addr, jshortArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jshort* array = (*p_env)->GetShortArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) p_addr, (void*) (array + p_arrayOffset), p_length * sizeof(jshort));
@@ -142,6 +129,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeShorts(JNIE
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeInts(JNIEnv *p_env, jclass p_class, jlong p_addr, jintArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jint* array = (*p_env)->GetIntArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) p_addr, (void*) (array + p_arrayOffset), p_length * sizeof(jint));
@@ -151,6 +139,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeInts(JNIEnv
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeLongs(JNIEnv *p_env, jclass p_class, jlong p_addr, jlongArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jlong* array = (*p_env)->GetLongArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) p_addr, (void*) (array + p_arrayOffset), p_length * sizeof(jlong));
@@ -160,6 +149,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeLongs(JNIEn
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_read(JNIEnv *p_env, jclass p_class, jlong p_addr, jbyteArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jbyte* array = (*p_env)->GetByteArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length);
@@ -169,6 +159,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_read(JNIEnv *p_e
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readShorts(JNIEnv *p_env, jclass p_class, jlong p_addr, jshortArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jshort* array = (*p_env)->GetShortArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length * sizeof(jshort));
@@ -178,6 +169,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readShorts(JNIEn
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readInts(JNIEnv *p_env, jclass p_class, jlong p_addr, jintArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jint* array = (*p_env)->GetIntArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length * sizeof(jint));
@@ -187,6 +179,7 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readInts(JNIEnv 
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readLongs(JNIEnv *p_env, jclass p_class, jlong p_addr, jlongArray p_array, jint p_arrayOffset, jint p_length) 
 {
+	assert(p_addr != 0);
 	jlong* array = (*p_env)->GetLongArrayElements(p_env, p_array, NULL);
 
 	memcpy((void*) (array + p_arrayOffset), (void*) p_addr, p_length * sizeof(jlong));
@@ -196,57 +189,35 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readLongs(JNIEnv
 
 JNIEXPORT jbyte JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readByte(JNIEnv *p_env, jclass p_class, jlong p_addr) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return 0;
-	}
+	assert(p_addr != 0);
 
 	return *((jbyte*) p_addr);	
 }
 
 JNIEXPORT jshort JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readShort(JNIEnv *p_env, jclass p_class, jlong p_addr) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return 0;
-	}
+	assert(p_addr != 0);
 
 	return *((jshort*) p_addr);
 }
 
 JNIEXPORT jint JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readInt(JNIEnv *p_env, jclass p_class, jlong p_addr) 
 {
-	/*
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return 0;
-	}
-	*/
+	assert(p_addr != 0);
 
 	return *((jint*) p_addr);
 }
 
 JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readLong(JNIEnv *p_env, jclass p_class, jlong p_addr) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return 0;
-	}
+	assert(p_addr != 0);
 
 	return *((jlong*) p_addr);
 }
 
 JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readValue(JNIEnv *p_env, jclass p_class, jlong p_addr, jint p_byteCount) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return 0;
-	}
+	assert(p_addr != 0);
 
 	// clip
 	if (p_byteCount > 8)
@@ -261,57 +232,35 @@ JNIEXPORT jlong JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_readValue(JNIEn
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeByte(JNIEnv *p_env, jclass p_class, jlong p_addr, jbyte p_value) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
+	assert(p_addr != 0);
 
 	*((jbyte*) p_addr) = p_value;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeShort(JNIEnv *p_env, jclass p_class, jlong p_addr, jshort p_value) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
+	assert(p_addr != 0);
 
 	*((jshort*) p_addr) = p_value;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeInt(JNIEnv *p_env, jclass p_class, jlong p_addr, jint p_value) 
 {
-	/*
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
-	*/
+	assert(p_addr != 0);
 
 	*((jint*) p_addr) = p_value;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeLong(JNIEnv *p_env, jclass p_class, jlong p_addr, jlong p_value) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
+	assert(p_addr != 0);
 
 	*((jlong*) p_addr) = p_value;
 }
 
 JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNINativeMemory_writeValue(JNIEnv *p_env, jclass p_class, jlong p_addr, jlong p_value, jint p_byteCount) 
 {
-	if (p_addr == 0)
-	{
-		printf("Native memory NULL pointer.\n");
-		return;
-	}
+	assert(p_addr != 0);
 
 	// clip
 	if (p_byteCount > 8)

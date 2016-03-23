@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.run.nothaas;
+package de.hhu.bsinfo.utils.run;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
@@ -18,11 +18,18 @@ public class NativeMemoryTest extends Main {
 
 	public static final Argument ARG_JNI_PATH = new Argument("jniPath", null, false, "Path to JNI file with native memory implementation");
 	
+	/**
+	 * Java main entry point.
+	 * @param args Main arguments.
+	 */
 	public static void main(final String[] args) {
 		Main main = new NativeMemoryTest();
 		main.run(args);
 	}
 	
+	/**
+	 * Constructor
+	 */
 	public NativeMemoryTest()
 	{
 		super("Testing JNI native memory implementation, especially if endianness is working correctly");

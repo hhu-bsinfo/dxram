@@ -6,17 +6,29 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
 
-// before running this as a peer, start one superpeer
+/**
+ * Minimal (local only) ChunkService test.
+ * Run this as a peer with one superpeer.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class SimpleLocalChunkServiceTest extends Main
 {	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
 
+	/**
+	 * Java main entry point.
+	 * @param args Main arguments.
+	 */
 	public static void main(final String[] args) {
 		Main main = new SimpleLocalChunkServiceTest();
 		main.run(args);
 	}
 	
+	/**
+	 * Constructor
+	 */
 	public SimpleLocalChunkServiceTest()
 	{
 		super("Simple test to verify if the local chunk service is working");

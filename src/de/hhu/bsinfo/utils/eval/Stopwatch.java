@@ -5,12 +5,15 @@ package de.hhu.bsinfo.utils.eval;
  * Methods to stop time
  * @author Florian Klein
  *         20.06.2012
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public final class Stopwatch {
 
 	// Attributes
-	private long m_startTime;
-	private long m_endTime;
+	private long m_startTime = 0;
+	private long m_endTime = 0;
+	private long m_accu = 0;
+	private long m_counter = 0;
 	
 	// Constructors
 	/**
@@ -34,16 +37,44 @@ public final class Stopwatch {
 		m_endTime = System.nanoTime();
 	}
 	
+	/**
+	 * Stop the watch and accumulate the resulting time
+	 * for avarage time calculation.
+	 */
+	public void stopAndAccumulate() {
+		m_endTime = System.nanoTime();
+		m_accu += (m_endTime - m_startTime);
+		m_counter++;
+	}
+	
+	/**
+	 * Get the average of accumulated times.
+	 * @return Avarage of accumulated times in ns.
+	 */
+	public long getAvarageOfAccumulated() {
+		return m_accu / m_counter;
+	}
+	
+	/**
+	 * Get the stopped time.
+	 * @return Stopped time in ns.
+	 */
 	public long getTime() {
 		return m_endTime - m_startTime;
 	}
 	
+	/**
+	 * Get the stopped time as a string.
+	 * @return Stopped time in ns as string.
+	 */
 	public String getTimeStr() {
 		return Long.toString(m_endTime - m_startTime);
 	}
 
 	/**
 	 * Prints the current time
+	 * @param p_header Header to add to the time to print.
+	 * @param p_printReadable True to print a readable version (split into minutes, seconds etc).
 	 */
 	public void print(final String p_header, final boolean p_printReadable) {
 		long time;

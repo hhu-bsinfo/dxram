@@ -6,11 +6,15 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.lock.LockService;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
+/**
+ * Test to verify if the (local) lock service is working.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class SimpleLocalLockServiceTest extends Main {
 	
 	public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "76", true, "Size of the chunks for allocation");
@@ -21,11 +25,18 @@ public class SimpleLocalLockServiceTest extends Main {
 	private ChunkService m_chunkService = null;
 	private LockService m_lockService = null;
 
+	/**
+	 * Java main entry point.
+	 * @param args Main arguments.
+	 */
 	public static void main(final String[] args) {
 		Main main = new SimpleLocalLockServiceTest();
 		main.run(args);
 	}
 	
+	/**
+	 * Constructor
+	 */
 	public SimpleLocalLockServiceTest()
 	{
 		super("Simple test to verify if the local lock service is working");
@@ -81,12 +92,22 @@ public class SimpleLocalLockServiceTest extends Main {
 		return 0;
 	}
 	
+	/**
+	 * Thread for execution the lock operations.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+	 *
+	 */
 	private static class LockerThread extends Thread {
 		
 		private Random m_random = new Random();
 		private LockService m_lockService = null;
 		private Chunk[] m_chunks = null;
 		
+		/**
+		 * Constructor
+		 * @param p_lockService LockService to execute lock operations on.
+		 * @param p_chunks List of chunks to lock.
+		 */
 		public LockerThread(final LockService p_lockService, final Chunk[] p_chunks) {
 			m_lockService = p_lockService;
 			m_chunks = p_chunks;

@@ -19,7 +19,12 @@ import de.hhu.bsinfo.utils.eval.SimpleTables;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.main.Main;
 
-public class BitVectorBenchmarks extends Main {
+/**
+ * Benchmark and compare execution time of various frontier lists used for BFS in dxgraph.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
+public class BFSFrontierBenchmarks extends Main {
 
 	private static final Argument ARG_ITEM_COUNT = new Argument("itemCount", "100", true, "Number of items to add and get from the list. "
 			+ "Make sure this is a multiple of the thread count, otherwise the multi threaded part will fail on validation");
@@ -31,13 +36,20 @@ public class BitVectorBenchmarks extends Main {
 	
 	private SimpleTables m_tables = null;
 	
+	/**
+	 * Java main entry point.
+	 * @param args Main arguments.
+	 */
 	public static void main(final String[] args) {
-		Main main = new BitVectorBenchmarks();
+		Main main = new BFSFrontierBenchmarks();
 		main.run(args);
 	}
 	
-	protected BitVectorBenchmarks() {
-		super("Test the various BitVector implementations and measure execution time.");
+	/**
+	 * Constructor
+	 */
+	protected BFSFrontierBenchmarks() {
+		super("Test the various BFS frontier implementations and measure execution time.");
 		
 	}
 
@@ -58,29 +70,43 @@ public class BitVectorBenchmarks extends Main {
 		prepareTable();
 		
 		//main(itemCount, threads, randDistributionFillRate);
-		
-		// eval
-		for (int i = 100; i <= 1000000; i *= 10)
-		{
-			// don't use a for loop, because floating point arithmetic
-			// causes rounding issues
-			main(i, threads, 0.1f);
-			main(i, threads, 0.2f);
-			main(i, threads, 0.3f);
-			main(i, threads, 0.4f);
-			main(i, threads, 0.5f);
-			main(i, threads, 0.6f);
-			main(i, threads, 0.7f);
-			main(i, threads, 0.8f);
-			main(i, threads, 0.9f);
-			main(i, threads, 1.0f);
-		}
+		mainEval(threads);
 		
 		System.out.println(m_tables.toCsv(true, "\t"));
 		
 		return 0;
 	}
 	
+	/**
+	 * Execute a full evaluation with a range of parameters.
+	 * @param p_threads Number of threads for multi threaded part.
+	 */
+	private void mainEval(final int p_threads)
+	{
+		for (int i = 100; i <= 1000000; i *= 10)
+		{
+			// don't use a for loop, because floating point arithmetic
+			// causes rounding issues
+			main(i, p_threads, 0.1f);
+			main(i, p_threads, 0.2f);
+			main(i, p_threads, 0.3f);
+			main(i, p_threads, 0.4f);
+			main(i, p_threads, 0.5f);
+			main(i, p_threads, 0.6f);
+			main(i, p_threads, 0.7f);
+			main(i, p_threads, 0.8f);
+			main(i, p_threads, 0.9f);
+			main(i, p_threads, 1.0f);
+		}
+	}
+	
+	/**
+	 * Execute a single evaluation pass.
+	 * @param p_itemCount Number of max items for a frontier.
+	 * @param p_threads Number of threads to use for multi threaded section.
+	 * @param p_randDistFillRate Distribution/Fill rate of of items in a frontier. 0.8 means that a frontier 
+	 * 			will be filled with 80% of p_itemCount elements.
+	 */
 	private void main(final int p_itemCount, final int p_threads, final float p_randDistFillRate)
 	{
 		System.out.println("=======================================================================");
@@ -100,6 +126,9 @@ public class BitVectorBenchmarks extends Main {
 		System.out.println("--------------------------");
 	}
 	
+	/**
+	 * Prepare the table for recording data.
+	 */
 	private void prepareTable()
 	{
 		m_tables = new SimpleTables(12, 8, 10);
@@ -137,6 +166,11 @@ public class BitVectorBenchmarks extends Main {
 		m_tables.setRowNames(7, "ConcurrentBitVector");
 	}
 	
+	/**
+	 * Prepare the data structures to be tested on the single test pass.
+	 * @param p_itemCount Number of max items for a frontier.
+	 * @return List of frontier lists to be executed on the single thread pass.
+	 */
 	private ArrayList<FrontierList> prepareTestsSingleThreaded(final long p_itemCount)
 	{
 		ArrayList<FrontierList> list = new ArrayList<FrontierList>();
@@ -153,21 +187,28 @@ public class BitVectorBenchmarks extends Main {
 		return list;
 	}
 	
+	/**
+	 * Prepare the data structures to be tested on the multi thread test pass.
+	 * @param p_itemCount Number of max items for a frontier.
+	 * @return List of frontier lists to be executed on the multi thread pass.
+	 */
 	private ArrayList<FrontierList> prepareTestsMultiThreaded(final long p_itemCount)
 	{
 		ArrayList<FrontierList> list = new ArrayList<FrontierList>();
-		
-//		list.add(new BulkFifoNaive());
-//		list.add(new BulkFifo());
-//		list.add(new TreeSetFifo());
-//		list.add(new BitVector(p_itemCount));
-//		list.add(new BitVectorOptimized(p_itemCount));
-//		list.add(new HalfConcurrentBitVector(p_itemCount));
+
 		list.add(new ConcurrentBitVector(p_itemCount));
 		
 		return list;
 	}
 
+	/**
+	 * Execute the test of one data structure single threaded.
+	 * @param p_frontierList Frontier list to test/benchmark.
+	 * @param testData Test data to be used.
+	 * @param p_table Name of the table to put the recorded data into.
+	 * @param p_column Name of the column in the table to put recorded data into.
+	 * @return Test vector to verify if test data was successfully written and read back.
+	 */
 	private long executeTestSingleThreaded(final FrontierList p_frontierList, final long[] testData, final String p_table, final String p_column) {
 		Stopwatch stopWatch = new Stopwatch();
 				
@@ -198,6 +239,14 @@ public class BitVectorBenchmarks extends Main {
 		return vals;
 	}
 	
+	/**
+	 * Execute the test of one data structure multi threaded.
+	 * @param p_frontierList Frontier list to test/benchmark.
+	 * @param testData Test data to be used.
+	 * @param p_table Name of the table to put the recorded data into.
+	 * @param p_column Name of the column in the table to put recorded data into.
+	 * @return Test vector to verify if test data was successfully written and read back.
+	 */
 	private long executeTestMultiThreaded(final FrontierList p_frontierList, final int p_threadCount, final long[] testData, final String p_table, final String p_column) {
 		Stopwatch stopWatch = new Stopwatch();
 		
@@ -268,6 +317,15 @@ public class BitVectorBenchmarks extends Main {
 		return val;
 	}
 	
+	/**
+	 * Do a full single thread pass with given parameters on all prepared frontiers.
+	 * @param p_itemCount Max number of items for a single frontier.
+	 * @param p_testData Test data to be used.
+	 * @param p_testVector Test vector of the test data for verification.
+	 * @param p_table Name of the table to put the recorded data into.
+	 * @param p_column Name of the column in the table to put recorded data into.
+	 * @return True if execution was successful and validation ok, false otherwise.
+	 */
 	private boolean doSingleThreaded(final int p_itemCount, final long[] p_testData, final long p_testVector, final String p_table, final String p_column) {
 		System.out.println("---------------------------------------------------");
 		System.out.println("Single threaded tests");
@@ -288,6 +346,15 @@ public class BitVectorBenchmarks extends Main {
 		return true;
 	}
 	
+	/**
+	 * Do a full multi thread pass with given parameters on all prepared frontiers.
+	 * @param p_itemCount Max number of items for a single frontier.
+	 * @param p_testData Test data to be used.
+	 * @param p_testVector Test vector of the test data for verification.
+	 * @param p_table Name of the table to put the recorded data into.
+	 * @param p_column Name of the column in the table to put recorded data into.
+	 * @return True if execution was successful and validation ok, false otherwise.
+	 */
 	private boolean doMultiThreaded(final int p_itemCount, final int p_threadCount, final long[] p_testData, final long p_testVector, final String p_table, final String p_column) {
 		System.out.println("---------------------------------------------------");
 		System.out.println("Multi threaded tests, threads: " + p_threadCount);
@@ -307,6 +374,12 @@ public class BitVectorBenchmarks extends Main {
 		return true;
 	}
 	
+	/**
+	 * Create the test data with given parameters.
+	 * @param p_totalItemCount Max number of items for the test data.
+	 * @param p_randDistFillRate Distribution/Fill rate for the test data.
+	 * @return Array with shuffled test data.
+	 */
 	private long[] createTestData(final int p_totalItemCount, final float p_randDistFillRate)
 	{
 		long[] testData;
@@ -341,6 +414,10 @@ public class BitVectorBenchmarks extends Main {
 		return testData;
 	}
 	
+	/**
+	 * Shuffle the contents of an array.
+	 * @param p_array Array with contents to shuffle.
+	 */
 	private static void shuffleArray(final long[] p_array) {
 		Random rnd = new Random();
 		for (int i = p_array.length - 1; i > 0; i--) {
@@ -352,6 +429,11 @@ public class BitVectorBenchmarks extends Main {
 		}
 	}
 	
+	/**
+	 * Create the test vector for verification.
+	 * @param p_testData Test data to create the test vector of.
+	 * @return Test vector.
+	 */
 	private long createTestVector(final long[] p_testData) {
 		long testVec = 0;
 		for (int i = 0; i < p_testData.length; i++) {
@@ -360,6 +442,11 @@ public class BitVectorBenchmarks extends Main {
 		return testVec;
 	}
 	
+	/**
+	 * Thread for multi thread pass to push back the data concurrently.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+	 *
+	 */
 	private static class PushWorkerThread extends Thread
 	{
 		public FrontierList m_frontier = null;
@@ -380,6 +467,11 @@ public class BitVectorBenchmarks extends Main {
 		}
 	}
 	
+	/**
+	 * Thread for multi thread pass to pop the data from the front concurrently.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+	 *
+	 */
 	private static class PopWorkerThread extends Thread
 	{
 		public FrontierList m_frontier = null;

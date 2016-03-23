@@ -1,7 +1,8 @@
-package de.hhu.bsinfo.utils.main;
+package de.hhu.bsinfo.utils.run;
 
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
+import de.hhu.bsinfo.utils.main.Main;
 
 /**
  * Example/Test implementation to show usage of the main application framwork.
