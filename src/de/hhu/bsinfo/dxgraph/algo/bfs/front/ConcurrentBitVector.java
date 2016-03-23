@@ -3,6 +3,12 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
+/**
+ * Thread safe, lock free implementation of a frontier listed based on
+ * the BitVector.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class ConcurrentBitVector implements FrontierList
 {
 	private AtomicLongArray m_vector = null;		
@@ -10,68 +16,13 @@ public class ConcurrentBitVector implements FrontierList
 	private AtomicLong m_itPos = new AtomicLong(0);
 	private AtomicLong m_count = new AtomicLong(0);
 	
-//	public static void main(String[] args)
-//	{
-//		int size = 100000000;
-//		ConcurrentBitVector vec = new ConcurrentBitVector(size);
-//		
-//		long expected = 0;
-//		for (int i = 0; i < size; i++)
-//		{
-//			vec.pushBack(i);
-//			expected += i;
-//		}
-//		System.out.println(expected);
-//		
-//		Bla[] threads = new Bla[12];
-//		for (int i = 0; i < threads.length; i++) {
-//			threads[i] = new Bla();
-//			threads[i].m_bitVector = vec;
-//		}
-//		System.out.println("start");
-//
-//		long time = System.nanoTime();
-//		for (int i = 0; i < threads.length; i++) {
-//			threads[i].start();
-//		}
-//		
-//		long val = 0;
-//		for (int i = 0; i < threads.length; i++) {
-//			try {
-//				threads[i].join();
-//				//System.out.println("thread " + i + ": " + threads[i].m_val);
-//				//val += threads[i].m_val;
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-//		}
-//		System.out.println("time: " + (System.nanoTime() - time) / (1000 * 1000.0));
-//		
-//		System.out.println("finished: " + val);
-//	}
-//	
-//	private static class Bla extends Thread
-//	{
-//		public ConcurrentBitVector m_bitVector = null;
-//		public long m_val = 0;
-//		
-//		@Override
-//		public void run()
-//		{
-//			while (!m_bitVector.isEmpty())
-//			{
-//				long tmp = m_bitVector.popFront();
-//				if (tmp != -1)
-//					m_val += tmp;
-//				Thread.yield();
-//			}
-//		}
-//	}
-	
-	public ConcurrentBitVector(final long p_vertexCount)
+	/**
+	 * Constructor
+	 * @param p_maxElementCount Specify the maximum number of elements.
+	 */
+	public ConcurrentBitVector(final long p_maxElementCount)
 	{
-		m_vector = new AtomicLongArray((int) ((p_vertexCount / 64L) + 1L));
+		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
 	}
 	
 	@Override

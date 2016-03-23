@@ -3,6 +3,13 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
+/**
+ * Thread safe, lock free implementation of a frontier listed based on
+ * the BitVector.
+ * Only the pushBack call is thread safe. The popFront call isn't.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class HalfConcurrentBitVector implements FrontierList
 {
 	private AtomicLongArray m_vector = null;		
@@ -11,9 +18,13 @@ public class HalfConcurrentBitVector implements FrontierList
 	
 	private AtomicLong m_count = new AtomicLong(0);
 	
-	public HalfConcurrentBitVector(final long p_vertexCount)
+	/**
+	 * Constructor
+	 * @param p_maxElementCount Specify the maximum number of elements.
+	 */
+	public HalfConcurrentBitVector(final long p_maxElementCount)
 	{
-		m_vector = new AtomicLongArray((int) ((p_vertexCount / 64L) + 1L));
+		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
 	}
 	
 	@Override

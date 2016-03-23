@@ -1,5 +1,11 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
+/**
+ * Implementation of a frontier list, which is represented
+ * as a bit vector indicating which values it contains.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class BitVector implements FrontierList
 {
 	private long[] m_vector = null;		
@@ -7,9 +13,13 @@ public class BitVector implements FrontierList
 	private long m_itPos = 0;
 	private long m_count = 0;
 	
-	public BitVector(final long p_vertexCount)
+	/**
+	 * Constructor
+	 * @param p_maxElementCount Specify the maximum number of elements.
+	 */
+	public BitVector(final long p_maxElementCount)
 	{
-		m_vector = new long[(int) ((p_vertexCount / 64L) + 1L)];
+		m_vector = new long[(int) ((p_maxElementCount / 64L) + 1L)];
 	}
 	
 	@Override

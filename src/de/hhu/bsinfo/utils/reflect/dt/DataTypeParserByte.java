@@ -22,11 +22,11 @@ public class DataTypeParserByte implements DataTypeParser
 		{
 			String tmp = p_str.substring(0, 2);
 			if (tmp.equals("0x"))
-				return java.lang.Byte.parseByte(p_str.substring(2), 16);
+				return (byte) Integer.parseInt(p_str.substring(2), 16);
 			else if (tmp.equals("0b"))
-				return java.lang.Byte.parseByte(p_str.substring(2), 2);
+				return (byte) Integer.parseInt(p_str.substring(2), 2);
 			else if (tmp.equals("0o"))
-				return java.lang.Byte.parseByte(p_str.substring(2), 8);
+				return (byte) Integer.parseInt(p_str.substring(2), 8);
 		}
 		
 		return java.lang.Byte.parseByte(p_str, 10);
