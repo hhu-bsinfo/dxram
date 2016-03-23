@@ -38,6 +38,9 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	
 	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 
+	/**
+	 * Error codes to be returned by some methods.
+	 */
 	public enum MemoryErrorCodes
 	{
 		SUCCESS,
@@ -48,11 +51,12 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		OUT_OF_MEMORY,
 	}
 	
-	// Constructors
 	/**
-	 * Creates an instance of MemoryManager
-	 * @param p_nodeID
-	 *            ID of the node this manager is running on.
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
 	 */
 	public MemoryManagerComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -385,21 +389,37 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		return m_cidTable.getCIDrangesOfAllLocalChunks();
 	}
 	
+	/**
+	 * Object containing status information about the memory.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+	 *
+	 */
 	public static class Status
 	{
 		private long m_totalMemoryBytes = -1;
 		private long m_freeMemoryBytes = -1;
 		
+		/**
+		 * Constructor
+		 */
 		public Status()
 		{
 			
 		}
 		
+		/**
+		 * Get the total amount of memory in bytes.
+		 * @return Total amount of memory in bytes.
+		 */
 		public long getTotalMemory()
 		{
 			return m_totalMemoryBytes;
 		}
 		
+		/**
+		 * Get the total amount of free memory in bytes.
+		 * @return Amount of free memory in bytes.
+		 */
 		public long getFreeMemory()
 		{
 			return m_freeMemoryBytes;
