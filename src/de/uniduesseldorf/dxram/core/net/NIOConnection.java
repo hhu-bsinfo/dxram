@@ -30,8 +30,8 @@ public class NIOConnection extends AbstractConnection {
 
 	private short m_nodeID;
 
-	private final ArrayDeque<ByteBuffer> m_incoming;
-	private final ArrayDeque<ByteBuffer> m_outgoing;
+	private ArrayDeque<ByteBuffer> m_incoming;
+	private ArrayDeque<ByteBuffer> m_outgoing;
 	private ReentrantLock m_incomingLock;
 	private ReentrantLock m_outgoingAllLock;
 	private ReentrantLock m_outgoingLock;
@@ -201,11 +201,7 @@ public class NIOConnection extends AbstractConnection {
 	 *            Buffer
 	 */
 	void addBuffer(final ByteBuffer p_buffer) {
-		System.out.println("got here");
 		m_outgoingLock.lock();
-		// Change operation request to OP_READ to read before trying to send the buffer again
-		// m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_WRITE);
-
 		m_outgoing.addFirst(p_buffer);
 		m_outgoingLock.unlock();
 	}
@@ -220,8 +216,6 @@ public class NIOConnection extends AbstractConnection {
 	 */
 	protected ByteBuffer getOutgoingBytes(final ByteBuffer p_buffer, final int p_bytes) {
 		int length = 0;
-		int startPos = 0;
-		boolean abort = false;
 		ByteBuffer buffer;
 		ByteBuffer ret = null;
 
@@ -234,22 +228,8 @@ public class NIOConnection extends AbstractConnection {
 			buffer = m_outgoing.poll();
 			m_outgoingLock.unlock();
 
-			// This is a left-over (see addBuffer())
-			if (buffer.remaining() != 0 && buffer.position() != 0) {
-				startPos = buffer.position();
-				length += buffer.remaining();
-				ret = buffer.duplicate();
-				ret.limit(ret.capacity());
-				abort = true;
-			}
-
-			// Skip when buffer is completed
-			if (buffer == null || !buffer.hasRemaining()) {
-				continue;
-			}
-
 			// Append when limit will not be reached
-			if (length + buffer.remaining() + startPos <= p_bytes) {
+			if (length + buffer.remaining() <= p_bytes) {
 				length += buffer.remaining();
 
 				if (ret == null) {
@@ -272,7 +252,7 @@ public class NIOConnection extends AbstractConnection {
 			}
 		}
 
-		if (ret != null && !abort) {
+		if (ret != null) {
 			ret.position(0);
 			if (length < ret.capacity()) {
 				ret.limit(length);

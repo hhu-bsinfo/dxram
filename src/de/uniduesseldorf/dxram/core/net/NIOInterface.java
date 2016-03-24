@@ -16,8 +16,8 @@ import de.uniduesseldorf.dxram.core.io.InputHelper;
 final class NIOInterface {
 
 	// Attributes
-	private static ByteBuffer m_readBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.RECEIVE_BYTES);
-	private static ByteBuffer m_writeBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.SEND_BYTES);
+	private static ByteBuffer m_readBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.INCOMING_BUFFER_SIZE);
+	private static ByteBuffer m_writeBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
 
 	/**
 	 * Hidden constructor as this class only contains static members and methods
@@ -77,9 +77,7 @@ final class NIOInterface {
 
 		try {
 			m_readBuffer.clear();
-			while (m_readBuffer.position() < m_readBuffer.capacity()) {
-				// m_readBuffer.limit(m_readBuffer.position() + Math.min(NIOConnectionCreator.INCOMING_BUFFER_SIZE, m_readBuffer.remaining()));
-
+			while (true) {
 				try {
 					readBytes = p_connection.getChannel().read(m_readBuffer);
 				} catch (final ClosedChannelException e) {
@@ -92,13 +90,13 @@ final class NIOInterface {
 					break;
 				} else if (readBytes == 0 && m_readBuffer.position() != 0) {
 					// There is nothing more to read at the moment
-					m_readBuffer.limit(m_readBuffer.position());
-					m_readBuffer.position(0);
-
+					m_readBuffer.flip();
 					buffer = ByteBuffer.allocate(m_readBuffer.limit());
 					buffer.put(m_readBuffer);
-					buffer.flip();
+					buffer.rewind();
+
 					p_connection.addIncoming(buffer);
+
 					break;
 				}
 			}
@@ -120,38 +118,45 @@ final class NIOInterface {
 	 */
 	protected static boolean write(final NIOConnection p_connection) throws IOException {
 		boolean ret = true;
-		int length = 0;
 		int bytes;
 		int size;
-		ByteBuffer view;
 		ByteBuffer buffer;
+		ByteBuffer view;
+		ByteBuffer slice;
+		ByteBuffer buf;
 
-		buffer = p_connection.getOutgoingBytes(m_writeBuffer, NIOConnectionCreator.SEND_BYTES);
+		buffer = p_connection.getOutgoingBytes(m_writeBuffer, NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
 		try {
 			if (buffer != null) {
-				if (buffer.remaining() > NIOConnectionCreator.SEND_BYTES) {
+				if (buffer.remaining() > NIOConnectionCreator.OUTGOING_BUFFER_SIZE) {
 					// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
 					// the length of the actual written data -> simulate a smaller buffer by slicing it
 					outerloop: while (buffer.remaining() > 0) {
-						size = Math.min(buffer.remaining(), NIOConnectionCreator.SEND_BYTES);
+						size = Math.min(buffer.remaining(), NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
 						view = buffer.slice();
 						view.limit(size);
 
-						length = view.remaining();
 						int tries = 0;
-						while (length > 0) {
+						while (view.remaining() > 0) {
 							try {
 								bytes = p_connection.getChannel().write(view);
-								length -= bytes;
-
 								if (bytes == 0) {
-									if (++tries == 10000) {
-										System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
-										buffer.position(buffer.position() + size - length);
-										view = buffer.slice();
-										p_connection.addBuffer(view);
-										ret = false;
+									if (++tries == 1000) {
+										// Read-buffer on the other side is full. Abort writing and schedule buffer for next write
+										buffer.position(buffer.position() + size - view.remaining());
 
+										if (buffer == m_writeBuffer) {
+											// Copy buffer to avoid manipulation of scheduled data
+											slice = buffer.slice();
+											buf = ByteBuffer.allocateDirect(slice.remaining());
+											buf.put(slice);
+											buf.rewind();
+
+											p_connection.addBuffer(buf);
+										} else {
+											p_connection.addBuffer(buffer);
+										}
+										ret = false;
 										break outerloop;
 									}
 								} else {
@@ -165,17 +170,24 @@ final class NIOInterface {
 						buffer.position(buffer.position() + size);
 					}
 				} else {
-					length = buffer.remaining();
 					int tries = 0;
-					while (length > 0) {
+					while (buffer.remaining() > 0) {
 						try {
 							bytes = p_connection.getChannel().write(buffer);
-							length -= bytes;
-
 							if (bytes == 0) {
-								if (++tries == 10000) {
-									System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
-									p_connection.addBuffer(buffer);
+								if (++tries == 1000) {
+									// Read-buffer on the other side is full. Abort writing and schedule buffer for next write
+									if (buffer == m_writeBuffer) {
+										// Copy buffer to avoid manipulation of scheduled data
+										slice = buffer.slice();
+										buf = ByteBuffer.allocateDirect(slice.remaining());
+										buf.put(slice);
+										buf.rewind();
+
+										p_connection.addBuffer(buf);
+									} else {
+										p_connection.addBuffer(buffer);
+									}
 									ret = false;
 									break;
 								}

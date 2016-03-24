@@ -152,9 +152,10 @@ public final class ClusterLogTest3 {
 		 */
 		@Override
 		public void run() {
-			final short[] nodeIDs = new short[2];
+			final short[] nodeIDs = new short[3];
 			nodeIDs[0] = 640;
 			nodeIDs[1] = 960;
+			nodeIDs[2] = -15807;
 			long start;
 			long counter = 0;
 			Chunk[] chunks;

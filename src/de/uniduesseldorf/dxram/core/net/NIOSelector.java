@@ -175,12 +175,10 @@ class NIOSelector extends Thread {
 						}
 					}
 				} else if (p_key.isWritable()) {
-					// System.out.println("try to write");
-					NIOInterface.write(connection);
-					// if (NIOInterface.write(connection)) {
-					// Set interest to READ after writing; do not if channel was blocked and data is left
-					p_key.interestOps(SelectionKey.OP_READ);
-					// }
+					if (NIOInterface.write(connection)) {
+						// Set interest to READ after writing; do not if channel was blocked and data is left
+						p_key.interestOps(SelectionKey.OP_READ);
+					}
 				} else if (p_key.isConnectable()) {
 					NIOInterface.connect(connection);
 				}

@@ -61,7 +61,6 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 	// Methods
 	@Override
 	public void initialize() throws NetworkException {
-		final byte networkType;
 		final byte chunkType;
 		final byte logType;
 		final byte lookupType;
@@ -70,8 +69,7 @@ public final class NetworkHandler implements NetworkInterface, DataReceiver {
 		LOGGER.trace("Entering initialize");
 
 		// Network Messages
-		networkType = FlowControlMessage.TYPE;
-		MessageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
+		MessageDirectory.register(FlowControlMessage.TYPE, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
 
 		// Chunk Messages
 		chunkType = ChunkMessages.TYPE;

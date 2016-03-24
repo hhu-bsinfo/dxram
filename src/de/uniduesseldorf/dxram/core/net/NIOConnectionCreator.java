@@ -17,10 +17,9 @@ import de.uniduesseldorf.dxram.core.net.AbstractConnection.DataReceiver;
 class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	// Constants
-	protected static final int INCOMING_BUFFER_SIZE = (int) (512 * 1024 * 1.2); // 1024 * 1024 * 2;// 65536 * 2;
-	protected static final int OUTGOING_BUFFER_SIZE = 512 * 1024; // 1024 * 1024;// 65536;
-	protected static final int RECEIVE_BYTES = (int) (512 * 1024 * 1.2); // 1024 * 1024;
-	protected static final int SEND_BYTES = 512 * 1024; // 1024 * 1024;
+	protected static final int INCOMING_BUFFER_SIZE = 1024 * 1024;
+	protected static final int OUTGOING_BUFFER_SIZE = 1024 * 1024;
+	protected static final int FLOW_CONTROL_LIMIT = 1024 * 1024;
 	protected static final int CONNECTION_TIMEOUT = 200;
 
 	// Attributes
