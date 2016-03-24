@@ -68,15 +68,15 @@ public class TcmdChunkPut extends TerminalCommand{
 		
 		int num = chunkService.get(chunk);
 		if(num == 0)
-			System.out.println("Getting Chunk with id '"+ cid +"' failed");
+			System.out.println("Getting Chunk with id '"+ Long.toHexString(cid) +"' failed");
 		else
 			chunk.getData().put( data.getBytes(StandardCharsets.US_ASCII) );
 		
 		num = chunkService.put(chunk);
 		if(num == 0)
-			System.out.println("Putting Chunk with id '"+ cid +"' failed");
+			System.out.println("Putting Chunk with id '"+ Long.toHexString(cid) +"' failed");
 		else
-			System.out.println(data + " put in "+ cid.longValue());
+			System.out.println(data + " put in "+ Long.toHexString(cid));
 			
 		return true;
 	}

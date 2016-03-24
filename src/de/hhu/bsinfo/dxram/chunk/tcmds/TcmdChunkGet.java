@@ -76,7 +76,7 @@ public class TcmdChunkGet extends TerminalCommand{
 		
 		if(num == 0)
 		{
-			System.out.println("Getting Chunk with id '"+ cid +"' failed");
+			System.out.println("Getting Chunk with id '"+ Long.toHexString(cid) +"' failed");
 			return false;
 		}
 		

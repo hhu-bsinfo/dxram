@@ -526,9 +526,9 @@ public final class CIDTable {
 						}
 						ret.add(p_unfinishedCID + i);
 					}
-				} else {
-					range = 0;
 				}
+			} else {
+				range = 0;
 			}
 		}
 
