@@ -23,11 +23,11 @@ public class DataTypeParserShort implements DataTypeParser
 		{
 			String tmp = p_str.substring(0, 2);
 			if (tmp.equals("0x"))
-				return java.lang.Short.parseShort(p_str.substring(2), 16);
+				return (short) Integer.parseInt(p_str.substring(2), 16);
 			else if (tmp.equals("0b"))
-				return java.lang.Short.parseShort(p_str.substring(2), 2);
+				return (short) Integer.parseInt(p_str.substring(2), 2);
 			else if (tmp.equals("0o"))
-				return java.lang.Short.parseShort(p_str.substring(2), 8);
+				return (short) Integer.parseInt(p_str.substring(2), 8);
 		}
 		
 		return java.lang.Short.parseShort(p_str);

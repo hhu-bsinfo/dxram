@@ -2,6 +2,11 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
 import java.util.Arrays;
 
+/**
+ * Implementation of a frontier list based on bulk allocated arrays.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class BulkFifoNaive implements FrontierList
 {
 	protected int m_bulkSize = 16 * 1024 * 1024 / Long.BYTES;
@@ -14,11 +19,19 @@ public class BulkFifoNaive implements FrontierList
 	protected int m_posFront = 0;
 	protected int m_blockFront = 0;
 	
+	/**
+	 * Constructor
+	 * Default bulk size is 16MB.
+	 */
 	public BulkFifoNaive()
 	{
 		m_chainedFifo[0] = new long[m_bulkSize];
 	}
 	
+	/**
+	 * Constructor
+	 * @param p_bulkSize Specify the bulk size for block allocation.
+	 */
 	public BulkFifoNaive(final int p_bulkSize)
 	{
 		m_bulkSize = p_bulkSize;
@@ -82,11 +95,7 @@ public class BulkFifoNaive implements FrontierList
 		long tmp = m_chainedFifo[m_blockFront][m_posFront++];
 		// go to next block, jump if necessary
 		if (m_posFront == m_bulkSize)
-		{
-			// TODO auto shrink doesn't work with reset...new idea?
-//			// auto shrink
-//			m_chainedFifo[m_blockFront] = null;
-			
+		{			
 			m_blockFront++;
 			m_posFront = 0;
 		}

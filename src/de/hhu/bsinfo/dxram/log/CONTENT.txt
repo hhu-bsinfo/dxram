@@ -1,8 +1,0 @@
-#Classes
-LogHandler - Default implementation of the LogInterface
-LogInterface - API of log service
-LogMessages - Network messages for the log service
-
-#Packages
-storage - Classes for handling the log storage
-header - Classes for accessing log entries

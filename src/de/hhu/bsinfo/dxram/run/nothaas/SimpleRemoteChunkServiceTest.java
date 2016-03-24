@@ -3,12 +3,17 @@ package de.hhu.bsinfo.dxram.run.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
-// before running this as a peer, start a superpeer and an additional storage peer
+/**
+ * Minimal remote ChunkService test.
+ * Run this as a peer with one superpeer and another peer
+ * to receive the remote calls of the ChunkService.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class SimpleRemoteChunkServiceTest extends Main
 {
 	public static final Argument ARG_REMOTE_PEER_ID = new Argument("remotePeerID", "-15999", true, "NodeID of the remote peer to create chunks on");
@@ -16,11 +21,18 @@ public class SimpleRemoteChunkServiceTest extends Main
 	private DXRAM m_dxram;
 	private ChunkService m_chunkService;
 
+	/**
+	 * Java main entry point.
+	 * @param args Main arguments.
+	 */
 	public static void main(final String[] args) {
 		Main main = new SimpleRemoteChunkServiceTest();
 		main.run(args);
 	}
 	
+	/**
+	 * Constructor
+	 */
 	public SimpleRemoteChunkServiceTest()
 	{
 		super("Test creating chunks on a remote peer");

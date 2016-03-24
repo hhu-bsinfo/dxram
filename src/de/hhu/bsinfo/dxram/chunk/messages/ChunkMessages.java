@@ -17,6 +17,8 @@ public class ChunkMessages {
 	public static final byte SUBTYPE_STATUS_REQUEST = 9;
 	public static final byte SUBTYPE_STATUS_RESPONSE = 10;
 	public static final byte SUBTYPE_PUT_MESSAGE = 11;
+	public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST = 12;
+	public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE = 13;
 	
 	/**
 	 * Static class

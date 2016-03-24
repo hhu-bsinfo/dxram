@@ -8,6 +8,12 @@ import java.util.Map.Entry;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
+/**
+ * Component to record statistics (time, call count, avarage values etc)
+ * in DXRAM.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class StatisticsComponent extends DXRAMComponent {
 
 	private LoggerComponent m_logger = null;
@@ -16,10 +22,22 @@ public class StatisticsComponent extends DXRAMComponent {
 	private Map<String, Boolean> m_disabledRecorders = new HashMap<String, Boolean>();
 	private ArrayList<StatisticsRecorder> m_recorders = new ArrayList<StatisticsRecorder>();
 	
+	/**
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 */
 	public StatisticsComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 	
+	/**
+	 * Create a new recorder to record statistics of a module.
+	 * @param p_class Class to create a recorder for.
+	 * @return Id of the newly created recorder (handle).
+	 */
 	public int createRecorder(final Class<?> p_class) {		
 		StatisticsRecorder recorder = new StatisticsRecorder(m_recorders.size(), p_class.getSimpleName());
 		m_recorders.add(recorder);
@@ -32,6 +50,12 @@ public class StatisticsComponent extends DXRAMComponent {
 		return recorder.getId();
 	}
 	
+	/**
+	 * Add a new operation to an existing recorder.
+	 * @param p_id Recorder id to add a new operation to.
+	 * @param p_operationName Name of the operation to create.
+	 * @return Id of the operation created (handle).
+	 */
 	public int createOperation(final int p_id, final String p_operationName)
 	{
 		StatisticsRecorder recorder = m_recorders.get(p_id);
@@ -43,6 +67,12 @@ public class StatisticsComponent extends DXRAMComponent {
 		return recorder.createOperation(p_operationName);
 	}
 	
+	/**
+	 * Call this when/before you start/enter the call/operation you want
+	 * to record.
+	 * @param p_recorderId Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
+	 */
 	public void enter(final int p_recorderId, final int p_operationId) {
 		if (!m_enabledOverride)
 			return;
@@ -62,6 +92,13 @@ public class StatisticsComponent extends DXRAMComponent {
 		operation.enter();
 	}
 	
+	/**
+	 * Call this when/before you start/enter the call/operation you want
+	 * to record.
+	 * @param p_recorderId Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
+	 * @param p_val Additional value to be added to the long counter.
+	 */
 	public void enter(final int p_recorderId, final int p_operationId, final long p_val) {
 		if (!m_enabledOverride)
 			return;
@@ -81,6 +118,13 @@ public class StatisticsComponent extends DXRAMComponent {
 		operation.enter(p_val);
 	}
 	
+	/**
+	 * Call this when/before you start/enter the call/operation you want
+	 * to record.
+	 * @param p_recorderId Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
+	 * @param p_val Additional value to be added to the double counter.
+	 */
 	public void enter(final int p_recorderId, final int p_operationId, final double p_val) {
 		if (!m_enabledOverride)
 			return;
@@ -100,6 +144,11 @@ public class StatisticsComponent extends DXRAMComponent {
 		operation.enter(p_val);
 	}
 	
+	/**
+	 * Call this when/after you ended/left the call/operation.
+	 * @param p_recorderId Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
+	 */
 	public void leave(final int p_recorderId, final int p_operationId) {
 		if (!m_enabledOverride)
 			return;
@@ -119,10 +168,19 @@ public class StatisticsComponent extends DXRAMComponent {
 		operation.leave();
 	}
 
+	/**
+	 * Get a list of all registered/created recorders.
+	 * @return List of StatisticsRecorders.
+	 */
 	public ArrayList<StatisticsRecorder> getRecorders() {
 		return m_recorders;
 	}
 	
+	/**
+	 * Get a specific recorder.
+	 * @param p_class Class this recorder was created for.
+	 * @return StatisticsRecorder if one was created for that class or null.
+	 */
 	public StatisticsRecorder getRecorder(final Class<?> p_class) {
 		for (StatisticsRecorder recorder : m_recorders) {
 			if (p_class.getSimpleName().equals(recorder.getName())) {

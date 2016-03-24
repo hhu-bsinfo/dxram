@@ -3,18 +3,26 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
+/**
+ * Thread safe, lock free implementation of a frontier listed based on
+ * the BitVector.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class ConcurrentBitVector implements FrontierList
 {
 	private AtomicLongArray m_vector = null;		
 	
-	private int m_itPos = 0;
-	private long m_itBit = 0;
-	
+	private AtomicLong m_itPos = new AtomicLong(0);
 	private AtomicLong m_count = new AtomicLong(0);
 	
-	public ConcurrentBitVector(final long p_vertexCount)
+	/**
+	 * Constructor
+	 * @param p_maxElementCount Specify the maximum number of elements.
+	 */
+	public ConcurrentBitVector(final long p_maxElementCount)
 	{
-		m_vector = new AtomicLongArray((int) ((p_vertexCount / 64L) + 1L));
+		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
 	}
 	
 	@Override
@@ -52,8 +60,7 @@ public class ConcurrentBitVector implements FrontierList
 	@Override
 	public void reset()
 	{
-		m_itPos = 0;
-		m_itBit = 0;
+		m_itPos.set(0);
 		m_count.set(0);
 		for (int i = 0; i < m_vector.length(); i++) {
 			m_vector.set(i, 0);
@@ -63,27 +70,42 @@ public class ConcurrentBitVector implements FrontierList
 	@Override
 	public long popFront()
 	{
-		while (m_count.get() > 0)
+		while (true)
 		{
-			if (m_vector.get(m_itPos) != 0)
-			{
-				while (m_itBit < 64L)
-				{
-					if (((m_vector.get(m_itPos) >> m_itBit) & 1L) != 0)
-					{
-						m_count.decrementAndGet();
-						return m_itPos * 64L + m_itBit++;
-					}
-					
-					m_itBit++;
+			// this section keeps threads out
+			// if the vector is already empty
+			long count = m_count.get();
+			if (count > 0) {
+				if (!m_count.compareAndSet(count, count - 1)) {
+					continue;
 				}
-				
-				m_itBit = 0;
+			} else {				
+				return -1;
 			}
 			
-			m_itPos++;
+			while (true)
+			{
+				long itPos = m_itPos.get();
+				
+				if ((m_vector.get((int) (itPos / 64L)) & (1L << itPos % 64L)) != 0)
+				{
+					if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
+						continue;
+					}
+					
+					return itPos;
+				}
+				
+				if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
+					continue;
+				}
+			}
 		}
-		
-		return -1;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "[m_count " + m_count + ", m_itPos " + m_itPos + "]"; 
 	}
 }

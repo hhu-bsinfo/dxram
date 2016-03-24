@@ -16,10 +16,18 @@ public class MemoryStatisticsRecorderIDs {
 		public static final String MS_CREATE_LID_TABLE = "CreateLIDTable";
 		public static final String MS_MALLOC = "Malloc";
 		public static final String MS_FREE = "Free";
+		public static final String MS_GET = "Get";
+		public static final String MS_PUT = "Put";
+		public static final String MS_CREATE = "Create";
+		public static final String MS_REMOVE = "Remove";
 		
 		public int m_createNIDTable = StatisticsRecorder.Operation.INVALID_ID;
 		public int m_createLIDTable = StatisticsRecorder.Operation.INVALID_ID;
 		public int m_malloc = StatisticsRecorder.Operation.INVALID_ID;
 		public int m_free = StatisticsRecorder.Operation.INVALID_ID;
+		public int m_get = StatisticsRecorder.Operation.INVALID_ID;
+		public int m_put = StatisticsRecorder.Operation.INVALID_ID;
+		public int m_create = StatisticsRecorder.Operation.INVALID_ID;
+		public int m_remove = StatisticsRecorder.Operation.INVALID_ID;
 	}
 }

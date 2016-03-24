@@ -26,6 +26,18 @@ public class Chunk implements DataStructure
 
 	/**
 	 * Constructor
+	 * Sets the chunk id to invalid.
+	 * @param p_bufferSize p_bufferSize Initial size of the byte buffer. If unknown/to read the complete payload
+	 * 			stored for the specified ID, you can set this to 0. The importObject function will
+	 * 			allocate the exact size this chunk occupies in memory.
+	 */
+	public Chunk(final int p_bufferSize) {
+		m_chunkID = ChunkID.INVALID_ID;
+		m_data = ByteBuffer.allocate(p_bufferSize);
+	}
+	
+	/**
+	 * Constructor
 	 * @param p_id ID the chunk is assigned to.
 	 * @param p_bufferSize Initial size of the byte buffer. If unknown/to read the complete payload
 	 * 			stored for the specified ID, you can set this to 0. The importObject function will
@@ -34,6 +46,18 @@ public class Chunk implements DataStructure
 	public Chunk(final long p_id, final int p_bufferSize) {
 		m_chunkID = p_id;
 		m_data = ByteBuffer.allocate(p_bufferSize);
+	}
+	
+	/**
+	 * Constructor
+	 * Sets the chunk id to invalid.
+	 * Create the chunk with an external buffer.
+	 * @param p_buffer External buffer containing the data for the chunk. Be careful
+	 * 				with shared references of the ByteBuffer object.
+	 */
+	public Chunk(final ByteBuffer p_buffer) {
+		m_chunkID = ChunkID.INVALID_ID;
+		m_data = p_buffer;
 	}
 	
 	/**

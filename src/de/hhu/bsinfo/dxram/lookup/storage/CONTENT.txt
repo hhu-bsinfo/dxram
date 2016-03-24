@@ -1,6 +1,0 @@
-#Classes
-CacheTree - Stores meta data in a special btree (for the client)
-CIDTree - Stores meta data in a special btree (for a super-peer)
-CIDTreeOptimized - Like CIDTree but stores backup ranges outside the tree
-AIDTable - HashMap to store ID-Mappings (chain hashmap)
-AIDTableOptimized - HashMap to store ID-Mappings (linear probing)

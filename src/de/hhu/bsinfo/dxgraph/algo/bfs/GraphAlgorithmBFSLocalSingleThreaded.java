@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.BitVector;
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.BitVectorOptimized;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.BitVectorMultiLevel;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.BulkFifo;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.BulkFifoNaive;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
@@ -44,10 +44,10 @@ public class GraphAlgorithmBFSLocalSingleThreaded extends GraphAlgorithm {
 			m_curFrontier = new BitVector(getGraphLoaderResultDelegate().getTotalVertexCount());
 			m_nextFrontier = new BitVector(getGraphLoaderResultDelegate().getTotalVertexCount());
 		}
-		else if (m_frontierListType == BitVectorOptimized.class)
+		else if (m_frontierListType == BitVectorMultiLevel.class)
 		{
-			m_curFrontier = new BitVectorOptimized(getGraphLoaderResultDelegate().getTotalVertexCount());
-			m_nextFrontier = new BitVectorOptimized(getGraphLoaderResultDelegate().getTotalVertexCount());
+			m_curFrontier = new BitVectorMultiLevel(getGraphLoaderResultDelegate().getTotalVertexCount());
+			m_nextFrontier = new BitVectorMultiLevel(getGraphLoaderResultDelegate().getTotalVertexCount());
 		}
 		else if (m_frontierListType == BulkFifoNaive.class)
 		{

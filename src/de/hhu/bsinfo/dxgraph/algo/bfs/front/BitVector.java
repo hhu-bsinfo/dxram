@@ -1,27 +1,36 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
+/**
+ * Implementation of a frontier list, which is represented
+ * as a bit vector indicating which values it contains.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class BitVector implements FrontierList
 {
 	private long[] m_vector = null;		
 	
-	private int m_itPos = 0;
-	private long m_itBit = 0;
-	
+	private long m_itPos = 0;
 	private long m_count = 0;
 	
-	public BitVector(final long p_vertexCount)
+	/**
+	 * Constructor
+	 * @param p_maxElementCount Specify the maximum number of elements.
+	 */
+	public BitVector(final long p_maxElementCount)
 	{
-		m_vector = new long[(int) ((p_vertexCount / 64L) + 1L)];
+		m_vector = new long[(int) ((p_maxElementCount / 64L) + 1L)];
 	}
 	
 	@Override
 	public void pushBack(final long p_index)
 	{
 		long tmp = (1L << (p_index % 64L));
-		if ((m_vector[(int) (p_index / 64L)] & tmp) == 0)
+		int idx = (int) (p_index / 64L);
+		if ((m_vector[idx] & tmp) == 0)
 		{				
 			m_count++;
-			m_vector[(int) (p_index / 64L)] |= tmp;
+			m_vector[idx] |= tmp;
 		}
 	}
 	
@@ -41,7 +50,6 @@ public class BitVector implements FrontierList
 	public void reset()
 	{
 		m_itPos = 0;
-		m_itBit = 0;
 		m_count = 0;
 		for (int i = 0; i < m_vector.length; i++) {
 			m_vector[i] = 0;
@@ -50,28 +58,26 @@ public class BitVector implements FrontierList
 	
 	@Override
 	public long popFront()
-	{
+	{		
 		while (m_count > 0)
 		{
-			if (m_vector[m_itPos] != 0)
+			if ((m_vector[(int) (m_itPos / 64L)] & (1L << (m_itPos % 64L))) != 0)
 			{
-				while (m_itBit < 64L)
-				{
-					if (((m_vector[m_itPos] >> m_itBit) & 1L) != 0)
-					{
-						m_count--;
-						return m_itPos * 64L + m_itBit++;
-					}
-					
-					m_itBit++;
-				}
-				
-				m_itBit = 0;
+				long tmp = m_itPos;
+				m_itPos++;	
+				m_count--;
+				return tmp;
 			}
-			
+
 			m_itPos++;
 		}
 		
 		return -1;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "[m_count " + m_count + ", m_itPos " + m_itPos + "]"; 
 	}
 }

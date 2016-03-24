@@ -16,7 +16,7 @@ import de.hhu.bsinfo.utils.main.Main;
  */
 public abstract class DXRAMMain extends Main {
 
-	public static final Argument ARG_DXRAM_CONF = new Argument("dxramConfig", "config/dxram.conf", true, "Configuration file for DXRAM");
+	private static final Argument ARG_DXRAM_CONF = new Argument("dxramConfig", "config/dxram.conf", true, "Configuration file for DXRAM");
 	
 	private DXRAM m_dxram = null;
 	private String m_ip = null;

@@ -3052,8 +3052,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 									backupPeer = (short) (backupRanges.get(i)[1] >> j * 16);
 									// Inform backupPeer to recover all chunks between (i * 1000) and ((i + 1) * 1000 -
 									// 1)
-									m_logger.info(getClass(), "Informing backup peer " + backupPeer + " to recover chunks" + " from backup range starting with "
-											+ backupRange + " from " + p_failedNode);
+//									m_logger.info(getClass(), "Informing backup peer " + backupPeer + " to recover chunks" + " from backup range starting with "
+//											+ backupRange + " from " + p_failedNode);
+									
+									m_logger.info(getClass(), "Starting recovery not implemented, no execution");
 									// TODO
 									/*
 									 * try {
@@ -3076,7 +3078,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 					m_failureLock.unlock();
 					
-					m_logger.info(getClass(), "Recovery of node " + p_failedNode + " complete");
+					m_logger.info(getClass(), "Recovery of failed node " + p_failedNode + " complete.");
 				}
 			}
 		}

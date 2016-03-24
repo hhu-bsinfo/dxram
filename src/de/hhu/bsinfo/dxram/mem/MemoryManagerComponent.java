@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.mem;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -28,6 +30,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	private JNIReadWriteSpinLock m_lock;
+	private long m_numActiveChunks;
 
 	private BootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
@@ -35,11 +38,25 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	
 	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
 
-	// Constructors
 	/**
-	 * Creates an instance of MemoryManager
-	 * @param p_nodeID
-	 *            ID of the node this manager is running on.
+	 * Error codes to be returned by some methods.
+	 */
+	public enum MemoryErrorCodes
+	{
+		SUCCESS,
+		UNKNOWN,
+		DOES_NOT_EXIST,
+		READ,
+		WRITE,
+		OUT_OF_MEMORY,
+	}
+	
+	/**
+	 * Constructor
+	 * @param p_priorityInit Priority for initialization of this component. 
+	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component. 
+	 * 			When choosing the order, consider component dependencies here.
 	 */
 	public MemoryManagerComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -68,6 +85,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_cidTable.initialize(m_rawMemory);
 
 		m_lock = new JNIReadWriteSpinLock();
+		
+		m_numActiveChunks = 0;
 		
 		return true;
 	}
@@ -140,6 +159,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		long chunkID = -1;
 		long lid = -1;
 		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		
 		// get new LID from CIDTable
 		lid = m_cidTable.getFreeLID();
 		if (lid == -1)
@@ -156,11 +177,14 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
 				// register new chunk
 				m_cidTable.set(chunkID, address);
+				m_numActiveChunks++;
 			} else {
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
 			}
 		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 
 		return chunkID;
 	}
@@ -190,19 +214,27 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @param p_dataStructure Data structure to write the data of its specified ID to.
 	 * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data structure exists.l
 	 */
-	public boolean get(final DataStructure p_dataStructure)
+	public MemoryErrorCodes get(final DataStructure p_dataStructure)
 	{
 		long address;
-		boolean ret = false;
+		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
 			SmallObjectHeapDataStructureImExporter importer = new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (importer.importObject(p_dataStructure) >= 0) {
-				ret = true;
-			}
+			if (importer.importObject(p_dataStructure) < 0) {
+				ret = MemoryErrorCodes.READ;
+			} 
 		}
+		else
+		{
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
+		}
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 		
 		return ret;
 	}
@@ -224,20 +256,26 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @throws MemoryException
 	 *             If writing data failed.
 	 */
-	public boolean put(final DataStructure p_dataStructure)
+	public MemoryErrorCodes put(final DataStructure p_dataStructure)
 	{
 		long address;
-		boolean ret = false;
+		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+		
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
 		
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
 			SmallObjectHeapDataStructureImExporter exporter = new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (exporter.exportObject(p_dataStructure) >= 0) {
-				ret = true;
+			if (exporter.exportObject(p_dataStructure) < 0) {
+				ret = MemoryErrorCodes.WRITE;
 			}
+		} else {
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
-
+		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		
 		return ret;
 	}
 
@@ -249,11 +287,13 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @throws MemoryException
 	 *             if the Chunk could not be get
 	 */
-	public boolean remove(final long p_chunkID) {
+	public MemoryErrorCodes remove(final long p_chunkID) {
 		long addressDeletedChunk;
 		int size;
-		boolean ret = false;
+		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		
 		// Get and delete the address from the CIDTable, mark as zombie first
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
 		if (addressDeletedChunk != -1)
@@ -270,11 +310,22 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);
 			m_rawMemory.free(addressDeletedChunk);
 			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free);
-			
-			ret = true;
+			m_numActiveChunks--;
+		} else {
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
 		
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		
 		return ret;
+	}
+	
+	/**
+	 * Get the number of currently active chunks/allocated blocks.
+	 * @return Number of currently active chunks.
+	 */
+	public long getNumberOfActiveChunks() {
+		return m_numActiveChunks;
 	}
 
 	/**
@@ -318,21 +369,57 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_cidTable.putChunkIDForReuse(p_chunkID);
 	}
 	
+//	/**
+//	 * Returns the ChunkIDs of all migrated Chunks
+//	 * @return the ChunkIDs of all migrated Chunks
+//	 * @throws MemoryException
+//	 * if the CIDTable could not be completely accessed
+//	 */
+//	public ArrayList<Long> getCIDOfAllMigratedChunks() {
+//		return m_cidTable.getCIDOfAllMigratedChunks();
+//	}
+	
+	/**
+	 * Returns the ChunkID ranges of all locally stored Chunks
+	 * @return the ChunkID ranges in an ArrayList
+	 * @throws MemoryException
+	 * if the CIDTable could not be completely accessed
+	 */
+	public ArrayList<Long> getCIDrangesOfAllLocalChunks() {
+		return m_cidTable.getCIDrangesOfAllLocalChunks();
+	}
+	
+	/**
+	 * Object containing status information about the memory.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+	 *
+	 */
 	public static class Status
 	{
 		private long m_totalMemoryBytes = -1;
 		private long m_freeMemoryBytes = -1;
 		
+		/**
+		 * Constructor
+		 */
 		public Status()
 		{
 			
 		}
 		
+		/**
+		 * Get the total amount of memory in bytes.
+		 * @return Total amount of memory in bytes.
+		 */
 		public long getTotalMemory()
 		{
 			return m_totalMemoryBytes;
 		}
 		
+		/**
+		 * Get the total amount of free memory in bytes.
+		 * @return Amount of free memory in bytes.
+		 */
 		public long getFreeMemory()
 		{
 			return m_freeMemoryBytes;
@@ -351,26 +438,9 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_statisticsRecorderIDs.m_operations.m_createLIDTable = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_CREATE_LID_TABLE);
 		m_statisticsRecorderIDs.m_operations.m_malloc = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_MALLOC);
 		m_statisticsRecorderIDs.m_operations.m_free = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_FREE);
+		m_statisticsRecorderIDs.m_operations.m_get = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_GET);
+		m_statisticsRecorderIDs.m_operations.m_put = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_PUT);
+		m_statisticsRecorderIDs.m_operations.m_create = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_CREATE);
+		m_statisticsRecorderIDs.m_operations.m_remove = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, MemoryStatisticsRecorderIDs.Operations.MS_REMOVE);
 	}
-
-	// FIXME take back in
-	// /**
-	// * Returns the ChunkIDs of all migrated Chunks
-	// * @return the ChunkIDs of all migrated Chunks
-	// * @throws MemoryException
-	// * if the CIDTable could not be completely accessed
-	// */
-	// public ArrayList<Long> getCIDOfAllMigratedChunks() throws MemoryException {
-	// return m_cidTable.getCIDOfAllMigratedChunks();
-	// }
-	//
-	// /**
-	// * Returns the ChunkID ranges of all locally stored Chunks
-	// * @return the ChunkID ranges in an ArrayList
-	// * @throws MemoryException
-	// * if the CIDTable could not be completely accessed
-	// */
-	// public ArrayList<Long> getCIDrangesOfAllLocalChunks() throws MemoryException {
-	// return m_cidTable.getCIDrangesOfAllLocalChunks();
-	// }
 }

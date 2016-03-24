@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.HalfConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
@@ -39,8 +39,8 @@ public class GraphAlgorithmBFSLocalMultiThreaded extends GraphAlgorithm {
 		m_loggerService.info(getClass(), "Starting " + m_threads.length + " BFS Threads...");
 		
 		long totalVertexCount = getGraphLoaderResultDelegate().getTotalVertexCount();
-		m_curFrontier = new ConcurrentBitVector(totalVertexCount);
-		m_nextFrontier = new ConcurrentBitVector(totalVertexCount);
+		m_curFrontier = new HalfConcurrentBitVector(totalVertexCount);
+		m_nextFrontier = new HalfConcurrentBitVector(totalVertexCount);
 		
 		for (int i = 0; i < m_threads.length; i++) {
 			m_threads[i] = new BFSThread(i, m_loggerService, m_chunkService);

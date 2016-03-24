@@ -12,7 +12,12 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
-//before running this as a peer, start one superpeer
+/**
+ * Test the nameservice.
+ * Run this as a peer and have one superpeer running.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ *
+ */
 public class SimpleNameserviceTest extends Main {
 	
 	public static final Argument ARG_CHUNK_SIZE = new Argument("chunkSize", "76", true, "Chunk size for allocation");
@@ -22,11 +27,18 @@ public class SimpleNameserviceTest extends Main {
 	private ChunkService m_chunkService;
 	private NameserviceService m_nameserviceService;
 
+	/**
+	 * Java main entry point.
+	 * @param args Main arguments.
+	 */
 	public static void main(final String[] args) {
 		Main main = new SimpleNameserviceTest();
 		main.run(args);
 	}
 	
+	/**
+	 * Constructor
+	 */
 	public SimpleNameserviceTest()
 	{
 		super("Simple test case to check if the name service is working");

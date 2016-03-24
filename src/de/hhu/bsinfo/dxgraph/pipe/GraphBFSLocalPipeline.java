@@ -4,6 +4,7 @@ import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalMultiThreaded;
+import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalMultiThreaded2;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalSingleThreaded;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.load.GraphLoader;
@@ -15,7 +16,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 public class GraphBFSLocalPipeline extends Pipeline {
 
 	protected static final Argument ARG_GRAPH_LOAD_DATA_PATH = new Argument("graphLoadDataPath", ".", true, "Path containing graph data files to laod"); 
-	protected static final Argument ARG_THREAD_COUNT = new Argument("threadCount", "1", true, "Total number of threads for BFS"); 
+	protected static final Argument ARG_BFS_THREAD_COUNT = new Argument("bfsThreadCount", "1", true, "Total number of threads for BFS"); 
 	protected static final Argument ARG_GRAPH_LOAD_VERTEX_BATCH_SIZE = new Argument("graphLoadVertexBatchSize", "100", true, "Batch size for loading vertices from the file");
 	protected static final Argument ARG_GRAPH_BFS_FRONTIER = new Argument("graphLoadBfsFrontier", "BitVector", true, "Data structure used for the frontiers (available on single thread only)");
 	protected static final Argument ARG_GRAPH_BFS_VERTEX_BATCH_SIZE_THREAD = new Argument("graphBfsVertexBatchSizeThread", "100", true, "Number of vertices per thread to be batch processed"); 
@@ -30,7 +31,7 @@ public class GraphBFSLocalPipeline extends Pipeline {
 			final int p_graphLoadVertexBatchSize, final Class<? extends FrontierList> p_frontierClass, int p_graphBfsVertexBatchSizeThread, final long p_graphBfsEntryNodeLocal)
 	{
 		m_arguments.setArgument(ARG_GRAPH_LOAD_DATA_PATH, p_graphLoadDataPath);
-		m_arguments.setArgument(ARG_THREAD_COUNT, p_threadCount);
+		m_arguments.setArgument(ARG_BFS_THREAD_COUNT, p_threadCount);
 		m_arguments.setArgument(ARG_GRAPH_LOAD_VERTEX_BATCH_SIZE, p_graphLoadVertexBatchSize);
 		m_arguments.setArgument(ARG_GRAPH_BFS_FRONTIER, p_frontierClass.getName());
 		m_arguments.setArgument(ARG_GRAPH_BFS_VERTEX_BATCH_SIZE_THREAD, p_graphBfsVertexBatchSizeThread);
@@ -44,7 +45,7 @@ public class GraphBFSLocalPipeline extends Pipeline {
 		recordTaskStatistics(true);
 	
 		final String graphLoadDataPath = p_arguments.getArgument(ARG_GRAPH_LOAD_DATA_PATH).getValue(String.class);
-		final int threadCount = p_arguments.getArgument(ARG_THREAD_COUNT).getValue(Integer.class);
+		final int threadCount = p_arguments.getArgument(ARG_BFS_THREAD_COUNT).getValue(Integer.class);
 		final int graphLoadVertexBatchSize = p_arguments.getArgument(ARG_GRAPH_LOAD_VERTEX_BATCH_SIZE).getValue(Integer.class);
 		final String graphBfsFrontier = p_arguments.getArgument(ARG_GRAPH_BFS_FRONTIER).getValue(String.class);
 		final int graphBfsVertexBatchCount = p_arguments.getArgument(ARG_GRAPH_BFS_VERTEX_BATCH_SIZE_THREAD).getValue(Integer.class);
@@ -65,9 +66,9 @@ public class GraphBFSLocalPipeline extends Pipeline {
 		pushTask(new PrintMemoryStatusToConsoleTask());
 		if (threadCount > 1) {
 			if (graphBfsEntryNodeLocal != null) {
-				pushTask(new GraphAlgorithmBFSLocalMultiThreaded(graphBfsVertexBatchCount, threadCount, loader, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
+				pushTask(new GraphAlgorithmBFSLocalMultiThreaded2(graphBfsVertexBatchCount, threadCount, loader, ChunkID.getChunkID(m_bootService.getNodeID(), graphBfsEntryNodeLocal)));
 			} else {
-				pushTask(new GraphAlgorithmBFSLocalMultiThreaded(graphBfsVertexBatchCount, threadCount, loader));
+				pushTask(new GraphAlgorithmBFSLocalMultiThreaded2(graphBfsVertexBatchCount, threadCount, loader));
 			}
 			
 		} else {
