@@ -66,7 +66,7 @@ public class TcmdChunkGet extends TerminalCommand{
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
 		
 		if (__checkIDandSize(size, cid, lid))	// check if size, cid and lid are valid
-			return true;						// if the values are not valid the function will do nothing and returns
+			return false;						// if the values are not valid the function will do nothing and returns
 		
 		cid = __getCid(cid, lid, nid);
 		
@@ -77,7 +77,7 @@ public class TcmdChunkGet extends TerminalCommand{
 		if(num == 0)
 		{
 			System.out.println("Getting Chunk with id '"+ cid +"' failed");
-			return true;
+			return false;
 		}
 		
 		
@@ -89,7 +89,7 @@ public class TcmdChunkGet extends TerminalCommand{
 			 lengthOfRead = len;
 		 
 		 if (__checkLengthAndOffset(lengthOfData, off, lengthOfRead))	// check for valid length and offset input
-			 return true;
+			 return false;
 
 		 if (lengthOfData - off < lengthOfRead)
 			 lengthOfRead = lengthOfData - off;
