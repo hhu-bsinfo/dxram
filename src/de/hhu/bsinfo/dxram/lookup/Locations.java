@@ -212,20 +212,20 @@ public final class Locations implements Importable, Exportable {
 		if (null != m_backupPeers) {
 			if (m_backupPeers.length == 3) {
 				if (m_backupPeers[0] == -1) {
-					ret = m_primaryPeer + ", backup peers unknown (ask " + m_primaryPeer + ")";
+					ret = "0x" + Integer.toHexString(m_primaryPeer) + ", backup peers unknown (ask 0x" + Integer.toHexString(m_primaryPeer) + ")";
 				} else {
-					ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", " + m_backupPeers[2] + "]";
+					ret = "0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x" + Integer.toHexString(m_backupPeers[1]) + ", 0x" + Integer.toHexString(m_backupPeers[2]) + "]";
 				}
 			} else if (m_backupPeers.length == 2) {
-				ret = m_primaryPeer + ", [" + m_backupPeers[0] + ", " + m_backupPeers[1] + "]";
+				ret = "0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x" + Integer.toHexString(m_backupPeers[1]) + "]";
 			} else {
-				ret = m_primaryPeer + ", [" + m_backupPeers[0] + "]";
+				ret = "0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + "]";
 			}
 		} else {
-			ret = m_primaryPeer + ", no backup peers";
+			ret = "0x" + Integer.toHexString(m_primaryPeer) + ", no backup peers";
 		}
 		if (null != m_range) {
-			ret += ", (" + m_range[0] + ", " + m_range[1] + ")";
+			ret += ", (0x" + Long.toHexString(m_range[0]) + ", 0x" + Long.toHexString(m_range[1]) + ")";
 		}
 		return ret;
 	}

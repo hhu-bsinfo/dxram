@@ -126,7 +126,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupRequest request;
 		LookupResponse response;
 
-		m_logger.trace(getClass(), "Entering get with: p_chunkID=" + p_chunkID);
+		m_logger.trace(getClass(), "Entering get with: p_chunkID=0x" + Long.toHexString(p_chunkID));
 
 		if (!overlayIsStable()) {
 			check = true;
@@ -221,7 +221,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		InitRangeRequest request;
 
-		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=" + p_firstChunkIDOrRangeID + ", p_locations=" + p_primaryAndBackupPeers);
+		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x" + Long.toHexString(p_firstChunkIDOrRangeID) + ", p_locations=" + p_primaryAndBackupPeers);
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer is not allowed to initialize backup ranges.");
@@ -977,7 +977,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		AskAboutSuccessorRequest request = null;
 		AskAboutSuccessorResponse response = null;
 
-		m_logger.trace(getClass(), "Entering getResponsibleSuperpeer with: p_chunkID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering getResponsibleSuperpeer with: p_nodeID=0x" + Integer.toHexString(p_nodeID));
 
 		m_overlayLock.lock();
 		if (!m_superpeers.isEmpty()) {
@@ -1361,15 +1361,17 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		Locations result = null;
 		LookupTree tree;
 
-		m_logger.trace(getClass(), "Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource());
-
 		chunkID = p_lookupRequest.getChunkID();
+		m_logger.trace(getClass(), "Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource() + " chunkID: " + Long.toHexString(chunkID));
+
 		m_dataLock.lock();
 		tree = getCIDTree(ChunkID.getCreatorID(chunkID));
 		if (null != tree) {
 			result = tree.getMetadata(chunkID);
 		}
 		m_dataLock.unlock();
+		
+		m_logger.trace(getClass(), "LOOKUP_REQUEST " + p_lookupRequest.getSource() + " chunkID " + Long.toHexString(chunkID) + " reply location: " + result);
 		
 		if (m_network.sendMessage(
 				new LookupResponse(p_lookupRequest, result)) 
@@ -2293,9 +2295,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		int id;
 		short[] backupSuperpeers;
 
-		m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource());
-
 		id = p_insertIDRequest.getID();
+		m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource() + ", id " + id);
+		
 		if (isOnlySuperpeer() || isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_me, CLOSED_INTERVAL)) {
 			m_mappingLock.lock();
 			m_idTable.put(id, p_insertIDRequest.getChunkID());
@@ -2338,13 +2340,14 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		int id;
 		long chunkID = -1;
 
-		m_logger.trace(getClass(), "Got request: GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource());
-
 		id = p_getChunkIDRequest.getID();
+		m_logger.trace(getClass(), "Got request: GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource() + ", id " + id);
+		
 		if (isOnlySuperpeer() || isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_me, CLOSED_INTERVAL)) {
 			m_mappingLock.lock();
 			chunkID = m_idTable.get(id);
 			m_mappingLock.unlock();
+			m_logger.trace(getClass(), "GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource() + ", id " + id + ", reply chunkID " + Long.toHexString(chunkID));
 		}
 		if (m_network.sendMessage(
 				new GetChunkIDResponse(p_getChunkIDRequest, chunkID)) 

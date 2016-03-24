@@ -252,7 +252,7 @@ public class StatisticsRecorder
 		 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 		 *
 		 */
-		private static class Stats
+		public static class Stats
 		{
 			private long m_threadId = -1;
 			

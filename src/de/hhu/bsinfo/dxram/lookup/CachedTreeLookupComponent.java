@@ -115,7 +115,7 @@ public class CachedTreeLookupComponent extends LookupComponent {
 
 		chunkID = m_applicationIDCache.get(p_id);
 		if (null == chunkID) {
-			m_logger.trace(getClass(), "value not cached: " + p_id);
+			m_logger.trace(getClass(), "value not cached for application cache: " + p_id);
 
 			ret = m_lookup.getChunkID(p_id);
 

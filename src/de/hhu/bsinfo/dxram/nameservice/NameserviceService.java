@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram.nameservice;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 
 /**
@@ -12,6 +13,7 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
  */
 public class NameserviceService extends DXRAMService {
 
+	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	
 	private NameServiceStringConverter m_converter = null;
@@ -24,6 +26,7 @@ public class NameserviceService extends DXRAMService {
 	@Override
 	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
+		m_logger = getComponent(LoggerComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
 		
 		m_converter = new NameServiceStringConverter(p_settings.getValue(NameserviceConfigurationValues.Component.TYPE));
@@ -43,7 +46,10 @@ public class NameserviceService extends DXRAMService {
 	 * @param p_name Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final DataStructure p_dataStructure, final String p_name) {
-		m_lookup.insertID(m_converter.convert(p_name), p_dataStructure.getID());
+		int id = m_converter.convert(p_name);
+		m_logger.trace(getClass(), "Registering chunkID 0x" + Long.toHexString(p_dataStructure.getID()) + ", name " + p_name + ", id " + id);
+		
+		m_lookup.insertID(id, p_dataStructure.getID());
 	}
 	
 	/**
@@ -52,7 +58,14 @@ public class NameserviceService extends DXRAMService {
 	 * @return If the name was registered with a chunk ID before, returns the chunk ID, null otherwise.
 	 */
 	public long getChunkID(final String p_name) {
-		return m_lookup.getChunkID(m_converter.convert(p_name));
+		int id = m_converter.convert(p_name);
+		m_logger.trace(getClass(), "Lookup name " + p_name + ", id " + id);
+		
+		long ret = m_lookup.getChunkID(id);
+		
+		m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID 0x" + Long.toHexString(ret));
+		
+		return ret;
 	}
 	
 	/**

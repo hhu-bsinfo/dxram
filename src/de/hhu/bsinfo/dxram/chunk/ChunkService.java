@@ -934,16 +934,17 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	/**
 	 * Initializes the backup range for current locations
 	 * and determines new backup peers if necessary
-	 * @param p_localID
-	 *            the current LocalID
+	 * @param p_chunkID
+	 *            the current ChunkID
 	 * @param p_size
 	 *            the size of the new created chunk
 	 * @throws LookupException
 	 *             if range could not be initialized
 	 */
-	private void initBackupRange(final long p_localID, final int p_size) {
+	private void initBackupRange(final long p_chunkID, final int p_size) {
 		int size;
-
+		long localId = ChunkID.getLocalID(p_chunkID);
+		
 		// TODO Kevin: fix this
 		if (m_logActive) {
 //			size = p_size + m_log.getAproxHeaderSize(m_nodeID, p_localID, p_size);
@@ -963,11 +964,17 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 //			} else {
 //				m_rangeSize += size;
 //			}
-		} else if (!m_firstBackupRangeInitialized && p_localID == 1) {
+		} else if (!m_firstBackupRangeInitialized && localId == 1) {
 			short nodeId = m_boot.getNodeID();
 			m_lookup.initRange(((long) nodeId << 48) + 0xFFFFFFFFFFFFL, new Locations(nodeId, new short[] {-1, -1, -1}, null));
 			m_firstBackupRangeInitialized = true;
 		}
+		
+//		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
+//				// by other peers
+//				for (int i = 0; i < p_count; i++) {
+//					m_lookup.initRange(chunkIDs[i], new Locations(m_boot.getNodeID(), new short[] {-1, -1, -1}, null));	
+//				}
 	}
 	
 	/**
