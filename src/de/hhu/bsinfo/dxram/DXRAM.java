@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxram;
 
+import java.net.InetSocketAddress;
+
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
@@ -20,6 +22,24 @@ public final class DXRAM
 	{
 		m_engine = new DXRAMEngine();
 	}
+	
+	/**
+	 * Initialize the instance.
+	 * @param p_autoShutdown True to have DXRAM shut down automatically when the application quits. 
+	 * 			If false, the caller has to take care of shutting down the instance by calling shutdown when done. 
+	 * @return True if initializing was successful, false otherwise.
+	 */
+	public boolean initialize(final boolean p_autoShutdown) {
+		boolean ret = m_engine.init();
+		if (ret == false)
+			return ret;
+		
+		printNodeInfo();
+		if (ret & p_autoShutdown)
+			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+		return ret;
+	}
+	
 	
 	/**
 	 * Initialize the instance.
@@ -105,6 +125,9 @@ public final class DXRAM
 		short nodeId = bootService.getNodeID();
 		System.out.println("NodeID: 0x" + Integer.toHexString(nodeId).substring(4).toUpperCase() + " (" + nodeId + ")");
 		System.out.println("Role: " + bootService.getNodeRole(nodeId));
+		
+		InetSocketAddress address = bootService.getNodeAddress(nodeId);
+		System.out.println("Address: " + address);
 	}
 	
 	/**

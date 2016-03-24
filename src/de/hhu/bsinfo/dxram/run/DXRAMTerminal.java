@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.dxram.run;
 
 import de.hhu.bsinfo.dxram.term.TerminalService;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.Main;
 
@@ -14,23 +13,23 @@ import de.hhu.bsinfo.utils.main.Main;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  *
  */
-public class PeerTerminal extends DXRAMMain {
+public class DXRAMTerminal extends DXRAMMain {
 	
 	/**
 	 * Main entry point
 	 * @param args Program arguments.
 	 */
 	public static void main(final String[] args) {
-		Main main = new PeerTerminal();
+		Main main = new DXRAMTerminal();
 		main.run(args);
 	}
 	
 	/**
 	 * Constructor
 	 */
-	protected PeerTerminal()
+	protected DXRAMTerminal()
 	{
-		super(null, null, NodeRole.PEER);
+		
 	}
 
 	@Override

@@ -239,6 +239,25 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 	/**
 	 * Initialize the engine. Executes various bootstrapping tasks,
 	 * initializes components and services.
+	 * @return True if successful, false otherwise.
+	 */
+	public boolean init() {
+		String[] keyValue;
+
+		keyValue = new String[2];
+		keyValue[0] = "dxram.config";
+		keyValue[1] = System.getProperty(keyValue[0]);
+		if (keyValue[1] == null) {
+			System.out.println("ERROR: No dxram configuraiton specified via vm args.");
+			return false;
+		}
+		
+		return init(keyValue[1], null, null, null);
+	}
+	
+	/**
+	 * Initialize the engine. Executes various bootstrapping tasks,
+	 * initializes components and services.
 	 * @param p_configurationFile Absolute or relative path to the configuration file.
 	 * @return True if successful, false otherwise.
 	 */
@@ -524,6 +543,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 		
 		// if loading the configuration failed (file missing), write back the created version
 		if (configLoadSuccessful == 1) {
+			System.out.println("Could not find configuration " + p_configurationFile + ", creating default.");
 			saveConfiguration(p_configurationFile);
 		}
 	}

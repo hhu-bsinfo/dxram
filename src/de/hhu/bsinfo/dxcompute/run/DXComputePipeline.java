@@ -36,7 +36,7 @@ public class DXComputePipeline extends DXRAMMain {
 	 */
 	protected DXComputePipeline() 
 	{
-		super(null, null, NodeRole.PEER);
+	
 	}
 	
 	@Override
