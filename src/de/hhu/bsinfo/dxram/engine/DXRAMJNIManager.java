@@ -52,13 +52,6 @@ public class DXRAMJNIManager
 		
 		String path;
 		
-		path = p_settings.getValue("JNI/" + profile + "/JNILock", String.class);
-		if (path == null) {
-			m_logger.error(LOG_HEADER, "Missing path for JNILock.");
-		} else {
-			JNILock.load(path);
-		}
-		
 		path = p_settings.getValue("JNI/" + profile + "/JNIconsole", String.class);
 		if (path == null) {
 			m_logger.error(LOG_HEADER, "Missing path for JNIconsole.");

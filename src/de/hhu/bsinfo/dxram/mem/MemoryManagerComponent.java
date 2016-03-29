@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -29,7 +30,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
-	private JNIReadWriteSpinLock m_lock;
+	private ReentrantReadWriteLock m_lock;
 	private long m_numActiveChunks;
 
 	private BootComponent m_boot = null;
@@ -84,7 +85,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
 		m_cidTable.initialize(m_rawMemory);
 
-		m_lock = new JNIReadWriteSpinLock();
+		m_lock = new ReentrantReadWriteLock(false);
 		
 		m_numActiveChunks = 0;
 		

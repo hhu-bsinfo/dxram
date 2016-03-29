@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Pair;
@@ -526,7 +527,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 		setupLogger();
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Bootstrapping with configuration file: " + p_configurationFile);
 		if (configLoadSuccessful != 0) {
-			m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Loading from configuration file: " + configLoadSuccessful);
+			m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Loading from configuration file failed: could not find configuraiton file.");
 		}
 		
 		// parameters
@@ -540,12 +541,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 		// setup components and services
 		setupComponents(m_configuration);
 		setupServices(m_configuration);
-		
-		// if loading the configuration failed (file missing), write back the created version
-		if (configLoadSuccessful == 1) {
-			System.out.println("Could not find configuration " + p_configurationFile + ", creating default.");
-			saveConfiguration(p_configurationFile);
-		}
 	}
 	
 	/**
@@ -577,7 +572,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 			parser.readConfiguration(m_configuration);
 		} catch (ConfigurationException e) {
 			// check if file exists -> save default config later
-			if (!(new File(p_configurationFile).exists())) {
+			if ((new File(p_configurationFile).exists())) {
 				return 1;
 			} else {
 				return -1;
