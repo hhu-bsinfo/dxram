@@ -342,14 +342,13 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	{
 		ArrayList<NodeEntry> nodes = new ArrayList<NodeEntry>();
 		
-		Map<Integer, Boolean> nodesEnabled = p_settings.getValues("Nodes/Node/Enabled", Boolean.class);
 		Map<Integer, String> nodesIP = p_settings.getValues("Nodes/Node/IP", String.class);
 		Map<Integer, Integer> nodesPort = p_settings.getValues("Nodes/Node/Port", Integer.class);
 		Map<Integer, String> nodesRole = p_settings.getValues("Nodes/Node/Role", String.class);
 		Map<Integer, Short> nodesRack = p_settings.getValues("Nodes/Node/Rack", Short.class);
 		Map<Integer, Short> nodesSwitch = p_settings.getValues("Nodes/Node/Switch", Short.class);
 		
-		for (Entry<Integer, Boolean> entry : nodesEnabled.entrySet())
+		for (Entry<Integer, String> entry : nodesIP.entrySet())
 		{
 			String ip = nodesIP.get(entry.getKey());
 			if (ip == null)

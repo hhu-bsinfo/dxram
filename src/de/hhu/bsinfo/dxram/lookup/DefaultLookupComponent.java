@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
@@ -110,6 +111,8 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private Lock m_failureLock = null;
 	private Lock m_promoteLock = null;
 	
+	private boolean m_performanceFlag = false;
+	
 	public DefaultLookupComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
@@ -126,8 +129,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupRequest request;
 		LookupResponse response;
 
-		m_logger.trace(getClass(), "Entering get with: p_chunkID=0x" + Long.toHexString(p_chunkID));
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering get with: p_chunkID=0x" + Long.toHexString(p_chunkID));
+		}
+		
 		if (!overlayIsStable()) {
 			check = true;
 		}
@@ -149,7 +154,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		//}
 
-		m_logger.trace(getClass(), "Exiting get");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting get");
+		}
 		return ret;
 	}
 
@@ -162,8 +169,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		GetBackupRangesRequest request;
 		GetBackupRangesResponse response;
 
-		m_logger.trace(getClass(), "Entering getAllBackupRanges with: p_nodeID=" + p_nodeID);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering getAllBackupRanges with: p_nodeID=" + p_nodeID);
+		}
+		
 		if (!overlayIsStable()) {
 			check = true;
 		}
@@ -182,7 +191,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		m_logger.trace(getClass(), "Exiting getAllBackupRanges");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting getAllBackupRanges");
+		}
 		return ret;
 	}
 
@@ -191,8 +202,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short responsibleSuperpeer;
 		boolean check = false;
 
-		m_logger.trace(getClass(), "Entering updateAllAfterRecovery with: p_owner=" + p_owner);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering updateAllAfterRecovery with: p_owner=" + p_owner);
+		}
+			
 		if (!overlayIsStable()) {
 			check = true;
 		}
@@ -211,7 +224,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			break;
 		}
 
-		m_logger.trace(getClass(), "Exiting updateAllAfterRecovery");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting updateAllAfterRecovery");
+		}
 	}
 
 	@Override
@@ -221,8 +236,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		InitRangeRequest request;
 
-		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x" + Long.toHexString(p_firstChunkIDOrRangeID) + ", p_locations=" + p_primaryAndBackupPeers);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x" + Long.toHexString(p_firstChunkIDOrRangeID) + ", p_locations=" + p_primaryAndBackupPeers);
+		}
+		
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer is not allowed to initialize backup ranges.");
 			return;
@@ -244,7 +261,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			finished = request.getResponse(InitRangeResponse.class).getStatus();
 		}
 
-		m_logger.trace(getClass(), "Exiting initRange");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting initRange");
+		}
 	}
 
 	@Override
@@ -254,8 +273,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		MigrateRequest request;
 
-		m_logger.trace(getClass(), "Entering migrate with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering migrate with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
+		}
+		
 		while (!finished) {
 			responsibleSuperpeer = m_mySuperpeer;
 
@@ -271,7 +292,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			finished = request.getResponse(MigrateResponse.class).getStatus();
 		}
 
-		m_logger.trace(getClass(), "Exiting migrate");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting migrate");
+		}
 	}
 
 	@Override
@@ -282,8 +305,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		MigrateRangeRequest request;
 
-		m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + p_startCID + ", p_endChunkID=" + p_endCID + ", p_nodeID=" + p_nodeID);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + p_startCID + ", p_endChunkID=" + p_endCID + ", p_nodeID=" + p_nodeID);
+		}
+		
 		creator = ChunkID.getCreatorID(p_startCID);
 		if (creator != ChunkID.getCreatorID(p_endCID)) {
 			m_logger.error(getClass(), "Start and end objects creators not equal");
@@ -305,7 +330,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		m_logger.trace(getClass(), "Exiting migrateRange");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting migrateRange");
+		}
 	}
 
 	@Override
@@ -315,8 +342,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		LookupTree tree;
 
-		m_logger.trace(getClass(), "Entering migrateNotCreatedChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering migrateNotCreatedChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
+		}
+		
 		responsibleSuperpeer = getResponsibleSuperpeer(ChunkID.getCreatorID(p_chunkID), NO_CHECK);
 		if (m_network.sendMessage(new MigrateMessage(responsibleSuperpeer, p_chunkID, p_nodeID, NO_BACKUP)) != NetworkErrorCodes.SUCCESS) {
 			// Ignore superpeer failure, System will fix this
@@ -351,7 +380,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				}
 			}
 		}
-		m_logger.trace(getClass(), "Exiting migrateNotCreatedChunk");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting migrateNotCreatedChunk");
+		}
 	}
 
 	@Override
@@ -360,8 +391,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		LookupTree tree;
 
-		m_logger.trace(getClass(), "Entering migrateOwnChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering migrateOwnChunk with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
+		}
+		
 		m_dataLock.lock();
 		tree = getCIDTree(m_me);
 		tree.migrateObject(p_chunkID, p_nodeID);
@@ -382,7 +415,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				}
 			}
 		}
-		m_logger.trace(getClass(), "Exiting migrateOwnChunk");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting migrateOwnChunk");
+		}
 	}
 
 	@Override
@@ -394,7 +429,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		InsertIDResponse response;
 
 		// Insert ChunkID <-> ApplicationID mapping
-		m_logger.trace(getClass(), "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + p_chunkID);
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + p_chunkID);
+		}
 		assert p_id < Math.pow(2, 31) && p_id >= 0;
 
 		if (!overlayIsStable()) {
@@ -433,7 +470,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		m_logger.trace(getClass(), "Exiting insertID");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting insertID");
+		}
 	}
 
 	@Override
@@ -444,7 +483,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		GetChunkIDRequest request;
 
 		// Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
-		m_logger.trace(getClass(), "Entering getChunkID with: p_id=" + p_id);
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering getChunkID with: p_id=" + p_id);
+		}
 
 		if (!overlayIsStable()) {
 			check = true;
@@ -467,8 +508,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		m_logger.trace(getClass(), "Exiting getChunkID");
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting getChunkID");
+		}
+		
 		return ret;
 	}
 
@@ -504,8 +547,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		RemoveRequest request;
 		RemoveResponse response;
 
-		m_logger.trace(getClass(), "Entering remove with: p_chunkID=" + p_chunkID);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering remove with: p_chunkID=" + p_chunkID);
+		}
+			
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer is not allowed to remove chunks from the overlay.");
 			return;
@@ -542,7 +587,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		m_logger.trace(getClass(), "Exiting remove");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting remove");
+		}
 	}
 
 	@Override
@@ -553,7 +600,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		RemoveRequest request;
 		RemoveResponse response;
 
-		m_logger.trace(getClass(), "Entering remove with: p_chunkIDs=" + p_chunkIDs);
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering remove with: p_chunkIDs=" + p_chunkIDs);
+		}
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer is not allowed to remove chunks from the overlay.");
@@ -590,8 +639,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 				break;
 			}
 		}
-
-		m_logger.trace(getClass(), "Exiting remove");
+		
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting remove");
+		}
 	}
 
 	@Override
@@ -764,7 +815,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	}
 	
 	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {			
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {	
+		m_performanceFlag = p_settings.getValue(DXRAMEngineConfigurationValues.PERFORMANCE_FLAG);
+		
 		m_boot = getDependentComponent(BootComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
@@ -851,8 +904,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		ArrayList<LookupTree> trees;
 		LookupTree tree;
 
-		m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
+		}
+		
 		contactSuperpeer = p_contactSuperpeer;
 		
 		if (p_contactSuperpeer == NodeID.INVALID_ID) {
@@ -920,7 +975,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			}
 		}
 
-		m_logger.trace(getClass(), "Starting stabilization thread");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Starting stabilization thread");
+		}
+		
 		m_worker = new SOWorker();
 
 		m_stabilizationThread = new Thread(m_worker);
@@ -928,7 +986,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		m_stabilizationThread.setDaemon(true);
 		m_stabilizationThread.start();
 
-		m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
+		}
 		
 		return true;
 	}
@@ -977,8 +1037,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		AskAboutSuccessorRequest request = null;
 		AskAboutSuccessorResponse response = null;
 
-		m_logger.trace(getClass(), "Entering getResponsibleSuperpeer with: p_nodeID=0x" + Integer.toHexString(p_nodeID));
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Entering getResponsibleSuperpeer with: p_nodeID=0x" + Integer.toHexString(p_nodeID));
+		}
+		
 		m_overlayLock.lock();
 		if (!m_superpeers.isEmpty()) {
 			index = Collections.binarySearch(m_superpeers, p_nodeID);
@@ -1024,8 +1086,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 			m_logger.warn(getClass(), "do not know any superpeer");
 			m_overlayLock.unlock();
 		}
-		m_logger.trace(getClass(), "Exiting getResponsibleSuperpeer");
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Exiting getResponsibleSuperpeer");
+		}
+		
 		return responsibleSuperpeer;
 	}
 
@@ -1256,8 +1320,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 
 		boolean newNodeisSuperpeer;
 
-		m_logger.trace(getClass(), "Got request: JOIN_REQUEST from " + p_joinRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: JOIN_REQUEST from " + p_joinRequest.getSource());
+		}
+		
 		joiningNode = p_joinRequest.getNewNode();
 		newNodeisSuperpeer = p_joinRequest.nodeIsSuperpeer();
 
@@ -1362,8 +1428,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupTree tree;
 
 		chunkID = p_lookupRequest.getChunkID();
-		m_logger.trace(getClass(), "Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource() + " chunkID: " + Long.toHexString(chunkID));
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: LOOKUP_REQUEST " + p_lookupRequest.getSource() + " chunkID: " + Long.toHexString(chunkID));
+		}
+		
 		m_dataLock.lock();
 		tree = getCIDTree(ChunkID.getCreatorID(chunkID));
 		if (null != tree) {
@@ -1371,7 +1439,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		}
 		m_dataLock.unlock();
 		
-		m_logger.trace(getClass(), "LOOKUP_REQUEST " + p_lookupRequest.getSource() + " chunkID " + Long.toHexString(chunkID) + " reply location: " + result);
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "LOOKUP_REQUEST " + p_lookupRequest.getSource() + " chunkID " + Long.toHexString(chunkID) + " reply location: " + result);
+		}
 		
 		if (m_network.sendMessage(
 				new LookupResponse(p_lookupRequest, result)) 
@@ -1392,8 +1462,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		ArrayList<long[]> ownBackupRanges;
 		ArrayList<Long> migrationBackupRanges;
 
-		m_logger.trace(getClass(), "Got request: GET_BACKUP_RANGES_REQUEST " + p_getBackupRangesRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: GET_BACKUP_RANGES_REQUEST " + p_getBackupRangesRequest.getSource());
+		}
+		
 		m_dataLock.lock();
 		tree = getCIDTree(p_getBackupRangesRequest.getNodeID());
 		if (tree != null) {
@@ -1426,8 +1498,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingUpdateAllMessage(final UpdateAllMessage p_updateAllMessage) {
 		LookupTree tree;
 
-		m_logger.trace(getClass(), "Got request: GET_UPDATE_ALL_MESSAGE " + p_updateAllMessage.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: GET_UPDATE_ALL_MESSAGE " + p_updateAllMessage.getSource());
+		}
+		
 		m_dataLock.lock();
 		tree = getCIDTree(p_updateAllMessage.getOwner());
 		if (tree != null) {
@@ -1450,8 +1524,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		InitRangeRequest request;
 		boolean isBackup;
 
-		m_logger.trace(getClass(), "Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
+		}
+		
 		primaryAndBackupPeers = new Locations(p_initRangeRequest.getLocations());
 		startChunkIDRangeID = p_initRangeRequest.getStartChunkIDOrRangeID();
 		creator = primaryAndBackupPeers.getPrimaryPeer();
@@ -1531,8 +1607,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		MigrateRequest request;
 		boolean isBackup;
 
-		m_logger.trace(getClass(), "Got Message: MIGRATE_REQUEST from " + p_migrateRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: MIGRATE_REQUEST from " + p_migrateRequest.getSource());
+		}
+		
 		nodeID = p_migrateRequest.getNodeID();
 		chunkID = p_migrateRequest.getChunkID();
 		creator = ChunkID.getCreatorID(chunkID);
@@ -1612,8 +1690,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		MigrateRangeRequest request;
 		boolean isBackup;
 
-		m_logger.trace(getClass(), "Got Message: MIGRATE_RANGE_REQUEST from " + p_migrateRangeRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: MIGRATE_RANGE_REQUEST from " + p_migrateRangeRequest.getSource());
+		}
+		
 		nodeID = p_migrateRangeRequest.getNodeID();
 		startChunkID = p_migrateRangeRequest.getStartChunkID();
 		endChunkID = p_migrateRangeRequest.getEndChunkID();
@@ -1695,8 +1775,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		boolean isBackup;
 		LookupTree tree;
 
-		m_logger.trace(getClass(), "Got Message: REMOVE_REQUEST from " + p_removeRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: REMOVE_REQUEST from " + p_removeRequest.getSource());
+		}
+		
 		chunkIDs = p_removeRequest.getChunkIDs();
 		isBackup = p_removeRequest.isBackup();
 
@@ -1763,8 +1845,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		LookupTree tree;
 
 		source = p_sendBackupsMessage.getSource();
-		m_logger.trace(getClass(), "Got Message: SEND_BACKUPS_MESSAGE from " + source);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: SEND_BACKUPS_MESSAGE from " + source);
+		}
+		
 		trees = p_sendBackupsMessage.getCIDTrees();
 		m_dataLock.lock();
 		for (int i = 0; i < trees.size(); i++) {
@@ -1787,8 +1871,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short source;
 
 		source = p_sendSuperpeersMessage.getSource();
-		m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + source);
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + source);
+		}
+		
 		m_overlayLock.lock();
 		m_superpeers = p_sendSuperpeersMessage.getSuperpeers();
 		insertSuperpeer(source);
@@ -1965,8 +2051,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		ArrayList<LookupTree> trees;
 		ArrayList<Short> peers;
 
-		m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutBackupsRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutBackupsRequest.getSource());
+		}
+		
 		trees = new ArrayList<LookupTree>();
 		peers = p_askAboutBackupsRequest.getPeers();
 		m_dataLock.lock();
@@ -2023,8 +2111,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	 *            the AskAboutSuccessorRequest
 	 */
 	private void incomingAskAboutSuccessorRequest(final AskAboutSuccessorRequest p_askAboutSuccessorRequest) {
-		m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutSuccessorRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + p_askAboutSuccessorRequest.getSource());
+		}
+		
 		if (m_network.sendMessage(
 				new AskAboutSuccessorResponse(p_askAboutSuccessorRequest, m_successor)) 
 				!= NetworkErrorCodes.SUCCESS) {
@@ -2041,8 +2131,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingNotifyAboutNewPredecessorMessage(final NotifyAboutNewPredecessorMessage p_notifyAboutNewPredecessorMessage) {
 		short possiblePredecessor;
 
-		m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE from " + p_notifyAboutNewPredecessorMessage.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE from " + p_notifyAboutNewPredecessorMessage.getSource());
+		}
+		
 		possiblePredecessor = p_notifyAboutNewPredecessorMessage.getNewPredecessor();
 		if (m_predecessor != possiblePredecessor) {
 			if (isNodeInRange(possiblePredecessor, m_predecessor, m_me, OPEN_INTERVAL)) {
@@ -2061,8 +2153,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingNotifyAboutNewSuccessorMessage(final NotifyAboutNewSuccessorMessage p_notifyAboutNewSuccessorMessage) {
 		short possibleSuccessor;
 
-		m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from " + p_notifyAboutNewSuccessorMessage.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from " + p_notifyAboutNewSuccessorMessage.getSource());
+		}
+		
 		possibleSuccessor = p_notifyAboutNewSuccessorMessage.getNewSuccessor();
 		if (m_successor != possibleSuccessor) {
 			if (isNodeInRange(possibleSuccessor, m_me, m_successor, OPEN_INTERVAL)) {
@@ -2081,8 +2175,10 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	private void incomingSearchForPeerRequest(final SearchForPeerRequest p_searchForPeerRequest) {
 		short peer = -1;
 
-		m_logger.trace(getClass(), "Got request: SEARCH_FOR_PEER_REQUEST from " + p_searchForPeerRequest.getSource());
-
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: SEARCH_FOR_PEER_REQUEST from " + p_searchForPeerRequest.getSource());
+		}
+		
 		m_overlayLock.lock();
 		if (0 < m_peers.size()) {
 			peer = m_peers.get((int) (m_peers.size() * Math.random()));
@@ -2296,7 +2392,9 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		short[] backupSuperpeers;
 
 		id = p_insertIDRequest.getID();
-		m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource() + ", id " + id);
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource() + ", id " + id);
+		}
 		
 		if (isOnlySuperpeer() || isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_me, CLOSED_INTERVAL)) {
 			m_mappingLock.lock();
@@ -2341,13 +2439,17 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 		long chunkID = -1;
 
 		id = p_getChunkIDRequest.getID();
-		m_logger.trace(getClass(), "Got request: GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource() + ", id " + id);
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "Got request: GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource() + ", id " + id);
+		}
 		
 		if (isOnlySuperpeer() || isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_me, CLOSED_INTERVAL)) {
 			m_mappingLock.lock();
 			chunkID = m_idTable.get(id);
 			m_mappingLock.unlock();
-			m_logger.trace(getClass(), "GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource() + ", id " + id + ", reply chunkID " + Long.toHexString(chunkID));
+			if (!m_performanceFlag) {
+				m_logger.trace(getClass(), "GET_CHUNKID_REQUEST from " + p_getChunkIDRequest.getSource() + ", id " + id + ", reply chunkID " + Long.toHexString(chunkID));
+			}
 		}
 		if (m_network.sendMessage(
 				new GetChunkIDResponse(p_getChunkIDRequest, chunkID)) 

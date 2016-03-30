@@ -33,7 +33,7 @@ public class SimpleLocalChunkServiceTest extends Main
 	{
 		super("Simple test to verify if the local chunk service is working");
 		m_dxram = new DXRAM();
-		m_dxram.initialize("config/dxram.conf", true);
+		m_dxram.initialize(true);
 		m_chunkService = m_dxram.getService(ChunkService.class);
 	}
 	

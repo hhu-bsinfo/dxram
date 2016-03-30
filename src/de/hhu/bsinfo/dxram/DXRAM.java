@@ -43,22 +43,22 @@ public final class DXRAM
 	
 	/**
 	 * Initialize the instance.
-	 * @param p_configurationFile Relative or absolute path to the DXRAM configuration file.
+	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 * @return True if initializing was successful, false otherwise.
 	 */
-	public boolean initialize(final String p_configurationFile) {
-		return initialize(p_configurationFile, null, null, null);
+	public boolean initialize(final String... p_configurationFiles) {
+		return initialize(null, null, null, p_configurationFiles);
 	}
 	
 	/**
 	 * Initialize the instance.
-	 * @param p_configurationFile Relative or absolute path to the DXRAM configuration file.
 	 * @param p_autoShutdown True to have DXRAM shut down automatically when the application quits. 
 	 * 			If false, the caller has to take care of shutting down the instance by calling shutdown when done. 
+	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 * @return True if initializing was successful, false otherwise.
 	 */
-	public boolean initialize(final String p_configurationFile, final boolean p_autoShutdown) {
-		boolean ret = initialize(p_configurationFile, null, null, null);
+	public boolean initialize(final boolean p_autoShutdown, final String... p_configurationFiles) {
+		boolean ret = initialize(null, null, null, p_configurationFiles);
 		if (ret & p_autoShutdown)
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		return ret;
@@ -66,32 +66,32 @@ public final class DXRAM
 	
 	/**
 	 * Initialize the instance.
-	 * @param p_configurationFile Relative or absolute path to the DXRAM configuration file.
 	 * @param p_overrideIp Overriding the configuration file provided IP address (example: 127.0.0.1).
 	 * @param p_overridePort Overriding the configuration file provided port number (example: 22223).
 	 * @param p_overrideRole Overriding the configuration file provided role (example: Superpeer).
+	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 * @return True if initializing was successful, false otherwise.
 	 */
-	public boolean initialize(final String p_configurationFile, final String p_overrideIp, 
-			final String p_overridePort, final NodeRole p_overrideRole) {
-		boolean ret = m_engine.init(p_configurationFile, p_overrideIp, p_overridePort, p_overrideRole);
+	public boolean initialize(final String p_overrideIp, final String p_overridePort, 
+			final NodeRole p_overrideRole, final String... p_configurationFiles) {
+		boolean ret = m_engine.init(p_overrideIp, p_overridePort, p_overrideRole, p_configurationFiles);
 		printNodeInfo();
 		return ret;
 	}
 	
 	/**
 	 * Initialize the instance.
-	 * @param p_configurationFile Relative or absolute path to the DXRAM configuration file.
 	 * @param p_overrideIp Overriding the configuration file provided IP address (example: 127.0.0.1).
 	 * @param p_overridePort Overriding the configuration file provided port number (example: 22223).
 	 * @param p_overrideRole Overriding the configuration file provided role (example: Superpeer).
 	 * @param p_autoShutdown True to have DXRAM shut down automatically when the application quits. 
 	 * 			If false, the caller has to take care of shutting down the instance by calling shutdown when done. 
+	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 * @return True if initializing was successful, false otherwise.
 	 */
-	public boolean initialize(final String p_configurationFile, final String p_overrideIp, 
-			final String p_overridePort, final NodeRole p_overrideRole, final boolean p_autoShutdown) {
-		boolean ret = m_engine.init(p_configurationFile, p_overrideIp, p_overridePort, p_overrideRole);
+	public boolean initialize(final String p_overrideIp, final String p_overridePort, 
+			final NodeRole p_overrideRole, final boolean p_autoShutdown, final String... p_configurationFiles) {
+		boolean ret = m_engine.init(p_overrideIp, p_overridePort, p_overrideRole, p_configurationFiles);
 		if (ret & p_autoShutdown)
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		printNodeInfo();
