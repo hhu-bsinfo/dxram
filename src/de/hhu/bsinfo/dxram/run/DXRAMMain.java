@@ -34,6 +34,16 @@ public class DXRAMMain extends Main {
 		m_dxram = new DXRAM();
 	}
 	
+	/**
+	 * Constructor
+	 * @param p_description Override the description for main.
+	 */
+	public DXRAMMain(final String p_description)
+	{
+		super(p_description);
+		m_dxram = new DXRAM();
+	}
+	
 	@Override
 	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
 		

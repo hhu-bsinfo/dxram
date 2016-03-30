@@ -86,7 +86,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
 	{
-		m_performanceFlag = p_settings.getValue(DXRAMEngineConfigurationValues.PERFORMANCE_FLAG);
+		m_performanceFlag = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PERFORMANCE_FLAG);
 		
 		m_boot = getComponent(BootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);

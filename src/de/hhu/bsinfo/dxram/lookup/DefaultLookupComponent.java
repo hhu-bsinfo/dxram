@@ -816,7 +816,7 @@ public class DefaultLookupComponent extends LookupComponent implements MessageRe
 	
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {	
-		m_performanceFlag = p_settings.getValue(DXRAMEngineConfigurationValues.PERFORMANCE_FLAG);
+		m_performanceFlag = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PERFORMANCE_FLAG);
 		
 		m_boot = getDependentComponent(BootComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);

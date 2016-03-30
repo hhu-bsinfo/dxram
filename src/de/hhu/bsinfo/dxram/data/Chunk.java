@@ -12,6 +12,8 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Furthermore this class is used internally when chunks are moved between different nodes. The actual
  * structure is unknown and not relevant for these tasks, as we just want to work with the payload as
  * one package.
+ * If a chunk is requested from the ChunkService, the internal buffer will be adjusted to the 
+ * actual size of the stored chunk in memory. 
  * 
  * @author Florian Klein 09.03.2012
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
@@ -110,7 +112,9 @@ public class Chunk implements DataStructure
 
 	@Override
 	public int importObject(final Importer p_importer, final int p_size) {
-		m_data = ByteBuffer.allocate(p_size);
+		if (m_data.capacity() != p_size) {
+			m_data = ByteBuffer.allocate(p_size);
+		}
 		return p_importer.readBytes(m_data.array());
 	}
 	

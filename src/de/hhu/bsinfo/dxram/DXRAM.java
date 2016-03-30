@@ -6,6 +6,7 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.utils.ManifestHelper;
 
 /**
  * Main class/entry point for any application to work with DXRAM and its services.
@@ -120,16 +121,29 @@ public final class DXRAM
 	 */
 	private void printNodeInfo()
 	{
-		BootService bootService = m_engine.getService(BootService.class);
 		System.out.println(">>> DXRAM Node <<<");
+		String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
+		if (buildDate != null) {
+			System.out.println("BuildDate: " + buildDate);
+		}
+		String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
+		if (buildUser != null) {
+			System.out.println("BuildUser: " + buildUser);
+		}
+		
+		BootService bootService = m_engine.getService(BootService.class);
+		
 		short nodeId = bootService.getNodeID();
-		System.out.println("NodeID: 0x" + Integer.toHexString(nodeId).substring(4).toUpperCase() + " (" + nodeId + ")");
+		String nodeIdStr = Integer.toHexString(nodeId).toUpperCase();
+		if (nodeIdStr.length() > 4)
+			nodeIdStr = nodeIdStr.substring(4);
+		System.out.println("NodeID: 0x" + nodeIdStr + " (" + nodeId + ")");
 		System.out.println("Role: " + bootService.getNodeRole(nodeId));
 		
 		InetSocketAddress address = bootService.getNodeAddress(nodeId);
 		System.out.println("Address: " + address);
 	}
-	
+
 	/**
 	 * Shuts down DXRAM in case of the system exits
 	 * @author Florian Klein 03.09.2013

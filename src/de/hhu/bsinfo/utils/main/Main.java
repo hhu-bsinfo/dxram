@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.utils.main;
 
 import de.hhu.bsinfo.utils.args.DefaultArgumentListParser;
+import de.hhu.bsinfo.utils.ManifestHelper;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentListParser;
 
@@ -28,6 +29,37 @@ public abstract class Main
 	public Main(final ArgumentListParser p_argumentsParser, final String p_description) {
 		m_argumentsParser = p_argumentsParser;
 		m_description = p_description;
+	}
+	
+	/**
+	 * Print build date and user (if available). 
+	 * Requires the application to be built as a jar package.
+	 */
+	public void printBuildDateAndUser() {
+		String buildDate = getBuildDate();
+		if (buildDate != null) {
+			System.out.println("BuildDate: " + buildDate);
+		}
+		String buildUser = getBuildUser();
+		if (buildUser != null) {
+			System.out.println("BuildUser: " + buildUser);
+		}
+	}
+	
+	/**
+	 * Get the build date of the application. Has to be built as a jar file.
+	 * @return If build date is available returns it as a string, null otherwise.
+	 */
+	public String getBuildDate() {
+		return ManifestHelper.getProperty(getClass(), "BuildDate");
+	}
+	
+	/**
+	 * Get the user who built this application. Has to be built as a jar file.
+	 * @return Name of the user who built this application if available, null otherwise.
+	 */
+	public String getBuildUser() {
+		return ManifestHelper.getProperty(getClass(), "BuildUser");
 	}
 	
 	/**

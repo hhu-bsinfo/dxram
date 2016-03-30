@@ -270,7 +270,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 		}
 		
 		if (configurations.isEmpty()) {
-			System.out.println("WARN: No dxram configuraiton specified via vm args.");
+			System.out.println("[WARN][DXRAMEngine] No dxram configuraiton specified via vm args.");
 		}
 		
 		return init(null, null, null, configurations.toArray(new String[0]));
@@ -540,10 +540,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 		// config, default values, class parameters, vm arguments
 		for (String configFile : p_configurationFiles)
 		{
-			System.out.println("Loading configuration file " + configFile);
+			System.out.println("[INFO][DXRAMEngine] Loading configuration file " + configFile);
 			int configLoadSuccessful = loadConfiguration(configFile);
 			if (configLoadSuccessful != 0) {
-				System.out.println("ERR: Loading from configuration file failed: could not find configuraiton file.");
+				System.out.println("[ERR][DXRAMEngine] Loading from configuration file failed: could not find configuraiton file.");
 			}
 		}
 		
