@@ -2,7 +2,11 @@ package de.hhu.bsinfo.dxram.stats;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkCreate;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.stats.tcmds.TcmdAvailableStatisticsRecorders;
+import de.hhu.bsinfo.dxram.stats.tcmds.TcmdPrintAllStatistics;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 
 /**
  * Exposing the component backend to the front with some
@@ -12,7 +16,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMService;
  */
 public class StatisticsService extends DXRAMService {
 
-	private StatisticsComponent m_statistics = null;;
+	private StatisticsComponent m_statistics = null;
+	private TerminalComponent m_terminal = null;
 	
 	/**
 	 * Create a new recorder to record statistics of a module.
@@ -121,6 +126,13 @@ public class StatisticsService extends DXRAMService {
 	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
 		m_statistics = getComponent(StatisticsComponent.class);
+		
+		
+		m_terminal = getComponent(TerminalComponent.class);
+		
+		m_terminal.registerCommand(new TcmdPrintAllStatistics());
+		m_terminal.registerCommand(new TcmdAvailableStatisticsRecorders());
+		
 		return true;
 	}
 

@@ -2,7 +2,6 @@ package de.hhu.bsinfo.dxram.chunk.tcmds;
 
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;

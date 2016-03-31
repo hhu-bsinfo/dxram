@@ -1,8 +1,10 @@
 package de.hhu.bsinfo.dxram.logger;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
@@ -297,6 +299,14 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 
 	@Override
 	public void setLogLevel(LogLevel p_logLevel) {
-		// don't support this
+		
+		Iterator<Entry<String, LogLevel>> it = m_logLevels.entrySet().iterator();
+		Map.Entry<String, LogLevel> keyValue;
+		while (it.hasNext()) {
+			
+		    keyValue = it.next();
+		    m_logLevels.put(keyValue.getKey(), p_logLevel);
+		}
+		
 	}
 }
