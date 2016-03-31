@@ -27,13 +27,17 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 	}
 	
 	@Override
-	protected boolean execute(long[] p_entryNodes) 
-	{
-		m_loggerService.info(getClass(), "Starting " + m_threads.length + " BFS Threads...");
-		
+	protected boolean setup() {
 		long totalVertexCount = getGraphLoaderResultDelegate().getTotalVertexCount();
 		m_curFrontier = new ConcurrentBitVector(totalVertexCount);
 		m_nextFrontier = new ConcurrentBitVector(totalVertexCount);
+		return true;
+	}
+	
+	@Override
+	protected boolean execute(long[] p_entryNodes) 
+	{
+		m_loggerService.info(getClass(), "Starting " + m_threads.length + " BFS Threads...");
 		
 		for (int i = 0; i < m_threads.length; i++) {
 			m_threads[i] = new BFSThread(i, m_loggerService, m_chunkService, m_bootService.getNodeID(), m_vertexBatchCountPerThread, m_curFrontier, m_nextFrontier);

@@ -37,8 +37,7 @@ public class GraphAlgorithmBFSLocalSingleThreaded extends GraphAlgorithm {
 	}
 	
 	@Override
-	protected boolean execute(long[] p_entryNodes) 
-	{		
+	protected boolean setup() {
 		if (m_frontierListType == null || m_frontierListType == BitVector.class)
 		{
 			m_curFrontier = new BitVector(getGraphLoaderResultDelegate().getTotalVertexCount());
@@ -68,7 +67,12 @@ public class GraphAlgorithmBFSLocalSingleThreaded extends GraphAlgorithm {
 		{
 			throw new RuntimeException("Cannot create instance of FrontierList type " + m_frontierListType);
 		}
-		
+		return true;
+	}
+	
+	@Override
+	protected boolean execute(long[] p_entryNodes) 
+	{		
 		// execute a full BFS for each node
 		int bfsIteration = 0;
 		for (long entryNode : p_entryNodes)

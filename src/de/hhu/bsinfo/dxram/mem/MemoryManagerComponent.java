@@ -178,6 +178,35 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		
 		return chunkID;
 	}
+	
+	/**
+	 * Create a chunk with a specific chunk id (used for migration/recovery).
+	 * @param p_chunkId Chunk id to assign to the chunk.
+	 * @param p_size Size of the chunk.
+	 * @return The chunk id if successful, -1 if another chunk with the same id already exists
+	 * 			or allocation memory failed.
+	 */
+	public long create(final long p_chunkId, final int p_size)
+	{
+		assert p_size > 0;
+		
+		long address = -1;
+		long chunkID = -1;
+		
+		if (m_cidTable.get(p_chunkId) == -1) {
+			address = m_rawMemory.malloc(p_size);
+			if (address >= 0) {
+				// register new chunk
+				m_cidTable.set(p_chunkId, address);
+				m_numActiveChunks++;
+				chunkID = p_chunkId;
+			} else {
+				chunkID = -1;
+			}
+		}
+				
+		return chunkID;
+	}
 
 	/**
 	 * Create a new chunk.

@@ -13,9 +13,15 @@ public abstract class GraphAlgorithm extends Task {
 		m_loaderResultDelegate = p_loaderResultsDelegate;
 		m_entryNodes = p_entryNodes;
 	}
-
+	
 	@Override
 	public boolean execute() {
+		m_loggerService.debug(getClass(), "Setting up algorithm...");
+		if (!setup()) {
+			m_loggerService.error(getClass(), "Setting up algorithm failed.");
+			return false;
+		}
+		
 		m_loggerService.debug(getClass(), "Executing algorithm with " + m_entryNodes.length + " entry nodes.");
 		// have arguments override roots list loaded from file
 		boolean ret;
@@ -39,5 +45,7 @@ public abstract class GraphAlgorithm extends Task {
 		return m_loaderResultDelegate;
 	}
 
+	protected abstract boolean setup();
+	
 	protected abstract boolean execute(final long[] p_entryNodes);
 }
