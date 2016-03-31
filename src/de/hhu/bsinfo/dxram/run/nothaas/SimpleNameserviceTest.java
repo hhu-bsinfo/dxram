@@ -93,12 +93,6 @@ public class SimpleNameserviceTest extends Main {
 			}
 		}
 		
-		System.out.println("Removing chunks from name service...");
-		for (Chunk chunk : chunks)
-		{
-			m_nameserviceService.remove(chunk);
-		}
-		
 		System.out.println("Done.");
 		return 0;
 	}

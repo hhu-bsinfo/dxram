@@ -140,8 +140,6 @@ public final class CIDTable {
 	 *            the ChunkID of the entry
 	 * @param p_addressChunk
 	 *            the address of the chunk
-	 * @throws MemoryException
-	 *             If accessing memory to write the entry failed
 	 */
 	public void set(final long p_chunkID, final long p_addressChunk) {
 		setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
@@ -153,11 +151,7 @@ public final class CIDTable {
 	 *            the ChunkID of the entry
 	 * @param p_flagZombie
 	 *            Flag the deleted entry as a zombie or not zombie i.e. fully deleted.
-	 * @return A pair with a bool indicating that the entry was fully removed and memory
-	 *         needs to be free'd. If false the entry was flaged as deleted/zombie i.e.
-	 *         do not free the memory for it, yet.
-	 * @throws MemoryException
-	 *             if the entry could not be get
+	 * @return The address of the chunk which was removed from the table.
 	 */
 	public long delete(final long p_chunkID, final boolean p_flagZombie) {
 		long ret;
@@ -221,6 +215,30 @@ public final class CIDTable {
 			}
 		}
 		
+		return ret;
+	}
+	
+	/**
+	 * Returns the ChunkIDs of all migrated Chunks
+	 * @return the ChunkIDs of all migrated Chunks
+	 * @throws MemoryException
+	 *             if the CIDTable could not be completely accessed
+	 */
+	public ArrayList<Long> getCIDOfAllMigratedChunks() {
+		ArrayList<Long> ret = null;
+		long entry;
+
+		if (m_store != null) {
+			ret = new ArrayList<Long>();
+			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
+				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
+				if (entry > 0 && i != (m_ownNodeID & 0xFFFF)) {
+					ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory,
+							i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+				}
+			}
+		}
+
 		return ret;
 	}
 
@@ -459,31 +477,6 @@ public final class CIDTable {
 			} else {
 				// delete flag cleared, but address is 0 -> free entry
 				writeEntry(p_addressTable, index, 0);
-			}
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Returns the ChunkIDs of all migrated Chunks
-	 * @return the ChunkIDs of all migrated Chunks
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
-	 */
-	@SuppressWarnings("unused")
-	private ArrayList<Long> getCIDOfAllMigratedChunks() {
-		ArrayList<Long> ret = null;
-		long entry;
-
-		if (m_store != null) {
-			ret = new ArrayList<Long>();
-			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-				if (entry > 0 && i != (m_ownNodeID & 0xFFFF)) {
-					ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory,
-							i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
-				}
 			}
 		}
 

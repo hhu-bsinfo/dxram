@@ -13,7 +13,6 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageJNINativeMemory;
-import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
 
 /**
  * Interface to access the local heap. Features for migration
@@ -144,6 +143,40 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		status.m_totalMemoryBytes = m_rawMemory.getTotalMemory();
 		
 		return status;
+	}
+	
+	/** 
+	 * The chunk ID 0 is reserved for a fixed index structure.
+	 * If the index structure is already created this will delete the old
+	 * one and allocate a new block of memory with the same id (0).
+	 * @param p_size Size for the index chunk.
+	 * @return On success the chunk id 0, -1 on failure.
+	 */
+	public long createIndex(final int p_size)
+	{
+		assert p_size > 0;
+		
+		long address = -1;
+		long chunkID = -1;
+		
+		if (m_cidTable.get(0) != -1) {
+			// delete old entry
+			address = m_cidTable.delete(0, false);
+			m_rawMemory.free(address);
+			m_numActiveChunks--;
+		}
+		
+		address = m_rawMemory.malloc(p_size);
+		if (address >= 0) {
+			chunkID = ((long) m_boot.getNodeID() << 48) + 0;
+			// register new chunk
+			m_cidTable.set(chunkID, address);
+			m_numActiveChunks++;
+		} else {
+			chunkID = -1;
+		}
+		
+		return chunkID;
 	}
 
 	/**
@@ -370,15 +403,15 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_cidTable.putChunkIDForReuse(p_chunkID);
 	}
 	
-//	/**
-//	 * Returns the ChunkIDs of all migrated Chunks
-//	 * @return the ChunkIDs of all migrated Chunks
-//	 * @throws MemoryException
-//	 * if the CIDTable could not be completely accessed
-//	 */
-//	public ArrayList<Long> getCIDOfAllMigratedChunks() {
-//		return m_cidTable.getCIDOfAllMigratedChunks();
-//	}
+	/**
+	 * Returns the ChunkIDs of all migrated Chunks
+	 * @return the ChunkIDs of all migrated Chunks
+	 * @throws MemoryException
+	 * if the CIDTable could not be completely accessed
+	 */
+	public ArrayList<Long> getCIDOfAllMigratedChunks() {
+		return m_cidTable.getCIDOfAllMigratedChunks();
+	}
 	
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
