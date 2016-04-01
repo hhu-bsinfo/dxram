@@ -15,8 +15,6 @@ abstract class AbstractConnectionCreator {
 	// Attributes
 	private ConnectionCreatorListener m_listener;
 
-	private static AbstractConnectionCreator m_instance;
-
 	// Constructors
 	/**
 	 * Creates an instance of AbstractConnectionCreator

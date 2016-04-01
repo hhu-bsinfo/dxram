@@ -18,6 +18,7 @@ public class NameserviceService extends DXRAMService {
 	
 	private NameServiceStringConverter m_converter = null;
 	
+	
 	@Override
 	protected void registerDefaultSettingsService(Settings p_settings) {
 		p_settings.setDefaultValue(NameserviceConfigurationValues.Component.TYPE);
@@ -49,7 +50,7 @@ public class NameserviceService extends DXRAMService {
 		int id = m_converter.convert(p_name);
 		m_logger.trace(getClass(), "Registering chunkID 0x" + Long.toHexString(p_dataStructure.getID()) + ", name " + p_name + ", id " + id);
 		
-		m_lookup.insertID(id, p_dataStructure.getID());
+		m_lookup.insertNameserviceEntry(id, p_dataStructure.getID());
 	}
 	
 	/**
@@ -61,7 +62,7 @@ public class NameserviceService extends DXRAMService {
 		int id = m_converter.convert(p_name);
 		m_logger.trace(getClass(), "Lookup name " + p_name + ", id " + id);
 		
-		long ret = m_lookup.getChunkID(id);
+		long ret = m_lookup.getChunkIDForNameserviceEntry(id);
 		
 		m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID 0x" + Long.toHexString(ret));
 		
@@ -73,7 +74,7 @@ public class NameserviceService extends DXRAMService {
 	 * @param p_dataStructure DataStructure/Chunk ID to remove the name entry of.
 	 */
 	public void remove(final DataStructure p_dataStructure) {
-		m_lookup.remove(p_dataStructure.getID());
+		m_lookup.removeChunkIDs(new long[] {p_dataStructure.getID()});
 	}
 	
 //	/**

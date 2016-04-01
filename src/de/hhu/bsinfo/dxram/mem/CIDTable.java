@@ -181,7 +181,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	public ArrayList<Long> getCIDrangesOfAllLocalChunks() {
+	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
 		ArrayList<Long> ret = null;
 		long entry;
 		long intervalStart;
@@ -471,8 +471,7 @@ public final class CIDTable {
 	 * @throws MemoryException
 	 *             if the CIDTable could not be completely accessed
 	 */
-	@SuppressWarnings("unused")
-	private ArrayList<Long> getCIDOfAllMigratedChunks() {
+	protected ArrayList<Long> getCIDOfAllMigratedChunks() {
 		ArrayList<Long> ret = null;
 		long entry;
 

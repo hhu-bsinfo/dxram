@@ -14,7 +14,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.lock.LockComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.lookup.Locations;
+import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
@@ -149,7 +149,7 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 				case DOES_NOT_EXIST:
 				{
 					// remote or migrated, figure out location and sort by peers
-					Locations locations = m_lookup.get(dataStructure.getID());
+					LookupRange locations = m_lookup.getLookupRange(dataStructure.getID());
 					if (locations == null) {
 						continue;
 					} else {

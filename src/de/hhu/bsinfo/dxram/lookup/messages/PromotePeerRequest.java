@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.lookup.storage.LookupTree;
+import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**

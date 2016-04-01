@@ -10,7 +10,7 @@ import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
 import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.lookup.Locations;
+import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -118,7 +118,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 			m_memoryManager.unlockAccess();
 			
 			// remote, figure out location
-			Locations locations = m_lookup.get(p_chunkID);
+			LookupRange locations = m_lookup.getLookupRange(p_chunkID);
 			if (locations == null) {
 				err = ErrorCode.CHUNK_NOT_AVAILABLE;
 			} else {
@@ -214,7 +214,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 			m_memoryManager.unlockAccess();
 			
 			// remote, figure out location
-			Locations locations = m_lookup.get(p_chunkID);
+			LookupRange locations = m_lookup.getLookupRange(p_chunkID);
 			if (locations == null) {
 				err = ErrorCode.CHUNK_NOT_AVAILABLE;
 			} else {
@@ -226,7 +226,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 						return ErrorCode.INVALID_PARAMETER;
 					}
 				} else {	
-					short primaryPeer = m_lookup.get(p_chunkID).getPrimaryPeer();
+					short primaryPeer = m_lookup.getLookupRange(p_chunkID).getPrimaryPeer();
 					if (primaryPeer == m_boot.getNodeID()) {
 						// Local release
 						if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {

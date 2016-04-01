@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
-import de.hhu.bsinfo.dxram.lookup.Locations;
+import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
@@ -14,7 +14,7 @@ import de.hhu.bsinfo.menet.AbstractResponse;
 public class LookupResponse extends AbstractResponse {
 
 	// Attributes
-	private Locations m_locations;
+	private LookupRange m_locations;
 
 	// Constructors
 	/**
@@ -33,7 +33,7 @@ public class LookupResponse extends AbstractResponse {
 	 * @param p_locations
 	 *            the primary peer, backup peers and range
 	 */
-	public LookupResponse(final LookupRequest p_request, final Locations p_locations) {
+	public LookupResponse(final LookupRequest p_request, final LookupRange p_locations) {
 		super(p_request, LookupMessages.SUBTYPE_LOOKUP_RESPONSE);
 
 		m_locations = p_locations;
@@ -44,7 +44,7 @@ public class LookupResponse extends AbstractResponse {
 	 * Get locations
 	 * @return the locations
 	 */
-	public final Locations getLocations() {
+	public final LookupRange getLocations() {
 		return m_locations;
 	}
 
@@ -67,7 +67,7 @@ public class LookupResponse extends AbstractResponse {
 		if (p_buffer.get() != 0) {
 			MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 			
-			m_locations = new Locations();
+			m_locations = new LookupRange();
 			importer.setPayloadSize(m_locations.sizeofObject());
 			importer.importObject(m_locations);
 		}

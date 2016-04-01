@@ -15,7 +15,6 @@ public final class RequestMap {
 
 	// Attributes
 	private static Map<Integer, AbstractRequest> m_pendingRequests = new HashMap<>();
-	// private static LinkedList<AbstractRequest> m_list = new LinkedList<AbstractRequest>();
 
 	private static Lock m_lock = new ReentrantLock(false);
 
@@ -36,8 +35,7 @@ public final class RequestMap {
 
 		m_lock.lock();
 
-		m_pendingRequests.put(p_request.getRequestID(), p_request);
-		// m_list.addLast(p_request);//
+		m_pendingRequests.put(p_request.getRequestID() & 0x00FFFFFF, p_request);
 
 		m_lock.unlock();
 	}
@@ -53,13 +51,6 @@ public final class RequestMap {
 
 		m_lock.lock();
 
-		/*-for (int i = 0; i < m_list.size(); i++) {
-			ret = m_list.get(i);
-			if (ret.getRequestID() == p_requestID) {
-				m_list.remove(i);
-				break;
-			}
-		}*/
 		ret = m_pendingRequests.remove(p_requestID);
 
 		m_lock.unlock();

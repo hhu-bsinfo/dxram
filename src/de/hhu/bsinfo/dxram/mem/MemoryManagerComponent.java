@@ -13,7 +13,6 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageJNINativeMemory;
-import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
 
 /**
  * Interface to access the local heap. Features for migration
@@ -370,15 +369,15 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_cidTable.putChunkIDForReuse(p_chunkID);
 	}
 	
-//	/**
-//	 * Returns the ChunkIDs of all migrated Chunks
-//	 * @return the ChunkIDs of all migrated Chunks
-//	 * @throws MemoryException
-//	 * if the CIDTable could not be completely accessed
-//	 */
-//	public ArrayList<Long> getCIDOfAllMigratedChunks() {
-//		return m_cidTable.getCIDOfAllMigratedChunks();
-//	}
+	/**
+	 * Returns the ChunkIDs of all migrated Chunks
+	 * @return the ChunkIDs of all migrated Chunks
+	 * @throws MemoryException
+	 * if the CIDTable could not be completely accessed
+	 */
+	public ArrayList<Long> getCIDOfAllMigratedChunks() {
+		return m_cidTable.getCIDOfAllMigratedChunks();
+	}
 	
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
@@ -386,8 +385,8 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @throws MemoryException
 	 * if the CIDTable could not be completely accessed
 	 */
-	public ArrayList<Long> getCIDrangesOfAllLocalChunks() {
-		return m_cidTable.getCIDrangesOfAllLocalChunks();
+	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
+		return m_cidTable.getCIDRangesOfAllLocalChunks();
 	}
 	
 	/**

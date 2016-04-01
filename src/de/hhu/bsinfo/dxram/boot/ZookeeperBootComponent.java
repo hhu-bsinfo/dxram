@@ -139,7 +139,7 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 	}
 	
 	@Override
-	public List<Short> getAvailablePeerNodeIDs()
+	public List<Short> getOnlinePeerNodeIDs()
 	{
 		List<Short> ids = new ArrayList<Short>();
 

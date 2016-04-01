@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
-import java.util.Queue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -21,8 +20,8 @@ public class NIOConnection extends AbstractConnection {
 
 	private int m_numberOfBuffers;
 
-	private final Queue<ByteBuffer> m_incoming;
-	private final ArrayDeque<ByteBuffer> m_outgoing;
+	private ArrayDeque<ByteBuffer> m_incoming;
+	private ArrayDeque<ByteBuffer> m_outgoing;
 	private ReentrantLock m_connectionCondLock;
 	private Condition m_connectionCond;
 
@@ -194,9 +193,6 @@ public class NIOConnection extends AbstractConnection {
 	 */
 	void addBuffer(final ByteBuffer p_buffer) {
 		m_outgoingLock.lock();
-		// Change operation request to OP_READ to read before trying to send the buffer again
-		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_READ);
-
 		m_outgoing.addFirst(p_buffer);
 		m_outgoingLock.unlock();
 	}
@@ -211,7 +207,6 @@ public class NIOConnection extends AbstractConnection {
 	 */
 	protected ByteBuffer getOutgoingBytes(final ByteBuffer p_buffer, final int p_bytes) {
 		int length = 0;
-		boolean abort = false;
 		ByteBuffer buffer;
 		ByteBuffer ret = null;
 
@@ -223,18 +218,6 @@ public class NIOConnection extends AbstractConnection {
 			}
 			buffer = m_outgoing.poll();
 			m_outgoingLock.unlock();
-
-			// This is a left-over (see addBuffer())
-			if (buffer.remaining() != 0 && buffer.position() != 0) {
-				ret = buffer;
-				abort = true;
-				break;
-			}
-
-			// Skip when buffer is completed
-			if (buffer == null || !buffer.hasRemaining()) {
-				continue;
-			}
 
 			// Append when limit will not be reached
 			if (length + buffer.remaining() <= p_bytes) {
@@ -260,7 +243,7 @@ public class NIOConnection extends AbstractConnection {
 			}
 		}
 
-		if (ret != null && !abort) {
+		if (ret != null) {
 			ret.position(0);
 			if (length < ret.capacity()) {
 				ret.limit(length);

@@ -37,7 +37,7 @@ public abstract class BootComponent extends DXRAMComponent {
 	 * Get IDs of all available (online) peer nodes.
 	 * @return List of IDs of nodes available.
 	 */
-	public abstract List<Short> getAvailablePeerNodeIDs();
+	public abstract List<Short> getOnlinePeerNodeIDs();
 	
 	/**
 	 * Get the node ID, which is currently assigned to this running instance.

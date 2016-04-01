@@ -3,7 +3,6 @@ package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -13,8 +12,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Marc Ewert 14.10.2014
  */
 public abstract class AbstractConnection {
-
-	protected static final int FLOW_CONTROL_LIMIT = 1 * 1024 * 1024;
 	
 	// Attributes
 	private final DataHandler m_dataHandler;
@@ -99,7 +96,7 @@ public abstract class AbstractConnection {
 	 * @return true if the connection is connected, false otherwise
 	 */
 	public final boolean isCongested() {
-		return m_unconfirmedBytes > FLOW_CONTROL_LIMIT * 0.9; // Too conservative?
+		return m_unconfirmedBytes > NIOConnectionCreator.FLOW_CONTROL_LIMIT;
 	}
 
 	/**
@@ -153,7 +150,7 @@ public abstract class AbstractConnection {
 
 		m_receivedBytes += ret.remaining();
 		m_flowControlCondLock.lock();
-		if (m_receivedBytes > FLOW_CONTROL_LIMIT * 0.8) {
+		if (m_receivedBytes > NIOConnectionCreator.FLOW_CONTROL_LIMIT * 0.8) {
 			sendFlowControlMessage();
 		}
 		m_flowControlCondLock.unlock();
@@ -180,7 +177,7 @@ public abstract class AbstractConnection {
 	 */
 	public final void write(final AbstractMessage p_message) throws IOException {
 		m_flowControlCondLock.lock();
-		while (m_unconfirmedBytes > FLOW_CONTROL_LIMIT) {
+		while (m_unconfirmedBytes > NIOConnectionCreator.FLOW_CONTROL_LIMIT) {
 			try {
 				m_flowControlCond.await();
 			} catch (final InterruptedException e) { /* ignore */}
@@ -221,9 +218,7 @@ public abstract class AbstractConnection {
 	 * Called when the connection was closed.
 	 */
 	public final void cleanup() {
-		if (m_connected) {
-			System.out.println("Connection to clean up is still connected");
-		} else {
+		if (!m_connected) {
 			m_taskExecutor.purgeQueue(m_destination);
 		}
 	}
@@ -366,13 +361,10 @@ public abstract class AbstractConnection {
 		 */
 		private AbstractMessage createMessage(final ByteBuffer p_buffer) {
 			AbstractMessage message = null;
-			ByteBuffer buffer;
 
 			p_buffer.flip();
-			buffer = p_buffer.asReadOnlyBuffer();
-
 			try {
-				message = AbstractMessage.createMessageHeader(buffer, m_messageDirectory);
+				message = AbstractMessage.createMessageHeader(p_buffer, m_messageDirectory);
 				// hack:
 				// to avoid copying data multiple times, some responses use the same objects provided
 				// with the request to directly write the data to them instead of creating a temporary 
@@ -387,7 +379,7 @@ public abstract class AbstractConnection {
 					resp.m_correspondingRequest = RequestMap.getRequest(resp);
 				}
 				
-				message.readPayload(buffer);
+				message.readPayload(p_buffer);
 			} catch (final Exception e) {
 				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to create message", e);
 			}
@@ -401,14 +393,9 @@ public abstract class AbstractConnection {
 	 * @author Florian Klein 09.03.2012
 	 * @author Marc Ewert 28.10.2014
 	 */
-	private static class ByteStreamInterpreter {
-
-		// Constants
-		private static final int HEADER_OFFSET = AbstractMessage.BYTES_PAYLOAD_SIZE;
+	private class ByteStreamInterpreter {
 
 		// Attributes
-		private int m_bytesRead;
-		private int m_payloadSize;
 		private ByteBuffer m_headerBytes;
 		private ByteBuffer m_messageBytes;
 
@@ -421,7 +408,7 @@ public abstract class AbstractConnection {
 		 * Creates an instance of MessageCreator
 		 */
 		ByteStreamInterpreter() {
-			m_headerBytes = ByteBuffer.allocateDirect(AbstractMessage.HEADER_SIZE - HEADER_OFFSET);
+			m_headerBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE);
 			clear();
 		}
 
@@ -447,8 +434,6 @@ public abstract class AbstractConnection {
 		 * Clear all data
 		 */
 		public void clear() {
-			m_bytesRead = 0;
-			m_payloadSize = 0;
 			m_headerBytes.clear();
 			m_step = Step.READ_HEADER;
 			m_exceptionOccurred = false;
@@ -468,8 +453,8 @@ public abstract class AbstractConnection {
 					case READ_HEADER:
 						readHeader(p_buffer);
 						break;
-					case READ_PAYLOAD_SIZE:
-						readPayloadSize(p_buffer);
+					case VERIFY_PAYLOAD:
+						verifyPayload();
 						break;
 					case READ_PAYLOAD:
 						readPayload(p_buffer);
@@ -486,51 +471,40 @@ public abstract class AbstractConnection {
 
 		/**
 		 * Reads the remaining message header
-		 * without the 4 bytes for payload length
 		 * @param p_buffer
 		 *            the ByteBuffer with the data
 		 */
 		private void readHeader(final ByteBuffer p_buffer) {
 			final int remaining = m_headerBytes.remaining();
 
-			if (p_buffer.remaining() <= remaining) {
+			if (p_buffer.remaining() < remaining) {
 				m_headerBytes.put(p_buffer);
 			} else {
 				m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
 				p_buffer.position(p_buffer.position() + remaining);
-			}
+				m_step = Step.VERIFY_PAYLOAD;
 
-			if (!m_headerBytes.hasRemaining()) {
-				m_step = Step.READ_PAYLOAD_SIZE;
+				m_headerBytes.position(m_headerBytes.limit());
 			}
-
-			m_bytesRead = m_headerBytes.limit() - m_headerBytes.remaining();
 		}
 
 		/**
-		 * Reads the size of the message payload
-		 * @param p_buffer
-		 *            the ByteBuffer with the data
+		 * Analyzes the size of the message payload
 		 */
-		private void readPayloadSize(final ByteBuffer p_buffer) {
-			while (m_bytesRead < AbstractMessage.HEADER_SIZE && p_buffer.hasRemaining()) {
-				m_payloadSize = m_payloadSize << 8 | p_buffer.get() & 0xFF;
+		private void verifyPayload() {
+			// Read payload size
+			final int payloadSize = m_headerBytes.getInt(m_headerBytes.position() - AbstractMessage.BYTES_PAYLOAD_SIZE);
 
-				m_bytesRead++;
-			}
+			// Create message buffer and copy header into (without payload size)
+			m_messageBytes = ByteBuffer.allocate((AbstractMessage.HEADER_SIZE - AbstractMessage.BYTES_PAYLOAD_SIZE) + payloadSize);
+			m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.BYTES_PAYLOAD_SIZE);
 
-			if (m_bytesRead == AbstractMessage.HEADER_SIZE) {
-				m_messageBytes = ByteBuffer.allocate(m_headerBytes.limit() + m_payloadSize);
-
-				m_headerBytes.flip();
-				m_messageBytes.put(m_headerBytes);
-
-				if (m_payloadSize == 0) {
-					// Payload data is complete
-					m_step = Step.DONE;
-				} else {
-					m_step = Step.READ_PAYLOAD;
-				}
+			if (payloadSize == 0) {
+				// There is no payload -> message complete
+				m_step = Step.DONE;
+			} else {
+				// Payload must be read next
+				m_step = Step.READ_PAYLOAD;
 			}
 		}
 
@@ -542,14 +516,11 @@ public abstract class AbstractConnection {
 		private void readPayload(final ByteBuffer p_buffer) {
 			final int remaining = m_messageBytes.remaining();
 
-			if (p_buffer.remaining() <= remaining) {
+			if (p_buffer.remaining() < remaining) {
 				m_messageBytes.put(p_buffer);
 			} else {
 				m_messageBytes.put(p_buffer.array(), p_buffer.position(), remaining);
 				p_buffer.position(p_buffer.position() + remaining);
-			}
-
-			if (!m_messageBytes.hasRemaining()) {
 				m_step = Step.DONE;
 			}
 		}
@@ -561,18 +532,17 @@ public abstract class AbstractConnection {
 		public boolean isMessageComplete() {
 			return m_step == Step.DONE;
 		}
+	}
 
-		// Classes
-		/**
-		 * Represents the steps in the creation process
-		 * @author Florian Klein
-		 *         09.03.2012
-		 */
-		private enum Step {
+	/**
+	 * Represents the steps in the creation process
+	 * @author Florian Klein
+	 *         09.03.2012
+	 */
+	private enum Step {
 
-			// Constants
-			READ_HEADER, READ_PAYLOAD_SIZE, READ_PAYLOAD, DONE
+		// Constants
+		READ_HEADER, VERIFY_PAYLOAD, READ_PAYLOAD, DONE
 
-		}
 	}
 }

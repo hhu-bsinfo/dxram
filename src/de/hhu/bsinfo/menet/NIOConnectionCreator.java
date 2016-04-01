@@ -17,12 +17,12 @@ import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
 class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	// Constants
-	protected static final int INCOMING_BUFFER_SIZE = 65536 * 2;
-	protected static final int OUTGOING_BUFFER_SIZE = 65536;
-	protected static final int SEND_BYTES = 1024 * 1024;
+	protected static final int INCOMING_BUFFER_SIZE = 1024 * 1024;
+	protected static final int OUTGOING_BUFFER_SIZE = 1024 * 1024;
+	protected static final int FLOW_CONTROL_LIMIT = 1024 * 1024;
 	protected static final int CONNECTION_TIMEOUT = 200;
 
-	// Attributes
+	// Attributes	
 	private TaskExecutor m_taskExecutor;
 	private MessageDirectory m_messageDirectory;
 	private NodeMap m_nodeMap;
@@ -52,7 +52,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Initializes the creator
 	 */
 	@Override
-	public void initialize(final short p_nodeID, final int p_listenPort) {
+	public void initialize(final short p_nodeID, final int p_listenPort) {		
 		m_nioSelector = new NIOSelector(this, p_listenPort);
 		m_nioSelector.setName("Network: NIOSelector");
 		m_nioSelector.setPriority(Thread.MAX_PRIORITY);
@@ -124,7 +124,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			connection = NIOInterface.initIncomingConnection(m_nodeMap, m_taskExecutor, m_messageDirectory, p_channel, m_nioSelector, m_numberOfBuffers);
 			fireConnectionCreated(connection);
 		} catch (final IOException e) {
-			System.out.println("ERROR::Could not create connection");
+			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not create connection!");
 			throw e;
 		}
 	}
@@ -143,7 +143,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			try {
 				p_connection.getChannel().close();
 			} catch (final IOException e) {
-				System.out.println("ERROR::Could not close connection to " + p_connection.getDestination());
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not close connection to " + p_connection.getDestination() + "!");
 			}
 			fireConnectionClosed(p_connection);
 		}

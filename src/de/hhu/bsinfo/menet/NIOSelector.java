@@ -27,7 +27,7 @@ class NIOSelector extends Thread {
 
 	private final Queue<ChangeOperationsRequest> m_changeRequests;
 	private ReentrantLock m_changeLock;
-
+	
 	private boolean m_running;
 
 	// Constructors
@@ -63,7 +63,7 @@ class NIOSelector extends Thread {
 			} catch (final IOException e) {
 				exception = e;
 
-				System.out.println("Could not bind network address. Retry in 1s.");
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
 
 				try {
 					Thread.sleep(1000);
@@ -72,7 +72,7 @@ class NIOSelector extends Thread {
 		}
 
 		if (exception != null) {
-			System.out.println("FATAL::Could not create network channel");
+			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not create network channel!");
 		}
 	}
 
@@ -106,7 +106,7 @@ class NIOSelector extends Thread {
 					try {
 						connection.getChannel().register(m_selector, interest, connection);
 					} catch (final ClosedChannelException e) {
-						System.out.println("ERROR::Could not change operations");
+						NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not change operations!");
 					}
 				} else {
 					m_connectionCreator.closeConnection(connection);
@@ -133,7 +133,7 @@ class NIOSelector extends Thread {
 					}
 				}
 			} catch (final Exception e) {
-				System.out.println("ERROR::Accessing the selector");
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Key selection failed!");
 			}
 		}
 	}
@@ -158,6 +158,8 @@ class NIOSelector extends Thread {
 	 *            the current key
 	 */
 	public void dispatch(final SelectionKey p_key) {
+		boolean complete = true;
+		boolean successful = true;
 		NIOConnection connection;
 
 		connection = (NIOConnection) p_key.attachment();
@@ -167,19 +169,32 @@ class NIOSelector extends Thread {
 					if (connection == null) {
 						m_connectionCreator.createConnection((SocketChannel) p_key.channel());
 					} else {
-						if (!NIOInterface.read(connection)) {
+						try {
+							successful = NIOInterface.read(connection);
+						} catch (final IOException e) {
+							NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not read from channel (" + connection.getDestination() + ")!");
+							successful = false;
+						}
+						if (!successful) {
 							m_connectionCreator.closeConnection(connection);
 						}
 					}
 				} else if (p_key.isWritable()) {
-					NIOInterface.write(connection);
-					// Set interest to READ after writing
-					p_key.interestOps(SelectionKey.OP_READ);
+					try {
+						complete = NIOInterface.write(connection); 
+					} catch (final IOException e) {
+						NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not write to channel (" + connection.getDestination() + ")!");
+						complete = false;
+					}
+					if (complete) {
+						// Set interest to READ after writing; do not if channel was blocked and data is left
+						p_key.interestOps(SelectionKey.OP_READ);
+					}
 				} else if (p_key.isConnectable()) {
 					NIOInterface.connect(connection);
 				}
 			} catch (final IOException e) {
-				System.out.println("WARN::Accessing the channel");
+				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not access channel properly!");
 			}
 		}
 	}
@@ -221,13 +236,13 @@ class NIOSelector extends Thread {
 		try {
 			m_serverChannel.close();
 		} catch (final IOException e) {
-			System.out.println("ERROR::Unable to close channel");
+			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to close channel!");
 		}
 
 		try {
 			m_selector.close();
 		} catch (final IOException e) {
-			System.out.println("ERROR::Unable to close selector");
+			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to close selector!");
 		}
 	}
 

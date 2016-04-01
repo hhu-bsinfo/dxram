@@ -17,7 +17,7 @@ public final class MigratedBackupsTree implements Serializable {
 
 	// Attributes
 	private short m_minEntries;
-	private long m_secondaryLogSize;
+	private long m_backupRangeSize;
 	private short m_minChildren;
 	private short m_maxEntries;
 	private short m_maxChildren;
@@ -35,13 +35,15 @@ public final class MigratedBackupsTree implements Serializable {
 	 * Creates an instance of MigrationsTree
 	 * @param p_order
 	 *            order of the btree
+	 * @param p_backupRangeSize
+	 *            the backup range size
 	 */
-	public MigratedBackupsTree(final short p_order, final long p_secondaryLogSize) {
+	public MigratedBackupsTree(final short p_order, final long p_backupRangeSize) {
 		// too small order for BTree
 		assert 1 < p_order;
 
 		m_minEntries = p_order;
-		m_secondaryLogSize = p_secondaryLogSize;
+		m_backupRangeSize = p_backupRangeSize;
 		m_minChildren = (short) (m_minEntries + 1);
 		m_maxEntries = (short) (2 * m_minEntries);
 		m_maxChildren = (short) (m_maxEntries + 1);
@@ -68,7 +70,7 @@ public final class MigratedBackupsTree implements Serializable {
 		boolean ret;
 
 		m_lock.lock();
-		ret = p_size + m_currentSecLogSize <= m_secondaryLogSize;
+		ret = p_size + m_currentSecLogSize <= m_backupRangeSize;
 		m_lock.unlock();
 
 		return ret;
