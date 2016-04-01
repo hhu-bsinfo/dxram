@@ -59,6 +59,31 @@ public class BulkFifoNaive implements FrontierList
 	}
 	
 	@Override
+	public boolean contains(long p_val) {
+		int curBlock = m_blockFront;
+		int curPos = m_posFront;
+		
+		do
+		{
+			int posEnd = m_bulkSize;
+			if (curBlock == m_blockBack)
+				posEnd = m_posBack;
+			
+			for (int i = curPos; i < posEnd; i++)
+			{
+				if (m_chainedFifo[curBlock][i] == p_val)
+					return true;
+			}
+			
+			curBlock++;
+			curPos = 0;
+		}
+		while (curBlock < m_blockBack);
+		
+		return false;
+	}
+	
+	@Override
 	public long size()
 	{
 		if (m_blockFront == m_blockBack) {

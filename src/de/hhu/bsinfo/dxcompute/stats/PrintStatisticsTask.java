@@ -25,7 +25,7 @@ public abstract class PrintStatisticsTask extends Task {
 		p_outputStream.println("---------------------------------------------------------");
 		p_outputStream.println(dateFormat.format(date));
 		short nodeId = m_bootService.getNodeID();
-		p_outputStream.println("NodeID: " + Integer.toHexString(nodeId).substring(4) + " (" + nodeId + ")");
+		p_outputStream.println("NodeID: " + Integer.toHexString(nodeId) + " (" + nodeId + ")");
 		p_outputStream.println("Role: " + m_bootService.getNodeRole(nodeId));	
 		p_outputStream.println("---------------------------------------------------------");
 		

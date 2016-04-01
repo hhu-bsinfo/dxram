@@ -34,10 +34,9 @@ public class GraphAlgorithmBFSLocalMultiThreaded extends GraphAlgorithm {
 	}
 	
 	@Override
-	protected boolean setup() {
-		long totalVertexCount = getGraphLoaderResultDelegate().getTotalVertexCount();
-		m_curFrontier = new HalfConcurrentBitVector(totalVertexCount);
-		m_nextFrontier = new HalfConcurrentBitVector(totalVertexCount);
+	protected boolean setup(final long p_totalVertexCount) {
+		m_curFrontier = new HalfConcurrentBitVector(p_totalVertexCount);
+		m_nextFrontier = new HalfConcurrentBitVector(p_totalVertexCount);
 		return true;
 	}
 	

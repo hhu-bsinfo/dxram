@@ -8,7 +8,10 @@ import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierBroadcastMessage;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierReleaseMessage;
 import de.hhu.bsinfo.dxcompute.coord.messages.SlaveSyncBarrierSignOnMessage;
+import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.locks.SpinLock;
@@ -21,16 +24,18 @@ import de.hhu.bsinfo.utils.locks.SpinLock;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  *
  */
-public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
+// TODO redoc
+public class SyncBarrierMaster implements MessageReceiver {
 
-	private static boolean ms_setupOnceDone = false;
-	
 	private int m_numSlaves = 1;
 	private int m_broadcastIntervalMs = 2000;
-	private ArrayList<Short> m_slavesSynced = new ArrayList<Short>();
-	private Lock m_slavesSyncedMutex = new SpinLock();
-	
 	private int m_barrierIdentifer = -1;
+
+	private NetworkService m_networkService = null;
+	private BootService m_bootService = null;
+	private LoggerService m_loggerService = null;
+	
+	private ArrayList<Short> m_slavesSynced = new ArrayList<Short>();
 	
 	/**
 	 * Constructor
@@ -38,30 +43,23 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 	 * @param p_broadcastIntervalMs Interval in ms to broadcast a message message to catch slaves waiting for the barrier.
 	 * @param p_barrierIdentifier Token to identify this barrier (if using multiple barriers), which is used as a sync token.
 	 */
-	public SyncBarrierMaster(final int p_numSlaves, final int p_broadcastIntervalMs, final int p_barrierIdentifier) {
+	public SyncBarrierMaster(final int p_numSlaves, final int p_broadcastIntervalMs, final int p_barrierIdentifier, final NetworkService p_networkService, final BootService p_bootService, final LoggerService p_loggerService) {
 		m_numSlaves = p_numSlaves;
 		m_broadcastIntervalMs = p_broadcastIntervalMs;
 		m_barrierIdentifer = p_barrierIdentifier;
-	}
-
-	@Override
-	protected boolean setup() {
-		// register network messages once
-		if (!ms_setupOnceDone)
-		{
-			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
-			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
-			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
-			ms_setupOnceDone = true;
-		}
+		
+		m_networkService = p_networkService;
+		m_bootService = p_bootService;
+		m_loggerService = p_loggerService;
+		
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
 		
 		m_networkService.registerReceiver(SlaveSyncBarrierSignOnMessage.class, this);
-		
-		return true;
 	}
 
-	@Override
-	protected boolean coordinate() {
+	public boolean execute() {
 		
 		m_loggerService.info(getClass(), "Broadcasting (every " + m_broadcastIntervalMs + "ms) and waiting until " + m_numSlaves + " slaves have signed on...");
 		
@@ -130,17 +128,18 @@ public class SyncBarrierMaster extends Coordinator implements MessageReceiver {
 	private void incomingSlaveSyncBarrierSignOn(final SlaveSyncBarrierSignOnMessage p_message) {
 		// from different sync call
 		if (p_message.getSyncToken() != m_barrierIdentifer) {
+			m_loggerService.warn(getClass(), "Received sync barrier sign on message by slave " + Integer.toHexString(p_message.getSource()) 
+				+ " with sync token " + p_message.getSyncToken() + ", does not match master token " + m_barrierIdentifer);
 			return;
 		}
 		
-		m_slavesSyncedMutex.lock();
-		
-		// avoid dupes
-		if (!m_slavesSynced.contains(p_message.getSource())) {
-			m_slavesSynced.add(p_message.getSource());
+		synchronized (m_slavesSynced)
+		{	
+			// avoid dupes
+			if (!m_slavesSynced.contains(p_message.getSource())) {
+				m_slavesSynced.add(p_message.getSource());
+			}
 		}
-		
-		m_slavesSyncedMutex.unlock();
 		
 		m_loggerService.debug(getClass(), "Slave " + p_message.getSource() + " has signed on.");
 	}

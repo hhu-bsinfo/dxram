@@ -120,8 +120,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 	{
 		Vertex2[] vertexBuffer = new Vertex2[m_vertexBatchSize];
 		int readCount = 0;
-		boolean loop = true;
-		
+
 		long verticesProcessed = 0;
 		float previousProgress = 0.0f;
 		
@@ -129,7 +128,7 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 		
 		m_loggerService.info(getClass(), "Loading started, vertex count: " + m_totalVerticesLoaded);
 		
-		while (loop)
+		while (true)
 		{
 			readCount = 0;
 			while (readCount < vertexBuffer.length)
@@ -150,29 +149,26 @@ public abstract class GraphLoaderOrderedEdgeList extends GraphLoader {
 				m_totalEdgesLoaded += neighbours.length;
 			}
 			
-			// create an array which is filled without null padding at the end
-			// if necessary 
-			if (readCount != vertexBuffer.length) {
-				Vertex2[] tmp = new Vertex2[readCount];
-				for (int i = 0; i < readCount; i++) {
-					tmp[i] = vertexBuffer[i];
-				}
-				
-				vertexBuffer = tmp;
-				loop = false;
+			if (readCount == 0) {
+				break;
 			}
 			
+			// fill in null paddings for unused elements
+			for (int i = readCount; i < vertexBuffer.length; i++) {
+				vertexBuffer[i] = null;
+			}
+
 			int count = m_chunkService.create(vertexBuffer);
-			if (count != vertexBuffer.length)
+			if (count != readCount)
 			{
-				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + vertexBuffer.length);
+				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + readCount);
 				return false;
 			}
 			
 			count = m_chunkService.put(vertexBuffer);
-			if (m_chunkService.put(vertexBuffer) != vertexBuffer.length)
+			if (count != readCount)
 			{
-				m_loggerService.error(getClass(), "Putting vertex data for chunks failed: " + count + " != " + vertexBuffer.length);
+				m_loggerService.error(getClass(), "Putting vertex data for chunks failed: " + count + " != " + readCount);
 				return false;
 			}
 			

@@ -50,7 +50,9 @@ public final class NetworkHandler implements DataReceiver {
 		
 		// Network Messages
 		networkType = FlowControlMessage.TYPE;
-		m_messageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
+		if (!m_messageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class)) {
+			throw new IllegalArgumentException("Type and subtype for FlowControlMessage already in use.");
+		}
 
 		m_lock = new ReentrantLock(false);
 	}
@@ -65,9 +67,15 @@ public final class NetworkHandler implements DataReceiver {
 	
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class)
 	{
+		boolean ret = false;
 		m_lock.lock();
-		m_messageDirectory.register(p_type, p_subtype, p_class);
+		ret = m_messageDirectory.register(p_type, p_subtype, p_class);
 		m_lock.unlock();
+		
+		if (!ret) {
+			ms_logger.warn(getClass().getSimpleName(), "Registering network message " + p_class.getSimpleName() + 
+					" for type " + p_type + " and subtype " + p_subtype + " failed, type and subtype already used.");
+		}
 	}
 
 	// Methods

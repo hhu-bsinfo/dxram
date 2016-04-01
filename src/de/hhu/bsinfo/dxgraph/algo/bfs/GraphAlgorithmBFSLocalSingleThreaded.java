@@ -37,16 +37,16 @@ public class GraphAlgorithmBFSLocalSingleThreaded extends GraphAlgorithm {
 	}
 	
 	@Override
-	protected boolean setup() {
+	protected boolean setup(final long p_totalVertexCount) {
 		if (m_frontierListType == null || m_frontierListType == BitVector.class)
 		{
-			m_curFrontier = new BitVector(getGraphLoaderResultDelegate().getTotalVertexCount());
-			m_nextFrontier = new BitVector(getGraphLoaderResultDelegate().getTotalVertexCount());
+			m_curFrontier = new BitVector(p_totalVertexCount);
+			m_nextFrontier = new BitVector(p_totalVertexCount);
 		}
 		else if (m_frontierListType == BitVectorMultiLevel.class)
 		{
-			m_curFrontier = new BitVectorMultiLevel(getGraphLoaderResultDelegate().getTotalVertexCount());
-			m_nextFrontier = new BitVectorMultiLevel(getGraphLoaderResultDelegate().getTotalVertexCount());
+			m_curFrontier = new BitVectorMultiLevel(p_totalVertexCount);
+			m_nextFrontier = new BitVectorMultiLevel(p_totalVertexCount);
 		}
 		else if (m_frontierListType == BulkFifoNaive.class)
 		{

@@ -282,6 +282,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// keep loop tight and execute everything
 		// that we don't have to lock outside of this section
 		for (int i = 0; i < p_dataStructures.length; i++) {
+			// skip nulls
+			if (p_dataStructures[i] == null) {
+				continue;
+			}
+			
 			long chunkID = m_memoryManager.create(p_dataStructures[i].sizeofObject());
 			if (chunkID != ChunkID.INVALID_ID) {
 				count++;
@@ -295,6 +300,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// tell the superpeer overlay about our newly created chunks, otherwise they can not be found
 		// by other peers
 		for (int i = 0; i < p_dataStructures.length; i++) {
+			// skip nulls
+			if (p_dataStructures[i] == null) {
+				continue;
+			}
+						
 			if (p_dataStructures[i].getID() != ChunkID.INVALID_ID) {
 				initBackupRange(p_dataStructures[i].getID(), p_dataStructures[i].sizeofObject());
 			}
@@ -303,7 +313,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 		
 		if (!m_performanceFlag) {
-			m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ") " + p_dataStructures[0].sizeofObject() + ", ...] -> " + Long.toHexString(p_dataStructures[0].getID()) + ", ...");
+			m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ")] -> " + count );
 		}
 		
 		return count;

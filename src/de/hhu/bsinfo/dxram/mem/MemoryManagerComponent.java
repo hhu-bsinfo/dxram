@@ -226,12 +226,9 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		
 		// get new LID from CIDTable
 		lid = m_cidTable.getFreeLID();
-		if (lid == -1)
-		{
+		if (lid == -1) {
 			chunkID = -1;
-		}
-		else
-		{			
+		} else {			
 			// first, try to allocate. maybe early return
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, p_size);
 			address = m_rawMemory.malloc(p_size);
@@ -242,6 +239,10 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 				m_cidTable.set(chunkID, address);
 				m_numActiveChunks++;
 			} else {
+				// most likely out of memory
+				m_logger.error(getClass(), "Creating chunk with size " + p_size + " failed, most likely out of memory, free " + 
+						m_rawMemory.getFreeMemory() + ", total " + m_rawMemory.getTotalMemory());
+					
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
 			}

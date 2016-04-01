@@ -4,7 +4,9 @@ import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierBroadcastMessage;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierReleaseMessage;
 import de.hhu.bsinfo.dxcompute.coord.messages.SlaveSyncBarrierSignOnMessage;
+import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -15,42 +17,35 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  *
  */
-public class SyncBarrierSlave extends Coordinator implements MessageReceiver {
+public class SyncBarrierSlave implements MessageReceiver {
 
-	private static boolean ms_setupOnceDone = false;
+	private int m_barrierIdentifer = -1;
 	
 	private volatile short m_masterNodeID = NodeID.INVALID_ID;
 	private volatile boolean m_masterBarrierReleased = false;
 	
-	private int m_barrierIdentifer = -1;
+	private NetworkService m_networkService = null;
+	private LoggerService m_loggerService = null;
 	
 	/**
 	 * Constructor
 	 * @param p_barrierIdentifier Token to identify this barrier (if using multiple barriers), which is used as a sync token.
 	 */
-	public SyncBarrierSlave(final int p_barrierIdentifier) {
+	public SyncBarrierSlave(final int p_barrierIdentifier, final NetworkService p_networkService, final LoggerService p_loggerService) {
 		m_barrierIdentifer = p_barrierIdentifier;
-	}
-	
-	@Override
-	protected boolean setup() {
-		// register network messages once
-		if (!ms_setupOnceDone)
-		{
-			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
-			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
-			m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
-			ms_setupOnceDone = true;
-		}
+		
+		m_networkService = p_networkService;
+		m_loggerService = p_loggerService;
+		
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
 		
 		m_networkService.registerReceiver(MasterSyncBarrierBroadcastMessage.class, this);
 		m_networkService.registerReceiver(MasterSyncBarrierReleaseMessage.class, this);
-		
-		return true;
 	}
 
-	@Override
-	protected boolean coordinate() {
+	public boolean execute() {
 		
 		m_loggerService.info(getClass(), "Waiting to receive master broadcast...");
 		
