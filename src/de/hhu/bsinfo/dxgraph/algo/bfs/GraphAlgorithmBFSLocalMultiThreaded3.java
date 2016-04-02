@@ -10,16 +10,17 @@ import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.Pair;
 
-public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
+public class GraphAlgorithmBFSLocalMultiThreaded3 extends GraphAlgorithm {
 
 	private int m_vertexBatchCountPerThread = 100;
 
 	private FrontierList m_curFrontier = null;
 	private FrontierList m_nextFrontier = null;
+	private FrontierList m_visitedList = null;
 	
 	private BFSThread[] m_threads = null;
 	
-	public GraphAlgorithmBFSLocalMultiThreaded2(final int p_vertexBatchCountPerThread, final int p_threadCount, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
+	public GraphAlgorithmBFSLocalMultiThreaded3(final int p_vertexBatchCountPerThread, final int p_threadCount, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
 	{
 		super(p_loaderResultsDelegate, p_entryNodes);
 		m_vertexBatchCountPerThread = p_vertexBatchCountPerThread;		
@@ -30,6 +31,7 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 	protected boolean setup(final long p_totalVertexCount) {
 		m_curFrontier = new ConcurrentBitVector(p_totalVertexCount);
 		m_nextFrontier = new ConcurrentBitVector(p_totalVertexCount);
+		m_visitedList = new ConcurrentBitVector(p_totalVertexCount);
 		return true;
 	}
 	
@@ -39,7 +41,7 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 		m_loggerService.info(getClass(), "Starting " + m_threads.length + " BFS Threads...");
 		
 		for (int i = 0; i < m_threads.length; i++) {
-			m_threads[i] = new BFSThread(i, m_loggerService, m_chunkService, m_bootService.getNodeID(), m_vertexBatchCountPerThread, m_curFrontier, m_nextFrontier);
+			m_threads[i] = new BFSThread(i, m_loggerService, m_chunkService, m_bootService.getNodeID(), m_vertexBatchCountPerThread, m_curFrontier, m_nextFrontier, m_visitedList);
 			m_threads[i].start();
 		}
 		
@@ -84,6 +86,7 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 		private int m_currentIterationLevel = 0;		
 		private FrontierList m_curFrontier = null;
 		private FrontierList m_nextFrontier = null;
+		private FrontierList m_visistedList = null;
 		
 		private volatile int m_visitedCounterRun = 0;
 		private volatile boolean m_iterationLevelDone = true;
@@ -96,7 +99,8 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 				final short p_nodeId, 
 				final int p_vertexBatchSize,
 				final FrontierList p_curFrontierShared,
-				final FrontierList p_nextFrontierShared)
+				final FrontierList p_nextFrontierShared,
+				final FrontierList p_visitedListShared)
 		{
 			super("BFSThread-" + p_id);
 			
@@ -113,6 +117,7 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 			
 			m_curFrontier = p_curFrontierShared;
 			m_nextFrontier = p_nextFrontierShared;
+			m_visistedList = p_visitedListShared;
 		}
 		
 		public void setCurrentBFSIterationLevel(final int p_iterationLevel) {
@@ -198,11 +203,18 @@ public class GraphAlgorithmBFSLocalMultiThreaded2 extends GraphAlgorithm {
 						writeBackCount++;
 						// set depth level
 						vertex.setUserData(m_currentIterationLevel);
+						// mark visited in cache
+						m_visistedList.pushBack(ChunkID.getLocalID(vertex.getID()));
+						
 						m_visitedCounterRun++;
 						long[] neighbours = vertex.getNeighbours();
 						
-						for (long neighbour : neighbours) {								
-							m_nextFrontier.pushBack(ChunkID.getLocalID(neighbour));
+						for (long neighbour : neighbours) {		
+							// check if already visited (cache)
+							long localId = ChunkID.getLocalID(neighbour);
+							if (!m_visistedList.contains(localId)) {
+								m_nextFrontier.pushBack(localId);
+							}
 						}
 					} else {
 						// already visited, don't have to put back to storage

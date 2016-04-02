@@ -144,6 +144,69 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		
 		return status;
 	}
+	
+	/** 
+	 * The chunk ID 0 is reserved for a fixed index structure.
+	 * If the index structure is already created this will delete the old
+	 * one and allocate a new block of memory with the same id (0).
+	 * @param p_size Size for the index chunk.
+	 * @return On success the chunk id 0, -1 on failure.
+	 */
+	public long createIndex(final int p_size)
+	{
+		assert p_size > 0;
+		
+		long address = -1;
+		long chunkID = -1;
+		
+		if (m_cidTable.get(0) != -1) {
+			// delete old entry
+			address = m_cidTable.delete(0, false);
+			m_rawMemory.free(address);
+			m_numActiveChunks--;
+		}
+		
+		address = m_rawMemory.malloc(p_size);
+		if (address >= 0) {
+			chunkID = ((long) m_boot.getNodeID() << 48) + 0;
+			// register new chunk
+			m_cidTable.set(chunkID, address);
+			m_numActiveChunks++;
+		} else {
+			chunkID = -1;
+		}
+		
+		return chunkID;
+	}
+	
+	/**
+	 * Create a chunk with a specific chunk id (used for migration/recovery).
+	 * @param p_chunkId Chunk id to assign to the chunk.
+	 * @param p_size Size of the chunk.
+	 * @return The chunk id if successful, -1 if another chunk with the same id already exists
+	 * 			or allocation memory failed.
+	 */
+	public long create(final long p_chunkId, final int p_size)
+	{
+		assert p_size > 0;
+		
+		long address = -1;
+		long chunkID = -1;
+		
+		if (m_cidTable.get(p_chunkId) == -1) {
+			address = m_rawMemory.malloc(p_size);
+			if (address >= 0) {
+				// register new chunk
+				m_cidTable.set(p_chunkId, address);
+				m_numActiveChunks++;
+				chunkID = p_chunkId;
+			} else {
+				chunkID = -1;
+			}
+		}
+				
+		return chunkID;
+	}
 
 	/**
 	 * Create a new chunk.
@@ -163,12 +226,9 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		
 		// get new LID from CIDTable
 		lid = m_cidTable.getFreeLID();
-		if (lid == -1)
-		{
+		if (lid == -1) {
 			chunkID = -1;
-		}
-		else
-		{			
+		} else {			
 			// first, try to allocate. maybe early return
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, p_size);
 			address = m_rawMemory.malloc(p_size);
@@ -179,6 +239,10 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 				m_cidTable.set(chunkID, address);
 				m_numActiveChunks++;
 			} else {
+				// most likely out of memory
+				m_logger.error(getClass(), "Creating chunk with size " + p_size + " failed, most likely out of memory, free " + 
+						m_rawMemory.getFreeMemory() + ", total " + m_rawMemory.getTotalMemory());
+					
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
 			}

@@ -15,6 +15,11 @@ public class TreeSetFifo implements FrontierList {
 	public void pushBack(long p_val) {
 		m_tree.add(p_val);
 	}
+	
+	@Override
+	public boolean contains(long p_val) {
+		return m_tree.contains(p_val);
+	}
 
 	@Override
 	public long size() {

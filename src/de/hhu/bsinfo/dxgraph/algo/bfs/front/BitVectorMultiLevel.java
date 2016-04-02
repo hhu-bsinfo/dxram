@@ -40,6 +40,13 @@ public class BitVectorMultiLevel implements FrontierList
 	}
 	
 	@Override
+	public boolean contains(long p_val) {
+		long tmp = (1L << (p_val % 64L));
+		int idx = (int) (p_val / 64L);
+		return ((m_vectorL0[idx] & tmp) != 0);
+	}
+	
+	@Override
 	public long size()
 	{
 		return m_count;

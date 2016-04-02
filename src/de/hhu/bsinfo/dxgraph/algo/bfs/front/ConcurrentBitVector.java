@@ -46,6 +46,13 @@ public class ConcurrentBitVector implements FrontierList
 	}
 	
 	@Override
+	public boolean contains(long p_val) {
+		long tmp = (1L << (p_val % 64L));
+		int index = (int) (p_val / 64L);
+		return ((m_vector.get(index) & tmp) != 0);
+	}
+	
+	@Override
 	public long size()
 	{
 		return m_count.get();

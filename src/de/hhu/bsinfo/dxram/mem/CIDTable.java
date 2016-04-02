@@ -45,14 +45,15 @@ public final class CIDTable {
 	private StatisticsComponent m_statistics = null;
 
 	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
-	
+
 	private AtomicLong m_nextLocalID = null;
 
 	// Constructors
 	/**
 	 * Creates an instance of CIDTable
 	 */
-	public CIDTable(final short p_ownNodeID, final StatisticsComponent p_statistics, final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs, final LoggerComponent p_logger) {
+	public CIDTable(final short p_ownNodeID, final StatisticsComponent p_statistics, final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs,
+			final LoggerComponent p_logger) {
 		m_ownNodeID = p_ownNodeID;
 		m_statistics = p_statistics;
 		m_statisticsRecorderIDs = p_statisticsRecorderIDs;
@@ -140,8 +141,6 @@ public final class CIDTable {
 	 *            the ChunkID of the entry
 	 * @param p_addressChunk
 	 *            the address of the chunk
-	 * @throws MemoryException
-	 *             If accessing memory to write the entry failed
 	 */
 	public void set(final long p_chunkID, final long p_addressChunk) {
 		setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
@@ -153,11 +152,7 @@ public final class CIDTable {
 	 *            the ChunkID of the entry
 	 * @param p_flagZombie
 	 *            Flag the deleted entry as a zombie or not zombie i.e. fully deleted.
-	 * @return A pair with a bool indicating that the entry was fully removed and memory
-	 *         needs to be free'd. If false the entry was flaged as deleted/zombie i.e.
-	 *         do not free the memory for it, yet.
-	 * @throws MemoryException
-	 *             if the entry could not be get
+	 * @return The address of the chunk which was removed from the table.
 	 */
 	public long delete(final long p_chunkID, final boolean p_flagZombie) {
 		long ret;
@@ -174,7 +169,7 @@ public final class CIDTable {
 	public boolean putChunkIDForReuse(final long p_chunkID) {
 		return m_store.put(ChunkID.getLocalID(p_chunkID));
 	}
-	
+
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
 	 * @return the ChunkID ranges in an ArrayList
@@ -203,7 +198,7 @@ public final class CIDTable {
 		// compress intervals
 		if (ret.size() >= 2) {
 			if (ret.size() % 2 != 0) {
-				//throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
+				// throw new MemoryException("internal error in getChunkIDRangesOfAllChunks");
 				// System.out.println("error: in ChunkIDRange list");
 			} else {
 				for (int i = 0; i < ret.size() - 2; i += 2) {
@@ -212,7 +207,7 @@ public final class CIDTable {
 
 					// can we merge intervals?
 					if (intervalEnd + 1 == intervalStart) {
-						//System.out.println("   remove el.");
+						// System.out.println("   remove el.");
 						ret.remove(i + 1);
 						ret.remove(i + 1);
 						i -= 2;
@@ -220,7 +215,31 @@ public final class CIDTable {
 				}
 			}
 		}
-		
+
+		return ret;
+	}
+
+	/**
+	 * Returns the ChunkIDs of all migrated Chunks
+	 * @return the ChunkIDs of all migrated Chunks
+	 * @throws MemoryException
+	 *             if the CIDTable could not be completely accessed
+	 */
+	public ArrayList<Long> getCIDOfAllMigratedChunks() {
+		ArrayList<Long> ret = null;
+		long entry;
+
+		if (m_store != null) {
+			ret = new ArrayList<Long>();
+			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
+				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
+				if (entry > 0 && i != (m_ownNodeID & 0xFFFF)) {
+					ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory,
+							i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
+				}
+			}
+		}
+
 		return ret;
 	}
 
@@ -258,16 +277,16 @@ public final class CIDTable {
 	 */
 	private long createNIDTable() {
 		long ret;
-		
+
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable, NID_TABLE_SIZE);
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, NID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 		m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
-		
+
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable);
-			
+
 		return ret;
 	}
 
@@ -279,16 +298,16 @@ public final class CIDTable {
 	 */
 	private long createLIDTable() {
 		long ret;
-		
+
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable, LID_TABLE_SIZE);
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, LID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 		m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
-		
+
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable);
-		
+
 		return ret;
 	}
 
@@ -459,30 +478,6 @@ public final class CIDTable {
 			} else {
 				// delete flag cleared, but address is 0 -> free entry
 				writeEntry(p_addressTable, index, 0);
-			}
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Returns the ChunkIDs of all migrated Chunks
-	 * @return the ChunkIDs of all migrated Chunks
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
-	 */
-	protected ArrayList<Long> getCIDOfAllMigratedChunks() {
-		ArrayList<Long> ret = null;
-		long entry;
-
-		if (m_store != null) {
-			ret = new ArrayList<Long>();
-			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-				if (entry > 0 && i != (m_ownNodeID & 0xFFFF)) {
-					ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory,
-							i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
-				}
 			}
 		}
 

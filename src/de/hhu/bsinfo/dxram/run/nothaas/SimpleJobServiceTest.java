@@ -96,7 +96,7 @@ public class SimpleJobServiceTest extends Main implements JobEventListener {
 		super("Testing the JobService and its remote job execution");
 		
 		m_dxram = new DXRAM();
-		m_dxram.initialize("config/dxram.conf", true);
+		m_dxram.initialize(true);
 		m_jobService = m_dxram.getService(JobService.class);
 		m_bootService = m_dxram.getService(BootService.class);
 		m_jobService.registerJobType(JobTest.MS_TYPE_ID, JobTest.class);

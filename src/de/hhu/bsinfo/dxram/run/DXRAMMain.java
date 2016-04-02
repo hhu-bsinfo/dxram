@@ -2,7 +2,9 @@ package de.hhu.bsinfo.dxram.run;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.term.TerminalService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
 
 /**
@@ -14,6 +16,8 @@ import de.hhu.bsinfo.utils.main.Main;
  */
 public class DXRAMMain extends Main {
 
+	private static final Argument ARG_DXRAM_TERMINAL = new Argument("dxramTerminal", "false", true, "Run the built in terminal of dxram after system launch");
+	
 	private DXRAM m_dxram = null;
 
 	/**
@@ -34,9 +38,19 @@ public class DXRAMMain extends Main {
 		m_dxram = new DXRAM();
 	}
 	
+	/**
+	 * Constructor
+	 * @param p_description Override the description for main.
+	 */
+	public DXRAMMain(final String p_description)
+	{
+		super(p_description);
+		m_dxram = new DXRAM();
+	}
+	
 	@Override
 	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
-		
+		p_arguments.setArgument(ARG_DXRAM_TERMINAL);
 	}
 	
 	@Override
@@ -57,13 +71,25 @@ public class DXRAMMain extends Main {
 	 */
 	protected int mainApplication(final ArgumentList p_arguments)
 	{
-		System.out.println("DXRAM started");
+		boolean runTerminal = p_arguments.getArgument(ARG_DXRAM_TERMINAL).getValue(Boolean.class);
 		
-		while (true) {
-			// Wait a moment
-			try {
-				Thread.sleep(3000);
-			} catch (final InterruptedException e) {}
+		if (runTerminal) {
+			System.out.println("DXRAM Terminal started.");
+			
+			if (!runTerminal()) {
+				return -1;
+			} else {
+				return 0;
+			}
+		} else {
+			System.out.println("DXRAM started");
+			
+			while (true) {
+				// Wait a moment
+				try {
+					Thread.sleep(3000);
+				} catch (final InterruptedException e) {}
+			}
 		}
 	}
 	
@@ -84,5 +110,20 @@ public class DXRAMMain extends Main {
 	protected DXRAM getDXRAM()
 	{
 		return m_dxram;
+	}
+	
+	/**
+	 * Run the built in terminal. The calling thread will be used for this.
+	 * @return True if execution was successful and finished, false if starting the terminal failed.
+	 */
+	protected boolean runTerminal() {
+		TerminalService term = getService(TerminalService.class);
+		if (term == null) {
+			System.out.println("ERROR: Cannot run terminal, missing service.");
+			return false;
+		}
+		
+		term.loop();
+		return true;
 	}
 }
