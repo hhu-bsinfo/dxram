@@ -18,7 +18,6 @@ import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.Tools;
 
-
 /**
  * This class implements the secondary log
  * @author Kevin Beineke 23.10.2014
@@ -32,9 +31,9 @@ public class SecondaryLog extends AbstractLog {
 
 	private static final int VERSIONS_BUFFER_CAPACITY = 65536;
 
-	// Attributes	
+	// Attributes
 	private LoggerComponent m_logger;
-	
+
 	private short m_nodeID;
 	private long m_rangeIDOrFirstLocalID;
 	private long m_secondaryLogSize;
@@ -64,6 +63,8 @@ public class SecondaryLog extends AbstractLog {
 	 * secondary log size
 	 * @param p_logService
 	 *            the log service to enable calling access granting methods in VersionsBuffer
+	 * @param p_logger
+	 *            the logger component
 	 * @param p_reorganizationThread
 	 *            the reorganization thread
 	 * @param p_nodeID
@@ -74,19 +75,33 @@ public class SecondaryLog extends AbstractLog {
 	 *            the unique identification of this backup range
 	 * @param p_storesMigrations
 	 *            whether this secondary log stores migrations or not
+	 * @param p_backupDirectory
+	 *            the backup directory
+	 * @param p_secondaryLogSize
+	 *            the size of a secondary log
+	 * @param p_flashPageSize
+	 *            the flash page size
+	 * @param p_logSegmentSize
+	 *            the segment size
+	 * @param p_reorgUtilizationThreshold
+	 *            the threshold size for a secondary size to trigger reorganization
+	 * @param p_useChecksum
+	 *            the logger component
 	 * @throws IOException
 	 *             if secondary log could not be created
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public SecondaryLog(final LogService p_logService, final LoggerComponent p_logger, final SecondaryLogsReorgThread p_reorganizationThread, final short p_nodeID, final long p_rangeIDOrFirstLocalID,
-			final String p_rangeIdentification, final boolean p_storesMigrations, final String p_backupDirectory, final long p_secondaryLogSize,
-			final int p_flashPageSize, final int p_logSegmentSize, final int p_reorgUtilizationThreshold, final boolean p_useChecksum) throws IOException, InterruptedException {
+	public SecondaryLog(final LogService p_logService, final LoggerComponent p_logger, final SecondaryLogsReorgThread p_reorganizationThread,
+			final short p_nodeID, final long p_rangeIDOrFirstLocalID, final String p_rangeIdentification, final boolean p_storesMigrations,
+			final String p_backupDirectory, final long p_secondaryLogSize, final int p_flashPageSize, final int p_logSegmentSize,
+			final int p_reorgUtilizationThreshold, final boolean p_useChecksum) throws IOException,
+			InterruptedException {
 		super(new File(p_backupDirectory + "N" + p_nodeID + "_" + SECLOG_PREFIX_FILENAME + p_nodeID + "_" + p_rangeIdentification
 				+ SECLOG_POSTFIX_FILENAME), p_secondaryLogSize, SECLOG_HEADER.length);
 		if (p_secondaryLogSize < p_flashPageSize) {
 			throw new IllegalArgumentException("Error: Secondary log too small");
-		}		
+		}
 		m_logger = p_logger;
 		m_secondaryLogSize = p_secondaryLogSize;
 		m_logSegmentSize = p_logSegmentSize;
@@ -280,7 +295,8 @@ public class SecondaryLog extends AbstractLog {
 						}
 					}
 				} else {
-					// Force reorganization thread to flush all versions (even though it is reorganizing this log currently -> high update rate)
+					// Force reorganization thread to flush all versions (even though it is reorganizing this log
+					// currently -> high update rate)
 					signalReorganization();
 					isSignaled = true;
 				}
@@ -655,6 +671,12 @@ public class SecondaryLog extends AbstractLog {
 	 *            the file name of the secondary log
 	 * @param p_path
 	 *            the path of the directory the file is in
+	 * @param p_useChecksum
+	 *            whether checksums are used
+	 * @param p_secondaryLogSize
+	 *            the secondary log size
+	 * @param p_logSegmentSize
+	 *            the segment size
 	 * @throws IOException
 	 *             if the secondary log could not be read
 	 * @throws InterruptedException
@@ -755,6 +777,10 @@ public class SecondaryLog extends AbstractLog {
 	 * Returns all segments of secondary log
 	 * @param p_path
 	 *            the path of the file
+	 * @param p_secondaryLogSize
+	 *            the secondary log size
+	 * @param p_logSegmentSize
+	 *            the segment size
 	 * @throws IOException
 	 *             if the secondary log could not be read
 	 * @throws InterruptedException
@@ -762,7 +788,8 @@ public class SecondaryLog extends AbstractLog {
 	 * @return all data
 	 * @note executed only by reorganization thread
 	 */
-	private static byte[][] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize) throws IOException, InterruptedException {
+	private static byte[][] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize) throws IOException,
+			InterruptedException {
 		byte[][] result = null;
 		int numberOfSegments;
 		RandomAccessFile randomAccessFile;
@@ -941,7 +968,8 @@ public class SecondaryLog extends AbstractLog {
 							// Get current version
 							currentVersion = p_allVersions.get(chunkID);
 							if (currentVersion == null || (short) (currentVersion.getEpoch() + 1) == entryVersion.getEpoch()) {
-								// There is no entry in hashtable or element is more current -> get latest version from cache
+								// There is no entry in hashtable or element is more current -> get latest version from
+								// cache
 								// (Epoch can only be 1 greater because there is no flushing during reorganization)
 								currentVersion = m_versionsBuffer.get(chunkID);
 							}

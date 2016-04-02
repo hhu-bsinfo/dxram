@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup;
 
 import de.hhu.bsinfo.utils.serialization.Exportable;
@@ -23,7 +24,7 @@ public final class LookupRange implements Importable, Exportable {
 		m_primaryPeer = -1;
 		m_range = null;
 	}
-	
+
 	// Constructors
 	/**
 	 * Creates an instance of Locations
@@ -38,27 +39,27 @@ public final class LookupRange implements Importable, Exportable {
 		m_primaryPeer = p_primaryPeer;
 		m_range = p_range;
 	}
-	
+
 	@Override
-	public int importObject(Importer p_importer, int p_size) {
-		
-		long primaryAndBackupPeers = p_importer.readLong();
-		
+	public int importObject(final Importer p_importer, final int p_size) {
+
+		final long primaryAndBackupPeers = p_importer.readLong();
+
 		m_primaryPeer = (short) primaryAndBackupPeers;
 		m_range = new long[] {p_importer.readLong(), p_importer.readLong()};
-		
+
 		return 2 * Long.BYTES + Short.BYTES;
 	}
-	
+
 	@Override
-	public int exportObject(Exporter p_exporter, int p_size) {
+	public int exportObject(final Exporter p_exporter, final int p_size) {
 		p_exporter.writeShort(getPrimaryPeer());
 		p_exporter.writeLong(getStartID());
 		p_exporter.writeLong(getEndID());
-		
+
 		return 2 * Long.BYTES + Short.BYTES;
 	}
-	
+
 	@Override
 	public int sizeofObject() {
 		return 2 * Long.BYTES + Short.BYTES;

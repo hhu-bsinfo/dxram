@@ -93,6 +93,8 @@ public final class LogCatalog {
 	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the RangeID for migrations or -1
+	 * @param p_logger
+	 *            the logger component
 	 * @return the secondary log
 	 */
 	public SecondaryLog getLog(final long p_chunkID, final byte p_rangeID, final LoggerComponent p_logger) {
@@ -118,6 +120,8 @@ public final class LogCatalog {
 	 *            the ChunkID
 	 * @param p_rangeID
 	 *            the RangeID for migrations or -1
+	 * @param p_logger
+	 *            the logger component
 	 * @return the secondary log buffer
 	 */
 	public SecondaryLogBuffer getBuffer(final long p_chunkID, final byte p_rangeID, final LoggerComponent p_logger) {
@@ -233,12 +237,19 @@ public final class LogCatalog {
 	 *            the first ChunkID of the range
 	 * @param p_log
 	 *            the new secondary log to link
+	 * @param p_logger
+	 *            the logger component
+	 * @param p_flashPageSize
+	 *            the size of a flash page
+	 * @param p_logSegmentSize
+	 *            the segment size
 	 * @throws IOException
 	 *             if no new secondary log could be created
 	 * @throws InterruptedException
 	 *             if no new secondary log could be created
 	 */
-	public void insertRange(final LoggerComponent p_logger, final long p_firstChunkIDOrRangeID, final SecondaryLog p_log, final int p_flashPageSize, final int p_logSegmentSize) throws IOException, InterruptedException {
+	public void insertRange(final LoggerComponent p_logger, final long p_firstChunkIDOrRangeID, final SecondaryLog p_log, final int p_flashPageSize,
+			final int p_logSegmentSize) throws IOException, InterruptedException {
 		SecondaryLogBuffer buffer;
 		int rangeID;
 

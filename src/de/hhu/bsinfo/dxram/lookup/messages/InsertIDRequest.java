@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -75,17 +76,25 @@ public class InsertIDRequest extends AbstractRequest {
 
 	// Methods
 	@Override
-	protected final void writePayload(final ByteBuffer p_buffer) {		
+	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_id);
 		p_buffer.putLong(m_chunkID);
-		p_buffer.put((byte) (m_isBackup ? 1 : 0));
+		if (m_isBackup) {
+			p_buffer.put((byte) 1);
+		} else {
+			p_buffer.put((byte) 0);
+		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_id = p_buffer.getInt();
 		m_chunkID = p_buffer.getLong();
-		m_isBackup = p_buffer.get() != 0 ? true : false;
+
+		final byte b = p_buffer.get();
+		if (b == 1) {
+			m_isBackup = true;
+		}
 	}
 
 	@Override

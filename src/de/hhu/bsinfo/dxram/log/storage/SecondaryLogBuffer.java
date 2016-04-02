@@ -7,7 +7,6 @@ import java.util.Arrays;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
-
 /**
  * This class implements the secondary log buffer
  * @author Kevin Beineke
@@ -17,7 +16,7 @@ public final class SecondaryLogBuffer {
 
 	// Attributes
 	private LoggerComponent m_logger;
-	
+
 	private byte[] m_buffer;
 	private int m_bytesInBuffer;
 
@@ -28,8 +27,14 @@ public final class SecondaryLogBuffer {
 	// Constructors
 	/**
 	 * Creates an instance of SecondaryLogBuffer
+	 * @param p_logger
+	 *            the logger component
 	 * @param p_secondaryLog
 	 *            Instance of the corresponding secondary log. Used to write directly to secondary
+	 * @param p_flashPageSize
+	 *            the flash page size
+	 * @param p_logSegmentSize
+	 *            the segment size
 	 */
 	public SecondaryLogBuffer(final LoggerComponent p_logger, final SecondaryLog p_secondaryLog, final int p_flashPageSize, final int p_logSegmentSize) {
 		m_logger = p_logger;

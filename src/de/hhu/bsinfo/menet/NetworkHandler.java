@@ -22,7 +22,7 @@ public final class NetworkHandler implements DataReceiver {
 
 	// Attributes
 	public static LoggerInterface ms_logger = new LoggerNull();
-	
+
 	private final TaskExecutor m_executor;
 	private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
 
@@ -32,20 +32,24 @@ public final class NetworkHandler implements DataReceiver {
 	private MessageDirectory m_messageDirectory;
 	private ConnectionManager m_manager;
 	private ReentrantLock m_receiversLock;
-	
-	private NodeMap m_nodeMap = null;
-	
+
+	private NodeMap m_nodeMap;
+
 	private int m_numMessageHandlerThreads;
-	
+
 	// Constructors
 	/**
 	 * Creates an instance of NetworkHandler
+	 * @param p_numMessageCreatorThreads
+	 *            the number of message creatorn threads
+	 * @param p_numMessageHandlerThreads
+	 *            the number of default message handler (+ one exclusive message handler)
 	 */
 	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads) {
 		final byte networkType;
-		
+
 		m_numMessageHandlerThreads = p_numMessageHandlerThreads;
-		
+
 		m_executor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
 		m_receivers = new HashMap<>();
 		m_receiversLock = new ReentrantLock(false);
@@ -57,44 +61,77 @@ public final class NetworkHandler implements DataReceiver {
 		m_exclusiveMessageHandler.start();
 
 		m_messageDirectory = new MessageDirectory();
-		
+
 		// Network Messages
 		networkType = FlowControlMessage.TYPE;
 		m_messageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class);
 	}
-	
+
+	/**
+	 * Sets the LoggerComponent
+	 * @param p_logger
+	 *            the LoggerComponent
+	 */
 	public void setLogger(final LoggerInterface p_logger) {
 		ms_logger = p_logger;
-		
+
 	}
-	
-	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class)
-	{
+
+	/**
+	 * Registers a message type
+	 * @param p_type
+	 *            the unique type
+	 * @param p_subtype
+	 *            the unique subtype
+	 * @param p_class
+	 *            the calling class
+	 */
+	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		m_messageDirectory.register(p_type, p_subtype, p_class);
 	}
 
 	// Methods
+	/**
+	 * Initializes the network handler
+	 * @param p_ownNodeID
+	 *            the own NodeID
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_maxOutstandingBytes
+	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_numberOfBuffers
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
+	 */
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes, final int p_numberOfBuffers) {
 		ms_logger.trace(getClass().getSimpleName(), "Entering initialize");
-		
+
 		m_nodeMap = p_nodeMap;
-		
-		AbstractConnectionCreator connectionCreator = new NIOConnectionCreator(m_executor, m_messageDirectory, m_nodeMap, p_maxOutstandingBytes, p_numberOfBuffers);
+
+		final AbstractConnectionCreator connectionCreator =
+				new NIOConnectionCreator(m_executor, m_messageDirectory, m_nodeMap, p_maxOutstandingBytes, p_numberOfBuffers);
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
-
 
 		ms_logger.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
 
+	/**
+	 * Activates the connection manager
+	 */
 	public void activateConnectionManager() {
 		m_manager.activate();
 	}
 
+	/**
+	 * Deactivates the connection manager
+	 */
 	public void deactivateConnectionManager() {
 		m_manager.deactivate();
 	}
 
+	/**
+	 * Closes the network handler
+	 */
 	public void close() {
 		ms_logger.trace(getClass().getSimpleName(), "Entering close");
 
@@ -105,6 +142,13 @@ public final class NetworkHandler implements DataReceiver {
 		ms_logger.trace(getClass().getSimpleName(), "Exiting close");
 	}
 
+	/**
+	 * Registers a message receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
+	 */
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
 
@@ -122,6 +166,13 @@ public final class NetworkHandler implements DataReceiver {
 		}
 	}
 
+	/**
+	 * Unregisters a message receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
+	 */
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
 
@@ -137,11 +188,17 @@ public final class NetworkHandler implements DataReceiver {
 		}
 	}
 
+	/**
+	 * Sends a message
+	 * @param p_message
+	 *            the message to send
+	 * @return the status
+	 */
 	public int sendMessage(final AbstractMessage p_message) {
 		AbstractConnection connection;
 
 		p_message.beforeSend();
-		
+
 		ms_logger.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
@@ -178,11 +235,11 @@ public final class NetworkHandler implements DataReceiver {
 				}
 			}
 		}
-		
+
 		p_message.afterSend();
 
 		ms_logger.trace(getClass().getSimpleName(), "Exiting sendMessage");
-		
+
 		return 0;
 	}
 
@@ -194,7 +251,7 @@ public final class NetworkHandler implements DataReceiver {
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
 		ms_logger.trace(getClass().getSimpleName(), "NewMessage: " + p_message);
-		
+
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);
 		} else {
@@ -202,7 +259,8 @@ public final class NetworkHandler implements DataReceiver {
 				// Limit number of open tasks
 				while (m_defaultMessageHandler.getQueueSize() > m_numMessageHandlerThreads * 2) {
 					if (m_manager.atLeastOneConnectionIsCongested()) {
-						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more than limit) messages
+						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
+						// than limit) messages
 						// to task queue until flow control message arrives
 						break;
 					}
@@ -214,7 +272,8 @@ public final class NetworkHandler implements DataReceiver {
 				// Limit number of open tasks
 				while (m_exclusiveMessageHandler.getQueueSize() > 4) {
 					if (m_manager.atLeastOneConnectionIsCongested()) {
-						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more than limit) messages
+						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
+						// than limit) messages
 						// to task queue until flow control message arrives
 						break;
 					}
@@ -241,6 +300,8 @@ public final class NetworkHandler implements DataReceiver {
 		// Constructors
 		/**
 		 * Creates an instance of MessageHandler
+		 * @param p_numMessageHandlerThreads
+		 *            the number of default message handler
 		 */
 		DefaultMessageHandler(final int p_numMessageHandlerThreads) {
 			m_defaultMessages = new ArrayDeque<>();
@@ -290,7 +351,7 @@ public final class NetworkHandler implements DataReceiver {
 			}
 		}
 	}
-	
+
 	/**
 	 * Distributes incoming messages
 	 * @author Marc Ewert 17.09.2014
@@ -377,7 +438,7 @@ public final class NetworkHandler implements DataReceiver {
 			}
 		}
 	}
-	
+
 	/**
 	 * Methods for reacting on incoming Messages
 	 * @author Florian Klein

@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Kevin Beineke
  *         03.06.2015
  */
-public final class MigratedBackupsTree implements Serializable {
+public final class MigrationBackupTree implements Serializable {
 
 	// Constants
 	private static final long serialVersionUID = 7565597467331239020L;
@@ -38,7 +38,7 @@ public final class MigratedBackupsTree implements Serializable {
 	 * @param p_backupRangeSize
 	 *            the backup range size
 	 */
-	public MigratedBackupsTree(final short p_order, final long p_backupRangeSize) {
+	public MigrationBackupTree(final short p_order, final long p_backupRangeSize) {
 		// too small order for BTree
 		assert 1 < p_order;
 
@@ -124,7 +124,7 @@ public final class MigratedBackupsTree implements Serializable {
 	public boolean putRange(final long p_startID, final long p_endID, final byte p_rangeID, final long p_rangeSize) {
 		// end larger than start
 		assert p_startID <= p_endID;
-			
+
 		Node startNode;
 
 		if (p_startID == p_endID) {
@@ -155,7 +155,7 @@ public final class MigratedBackupsTree implements Serializable {
 	 */
 	public byte getBackupRange(final long p_chunkID) {
 		assert m_root != null;
-		
+
 		byte ret;
 
 		m_lock.lock();
@@ -1221,16 +1221,16 @@ public final class MigratedBackupsTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_chunkID) {
-				low = mid + 1;
-			} else if (midVal > p_chunkID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_chunkID) {
+					low = mid + 1;
+				} else if (midVal > p_chunkID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1420,16 +1420,16 @@ public final class MigratedBackupsTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getChunkID(0);
+				midVal = m_children[mid].getChunkID(0);
 
-			if (midVal < chunkID) {
-				low = mid + 1;
-			} else if (midVal > chunkID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < chunkID) {
+					low = mid + 1;
+				} else if (midVal > chunkID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

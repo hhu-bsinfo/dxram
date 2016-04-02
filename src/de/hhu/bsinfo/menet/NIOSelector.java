@@ -27,7 +27,7 @@ class NIOSelector extends Thread {
 
 	private final Queue<ChangeOperationsRequest> m_changeRequests;
 	private ReentrantLock m_changeLock;
-	
+
 	private boolean m_running;
 
 	// Constructors
@@ -35,6 +35,8 @@ class NIOSelector extends Thread {
 	 * Creates an instance of NIOSelector
 	 * @param p_connectionCreator
 	 *            the NIOConnectionCreator
+	 * @param p_port
+	 *            the port
 	 */
 	protected NIOSelector(final NIOConnectionCreator p_connectionCreator, final int p_port) {
 		m_serverChannel = null;
@@ -181,7 +183,7 @@ class NIOSelector extends Thread {
 					}
 				} else if (p_key.isWritable()) {
 					try {
-						complete = NIOInterface.write(connection); 
+						complete = NIOInterface.write(connection);
 					} catch (final IOException e) {
 						NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not write to channel (" + connection.getDestination() + ")!");
 						complete = false;

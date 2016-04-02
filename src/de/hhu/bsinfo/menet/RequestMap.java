@@ -57,16 +57,22 @@ public final class RequestMap {
 
 		return ret;
 	}
-	
+
+	/**
+	 * Returns the corresponding request
+	 * @param p_resonse
+	 *            the response
+	 * @return the request
+	 */
 	static AbstractRequest getRequest(final AbstractResponse p_resonse) {
 		AbstractRequest req = null;
-		
+
 		m_lock.lock();
 
 		req = m_pendingRequests.get(p_resonse.getRequestID());
 
 		m_lock.unlock();
-		
+
 		return req;
 	}
 

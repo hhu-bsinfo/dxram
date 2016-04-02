@@ -1,5 +1,10 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+/**
+ * Type and list of subtypes for all lookup messages
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
+ */
 public class LookupMessages {
 	// Constants
 	public static final byte TYPE = 5;

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.backup;
 
 import java.util.ArrayList;
@@ -14,11 +15,15 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
+/**
+ * Component for managing backup ranges.
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
+ */
 public class BackupComponent extends DXRAMComponent {
 
-	private boolean m_backupActive; 
+	private boolean m_backupActive;
 	private String m_backupDirectory;
-	private long m_backupRangeSize; 
+	private long m_backupRangeSize;
 	private long m_rangeSize;
 	private boolean m_firstRangeInitialized;
 	private short m_replicationFactor;
@@ -29,56 +34,82 @@ public class BackupComponent extends DXRAMComponent {
 	private BackupRange m_currentMigrationBackupRange;
 	private ArrayList<BackupRange> m_migrationBackupRanges;
 	// ChunkID -> migration backup range
-	private MigratedBackupsTree m_migrationsTree;
+	private MigrationBackupTree m_migrationsTree;
 
 	private BootComponent m_boot;
-	private LoggerComponent m_logger = null;
+	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private LogComponent m_log;
-	
 
-	public BackupComponent(int p_priorityInit, int p_priorityShutdown) {
+	/**
+	 * Creates the backup component
+	 * @param p_priorityInit
+	 *            the initialization priority
+	 * @param p_priorityShutdown
+	 *            the shutdown priority
+	 */
+	public BackupComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
-	
+
+	/**
+	 * Returns whether backup is enabled or not
+	 * @return whether backup is enabled or not
+	 */
 	public boolean isActive() {
 		return m_backupActive;
 	}
-	
+
+	/**
+	 * Return the path to all logs
+	 * @return the backup directory
+	 */
 	public String getBackupDirectory() {
 		return m_backupDirectory;
 	}
-	
+
 	/**
 	 * Registers peer in superpeer overlay
 	 */
 	public void registerPeer() {
 		m_lookup.initRange(0, new LookupRangeWithBackupPeers(m_boot.getNodeID(), null, null));
 	}
-	
-	public boolean fitsInCurrentMigrationBackupRange(final long p_size, final int p_logEntrySize) {
-		return m_migrationsTree.fits(p_size + p_logEntrySize) && (m_migrationsTree.size() != 0 || p_size > 0);
-	}
-	
-	public void initNewMigrationBackupRange() {
-		determineBackupPeers(-1);
-		m_migrationsTree.initNewBackupRange();
 
-		m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), new LookupRangeWithBackupPeers(m_boot.getNodeID(),
-				m_currentMigrationBackupRange.getBackupPeers(), null));
-		m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), m_currentMigrationBackupRange.getBackupPeers());
-	}
-	
-	public short[] getCurrentMigrationBackupPeers() {
-		return m_currentMigrationBackupRange.getBackupPeers();
-	}
-	
-	public byte addMigratedChunk(final Chunk p_chunk) {
-		byte rangeID = (byte) m_currentMigrationBackupRange.getRangeID();
-		
-		m_migrationsTree.putObject(p_chunk.getID(), rangeID, p_chunk.getDataSize());
-		
-		return rangeID;
+	/**
+	 * Initializes the backup range for current locations
+	 * and determines new backup peers if necessary
+	 * @param p_chunkID
+	 *            the current ChunkID
+	 * @param p_size
+	 *            the size of the new created chunk
+	 */
+	public void initBackupRange(final long p_chunkID, final int p_size) {
+		int size;
+		final long localID = ChunkID.getLocalID(p_chunkID);
+		final short nodeID = m_boot.getNodeID();
+
+		if (m_backupActive) {
+			size = p_size + m_log.getAproxHeaderSize(nodeID, localID, p_size);
+			if (!m_firstRangeInitialized && localID == 1) {
+				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
+				// This is the first put and p_localID is not reused
+				determineBackupPeers(0);
+				m_lookup.initRange((long) nodeID << 48, new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_log.initBackupRange((long) nodeID << 48, m_currentBackupRange.getBackupPeers());
+				m_rangeSize = size;
+				m_firstRangeInitialized = true;
+			} else if (m_rangeSize + size > m_backupRangeSize) {
+				determineBackupPeers(localID);
+				m_lookup.initRange(((long) nodeID << 48) + localID, new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_log.initBackupRange(((long) nodeID << 48) + localID, m_currentBackupRange.getBackupPeers());
+				m_rangeSize = size;
+			} else {
+				m_rangeSize += size;
+			}
+		} else if (!m_firstRangeInitialized && localID == 1) {
+			m_lookup.initRange(((long) nodeID << 48) + 0xFFFFFFFFFFFFL, new LookupRangeWithBackupPeers(nodeID, new short[] {-1, -1, -1}, null));
+			m_firstRangeInitialized = true;
+		}
 	}
 
 	/**
@@ -103,7 +134,7 @@ public class BackupComponent extends DXRAMComponent {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Returns the corresponding backup peers
 	 * @param p_chunkID
@@ -126,47 +157,55 @@ public class BackupComponent extends DXRAMComponent {
 
 		return ret;
 	}
-	
+
 	/**
-	 * Initializes the backup range for current locations
-	 * and determines new backup peers if necessary
-	 * @param p_chunkID
-	 *            the current ChunkID
-	 * @param p_size
-	 *            the size of the new created chunk
+	 * Initializes a new migration backup range
 	 */
-	public void initBackupRange(final long p_chunkID, final int p_size) {
-		int size;
-		long localID = ChunkID.getLocalID(p_chunkID);
-		short nodeID = m_boot.getNodeID();
-		
-		if (m_backupActive) {
-			size = p_size + m_log.getAproxHeaderSize(nodeID, localID, p_size);
-			if (!m_firstRangeInitialized && localID == 1) {
-				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
-				// This is the first put and p_localID is not reused
-				determineBackupPeers(0);
-				m_lookup.initRange((long) nodeID << 48, new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange((long) nodeID << 48, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = size;
-				m_firstRangeInitialized = true;
-			} else if (m_rangeSize + size > m_backupRangeSize) {
-				determineBackupPeers(localID);
-				m_lookup.initRange(((long) nodeID << 48) + localID, new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange(((long) nodeID << 48) + localID, m_currentBackupRange.getBackupPeers());
-				m_rangeSize = size;
-			} else {
-				m_rangeSize += size;
-			}
-		} else if (!m_firstRangeInitialized && localID == 1) {
-			short nodeId = m_boot.getNodeID();
-			m_lookup.initRange(((long) nodeId << 48) + 0xFFFFFFFFFFFFL, new LookupRangeWithBackupPeers(nodeId, new short[] {-1, -1, -1}, null));
-			m_firstRangeInitialized = true;
-		}
+	public void initNewMigrationBackupRange() {
+		determineBackupPeers(-1);
+		m_migrationsTree.initNewBackupRange();
+
+		m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), new LookupRangeWithBackupPeers(m_boot.getNodeID(),
+				m_currentMigrationBackupRange.getBackupPeers(), null));
+		m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), m_currentMigrationBackupRange.getBackupPeers());
+	}
+
+	/**
+	 * Returns the backup peers for current migration backup range
+	 * @return the backup peers for current migration backup range
+	 */
+	public short[] getCurrentMigrationBackupPeers() {
+		return m_currentMigrationBackupRange.getBackupPeers();
+	}
+
+	/**
+	 * Puts a migrated chunk into the migration tree
+	 * @param p_chunk
+	 *            the migrated chunk
+	 * @return the RangeID of the migration backup range the chunk was put in
+	 */
+	public byte addMigratedChunk(final Chunk p_chunk) {
+		final byte rangeID = (byte) m_currentMigrationBackupRange.getRangeID();
+
+		m_migrationsTree.putObject(p_chunk.getID(), rangeID, p_chunk.getDataSize());
+
+		return rangeID;
+	}
+
+	/**
+	 * Checks if given log entry fits in current migration backup range
+	 * @param p_size
+	 *            the range size
+	 * @param p_logEntrySize
+	 *            the log entry size
+	 * @return whether the entry and range fits in backup range
+	 */
+	public boolean fitsInCurrentMigrationBackupRange(final long p_size, final int p_logEntrySize) {
+		return m_migrationsTree.fits(p_size + p_logEntrySize) && (m_migrationsTree.size() != 0 || p_size > 0);
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(Settings p_settings) {
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_ACTIVE);
 		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_DIRECTORY);
 		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_RANGE_SIZE);
@@ -174,7 +213,7 @@ public class BackupComponent extends DXRAMComponent {
 	}
 
 	@Override
-	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, Settings p_settings) {
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 
 		m_backupActive = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_ACTIVE);
 		m_backupDirectory = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_DIRECTORY);
@@ -184,26 +223,25 @@ public class BackupComponent extends DXRAMComponent {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_lookup = getDependentComponent(LookupComponent.class);
 		m_log = getDependentComponent(LogComponent.class);
-		
+
 		if (m_backupActive && m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_ownBackupRanges = new ArrayList<BackupRange>();
 			m_migrationBackupRanges = new ArrayList<BackupRange>();
-			m_migrationsTree = new MigratedBackupsTree((short) 10, m_backupRangeSize);
+			m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize);
 			m_currentBackupRange = null;
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
 		}
 		m_firstRangeInitialized = false;
-		
+
 		return false;
 	}
 
 	@Override
 	protected boolean shutdownComponent() {
-		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	/**
 	 * Determines backup peers
 	 * @param p_localID
@@ -216,7 +254,7 @@ public class BackupComponent extends DXRAMComponent {
 		short[] oldBackupPeers = null;
 		short[] newBackupPeers = null;
 		short numberOfPeers = 0;
-		
+
 		List<Short> peers = null;
 		// Get all other online peers
 		peers = m_boot.getOnlinePeerNodeIDs();
@@ -275,7 +313,7 @@ public class BackupComponent extends DXRAMComponent {
 							}
 						}
 					}
-					m_logger.info(BackupComponent.class, ((i + 1) + ". backup peer determined for new range " + p_localID + ": " + peers.get(index)));
+					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
 				}
@@ -304,7 +342,7 @@ public class BackupComponent extends DXRAMComponent {
 						}
 					}
 				}
-				m_logger.info(BackupComponent.class, ((i + 1) + ". backup peer determined for new range " + p_localID + ": " + peers.get(index)));
+				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
 				newBackupPeers[i] = peers.get(index);
 				ready = false;
 			}
@@ -323,6 +361,5 @@ public class BackupComponent extends DXRAMComponent {
 			}
 		}
 	}
-	
 
 }

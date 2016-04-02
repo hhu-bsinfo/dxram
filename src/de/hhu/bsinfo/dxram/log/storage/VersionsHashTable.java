@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
-
 /**
  * HashTable to store versions (Linear probing)
  * @author Kevin Beineke
@@ -15,7 +14,7 @@ public class VersionsHashTable {
 
 	// Attributes
 	private LoggerComponent m_logger;
-	
+
 	private int[] m_table;
 	private int m_count;
 	private int m_elementCapacity;
@@ -25,10 +24,12 @@ public class VersionsHashTable {
 	 * Creates an instance of VersionsHashTable
 	 * @param p_initialElementCapacity
 	 *            the initial capacity of VersionsHashTable
+	 * @param p_logger
+	 *            the logger component
 	 */
 	public VersionsHashTable(final int p_initialElementCapacity, final LoggerComponent p_logger) {
 		super();
-		
+
 		m_logger = p_logger;
 
 		m_count = 0;

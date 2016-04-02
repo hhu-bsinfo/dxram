@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup;
 
 import de.hhu.bsinfo.utils.serialization.Exportable;
@@ -25,7 +26,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 		m_backupPeers = null;
 		m_range = null;
 	}
-	
+
 	// Constructors
 	/**
 	 * Creates an instance of Locations
@@ -64,29 +65,29 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 		this((short) p_primaryAndBackupPeers, new short[] {(short) ((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
 				(short) ((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32), (short) ((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
 	}
-	
+
 	@Override
-	public int importObject(Importer p_importer, int p_size) {
-		
-		long primaryAndBackupPeers = p_importer.readLong();
-		
+	public int importObject(final Importer p_importer, final int p_size) {
+
+		final long primaryAndBackupPeers = p_importer.readLong();
+
 		m_primaryPeer = (short) primaryAndBackupPeers;
 		m_backupPeers = new short[] {(short) ((primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
 				(short) ((primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32), (short) ((primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)};
 		m_range = new long[] {p_importer.readLong(), p_importer.readLong()};
-		
+
 		return 3 * Long.BYTES;
 	}
-	
+
 	@Override
-	public int exportObject(Exporter p_exporter, int p_size) {
+	public int exportObject(final Exporter p_exporter, final int p_size) {
 		p_exporter.writeLong(convertToLong());
 		p_exporter.writeLong(getStartID());
 		p_exporter.writeLong(getEndID());
-		
+
 		return 3 * Long.BYTES;
 	}
-	
+
 	@Override
 	public int sizeofObject() {
 		return 3 * Long.BYTES;
@@ -124,7 +125,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 			if (m_backupPeers.length == 3) {
 				ret =
 						((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-								+ (m_backupPeers[0] & 0x000000000000FFFFL);
+						+ (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else if (m_backupPeers.length == 2) {
 				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else {
@@ -189,7 +190,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 			if (m_backupPeers.length == 3) {
 				ret =
 						((m_backupPeers[2] & 0x000000000000FFFFL) << 48) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
-								+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+						+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 			} else if (m_backupPeers.length == 2) {
 				ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 			} else {
@@ -214,10 +215,14 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 				if (m_backupPeers[0] == -1) {
 					ret = "0x" + Integer.toHexString(m_primaryPeer) + ", backup peers unknown (ask 0x" + Integer.toHexString(m_primaryPeer) + ")";
 				} else {
-					ret = "0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x" + Integer.toHexString(m_backupPeers[1]) + ", 0x" + Integer.toHexString(m_backupPeers[2]) + "]";
+					ret =
+							"0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x"
+									+ Integer.toHexString(m_backupPeers[1]) + ", 0x" + Integer.toHexString(m_backupPeers[2]) + "]";
 				}
 			} else if (m_backupPeers.length == 2) {
-				ret = "0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x" + Integer.toHexString(m_backupPeers[1]) + "]";
+				ret =
+						"0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x"
+								+ Integer.toHexString(m_backupPeers[1]) + "]";
 			} else {
 				ret = "0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + "]";
 			}

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -67,7 +68,11 @@ public class RemoveRequest extends AbstractRequest {
 		p_buffer.putInt(m_chunkIDs.length);
 		p_buffer.asLongBuffer().put(m_chunkIDs);
 		p_buffer.position(p_buffer.position() + m_chunkIDs.length * Long.BYTES);
-		p_buffer.put((byte) (m_isBackup ? 1 : 0));
+		if (m_isBackup) {
+			p_buffer.put((byte) 1);
+		} else {
+			p_buffer.put((byte) 0);
+		}
 	}
 
 	@Override
@@ -75,7 +80,11 @@ public class RemoveRequest extends AbstractRequest {
 		m_chunkIDs = new long[p_buffer.getInt()];
 		p_buffer.asLongBuffer().get(m_chunkIDs);
 		p_buffer.position(p_buffer.position() + m_chunkIDs.length * Long.BYTES);
-		m_isBackup = p_buffer.get() != 0 ? true : false;			
+
+		final byte b = p_buffer.get();
+		if (b == 1) {
+			m_isBackup = true;
+		}
 	}
 
 	@Override

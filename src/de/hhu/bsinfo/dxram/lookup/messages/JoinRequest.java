@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -65,13 +66,22 @@ public class JoinRequest extends AbstractRequest {
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putShort(m_newNode);
-		p_buffer.put((byte) (m_nodeIsSuperpeer ? 1 : 0));
+
+		if (m_nodeIsSuperpeer) {
+			p_buffer.put((byte) 1);
+		} else {
+			p_buffer.put((byte) 0);
+		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_newNode = p_buffer.getShort();
-		m_nodeIsSuperpeer = p_buffer.get() == 0 ? false : true;
+
+		final byte b = p_buffer.get();
+		if (b == 1) {
+			m_nodeIsSuperpeer = true;
+		}
 	}
 
 	@Override

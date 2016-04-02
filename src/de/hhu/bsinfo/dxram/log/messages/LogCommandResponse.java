@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
@@ -48,18 +49,18 @@ public class LogCommandResponse extends AbstractResponse {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		byte[] bytes = m_answer.getBytes();
-		
+		final byte[] bytes = m_answer.getBytes();
+
 		p_buffer.putInt(bytes.length);
 		p_buffer.put(bytes);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		int size = p_buffer.getInt();
-		byte[] bytes = new byte[size];
+		final int size = p_buffer.getInt();
+		final byte[] bytes = new byte[size];
 		p_buffer.get(bytes);
-		
+
 		m_answer = new String(bytes);
 	}
 

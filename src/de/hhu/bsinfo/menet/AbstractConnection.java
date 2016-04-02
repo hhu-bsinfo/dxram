@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Marc Ewert 14.10.2014
  */
 public abstract class AbstractConnection {
-	
+
 	// Attributes
 	private final DataHandler m_dataHandler;
 	private final ByteStreamInterpreter m_streamInterpreter;
@@ -41,6 +41,12 @@ public abstract class AbstractConnection {
 	 * Creates an instance of AbstractConnection
 	 * @param p_destination
 	 *            the destination
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_taskExecutor
+	 *            the task executer
+	 * @param p_messageDirectory
+	 *            the message directory
 	 */
 	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory) {
 		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null);
@@ -52,8 +58,15 @@ public abstract class AbstractConnection {
 	 *            the destination
 	 * @param p_listener
 	 *            the ConnectionListener
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_taskExecutor
+	 *            the task executer
+	 * @param p_messageDirectory
+	 *            the message directory
 	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final DataReceiver p_listener) {
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+			final DataReceiver p_listener) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_dataHandler = new DataHandler();
@@ -63,7 +76,7 @@ public abstract class AbstractConnection {
 		m_nodeMap = p_nodeMap;
 		m_taskExecutor = p_taskExecutor;
 		m_messageDirectory = p_messageDirectory;
-		
+
 		m_connected = false;
 
 		m_listener = p_listener;
@@ -244,6 +257,7 @@ public abstract class AbstractConnection {
 	protected final void newData() {
 		m_taskExecutor.execute(m_destination, m_dataHandler);
 	}
+
 	/**
 	 * Confirm received bytes for the other node
 	 */
@@ -367,18 +381,18 @@ public abstract class AbstractConnection {
 				message = AbstractMessage.createMessageHeader(p_buffer, m_messageDirectory);
 				// hack:
 				// to avoid copying data multiple times, some responses use the same objects provided
-				// with the request to directly write the data to them instead of creating a temporary 
+				// with the request to directly write the data to them instead of creating a temporary
 				// object in the response, de-serializing the data and then copying from the temporary object
 				// to the object that should receive the data in the first place. (example DXRAM: get request/response)
-				// This is only possible, if we have a reference to the original request within the response 
+				// This is only possible, if we have a reference to the original request within the response
 				// while reading from the network byte buffer. But in this low level stage, we (usually) don't have
-				// access to requests/responses. So we exploit the request map to get our corresponding request 
+				// access to requests/responses. So we exploit the request map to get our corresponding request
 				// before de-serializing the network buffer for every request.
 				if (message instanceof AbstractResponse) {
-					AbstractResponse resp = (AbstractResponse) message;
+					final AbstractResponse resp = (AbstractResponse) message;
 					resp.m_correspondingRequest = RequestMap.getRequest(resp);
 				}
-				
+
 				message.readPayload(p_buffer);
 			} catch (final Exception e) {
 				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to create message", e);
@@ -496,7 +510,7 @@ public abstract class AbstractConnection {
 			final int payloadSize = m_headerBytes.getInt(m_headerBytes.position() - AbstractMessage.BYTES_PAYLOAD_SIZE);
 
 			// Create message buffer and copy header into (without payload size)
-			m_messageBytes = ByteBuffer.allocate((AbstractMessage.HEADER_SIZE - AbstractMessage.BYTES_PAYLOAD_SIZE) + payloadSize);
+			m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.BYTES_PAYLOAD_SIZE + payloadSize);
 			m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.BYTES_PAYLOAD_SIZE);
 
 			if (payloadSize == 0) {

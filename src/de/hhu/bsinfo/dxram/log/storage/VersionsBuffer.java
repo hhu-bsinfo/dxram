@@ -11,7 +11,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
-
 /**
  * HashTable to store versions (Linear probing)
  * @author Kevin Beineke
@@ -25,7 +24,7 @@ public class VersionsBuffer {
 	// Attributes
 	private LogService m_logService;
 	private LoggerComponent m_logger;
-	
+
 	private int[] m_table;
 	private int m_count;
 	private int m_intCapacity;
@@ -40,12 +39,13 @@ public class VersionsBuffer {
 	private ReentrantLock m_accessLock;
 	private ReentrantLock m_flushLock;
 
-
 	// Constructors
 	/**
 	 * Creates an instance of VersionsHashTable
 	 * @param p_logService
 	 *            the log service to enable calling access granting methods
+	 * @param p_logger
+	 *            the logger component
 	 * @param p_initialElementCapacity
 	 *            the initial capacity of VersionsHashTable
 	 * @param p_loadFactor
@@ -53,7 +53,8 @@ public class VersionsBuffer {
 	 * @param p_path
 	 *            the versions file's path
 	 */
-	protected VersionsBuffer(final LogService p_logService, final LoggerComponent p_logger, final int p_initialElementCapacity, final float p_loadFactor, final String p_path) {
+	protected VersionsBuffer(final LogService p_logService, final LoggerComponent p_logger, final int p_initialElementCapacity, final float p_loadFactor,
+			final String p_path) {
 		super();
 
 		m_logService = p_logService;
@@ -479,12 +480,12 @@ public class VersionsBuffer {
 
 		h1 ^= 8;
 		h1 ^= h1 >>> 16;
-		h1 *= 0x85ebca6b;
-		h1 ^= h1 >>> 13;
-		h1 *= 0xc2b2ae35;
-		h1 ^= h1 >>> 16;
+				h1 *= 0x85ebca6b;
+				h1 ^= h1 >>> 13;
+					h1 *= 0xc2b2ae35;
+					h1 ^= h1 >>> 16;
 
-		return h1;
+					return h1;
 	}
 
 }

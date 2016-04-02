@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.migration;
 
 import java.util.ArrayList;
@@ -28,42 +29,20 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  */
 public class MigrationService extends DXRAMService implements MessageReceiver {
 
-	private BootComponent m_boot = null;
-	private BackupComponent m_backup = null;
-	private ChunkComponent m_chunk = null;
-	private LookupComponent m_lookup = null;
-	private MemoryManagerComponent m_memoryManager = null;
-	private NetworkComponent m_network = null;
-	
-	private Lock m_migrationLock;
-	
-	@Override
-	protected void registerDefaultSettingsService(Settings p_settings) {
-	}
+	private BootComponent m_boot;
+	private BackupComponent m_backup;
+	private ChunkComponent m_chunk;
+	private LookupComponent m_lookup;
+	private MemoryManagerComponent m_memoryManager;
+	private NetworkComponent m_network;
 
-	@Override
-	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			Settings p_settings) {
-		m_boot = getComponent(BootComponent.class);
-		m_backup = getComponent(BackupComponent.class);
-		m_chunk = getComponent(ChunkComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		
-		m_migrationLock = new ReentrantLock(false);
-		
-		registerNetworkMessageListener();
-		
-		return true;
-	}
+	private Lock m_migrationLock;
 
 	@Override
 	protected boolean shutdownService() {
 		return true;
 	}
-	
-	
+
 	/**
 	 * Migrates the corresponding Chunk for the giving ID to another Node
 	 * @param p_chunkID
@@ -98,11 +77,11 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 
 					// Update superpeers
 					m_lookup.migrate(p_chunkID, p_target);
-					
+
 					// TODO:
 					// Remove all locks
-					//m_lock.unlockAll(p_chunkID);
-					
+					// m_lock.unlockAll(p_chunkID);
+
 					// Update local memory management
 					m_memoryManager.remove(p_chunkID);
 					if (m_backup.isActive()) {
@@ -210,8 +189,8 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 					while (iter <= p_endChunkID) {
 						// TODO:
 						// Remove all locks
-						//m_lock.unlockAll(iter);
-						
+						// m_lock.unlockAll(iter);
+
 						// Update local memory management
 						m_memoryManager.remove(iter);
 						iter++;
@@ -230,7 +209,7 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Migrates all chunks to another node. Is called for promotion.
 	 * @param p_target
@@ -239,19 +218,21 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 	public void migrateAll(final short p_target) {
 		long localID;
 		long chunkID;
+		long firstID;
+		long lastID;
 		Iterator<Long> iter;
 
 		// Migrate all chunks created on this node
-		ArrayList<Long> ownChunkRanges = m_memoryManager.getCIDRangesOfAllLocalChunks();
+		final ArrayList<Long> ownChunkRanges = m_memoryManager.getCIDRangesOfAllLocalChunks();
 		for (int i = 0; i < ownChunkRanges.size(); i += 2) {
-			long firstID = ownChunkRanges.get(i);
-			long lastID = ownChunkRanges.get(i + 1);
+			firstID = ownChunkRanges.get(i);
+			lastID = ownChunkRanges.get(i + 1);
 			for (localID = firstID; localID < lastID; i++) {
 				chunkID = ((long) m_boot.getNodeID() << 48) + localID;
 				if (m_memoryManager.exists(chunkID)) {
 					migrate(chunkID, p_target);
 				}
-			}	
+			}
 		}
 
 		// Migrate all chunks migrated to this node
@@ -261,20 +242,40 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 			chunkID = iter.next();
 			migrate(chunkID, p_target);
 		}
-	}	
-	
+	}
+
+	@Override
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
+
+	@Override
+	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
+			final Settings p_settings) {
+		m_boot = getComponent(BootComponent.class);
+		m_backup = getComponent(BackupComponent.class);
+		m_chunk = getComponent(ChunkComponent.class);
+		m_lookup = getComponent(LookupComponent.class);
+		m_memoryManager = getComponent(MemoryManagerComponent.class);
+		m_network = getComponent(NetworkComponent.class);
+
+		m_migrationLock = new ReentrantLock(false);
+
+		registerNetworkMessageListener();
+
+		return true;
+	}
+
 	/**
 	 * Handles an incoming MigrationMessage
 	 * @param p_message
 	 *            the MigrationMessage
 	 */
 	private void incomingMigrationMessage(final MigrationMessage p_message) {
-			m_chunk.putForeignChunks((Chunk[]) p_message.getDataStructures());
+		m_chunk.putForeignChunks((Chunk[]) p_message.getDataStructures());
 	}
-	
+
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
-		
+
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
@@ -287,16 +288,14 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 			}
 		}
 	}
-	
+
 	// -----------------------------------------------------------------------------------
 
 	/**
 	 * Register network messages we want to listen to in here.
 	 */
-	private void registerNetworkMessageListener()
-	{
+	private void registerNetworkMessageListener() {
 		m_network.register(MigrationMessage.class, this);
 	}
 
-	
 }

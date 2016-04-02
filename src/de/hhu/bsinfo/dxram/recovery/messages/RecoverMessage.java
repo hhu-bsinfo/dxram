@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.recovery.messages;
 
 import java.nio.ByteBuffer;
@@ -65,15 +66,15 @@ public class RecoverMessage extends AbstractMessage {
 		if (m_useLiveData) {
 			p_buffer.put((byte) 1);
 		} else {
-			p_buffer.put((byte) 0);			
+			p_buffer.put((byte) 0);
 		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_owner = p_buffer.getShort();
-		
-		byte b = p_buffer.get();
+
+		final byte b = p_buffer.get();
 		if (b == 1) {
 			m_useLiveData = true;
 		}

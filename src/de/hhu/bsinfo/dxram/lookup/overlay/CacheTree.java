@@ -31,6 +31,8 @@ public final class CacheTree {
 	// Constructors
 	/**
 	 * Creates an instance of CacheTree
+	 * @param p_cacheMaxSize
+	 *            the maximal number of cache entries
 	 * @param p_order
 	 *            order of the btree
 	 */

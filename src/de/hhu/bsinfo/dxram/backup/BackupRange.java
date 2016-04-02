@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.backup;
 
 import de.hhu.bsinfo.utils.serialization.Exportable;
@@ -6,24 +7,23 @@ import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Stores a backup range
+ * Stores a backup range (for chunk and backup service)
  * @author Kevin Beineke 10.06.2015
  */
 public final class BackupRange implements Importable, Exportable {
 
 	// Attributes
 	private long m_firstChunkIDORRangeID = -1;
-	private short[] m_backupPeers = null;
+	private short[] m_backupPeers;
 
 	// Constructors
 	/**
-	 * Default constructor
+	 * Creates an instance of BackupRange
 	 */
-	public BackupRange() {
-	}
-	
+	public BackupRange() {}
+
 	/**
-	 * Creates an instance of Locations
+	 * Creates an instance of BackupRange
 	 * @param p_firstChunkIDORRangeID
 	 *            the RangeID or the first ChunkID
 	 * @param p_backupPeers
@@ -37,7 +37,7 @@ public final class BackupRange implements Importable, Exportable {
 	}
 
 	/**
-	 * Creates an instance of Locations
+	 * Creates an instance of BackupRange
 	 * @param p_firstChunkIDORRangeID
 	 *            the RangeID or the first ChunkID
 	 * @param p_backupPeers
@@ -75,7 +75,7 @@ public final class BackupRange implements Importable, Exportable {
 			if (m_backupPeers.length == 3) {
 				ret =
 						((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-								+ (m_backupPeers[0] & 0x000000000000FFFFL);
+						+ (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else if (m_backupPeers.length == 2) {
 				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else {
@@ -110,39 +110,38 @@ public final class BackupRange implements Importable, Exportable {
 
 		return ret;
 	}
-	
+
 	@Override
-	public int importObject(Importer p_importer, int p_size) {
+	public int importObject(final Importer p_importer, final int p_size) {
 		int ret = 0;
-		
+
 		if (p_size < sizeofObject()) {
 			ret = -1;
 		} else {
 			long backupPeers = -1;
-			
+
 			m_firstChunkIDORRangeID = p_importer.readLong();
 			backupPeers = p_importer.readLong();
 			m_backupPeers = new short[] {(short) (backupPeers & 0x000000000000FFFFL),
 					(short) ((backupPeers & 0x00000000FFFF0000L) >> 16), (short) ((backupPeers & 0x0000FFFF00000000L) >> 32)};
 		}
-		
+
 		return ret;
 	}
-	
 
 	@Override
-	public int exportObject(Exporter p_exporter, int p_size) {
+	public int exportObject(final Exporter p_exporter, final int p_size) {
 		int ret = 0;
-		
+
 		if (p_size < sizeofObject()) {
 			ret = -1;
 		} else {
 			p_exporter.writeLong(getRangeID());
 			p_exporter.writeLong(getBackupPeersAsLong());
-			
+
 			ret = Long.BYTES * 2;
 		}
-		
+
 		return ret;
 	}
 
@@ -150,7 +149,11 @@ public final class BackupRange implements Importable, Exportable {
 	public int sizeofObject() {
 		return sizeofObjectStatic();
 	}
-	
+
+	/**
+	 * The size of all attributes
+	 * @return the size
+	 */
 	public static int sizeofObjectStatic() {
 		return Long.BYTES + 3 * Short.BYTES;
 	}

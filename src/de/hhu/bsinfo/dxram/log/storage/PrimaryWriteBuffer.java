@@ -18,7 +18,6 @@ import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
-
 /**
  * Primary log write buffer Implemented as a ring buffer in a byte array. The
  * in-memory write-buffer for writing on primary log is cyclic. Similar to a
@@ -84,10 +83,21 @@ public class PrimaryWriteBuffer {
 	 * configuration
 	 * @param p_logService
 	 *            the log service
+	 * @param p_logger
+	 *            the logger component
 	 * @param p_primaryLog
 	 *            Instance of the primary log. Used to write directly to primary log if buffer is full
+	 * @param p_writeBufferSize
+	 *            the size of the write buffer
+	 * @param p_flashPageSize
+	 *            the size of a flash page
+	 * @param p_logSegmentSize
+	 *            the segment size
+	 * @param p_useChecksum
+	 *            whether checksums are used
 	 */
-	public PrimaryWriteBuffer(final LogService p_logService, final LoggerComponent p_logger, final PrimaryLog p_primaryLog, final int p_writeBufferSize, final int p_flashPageSize, final int p_logSegmentSize, final boolean p_useChecksum) {
+	public PrimaryWriteBuffer(final LogService p_logService, final LoggerComponent p_logger, final PrimaryLog p_primaryLog, final int p_writeBufferSize,
+			final int p_flashPageSize, final int p_logSegmentSize, final boolean p_useChecksum) {
 		m_logService = p_logService;
 		m_logger = p_logger;
 		m_primaryLog = p_primaryLog;
@@ -95,7 +105,7 @@ public class PrimaryWriteBuffer {
 		m_flashPageSize = p_flashPageSize;
 		m_logSegmentSize = p_logSegmentSize;
 		m_useChecksum = p_useChecksum;
-		
+
 		m_bufferReadPointer = 0;
 		m_bufferWritePointer = 0;
 		m_bytesInWriteBuffer = 0;

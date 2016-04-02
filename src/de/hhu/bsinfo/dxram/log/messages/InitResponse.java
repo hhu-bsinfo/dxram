@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
@@ -51,13 +52,13 @@ public class InitResponse extends AbstractResponse {
 		if (m_success) {
 			p_buffer.put((byte) 1);
 		} else {
-			p_buffer.put((byte) 0);			
+			p_buffer.put((byte) 0);
 		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		byte b = p_buffer.get();
+		final byte b = p_buffer.get();
 		if (b == 1) {
 			m_success = true;
 		} else {

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.recovery.messages;
 
 import java.nio.ByteBuffer;
@@ -63,15 +64,15 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		long chunkID;
 		byte[] bytes;
-		
-		int length = p_buffer.getInt();
-		
+
+		final int length = p_buffer.getInt();
+
 		m_chunks = new Chunk[length];
 		for (int i = 0; i < length; i++) {
 			chunkID = p_buffer.getLong();
 			bytes = new byte[p_buffer.getInt()];
 			p_buffer.get(bytes);
-			
+
 			m_chunks[i] = new Chunk(chunkID, ByteBuffer.wrap(bytes));
 		}
 	}
@@ -79,11 +80,11 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
 	@Override
 	protected final int getPayloadLengthForWrite() {
 		int ret = 4;
-		
+
 		for (Chunk chunk : m_chunks) {
 			ret += Long.BYTES + Integer.BYTES + chunk.getDataSize();
 		}
-		
+
 		return ret;
 	}
 

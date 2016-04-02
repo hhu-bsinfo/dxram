@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.recovery;
 
 import java.io.File;
@@ -25,11 +26,9 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 /**
  * This service provides all recovery functionality.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.03.16
- *
  */
-public class RecoveryService extends DXRAMService implements MessageReceiver
-{	
-	// Attributes	
+public class RecoveryService extends DXRAMService implements MessageReceiver {
+	// Attributes
 	private BootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
@@ -37,16 +36,16 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private NetworkComponent m_network;
-	
+
 	private String m_backupDirectory;
-		
+
 	/**
 	 * Constructor
 	 */
 	public RecoveryService() {
 		super();
 	}
-	
+
 	/**
 	 * Recovers all Chunks of given node
 	 * @param p_owner
@@ -68,7 +67,7 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 			}
 		} else {
 			m_logger.info(RecoveryService.class, "Forwarding recovery to " + p_dest);
-			NetworkErrorCodes err = m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
+			final NetworkErrorCodes err = m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
 			if (err != NetworkErrorCodes.SUCCESS) {
 				m_logger.error(RecoveryService.class, "Could not forward command to " + p_dest + ". Aborting recovery!");
 				ret = false;
@@ -76,16 +75,14 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 		}
 
 		return ret;
-	}	
-	
-	@Override
-	protected void registerDefaultSettingsService(Settings p_settings) {
 	}
-	
+
 	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
-	{		
-		
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
+
+	@Override
+	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+
 		m_boot = getComponent(BootComponent.class);
 		m_backup = getComponent(BackupComponent.class);
 		m_chunk = getComponent(ChunkComponent.class);
@@ -93,7 +90,7 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 		m_logger = getComponent(LoggerComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
 		m_network = getComponent(NetworkComponent.class);
-		
+
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
@@ -101,13 +98,12 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Recovery service will not work!");
 		}
 		m_backupDirectory = m_backup.getBackupDirectory();
-				
+
 		return true;
 	}
 
 	@Override
-	protected boolean shutdownService() 
-	{				
+	protected boolean shutdownService() {
 		return true;
 	}
 
@@ -126,12 +122,12 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 		if (!m_backup.isActive()) {
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Cannot recover!");
 		} else {
-			backupRanges = m_lookup.getAllBackupRanges(p_owner);	
+			backupRanges = m_lookup.getAllBackupRanges(p_owner);
 			if (backupRanges != null) {
 				for (BackupRange backupRange : backupRanges) {
 					backupPeers = backupRange.getBackupPeers();
 					firstChunkIDOrRangeID = backupRange.getRangeID();
-	
+
 					// Get Chunks from backup peers (or locally if this is the primary backup peer)
 					for (short backupPeer : backupPeers) {
 						if (backupPeer == m_boot.getNodeID()) {
@@ -151,7 +147,7 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 						}
 						break;
 					}
-	
+
 					m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks.");
 
 					// Store recovered Chunks
@@ -180,7 +176,7 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 		File folderToScan;
 		File[] listOfFiles;
 		Chunk[] chunks = null;
-		
+
 		if (!m_backup.isActive()) {
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Cannot recover!");
 		} else {
@@ -195,14 +191,15 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 						if (chunks == null) {
 							m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next file.");
 							continue;
-						}	
+						}
 						m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks from file.");
 
 						// Store recovered Chunks
 						m_chunk.putRecoveredChunks(chunks);
 
 						if (fileName.contains("M")) {
-							// Inform superpeers about new location of migrated Chunks (non-migrated Chunks are processed later)
+							// Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
+							// processed later)
 							for (Chunk chunk : chunks) {
 								if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
 									// TODO: This might crash because there is no tree for creator of this chunk
@@ -213,13 +210,13 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 					}
 				}
 			}
-	
+
 			// Inform superpeers about new location of non-migrated Chunks
 			// TODO: This might crash because there is no tree for recovered peer
 			m_lookup.setRestorerAfterRecovery(p_owner);
 		}
 	}
-	
+
 	/**
 	 * Handles an incoming RecoverMessage
 	 * @param p_message
@@ -245,58 +242,55 @@ public class RecoveryService extends DXRAMService implements MessageReceiver
 
 		owner = p_request.getOwner();
 		firstChunkIDOrRangeID = p_request.getFirstChunkIDOrRangeID();
-		
+
 		if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == owner) {
 			chunks = m_log.recoverBackupRange(owner, firstChunkIDOrRangeID, (byte) -1);
 		} else {
 			chunks = m_log.recoverBackupRange(owner, -1, (byte) firstChunkIDOrRangeID);
 		}
-			
+
 		if (chunks == null) {
 			m_logger.error(RecoveryService.class, "Cannot recover Chunks locally.");
 		} else {
 			m_network.sendMessage(new RecoverBackupRangeResponse(p_request, chunks));
 		}
 	}
-	
+
 	@Override
-	public void onIncomingMessage(AbstractMessage p_message) {
+	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
 			if (p_message.getType() == RecoveryMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-			case RecoveryMessages.SUBTYPE_RECOVER_MESSAGE:
-				incomingRecoverMessage((RecoverMessage) p_message);
-				break;
-			case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
-				incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
-				break;
-			default:
-				break;
+				case RecoveryMessages.SUBTYPE_RECOVER_MESSAGE:
+					incomingRecoverMessage((RecoverMessage) p_message);
+					break;
+				case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
+					incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
+					break;
+				default:
+					break;
+				}
 			}
-			}
-		}		
+		}
 	}
-	
+
 	// -----------------------------------------------------------------------------------
-	
-		/**
-		 * Register network messages we use in here.
-		 */
-		private void registerNetworkMessages()
-		{
-			m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE, RecoverMessage.class);
-			m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, RecoverBackupRangeRequest.class);
-			m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE, RecoverBackupRangeResponse.class);
-		}
-		
-		/**
-		 * Register network messages we want to listen to in here.
-		 */
-		private void registerNetworkMessageListener()
-		{
-			m_network.register(RecoverMessage.class, this);
-			m_network.register(RecoverBackupRangeRequest.class, this);
-		}
-	
-	
+
+	/**
+	 * Register network messages we use in here.
+	 */
+	private void registerNetworkMessages() {
+		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE, RecoverMessage.class);
+		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, RecoverBackupRangeRequest.class);
+		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE, RecoverBackupRangeResponse.class);
+	}
+
+	/**
+	 * Register network messages we want to listen to in here.
+	 */
+	private void registerNetworkMessageListener() {
+		m_network.register(RecoverMessage.class, this);
+		m_network.register(RecoverBackupRangeRequest.class, this);
+	}
+
 }

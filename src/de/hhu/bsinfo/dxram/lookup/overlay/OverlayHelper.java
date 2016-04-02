@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import java.util.ArrayList;
@@ -7,11 +8,15 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.NodeID;
 
+/**
+ * Helper methods for superpeer overlay
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 02.04.16
+ */
 public class OverlayHelper {
 
 	private static final short CLOSED_INTERVAL = 0;
 	private static final short UPPER_CLOSED_INTERVAL = 1;
-	
+
 	/**
 	 * Verifies if node is between start and end
 	 * @param p_nodeID
@@ -67,23 +72,26 @@ public class OverlayHelper {
 
 		return ret;
 	}
-	
+
 	/**
-	 * Checks if the superpeer overlay is stable by comparing the current number of superpeers with the initially expected
+	 * Checks if the superpeer overlay is stable by comparing the current number of superpeers with the initially
+	 * expected
 	 * @param p_initialNumberOfSuperpeers
-	 * 			number of superpeers in nodes configuration
+	 *            number of superpeers in nodes configuration
 	 * @param p_currentNumberOfSuperpeers
-	 * 			number of currently available superpeers
-	 * @return
+	 *            number of currently available superpeers
+	 * @return whether the overlay is stable or not
 	 */
 	protected static boolean isOverlayStable(final int p_initialNumberOfSuperpeers, final int p_currentNumberOfSuperpeers) {
 		return p_initialNumberOfSuperpeers == p_currentNumberOfSuperpeers;
 	}
-	
+
 	/**
 	 * Inserts the superpeer at given position in the superpeer array
 	 * @param p_superpeer
 	 *            NodeID of the new superpeer
+	 * @param p_superpeers
+	 *            all superpeers
 	 * @note assumes m_overlayLock has been locked
 	 */
 	protected static void insertSuperpeer(final short p_superpeer, final ArrayList<Short> p_superpeers) {
@@ -96,11 +104,13 @@ public class OverlayHelper {
 			p_superpeers.add(index * -1 - 1, p_superpeer);
 		}
 	}
-	
+
 	/**
 	 * Removes superpeer
 	 * @param p_superpeer
 	 *            NodeID of the superpeer that has to be removed
+	 * @param p_superpeers
+	 *            all superpeers
 	 * @return the index if p_superpeer was found and deleted, -1 otherwise
 	 * @note assumes m_overlayLock has been locked
 	 */
@@ -121,6 +131,8 @@ public class OverlayHelper {
 	 * Inserts the peer at given position in the peer array
 	 * @param p_peer
 	 *            NodeID of the new peer
+	 * @param p_peers
+	 *            all peers
 	 * @note assumes m_overlayLock has been locked
 	 */
 	protected static void insertPeer(final short p_peer, final ArrayList<Short> p_peers) {
@@ -138,6 +150,8 @@ public class OverlayHelper {
 	 * Removes peer
 	 * @param p_peer
 	 *            NodeID of the peer that has to be removed
+	 * @param p_peers
+	 *            all peers
 	 * @return true if p_peer was found and deleted, false otherwise
 	 * @note assumes m_overlayLock has been locked
 	 */
@@ -153,11 +167,15 @@ public class OverlayHelper {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Determines the superpeers this superpeer stores backups for
 	 * @param p_nodeID
 	 *            the NodeID
+	 * @param p_predecessor
+	 *            the predecessor superpeer
+	 * @param p_superpeers
+	 *            all superpeers
 	 * @return the superpeers p_nodeID is responsible for (got backups for)
 	 * @note assumes m_overlayLock has been locked
 	 */
@@ -183,11 +201,17 @@ public class OverlayHelper {
 		}
 		return responsibleArea;
 	}
-	
+
 	/**
 	 * Determines the responsible superpeer for given NodeID
 	 * @param p_nodeID
 	 *            NodeID from chunk whose location is searched
+	 * @param p_superpeers
+	 *            all superpeers
+	 * @param p_overlayLock
+	 *            the overlay lock
+	 * @param p_logger
+	 *            the logger component
 	 * @return the responsible superpeer for given ChunkID
 	 */
 	protected static short getResponsibleSuperpeer(final short p_nodeID, final ArrayList<Short> p_superpeers, final ReentrantLock p_overlayLock,
@@ -216,11 +240,13 @@ public class OverlayHelper {
 
 		return responsibleSuperpeer;
 	}
-	
+
 	/**
 	 * Determines the backup superpeers for this superpeer
 	 * @param p_nodeID
 	 *            the NodeID
+	 * @param p_superpeers
+	 *            all superpeers
 	 * @return the three successing superpeers
 	 * @note assumes m_overlayLock has been locked
 	 */

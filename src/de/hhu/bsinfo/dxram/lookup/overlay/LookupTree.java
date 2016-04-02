@@ -44,7 +44,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 	private Entry m_changedEntry;
 
-	// Constructors	
+	// Constructors
 	/**
 	 * Creates an instance of LookupTree
 	 * @param p_order
@@ -70,7 +70,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		m_changedEntry = null;
 	}
-	
 
 	/**
 	 * Reads an CIDTree from ByteBuffer
@@ -121,7 +120,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Writes an CIDTree
 	 * @param p_buffer
@@ -175,7 +174,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Get the lenth of a CIDTree
 	 * @param p_tree
@@ -199,19 +198,19 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		return ret;
 	}
-	
+
 	@Override
-	public int importObject(Importer p_importer, int p_size) {
+	public int importObject(final Importer p_importer, final int p_size) {
 		// TODO stefan: replace java serializable interface with importer/exporter interface
 		throw new RuntimeException("Not implemented.");
 	}
-	
+
 	@Override
-	public int exportObject(Exporter p_exporter, int p_size) {
+	public int exportObject(final Exporter p_exporter, final int p_size) {
 		// TODO stefan: replace java serializable interface with importer/exporter interface
 		throw new RuntimeException("Not implemented.");
 	}
-	
+
 	@Override
 	public int sizeofObject() {
 		// TODO stefan: replace java serializable interface with importer/exporter interface
@@ -222,7 +221,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	public boolean hasDynamicObjectSize() {
 		return true;
 	}
-
 
 	// Getters
 	/**
@@ -1575,16 +1573,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_localID) {
-				low = mid + 1;
-			} else if (midVal > p_localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_localID) {
+					low = mid + 1;
+				} else if (midVal > p_localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1774,16 +1772,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLocalID(0);
+				midVal = m_children[mid].getLocalID(0);
 
-			if (midVal < localID) {
-				low = mid + 1;
-			} else if (midVal > localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < localID) {
+					low = mid + 1;
+				} else if (midVal > localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1949,7 +1947,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	private final class Entry implements Serializable {
 
 		private static final long serialVersionUID = -3247514337685593792L;
-		
+
 		// Attributes
 		private long m_localID;
 		private short m_nodeID;

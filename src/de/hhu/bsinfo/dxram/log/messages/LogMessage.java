@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
@@ -12,7 +13,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
  * @author Kevin Beineke 20.04.2014
  */
 public class LogMessage extends AbstractMessage {
-	
+
 	// Attributes
 	private byte m_rangeID;
 	private DataStructure[] m_dataStructures;
@@ -75,10 +76,10 @@ public class LogMessage extends AbstractMessage {
 		p_buffer.put(m_rangeID);
 
 		p_buffer.putInt(m_dataStructures.length);
-		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+		final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		for (DataStructure dataStructure : m_dataStructures) {
-			int size = dataStructure.sizeofObject();
-			
+			final int size = dataStructure.sizeofObject();
+
 			p_buffer.putLong(dataStructure.getID());
 			exporter.setPayloadSize(size);
 			p_buffer.putInt(size);

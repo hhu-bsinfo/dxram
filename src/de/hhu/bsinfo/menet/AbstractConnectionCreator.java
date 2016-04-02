@@ -36,8 +36,10 @@ abstract class AbstractConnectionCreator {
 	// Methods
 	/**
 	 * Initializes the creator
-	 * @throws DXRAMException
-	 *             if the creator could not be initialized
+	 * @param p_nodeID
+	 *            the NodeID
+	 * @param p_listenPort
+	 *            the listen port
 	 */
 	protected void initialize(final short p_nodeID, final int p_listenPort) {}
 

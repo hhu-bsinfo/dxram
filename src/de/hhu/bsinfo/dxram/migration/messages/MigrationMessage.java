@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.migration.messages;
 
 import java.nio.ByteBuffer;
@@ -15,8 +16,8 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 public class MigrationMessage extends AbstractMessage {
 
 	// Attributes
-	private DataStructure[] m_dataStructures = null;
-	
+	private DataStructure[] m_dataStructures;
+
 	// Constructors
 	/**
 	 * Creates an instance of DataMessage
@@ -50,12 +51,13 @@ public class MigrationMessage extends AbstractMessage {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		
+		int size;
+
 		p_buffer.putInt(m_dataStructures.length);
-		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+		final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		for (DataStructure dataStructure : m_dataStructures) {
-			int size = dataStructure.sizeofObject();
-			
+			size = dataStructure.sizeofObject();
+
 			p_buffer.putLong(dataStructure.getID());
 			exporter.setPayloadSize(size);
 			p_buffer.putInt(size);
@@ -65,14 +67,17 @@ public class MigrationMessage extends AbstractMessage {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-		
+		int size;
+		long id;
+
+		final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+
 		m_dataStructures = new Chunk[p_buffer.getInt()];
-		
+
 		for (int i = 0; i < m_dataStructures.length; i++) {
-			long id = p_buffer.getLong();
-			int size = p_buffer.getInt();
-			
+			id = p_buffer.getLong();
+			size = p_buffer.getInt();
+
 			importer.setPayloadSize(size);
 			m_dataStructures[i] = new Chunk(id, size);
 			importer.importObject(m_dataStructures[i]);
@@ -82,14 +87,14 @@ public class MigrationMessage extends AbstractMessage {
 	@Override
 	protected final int getPayloadLengthForWrite() {
 		int size = Integer.BYTES;
-		
+
 		size += m_dataStructures.length * Long.BYTES;
 		size += m_dataStructures.length * Integer.BYTES;
-		
+
 		for (DataStructure dataStructure : m_dataStructures) {
 			size += dataStructure.sizeofObject();
 		}
-		
+
 		return size;
 	}
 

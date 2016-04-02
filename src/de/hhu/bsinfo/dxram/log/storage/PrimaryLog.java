@@ -7,7 +7,6 @@ import java.nio.charset.Charset;
 
 import de.hhu.bsinfo.dxram.log.LogService;
 
-
 /**
  * This class implements the primary log. Furthermore this class manages all
  * secondary logs
@@ -31,16 +30,25 @@ public final class PrimaryLog extends AbstractLog {
 	 * Creates an instance of PrimaryLog with user specific configuration
 	 * @param p_logService
 	 *            the log service
+	 * @param p_backupDirectory
+	 *            the backup directory
+	 * @param p_nodeID
+	 *            the NodeID
+	 * @param p_primaryLogSize
+	 *            the size of a primary log
+	 * @param p_flashPageSize
+	 *            the size of flash page
 	 * @throws IOException
 	 *             if primary log could not be created
 	 * @throws InterruptedException
 	 *             if the caller was interrupted
 	 */
-	public PrimaryLog(final LogService p_logService, final String p_backupDirectory, final short p_nodeID, final long p_primaryLogSize, final int p_flashPageSize) throws IOException, InterruptedException {
+	public PrimaryLog(final LogService p_logService, final String p_backupDirectory, final short p_nodeID, final long p_primaryLogSize,
+			final int p_flashPageSize) throws IOException, InterruptedException {
 		super(new File(p_backupDirectory + "N" + p_nodeID + "_" + PRIMLOG_SUFFIX_FILENAME), p_primaryLogSize,
 				PRIMLOG_HEADER.length);
 		m_primaryLogSize = p_primaryLogSize;
-		
+
 		m_writePos = 0;
 		m_numberOfBytes = 0;
 

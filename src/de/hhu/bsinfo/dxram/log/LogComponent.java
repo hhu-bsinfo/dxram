@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.log;
 
 import java.io.IOException;
@@ -15,21 +16,32 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 
-public abstract class LogComponent extends DXRAMComponent {
-	
+/**
+ * Component for remote logging of chunks.
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
+ */
+public class LogComponent extends DXRAMComponent {
+
 	private BootComponent m_boot;
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
-	
+
 	private LogService m_logService;
 	private boolean m_useChecksum;
 	private int m_logSegmentSize;
 	private long m_secondaryLogSize;
-	
-	public LogComponent(int p_priorityInit, int p_priorityShutdown) {
+
+	/**
+	 * Creates the log component
+	 * @param p_priorityInit
+	 *            the initialization priority
+	 * @param p_priorityShutdown
+	 *            the shutdown priority
+	 */
+	public LogComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
-	
+
 	/**
 	 * Returns the header size
 	 * @param p_nodeID
@@ -43,7 +55,7 @@ public abstract class LogComponent extends DXRAMComponent {
 	public short getAproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
 		return AbstractLogEntryHeader.getAproxSecLogHeaderSize(m_boot.getNodeID() != p_nodeID, p_localID, p_size);
 	}
-	
+
 	/**
 	 * Initializes a new backup range
 	 * @param p_firstChunkIDOrRangeID
@@ -64,7 +76,7 @@ public abstract class LogComponent extends DXRAMComponent {
 				} else {
 					request = new InitRequest(p_backupPeers[i], p_firstChunkIDOrRangeID, m_boot.getNodeID());
 				}
-				NetworkErrorCodes err = m_network.sendSync(request);
+				final NetworkErrorCodes err = m_network.sendSync(request);
 				if (err != NetworkErrorCodes.SUCCESS) {
 					i--;
 					continue;
@@ -76,9 +88,9 @@ public abstract class LogComponent extends DXRAMComponent {
 				}
 			}
 		}
-		m_logger.info(LogService.class, ("Time to init range: " + (System.currentTimeMillis() - time)));
+		m_logger.info(LogService.class, "Time to init range: " + (System.currentTimeMillis() - time));
 	}
-	
+
 	/**
 	 * Recovers all Chunks of given backup range
 	 * @param p_owner
@@ -127,17 +139,30 @@ public abstract class LogComponent extends DXRAMComponent {
 
 		return ret;
 	}
-	
+
 	@Override
-	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, Settings p_settings) {
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 
 		m_boot = getDependentComponent(BootComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
-		
+
 		return false;
 	}
-	
+
+	/**
+	 * Sets attributes from log service
+	 * @param p_logService
+	 *            the log service
+	 * @param p_backupDirectory
+	 *            the backup directory
+	 * @param p_useChecksum
+	 *            whether checksums are used or not
+	 * @param p_secondaryLogSize
+	 *            the secondary log size
+	 * @param p_logSegmentSize
+	 *            the segment size
+	 */
 	protected void setAttributes(final LogService p_logService, final String p_backupDirectory,
 			final boolean p_useChecksum, final long p_secondaryLogSize, final int p_logSegmentSize) {
 		m_logService = p_logService;
@@ -145,5 +170,13 @@ public abstract class LogComponent extends DXRAMComponent {
 		m_secondaryLogSize = p_secondaryLogSize;
 		m_logSegmentSize = p_logSegmentSize;
 	}
-	
+
+	@Override
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
+
+	@Override
+	protected boolean shutdownComponent() {
+		return false;
+	}
+
 }

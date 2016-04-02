@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.net;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
@@ -15,15 +16,15 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class NetworkComponent extends DXRAMComponent {
-		
+
 	private LoggerComponent m_logger = null;
 	private BootComponent m_boot = null;
-	
+
 	// Attributes
 	private NetworkHandler m_networkHandler = null;
 	private int m_requestTimeoutMs = -1;
-	
-	public NetworkComponent(int p_priorityInit, int p_priorityShutdown) {
+
+	public NetworkComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
@@ -36,8 +37,8 @@ public class NetworkComponent extends DXRAMComponent {
 	public void deactivateConnectionManager() {
 		m_networkHandler.deactivateConnectionManager();
 	}
-	
-	public void registerMessageType(byte p_type, byte p_subtype, Class<?> p_class) {
+
+	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		m_networkHandler.registerMessageType(p_type, p_subtype, p_class);
 	}
 
@@ -45,28 +46,33 @@ public class NetworkComponent extends DXRAMComponent {
 		m_logger.trace(getClass(), "Sending message " + p_message);
 		int res = m_networkHandler.sendMessage(p_message);
 		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
-		
+
 		switch (res) {
-			case 0:
-				errCode = NetworkErrorCodes.SUCCESS; break;
-			case -1:
-				errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE; break;
-			case -2:
-				errCode = NetworkErrorCodes.SEND_DATA; break;
-			default:
-				assert 1 == 2; break;
+		case 0:
+			errCode = NetworkErrorCodes.SUCCESS;
+			break;
+		case -1:
+			errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
+			break;
+		case -2:
+			errCode = NetworkErrorCodes.SEND_DATA;
+			break;
+		default:
+			assert 1 == 2;
+			break;
 		}
-		
+
 		if (errCode != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(this.getClass(), "Sending message " + p_message + " failed: " + errCode);
 		}
-		
+
 		return errCode;
 	}
-	
+
 	/**
 	 * Send the Request and wait for fulfillment (wait for response).
-	 * @param p_request The request to send.
+	 * @param p_request
+	 *            The request to send.
 	 * @return 0 if successful, -1 if sending the request failed, 1 waiting for the response timed out.
 	 */
 	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
@@ -77,22 +83,22 @@ public class NetworkComponent extends DXRAMComponent {
 			if (!p_request.waitForResponses(m_requestTimeoutMs)) {
 				m_logger.error(this.getClass(), "Sending sync, waiting for responses " + p_request + " failed, timeout.");
 				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
-			} else {		
+			} else {
 				m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
 			}
 		}
-		
+
 		return err;
 	}
 
-	public void register(Class<? extends AbstractMessage> p_message, MessageReceiver p_receiver) {
+	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.register(p_message, p_receiver);
 	}
 
-	public void unregister(Class<? extends AbstractMessage> p_message, MessageReceiver p_receiver) {
+	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.unregister(p_message, p_receiver);
 	}
-	
+
 	// --------------------------------------------------------------------------------------
 
 	@Override
@@ -103,35 +109,35 @@ public class NetworkComponent extends DXRAMComponent {
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 	}
-	
+
 	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) 
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings)
 	{
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_boot = getDependentComponent(BootComponent.class);
-		
+
 		m_networkHandler = new NetworkHandler(
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR),
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER));
-		
+
 		m_networkHandler.setLogger(m_logger);
 		m_networkHandler.initialize(
-				m_boot.getNodeID(), 
-				new NodeMappings(m_boot), 
+				m_boot.getNodeID(),
+				new NodeMappings(m_boot),
 				p_settings.getValue(NetworkConfigurationValues.Component.MAX_OUTSTANDING_BYTES),
 				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS));
-		
+
 		m_requestTimeoutMs = p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
-		
+
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownComponent() {
 		m_networkHandler.close();
-		
+
 		m_networkHandler = null;
-		
+
 		return true;
 	}
 }

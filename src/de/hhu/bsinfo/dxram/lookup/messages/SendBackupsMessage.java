@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -65,7 +66,7 @@ public class SendBackupsMessage extends AbstractMessage {
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		if (m_mappings == null) {
-			p_buffer.put((byte) 0); 
+			p_buffer.put((byte) 0);
 		} else {
 			p_buffer.put((byte) 1);
 			p_buffer.putInt(m_mappings.length);

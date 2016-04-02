@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -51,8 +52,8 @@ public class GetBackupRangesResponse extends AbstractResponse {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-		
+		final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+
 		p_buffer.putInt(m_backupRanges.length);
 		for (BackupRange backupRange : m_backupRanges) {
 			exporter.setPayloadSize(backupRange.sizeofObject());
@@ -62,8 +63,8 @@ public class GetBackupRangesResponse extends AbstractResponse {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-		
+		final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+
 		m_backupRanges = new BackupRange[p_buffer.getInt()];
 		for (int i = 0; i < m_backupRanges.length; i++) {
 			m_backupRanges[i] = new BackupRange();

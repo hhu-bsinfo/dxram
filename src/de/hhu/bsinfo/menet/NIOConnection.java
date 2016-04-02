@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
@@ -34,6 +35,12 @@ public class NIOConnection extends AbstractConnection {
 	 * Creates an instance of NIOConnection (this node creates a new connection with another node)
 	 * @param p_destination
 	 *            the destination
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_taskExecutor
+	 *            the task executer
+	 * @param p_messageDirectory
+	 *            the message directory
 	 * @param p_listener
 	 *            the ConnectionListener
 	 * @param p_lock
@@ -42,11 +49,14 @@ public class NIOConnection extends AbstractConnection {
 	 *            the Condition
 	 * @param p_nioSelector
 	 *            the NIOSelector
+	 * @param p_numberOfBuffers
+	 *            the number of buffers to schedule
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final DataReceiver p_listener,
-			final ReentrantLock p_lock, final Condition p_cond, final NIOSelector p_nioSelector, final int p_numberOfBuffers) throws IOException {
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+			final DataReceiver p_listener, final ReentrantLock p_lock, final Condition p_cond, final NIOSelector p_nioSelector,
+			final int p_numberOfBuffers) throws IOException {
 		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_listener);
 		m_channel = SocketChannel.open();
 		m_channel.configureBlocking(false);
@@ -69,22 +79,31 @@ public class NIOConnection extends AbstractConnection {
 		m_incomingLock = new ReentrantLock(false);
 		m_outgoingAllLock = new ReentrantLock(false);
 		m_outgoingLock = new ReentrantLock(false);
-		
+
 		m_numberOfBuffers = p_numberOfBuffers;
 	}
 
 	/**
-	 * Creates an instance of NIOConnection (another node creates a new connection with this node)
+	 * Creates an instance of NIOConnection (this node creates a new connection with another node)
 	 * @param p_destination
 	 *            the destination
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_taskExecutor
+	 *            the task executer
+	 * @param p_messageDirectory
+	 *            the message directory
 	 * @param p_channel
-	 *            the SocketChannel
+	 *            the socket channel
 	 * @param p_nioSelector
 	 *            the NIOSelector
+	 * @param p_numberOfBuffers
+	 *            the number of buffers to schedule
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers) throws IOException {
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+			final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers) throws IOException {
 		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory);
 
 		m_channel = p_channel;
@@ -105,7 +124,7 @@ public class NIOConnection extends AbstractConnection {
 		m_incomingLock = new ReentrantLock(false);
 		m_outgoingAllLock = new ReentrantLock(false);
 		m_outgoingLock = new ReentrantLock(false);
-		
+
 		m_numberOfBuffers = p_numberOfBuffers;
 	}
 

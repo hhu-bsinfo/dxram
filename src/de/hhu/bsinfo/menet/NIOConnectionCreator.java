@@ -22,19 +22,29 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	protected static final int FLOW_CONTROL_LIMIT = 1024 * 1024;
 	protected static final int CONNECTION_TIMEOUT = 200;
 
-	// Attributes	
+	// Attributes
 	private TaskExecutor m_taskExecutor;
 	private MessageDirectory m_messageDirectory;
 	private NodeMap m_nodeMap;
 	private int m_numberOfBuffers;
-	
+
 	private NIOSelector m_nioSelector;
 
 	// Constructors
 	/**
 	 * Creates an instance of NIOConnectionCreator
+	 * @param p_taskExecutor
+	 *            the task executer
+	 * @param p_messageDirectory
+	 *            the message directory
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_maxOutstandingBytes
+	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_numberOfBuffers
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	protected NIOConnectionCreator(final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, 
+	protected NIOConnectionCreator(final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
 			final NodeMap p_nodeMap, final int p_maxOutstandingBytes, final int p_numberOfBuffers) {
 		super();
 
@@ -43,7 +53,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		m_taskExecutor = p_taskExecutor;
 		m_messageDirectory = p_messageDirectory;
 		m_numberOfBuffers = p_numberOfBuffers;
-		
+
 		m_nodeMap = p_nodeMap;
 	}
 
@@ -52,7 +62,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Initializes the creator
 	 */
 	@Override
-	public void initialize(final short p_nodeID, final int p_listenPort) {		
+	public void initialize(final short p_nodeID, final int p_listenPort) {
 		m_nioSelector = new NIOSelector(this, p_listenPort);
 		m_nioSelector.setName("Network: NIOSelector");
 		m_nioSelector.setPriority(Thread.MAX_PRIORITY);

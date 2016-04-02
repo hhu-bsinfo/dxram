@@ -1,14 +1,12 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
-
 
 /**
  * A helper class for the LogEntryHeaderInterface.
@@ -52,12 +50,6 @@ public abstract class AbstractLogEntryHeader {
 	private static final AbstractLogEntryHeader DEFAULT_SEC_LOG_ENTRY_HEADER = new DefaultSecLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_SEC_LOG_ENTRY_HEADER = new MigrationSecLogEntryHeader();
 
-	// Constructors
-	/**
-	 * Creates an instance of LogEntryHeaderHelper
-	 */
-	protected AbstractLogEntryHeader() {}
-
 	// Methods
 	/**
 	 * Generates a log entry with filled-in header but without any payload
@@ -78,26 +70,26 @@ public abstract class AbstractLogEntryHeader {
 	/**
 	 * Sets the logger
 	 * @param p_logger
-	 *             the logger component
+	 *            the logger component
 	 * @note Must be called before the first log entry header is created
 	 */
 	public static void setLogger(final LoggerComponent p_logger) {
 		m_logger = p_logger;
 	}
-	
+
 	/**
 	 * Sets the crc size
 	 * @param p_useChecksum
-	 *             whether a checksum is added or not
+	 *            whether a checksum is added or not
 	 * @note Must be called before the first log entry header is created
 	 */
 	public static void setCRCSize(final boolean p_useChecksum) {
 		if (!p_useChecksum) {
-		m_logEntryCRCSize = (byte) 0;
+			m_logEntryCRCSize = (byte) 0;
 		}
 		m_useChecksum = p_useChecksum;
 	}
-	
+
 	/**
 	 * Adds checksum to entry header
 	 * @param p_buffer
@@ -112,7 +104,7 @@ public abstract class AbstractLogEntryHeader {
 	 *            number of bytes until wrap around
 	 */
 	public static void addChecksum(final byte[] p_buffer, final int p_offset, final int p_size, final AbstractLogEntryHeader p_logEntryHeader,
-			final int p_bytesUntilEnd) {		
+			final int p_bytesUntilEnd) {
 		final short headerSize = p_logEntryHeader.getHeaderSize(p_buffer, p_offset);
 		final short crcOffset = p_logEntryHeader.getCRCOffset(p_buffer, p_offset);
 		int checksum;
@@ -171,7 +163,7 @@ public abstract class AbstractLogEntryHeader {
 	 *            offset in buffer
 	 * @return the type
 	 */
-	protected abstract short getType(final byte[] p_buffer, final int p_offset);
+	public abstract short getType(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Returns RangeID of a log entry
@@ -282,48 +274,6 @@ public abstract class AbstractLogEntryHeader {
 	 * @return whether the length field is completely in this iteration or not
 	 */
 	public abstract boolean readable(final byte[] p_buffer, final int p_offset, final int p_bytesUntilEnd);
-
-	/**
-	 * Returns the NodeID offset
-	 * @return the offset
-	 */
-	protected abstract short getNIDOffset();
-
-	/**
-	 * Returns the LocalID offset
-	 * @return the offset
-	 */
-	protected abstract short getLIDOffset();
-
-	/**
-	 * Returns the length offset
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the offset
-	 */
-	protected abstract short getLENOffset(final byte[] p_buffer, final int p_offset);
-
-	/**
-	 * Returns the version offset
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the offset
-	 */
-	protected abstract short getVEROffset(final byte[] p_buffer, final int p_offset);
-
-	/**
-	 * Returns the checksum offset
-	 * @param p_buffer
-	 *            buffer with log entries
-	 * @param p_offset
-	 *            offset in buffer
-	 * @return the offset
-	 */
-	protected abstract short getCRCOffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Prints the log header
@@ -501,6 +451,48 @@ public abstract class AbstractLogEntryHeader {
 
 		p_buffer[offset + 1] = (byte) (p_buffer[offset + 1] ^ 1 << 15);
 	}
+
+	/**
+	 * Returns the NodeID offset
+	 * @return the offset
+	 */
+	protected abstract short getNIDOffset();
+
+	/**
+	 * Returns the LocalID offset
+	 * @return the offset
+	 */
+	protected abstract short getLIDOffset();
+
+	/**
+	 * Returns the length offset
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @return the offset
+	 */
+	protected abstract short getLENOffset(final byte[] p_buffer, final int p_offset);
+
+	/**
+	 * Returns the version offset
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @return the offset
+	 */
+	protected abstract short getVEROffset(final byte[] p_buffer, final int p_offset);
+
+	/**
+	 * Returns the checksum offset
+	 * @param p_buffer
+	 *            buffer with log entries
+	 * @param p_offset
+	 *            offset in buffer
+	 * @return the offset
+	 */
+	protected abstract short getCRCOffset(final byte[] p_buffer, final int p_offset);
 
 	/**
 	 * Puts type of log entry in log entry header

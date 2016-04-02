@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
@@ -31,7 +32,7 @@ public class LogCommandRequest extends AbstractRequest {
 	 */
 	public LogCommandRequest(final short p_destination, final String p_cmd) {
 		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_LOG_COMMAND_REQUEST);
-		
+
 		m_cmd = p_cmd;
 	}
 
@@ -46,18 +47,18 @@ public class LogCommandRequest extends AbstractRequest {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		byte[] bytes = m_cmd.getBytes();
-		
+		final byte[] bytes = m_cmd.getBytes();
+
 		p_buffer.putInt(bytes.length);
 		p_buffer.put(bytes);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		int size = p_buffer.getInt();
-		byte[] bytes = new byte[size];
+		final int size = p_buffer.getInt();
+		final byte[] bytes = new byte[size];
 		p_buffer.get(bytes);
-		
+
 		m_cmd = new String(bytes);
 	}
 

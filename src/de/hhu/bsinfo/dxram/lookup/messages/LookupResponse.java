@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -54,9 +55,9 @@ public class LookupResponse extends AbstractResponse {
 		if (m_locations == null) {
 			p_buffer.put((byte) 0);
 		} else {
-			MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
+			final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 			exporter.setPayloadSize(m_locations.sizeofObject());
-			
+
 			p_buffer.put((byte) 1);
 			exporter.exportObject(m_locations);
 		}
@@ -65,8 +66,8 @@ public class LookupResponse extends AbstractResponse {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		if (p_buffer.get() != 0) {
-			MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-			
+			final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+
 			m_locations = new LookupRange();
 			importer.setPayloadSize(m_locations.sizeofObject());
 			importer.importObject(m_locations);

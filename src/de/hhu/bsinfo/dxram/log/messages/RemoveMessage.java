@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
@@ -31,29 +32,29 @@ public class RemoveMessage extends AbstractMessage {
 	 * Creates an instance of RemoveMessage
 	 * @param p_destination
 	 *            the destination
-	 * @param ids
+	 * @param p_chunkIDs
 	 *            the ChunkIDs of the Chunks to remove
 	 */
-	public RemoveMessage(final short p_destination, final Long[] ids) {
+	public RemoveMessage(final short p_destination, final Long[] p_chunkIDs) {
 		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
-		m_chunkIDs = ids;
+		m_chunkIDs = p_chunkIDs;
 		m_rangeID = -1;
 	}
-	
+
 	/**
 	 * Creates an instance of RemoveMessage
 	 * @param p_destination
 	 *            the destination
-	 * @param ids
+	 * @param p_chunkIDs
 	 *            the ChunkIDs of the Chunks to remove
 	 */
-	public RemoveMessage(final short p_destination, final long[] ids) {
+	public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
 		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
-		Long[] chunkIDs = new Long[ids.length];
-		for (int i = 0; i < ids.length; i++) {
-			chunkIDs[i] = ids[i];
+		final Long[] chunkIDs = new Long[p_chunkIDs.length];
+		for (int i = 0; i < p_chunkIDs.length; i++) {
+			chunkIDs[i] = p_chunkIDs[i];
 		}
 		m_chunkIDs = chunkIDs;
 		m_rangeID = -1;
@@ -101,6 +102,6 @@ public class RemoveMessage extends AbstractMessage {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return Byte.BYTES + Integer.BYTES + (Long.BYTES * m_chunkIDs.length);
+		return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.length;
 	}
 }

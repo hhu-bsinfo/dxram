@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import java.util.ArrayList;
@@ -44,8 +45,12 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.CRC16;
 
+/**
+ * Peer functionality for overlay
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
+ */
 public class OverlayPeer implements MessageReceiver {
-	
+
 	private static final short OPEN_INTERVAL = 2;
 	private static final boolean IS_NOT_SUPERPEER = false;
 	private static final boolean NO_CHECK = false;
@@ -53,33 +58,47 @@ public class OverlayPeer implements MessageReceiver {
 	private static final boolean NO_BACKUP = false;
 
 	// Attributes
-	private BootComponent m_boot = null;
-	private LoggerComponent m_logger = null;
-	private NetworkComponent m_network = null;
+	private BootComponent m_boot;
+	private LoggerComponent m_logger;
+	private NetworkComponent m_network;
 
 	private short m_nodeID = -1;
 	private short m_mySuperpeer = -1;
-	private ArrayList<Short> m_superpeers = null;	
+	private ArrayList<Short> m_superpeers;
 	private int m_initialNumberOfSuperpeers;
-	private ReentrantLock m_overlayLock = null;
+	private ReentrantLock m_overlayLock;
 
 	private CRC16 m_hashGenerator = new CRC16();
-		
-	
+
+	/**
+	 * Creates an instance of OverlayPeer
+	 * @param p_nodeID
+	 *            the own NodeID
+	 * @param p_contactSuperpeer
+	 *            the superpeer to contact for joining
+	 * @param p_initialNumberOfSuperpeers
+	 *            the number of expeced superpeers
+	 * @param p_boot
+	 *            the BootComponent
+	 * @param p_logger
+	 *            the LoggerComponent
+	 * @param p_network
+	 *            the NetworkComponent
+	 */
 	public OverlayPeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers,
 			final BootComponent p_boot, final LoggerComponent p_logger, final NetworkComponent p_network) {
 		m_boot = p_boot;
 		m_logger = p_logger;
 		m_network = p_network;
-		
+
 		registerNetworkMessages();
 		registerNetworkMessageListener();
-		
+
 		joinSuperpeerOverlay(p_contactSuperpeer);
 	}
-	
+
 	/* Lookup */
-	
+
 	/**
 	 * Get the corresponding LookupRange for the given ChunkID
 	 * @param p_chunkID
@@ -95,31 +114,30 @@ public class OverlayPeer implements MessageReceiver {
 		LookupRequest request;
 		LookupResponse response;
 
-
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
 			check = true;
 		}
 		nodeID = ChunkID.getCreatorID(p_chunkID);
 		// FIXME will not terminate if chunk id requested does not exist
-		//while (null == ret) {
-			responsibleSuperpeer = getResponsibleSuperpeer(nodeID, check);
+		// while (null == ret) {
+		responsibleSuperpeer = getResponsibleSuperpeer(nodeID, check);
 
-			if (-1 != responsibleSuperpeer) {
-				request = new LookupRequest(responsibleSuperpeer, p_chunkID);
-				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
-					// Responsible superpeer is not available, try again and check responsible superpeer
-					check = true;
-				}
-				
-				response = request.getResponse(LookupResponse.class);
-
-				ret = response.getLocations();
+		if (-1 != responsibleSuperpeer) {
+			request = new LookupRequest(responsibleSuperpeer, p_chunkID);
+			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				// Responsible superpeer is not available, try again and check responsible superpeer
+				check = true;
 			}
-		//}
-			
+
+			response = request.getResponse(LookupResponse.class);
+
+			ret = response.getLocations();
+		}
+		// }
+
 		return ret;
 	}
-	
+
 	/**
 	 * Remove the ChunkIDs from range after deletion of that chunks
 	 * @param p_chunkIDs
@@ -163,15 +181,15 @@ public class OverlayPeer implements MessageReceiver {
 			}
 		}
 	}
-	
+
 	/* Name Service */
-	
+
 	/**
 	 * Insert a new name service entry
 	 * @param p_id
-	 * 			the AID
+	 *            the AID
 	 * @param p_chunkID
-	 * 			the ChunkID
+	 *            the ChunkID
 	 */
 	public void insertNameserviceEntry(final int p_id, final long p_chunkID) {
 		short responsibleSuperpeer;
@@ -223,7 +241,7 @@ public class OverlayPeer implements MessageReceiver {
 	/**
 	 * Get ChunkID for give AID
 	 * @param p_id
-	 * 			the AID
+	 *            the AID
 	 * @return the corresponding ChunkID
 	 */
 	public long getChunkIDForNameserviceEntry(final int p_id) {
@@ -256,7 +274,7 @@ public class OverlayPeer implements MessageReceiver {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Get the number of entries in name service
 	 * @return the number of name service entries
@@ -283,15 +301,15 @@ public class OverlayPeer implements MessageReceiver {
 
 		return ret;
 	}
-	
+
 	/* Migration */
-	
+
 	/**
 	 * Store migration of given ChunkID to a new location
 	 * @param p_chunkID
-	 * 			the ChunkID
+	 *            the ChunkID
 	 * @param p_nodeID
-	 * 			the new owner
+	 *            the new owner
 	 */
 	public void migrate(final long p_chunkID, final short p_nodeID) {
 		short responsibleSuperpeer;
@@ -309,7 +327,7 @@ public class OverlayPeer implements MessageReceiver {
 				try {
 					Thread.sleep(1000);
 				} catch (final InterruptedException e1) {}
-				continue;	
+				continue;
 			}
 			finished = request.getResponse(MigrateResponse.class).getStatus();
 		}
@@ -318,11 +336,11 @@ public class OverlayPeer implements MessageReceiver {
 	/**
 	 * Store migration of a range of ChunkIDs to a new location
 	 * @param p_startCID
-	 * 			the first ChunkID
+	 *            the first ChunkID
 	 * @param p_endCID
-	 * 			the last ChunkID
+	 *            the last ChunkID
 	 * @param p_nodeID
-	 * 			the new owner
+	 *            the new owner
 	 */
 	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 		short creator;
@@ -345,22 +363,22 @@ public class OverlayPeer implements MessageReceiver {
 					try {
 						Thread.sleep(1000);
 					} catch (final InterruptedException e1) {}
-					continue;	
+					continue;
 				}
 
 				finished = request.getResponse(MigrateRangeResponse.class).getStatus();
 			}
 		}
 	}
-	
+
 	/* Backup */
-	
+
 	/**
 	 * Initialize a new backup range
 	 * @param p_firstChunkIDOrRangeID
-	 * 			the RangeID or ChunkID of the first chunk in range 
+	 *            the RangeID or ChunkID of the first chunk in range
 	 * @param p_primaryAndBackupPeers
-	 * 			the creator and all backup peers
+	 *            the creator and all backup peers
 	 */
 	public void initRange(final long p_firstChunkIDOrRangeID, final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
 		short responsibleSuperpeer;
@@ -384,7 +402,7 @@ public class OverlayPeer implements MessageReceiver {
 			finished = request.getResponse(InitRangeResponse.class).getStatus();
 		}
 	}
-	
+
 	/**
 	 * Get all backup ranges for given node
 	 * @param p_nodeID
@@ -398,7 +416,6 @@ public class OverlayPeer implements MessageReceiver {
 
 		GetBackupRangesRequest request;
 		GetBackupRangesResponse response;
-
 
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
 			check = true;
@@ -420,18 +437,17 @@ public class OverlayPeer implements MessageReceiver {
 
 		return ret;
 	}
-	
+
 	/* Recovery */
 
 	/**
 	 * Set restorer as new creator for recovered chunks
 	 * @param p_owner
-	 * 			NodeID of the recovered peer
+	 *            NodeID of the recovered peer
 	 */
 	public void setRestorerAfterRecovery(final short p_owner) {
 		short responsibleSuperpeer;
 		boolean check = false;
-
 
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
 			check = true;
@@ -451,7 +467,7 @@ public class OverlayPeer implements MessageReceiver {
 			break;
 		}
 	}
-	
+
 	/**
 	 * Checks if all superpeers are offline
 	 * @return if all superpeers are offline
@@ -460,15 +476,15 @@ public class OverlayPeer implements MessageReceiver {
 		boolean ret = true;
 		short superpeer;
 		int i = 0;
-		
+
 		if (m_network.sendMessage(new PingSuperpeerMessage(m_mySuperpeer)) != NetworkErrorCodes.SUCCESS) {
 			if (!m_superpeers.isEmpty()) {
 				while (i < m_superpeers.size()) {
 					superpeer = m_superpeers.get(i++);
 					if (m_network.sendMessage(new PingSuperpeerMessage(superpeer)) != NetworkErrorCodes.SUCCESS) {
 						continue;
-					} 
-					
+					}
+
 					ret = false;
 					break;
 				}
@@ -479,11 +495,12 @@ public class OverlayPeer implements MessageReceiver {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Joins the superpeer overlay through contactSuperpeer
 	 * @param p_contactSuperpeer
 	 *            NodeID of a known superpeer
+	 * @return whether joining was successful
 	 */
 	private boolean joinSuperpeerOverlay(final short p_contactSuperpeer) {
 		short contactSuperpeer;
@@ -493,7 +510,7 @@ public class OverlayPeer implements MessageReceiver {
 		m_logger.trace(getClass(), "Entering joinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
 
 		contactSuperpeer = p_contactSuperpeer;
-		
+
 		if (p_contactSuperpeer == NodeID.INVALID_ID) {
 			m_logger.error(getClass(), "Cannot join superpeer overlay, no bootstrap superpeer available to contact.");
 			return false;
@@ -501,26 +518,26 @@ public class OverlayPeer implements MessageReceiver {
 
 		while (-1 != contactSuperpeer) {
 			m_logger.trace(getClass(), "Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + m_nodeID);
-		
+
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_NOT_SUPERPEER);
 			if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
 				// Contact superpeer is not available, get a new contact superpeer
 				contactSuperpeer = m_boot.getNodeIDBootstrap();
 				continue;
 			}
-		
+
 			joinResponse = joinRequest.getResponse(JoinResponse.class);
 			contactSuperpeer = joinResponse.getNewContactSuperpeer();
 		}
 		m_superpeers = joinResponse.getSuperpeers();
 		m_mySuperpeer = joinResponse.getSource();
 		OverlayHelper.insertSuperpeer(m_mySuperpeer, m_superpeers);
-		
+
 		m_logger.trace(getClass(), "Exiting joinSuperpeerOverlay");
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Determines the responsible superpeer for given NodeID
 	 * @param p_nodeID
@@ -563,7 +580,7 @@ public class OverlayPeer implements MessageReceiver {
 					request = new AskAboutSuccessorRequest(predecessor);
 					if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 						// Predecessor is not available, try responsibleSuperpeer without checking
-						break;	
+						break;
 					}
 
 					response = request.getResponse(AskAboutSuccessorResponse.class);
@@ -587,8 +604,8 @@ public class OverlayPeer implements MessageReceiver {
 		m_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
 
 		return responsibleSuperpeer;
-	}	
-	
+	}
+
 	/**
 	 * Handles an incoming SendSuperpeersMessage
 	 * @param p_sendSuperpeersMessage
@@ -611,7 +628,7 @@ public class OverlayPeer implements MessageReceiver {
 			}
 		}
 	}
-	
+
 	/**
 	 * Handles an incoming Message
 	 * @param p_message
@@ -631,15 +648,13 @@ public class OverlayPeer implements MessageReceiver {
 			}
 		}
 	}
-	
-	
+
 	// -----------------------------------------------------------------------------------
-	
+
 	/**
 	 * Register network messages we use in here.
 	 */
-	private void registerNetworkMessages()
-	{
+	private void registerNetworkMessages() {
 		m_network.register(LookupRequest.class, this);
 		m_network.register(GetBackupRangesRequest.class, this);
 		m_network.register(UpdateAllMessage.class, this);
@@ -651,13 +666,12 @@ public class OverlayPeer implements MessageReceiver {
 		m_network.register(InsertIDRequest.class, this);
 		m_network.register(GetChunkIDRequest.class, this);
 	}
-	
+
 	/**
 	 * Register network messages we want to listen to in here.
 	 */
-	private void registerNetworkMessageListener()
-	{
+	private void registerNetworkMessageListener() {
 		m_network.register(SendSuperpeersMessage.class, this);
 	}
-	
+
 }
