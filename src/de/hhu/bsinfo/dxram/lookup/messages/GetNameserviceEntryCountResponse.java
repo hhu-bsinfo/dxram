@@ -31,7 +31,7 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
 	 *            the count
 	 */
 	public GetNameserviceEntryCountResponse(final GetNameserviceEntryCountRequest p_request, final long p_count) {
-		super(p_request, LookupMessages.SUBTYPE_GET_MAPPING_COUNT_RESPONSE);
+		super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE);
 
 		m_count = p_count;
 	}

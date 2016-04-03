@@ -19,6 +19,8 @@ public class NIOConnection extends AbstractConnection {
 	private SocketChannel m_channel;
 	private NIOSelector m_nioSelector;
 
+	private int m_incomingBufferSize;
+	private int m_outgoingBufferSize;
 	private int m_numberOfBuffers;
 
 	private ArrayDeque<ByteBuffer> m_incoming;
@@ -51,19 +53,29 @@ public class NIOConnection extends AbstractConnection {
 	 *            the NIOSelector
 	 * @param p_numberOfBuffers
 	 *            the number of buffers to schedule
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
 	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
 			final DataReceiver p_listener, final ReentrantLock p_lock, final Condition p_cond, final NIOSelector p_nioSelector,
-			final int p_numberOfBuffers) throws IOException {
-		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_listener);
+			final int p_numberOfBuffers, final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_listener, p_flowControlWindowSize);
+
+		m_incomingBufferSize = p_incomingBufferSize;
+		m_outgoingBufferSize = p_outgoingBufferSize;
+
 		m_channel = SocketChannel.open();
 		m_channel.configureBlocking(false);
 		m_channel.socket().setSoTimeout(0);
 		m_channel.socket().setTcpNoDelay(true);
-		m_channel.socket().setSendBufferSize(NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
-		m_channel.socket().setReceiveBufferSize(NIOConnectionCreator.INCOMING_BUFFER_SIZE);
+		m_channel.socket().setReceiveBufferSize(m_incomingBufferSize);
+		m_channel.socket().setSendBufferSize(m_outgoingBufferSize);
 
 		m_nioSelector = p_nioSelector;
 		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_CONNECT);
@@ -99,19 +111,29 @@ public class NIOConnection extends AbstractConnection {
 	 *            the NIOSelector
 	 * @param p_numberOfBuffers
 	 *            the number of buffers to schedule
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
 	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
-			final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers) throws IOException {
-		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory);
+			final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers,
+			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_flowControlWindowSize);
+
+		m_incomingBufferSize = p_incomingBufferSize;
+		m_outgoingBufferSize = p_outgoingBufferSize;
 
 		m_channel = p_channel;
 		m_channel.configureBlocking(false);
 		m_channel.socket().setSoTimeout(0);
 		m_channel.socket().setTcpNoDelay(true);
-		m_channel.socket().setSendBufferSize(NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
-		m_channel.socket().setReceiveBufferSize(NIOConnectionCreator.INCOMING_BUFFER_SIZE);
+		m_channel.socket().setReceiveBufferSize(m_incomingBufferSize);
+		m_channel.socket().setSendBufferSize(m_outgoingBufferSize);
 
 		m_nioSelector = p_nioSelector;
 
@@ -290,8 +312,8 @@ public class NIOConnection extends AbstractConnection {
 
 		m_connectionCondLock.lock();
 		try {
-			m_channel.socket().setSendBufferSize(NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
-			m_channel.socket().setReceiveBufferSize(NIOConnectionCreator.INCOMING_BUFFER_SIZE);
+			m_channel.socket().setReceiveBufferSize(m_incomingBufferSize);
+			m_channel.socket().setSendBufferSize(m_outgoingBufferSize);
 		} catch (final IOException e) {
 			m_connectionCondLock.unlock();
 			throw e;

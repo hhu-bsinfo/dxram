@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
@@ -11,35 +12,35 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
-public abstract class ChunkComponent extends DXRAMComponent {
-	
+public class ChunkComponent extends DXRAMComponent {
+
 	private BootComponent m_boot;
 	private BackupComponent m_backup;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 	private LogComponent m_log;
-	
-	public ChunkComponent(int p_priorityInit, int p_priorityShutdown) {
+
+	public ChunkComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
-	
+
 	public void putRecoveredChunks(final Chunk[] p_chunks) {
 
 		if (!m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			putForeignChunks(p_chunks);
 		}
 	}
-	
+
 	@Override
-	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, Settings p_settings) {
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 
 		m_boot = getDependentComponent(BootComponent.class);
 		m_backup = getDependentComponent(BackupComponent.class);
 		m_memoryManager = getDependentComponent(MemoryManagerComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
 		m_log = getDependentComponent(LogComponent.class);
-		
-		return false;
+
+		return true;
 	}
 
 	/**
@@ -58,7 +59,7 @@ public abstract class ChunkComponent extends DXRAMComponent {
 		m_memoryManager.lockManage();
 		for (int i = 0; i < p_chunks.length; i++) {
 			chunk = p_chunks[i];
-			
+
 			m_memoryManager.create(chunk.getID(), chunk.getDataSize());
 			m_memoryManager.put(chunk);
 
@@ -88,7 +89,7 @@ public abstract class ChunkComponent extends DXRAMComponent {
 					backupPeers = m_backup.getCurrentMigrationBackupPeers();
 				}
 
-				rangeID = m_backup.addMigratedChunk(chunk);				
+				rangeID = m_backup.addMigratedChunk(chunk);
 
 				if (backupPeers != null) {
 					for (int j = 0; j < backupPeers.length; j++) {
@@ -100,5 +101,13 @@ public abstract class ChunkComponent extends DXRAMComponent {
 			}
 		}
 	}
-	
+
+	@Override
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
+
+	@Override
+	protected boolean shutdownComponent() {
+		return true;
+	}
+
 }

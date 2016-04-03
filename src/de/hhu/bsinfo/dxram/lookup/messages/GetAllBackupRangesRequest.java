@@ -9,7 +9,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Kevin Beineke
  *         08.10.2015
  */
-public class GetBackupRangesRequest extends AbstractRequest {
+public class GetAllBackupRangesRequest extends AbstractRequest {
 
 	// Attributes
 	private short m_nodeID;
@@ -18,7 +18,7 @@ public class GetBackupRangesRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of GetBackupRangesRequest
 	 */
-	public GetBackupRangesRequest() {
+	public GetAllBackupRangesRequest() {
 		super();
 
 		m_nodeID = -1;
@@ -31,8 +31,8 @@ public class GetBackupRangesRequest extends AbstractRequest {
 	 * @param p_nodeID
 	 *            the NodeID
 	 */
-	public GetBackupRangesRequest(final short p_destination, final short p_nodeID) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_REQUEST);
+	public GetAllBackupRangesRequest(final short p_destination, final short p_nodeID) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST);
 
 		m_nodeID = p_nodeID;
 	}

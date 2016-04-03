@@ -10,7 +10,7 @@ import de.hhu.bsinfo.menet.AbstractResponse;
  * @author Florian Klein
  *         09.03.2012
  */
-public class GetChunkIDResponse extends AbstractResponse {
+public class GetChunkIDForNameserviceEntryResponse extends AbstractResponse {
 
 	// Attributes
 	private long m_chunkID;
@@ -19,7 +19,7 @@ public class GetChunkIDResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of GetChunkIDResponse
 	 */
-	public GetChunkIDResponse() {
+	public GetChunkIDForNameserviceEntryResponse() {
 		super();
 
 		m_chunkID = ChunkID.INVALID_ID;
@@ -32,8 +32,8 @@ public class GetChunkIDResponse extends AbstractResponse {
 	 * @param p_chunkID
 	 *            the ChunkID
 	 */
-	public GetChunkIDResponse(final GetChunkIDRequest p_request, final long p_chunkID) {
-		super(p_request, LookupMessages.SUBTYPE_GET_CHUNKID_RESPONSE);
+	public GetChunkIDForNameserviceEntryResponse(final GetChunkIDForNameserviceEntryRequest p_request, final long p_chunkID) {
+		super(p_request, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_RESPONSE);
 
 		m_chunkID = p_chunkID;
 	}

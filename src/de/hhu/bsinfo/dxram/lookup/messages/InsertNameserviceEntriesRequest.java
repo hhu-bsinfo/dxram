@@ -11,7 +11,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Florian Klein
  *         09.03.2012
  */
-public class InsertIDRequest extends AbstractRequest {
+public class InsertNameserviceEntriesRequest extends AbstractRequest {
 
 	// Attributes
 	private int m_id;
@@ -22,7 +22,7 @@ public class InsertIDRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of InsertIDRequest
 	 */
-	public InsertIDRequest() {
+	public InsertNameserviceEntriesRequest() {
 		super();
 
 		m_id = -1;
@@ -41,8 +41,8 @@ public class InsertIDRequest extends AbstractRequest {
 	 * @param p_isBackup
 	 *            whether this is a backup message or not
 	 */
-	public InsertIDRequest(final short p_destination, final int p_id, final long p_chunkID, final boolean p_isBackup) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_ID_REQUEST);
+	public InsertNameserviceEntriesRequest(final short p_destination, final int p_id, final long p_chunkID, final boolean p_isBackup) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST);
 
 		m_id = p_id;
 		m_chunkID = p_chunkID;

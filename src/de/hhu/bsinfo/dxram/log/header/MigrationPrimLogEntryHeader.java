@@ -1,7 +1,6 @@
 
 package de.hhu.bsinfo.dxram.log.header;
 
-
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 
@@ -77,7 +76,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 	}
 
 	@Override
-	protected short getType(final byte[] p_buffer, final int p_offset) {
+	public short getType(final byte[] p_buffer, final int p_offset) {
 		return (short) (p_buffer[p_offset] & 0x00FF);
 	}
 

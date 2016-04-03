@@ -348,11 +348,11 @@ public class LookupComponent extends DXRAMComponent {
 
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(LookupConfigurationValues.Component.PING_INTERVAL);
 		p_settings.setDefaultValue(LookupConfigurationValues.Component.CACHES_ENABLED);
-		p_settings.setDefaultValue(LookupConfigurationValues.Component.CACHE_TTL);
 		p_settings.setDefaultValue(LookupConfigurationValues.Component.CACHE_ENTRIES);
 		p_settings.setDefaultValue(LookupConfigurationValues.Component.NAMESERVICE_CACHE_ENTRIES);
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.CACHE_TTL);
+		p_settings.setDefaultValue(LookupConfigurationValues.Component.PING_INTERVAL);
 	}
 
 	@Override
@@ -362,7 +362,7 @@ public class LookupComponent extends DXRAMComponent {
 
 		m_cachesEnabled = p_settings.getValue(LookupConfigurationValues.Component.CACHES_ENABLED);
 		if (m_cachesEnabled) {
-			m_maxCacheSize = p_settings.getValue(LookupConfigurationValues.Component.CACHE_TTL);
+			m_maxCacheSize = p_settings.getValue(LookupConfigurationValues.Component.CACHE_ENTRIES);
 
 			m_chunkIDCacheTree = new CacheTree(m_maxCacheSize, ORDER);
 

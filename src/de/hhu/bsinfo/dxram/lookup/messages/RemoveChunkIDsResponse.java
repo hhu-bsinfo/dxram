@@ -5,34 +5,34 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
- * Response to a InsertIDRequest
- * @author Florian Klein
- *         09.03.2012
+ * Response to a RemoveRequest
+ * @author Kevin Beineke
+ *         06.09.2012
  */
-public class InsertIDResponse extends AbstractResponse {
+public class RemoveChunkIDsResponse extends AbstractResponse {
 
 	// Attributes
 	private short[] m_backupSuperpeers;
 
 	// Constructors
 	/**
-	 * Creates an instance of InsertIDResponse
+	 * Creates an instance of RemoveResponse
 	 */
-	public InsertIDResponse() {
+	public RemoveChunkIDsResponse() {
 		super();
 
 		m_backupSuperpeers = null;
 	}
 
 	/**
-	 * Creates an instance of InsertIDResponse
+	 * Creates an instance of RemoveResponse
 	 * @param p_request
-	 *            the request
+	 *            the corresponding RemoveRequest
 	 * @param p_backupSuperpeers
 	 *            the backup superpeers
 	 */
-	public InsertIDResponse(final InsertIDRequest p_request, final short[] p_backupSuperpeers) {
-		super(p_request, LookupMessages.SUBTYPE_INSERT_ID_RESPONSE);
+	public RemoveChunkIDsResponse(final RemoveChunkIDsRequest p_request, final short[] p_backupSuperpeers) {
+		super(p_request, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_RESPONSE);
 
 		m_backupSuperpeers = p_backupSuperpeers;
 	}
@@ -64,7 +64,7 @@ public class InsertIDResponse extends AbstractResponse {
 		if (p_buffer.get() != 0) {
 			m_backupSuperpeers = new short[p_buffer.getInt()];
 			p_buffer.asShortBuffer().get(m_backupSuperpeers);
-			p_buffer.position(p_buffer.position() + m_backupSuperpeers.length * Short.BYTES);
+			p_buffer.position(p_buffer.position() + Short.BYTES * m_backupSuperpeers.length);
 		}
 	}
 
@@ -75,7 +75,7 @@ public class InsertIDResponse extends AbstractResponse {
 		if (m_backupSuperpeers == null) {
 			ret = Byte.BYTES;
 		} else {
-			ret = Byte.BYTES + Integer.BYTES + m_backupSuperpeers.length * Short.BYTES;
+			ret = Byte.BYTES + Integer.BYTES + Short.BYTES * m_backupSuperpeers.length;
 		}
 
 		return ret;

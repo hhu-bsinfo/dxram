@@ -106,18 +106,26 @@ public final class NetworkHandler implements DataReceiver {
 	 *            the own NodeID
 	 * @param p_nodeMap
 	 *            the node map
-	 * @param p_maxOutstandingBytes
-	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
 	 * @param p_numberOfBuffers
+	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @param p_connectionTimeout
+	 *            the connection timeout
 	 */
-	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes, final int p_numberOfBuffers) {
+	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
+			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 		ms_logger.trace(getClass().getSimpleName(), "Entering initialize");
 
 		m_nodeMap = p_nodeMap;
 
 		final AbstractConnectionCreator connectionCreator =
-				new NIOConnectionCreator(m_executor, m_messageDirectory, m_nodeMap, p_maxOutstandingBytes, p_numberOfBuffers);
+				new NIOConnectionCreator(m_executor, m_messageDirectory, m_nodeMap, p_incomingBufferSize, p_outgoingBufferSize,
+						p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
 
@@ -170,7 +178,7 @@ public final class NetworkHandler implements DataReceiver {
 			}
 			entry.add(p_receiver);
 
-			ms_logger.info(getClass().getSimpleName(), "new MessageReceiver");
+			ms_logger.info(getClass().getSimpleName(), "new MessageReceiver for " + p_message.getSimpleName());
 			m_receiversLock.unlock();
 		}
 	}

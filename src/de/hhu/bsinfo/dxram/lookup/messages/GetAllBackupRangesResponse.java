@@ -12,7 +12,7 @@ import de.hhu.bsinfo.menet.AbstractResponse;
  * @author Kevin Beineke
  *         08.10.2015
  */
-public class GetBackupRangesResponse extends AbstractResponse {
+public class GetAllBackupRangesResponse extends AbstractResponse {
 
 	// Attributes
 	private BackupRange[] m_backupRanges;
@@ -21,7 +21,7 @@ public class GetBackupRangesResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of GetBackupRangesResponse
 	 */
-	public GetBackupRangesResponse() {
+	public GetAllBackupRangesResponse() {
 		super();
 
 		m_backupRanges = null;
@@ -34,8 +34,8 @@ public class GetBackupRangesResponse extends AbstractResponse {
 	 * @param p_backupRanges
 	 *            all backup ranges for requested NodeID
 	 */
-	public GetBackupRangesResponse(final GetBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
-		super(p_request, LookupMessages.SUBTYPE_GET_BACKUP_RANGES_RESPONSE);
+	public GetAllBackupRangesResponse(final GetAllBackupRangesRequest p_request, final BackupRange[] p_backupRanges) {
+		super(p_request, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE);
 
 		m_backupRanges = p_backupRanges;
 	}

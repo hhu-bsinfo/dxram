@@ -33,6 +33,8 @@ public abstract class AbstractConnection {
 	private int m_unconfirmedBytes;
 	private int m_receivedBytes;
 
+	private int m_flowControlWindowSize;
+
 	private ReentrantLock m_flowControlCondLock;
 	private Condition m_flowControlCond;
 
@@ -47,9 +49,12 @@ public abstract class AbstractConnection {
 	 *            the task executer
 	 * @param p_messageDirectory
 	 *            the message directory
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory) {
-		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null);
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+			final int p_flowControlWindowSize) {
+		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null, p_flowControlWindowSize);
 	}
 
 	/**
@@ -64,9 +69,11 @@ public abstract class AbstractConnection {
 	 *            the task executer
 	 * @param p_messageDirectory
 	 *            the message directory
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
 	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
-			final DataReceiver p_listener) {
+			final DataReceiver p_listener, final int p_flowControlWindowSize) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_dataHandler = new DataHandler();
@@ -83,6 +90,7 @@ public abstract class AbstractConnection {
 
 		m_timestamp = 0;
 
+		m_flowControlWindowSize = p_flowControlWindowSize;
 		m_flowControlCondLock = new ReentrantLock(false);
 		m_flowControlCond = m_flowControlCondLock.newCondition();
 
@@ -109,7 +117,7 @@ public abstract class AbstractConnection {
 	 * @return true if the connection is connected, false otherwise
 	 */
 	public final boolean isCongested() {
-		return m_unconfirmedBytes > NIOConnectionCreator.FLOW_CONTROL_LIMIT;
+		return m_unconfirmedBytes > m_flowControlWindowSize;
 	}
 
 	/**
@@ -163,7 +171,7 @@ public abstract class AbstractConnection {
 
 		m_receivedBytes += ret.remaining();
 		m_flowControlCondLock.lock();
-		if (m_receivedBytes > NIOConnectionCreator.FLOW_CONTROL_LIMIT * 0.8) {
+		if (m_receivedBytes > m_flowControlWindowSize * 0.8) {
 			sendFlowControlMessage();
 		}
 		m_flowControlCondLock.unlock();
@@ -190,7 +198,7 @@ public abstract class AbstractConnection {
 	 */
 	public final void write(final AbstractMessage p_message) throws IOException {
 		m_flowControlCondLock.lock();
-		while (m_unconfirmedBytes > NIOConnectionCreator.FLOW_CONTROL_LIMIT) {
+		while (m_unconfirmedBytes > m_flowControlWindowSize) {
 			try {
 				m_flowControlCond.await();
 			} catch (final InterruptedException e) { /* ignore */}

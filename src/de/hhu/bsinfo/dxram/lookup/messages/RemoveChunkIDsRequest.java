@@ -10,7 +10,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Kevin Beineke
  *         06.09.2012
  */
-public class RemoveRequest extends AbstractRequest {
+public class RemoveChunkIDsRequest extends AbstractRequest {
 
 	// Attributes
 	private long[] m_chunkIDs;
@@ -20,7 +20,7 @@ public class RemoveRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of RemoveRequest
 	 */
-	public RemoveRequest() {
+	public RemoveChunkIDsRequest() {
 		super();
 
 		m_chunkIDs = null;
@@ -36,8 +36,8 @@ public class RemoveRequest extends AbstractRequest {
 	 * @param p_isBackup
 	 *            whether this is a backup message or not
 	 */
-	public RemoveRequest(final short p_destination, final long[] p_chunkIDs, final boolean p_isBackup) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_REQUEST);
+	public RemoveChunkIDsRequest(final short p_destination, final long[] p_chunkIDs, final boolean p_isBackup) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST);
 
 		assert p_chunkIDs != null;
 

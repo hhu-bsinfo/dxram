@@ -12,7 +12,7 @@ import de.hhu.bsinfo.menet.AbstractResponse;
  * @author Kevin Beineke
  *         06.09.2012
  */
-public class LookupResponse extends AbstractResponse {
+public class GetLookupRangeResponse extends AbstractResponse {
 
 	// Attributes
 	private LookupRange m_locations;
@@ -21,7 +21,7 @@ public class LookupResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of LookupResponse
 	 */
-	public LookupResponse() {
+	public GetLookupRangeResponse() {
 		super();
 
 		m_locations = null;
@@ -34,8 +34,8 @@ public class LookupResponse extends AbstractResponse {
 	 * @param p_locations
 	 *            the primary peer, backup peers and range
 	 */
-	public LookupResponse(final LookupRequest p_request, final LookupRange p_locations) {
-		super(p_request, LookupMessages.SUBTYPE_LOOKUP_RESPONSE);
+	public GetLookupRangeResponse(final GetLookupRangeRequest p_request, final LookupRange p_locations) {
+		super(p_request, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_RESPONSE);
 
 		m_locations = p_locations;
 	}

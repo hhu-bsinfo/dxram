@@ -23,7 +23,9 @@ class NIOSelector extends Thread {
 	// Attributes
 	private ServerSocketChannel m_serverChannel;
 	private Selector m_selector;
+
 	private NIOConnectionCreator m_connectionCreator;
+	private NIOInterface m_nioInterface;
 
 	private final Queue<ChangeOperationsRequest> m_changeRequests;
 	private ReentrantLock m_changeLock;
@@ -35,12 +37,16 @@ class NIOSelector extends Thread {
 	 * Creates an instance of NIOSelector
 	 * @param p_connectionCreator
 	 *            the NIOConnectionCreator
+	 * @param p_nioInterface
+	 *            the NIOInterface to send/receive data
 	 * @param p_port
 	 *            the port
 	 */
-	protected NIOSelector(final NIOConnectionCreator p_connectionCreator, final int p_port) {
+	protected NIOSelector(final NIOConnectionCreator p_connectionCreator, final NIOInterface p_nioInterface, final int p_port) {
 		m_serverChannel = null;
 		m_selector = null;
+
+		m_nioInterface = p_nioInterface;
 		m_connectionCreator = p_connectionCreator;
 
 		m_changeRequests = new ArrayDeque<>();
@@ -172,7 +178,7 @@ class NIOSelector extends Thread {
 						m_connectionCreator.createConnection((SocketChannel) p_key.channel());
 					} else {
 						try {
-							successful = NIOInterface.read(connection);
+							successful = m_nioInterface.read(connection);
 						} catch (final IOException e) {
 							NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not read from channel (" + connection.getDestination() + ")!");
 							successful = false;
@@ -183,7 +189,7 @@ class NIOSelector extends Thread {
 					}
 				} else if (p_key.isWritable()) {
 					try {
-						complete = NIOInterface.write(connection);
+						complete = m_nioInterface.write(connection);
 					} catch (final IOException e) {
 						NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not write to channel (" + connection.getDestination() + ")!");
 						complete = false;

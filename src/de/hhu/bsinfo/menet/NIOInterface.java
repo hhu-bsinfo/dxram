@@ -14,13 +14,30 @@ import java.nio.channels.SocketChannel;
 final class NIOInterface {
 
 	// Attributes
-	private static ByteBuffer m_readBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.INCOMING_BUFFER_SIZE);
-	private static ByteBuffer m_writeBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
+	private int m_incomingBufferSize;
+	private int m_outgoingBufferSize;
+	private int m_flowControlWindowSize;
+
+	private ByteBuffer m_readBuffer;
+	private ByteBuffer m_writeBuffer;
 
 	/**
-	 * Hidden constructor as this class only contains static members and methods
+	 * Creates an instance of NIOInterface
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	private NIOInterface() {}
+	NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) {
+		m_incomingBufferSize = p_incomingBufferSize;
+		m_outgoingBufferSize = p_outgoingBufferSize;
+		m_flowControlWindowSize = p_flowControlWindowSize;
+
+		m_readBuffer = ByteBuffer.allocateDirect(p_incomingBufferSize);
+		m_writeBuffer = ByteBuffer.allocateDirect(m_outgoingBufferSize);
+	}
 
 	/**
 	 * Creates a new connection
@@ -40,7 +57,7 @@ final class NIOInterface {
 	 *             if the connection could not be created
 	 * @return the new NIOConnection
 	 */
-	protected static NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+	protected NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
 			final MessageDirectory p_messageDirectory, final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers)
 					throws IOException {
 		NIOConnection connection = null;
@@ -54,7 +71,8 @@ final class NIOInterface {
 		} else {
 			m_readBuffer.flip();
 
-			connection = new NIOConnection(m_readBuffer.getShort(), p_nodeMap, p_taskExecutor, p_messageDirectory, p_channel, p_nioSelector, p_numberOfBuffers);
+			connection = new NIOConnection(m_readBuffer.getShort(), p_nodeMap, p_taskExecutor, p_messageDirectory, p_channel, p_nioSelector, p_numberOfBuffers,
+					m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 			p_channel.register(p_nioSelector.getSelector(), SelectionKey.OP_READ, connection);
 
 			if (m_readBuffer.hasRemaining()) {
@@ -78,7 +96,7 @@ final class NIOInterface {
 	 *             if the data could not be read
 	 * @return whether reading from channel was successful or not (connection is closed then)
 	 */
-	protected static boolean read(final NIOConnection p_connection) throws IOException {
+	protected boolean read(final NIOConnection p_connection) throws IOException {
 		boolean ret = true;
 		long readBytes = 0;
 		ByteBuffer buffer;
@@ -119,7 +137,7 @@ final class NIOInterface {
 	 * @throws IOException
 	 *             if the data could not be written
 	 */
-	protected static boolean write(final NIOConnection p_connection) throws IOException {
+	protected boolean write(final NIOConnection p_connection) throws IOException {
 		boolean ret = true;
 		int bytes;
 		int size;
@@ -128,13 +146,13 @@ final class NIOInterface {
 		ByteBuffer slice;
 		ByteBuffer buf;
 
-		buffer = p_connection.getOutgoingBytes(m_writeBuffer, NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
+		buffer = p_connection.getOutgoingBytes(m_writeBuffer, m_outgoingBufferSize);
 		if (buffer != null) {
-			if (buffer.remaining() > NIOConnectionCreator.OUTGOING_BUFFER_SIZE) {
+			if (buffer.remaining() > m_outgoingBufferSize) {
 				// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
 				// the length of the actual written data -> simulate a smaller buffer by slicing it
 				outerloop: while (buffer.remaining() > 0) {
-					size = Math.min(buffer.remaining(), NIOConnectionCreator.OUTGOING_BUFFER_SIZE);
+					size = Math.min(buffer.remaining(), m_outgoingBufferSize);
 					view = buffer.slice();
 					view.limit(size);
 

@@ -9,7 +9,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
  * @author Kevin Beineke
  *         12.10.2015
  */
-public class UpdateAllMessage extends AbstractMessage {
+public class SetRestorerAfterRecoveryMessage extends AbstractMessage {
 
 	// Attributes
 	private short m_owner;
@@ -18,7 +18,7 @@ public class UpdateAllMessage extends AbstractMessage {
 	/**
 	 * Creates an instance of UpdateAllMessage
 	 */
-	public UpdateAllMessage() {
+	public SetRestorerAfterRecoveryMessage() {
 		super();
 
 		m_owner = -1;
@@ -31,8 +31,8 @@ public class UpdateAllMessage extends AbstractMessage {
 	 * @param p_owner
 	 *            the failed peer
 	 */
-	public UpdateAllMessage(final short p_destination, final short p_owner) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_UPDATE_ALL_MESSAGE);
+	public SetRestorerAfterRecoveryMessage(final short p_destination, final short p_owner) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE);
 
 		m_owner = p_owner;
 	}

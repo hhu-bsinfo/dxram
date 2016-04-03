@@ -10,7 +10,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Kevin Beineke
  *         06.09.2012
  */
-public class LookupRequest extends AbstractRequest {
+public class GetLookupRangeRequest extends AbstractRequest {
 
 	// Attributes
 	private long m_chunkID;
@@ -19,7 +19,7 @@ public class LookupRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of LookupRequest
 	 */
-	public LookupRequest() {
+	public GetLookupRangeRequest() {
 		super();
 
 		m_chunkID = -1;
@@ -32,8 +32,8 @@ public class LookupRequest extends AbstractRequest {
 	 * @param p_chunkID
 	 *            the ChunkID of the requested object
 	 */
-	public LookupRequest(final short p_destination, final long p_chunkID) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_LOOKUP_REQUEST);
+	public GetLookupRangeRequest(final short p_destination, final long p_chunkID) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST);
 
 		assert p_chunkID != ChunkID.INVALID_ID;
 

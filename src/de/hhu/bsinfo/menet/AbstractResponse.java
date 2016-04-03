@@ -8,7 +8,7 @@ package de.hhu.bsinfo.menet;
  */
 public abstract class AbstractResponse extends AbstractMessage {
 
-	private AbstractRequest m_correspondingRequest;
+	public AbstractRequest m_correspondingRequest;
 
 	// Constructors
 	/**

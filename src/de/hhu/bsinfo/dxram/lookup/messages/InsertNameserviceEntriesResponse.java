@@ -5,34 +5,34 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
- * Response to a RemoveRequest
- * @author Kevin Beineke
- *         06.09.2012
+ * Response to a InsertIDRequest
+ * @author Florian Klein
+ *         09.03.2012
  */
-public class RemoveResponse extends AbstractResponse {
+public class InsertNameserviceEntriesResponse extends AbstractResponse {
 
 	// Attributes
 	private short[] m_backupSuperpeers;
 
 	// Constructors
 	/**
-	 * Creates an instance of RemoveResponse
+	 * Creates an instance of InsertIDResponse
 	 */
-	public RemoveResponse() {
+	public InsertNameserviceEntriesResponse() {
 		super();
 
 		m_backupSuperpeers = null;
 	}
 
 	/**
-	 * Creates an instance of RemoveResponse
+	 * Creates an instance of InsertIDResponse
 	 * @param p_request
-	 *            the corresponding RemoveRequest
+	 *            the request
 	 * @param p_backupSuperpeers
 	 *            the backup superpeers
 	 */
-	public RemoveResponse(final RemoveRequest p_request, final short[] p_backupSuperpeers) {
-		super(p_request, LookupMessages.SUBTYPE_REMOVE_RESPONSE);
+	public InsertNameserviceEntriesResponse(final InsertNameserviceEntriesRequest p_request, final short[] p_backupSuperpeers) {
+		super(p_request, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_RESPONSE);
 
 		m_backupSuperpeers = p_backupSuperpeers;
 	}
@@ -64,7 +64,7 @@ public class RemoveResponse extends AbstractResponse {
 		if (p_buffer.get() != 0) {
 			m_backupSuperpeers = new short[p_buffer.getInt()];
 			p_buffer.asShortBuffer().get(m_backupSuperpeers);
-			p_buffer.position(p_buffer.position() + Short.BYTES * m_backupSuperpeers.length);
+			p_buffer.position(p_buffer.position() + m_backupSuperpeers.length * Short.BYTES);
 		}
 	}
 
@@ -75,7 +75,7 @@ public class RemoveResponse extends AbstractResponse {
 		if (m_backupSuperpeers == null) {
 			ret = Byte.BYTES;
 		} else {
-			ret = Byte.BYTES + Integer.BYTES + Short.BYTES * m_backupSuperpeers.length;
+			ret = Byte.BYTES + Integer.BYTES + m_backupSuperpeers.length * Short.BYTES;
 		}
 
 		return ret;

@@ -16,18 +16,18 @@ import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
  */
 class NIOConnectionCreator extends AbstractConnectionCreator {
 
-	// Constants
-	protected static final int INCOMING_BUFFER_SIZE = 1024 * 1024;
-	protected static final int OUTGOING_BUFFER_SIZE = 1024 * 1024;
-	protected static final int FLOW_CONTROL_LIMIT = 1024 * 1024;
-	protected static final int CONNECTION_TIMEOUT = 200;
-
 	// Attributes
 	private TaskExecutor m_taskExecutor;
 	private MessageDirectory m_messageDirectory;
 	private NodeMap m_nodeMap;
-	private int m_numberOfBuffers;
 
+	private int m_incomingBufferSize;
+	private int m_outgoingBufferSize;
+	private int m_numberOfBuffers;
+	private int m_flowControlWindowSize;
+	private int m_connectionTimeout = 200;
+
+	private NIOInterface m_nioInterface;
 	private NIOSelector m_nioSelector;
 
 	// Constructors
@@ -39,22 +39,36 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 *            the message directory
 	 * @param p_nodeMap
 	 *            the node map
-	 * @param p_maxOutstandingBytes
-	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
 	 * @param p_numberOfBuffers
+	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @param p_connectionTimeout
+	 *            the connection timeout
 	 */
 	protected NIOConnectionCreator(final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
-			final NodeMap p_nodeMap, final int p_maxOutstandingBytes, final int p_numberOfBuffers) {
+			final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
+			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 		super();
 
 		m_nioSelector = null;
 
 		m_taskExecutor = p_taskExecutor;
 		m_messageDirectory = p_messageDirectory;
+
+		m_incomingBufferSize = p_incomingBufferSize;
+		m_outgoingBufferSize = p_outgoingBufferSize;
 		m_numberOfBuffers = p_numberOfBuffers;
+		m_flowControlWindowSize = p_flowControlWindowSize;
+		m_connectionTimeout = p_connectionTimeout;
 
 		m_nodeMap = p_nodeMap;
+
+		m_nioInterface = new NIOInterface(p_incomingBufferSize, p_outgoingBufferSize, p_flowControlWindowSize);
 	}
 
 	// Methods
@@ -63,7 +77,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 */
 	@Override
 	public void initialize(final short p_nodeID, final int p_listenPort) {
-		m_nioSelector = new NIOSelector(this, p_listenPort);
+		m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort);
 		m_nioSelector.setName("Network: NIOSelector");
 		m_nioSelector.setPriority(Thread.MAX_PRIORITY);
 		m_nioSelector.start();
@@ -98,13 +112,14 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		condLock = new ReentrantLock(false);
 		cond = condLock.newCondition();
-		ret = new NIOConnection(p_destination, m_nodeMap, m_taskExecutor, m_messageDirectory, p_listener, condLock, cond, m_nioSelector, m_numberOfBuffers);
+		ret = new NIOConnection(p_destination, m_nodeMap, m_taskExecutor, m_messageDirectory, p_listener, condLock, cond, m_nioSelector, m_numberOfBuffers,
+				m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 
 		timeStart = System.currentTimeMillis();
 		condLock.lock();
 		while (!ret.isConnected()) {
 			timeNow = System.currentTimeMillis();
-			if (timeNow - timeStart > CONNECTION_TIMEOUT) {
+			if (timeNow - timeStart > m_connectionTimeout) {
 				NetworkHandler.ms_logger.debug(getClass().getSimpleName(), "connection time-out");
 
 				condLock.unlock();
@@ -131,7 +146,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		NIOConnection connection;
 
 		try {
-			connection = NIOInterface.initIncomingConnection(m_nodeMap, m_taskExecutor, m_messageDirectory, p_channel, m_nioSelector, m_numberOfBuffers);
+			connection = m_nioInterface.initIncomingConnection(m_nodeMap, m_taskExecutor, m_messageDirectory, p_channel, m_nioSelector, m_numberOfBuffers);
 			fireConnectionCreated(connection);
 		} catch (final IOException e) {
 			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not create connection!");

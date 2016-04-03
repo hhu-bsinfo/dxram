@@ -18,8 +18,6 @@ import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
-import de.hhu.bsinfo.dxram.log.messages.LogCommandRequest;
-import de.hhu.bsinfo.dxram.log.messages.LogCommandResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
@@ -138,7 +136,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	 *             if the secondary log buffer could not be returned
 	 */
 	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		SecondaryLogBuffer ret = null;
 		LogCatalog cat;
 
@@ -504,6 +502,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	 * Returns the current utilization of primary log and all secondary logs
 	 * @return the current utilization
 	 */
+	@SuppressWarnings("unused")
 	private String getCurrentUtilization() {
 		String ret;
 		long counter;
@@ -670,26 +669,6 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		}
 	}
 
-	/**
-	 * Handles an incoming LogCommandRequest
-	 * @param p_request
-	 *            the CommandRequest
-	 */
-	private void incomingCommandRequest(final LogCommandRequest p_request) {
-		String res;
-
-		if (p_request.getArgument().contains("loginfo")) {
-			res = getCurrentUtilization();
-		} else {
-			res = "error";
-		}
-
-		final NetworkErrorCodes err = m_network.sendMessage(new LogCommandResponse(p_request, res));
-		if (err != NetworkErrorCodes.SUCCESS) {
-			m_logger.error(LogService.class, "Could not response to log command request: " + err);
-		}
-	}
-
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
@@ -703,9 +682,6 @@ public class LogService extends DXRAMService implements MessageReceiver {
 					break;
 				case LogMessages.SUBTYPE_INIT_REQUEST:
 					incomingInitRequest((InitRequest) p_message);
-					break;
-				case LogMessages.SUBTYPE_LOG_COMMAND_REQUEST:
-					incomingCommandRequest((LogCommandRequest) p_message);
 					break;
 				default:
 					break;
@@ -724,8 +700,6 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_LOG_COMMAND_REQUEST, LogCommandRequest.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_LOG_COMMAND_RESPONSE, LogCommandResponse.class);
 	}
 
 	/**
@@ -735,7 +709,6 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		m_network.register(LogMessage.class, this);
 		m_network.register(RemoveMessage.class, this);
 		m_network.register(InitRequest.class, this);
-		m_network.register(LogCommandRequest.class, this);
 	}
 
 }

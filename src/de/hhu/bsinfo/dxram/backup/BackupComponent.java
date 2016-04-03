@@ -234,7 +234,7 @@ public class BackupComponent extends DXRAMComponent {
 		}
 		m_firstRangeInitialized = false;
 
-		return false;
+		return true;
 	}
 
 	@Override

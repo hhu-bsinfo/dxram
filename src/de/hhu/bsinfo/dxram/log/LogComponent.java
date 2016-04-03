@@ -147,7 +147,7 @@ public class LogComponent extends DXRAMComponent {
 		m_network = getDependentComponent(NetworkComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 
-		return false;
+		return true;
 	}
 
 	/**

@@ -14,11 +14,14 @@ import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.dxram.migration.messages.MigrationMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationMessages;
+import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
+import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -33,6 +36,7 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
 	private LookupComponent m_lookup;
+	private LoggerComponent m_logger;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 
@@ -73,7 +77,9 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 
 				if (chunk != null) {
 					// LOGGER.trace("Send request to " + p_target);
-					m_network.sendMessage(new MigrationMessage(p_target, new Chunk[] {chunk}));
+					if (m_network.sendSync(new MigrationRequest(p_target, new Chunk[] {chunk})) != NetworkErrorCodes.SUCCESS) {
+						m_logger.error(getClass(), "Could not migrate chunks");
+					}
 
 					// Update superpeers
 					m_lookup.migrate(p_chunkID, p_target);
@@ -98,7 +104,7 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 					ret = true;
 				}
 			} else {
-				System.out.println("Chunk with ChunkID " + p_chunkID + " could not be migrated!");
+				m_logger.error(getClass(), "Chunk with ChunkID " + p_chunkID + " could not be migrated");
 				ret = false;
 			}
 			m_migrationLock.unlock();
@@ -156,14 +162,16 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 								chunkIDs[counter] = chunk.getID();
 								size += chunk.getDataSize();
 							} else {
-								System.out.println("Chunk with ChunkID " + iter + " could not be migrated!");
+								m_logger.error(getClass(), "Chunk with ChunkID " + iter + " could not be migrated");
 							}
 							iter++;
 						}
 						m_memoryManager.unlockAccess();
 
-						System.out.println("Sending " + counter + " Chunks (" + size + " Bytes) to " + p_target);
-						m_network.sendMessage(new MigrationMessage(p_target, Arrays.copyOf(chunks, counter)));
+						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to " + p_target);
+						if (m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter))) != NetworkErrorCodes.SUCCESS) {
+							m_logger.error(getClass(), "Could not migrate chunks");
+						}
 
 						if (iter > p_endChunkID) {
 							break;
@@ -197,15 +205,15 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 					}
 					ret = true;
 				} else {
-					System.out.println("Chunks could not be migrated because end of range is before start of range!");
+					m_logger.error(getClass(), "Chunks could not be migrated because end of range is before start of range");
 					ret = false;
 				}
 			} else {
-				System.out.println("Chunks could not be migrated!");
+				m_logger.error(getClass(), "Chunks could not be migrated");
 				ret = false;
 			}
 			m_migrationLock.unlock();
-			System.out.println("All chunks migrated!");
+			m_logger.info(getClass(), "All chunks migrated");
 		}
 		return ret;
 	}
@@ -254,23 +262,25 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 		m_backup = getComponent(BackupComponent.class);
 		m_chunk = getComponent(ChunkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
+		m_logger = getComponent(LoggerComponent.class);
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 
 		m_migrationLock = new ReentrantLock(false);
 
+		registerNetworkMessages();
 		registerNetworkMessageListener();
 
 		return true;
 	}
 
 	/**
-	 * Handles an incoming MigrationMessage
-	 * @param p_message
-	 *            the MigrationMessage
+	 * Handles an incoming MigrationRequest
+	 * @param p_request
+	 *            the MigrationRequest
 	 */
-	private void incomingMigrationMessage(final MigrationMessage p_message) {
-		m_chunk.putForeignChunks((Chunk[]) p_message.getDataStructures());
+	private void incomingMigrationRequest(final MigrationRequest p_request) {
+		m_chunk.putForeignChunks((Chunk[]) p_request.getDataStructures());
 	}
 
 	@Override
@@ -280,7 +290,7 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
 				case MigrationMessages.SUBTYPE_MIGRATION_MESSAGE:
-					incomingMigrationMessage((MigrationMessage) p_message);
+					incomingMigrationRequest((MigrationRequest) p_message);
 					break;
 				default:
 					break;
@@ -292,10 +302,18 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 	// -----------------------------------------------------------------------------------
 
 	/**
+	 * Register network messages we use in here.
+	 */
+	private void registerNetworkMessages() {
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE, MigrationResponse.class);
+	}
+
+	/**
 	 * Register network messages we want to listen to in here.
 	 */
 	private void registerNetworkMessageListener() {
-		m_network.register(MigrationMessage.class, this);
+		m_network.register(MigrationRequest.class, this);
 	}
 
 }

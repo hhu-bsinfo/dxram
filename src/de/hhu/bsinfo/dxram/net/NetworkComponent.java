@@ -105,14 +105,16 @@ public class NetworkComponent extends DXRAMComponent {
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.MAX_OUTSTANDING_BYTES);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.INCOMING_BUFFER_SIZE);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.CONNECTION_TIMEOUT_MS);
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings)
-	{
+	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_boot = getDependentComponent(BootComponent.class);
 
@@ -124,8 +126,11 @@ public class NetworkComponent extends DXRAMComponent {
 		m_networkHandler.initialize(
 				m_boot.getNodeID(),
 				new NodeMappings(m_boot),
-				p_settings.getValue(NetworkConfigurationValues.Component.MAX_OUTSTANDING_BYTES),
-				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS));
+				p_settings.getValue(NetworkConfigurationValues.Component.INCOMING_BUFFER_SIZE),
+				p_settings.getValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE),
+				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS),
+				p_settings.getValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE),
+				p_settings.getValue(NetworkConfigurationValues.Component.CONNECTION_TIMEOUT_MS));
 
 		m_requestTimeoutMs = p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 

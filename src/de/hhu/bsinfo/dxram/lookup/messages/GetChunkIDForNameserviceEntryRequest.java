@@ -9,7 +9,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Florian Klein
  *         09.03.2012
  */
-public class GetChunkIDRequest extends AbstractRequest {
+public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
 
 	// Attributes
 	private int m_id;
@@ -18,7 +18,7 @@ public class GetChunkIDRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of GetChunkIDRequest
 	 */
-	public GetChunkIDRequest() {
+	public GetChunkIDForNameserviceEntryRequest() {
 		super();
 
 		m_id = -1;
@@ -31,8 +31,8 @@ public class GetChunkIDRequest extends AbstractRequest {
 	 * @param p_id
 	 *            the id
 	 */
-	public GetChunkIDRequest(final short p_destination, final int p_id) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_REQUEST);
+	public GetChunkIDForNameserviceEntryRequest(final short p_destination, final int p_id) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST);
 
 		m_id = p_id;
 	}
