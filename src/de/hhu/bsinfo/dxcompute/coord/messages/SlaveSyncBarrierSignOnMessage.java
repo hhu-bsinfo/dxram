@@ -19,8 +19,9 @@ public class SlaveSyncBarrierSignOnMessage extends SyncMessage {
 	 * @param p_destination
 	 *            the destination node id.
 	 * @param p_syncToken Token to correctly identify responses to a sync message
+	 * @param p_data Some custom data to pass along.
 	 */
-	public SlaveSyncBarrierSignOnMessage(final short p_destination, final int p_syncToken) {
-		super(p_destination, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, p_syncToken);
+	public SlaveSyncBarrierSignOnMessage(final short p_destination, final int p_syncToken, final long p_data) {
+		super(p_destination, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, p_syncToken, p_data);
 	}
 }

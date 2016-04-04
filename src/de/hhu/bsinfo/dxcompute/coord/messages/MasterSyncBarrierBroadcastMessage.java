@@ -21,7 +21,7 @@ public class MasterSyncBarrierBroadcastMessage extends SyncMessage
 	 * @param p_destination
 	 *            the destination node id.
 	 */
-	public MasterSyncBarrierBroadcastMessage(final short p_destination, final int p_syncToken) {
-		super(p_destination, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, p_syncToken);
+	public MasterSyncBarrierBroadcastMessage(final short p_destination, final int p_syncToken, final long p_data) {
+		super(p_destination, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, p_syncToken, p_data);
 	}
 }

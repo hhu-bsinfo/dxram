@@ -22,12 +22,12 @@ public class SyncBarrierSlaveTask extends Coordinator {
 	
 	@Override
 	protected boolean setup() {
-		m_syncBarrier = new SyncBarrierSlave(m_barrierIdentifer, m_networkService, m_loggerService);
+		m_syncBarrier = new SyncBarrierSlave(m_networkService, m_loggerService);
 		return true;
 	}
 
 	@Override
 	protected boolean coordinate() {
-		return m_syncBarrier.execute();
+		return m_syncBarrier.execute(m_barrierIdentifer, -1);
 	}
 }

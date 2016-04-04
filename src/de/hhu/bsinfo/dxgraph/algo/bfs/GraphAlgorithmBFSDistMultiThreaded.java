@@ -22,9 +22,6 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 	private int m_broadcastIntervalMs = 2000;
 	private int m_barrierIdentifer = -1;
 	
-	private SyncBarrierMaster m_syncBarrierMaster = null;
-	private SyncBarrierSlave m_syncBarrierSlave = null;
-	
 	private FrontierList m_curFrontier = null;
 	private FrontierList m_nextFrontier = null;
 	
@@ -82,9 +79,192 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 		} else {
 			executeSlave();
 		}
+		
+		for (int i = 0; i < m_threads.length; i++) {
+			m_threads[i].exitThread();
+		}
+		
+		m_loggerService.info(getClass(), "Joining BFS threads...");
+		for (int i = 0; i < m_threads.length; i++) {
+			try {
+				m_threads[i].join();
+			} catch (InterruptedException e) {
+			}
+		}
 
 		m_loggerService.info(getClass(), "Finished BFS.");
 		return true;
+	}
+	
+	private class Master
+	{
+		private SyncBarrierMaster m_entryBarrier;
+		private SyncBarrierMaster m_levelBarrier;
+		
+		public Master()
+		{
+			m_entryBarrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
+			m_levelBarrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
+		}
+		
+		public void execute(long[] p_entryNodes)
+		{
+			// entry barrier: wait for everyone to finish setup
+			m_entryBarrier.execute(1111, -1);
+			
+			// for each vertex of the root list execute a full bfs search
+			for (long entryNode : p_entryNodes)
+			{		 
+				// send vertex to the node it is local to
+				short entryNodeId = ChunkID.getCreatorID(entryNode);
+				if (entryNodeId != m_bootService.getNodeID())
+				{
+					// send to remote 
+					VerticesForNextFrontierMessage msg = new VerticesForNextFrontierMessage(entryNodeId, 1);
+					msg.getVertexIDBuffer()[0] = entryNode;
+					msg.setNumVerticesInBatch(1);
+					
+					if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+						m_loggerService.error(getClass(), "Sending entry vertex " + Long.toHexString(entryNode) + " to node " + 
+									Integer.toHexString(entryNodeId) + " failed");
+						continue; 
+					}
+				}
+				else
+				{
+					// located here
+					m_nextFrontier.pushBack(ChunkID.getLocalID(entryNode));
+				}
+				
+				// for each bfs level
+				while (true)
+				{
+					// master: wait for all slaves to finish this
+					m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 2222, m_networkService, m_bootService, m_loggerService);
+					m_syncBarrierMaster.execute();
+					
+					// frontier swap for everything, because we must put our entry node in next
+					FrontierList tmp = m_curFrontier;
+					m_curFrontier = m_nextFrontier;
+					m_nextFrontier = tmp;
+					m_nextFrontier.reset();
+					
+					// also swap them for threads!
+					for (int t = 0; t < m_threads.length; t++) {	
+						m_threads[t].triggerFrontierSwap();
+					}
+					
+					m_loggerService.info(getClass(), "Executing BFS iteration (" + bfsIteration + ") with root node " + Long.toHexString(entryNode));
+					Pair<Long, Integer> results = runBFS(bfsIteration);
+					m_loggerService.info(getClass(), "Results BFS iteration (" + bfsIteration + ") for root node " + Long.toHexString(entryNode) + ": Iteration depth " + results.second() + ", total visited vertices " + results.first());
+				
+					bfsIteration++;
+				}
+			}
+		}
+	}
+	
+	private class Slave
+	{
+		private SyncBarrierSlave m_levelBarrier;
+		private volatile boolean m_globalFinishedCurLevel = false;
+		
+		private long m_totalVisitedCounter = 0;
+		private int m_totalBfsLevels = 0;
+		
+		public Slave()
+		{
+			m_levelBarrier = new SyncBarrierSlave(m_networkService, m_loggerService);
+		}
+		
+		public long getTotalVisitedCounter() {
+			return m_totalVisitedCounter;
+		}
+		
+		public int getTotalBfsLevels() {
+			return m_totalBfsLevels;
+		}
+		
+		public void execute()
+		{
+			m_totalVisitedCounter = 0;
+			m_totalBfsLevels = 0;
+			
+			long lastLevelVisitedCounter = 0;
+			// for each level
+			while (true)
+			{
+				// use this to send our visited counter of the last iteration to the master
+				m_levelBarrier.execute(2222 + m_totalBfsLevels, lastLevelVisitedCounter);
+				// we received an exit signal
+				if (m_levelBarrier.getBarrierData() == -1)
+					break;
+				
+				// frontier swap
+				FrontierList tmp = m_curFrontier;
+				m_curFrontier = m_nextFrontier;
+				m_nextFrontier = tmp;
+				m_nextFrontier.reset();
+				
+				// also swap them for threads!
+				for (int t = 0; t < m_threads.length; t++) {	
+					m_threads[t].triggerFrontierSwap();
+				}
+				
+				// TODO send message to master that we are running and got work 
+				
+				// kick off threads with current frontier
+				for (int t = 0; t < m_threads.length; t++) {	
+					m_threads[t].runIteration(true);
+				}
+				
+				// check periodically if threads are done
+				// to detect end of bfs level
+				boolean previousAllIdle = false;
+				while (!m_globalFinishedCurLevel)
+				{
+					boolean allIdle = true;
+					for (int t = 0; t < m_threads.length; t++) {	
+						if (!m_threads[t].isIdle()) {
+							allIdle = false;
+							break;
+						}
+					}
+					
+					if (!previousAllIdle && allIdle)
+					{
+						// signal we are bored
+						// TODO send message to master we are currently bored
+						// incoming level done message
+					}
+					else if (previousAllIdle && !allIdle)
+					{
+						// TODO send message to master that we are running and got work 
+					}
+					
+					previousAllIdle = allIdle;
+					
+					Thread.yield();
+				}
+				
+				// pause idling threads
+				for (int t = 0; t < m_threads.length; t++) {	
+					m_threads[t].runIteration(false);
+				}
+				
+				// wait for all threads to enter pause state
+				for (int t = 0; t < m_threads.length; t++) {	
+					if (!m_threads[t].isIterationPaused()) {
+						--t;
+						Thread.yield();
+						continue;
+					}
+				}
+				
+				m_totalVisitedCounter += lastLevelVisitedCounter;
+				m_totalBfsLevels++;
+			}
+		}
 	}
 	
 	private void executeMaster(long[] p_entryNodes)

@@ -20,8 +20,9 @@ public class MasterSyncBarrierReleaseMessage extends SyncMessage {
 	 * @param p_destination
 	 *            the destination node id.
 	 * @param p_syncToken Token to correctly identify responses to a sync message
+	 * @param p_data Some custom data to pass along.
 	 */
-	public MasterSyncBarrierReleaseMessage(final short p_destination, final int p_syncToken) {
-		super(p_destination, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, p_syncToken);
+	public MasterSyncBarrierReleaseMessage(final short p_destination, final int p_syncToken, final long p_data) {
+		super(p_destination, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, p_syncToken, p_data);
 	}
 }

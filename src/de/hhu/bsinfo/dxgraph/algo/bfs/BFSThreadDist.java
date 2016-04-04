@@ -29,8 +29,10 @@ public class BFSThreadDist extends Thread {
 	private FrontierList m_curFrontier = null;
 	private FrontierList m_nextFrontier = null;
 	
+	private volatile boolean m_runIteration = false;
+	private volatile boolean m_isIterationPaused = false;
 	private volatile int m_visitedCounterRun = 0;
-	private volatile boolean m_iterationLevelDone = true;
+	private volatile boolean m_isIdle = true;
 	private volatile boolean m_exitThread = false;
 	
 	public BFSThreadDist(
@@ -66,13 +68,16 @@ public class BFSThreadDist extends Thread {
 		m_currentIterationLevel = p_iterationLevel;
 	}
 	
-	public void triggerNextIteration() {
-		m_visitedCounterRun = 0;
-		m_iterationLevelDone = false;
+	public void runIteration(final boolean p_run) {
+		m_runIteration = p_run;
 	}
 	
-	public boolean isIterationLevelDone() {
-		return m_iterationLevelDone;
+	public boolean isIterationPaused() {
+		return m_isIterationPaused;
+	}
+	
+	public boolean isIdle() {
+		return m_isIdle;
 	}
 	
 	public int getVisitedCountLastRun() {
@@ -94,25 +99,33 @@ public class BFSThreadDist extends Thread {
 	{
 		while (true)
 		{
-			while (m_iterationLevelDone)
-			{						
+			do
+			{
+				m_isIterationPaused = true;
+				
 				if (m_exitThread)
 					return;
 				
-				Thread.yield();
+				if (m_isIdle) {
+					Thread.yield();
+				}
 			}
+			while (!m_runIteration);
+			m_isIterationPaused = false;
 			
 			int validVertsInBatch = 0;
 			for (int i = 0; i < m_vertexBatch.length; i++) {
 				long tmp = m_curFrontier.popFront();
 				if (tmp != -1)
 				{
+					m_isIdle = false;
 					m_vertexBatch[i].setID(ChunkID.getChunkID(m_nodeId, tmp));
 					validVertsInBatch++;
 				}
 				else
 				{
 					if (validVertsInBatch == 0) {
+						m_isIdle = true;
 						break;
 					}
 					m_vertexBatch[i].setID(ChunkID.INVALID_ID);
@@ -120,7 +133,6 @@ public class BFSThreadDist extends Thread {
 			}
 			
 			if (validVertsInBatch == 0) {
-				m_iterationLevelDone = true;
 				continue;
 			}
 			

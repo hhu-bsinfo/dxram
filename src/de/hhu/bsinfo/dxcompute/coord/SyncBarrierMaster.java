@@ -2,7 +2,6 @@ package de.hhu.bsinfo.dxcompute.coord;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 
 import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierBroadcastMessage;
@@ -14,7 +13,7 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.locks.SpinLock;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Implementation for a sync barrier for multiple nodes with one master 
@@ -35,7 +34,7 @@ public class SyncBarrierMaster implements MessageReceiver {
 	private BootService m_bootService = null;
 	private LoggerService m_loggerService = null;
 	
-	private ArrayList<Short> m_slavesSynced = new ArrayList<Short>();
+	private ArrayList<Pair<Short, Long>> m_slavesSynced = new ArrayList<Pair<Short, Long>>();
 	
 	/**
 	 * Constructor
@@ -43,10 +42,9 @@ public class SyncBarrierMaster implements MessageReceiver {
 	 * @param p_broadcastIntervalMs Interval in ms to broadcast a message message to catch slaves waiting for the barrier.
 	 * @param p_barrierIdentifier Token to identify this barrier (if using multiple barriers), which is used as a sync token.
 	 */
-	public SyncBarrierMaster(final int p_numSlaves, final int p_broadcastIntervalMs, final int p_barrierIdentifier, final NetworkService p_networkService, final BootService p_bootService, final LoggerService p_loggerService) {
+	public SyncBarrierMaster(final int p_numSlaves, final int p_broadcastIntervalMs, final NetworkService p_networkService, final BootService p_bootService, final LoggerService p_loggerService) {
 		m_numSlaves = p_numSlaves;
 		m_broadcastIntervalMs = p_broadcastIntervalMs;
-		m_barrierIdentifer = p_barrierIdentifier;
 		
 		m_networkService = p_networkService;
 		m_bootService = p_bootService;
@@ -55,13 +53,15 @@ public class SyncBarrierMaster implements MessageReceiver {
 		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
 		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_BROADCAST, MasterSyncBarrierBroadcastMessage.class);
 		m_networkService.registerMessageType(CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
-		
-		m_networkService.registerReceiver(SlaveSyncBarrierSignOnMessage.class, this);
 	}
 
-	public boolean execute() {
+	public boolean execute(final int p_barrierIdentifier, final long p_data) {
 		
-		m_loggerService.info(getClass(), "Broadcasting (every " + m_broadcastIntervalMs + "ms) and waiting until " + m_numSlaves + " slaves have signed on...");
+		m_barrierIdentifer = p_barrierIdentifier;
+		
+		m_loggerService.info(getClass(), "Broadcasting (every " + m_broadcastIntervalMs + "ms) and waiting until " + m_numSlaves + " slaves have signed on with identifier " + p_barrierIdentifier + " and data " + p_data);
+		
+		m_networkService.registerReceiver(SlaveSyncBarrierSignOnMessage.class, this);
 		
 		// wait until all slaves have signed on
 		while (m_slavesSynced.size() != m_numSlaves)
@@ -73,10 +73,11 @@ public class SyncBarrierMaster implements MessageReceiver {
 				// don't send to ourselves
 				if (peer != m_bootService.getNodeID())
 				{
-					MasterSyncBarrierBroadcastMessage message = new MasterSyncBarrierBroadcastMessage(peer, m_barrierIdentifer);
+					MasterSyncBarrierBroadcastMessage message = new MasterSyncBarrierBroadcastMessage(peer, m_barrierIdentifer, p_data);
 					NetworkErrorCodes error = m_networkService.sendMessage(message);
 					if (error != NetworkErrorCodes.SUCCESS) {
 						m_loggerService.error(getClass(), "Sending broadcast message to peer " + peer + " failed: " + error);
+						return false;
 					} 
 				}
 			}
@@ -90,19 +91,26 @@ public class SyncBarrierMaster implements MessageReceiver {
 		m_loggerService.info(getClass(), m_numSlaves + " slaves have signed on.");
 		
 		// release barrier
-		for (short slavePeerID : m_slavesSynced)
+		for (Pair<Short, Long> slaves : m_slavesSynced)
 		{
-			m_loggerService.debug(getClass(), "Releasing slave " + slavePeerID);
-			MasterSyncBarrierReleaseMessage message = new MasterSyncBarrierReleaseMessage(slavePeerID, m_barrierIdentifer);
+			m_loggerService.debug(getClass(), "Releasing slave " + slaves.first());
+			MasterSyncBarrierReleaseMessage message = new MasterSyncBarrierReleaseMessage(slaves.first(), m_barrierIdentifer, p_data);
 			NetworkErrorCodes error = m_networkService.sendMessage(message);
 			if (error != NetworkErrorCodes.SUCCESS) {
-				m_loggerService.error(getClass(), "Sending release to " + slavePeerID + " failed: " + error);
+				m_loggerService.error(getClass(), "Sending release to " + slaves.first() + " failed: " + error);
+				return false;
 			} 
 		}
 		
 		m_loggerService.info(getClass(), "Barrier releaseed.");
 		
+		m_networkService.unregisterReceiver(SlaveSyncBarrierSignOnMessage.class, this);
+		
 		return true;
+	}
+	
+	public ArrayList<Pair<Short, Long>> getBarrierData() {
+		return m_slavesSynced;
 	}
 	
 	
@@ -137,7 +145,7 @@ public class SyncBarrierMaster implements MessageReceiver {
 		{	
 			// avoid dupes
 			if (!m_slavesSynced.contains(p_message.getSource())) {
-				m_slavesSynced.add(p_message.getSource());
+				m_slavesSynced.add(new Pair<Short, Long>(p_message.getSource(), p_message.getData()));
 			}
 		}
 		

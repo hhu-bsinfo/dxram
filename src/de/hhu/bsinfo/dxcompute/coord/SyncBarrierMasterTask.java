@@ -30,12 +30,12 @@ public class SyncBarrierMasterTask extends Coordinator {
 
 	@Override
 	protected boolean setup() {
-		m_syncBarrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_barrierIdentifer, m_networkService, m_bootService, m_loggerService);
+		m_syncBarrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
 		return true;
 	}
 
 	@Override
 	protected boolean coordinate() {
-		return m_syncBarrier.execute();
+		return m_syncBarrier.execute(m_barrierIdentifer, -1);
 	}
 }
