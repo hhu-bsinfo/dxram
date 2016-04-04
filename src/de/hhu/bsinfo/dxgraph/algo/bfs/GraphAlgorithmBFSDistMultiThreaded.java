@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxcompute.coord.SyncBarrierSlave;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.SlaveRunning;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -98,19 +99,17 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 	
 	private class Master
 	{
-		private SyncBarrierMaster m_entryBarrier;
-		private SyncBarrierMaster m_levelBarrier;
+		private SyncBarrierMaster m_barrier;
 		
 		public Master()
 		{
-			m_entryBarrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
-			m_levelBarrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
+			m_barrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
 		}
 		
 		public void execute(long[] p_entryNodes)
 		{
 			// entry barrier: wait for everyone to finish setup
-			m_entryBarrier.execute(1111, -1);
+			m_barrier.execute(1111, 0);
 			
 			// for each vertex of the root list execute a full bfs search
 			for (long entryNode : p_entryNodes)
@@ -137,13 +136,13 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 				}
 				
 				// for each bfs level
+				int bfsLevel = 0;
 				while (true)
 				{
-					// master: wait for all slaves to finish this
-					m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 2222, m_networkService, m_bootService, m_loggerService);
-					m_syncBarrierMaster.execute();
+					// level sync
+					m_barrier.execute(2222, bfsLevel);
 					
-					// frontier swap for everything, because we must put our entry node in next
+					// frontier swap
 					FrontierList tmp = m_curFrontier;
 					m_curFrontier = m_nextFrontier;
 					m_nextFrontier = tmp;
@@ -154,19 +153,68 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 						m_threads[t].triggerFrontierSwap();
 					}
 					
-					m_loggerService.info(getClass(), "Executing BFS iteration (" + bfsIteration + ") with root node " + Long.toHexString(entryNode));
-					Pair<Long, Integer> results = runBFS(bfsIteration);
-					m_loggerService.info(getClass(), "Results BFS iteration (" + bfsIteration + ") for root node " + Long.toHexString(entryNode) + ": Iteration depth " + results.second() + ", total visited vertices " + results.first());
+					// kick off threads with current frontier
+					for (int t = 0; t < m_threads.length; t++) {	
+						m_threads[t].runIteration(true);
+					}
+					
+					// check periodically if threads are done
+					// to detect end of bfs level
+					boolean previousAllIdle = false;
+					while (!m_globalFinishedCurLevel)
+					{
+						boolean allIdle = true;
+						for (int t = 0; t < m_threads.length; t++) {	
+							if (!m_threads[t].isIdle()) {
+								allIdle = false;
+								break;
+							}
+						}
+						
+						if (!previousAllIdle && allIdle)
+						{
+							// signal we are bored
+							// TODO send message to master we are currently bored
+							// incoming level done message
+						}
+						else if (previousAllIdle && !allIdle)
+						{
+							// TODO send message to master that we are running and got work 
+						}
+						
+						previousAllIdle = allIdle;
+						
+						Thread.yield();
+					}
+					
+					// pause idling threads
+					for (int t = 0; t < m_threads.length; t++) {	
+						m_threads[t].runIteration(false);
+					}
+					
+					// wait for all threads to enter pause state
+					for (int t = 0; t < m_threads.length; t++) {	
+						if (!m_threads[t].isIterationPaused()) {
+							--t;
+							Thread.yield();
+							continue;
+						}
+					}
+					
+					m_totalVisitedCounter += lastLevelVisitedCounter;
+					m_totalBfsLevels++;
 				
-					bfsIteration++;
+					bfsLevel++;
 				}
 			}
+			
+	
 		}
 	}
 	
-	private class Slave
+	private class Slave implements MessageReceiver
 	{
-		private SyncBarrierSlave m_levelBarrier;
+		private SyncBarrierSlave m_barrier;
 		private volatile boolean m_globalFinishedCurLevel = false;
 		
 		private long m_totalVisitedCounter = 0;
@@ -174,7 +222,7 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 		
 		public Slave()
 		{
-			m_levelBarrier = new SyncBarrierSlave(m_networkService, m_loggerService);
+			m_barrier = new SyncBarrierSlave(m_networkService, m_loggerService);
 		}
 		
 		public long getTotalVisitedCounter() {
@@ -187,6 +235,13 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 		
 		public void execute()
 		{
+			short masterNodeId = -1;
+			
+			m_barrier.execute(1111, -1);
+			masterNodeId = m_barrier.getMasterNodeID();
+			
+			// TODO for each vertex missing
+			
 			m_totalVisitedCounter = 0;
 			m_totalBfsLevels = 0;
 			
@@ -199,7 +254,7 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 				// we received an exit signal
 				if (m_levelBarrier.getBarrierData() == -1)
 					break;
-				
+
 				// frontier swap
 				FrontierList tmp = m_curFrontier;
 				m_curFrontier = m_nextFrontier;
@@ -212,6 +267,8 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 				}
 				
 				// TODO send message to master that we are running and got work 
+				m_networkService.sendMessage(new SlaveRunning(masterNodeId))
+				
 				
 				// kick off threads with current frontier
 				for (int t = 0; t < m_threads.length; t++) {	
@@ -264,6 +321,12 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 				m_totalVisitedCounter += lastLevelVisitedCounter;
 				m_totalBfsLevels++;
 			}
+		}
+
+		@Override
+		public void onIncomingMessage(AbstractMessage p_message) {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 	

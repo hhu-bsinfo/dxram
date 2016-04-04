@@ -74,6 +74,10 @@ public class SyncBarrierSlave implements MessageReceiver {
 		return true;
 	}
 	
+	public short getMasterNodeID() {
+		return m_masterNodeID;
+	}
+	
 	public long getBarrierData() {
 		return m_barrierData;
 	}

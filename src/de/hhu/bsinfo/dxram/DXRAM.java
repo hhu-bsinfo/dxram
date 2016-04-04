@@ -131,6 +131,8 @@ public final class DXRAM
 			System.out.println("BuildUser: " + buildUser);
 		}
 		
+		System.out.println("Cwd: " + System.getProperty("user.dir"));
+		
 		BootService bootService = m_engine.getService(BootService.class);
 		
 		short nodeId = bootService.getNodeID();

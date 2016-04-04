@@ -136,6 +136,9 @@ public class BFSThreadDist extends Thread {
 				continue;
 			}
 			
+			// TODO send/flush remaining buffered data for remote frontiers if
+			// we run out of vertices in the current frontier
+			
 			int gett = m_chunkService.get(m_vertexBatch, 0, validVertsInBatch);
 			if (gett != validVertsInBatch)
 			{
