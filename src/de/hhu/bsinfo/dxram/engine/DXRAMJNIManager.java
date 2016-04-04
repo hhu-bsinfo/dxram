@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.JNIconsole;
+import de.hhu.bsinfo.utils.OSValidator;
 import de.hhu.bsinfo.utils.log.Logger;
 
 /**
@@ -33,19 +34,30 @@ public class DXRAMJNIManager
 		m_logger.debug(LOG_HEADER, "Setting up JNI classes..." );
 		
 		String path;
+		String cwd = System.getProperty("user.dir");
+		String extension = null;
+		if (OSValidator.isUnix()) {
+			extension = "so";
+		} else if (OSValidator.isMac()) {
+			extension = "dylib";
+		} else {
+			m_logger.error(LOG_HEADER, "Non supported OS.");
+			return;
+		}
 		
 		path = p_settings.getValue("JNI/JNIconsole", String.class);
 		if (path == null) {
-			m_logger.error(LOG_HEADER, "Missing path for JNIconsole.");
+			JNIconsole.load(cwd + "/jni/libJNIconsole." + extension);
 		} else {
 			JNIconsole.load(path);
 		}
 		
 		path = p_settings.getValue("JNI/JNINativeMemory", String.class);
 		if (path == null) {
-			m_logger.error(LOG_HEADER, "Missing path for JNINativeMemory.");
+			JNINativeMemory.load(cwd + "/jni/libJNINativeMemory." + extension);
 		} else {
 			JNINativeMemory.load(path);
 		}
 	}
+
 }
