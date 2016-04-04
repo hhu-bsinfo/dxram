@@ -1071,7 +1071,7 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 	 * @throws MemoryException
 	 *             if the Chunks could not be put properly
 	 */
-	public void putForeignChunks(final Chunk[] p_chunks) throws LookupException, NetworkException, MemoryException {
+	private void putForeignChunks(final Chunk[] p_chunks) throws LookupException, NetworkException, MemoryException {
 		int logEntrySize;
 		long size = 0;
 		long cutChunkID = -1;
@@ -1162,7 +1162,6 @@ public final class ChunkHandler implements ChunkInterface, MessageReceiver, Conn
 
 				if (chunk != null) {
 					// LOGGER.trace("Send request to " + p_target);
-
 					new DataMessage(p_target, new Chunk[] {chunk}).send(m_network);
 
 					// Update superpeers

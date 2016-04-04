@@ -406,7 +406,7 @@ public final class LogMessages {
 
 	/**
 	 * Response to a LogCommandRequest
-	 * @author Florian Klein 05.07.2014
+	 * @author Kevin Beineke 10.09.2015
 	 */
 	public static class LogCommandResponse extends AbstractResponse {
 
