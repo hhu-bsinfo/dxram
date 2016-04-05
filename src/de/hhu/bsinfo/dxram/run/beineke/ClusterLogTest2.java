@@ -1,13 +1,9 @@
 
-package de.uniduesseldorf.dxram.test;
+package de.hhu.bsinfo.dxram.run.beineke;
 
-import java.util.Arrays;
-
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.data.Chunk;
 
 /**
  * Second test case for Cluster 2016.
@@ -48,46 +44,41 @@ public final class ClusterLogTest2 {
 
 		// Constructors
 		/**
-		 * Creates an instance of Server
+		 * Creates an instance of Master
 		 */
 		Master() {}
 
 		// Methods
 		/**
-		 * Starts the server
+		 * Starts the Master
 		 */
 		public void start() {
 			long counter = 0;
 			long start;
-			int[] sizes;
 			Chunk[] chunks;
 
 			// Initialize DXRAM
-			try {
-				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-			} catch (final DXRAMException e1) {
-				e1.printStackTrace();
-			}
+			final DXRAM dxram = new DXRAM();
+			dxram.initialize("config/dxram.conf");
+			final ChunkService chunkService = dxram.getService(ChunkService.class);
 
-			sizes = new int[CHUNKS_PER_PUT];
-			Arrays.fill(sizes, CHUNK_SIZE);
+			// Create array of Chunks
+			chunks = new Chunk[CHUNKS_PER_PUT];
+			for (int i = 0; i < CHUNKS_PER_PUT; i++) {
+				chunks[i] = new Chunk(CHUNK_SIZE);
+				chunks[i].getData().put("Test!".getBytes());
+			}
 
 			start = System.currentTimeMillis();
 			while (counter < 3221225472L) {
-				try {
-					// Create array of Chunks
-					chunks = Core.createNewChunks(sizes);
+				// Create new chunks in MemoryManagement
+				chunkService.create(chunks);
 
-					// Store them in-memory and replicate them on backups' SSD
-					Core.put(chunks);
+				// Store them in-memory and replicate them on backups' SSD
+				chunkService.put(chunks);
 
-					counter += CHUNKS_PER_PUT * CHUNK_SIZE;
-					// System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
-				} catch (final DXRAMException e) {
-					e.printStackTrace();
-					break;
-				}
+				counter += CHUNKS_PER_PUT * CHUNK_SIZE;
+				// System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
 			}
 			System.out.println("Time to create 3GB payload: " + (System.currentTimeMillis() - start));
 		}

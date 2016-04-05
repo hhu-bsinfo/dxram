@@ -1,16 +1,13 @@
 
-package de.uniduesseldorf.dxram.test;
+package de.hhu.bsinfo.dxram.run.beineke;
 
-import java.util.Arrays;
 import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 
-import de.uniduesseldorf.dxram.core.api.Core;
-import de.uniduesseldorf.dxram.core.api.config.ConfigurationHandler;
-import de.uniduesseldorf.dxram.core.api.config.NodesConfigurationHandler;
-import de.uniduesseldorf.dxram.core.chunk.Chunk;
-import de.uniduesseldorf.dxram.core.exceptions.DXRAMException;
+import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.data.Chunk;
 
 /**
  * Third test case for Cluster 2016. Imitates a test found in http://dx.doi.org/10.1145/2806887.
@@ -58,16 +55,13 @@ public final class ClusterLogTest3 {
 			new Master().start();
 		} else if (p_arguments[0].equals("benchmark")) {
 			// Initialize DXRAM
-			try {
-				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-			} catch (final DXRAMException e1) {
-				e1.printStackTrace();
-			}
+			final DXRAM dxram = new DXRAM();
+			dxram.initialize("config/dxram.conf");
+			final ChunkService chunkService = dxram.getService(ChunkService.class);
 
 			Benchmark currentThread = null;
 			for (int i = 0; i < THREADS; i++) {
-				currentThread = new Benchmark();
+				currentThread = new Benchmark(chunkService);
 				currentThread.start();
 			}
 			try {
@@ -77,6 +71,7 @@ public final class ClusterLogTest3 {
 	}
 
 	/**
+	 * The Master creates a fixed amount of data.
 	 * @author Kevin Beineke
 	 *         22.01.2016
 	 */
@@ -84,7 +79,7 @@ public final class ClusterLogTest3 {
 
 		// Constructors
 		/**
-		 * Creates an instance of Server
+		 * Creates an instance of Master
 		 */
 		Master() {}
 
@@ -95,37 +90,32 @@ public final class ClusterLogTest3 {
 		public void start() {
 			long counter = 0;
 			long start;
-			int[] sizes;
 			Chunk[] chunks;
 
 			// Initialize DXRAM
-			try {
-				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-			} catch (final DXRAMException e1) {
-				e1.printStackTrace();
-			}
+			final DXRAM dxram = new DXRAM();
+			dxram.initialize("config/dxram.conf");
+			final ChunkService chunkService = dxram.getService(ChunkService.class);
 
 			/**
 			 * Phase 1: Creating chunks
 			 */
-			sizes = new int[CHUNKS_PER_PUT];
-			Arrays.fill(sizes, CHUNK_SIZE);
+			// Create array of Chunks
+			chunks = new Chunk[CHUNKS_PER_PUT];
+			for (int i = 0; i < CHUNKS_PER_PUT; i++) {
+				chunks[i] = new Chunk(CHUNK_SIZE);
+				chunks[i].getData().put("Test!".getBytes());
+			}
 
 			start = System.currentTimeMillis();
 			while (counter < BYTES_TO_LOAD) {
-				try {
-					// Create array of Chunks
-					chunks = Core.createNewChunks(sizes);
+				// Create new chunks in MemoryManagement
+				chunkService.create(chunks);
 
-					// Store them in-memory and replicate them on backups' SSD
-					Core.put(chunks);
+				// Store them in-memory and replicate them on backups' SSD
+				chunkService.put(chunks);
 
-					counter += CHUNK_SIZE * CHUNKS_PER_PUT;
-				} catch (final DXRAMException e) {
-					e.printStackTrace();
-					break;
-				}
+				counter += CHUNK_SIZE * CHUNKS_PER_PUT;
 				if (counter % (100 * 1000 * 1000) == 0) {
 					System.out.println("Created 100.000.000 bytes and replicated them. All: " + counter);
 				}
@@ -135,16 +125,22 @@ public final class ClusterLogTest3 {
 	}
 
 	/**
+	 * The Benchmark changes (puts) the data of all Masters.
 	 * @author Kevin Beineke
 	 *         22.01.2016
 	 */
 	private static class Benchmark extends Thread {
 
+		// Attributes
+		private ChunkService m_chunkService;
+
 		// Constructors
 		/**
 		 * Creates an instance of Client
 		 */
-		Benchmark() {}
+		Benchmark(final ChunkService p_chunkService) {
+			m_chunkService = p_chunkService;
+		}
 
 		// Methods
 		/**
@@ -164,9 +160,10 @@ public final class ClusterLogTest3 {
 			FastZipfGenerator zipf;
 
 			// Create array of Chunks
-			chunks = new Chunk[CHUNKS_PER_UPDATE];
-			for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-				chunks[i] = new Chunk(0, new byte[CHUNK_SIZE]);
+			chunks = new Chunk[CHUNKS_PER_PUT];
+			for (int i = 0; i < CHUNKS_PER_PUT; i++) {
+				chunks[i] = new Chunk(CHUNK_SIZE);
+				chunks[i].getData().put("Test!".getBytes());
 			}
 
 			start = System.currentTimeMillis();
@@ -180,14 +177,10 @@ public final class ClusterLogTest3 {
 						chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(2)] << 48) + offset + i);
 					}*/
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-						chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(2)] << 48) + nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
+						chunks[i].setID(((long) nodeIDs[rand.nextInt(2)] << 48) + nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1);
 					}
 
-					try {
-						Core.put(chunks);
-					} catch (final DXRAMException e) {
-						e.printStackTrace();
-					}
+					m_chunkService.put(chunks);
 
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
 					if (counter % (10 * 1000 * 1000) == 0) {
@@ -200,14 +193,10 @@ public final class ClusterLogTest3 {
 
 				while (counter < BYTES_TO_UPDATE / THREADS) {
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
-						chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(2)] << 48) + zipf.next());
+						chunks[i].setID(((long) nodeIDs[rand.nextInt(2)] << 48) + zipf.next());
 					}
 
-					try {
-						Core.put(chunks);
-					} catch (final DXRAMException e) {
-						e.printStackTrace();
-					}
+					m_chunkService.put(chunks);
 
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
 					if (counter % (10 * 1000 * 1000) == 0) {

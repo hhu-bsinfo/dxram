@@ -1,26 +1,19 @@
 
-package de.hhu.bsinfo.dxram.test;
+package de.hhu.bsinfo.dxram.run.beineke;
 
-import de.uniduesseldorf.dxram.core.dxram.Core;
-import de.uniduesseldorf.dxram.core.dxram.nodeconfig.NodeID;
+import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.engine.DXRAMException;
-import de.hhu.bsinfo.dxram.engine.nodeconfig.NodesConfigurationHandler;
-import de.hhu.bsinfo.utils.ArrayTools;
-import de.hhu.bsinfo.utils.config.ConfigurationHandler;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 
 /*
  * Start-up:
- * 1) Start at least one superpeer: With parameter "superpeer", must also be a superpeer in nodes.config
- * 2) Start server: With parameters "server x" whereas x is the number of messages that should be stored on server
- * 3) Set serverID to NodeID of server
+ * 1) Start at least one superpeer.
+ * 2) Optional: Start peers for backup.
+ * 3) Start server: With parameters "server x" whereas x is the number of messages that should be stored on server
  * 4) Start clients: No parameters
- * Notes:
- * a) The server's NodeID only changes if the number of first initialized superpeers differs. For one superpeer:
- * serverID = -15999
- * b) Server and clients can be peers and superpeers, but should be peers only for a reasonable allocation of roles in
- * DXRAM
  */
 /**
  * Test case for the distributed Chunk handling
@@ -42,58 +35,99 @@ public final class MailboxTest {
 	 *            The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
-		if (p_arguments.length == 1 && p_arguments[0].equals("superpeer")) {
-			new Superpeer().start();
-		} else if (p_arguments.length == 2 && p_arguments[0].equals("server")) {
+		if (p_arguments.length == 2 && p_arguments[0].equals("server")) {
 			new Server(Integer.parseInt(p_arguments[1])).start();
-		} else if (p_arguments.length == 1 && p_arguments[0].equals("backup")) {
-			new Backup().start();
 		} else {
 			new Client().start();
 		}
 	}
 
 	// Classes
-
-
-
-
-
-
 	/**
-	 * Represents a backup peer
-	 * @author Kevin Beineke
-	 *         20.04.2014
+	 * Represents a superpeer
+	 * @author Florian Klein
+	 *         22.07.2013
 	 */
-	private static class Backup {
+	private static class Server {
+
+		// Attributes
+		private int m_amount;
 
 		// Constructors
 		/**
-		 * Creates an instance of Backup
+		 * Creates an instance of Server
+		 * @param p_amount
+		 *            the amount of Chunks to create
 		 */
-		Backup() {}
+		Server(final int p_amount) {
+			m_amount = p_amount;
+		}
 
 		// Methods
 		/**
-		 * Starts the Backup peer
+		 * Starts the server
 		 */
 		public void start() {
+			Chunk anchor;
+			Chunk[] chunks;
+
 			// Wait a moment
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(500);
 			} catch (final InterruptedException e) {}
 
-			// Initialize EPM
-			try {
-				Core.initialize(ConfigurationHandler.getConfigurationFromFile("config/dxram.config"),
-						NodesConfigurationHandler.getConfigurationFromFile("config/nodes.config"));
-			} catch (final DXRAMException e1) {
-				e1.printStackTrace();
+			// Initialize DXRAM
+			final DXRAM dxram = new DXRAM();
+			dxram.initialize("config/dxram.conf");
+			final ChunkService chunkService = dxram.getService(ChunkService.class);
+			final NameserviceService nameService = dxram.getService(NameserviceService.class);
+
+			// Create anchor
+			anchor = new Chunk(Long.BYTES * m_amount);
+			chunkService.create(anchor);
+			nameService.register(anchor, "anc");
+
+			// Create Mails
+			chunks = new Chunk[m_amount];
+			for (int i = 0; i < m_amount; i++) {
+				chunks[i] = new Chunk(1024);
+				chunks[i].getData().put(("Mail " + i).getBytes());
 			}
+			chunkService.create(chunks);
+			chunkService.put(chunks);
 
-			System.out.println("Backup peer started");
+			// Set the Mailbox-Content
+			for (int i = 0; i < chunks.length; i++) {
+				anchor.getData().putLong(i * Long.BYTES, chunks[i].getID());
+			}
+			chunkService.put(anchor);
 
-			// Get the Mailbox-Content
+			System.out.println("Server started");
+
+			/* Migration test */
+			int i = 0;
+			while (i < 10) {
+				// Wait a moment
+				try {
+					Thread.sleep(1000);
+				} catch (final InterruptedException e) {}
+				i++;
+			}
+			// try {
+			// System.out.println("Migrating range(1,5) to " + 960);
+			// Core.migrateRange(((long) NodeID.getLocalNodeID() << 48) + 1,
+			// ((long) NodeID.getLocalNodeID() << 48) + 5,
+			// (short) 960);
+			// System.out.println("Migrating object(1) to " + 320);
+			// Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 1, (short) 320);
+			// Core.execute("migrate", "" + ((long) NodeID.getLocalNodeID() << 48) + 1, "" + Core.getNodeID(), ""
+			// + (short) 320);
+			// System.out.println("Migrating object(2) to " + (-15999));
+			// Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 2, (short) (-15999));
+			// System.out.println("Migrating object(3) to " + (-15615));
+			// Core.migrate(((long) NodeID.getLocalNodeID() << 48) + 3, (short) (-15615));
+			// } catch (final DXRAMException e1) {}
+
 			while (true) {
 				// Wait a moment
 				try {
@@ -101,7 +135,74 @@ public final class MailboxTest {
 				} catch (final InterruptedException e) {}
 			}
 		}
+	}
 
+	/**
+	 * Represents a client
+	 * @author Florian Klein
+	 *         22.07.2013
+	 */
+	private static class Client {
+
+		// Constructors
+		/**
+		 * Creates an instance of Client
+		 */
+		Client() {}
+
+		// Methods
+		/**
+		 * Starts the client
+		 */
+		public void start() {
+			int i = 0;
+			long chunkID;
+			long[] chunkIDs;
+			ByteBuffer data;
+			Chunk anchor = null;
+			Chunk chunk;
+
+			// Wait a moment
+			try {
+				Thread.sleep(1000);
+			} catch (final InterruptedException e) {}
+
+			// Initialize DXRAM
+			final DXRAM dxram = new DXRAM();
+			dxram.initialize("config/dxram.conf");
+			final ChunkService chunkService = dxram.getService(ChunkService.class);
+			final NameserviceService nameService = dxram.getService(NameserviceService.class);
+
+			System.out.println("Client started");
+
+			chunkID = nameService.getChunkID("anc");
+			// TODO: Size?
+			anchor = new Chunk(chunkID, 100);
+			chunkService.get(anchor);
+
+			data = anchor.getData();
+			chunkIDs = new long[data.capacity() / Long.BYTES];
+			while (data.remaining() >= Long.BYTES) {
+				chunkIDs[i++] = data.getLong();
+			}
+
+			chunk = new Chunk(1024);
+			// Get the Mailbox-Content
+			while (true) {
+				System.out.println("----------");
+
+				for (long id : chunkIDs) {
+					chunk.setID(id);
+					chunkService.get(chunk);
+					System.out.println(new String(chunk.getData().array()) + "\t" + chunk.getID());
+				}
+
+				// Wait a moment
+				try {
+					Thread.sleep(1000);
+				} catch (final InterruptedException e) {}
+			}
+		}
 	}
 
 }
