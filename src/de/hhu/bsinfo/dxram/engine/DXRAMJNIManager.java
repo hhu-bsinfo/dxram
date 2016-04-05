@@ -36,6 +36,7 @@ public class DXRAMJNIManager
 		String path;
 		String cwd = System.getProperty("user.dir");
 		String extension = null;
+		
 		if (OSValidator.isUnix()) {
 			extension = "so";
 		} else if (OSValidator.isMac()) {
@@ -47,17 +48,17 @@ public class DXRAMJNIManager
 		
 		path = p_settings.getValue("JNI/JNIconsole", String.class);
 		if (path == null) {
-			JNIconsole.load(cwd + "/jni/libJNIconsole." + extension);
-		} else {
-			JNIconsole.load(path);
+			path = cwd + "/jni/libJNIconsole." + extension;
 		}
+		m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
+		JNIconsole.load(path);
 		
 		path = p_settings.getValue("JNI/JNINativeMemory", String.class);
 		if (path == null) {
-			JNINativeMemory.load(cwd + "/jni/libJNINativeMemory." + extension);
-		} else {
-			JNINativeMemory.load(path);
+			path = cwd + "/jni/libJNINativeMemory." + extension;
 		}
+		m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
+		JNINativeMemory.load(path);
 	}
 
 }

@@ -84,18 +84,8 @@ public final class CIDTable {
 	 *             if the CIDTable could not be disengaged
 	 */
 	public void disengage() {
-		long entry;
-
 		m_store = null;
 		m_nextLocalID = null;
-
-		for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
-			entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-			if (entry > 0) {
-				disengage(entry, LID_TABLE_LEVELS - 1);
-				m_rawMemory.free(entry);
-			}
-		}
 
 		m_addressTableDirectory = -1;
 	}

@@ -23,7 +23,7 @@ public final class NetworkHandler implements DataReceiver {
 	// Attributes
 	public static LoggerInterface ms_logger = new LoggerNull();
 
-	private final TaskExecutor m_executor;
+	private final TaskExecutor m_messageCreatorExecutor;
 	private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
 
 	private final DefaultMessageHandler m_defaultMessageHandler;
@@ -50,7 +50,7 @@ public final class NetworkHandler implements DataReceiver {
 
 		m_numMessageHandlerThreads = p_numMessageHandlerThreads;
 
-		m_executor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
+		m_messageCreatorExecutor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
 		m_receivers = new HashMap<>();
 		m_receiversLock = new ReentrantLock(false);
 
@@ -124,7 +124,7 @@ public final class NetworkHandler implements DataReceiver {
 		m_nodeMap = p_nodeMap;
 
 		final AbstractConnectionCreator connectionCreator =
-				new NIOConnectionCreator(m_executor, m_messageDirectory, m_nodeMap, p_incomingBufferSize, p_outgoingBufferSize,
+				new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize, p_outgoingBufferSize,
 						p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
@@ -150,13 +150,36 @@ public final class NetworkHandler implements DataReceiver {
 	 * Closes the network handler
 	 */
 	public void close() {
-		ms_logger.trace(getClass().getSimpleName(), "Entering close");
+		// Shutdown message creator(s)
+		m_messageCreatorExecutor.shutdown();
+		try {
+			m_messageCreatorExecutor.awaitTermination();
+			ms_logger.info(getClass().getSimpleName(), "Shutdown of MessageCreator(s) successful.");
+		} catch (final InterruptedException e) {
+			ms_logger.warn(getClass().getSimpleName(), "Could not wait for message creator thread pool to finish. Interrupted.");
+		}
 
-		m_executor.shutdown();
+		// Shutdown default message handler(s)
 		m_defaultMessageHandler.m_executor.shutdown();
-		m_exclusiveMessageHandler.shutdown();
+		try {
+			m_defaultMessageHandler.m_executor.awaitTermination();
+			ms_logger.info(getClass().getSimpleName(), "Shutdown of DefaultMessageHandler(s) successful.");
+		} catch (final InterruptedException e) {
+			ms_logger.warn(getClass().getSimpleName(), "Could not wait for default message handler thread pool to finish. Interrupted.");
+		}
 
-		ms_logger.trace(getClass().getSimpleName(), "Exiting close");
+		// Shutdown exclusive message handler
+		m_exclusiveMessageHandler.shutdown();
+		m_exclusiveMessageHandler.interrupt();
+		try {
+			m_exclusiveMessageHandler.join();
+			ms_logger.info(getClass().getSimpleName(), "Shutdown of ExclusiveMessageHandler successful.");
+		} catch (final InterruptedException e) {
+			ms_logger.warn(getClass().getSimpleName(), "Could not wait for exclusive message handler to finish. Interrupted.");
+		}
+
+		// Close connection manager (shuts down selector thread, too)
+		m_manager.close();
 	}
 
 	/**
@@ -436,7 +459,7 @@ public final class NetworkHandler implements DataReceiver {
 						try {
 							m_messageAvailable.await();
 						} catch (final InterruptedException e) {
-							continue;
+							break;
 						}
 					}
 

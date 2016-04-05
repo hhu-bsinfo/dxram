@@ -239,7 +239,7 @@ public class BackupComponent extends DXRAMComponent {
 
 	@Override
 	protected boolean shutdownComponent() {
-		return false;
+		return true;
 	}
 
 	/**

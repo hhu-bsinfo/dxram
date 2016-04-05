@@ -176,7 +176,7 @@ public class LogComponent extends DXRAMComponent {
 
 	@Override
 	protected boolean shutdownComponent() {
-		return false;
+		return true;
 	}
 
 }

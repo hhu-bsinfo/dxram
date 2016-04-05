@@ -246,12 +246,14 @@ class NIOSelector extends Thread {
 		} catch (final IOException e) {
 			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to close channel!");
 		}
+		NetworkHandler.ms_logger.info(getClass().getSimpleName(), "Closing ServerSocketChannel successful.");
 
 		try {
 			m_selector.close();
 		} catch (final IOException e) {
-			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to close selector!");
+			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to shutdown selector!");
 		}
+		NetworkHandler.ms_logger.info(getClass().getSimpleName(), "Shutdown of Selector successful.");
 	}
 
 	/**
