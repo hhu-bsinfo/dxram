@@ -163,8 +163,6 @@ public class NIOConnection extends AbstractConnection {
 	/**
 	 * Reads messages from the connection
 	 * @return a AbstractMessage which was received
-	 * @throws IOException
-	 *             if the message could not be read
 	 */
 	@Override
 	protected ByteBuffer doRead() {
@@ -198,8 +196,6 @@ public class NIOConnection extends AbstractConnection {
 	 * Writes data to the connection
 	 * @param p_message
 	 *            the AbstractMessage to send
-	 * @throws IOException
-	 *             if the data could not be written
 	 */
 	@Override
 	protected void doWrite(final AbstractMessage p_message) {

@@ -9,8 +9,6 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-
 /**
  * Paging-like Tables for the ChunkID-VA mapping
  * @author Florian Klein
@@ -67,8 +65,6 @@ public final class CIDTable {
 	 * Initializes the CIDTable
 	 * @param p_rawMemory
 	 *            The raw memory instance to use for allocation.
-	 * @throws MemoryException
-	 *             if the CIDTable could not be initialized
 	 */
 	public void initialize(final SmallObjectHeap p_rawMemory) {
 		m_rawMemory = p_rawMemory;
@@ -82,8 +78,6 @@ public final class CIDTable {
 
 	/**
 	 * Disengages the CIDTable
-	 * @throws MemoryException
-	 *             if the CIDTable could not be disengaged
 	 */
 	public void disengage() {
 		m_store = null;
@@ -116,8 +110,6 @@ public final class CIDTable {
 	 * @param p_chunkID
 	 *            the ChunkID of the entry
 	 * @return the entry. 0 for invalid/unused.
-	 * @throws MemoryException
-	 *             If accessing memory to read the entry failed
 	 */
 	public long get(final long p_chunkID) {
 		long ret;
@@ -165,8 +157,6 @@ public final class CIDTable {
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
 	 * @return the ChunkID ranges in an ArrayList
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
 	 */
 	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
 		ArrayList<Long> ret = null;
@@ -214,8 +204,6 @@ public final class CIDTable {
 	/**
 	 * Returns the ChunkIDs of all migrated Chunks
 	 * @return the ChunkIDs of all migrated Chunks
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
 	 */
 	public ArrayList<Long> getCIDOfAllMigratedChunks() {
 		ArrayList<Long> ret = null;
@@ -243,8 +231,6 @@ public final class CIDTable {
 	 *            the table
 	 * @param p_level
 	 *            the table level
-	 * @throws MemoryException
-	 *             if the table could not be disengaged
 	 */
 	private void disengage(final long p_addressTable, final int p_level) {
 		long entry;
@@ -264,8 +250,6 @@ public final class CIDTable {
 	/**
 	 * Creates the NodeID table
 	 * @return the address of the table
-	 * @throws MemoryException
-	 *             If accessing memory to either allocate or writing the table failed.
 	 */
 	private long createNIDTable() {
 		long ret;
@@ -285,8 +269,6 @@ public final class CIDTable {
 	/**
 	 * Creates a table
 	 * @return the address of the table
-	 * @throws MemoryException
-	 *             If accessing memory to either allocate or writing the table failed.
 	 */
 	private long createLIDTable() {
 		long ret;
@@ -310,8 +292,6 @@ public final class CIDTable {
 	 * @param p_index
 	 *            the index of the entry
 	 * @return the entry
-	 * @throws MemoryException
-	 *             If accessing memory to read the entry failed
 	 */
 	private long readEntry(final long p_addressTable, final long p_index) {
 		long ret;
@@ -333,8 +313,6 @@ public final class CIDTable {
 	 *            the index of the entry
 	 * @param p_entry
 	 *            the entry
-	 * @throws MemoryException
-	 *             If accessing memory to read the entry failed
 	 */
 	private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) {
 		long value;
@@ -354,8 +332,6 @@ public final class CIDTable {
 	 * @param p_level
 	 *            the table level
 	 * @return the entry
-	 * @throws MemoryException
-	 *             If accessing memory to read the entry failed
 	 */
 	private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) {
 		long ret = 0;
@@ -390,8 +366,6 @@ public final class CIDTable {
 	 *            the address of the current CID table
 	 * @param p_level
 	 *            the table level
-	 * @throws MemoryException
-	 *             If accessing memory to write the entry failed
 	 */
 	private void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) {
 		long index;
@@ -433,8 +407,6 @@ public final class CIDTable {
 	 *            flag the deleted entry as zombie i.e. keep the chunk
 	 *            allocated but remove it from the table index.
 	 * @return the entry
-	 * @throws MemoryException
-	 *             if the entry could not be deleted
 	 */
 	private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) {
 		long ret = -1;
@@ -485,8 +457,6 @@ public final class CIDTable {
 	 * @param p_level
 	 *            the current table level
 	 * @return the ArrayList
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
 	 */
 	private ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) {
 		ArrayList<Long> ret;
@@ -530,8 +500,6 @@ public final class CIDTable {
 	 * @param p_level
 	 *            the current table level
 	 * @return the ArrayList
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
 	 */
 	private ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) {
 		ArrayList<Long> ret;
@@ -702,8 +670,6 @@ public final class CIDTable {
 
 		/**
 		 * Finds free LIDs in the CIDTable
-		 * @throws MemoryException
-		 *             if the CIDTable could not be accessed
 		 */
 		private void findFreeLIDs() {
 			findFreeLIDs(readEntry(m_addressTableDirectory, m_ownNodeID & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1, 0);
@@ -718,8 +684,6 @@ public final class CIDTable {
 		 * @param p_offset
 		 *            the offset of the LID
 		 * @return true if free LIDs were found, false otherwise
-		 * @throws MemoryException
-		 *             if the CIDTable could not be accessed
 		 */
 		private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) {
 			boolean ret = false;

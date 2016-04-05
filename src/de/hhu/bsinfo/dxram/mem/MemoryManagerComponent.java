@@ -15,8 +15,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageJNINativeMemory;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-
 /**
  * Interface to access the local heap. Features for migration
  * and other tasks are provided as well.
@@ -331,8 +329,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @param p_length
 	 *            Number of bytes to put.
 	 * @return Number of bytes put/written to the chunk.
-	 * @throws MemoryException
-	 *             If writing data failed.
 	 */
 	public MemoryErrorCodes put(final DataStructure p_dataStructure)
 	{
@@ -362,8 +358,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * This is a management call and has to be locked using lockManage().
 	 * @param p_chunkID
 	 *            the ChunkID of the Chunk
-	 * @throws MemoryException
-	 *             if the Chunk could not be get
 	 */
 	public MemoryErrorCodes remove(final long p_chunkID) {
 		long addressDeletedChunk;
@@ -413,8 +407,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @param p_chunkID
 	 *            the ChunkID
 	 * @return whether this Chunk is stored locally or not
-	 * @throws MemoryException
-	 *             if the Chunk could not be checked
 	 */
 	public boolean exists(final long p_chunkID) {
 		long address;
@@ -440,8 +432,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * Removes the ChunkID of a deleted Chunk that was migrated
 	 * @param p_chunkID
 	 *            the ChunkID
-	 * @throws MemoryException
-	 *             if the Chunk could not be get
 	 */
 	public void prepareChunkIDForReuse(final long p_chunkID) {
 		m_cidTable.putChunkIDForReuse(p_chunkID);
@@ -450,8 +440,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	/**
 	 * Returns the ChunkIDs of all migrated Chunks
 	 * @return the ChunkIDs of all migrated Chunks
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
 	 */
 	public ArrayList<Long> getCIDOfAllMigratedChunks() {
 		return m_cidTable.getCIDOfAllMigratedChunks();
@@ -460,8 +448,6 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
 	 * @return the ChunkID ranges in an ArrayList
-	 * @throws MemoryException
-	 *             if the CIDTable could not be completely accessed
 	 */
 	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
 		return m_cidTable.getCIDRangesOfAllLocalChunks();
