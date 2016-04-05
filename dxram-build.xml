@@ -117,5 +117,14 @@
 	<target name="clean-all" description="removes all created files and folders">
 		<delete dir="${build_proj_dir}" failonerror="false" />
 	</target>
+	
+	<target name="zip" description="">
+		<zip destfile="dxram.zip"
+			basedir="."
+			includes="bin/**, config/*.student.conf, src/**, eclipse/**, jni/*.so, jni/*.dylib, lib/**, scripts/**, tools/**, dxram-build.xml, README.txt"
+			excludes="build/**, jni/console/**, jni/libhistory/**, jni/nativememory/**, log/**, wiki/**, log.txt, start_dxram_terminal.sh, start_zookeeper.sh, jni/JNIconsole.dylib"
+		/>
+	</target>
+	
 </project>
 
