@@ -88,8 +88,6 @@
 		
 		<javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false" debug="${debugOn}" optimize="${optimizeOn}" encoding="UTF-8">
 			<include name="de/hhu/bsinfo/dxram/**/*.java"/>
-			<include name="de/hhu/bsinfo/dxcompute/**/*.java"/>
-			<include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
 			<include name="de/hhu/bsinfo/menet/**/*.java"/>
 			<include name="de/hhu/bsinfo/soh/**/*.java"/>
 			<include name="de/hhu/bsinfo/utils/**/*.java"/>
@@ -100,16 +98,10 @@
 			</classpath>
 		</javac>
 		
-		<tstamp>
-		    <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
-	   	</tstamp>
-		
 		<jar destfile="${build_proj_dir}/${name}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
 			<manifest>
 				<attribute name="Main-Class" value="de.hhu.bsinfo.dxram.run.DXRAMMain" />
 				<attribute name="Class-Path" value="${jar.classpath}" />
-				<attribute name="BuildDate" value="${TODAY}"/>
-				<attribute name="BuildUser" value="${user.name}"/>
 			</manifest>
 		</jar>
 	</target>
@@ -118,4 +110,3 @@
 		<delete dir="${build_proj_dir}" failonerror="false" />
 	</target>
 </project>
-
