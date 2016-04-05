@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dxram" basedir="." default="zip">
+	<property name="name" value="dxram" />
+	<property name="build_dir" value="build" />
+	<property name="conf_dir" value="config" />
+	<property name="lib_dir" value="lib" />
+	<property name="jni_dir" value="jni" />
+	<property name="log_dir" value="log" />
+	<property name="source_dir" value="src" />
+	
+	<property name="build_proj_dir" value="${build_dir}/${name}" />
+	<property name="build_proj_conf_dir" value="${build_proj_dir}/${conf_dir}" />	
+	<property name="build_proj_lib_dir" value="${build_proj_dir}/${lib_dir}" />	
+	<property name="build_proj_log_dir" value="${build_proj_dir}/${log_dir}" />	
+	
+
+	<target name="zip" description="">
+		<zip destfile="dxram.zip"
+			basedir="."
+			includes="bin/**, config/*.student.conf, src/**, eclipse/**, jni/*.so, jni/*.dylib, lib/**, scripts/**, tools/**, dxram-build.xml, README.txt"
+			excludes="build/**, jni/console/**, jni/libhistory/**, jni/nativememory/**, log/**, wiki/**, log.txt, start_dxram_terminal.sh, start_zookeeper.sh, jni/JNIconsole.dylib"
+		/>
+	</target>
+	
+</project>
+
