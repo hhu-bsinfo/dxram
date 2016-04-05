@@ -15,8 +15,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageJNINativeMemory;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-
 /**
  * Interface to access the local heap. Features for migration
  * and other tasks are provided as well.

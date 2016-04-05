@@ -9,8 +9,6 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 
-import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
-
 /**
  * Paging-like Tables for the ChunkID-VA mapping
  * @author Florian Klein
