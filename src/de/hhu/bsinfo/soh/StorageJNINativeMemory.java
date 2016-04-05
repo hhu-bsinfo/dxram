@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.soh;
 
 import java.io.File;
@@ -8,7 +9,7 @@ public class StorageJNINativeMemory implements Storage {
 
 	private long m_memoryBase = -1;
 	private long m_memorySize = -1;
-	
+
 	@Override
 	public void allocate(long p_size) {
 		assert p_size > 0;
@@ -27,7 +28,7 @@ public class StorageJNINativeMemory implements Storage {
 		m_memoryBase = -1;
 		m_memorySize = -1;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "m_memoryBase=0x" + Long.toHexString(m_memoryBase) + ", m_memorySize: " + m_memorySize;
@@ -38,7 +39,7 @@ public class StorageJNINativeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length <= m_memorySize;
-		
+
 		JNINativeMemory.dump(m_memoryBase + p_ptr, p_length, p_file.getAbsolutePath());
 	}
 
@@ -52,7 +53,7 @@ public class StorageJNINativeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_size <= m_memorySize;
-		
+
 		JNINativeMemory.set(m_memoryBase + p_ptr, p_value, p_size);
 	}
 
@@ -61,7 +62,7 @@ public class StorageJNINativeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length <= m_memorySize;
-		
+
 		JNINativeMemory.read(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}
@@ -70,7 +71,7 @@ public class StorageJNINativeMemory implements Storage {
 	public byte readByte(long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
-		
+
 		return JNINativeMemory.readByte(m_memoryBase + p_ptr);
 	}
 
@@ -78,7 +79,7 @@ public class StorageJNINativeMemory implements Storage {
 	public short readShort(long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
-		
+
 		return JNINativeMemory.readShort(m_memoryBase + p_ptr);
 	}
 
@@ -86,7 +87,7 @@ public class StorageJNINativeMemory implements Storage {
 	public int readInt(long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
-		
+
 		return JNINativeMemory.readInt(m_memoryBase + p_ptr);
 	}
 
@@ -94,7 +95,7 @@ public class StorageJNINativeMemory implements Storage {
 	public long readLong(long p_ptr) {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
-		
+
 		return JNINativeMemory.readLong(m_memoryBase + p_ptr);
 	}
 
@@ -102,7 +103,7 @@ public class StorageJNINativeMemory implements Storage {
 	public int writeBytes(long p_ptr, byte[] p_array, int p_arrayOffset, int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_length <= m_memorySize;
-		
+
 		JNINativeMemory.write(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}
@@ -111,7 +112,7 @@ public class StorageJNINativeMemory implements Storage {
 	public void writeByte(long p_ptr, byte p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
-		
+
 		JNINativeMemory.writeByte(m_memoryBase + p_ptr, p_value);
 	}
 
@@ -119,7 +120,7 @@ public class StorageJNINativeMemory implements Storage {
 	public void writeShort(long p_ptr, short p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 1 < m_memorySize;
-		
+
 		JNINativeMemory.writeShort(m_memoryBase + p_ptr, p_value);
 	}
 
@@ -127,7 +128,7 @@ public class StorageJNINativeMemory implements Storage {
 	public void writeInt(long p_ptr, int p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 3 < m_memorySize;
-		
+
 		JNINativeMemory.writeInt(m_memoryBase + p_ptr, p_value);
 	}
 
@@ -135,7 +136,7 @@ public class StorageJNINativeMemory implements Storage {
 	public void writeLong(long p_ptr, long p_value) {
 		assert p_ptr >= 0;
 		assert p_ptr + 7 < m_memorySize;
-		
+
 		JNINativeMemory.writeLong(m_memoryBase + p_ptr, p_value);
 	}
 
@@ -160,7 +161,7 @@ public class StorageJNINativeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length * Short.BYTES <= m_memorySize;
-		
+
 		JNINativeMemory.readShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}
@@ -170,7 +171,7 @@ public class StorageJNINativeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length * Integer.BYTES <= m_memorySize;
-		
+
 		JNINativeMemory.readInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}
@@ -180,7 +181,7 @@ public class StorageJNINativeMemory implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr < m_memorySize;
 		assert p_ptr + p_length * Long.BYTES <= m_memorySize;
-		
+
 		JNINativeMemory.readLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}
@@ -189,7 +190,7 @@ public class StorageJNINativeMemory implements Storage {
 	public int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_length * Short.BYTES <= m_memorySize;
-		
+
 		JNINativeMemory.writeShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}
@@ -198,7 +199,7 @@ public class StorageJNINativeMemory implements Storage {
 	public int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_length * Integer.BYTES <= m_memorySize;
-		
+
 		JNINativeMemory.writeInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}
@@ -207,7 +208,7 @@ public class StorageJNINativeMemory implements Storage {
 	public int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
 		assert p_ptr >= 0;
 		assert p_ptr + p_length * Long.BYTES <= m_memorySize;
-		
+
 		JNINativeMemory.writeLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
 		return p_length;
 	}

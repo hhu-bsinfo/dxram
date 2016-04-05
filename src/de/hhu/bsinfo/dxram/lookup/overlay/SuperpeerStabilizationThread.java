@@ -126,11 +126,11 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
 	/**
 	 * Performs stabilization protocol
-	 * @note without disappearing superpeers this method does not do anything important; All the setup is done with
-	 *       joining
+	 * @note without disappearing superpeers this method does not do anything important; All the setup is done with joining
 	 */
 	private void performStabilization() {
-		while (-1 != m_superpeer.getPredecessor()) {
+		while (-1 != m_superpeer.getPredecessor() && m_nodeID != m_superpeer.getPredecessor()) {
+			m_logger.trace(getClass(), "Performing stabilization by sending NodeID to predecessor=" + m_superpeer.getPredecessor());
 			if (m_network.sendMessage(new NotifyAboutNewSuccessorMessage(m_superpeer.getPredecessor(), m_nodeID))
 				!= NetworkErrorCodes.SUCCESS) {
 				// Predecessor is not available anymore, determine new predecessor and repeat it
@@ -140,7 +140,8 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 			break;
 		}
 
-		while (-1 != m_superpeer.getSuccessor()) {
+		while (-1 != m_superpeer.getSuccessor() && m_nodeID != m_superpeer.getSuccessor()) {
+			m_logger.trace(getClass(), "Performing stabilization by sending NodeID to successor=" + m_superpeer.getSuccessor());
 			if (m_network.sendMessage(new NotifyAboutNewPredecessorMessage(m_superpeer.getSuccessor(), m_nodeID))
 				!= NetworkErrorCodes.SUCCESS) {
 				// Predecessor is not available anymore, determine new predecessor and repeat it
@@ -188,6 +189,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				m_next++;
 				m_overlayLock.unlock();
 
+				m_logger.trace(getClass(), "Asking " + contactSuperpeer + " about his successor to fix overlay");
 				request = new AskAboutSuccessorRequest(contactSuperpeer);
 				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 					// Superpeer is not available anymore, remove from superpeer array and try next superpeer
@@ -230,6 +232,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 					m_overlayLock.unlock();
 					break;
 				}
+				m_logger.trace(getClass(), "Pinging " + peer + " for heartbeat protocol");
 				if (m_network.sendMessage(
 						new SendSuperpeersMessage(peer, m_otherSuperpeers))
 				!= NetworkErrorCodes.SUCCESS) {
@@ -282,6 +285,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 			while (-1 != currentSuperpeer) {
 				peers = m_superpeer.getPeersInResponsibleArea(oldSuperpeer, currentSuperpeer);
 
+				m_logger.trace(getClass(), "Gathering backups by requesting all backups in responsible area from " + currentSuperpeer);
 				request = new AskAboutBackupsRequest(currentSuperpeer, peers);
 				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 					// CurrentSuperpeer is not available anymore, remove it from superpeer array

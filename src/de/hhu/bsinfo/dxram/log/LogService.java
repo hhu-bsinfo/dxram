@@ -30,6 +30,7 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.Tools;
@@ -49,6 +50,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	private LoggerComponent m_logger;
 
 	private short m_nodeID;
+	private boolean m_loggingIsActive;
 
 	private PrimaryWriteBuffer m_writeBuffer;
 	private PrimaryLog m_primaryLog;
@@ -136,7 +138,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	 *             if the secondary log buffer could not be returned
 	 */
 	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		SecondaryLogBuffer ret = null;
 		LogCatalog cat;
 
@@ -295,52 +297,55 @@ public class LogService extends DXRAMService implements MessageReceiver {
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_useChecksum = p_settings.getValue(LogConfigurationValues.Service.LOG_CHECKSUM);
+		m_loggingIsActive = (getComponent(BootComponent.class).getNodeRole() == NodeRole.PEER) && getComponent(BackupComponent.class).isActive();
+		if (m_loggingIsActive) {
+			m_useChecksum = p_settings.getValue(LogConfigurationValues.Service.LOG_CHECKSUM);
 
-		m_flashPageSize = p_settings.getValue(LogConfigurationValues.Service.FLASHPAGE_SIZE);
-		m_logSegmentSize = p_settings.getValue(LogConfigurationValues.Service.LOG_SEGMENT_SIZE);
-		m_primaryLogSize = p_settings.getValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
-		m_secondaryLogSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
-		m_writeBufferSize = p_settings.getValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
+			m_flashPageSize = p_settings.getValue(LogConfigurationValues.Service.FLASHPAGE_SIZE);
+			m_logSegmentSize = p_settings.getValue(LogConfigurationValues.Service.LOG_SEGMENT_SIZE);
+			m_primaryLogSize = p_settings.getValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
+			m_secondaryLogSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
+			m_writeBufferSize = p_settings.getValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
 
-		m_reorgUtilizationThreshold = p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
+			m_reorgUtilizationThreshold = p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
 
-		m_network = getComponent(NetworkComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_nodeID = getComponent(BootComponent.class).getNodeID();
+			m_network = getComponent(NetworkComponent.class);
+			m_logger = getComponent(LoggerComponent.class);
+			m_nodeID = getComponent(BootComponent.class).getNodeID();
 
-		m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
+			m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
 
-		// Set attributes of log component that can only be set by log service
-		getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum, m_secondaryLogSize, m_logSegmentSize);
+			// Set attributes of log component that can only be set by log service
+			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum, m_secondaryLogSize, m_logSegmentSize);
 
-		registerNetworkMessages();
-		registerNetworkMessageListener();
-		// Set the log entry header crc size (must be called before the first log entry header is created)
-		AbstractLogEntryHeader.setCRCSize(m_useChecksum);
+			registerNetworkMessages();
+			registerNetworkMessageListener();
+			// Set the log entry header crc size (must be called before the first log entry header is created)
+			AbstractLogEntryHeader.setCRCSize(m_useChecksum);
 
-		// Create primary log
-		try {
-			m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize, m_flashPageSize);
-		} catch (final IOException | InterruptedException e) {
-			m_logger.error(LogService.class, "Primary log creation failed: " + e);
+			// Create primary log
+			try {
+				m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize, m_flashPageSize);
+			} catch (final IOException | InterruptedException e) {
+				m_logger.error(LogService.class, "Primary log creation failed: " + e);
+			}
+
+			// Create primary log buffer
+			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize, m_flashPageSize, m_logSegmentSize, m_useChecksum);
+
+			// Create secondary log and secondary log buffer catalogs
+			m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
+
+			m_secondaryLogCreationLock = new ReentrantReadWriteLock(false);
+
+			// Create reorganization thread for secondary logs
+			m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize, m_logSegmentSize);
+			m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
+			// Start secondary logs reorganization thread
+			m_secondaryLogsReorgThread.start();
+
+			m_flushLock = new ReentrantLock(false);
 		}
-
-		// Create primary log buffer
-		m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize, m_flashPageSize, m_logSegmentSize, m_useChecksum);
-
-		// Create secondary log and secondary log buffer catalogs
-		m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
-
-		m_secondaryLogCreationLock = new ReentrantReadWriteLock(false);
-
-		// Create reorganization thread for secondary logs
-		m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize, m_logSegmentSize);
-		m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
-		// Start secondary logs reorganization thread
-		m_secondaryLogsReorgThread.start();
-
-		m_flushLock = new ReentrantLock(false);
 
 		return true;
 	}
@@ -349,45 +354,49 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	protected boolean shutdownService() {
 		LogCatalog cat;
 
-		// Stop reorganization thread
-		m_secondaryLogsReorgThread.shutdown();
-		try {
-			m_secondaryLogsReorgThread.join();
-		} catch (final InterruptedException e1) {
-			m_logger.warn(LogService.class, "Could not shut down reorganization thread!");
-		}
-		m_secondaryLogsReorgThread = null;
-
-		// Close write buffer
-		try {
-			m_writeBuffer.closeWriteBuffer();
-		} catch (final IOException | InterruptedException e) {
-			m_logger.warn(LogService.class, "Could not close write buffer!");
-		}
-		m_writeBuffer = null;
-
-		// Close primary log
-		if (m_primaryLog != null) {
+		if (m_loggingIsActive) {
+			// Stop reorganization thread
+			m_secondaryLogsReorgThread.shutdown();
+			m_secondaryLogsReorgThread.interrupt();
 			try {
-				m_primaryLog.closeLog();
-			} catch (final IOException e) {
-				m_logger.warn(LogService.class, "Could not close primary log!");
+				m_secondaryLogsReorgThread.join();
+				m_logger.info(getClass(), "Shutdown of SecondaryLogsReorgThread successful.");
+			} catch (final InterruptedException e1) {
+				m_logger.warn(getClass(), "Could not wait for reorganization thread to finish. Interrupted.");
 			}
-			m_primaryLog = null;
-		}
+			m_secondaryLogsReorgThread = null;
 
-		// Clear secondary logs and buffers
-		for (int i = 0; i < Short.MAX_VALUE * 2 + 1; i++) {
+			// Close write buffer
 			try {
-				cat = m_logCatalogs[i];
-				if (cat != null) {
-					cat.closeLogsAndBuffers();
-				}
+				m_writeBuffer.closeWriteBuffer();
 			} catch (final IOException | InterruptedException e) {
-				m_logger.warn(LogService.class, "Could not close secondary log buffer " + i);
+				m_logger.warn(LogService.class, "Could not close write buffer!");
 			}
+			m_writeBuffer = null;
+
+			// Close primary log
+			if (m_primaryLog != null) {
+				try {
+					m_primaryLog.closeLog();
+				} catch (final IOException e) {
+					m_logger.warn(LogService.class, "Could not close primary log!");
+				}
+				m_primaryLog = null;
+			}
+
+			// Clear secondary logs and buffers
+			for (int i = 0; i < Short.MAX_VALUE * 2 + 1; i++) {
+				try {
+					cat = m_logCatalogs[i];
+					if (cat != null) {
+						cat.closeLogsAndBuffers();
+					}
+				} catch (final IOException | InterruptedException e) {
+					m_logger.warn(LogService.class, "Could not close secondary log buffer " + i);
+				}
+			}
+			m_logCatalogs = null;
 		}
-		m_logCatalogs = null;
 
 		return true;
 	}

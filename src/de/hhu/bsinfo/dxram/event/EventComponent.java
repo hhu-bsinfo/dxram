@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.event;
 
 import java.util.ArrayList;
@@ -12,21 +13,22 @@ import de.hhu.bsinfo.menet.TaskExecutor;
  * Node local event system to notify other listening components about
  * something specified that happened.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
- *
  */
 public class EventComponent extends DXRAMComponent {
 
 	private LoggerComponent m_logger = null;
-	
-	private Map<String, ArrayList<EventListener<? extends Event>>> m_eventListener = new HashMap<>(); 
+
+	private Map<String, ArrayList<EventListener<? extends Event>>> m_eventListener = new HashMap<>();
 	private TaskExecutor m_executor = null;
-	
+
 	/**
 	 * Constructor
-	 * @param p_priorityInit Priority for initialization of this component. 
-	 * 			When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component. 
-	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityInit
+	 *            Priority for initialization of this component.
+	 *            When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown
+	 *            Priority for shutting down this component.
+	 *            When choosing the order, consider component dependencies here.
 	 */
 	public EventComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -34,8 +36,10 @@ public class EventComponent extends DXRAMComponent {
 
 	/**
 	 * Register a listener to listen to specific event.
-	 * @param p_listener Listener to register.
-	 * @param p_class Event to listen to.
+	 * @param p_listener
+	 *            Listener to register.
+	 * @param p_class
+	 *            Event to listen to.
 	 */
 	public <T extends Event> void registerListener(final EventListener<T> p_listener, final Class<T> p_class)
 	{
@@ -44,14 +48,15 @@ public class EventComponent extends DXRAMComponent {
 			listeners = new ArrayList<EventListener<?>>();
 			m_eventListener.put(p_class.getName(), listeners);
 		}
-		
+
 		listeners.add(p_listener);
 		m_logger.debug(getClass(), "Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
 	}
-	
+
 	/**
 	 * Fire an event.
-	 * @param p_event Event to fire.
+	 * @param p_event
+	 *            Event to fire.
 	 */
 	public <T extends Event> void fireEvent(final T p_event)
 	{
@@ -60,7 +65,7 @@ public class EventComponent extends DXRAMComponent {
 		if (listeners != null)
 		{
 			FireEvent<T> task = new FireEvent<T>(p_event, listeners);
-					
+
 			if (m_executor != null) {
 				m_executor.execute(task);
 			} else {
@@ -68,7 +73,7 @@ public class EventComponent extends DXRAMComponent {
 			}
 		}
 	}
-	
+
 	@Override
 	protected void registerDefaultSettingsComponent(Settings p_settings) {
 		p_settings.setDefaultValue(EventConfigurationValues.Component.USE_EXECUTOR);
@@ -79,10 +84,11 @@ public class EventComponent extends DXRAMComponent {
 	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
-		
-		if (p_settings.getValue(EventConfigurationValues.Component.USE_EXECUTOR))
+
+		if (p_settings.getValue(EventConfigurationValues.Component.USE_EXECUTOR)) {
 			m_executor = new TaskExecutor("EventExecutor", p_settings.getValue(EventConfigurationValues.Component.THREAD_COUNT));
-		
+		}
+
 		return true;
 	}
 
@@ -90,33 +96,41 @@ public class EventComponent extends DXRAMComponent {
 	protected boolean shutdownComponent() {
 		if (m_executor != null) {
 			m_executor.shutdown();
+			try {
+				m_executor.awaitTermination();
+				m_logger.info(getClass().getSimpleName(), "Shutdown of EventExecutor successful.");
+			} catch (final InterruptedException e) {
+				m_logger.warn(getClass().getSimpleName(), "Could not wait for event executor thread pool to finish. Interrupted.");
+			}
 			m_executor = null;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Wrapper class to execute the firing of an event i.e. the calling
 	 * of the listeners with the event fired as parameter in a separate thread.
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
 	 */
-	private static class FireEvent<T extends Event>  implements Runnable {
+	private static class FireEvent<T extends Event> implements Runnable {
 
 		private Event m_event = null;
 		private ArrayList<EventListener<?>> m_listener = null;
-		
+
 		/**
 		 * Constructor
-		 * @param p_event Event to fire.
-		 * @param p_listener List of listeners to receive the event.
+		 * @param p_event
+		 *            Event to fire.
+		 * @param p_listener
+		 *            List of listeners to receive the event.
 		 */
 		public FireEvent(final T p_event, final ArrayList<EventListener<?>> p_listener)
 		{
 			m_event = p_event;
 			m_listener = p_listener;
 		}
-		
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {

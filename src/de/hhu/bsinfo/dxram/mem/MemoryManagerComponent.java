@@ -15,6 +15,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageJNINativeMemory;
 
+import de.uniduesseldorf.dxram.core.exceptions.MemoryException;
+
 /**
  * Interface to access the local heap. Features for migration
  * and other tasks are provided as well.
@@ -78,13 +80,13 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_statistics = getDependentComponent(StatisticsComponent.class);
 
-		registerStatisticsOperations();
-
 		if (m_boot.getNodeRole() != NodeRole.SUPERPEER) {
+			registerStatisticsOperations();
+
+			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
+			m_logger.trace(getClass(), "Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
 			m_rawMemory = new SmallObjectHeap(new StorageJNINativeMemory());
-			m_rawMemory.initialize(
-					p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE),
-					p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
+			m_rawMemory.initialize(ramSize, p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
 			m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 
@@ -98,12 +100,14 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 
 	@Override
 	protected boolean shutdownComponent() {
-		m_cidTable.disengage();
-		m_rawMemory.disengage();
+		if (m_boot.getNodeRole() != NodeRole.SUPERPEER) {
+			m_cidTable.disengage();
+			m_rawMemory.disengage();
 
-		m_cidTable = null;
-		m_rawMemory = null;
-		m_lock = null;
+			m_cidTable = null;
+			m_rawMemory = null;
+			m_lock = null;
+		}
 
 		return true;
 	}

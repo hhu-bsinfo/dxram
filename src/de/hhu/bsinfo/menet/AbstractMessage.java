@@ -349,7 +349,11 @@ public abstract class AbstractMessage {
 
 	@Override
 	public final String toString() {
-		return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+		if (m_source != -1) {
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+		} else {
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_destination + "]";
+		}
 	}
 
 }

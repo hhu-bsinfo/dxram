@@ -51,6 +51,13 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	}
 
 	/**
+	 * Closes the ConnectionManager
+	 */
+	public void close() {
+		m_creator.close();
+	}
+
+	/**
 	 * Checks if there is a congested connection
 	 * @return whether there is congested connection or not
 	 */
