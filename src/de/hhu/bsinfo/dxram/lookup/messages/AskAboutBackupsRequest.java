@@ -51,7 +51,7 @@ public class AskAboutBackupsRequest extends AbstractRequest {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		if (m_peers == null) {
+		if (m_peers == null || m_peers.size() == 0) {
 			p_buffer.putInt(0);
 		} else {
 			p_buffer.putInt(m_peers.size());
@@ -63,8 +63,11 @@ public class AskAboutBackupsRequest extends AbstractRequest {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_peers = new ArrayList<Short>(p_buffer.getInt());
-		for (int i = 0; i < m_peers.size(); i++) {
+		int length;
+
+		m_peers = new ArrayList<Short>();
+		length = p_buffer.getInt();
+		for (int i = 0; i < length; i++) {
 			m_peers.add(p_buffer.getShort());
 		}
 	}
@@ -74,7 +77,7 @@ public class AskAboutBackupsRequest extends AbstractRequest {
 		int ret;
 
 		ret = Integer.BYTES;
-		if (m_peers != null) {
+		if (m_peers != null && m_peers.size() > 0) {
 			ret += Short.BYTES * m_peers.size();
 		}
 

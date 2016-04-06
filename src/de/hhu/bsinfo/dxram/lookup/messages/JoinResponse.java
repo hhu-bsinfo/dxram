@@ -137,9 +137,9 @@ public class JoinResponse extends AbstractResponse {
 			p_buffer.putShort(m_successor);
 
 			if (m_mappings == null || m_mappings.length == 0) {
-				p_buffer.put((byte) 0);
+				p_buffer.putInt(0);
 			} else {
-				p_buffer.put((byte) 1);
+				p_buffer.putInt(m_mappings.length);
 				p_buffer.put(m_mappings);
 			}
 
@@ -183,8 +183,9 @@ public class JoinResponse extends AbstractResponse {
 			m_predecessor = p_buffer.getShort();
 			m_successor = p_buffer.getShort();
 
-			if (p_buffer.get() != 0) {
-				m_mappings = new byte[p_buffer.getInt()];
+			length = p_buffer.getInt();
+			if (length != 0) {
+				m_mappings = new byte[length];
 				p_buffer.get(m_mappings);
 			}
 
@@ -217,9 +218,9 @@ public class JoinResponse extends AbstractResponse {
 		if (m_newContactSuperpeer == -1) {
 			ret = Byte.BYTES + Short.BYTES * 2;
 
-			ret += Byte.BYTES;
+			ret += Integer.BYTES;
 			if (m_mappings != null && m_mappings.length > 0) {
-				ret += Integer.BYTES + m_mappings.length;
+				ret += m_mappings.length;
 			}
 
 			ret += Integer.BYTES;

@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -425,8 +426,6 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 	 * @return Number of successfully removed data structures.
 	 */
 	public int remove(final long... p_chunkIDs) {
-		// TODO: Inform backups
-
 		int chunksRemoved = 0;
 
 		if (p_chunkIDs.length == 0) {
@@ -471,13 +470,13 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				}
 			} else {
 				// remote or migrated, figure out location and sort by peers
-				LookupRange locations;
+				LookupRange lookupRange;
 
-				locations = m_lookup.getLookupRange(p_chunkIDs[i]);
-				if (locations == null) {
+				lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
+				if (lookupRange == null) {
 					continue;
 				} else {
-					short peer = locations.getPrimaryPeer();
+					short peer = lookupRange.getPrimaryPeer();
 
 					ArrayList<Long> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
 					if (remoteChunksOfPeer == null) {
@@ -823,13 +822,13 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				totalChunksGot++;
 			} else {
 				// remote or migrated, figure out location and sort by peers
-				LookupRange locations;
+				LookupRange lookupRange;
 
-				locations = m_lookup.getLookupRange(p_dataStructures[i + p_offset].getID());
-				if (locations == null) {
+				lookupRange = m_lookup.getLookupRange(p_dataStructures[i + p_offset].getID());
+				if (lookupRange == null) {
 					continue;
 				} else {
-					short peer = locations.getPrimaryPeer();
+					short peer = lookupRange.getPrimaryPeer();
 
 					ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
 					if (remoteChunksOfPeer == null) {
@@ -889,6 +888,110 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		}
 
 		return totalChunksGot;
+	}
+
+	/**
+	 * Get/Read the data stored in the backend storage for chunks of unknown size. Use this if the payload size is unknown, only!
+	 * @param p_chunkIDs
+	 *            Array with ChunkIDs.
+	 * @return an array with all read chunks.
+	 */
+	public Chunk[] get(final long[] p_chunkIDs) {
+		Chunk[] ret = null;
+
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
+		}
+
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "a superpeer must not get chunks");
+		}
+
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get, p_chunkIDs.length);
+
+		// sort by local and remote data first
+		Map<Short, ArrayList<Integer>> remoteChunkIDsByPeers = new TreeMap<>();
+
+		ret = new Chunk[p_chunkIDs.length];
+		m_memoryManager.lockAccess();
+		for (int i = 0; i < p_chunkIDs.length; i++) {
+			// try to get locally, will check first if it exists and
+			// returns false if it doesn't exist
+			byte[] data = m_memoryManager.get(p_chunkIDs[i]);
+			if (data != null) {
+				ret[i] = new Chunk(p_chunkIDs[i], ByteBuffer.wrap(data));
+			} else {
+				// remote or migrated, figure out location and sort by peers
+				LookupRange lookupRange;
+
+				lookupRange = m_lookup.getLookupRange(p_chunkIDs[i]);
+				if (lookupRange == null) {
+					continue;
+				} else {
+					short peer = lookupRange.getPrimaryPeer();
+
+					ArrayList<Integer> remoteChunkIDsOfPeer = remoteChunkIDsByPeers.get(peer);
+					if (remoteChunkIDsOfPeer == null) {
+						remoteChunkIDsOfPeer = new ArrayList<Integer>();
+						remoteChunkIDsByPeers.put(peer, remoteChunkIDsOfPeer);
+					}
+					// Add the index in ChunkID array not the ChunkID itself
+					remoteChunkIDsOfPeer.add(i);
+				}
+			}
+		}
+		m_memoryManager.unlockAccess();
+
+		// go for remote ones by each peer
+		for (final Entry<Short, ArrayList<Integer>> peerWithChunks : remoteChunkIDsByPeers.entrySet()) {
+			short peer = peerWithChunks.getKey();
+			ArrayList<Integer> remoteChunkIDs = peerWithChunks.getValue();
+
+			if (peer == m_boot.getNodeID()) {
+				// local get, migrated data to current node
+				m_memoryManager.lockAccess();
+				for (final int index : remoteChunkIDs) {
+					long chunkID = p_chunkIDs[index];
+					byte[] data = m_memoryManager.get(chunkID);
+					if (data != null) {
+						ret[index] = new Chunk(chunkID, ByteBuffer.wrap(data));
+					} else {
+						m_logger.error(getClass(), "Getting local chunk " + Long.toHexString(chunkID) + " failed.");
+					}
+				}
+				m_memoryManager.unlockAccess();
+			} else {
+				// Remote get from specified peer
+				Chunk[] chunks = new Chunk[remoteChunkIDs.size()];
+				for (int i = 0; i < chunks.length; i++) {
+					chunks[i] = new Chunk(remoteChunkIDs.get(i));
+				}
+				GetRequest request = new GetRequest(peer, chunks);
+				NetworkErrorCodes error = m_network.sendSync(request);
+				if (error != NetworkErrorCodes.SUCCESS)
+				{
+					m_logger.error(getClass(), "Sending chunk get request to peer " + peer + " failed: " + error);
+					continue;
+				}
+
+				GetResponse response = request.getResponse(GetResponse.class);
+				if (response != null) {
+					if (response.getNumberOfChunksGot() != remoteChunkIDs.size())
+					{
+						// TODO not all chunks were found
+						m_logger.warn(getClass(), "Could not find all chunks on peer " + Integer.toHexString(peer & 0xFFFF) + " for chunk request.");
+					}
+				}
+			}
+		}
+
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+
+		if (!m_performanceFlag) {
+			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
+		}
+
+		return ret;
 	}
 
 	public ArrayList<Long> getAllLocalChunkIDRanges() {

@@ -15,7 +15,7 @@ import de.hhu.bsinfo.menet.AbstractResponse;
 public class GetLookupRangeResponse extends AbstractResponse {
 
 	// Attributes
-	private LookupRange m_locations;
+	private LookupRange m_lookupRange;
 
 	// Constructors
 	/**
@@ -24,42 +24,42 @@ public class GetLookupRangeResponse extends AbstractResponse {
 	public GetLookupRangeResponse() {
 		super();
 
-		m_locations = null;
+		m_lookupRange = null;
 	}
 
 	/**
 	 * Creates an instance of LookupResponse
 	 * @param p_request
 	 *            the corresponding LookupRequest
-	 * @param p_locations
+	 * @param p_lookupRange
 	 *            the primary peer, backup peers and range
 	 */
-	public GetLookupRangeResponse(final GetLookupRangeRequest p_request, final LookupRange p_locations) {
+	public GetLookupRangeResponse(final GetLookupRangeRequest p_request, final LookupRange p_lookupRange) {
 		super(p_request, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_RESPONSE);
 
-		m_locations = p_locations;
+		m_lookupRange = p_lookupRange;
 	}
 
 	// Getters
 	/**
-	 * Get locations
-	 * @return the locations
+	 * Get lookupRange
+	 * @return the LookupRange
 	 */
-	public final LookupRange getLocations() {
-		return m_locations;
+	public final LookupRange getLookupRange() {
+		return m_lookupRange;
 	}
 
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		if (m_locations == null) {
+		if (m_lookupRange == null) {
 			p_buffer.put((byte) 0);
 		} else {
 			final MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-			exporter.setPayloadSize(m_locations.sizeofObject());
+			exporter.setPayloadSize(m_lookupRange.sizeofObject());
 
 			p_buffer.put((byte) 1);
-			exporter.exportObject(m_locations);
+			exporter.exportObject(m_lookupRange);
 		}
 	}
 
@@ -68,9 +68,9 @@ public class GetLookupRangeResponse extends AbstractResponse {
 		if (p_buffer.get() != 0) {
 			final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-			m_locations = new LookupRange();
-			importer.setPayloadSize(m_locations.sizeofObject());
-			importer.importObject(m_locations);
+			m_lookupRange = new LookupRange();
+			importer.setPayloadSize(m_lookupRange.sizeofObject());
+			importer.importObject(m_lookupRange);
 		}
 	}
 
@@ -78,10 +78,10 @@ public class GetLookupRangeResponse extends AbstractResponse {
 	protected final int getPayloadLengthForWrite() {
 		int ret;
 
-		if (m_locations == null) {
+		if (m_lookupRange == null) {
 			ret = Byte.BYTES;
 		} else {
-			ret = Byte.BYTES + m_locations.sizeofObject();
+			ret = Byte.BYTES + m_lookupRange.sizeofObject();
 		}
 
 		return ret;

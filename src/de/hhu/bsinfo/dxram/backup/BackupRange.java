@@ -41,7 +41,7 @@ public final class BackupRange implements Importable, Exportable {
 	 * @param p_firstChunkIDORRangeID
 	 *            the RangeID or the first ChunkID
 	 * @param p_backupPeers
-	 *            the locations in long representation
+	 *            the backup range in long representation
 	 */
 	public BackupRange(final long p_firstChunkIDORRangeID, final long p_backupPeers) {
 		this(p_firstChunkIDORRangeID, new short[] {(short) (p_backupPeers & 0x000000000000FFFFL),
@@ -88,8 +88,8 @@ public final class BackupRange implements Importable, Exportable {
 
 	// Methods
 	/**
-	 * Prints the locations
-	 * @return String interpretation of locations
+	 * Prints the backup range
+	 * @return String interpretation of BackupRange
 	 */
 	@Override
 	public String toString() {

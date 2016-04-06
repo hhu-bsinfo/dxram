@@ -38,13 +38,14 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
 	private int m_initialNumberOfSuperpeers;
 	private ArrayList<Short> m_otherSuperpeers;
-	private ArrayList<Short> m_peers;
 	private ReentrantLock m_overlayLock;
 
 	private short m_nodeID;
 	private int m_sleepInterval;
 	private int m_next;
 	private boolean m_shutdown;
+
+	private String m_overlayFigure;
 
 	// Constructors
 	/**
@@ -81,7 +82,6 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		m_sleepInterval = p_sleepInterval;
 		m_next = 0;
 
-		registerNetworkMessages();
 		registerNetworkMessageListener();
 	}
 
@@ -121,6 +121,8 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				m_superpeer.takeOverPeersAndCIDTrees(m_nodeID);
 			}
 			pingPeers();
+
+			printOverlay();
 		}
 	}
 
@@ -132,7 +134,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		while (-1 != m_superpeer.getPredecessor() && m_nodeID != m_superpeer.getPredecessor()) {
 			m_logger.trace(getClass(), "Performing stabilization by sending NodeID to predecessor=" + m_superpeer.getPredecessor());
 			if (m_network.sendMessage(new NotifyAboutNewSuccessorMessage(m_superpeer.getPredecessor(), m_nodeID))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Predecessor is not available anymore, determine new predecessor and repeat it
 				m_superpeer.failureHandling(m_superpeer.getPredecessor());
 				continue;
@@ -143,7 +145,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		while (-1 != m_superpeer.getSuccessor() && m_nodeID != m_superpeer.getSuccessor()) {
 			m_logger.trace(getClass(), "Performing stabilization by sending NodeID to successor=" + m_superpeer.getSuccessor());
 			if (m_network.sendMessage(new NotifyAboutNewPredecessorMessage(m_superpeer.getSuccessor(), m_nodeID))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Predecessor is not available anymore, determine new predecessor and repeat it
 				m_superpeer.failureHandling(m_superpeer.getSuccessor());
 				continue;
@@ -222,11 +224,12 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		short peer;
 		int i = 0;
 
-		if (null != m_peers) {
+		final ArrayList<Short> peers = m_superpeer.getPeers();
+		if (peers != null && peers.size() > 0) {
 			while (true) {
 				m_overlayLock.lock();
-				if (i < m_peers.size()) {
-					peer = m_peers.get(i++);
+				if (i < peers.size()) {
+					peer = peers.get(i++);
 					m_overlayLock.unlock();
 				} else {
 					m_overlayLock.unlock();
@@ -235,7 +238,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				m_logger.trace(getClass(), "Pinging " + peer + " for heartbeat protocol");
 				if (m_network.sendMessage(
 						new SendSuperpeersMessage(peer, m_otherSuperpeers))
-				!= NetworkErrorCodes.SUCCESS) {
+						!= NetworkErrorCodes.SUCCESS) {
 					// Peer is not available anymore, remove it from peer array
 					m_superpeer.failureHandling(peer);
 				}
@@ -253,7 +256,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		m_overlayLock.lock();
 		responsibleArea = OverlayHelper.getResponsibleArea(m_nodeID, m_superpeer.getPredecessor(), m_otherSuperpeers);
 		m_overlayLock.unlock();
-		m_logger.info(getClass(), "Responsible backup area: " + responsibleArea[0] + ", " + responsibleArea[1]);
+		m_logger.trace(getClass(), "Responsible backup area: " + responsibleArea[0] + ", " + responsibleArea[1]);
 
 		gatherBackups(responsibleArea);
 		m_superpeer.deleteUnnecessaryBackups(responsibleArea);
@@ -308,6 +311,48 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				currentSuperpeer = OverlayHelper.getResponsibleSuperpeer((short) (currentSuperpeer + 1), m_otherSuperpeers, m_overlayLock, m_logger);
 			}
 		}
+	}
+
+	/**
+	 * Prints the overlay if something has changed since last call
+	 * @note is called periodically
+	 */
+	private void printOverlay() {
+		boolean printed = false;
+		short superpeer;
+		short peer;
+		String superpeersFigure = "Superpeers: ";
+		String peersFigure = "Peers: ";
+
+		m_overlayLock.lock();
+		for (int i = 0; i < m_otherSuperpeers.size(); i++) {
+			superpeer = m_otherSuperpeers.get(i);
+			if (!printed && superpeer > m_nodeID) {
+				superpeersFigure += " \'" + m_nodeID + "\'";
+				printed = true;
+			}
+			superpeersFigure += " " + superpeer;
+		}
+		if (!printed) {
+			superpeersFigure += " \'" + m_nodeID + "\'";
+		}
+
+		final ArrayList<Short> peers = m_superpeer.getPeers();
+		if (peers != null && peers.size() > 0) {
+			for (int i = 0; i < peers.size(); i++) {
+				peer = peers.get(i);
+				peersFigure += " " + peer;
+			}
+		}
+		m_overlayLock.unlock();
+
+		if (!(superpeersFigure + peersFigure).equals(m_overlayFigure)) {
+			m_logger.info(getClass(), superpeersFigure);
+			if (!peersFigure.equals("Peers: ")) {
+				m_logger.info(getClass(), peersFigure);
+			}
+		}
+		m_overlayFigure = superpeersFigure + peersFigure;
 	}
 
 	/**
@@ -449,20 +494,6 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 	}
 
 	// -----------------------------------------------------------------------------------
-
-	/**
-	 * Register network messages we use in here.
-	 */
-	private void registerNetworkMessages() {
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
-
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST, AskAboutBackupsRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE, AskAboutBackupsResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, AskAboutSuccessorRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, AskAboutSuccessorResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE, NotifyAboutNewPredecessorMessage.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, NotifyAboutNewSuccessorMessage.class);
-	}
 
 	/**
 	 * Register network messages we want to listen to in here.

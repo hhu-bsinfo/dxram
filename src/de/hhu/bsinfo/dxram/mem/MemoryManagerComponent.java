@@ -288,7 +288,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	 * @param p_dataStructure
 	 *            Data structure to write the data of its specified ID to.
 	 * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data
-	 *         structure exists.l
+	 *         structure exists.
 	 */
 	public MemoryErrorCodes get(final DataStructure p_dataStructure)
 	{
@@ -308,6 +308,38 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 		else
 		{
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
+		}
+
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+
+		return ret;
+	}
+
+	/**
+	 * Get a chunk when size is unknown.
+	 * This is an access call and has to be locked using lockAccess().
+	 * @param p_chunkID
+	 *            Data structure to write the data of its specified ID to.
+	 * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID exists.
+	 */
+	public byte[] get(final long p_chunkID)
+	{
+		byte[] ret = null;
+		long address;
+
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+
+		address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			int chunkSize = m_rawMemory.getSizeBlock(address);
+			ret = new byte[chunkSize];
+
+			SmallObjectHeapDataStructureImExporter importer = new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			if (importer.readBytes(ret) != chunkSize) {
+				ret = null;
+			}
+		} else {
+			m_logger.warn(getClass(), "Could not find data for ID=" + p_chunkID);
 		}
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);

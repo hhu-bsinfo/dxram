@@ -90,9 +90,12 @@ public class OverlayPeer implements MessageReceiver {
 		m_logger = p_logger;
 		m_network = p_network;
 
+		m_nodeID = m_boot.getNodeID();
+
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
+		m_overlayLock = new ReentrantLock(false);
 		joinSuperpeerOverlay(p_contactSuperpeer);
 	}
 
@@ -130,7 +133,7 @@ public class OverlayPeer implements MessageReceiver {
 
 			response = request.getResponse(GetLookupRangeResponse.class);
 
-			ret = response.getLocations();
+			ret = response.getLookupRange();
 		}
 		// }
 
@@ -681,6 +684,10 @@ public class OverlayPeer implements MessageReceiver {
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE, SetRestorerAfterRecoveryMessage.class);
 
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
+
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, AskAboutSuccessorRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, AskAboutSuccessorResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
 	}
 
 	/**

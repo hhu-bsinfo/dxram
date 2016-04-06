@@ -242,7 +242,7 @@ public class LookupComponent extends DXRAMComponent {
 	 */
 	public void initRange(final long p_firstChunkIDOrRangeID, final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
 
-		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x" + Long.toHexString(p_firstChunkIDOrRangeID) + ", p_locations="
+		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x" + Long.toHexString(p_firstChunkIDOrRangeID) + ", p_primaryAndBackupPeers="
 				+ p_primaryAndBackupPeers);
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {

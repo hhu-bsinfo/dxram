@@ -14,7 +14,7 @@ public class InitRangeRequest extends AbstractRequest {
 
 	// Attributes
 	private long m_startChunkIDOrRangeID;
-	private long m_locations;
+	private long m_lookupRange;
 	private boolean m_isBackup;
 
 	// Constructors
@@ -25,7 +25,7 @@ public class InitRangeRequest extends AbstractRequest {
 		super();
 
 		m_startChunkIDOrRangeID = -1;
-		m_locations = -1;
+		m_lookupRange = -1;
 		m_isBackup = false;
 	}
 
@@ -35,16 +35,16 @@ public class InitRangeRequest extends AbstractRequest {
 	 *            the destination
 	 * @param p_startChunkID
 	 *            the first object
-	 * @param p_locations
-	 *            the locations (backup peers and own NodeID)
+	 * @param p_lookupRange
+	 *            the LookupRange (backup peers and own NodeID)
 	 * @param p_isBackup
 	 *            whether this is a backup message or not
 	 */
-	public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_locations, final boolean p_isBackup) {
+	public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_lookupRange, final boolean p_isBackup) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
 
 		m_startChunkIDOrRangeID = p_startChunkID;
-		m_locations = p_locations;
+		m_lookupRange = p_lookupRange;
 		m_isBackup = p_isBackup;
 	}
 
@@ -58,11 +58,11 @@ public class InitRangeRequest extends AbstractRequest {
 	}
 
 	/**
-	 * Get locations
-	 * @return the locations
+	 * Get lookupRange
+	 * @return the LookupRange
 	 */
-	public final long getLocations() {
-		return m_locations;
+	public final long getLookupRange() {
+		return m_lookupRange;
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class InitRangeRequest extends AbstractRequest {
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putLong(m_startChunkIDOrRangeID);
-		p_buffer.putLong(m_locations);
+		p_buffer.putLong(m_lookupRange);
 		if (m_isBackup) {
 			p_buffer.put((byte) 1);
 		} else {
@@ -88,7 +88,7 @@ public class InitRangeRequest extends AbstractRequest {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_startChunkIDOrRangeID = p_buffer.getLong();
-		m_locations = p_buffer.getLong();
+		m_lookupRange = p_buffer.getLong();
 
 		final byte b = p_buffer.get();
 		if (b == 1) {
