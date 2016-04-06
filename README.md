@@ -79,9 +79,9 @@ Now switch back to Eclipse and create a new project and name it as dxram. Eclips
 	—>start_zookeeper.sh
 ```
 Lastly you should import the run configuration file in Eclipse. Go to _File > Import … > Run/Debug > Launch Configurations_ and click _Next_.
-![alt text](./doc/import1.png "First step")
+![alt text](doc/import1.png "First step")
 In the next dialog select the eclipse directory from the dxram folder as the „From Directory:“ and check the eclipse folder on the left half of the split pane and click finish.
-![alt text](./doc/import2.png "Second step")
+![alt text](doc/import2.png "Second step")
 
 
 ### 2.2 Test Run
