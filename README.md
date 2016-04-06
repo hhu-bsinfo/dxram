@@ -9,7 +9,8 @@ The recommended project structure looks like this:
 	->start_zookeeper.sh
 ```
 ## Requirements
-DXRAM needs Java 1.8 to run properly.
+DXRAM needs Java 1.8 to run properly. Currently supported operating systems are
+MacOSX and Linux.
 
 ### DXRAM
 Download the current version of dram.zip from the web server or clone the repository.
@@ -119,8 +120,9 @@ Execute the _start_zookeeper.sh_ in a terminal to start ZooKeeper. Now run the p
 
 ## Build DXRAM as deployable jar
 The Ant build-script "dxram-build.xml" creates a folder "build" under the project directory. The folder contains the
-jar-file for DXRAM and two additional folders "config" and "lib". The config-folder contains the
-configuration-files copied from config for dxram and the log4j-Logger, the lib-folder contains the libs used by dxram.
+jar-file for DXRAM and three additional folders "config", "jni" and "lib" needed to run the jar. The config-folder contains the
+configuration-files copied from config for dxram and the log4j-Logger, the lib-folder contains the libs used by dxram and
+jni comes with compiled labraries for native access for some parts of dxram.
 
 ## Running the jar file
 The jar-file can run the core DXRAM system. To run a superpeer locally use:
