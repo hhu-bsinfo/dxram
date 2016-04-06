@@ -34,7 +34,7 @@ public final class ZooKeeperHandler {
 	/**
 	 * Creates an instance of ZooKeeperHandler
 	 */
-	public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout, final LoggerInterface p_logger) 
+	public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout, final LoggerInterface p_logger)
 	{
 		m_path = p_path;
 		m_connection = p_connection;
@@ -95,8 +95,6 @@ public final class ZooKeeperHandler {
 	 *             if ZooKeeper could not accessed
 	 */
 	public synchronized void close(final boolean p_delete) throws ZooKeeperException {
-		m_logger.trace(getClass().getName(), "Entering close");
-
 		if (m_zookeeper != null) {
 			try {
 				if (p_delete) {
@@ -110,8 +108,6 @@ public final class ZooKeeperHandler {
 			}
 			m_zookeeper = null;
 		}
-
-		m_logger.trace(getClass().getName(), "Exiting close");
 	}
 
 	/**
@@ -431,7 +427,7 @@ public final class ZooKeeperHandler {
 			if (m_zookeeper == null) {
 				connect();
 			}
-				
+
 			ret = m_zookeeper.getData(m_path + "/" + p_path, p_watcher, p_status);
 		} catch (final KeeperException | InterruptedException e) {
 			m_logger.error(getClass().getName(), "ERR:Could not access ZooKeeper", e);

@@ -1,3 +1,0 @@
-#Classes
-MonitoringHandler - Default implementation of the MonitoringInterface
-MonitoringInterface - API of the monitoring service

@@ -124,8 +124,6 @@ public final class MessageDirectory {
 	 * @param p_subtype
 	 *            the subtype of the Message
 	 * @return a new Message instance
-	 * @throws de.hhu.bsinfo.menet.NetworkException
-	 *             if the instance could not be created
 	 */
 	public AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
 		AbstractMessage ret;

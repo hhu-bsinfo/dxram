@@ -8,8 +8,8 @@ package de.hhu.bsinfo.menet;
  */
 public abstract class AbstractResponse extends AbstractMessage {
 
-	AbstractRequest m_correspondingRequest = null;
-	
+	public AbstractRequest m_correspondingRequest;
+
 	// Constructors
 	/**
 	 * Creates an instance of Response
@@ -27,7 +27,7 @@ public abstract class AbstractResponse extends AbstractMessage {
 	 */
 	public AbstractResponse(final AbstractRequest p_request, final byte p_subtype) {
 		super(p_request.getMessageID(), p_request.getSource(), p_request.getType(), p_subtype);
-	
+
 		m_correspondingRequest = p_request;
 	}
 
@@ -48,6 +48,10 @@ public abstract class AbstractResponse extends AbstractMessage {
 		return getMessageID();
 	}
 
+	/**
+	 * Returns the corresponding request
+	 * @return the corresponding request
+	 */
 	protected AbstractRequest getCorrespondingRequest() {
 		return m_correspondingRequest;
 	}

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -40,7 +41,7 @@ public class StartRecoveryMessage extends AbstractMessage {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
 
 		assert p_failedPeer != NodeID.INVALID_ID;
-		
+
 		m_failedPeer = p_failedPeer;
 		m_beginOfRange = p_beginOfRange;
 	}

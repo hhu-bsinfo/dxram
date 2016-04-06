@@ -48,7 +48,7 @@ public abstract class AbstractMessage {
 		m_subtype = DEFAULT_SUBTYPE;
 
 		m_exclusivity = DEFAULT_EXCLUSIVITY_VALUE;
-		
+
 		m_statusCode = 0;
 	}
 
@@ -105,10 +105,13 @@ public abstract class AbstractMessage {
 	 *            the message type
 	 * @param p_subtype
 	 *            the message subtype
-	 * @param p_ratingValue
-	 *            the rating value of the message
+	 * @param p_exclusivity
+	 *            whether this is an exclusive message or not
+	 * @param p_statusCode
+	 *            the status code
 	 */
-	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity, final byte p_statusCode) {
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity,
+			final byte p_statusCode) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_messageID = p_messageID;
@@ -116,7 +119,7 @@ public abstract class AbstractMessage {
 		m_destination = p_destination;
 		m_type = p_type;
 		m_subtype = p_subtype;
-		
+
 		m_exclusivity = p_exclusivity;
 		m_statusCode = p_statusCode;
 	}
@@ -179,7 +182,7 @@ public abstract class AbstractMessage {
 	}
 
 	// Setters
-	
+
 	/**
 	 * Set the status code (definable error, success,...)
 	 * @param p_statusCode
@@ -303,6 +306,8 @@ public abstract class AbstractMessage {
 	 * Creates a Message from the given byte buffer
 	 * @param p_buffer
 	 *            the byte buffer
+	 * @param p_messageDirectory
+	 *            the message directory
 	 * @return the created Message
 	 * @throws NetworkException
 	 *             if the message header could not be created
@@ -326,7 +331,7 @@ public abstract class AbstractMessage {
 		subtype = p_buffer.get();
 		exclusivity = p_buffer.get() == 1;
 		statusCode = p_buffer.get();
-		
+
 		try {
 			ret = p_messageDirectory.getInstance(type, subtype);
 		} catch (final Exception e) {
@@ -344,7 +349,11 @@ public abstract class AbstractMessage {
 
 	@Override
 	public final String toString() {
-		return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+		if (m_source != -1) {
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+		} else {
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_destination + "]";
+		}
 	}
 
 }

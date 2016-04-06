@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -49,12 +50,19 @@ public class MigrateResponse extends AbstractResponse {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.put((byte) (m_success ? 1 : 0));
+		if (m_success) {
+			p_buffer.put((byte) 1);
+		} else {
+			p_buffer.put((byte) 0);
+		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_success = p_buffer.get() != 0 ? true : false;
+		final byte b = p_buffer.get();
+		if (b == 1) {
+			m_success = true;
+		}
 	}
 
 	@Override

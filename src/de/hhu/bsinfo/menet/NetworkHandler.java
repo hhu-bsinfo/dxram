@@ -6,6 +6,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
@@ -20,104 +21,174 @@ import de.hhu.bsinfo.utils.log.LoggerNull;
 public final class NetworkHandler implements DataReceiver {
 
 	// Attributes
-	private final TaskExecutor m_executor;
+	public static LoggerInterface ms_logger = new LoggerNull();
+
+	private final TaskExecutor m_messageCreatorExecutor;
 	private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
 
-	private final MessageHandler m_messageHandler;
+	private final DefaultMessageHandler m_defaultMessageHandler;
+	private final ExclusiveMessageHandler m_exclusiveMessageHandler;
 
 	private MessageDirectory m_messageDirectory;
 	private ConnectionManager m_manager;
 	private ReentrantLock m_receiversLock;
 
-	private ReentrantLock m_lock;
-	
-	private NodeMap m_nodeMap = null;
-	static LoggerInterface ms_logger = new LoggerNull();
-	
+	private NodeMap m_nodeMap;
+
+	private int m_numMessageHandlerThreads;
+
 	// Constructors
 	/**
 	 * Creates an instance of NetworkHandler
+	 * @param p_numMessageCreatorThreads
+	 *            the number of message creatorn threads
+	 * @param p_numMessageHandlerThreads
+	 *            the number of default message handler (+ one exclusive message handler)
 	 */
 	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads) {
 		final byte networkType;
-		
-		m_executor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
+
+		m_numMessageHandlerThreads = p_numMessageHandlerThreads;
+
+		m_messageCreatorExecutor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
 		m_receivers = new HashMap<>();
 		m_receiversLock = new ReentrantLock(false);
-		m_messageHandler = new MessageHandler(p_numMessageHandlerThreads);
+
+		m_defaultMessageHandler = new DefaultMessageHandler(p_numMessageHandlerThreads);
+
+		m_exclusiveMessageHandler = new ExclusiveMessageHandler();
+		m_exclusiveMessageHandler.setName("Network: ExclusiveMessageHandler");
+		m_exclusiveMessageHandler.start();
 
 		m_messageDirectory = new MessageDirectory();
-		
+
 		// Network Messages
 		networkType = FlowControlMessage.TYPE;
 		if (!m_messageDirectory.register(networkType, FlowControlMessage.SUBTYPE, FlowControlMessage.class)) {
 			throw new IllegalArgumentException("Type and subtype for FlowControlMessage already in use.");
 		}
-
-		m_lock = new ReentrantLock(false);
 	}
-	
+
+	/**
+	 * Sets the LoggerComponent
+	 * @param p_logger
+	 *            the LoggerComponent
+	 */
 	public void setLogger(final LoggerInterface p_logger) {
 		ms_logger = p_logger;
+
 	}
-	
-	public ReentrantLock getExclusiveLock() {
-		return m_messageHandler.m_exclusiveLock;
-	}
-	
-	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class)
-	{
+
+	/**
+	 * Registers a message type
+	 * @param p_type
+	 *            the unique type
+	 * @param p_subtype
+	 *            the unique subtype
+	 * @param p_class
+	 *            the calling class
+	 */
+	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		boolean ret = false;
-		m_lock.lock();
+
 		ret = m_messageDirectory.register(p_type, p_subtype, p_class);
-		m_lock.unlock();
-		
+
 		if (!ret) {
-			ms_logger.warn(getClass().getSimpleName(), "Registering network message " + p_class.getSimpleName() + 
-					" for type " + p_type + " and subtype " + p_subtype + " failed, type and subtype already used.");
+			ms_logger.warn(getClass().getSimpleName(), "Registering network message " + p_class.getSimpleName()
+					+ " for type " + p_type + " and subtype " + p_subtype + " failed, type and subtype already used.");
 		}
 	}
 
 	// Methods
-	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_maxOutstandingBytes, final int p_numberOfBuffers) {
+	/**
+	 * Initializes the network handler
+	 * @param p_ownNodeID
+	 *            the own NodeID
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
+	 * @param p_numberOfBuffers
+	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @param p_connectionTimeout
+	 *            the connection timeout
+	 */
+	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
+			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 		ms_logger.trace(getClass().getSimpleName(), "Entering initialize");
-		
-		m_lock.lock();
-		
+
 		m_nodeMap = p_nodeMap;
-		
-		AbstractConnectionCreator connectionCreator = new NIOConnectionCreator(m_executor, m_messageDirectory, m_nodeMap, p_maxOutstandingBytes, p_numberOfBuffers);
+
+		final AbstractConnectionCreator connectionCreator =
+				new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize, p_outgoingBufferSize,
+						p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
-
-		m_lock.unlock();
 
 		ms_logger.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
 
+	/**
+	 * Activates the connection manager
+	 */
 	public void activateConnectionManager() {
-		m_lock.lock();
 		m_manager.activate();
-		m_lock.unlock();
 	}
 
+	/**
+	 * Deactivates the connection manager
+	 */
 	public void deactivateConnectionManager() {
-		m_lock.lock();
 		m_manager.deactivate();
-		m_lock.unlock();
 	}
 
+	/**
+	 * Closes the network handler
+	 */
 	public void close() {
-		ms_logger.trace(getClass().getSimpleName(), "Entering close");
+		// Shutdown message creator(s)
+		m_messageCreatorExecutor.shutdown();
+		try {
+			m_messageCreatorExecutor.awaitTermination();
+			ms_logger.info(getClass().getSimpleName(), "Shutdown of MessageCreator(s) successful.");
+		} catch (final InterruptedException e) {
+			ms_logger.warn(getClass().getSimpleName(), "Could not wait for message creator thread pool to finish. Interrupted.");
+		}
 
-		m_lock.lock();
-		m_executor.shutdown();
-		m_messageHandler.m_executor.shutdown();
-		m_lock.unlock();
+		// Shutdown default message handler(s)
+		m_defaultMessageHandler.m_executor.shutdown();
+		try {
+			m_defaultMessageHandler.m_executor.awaitTermination();
+			ms_logger.info(getClass().getSimpleName(), "Shutdown of DefaultMessageHandler(s) successful.");
+		} catch (final InterruptedException e) {
+			ms_logger.warn(getClass().getSimpleName(), "Could not wait for default message handler thread pool to finish. Interrupted.");
+		}
 
-		ms_logger.trace(getClass().getSimpleName(), "Exiting close");
+		// Shutdown exclusive message handler
+		m_exclusiveMessageHandler.shutdown();
+		m_exclusiveMessageHandler.interrupt();
+		try {
+			m_exclusiveMessageHandler.join();
+			ms_logger.info(getClass().getSimpleName(), "Shutdown of ExclusiveMessageHandler successful.");
+		} catch (final InterruptedException e) {
+			ms_logger.warn(getClass().getSimpleName(), "Could not wait for exclusive message handler to finish. Interrupted.");
+		}
+
+		// Close connection manager (shuts down selector thread, too)
+		m_manager.close();
 	}
 
+	/**
+	 * Registers a message receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
+	 */
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
 
@@ -130,11 +201,18 @@ public final class NetworkHandler implements DataReceiver {
 			}
 			entry.add(p_receiver);
 
-			ms_logger.info(getClass().getSimpleName(), "new MessageReceiver");
+			ms_logger.info(getClass().getSimpleName(), "new MessageReceiver for " + p_message.getSimpleName());
 			m_receiversLock.unlock();
 		}
 	}
 
+	/**
+	 * Unregisters a message receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
+	 */
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
 
@@ -150,11 +228,17 @@ public final class NetworkHandler implements DataReceiver {
 		}
 	}
 
+	/**
+	 * Sends a message
+	 * @param p_message
+	 *            the message to send
+	 * @return the status
+	 */
 	public int sendMessage(final AbstractMessage p_message) {
 		AbstractConnection connection;
 
 		p_message.beforeSend();
-		
+
 		ms_logger.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
@@ -191,11 +275,11 @@ public final class NetworkHandler implements DataReceiver {
 				}
 			}
 		}
-		
+
 		p_message.afterSend();
 
 		ms_logger.trace(getClass().getSimpleName(), "Exiting sendMessage");
-		
+
 		return 0;
 	}
 
@@ -207,11 +291,37 @@ public final class NetworkHandler implements DataReceiver {
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
 		ms_logger.trace(getClass().getSimpleName(), "NewMessage: " + p_message);
-		
+
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);
 		} else {
-			m_messageHandler.newMessage(p_message);
+			if (!p_message.isExclusive()) {
+				// Limit number of open tasks
+				while (m_defaultMessageHandler.getQueueSize() > m_numMessageHandlerThreads * 2) {
+					if (m_manager.atLeastOneConnectionIsCongested()) {
+						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
+						// than limit) messages
+						// to task queue until flow control message arrives
+						break;
+					}
+					Thread.yield();
+				}
+
+				m_defaultMessageHandler.newMessage(p_message);
+			} else {
+				// Limit number of open tasks
+				while (m_exclusiveMessageHandler.getQueueSize() > 4) {
+					if (m_manager.atLeastOneConnectionIsCongested()) {
+						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
+						// than limit) messages
+						// to task queue until flow control message arrives
+						break;
+					}
+					Thread.yield();
+				}
+
+				m_exclusiveMessageHandler.newMessage(p_message);
+			}
 		}
 	}
 
@@ -220,29 +330,33 @@ public final class NetworkHandler implements DataReceiver {
 	 * Distributes incoming messages
 	 * @author Marc Ewert 17.09.2014
 	 */
-	private class MessageHandler implements Runnable {
+	private class DefaultMessageHandler implements Runnable {
 
 		// Attributes
 		private final ArrayDeque<AbstractMessage> m_defaultMessages;
-		private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
-		private int m_numMessageHandlerThreads;
-		private final TaskExecutor m_executor;
 		private ReentrantLock m_defaultMessagesLock;
-		private ReentrantLock m_exclusiveLock;
-		private ReentrantLock m_exclusiveMessagesLock;
+		private final TaskExecutor m_executor;
 
 		// Constructors
 		/**
 		 * Creates an instance of MessageHandler
+		 * @param p_numMessageHandlerThreads
+		 *            the number of default message handler
 		 */
-		MessageHandler(final int p_numMessageHandlerThreads) {
-			m_numMessageHandlerThreads = p_numMessageHandlerThreads;
-			m_executor = new TaskExecutor("MessageHandler", m_numMessageHandlerThreads);
+		DefaultMessageHandler(final int p_numMessageHandlerThreads) {
 			m_defaultMessages = new ArrayDeque<>();
-			m_exclusiveMessages = new ArrayDeque<>();
 			m_defaultMessagesLock = new ReentrantLock(false);
-			m_exclusiveLock = new ReentrantLock(false);
-			m_exclusiveMessagesLock = new ReentrantLock(false);
+
+			m_executor = new TaskExecutor("Network: DefaultMessageHandler", p_numMessageHandlerThreads);
+		}
+
+		// Getter
+		/**
+		 * Returns the number of messages in default message queue
+		 * @return the number of scheduled messages
+		 */
+		public int getQueueSize() {
+			return m_defaultMessages.size();
 		}
 
 		// Methods
@@ -252,25 +366,9 @@ public final class NetworkHandler implements DataReceiver {
 		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
-			// Limit number of tasks to NUMBER_OF_MESSAGE_HANDLER
-			while (m_defaultMessages.size() + m_exclusiveMessages.size() > m_numMessageHandlerThreads * 2) {
-				if (m_manager.atLeastOneConnectionIsCongested()) {
-					// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
-					// than limit) messages to task queue until flow control message arrives
-					break;
-				}
-				Thread.yield();
-			}
-
-			if (!p_message.isExclusive()) {
-				m_defaultMessagesLock.lock();
-				m_defaultMessages.offer(p_message);
-				m_defaultMessagesLock.unlock();
-			} else {
-				m_exclusiveMessagesLock.lock();
-				m_exclusiveMessages.offer(p_message);
-				m_exclusiveMessagesLock.unlock();
-			}
+			m_defaultMessagesLock.lock();
+			m_defaultMessages.offer(p_message);
+			m_defaultMessagesLock.unlock();
 
 			m_executor.execute(this);
 		}
@@ -278,36 +376,109 @@ public final class NetworkHandler implements DataReceiver {
 		@Override
 		public void run() {
 			AbstractMessage message = null;
-			boolean isExclusive = false;
 			Entry entry;
 
-			while (message == null) {
-				if (m_exclusiveMessages.size() > m_defaultMessages.size() && m_exclusiveLock.tryLock()) {
-					isExclusive = true;
-					m_exclusiveMessagesLock.lock();
-					message = m_exclusiveMessages.poll();
-					m_exclusiveMessagesLock.unlock();
-				} else {
-					m_defaultMessagesLock.lock();
-					message = m_defaultMessages.poll();
-					m_defaultMessagesLock.unlock();
-				}
-			}
+			m_defaultMessagesLock.lock();
+			message = m_defaultMessages.poll();
+			m_defaultMessagesLock.unlock();
 
 			entry = m_receivers.get(message.getClass());
 
 			if (entry != null) {
 				entry.newMessage(message);
 			} else {
-				System.out.println("Got no message!!!");
-			}
-
-			if (isExclusive) {
-				m_exclusiveLock.unlock();
+				ms_logger.error(getClass().getSimpleName(), "Default message queue is empty!");
 			}
 		}
 	}
-	
+
+	/**
+	 * Distributes incoming messages
+	 * @author Marc Ewert 17.09.2014
+	 */
+	private class ExclusiveMessageHandler extends Thread {
+
+		// Attributes
+		private final ArrayDeque<AbstractMessage> m_exclusiveMessages;
+		private ReentrantLock m_exclusiveMessagesLock;
+		private Condition m_messageAvailable;
+		private boolean m_shutdown;
+
+		// Constructors
+		/**
+		 * Creates an instance of MessageHandler
+		 */
+		ExclusiveMessageHandler() {
+			m_exclusiveMessages = new ArrayDeque<>();
+			m_exclusiveMessagesLock = new ReentrantLock(false);
+			m_messageAvailable = m_exclusiveMessagesLock.newCondition();
+		}
+
+		// Getter
+		/**
+		 * Returns the number of messages in default message queue
+		 * @return the number of scheduled messages
+		 */
+		public int getQueueSize() {
+			return m_exclusiveMessages.size();
+		}
+
+		// Methods
+		/**
+		 * Closes the handler
+		 */
+		public void shutdown() {
+			m_shutdown = true;
+		}
+
+		/**
+		 * Enqueue a new message for delivering
+		 * @param p_message
+		 *            the message
+		 */
+		public void newMessage(final AbstractMessage p_message) {
+			m_exclusiveMessagesLock.lock();
+			m_exclusiveMessages.offer(p_message);
+
+			if (m_exclusiveMessages.size() == 1) {
+				m_messageAvailable.signal();
+			}
+			m_exclusiveMessagesLock.unlock();
+		}
+
+		@Override
+		public void run() {
+			AbstractMessage message = null;
+			Entry entry;
+
+			while (!m_shutdown) {
+				while (message == null) {
+					m_exclusiveMessagesLock.lock();
+
+					if (m_exclusiveMessages.size() == 0) {
+						try {
+							m_messageAvailable.await();
+						} catch (final InterruptedException e) {
+							break;
+						}
+					}
+
+					message = m_exclusiveMessages.poll();
+					m_exclusiveMessagesLock.unlock();
+				}
+
+				entry = m_receivers.get(message.getClass());
+
+				if (entry != null) {
+					entry.newMessage(message);
+				} else {
+					ms_logger.error(getClass().getSimpleName(), "Exclusive message queue is empty!");
+				}
+				message = null;
+			}
+		}
+	}
+
 	/**
 	 * Methods for reacting on incoming Messages
 	 * @author Florian Klein

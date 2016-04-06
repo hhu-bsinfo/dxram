@@ -167,7 +167,7 @@ public class JobService extends DXRAMService implements MessageReceiver, JobEven
 				return false;
 			
 			// now check for remote peers
-			List<Short> peers = m_boot.getAvailablePeerNodeIDs();
+			List<Short> peers = m_boot.getOnlinePeerNodeIDs();
 			for (short peer : peers)
 			{
 				// don't consider ourselves

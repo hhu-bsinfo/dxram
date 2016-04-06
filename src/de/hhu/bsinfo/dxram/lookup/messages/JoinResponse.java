@@ -1,9 +1,10 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.lookup.storage.LookupTree;
+import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
@@ -135,19 +136,23 @@ public class JoinResponse extends AbstractResponse {
 			p_buffer.putShort(m_predecessor);
 			p_buffer.putShort(m_successor);
 
-			if (m_mappings == null) {
+			if (m_mappings == null || m_mappings.length == 0) {
 				p_buffer.put((byte) 0);
 			} else {
 				p_buffer.put((byte) 1);
 				p_buffer.put(m_mappings);
 			}
 
-			p_buffer.putInt(m_superpeers.size());
-			for (short superpeer : m_superpeers) {
-				p_buffer.putShort(superpeer);
+			if (m_superpeers == null || m_superpeers.size() == 0) {
+				p_buffer.putInt(0);
+			} else {
+				p_buffer.putInt(m_superpeers.size());
+				for (short superpeer : m_superpeers) {
+					p_buffer.putShort(superpeer);
+				}
 			}
 
-			if (m_peers == null) {
+			if (m_peers == null || m_peers.size() == 0) {
 				p_buffer.putInt(0);
 			} else {
 				p_buffer.putInt(m_peers.size());
@@ -156,7 +161,7 @@ public class JoinResponse extends AbstractResponse {
 				}
 			}
 
-			if (m_trees == null) {
+			if (m_trees == null || m_trees.size() == 0) {
 				p_buffer.putInt(0);
 			} else {
 				p_buffer.putInt(m_trees.size());
@@ -183,8 +188,8 @@ public class JoinResponse extends AbstractResponse {
 				p_buffer.get(m_mappings);
 			}
 
-			length = p_buffer.getInt();
 			m_superpeers = new ArrayList<Short>();
+			length = p_buffer.getInt();
 			for (int i = 0; i < length; i++) {
 				m_superpeers.add(p_buffer.getShort());
 			}
@@ -213,19 +218,22 @@ public class JoinResponse extends AbstractResponse {
 			ret = Byte.BYTES + Short.BYTES * 2;
 
 			ret += Byte.BYTES;
-			if (m_mappings != null) {
+			if (m_mappings != null && m_mappings.length > 0) {
 				ret += Integer.BYTES + m_mappings.length;
 			}
 
-			ret += Integer.BYTES + Short.BYTES * m_superpeers.size();
+			ret += Integer.BYTES;
+			if (m_superpeers != null && m_superpeers.size() > 0) {
+				ret += Short.BYTES * m_superpeers.size();
+			}
 
 			ret += Integer.BYTES;
-			if (m_peers != null) {
+			if (m_peers != null && m_peers.size() > 0) {
 				ret += Short.BYTES * m_peers.size();
 			}
 
 			ret += Integer.BYTES;
-			if (m_trees != null) {
+			if (m_trees != null && m_trees.size() > 0) {
 				for (LookupTree tree : m_trees) {
 					ret += LookupTree.getCIDTreeWriteLength(tree);
 				}
