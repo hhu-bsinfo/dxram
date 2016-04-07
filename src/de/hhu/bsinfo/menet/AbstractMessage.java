@@ -12,8 +12,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class AbstractMessage {
 
 	// Constants
-	static final byte BYTES_PAYLOAD_SIZE = 4;
-
 	public static final int INVALID_MESSAGE_ID = -1;
 	public static final byte DEFAULT_TYPE = 0;
 	public static final byte DEFAULT_SUBTYPE = 0;
@@ -21,14 +19,21 @@ public abstract class AbstractMessage {
 	public static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
 	public static final byte DEFAULT_RATING_VALUE = 1;
 
+	/*- Header size:
+	 *  messageID + type + subtype + exclusivity + statusCode + payloadSize
+	 *  3b        + 1b   + 1b      + 1b          + 1b         + 4b           = 11 bytes
+	 */
 	public static final byte HEADER_SIZE = 11;
+	public static final byte PAYLOAD_SIZE_LENGTH = 4;
 
 	// Attributes
+	// (!) MessageID occupies only 3 byte in message header
 	private int m_messageID;
 	private short m_source;
 	private short m_destination;
 	private byte m_type;
 	private byte m_subtype;
+	// (!) Exclusivity is written as a byte (0 -> false, 1 -> true)
 	private boolean m_exclusivity;
 	// status code for all messages to indicate success, errors etc.
 	private byte m_statusCode;
@@ -303,7 +308,7 @@ public abstract class AbstractMessage {
 	protected void afterSend() {}
 
 	/**
-	 * Creates a Message from the given byte buffer
+	 * Creates a Message from the given incoming byte buffer
 	 * @param p_buffer
 	 *            the byte buffer
 	 * @param p_messageDirectory
@@ -322,7 +327,8 @@ public abstract class AbstractMessage {
 
 		assert p_buffer != null;
 
-		if (p_buffer.remaining() < HEADER_SIZE - BYTES_PAYLOAD_SIZE) {
+		// The message header does not contain the payload size
+		if (p_buffer.remaining() < HEADER_SIZE - PAYLOAD_SIZE_LENGTH) {
 			throw new NetworkException("Incomplete header");
 		}
 

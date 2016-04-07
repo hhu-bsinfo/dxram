@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -52,20 +53,23 @@ public class SendSuperpeersMessage extends AbstractMessage {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		if (m_superpeers == null) {
+		if (m_superpeers == null || m_superpeers.size() == 0) {
 			p_buffer.putInt(0);
 		} else {
 			p_buffer.putInt(m_superpeers.size());
-			for (short peer : m_superpeers) {
-				p_buffer.putShort(peer);
+			for (short superpeer : m_superpeers) {
+				p_buffer.putShort(superpeer);
 			}
 		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_superpeers = new ArrayList<Short>(p_buffer.getInt());
-		for (int i = 0; i < m_superpeers.size(); i++) {
+		int length;
+
+		m_superpeers = new ArrayList<Short>();
+		length = p_buffer.getInt();
+		for (int i = 0; i < length; i++) {
 			m_superpeers.add(p_buffer.getShort());
 		}
 	}
@@ -75,7 +79,7 @@ public class SendSuperpeersMessage extends AbstractMessage {
 		int ret;
 
 		ret = Integer.BYTES;
-		if (m_superpeers != null) {
+		if (m_superpeers != null && m_superpeers.size() > 0) {
 			ret += Short.BYTES * m_superpeers.size();
 		}
 

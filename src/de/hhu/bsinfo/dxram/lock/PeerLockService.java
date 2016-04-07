@@ -118,12 +118,12 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 			m_memoryManager.unlockAccess();
 			
 			// remote, figure out location
-			LookupRange locations = m_lookup.getLookupRange(p_chunkID);
-			if (locations == null) {
+			LookupRange lookupRange = m_lookup.getLookupRange(p_chunkID);
+			if (lookupRange == null) {
 				err = ErrorCode.CHUNK_NOT_AVAILABLE;
 			} else {
 	
-				short peer = locations.getPrimaryPeer();
+				short peer = lookupRange.getPrimaryPeer();
 				if (peer == m_boot.getNodeID()) {
 					// local lock
 					if (!m_lock.lock(p_chunkID, m_boot.getNodeID(), p_writeLock, p_timeout)) {
@@ -214,12 +214,12 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 			m_memoryManager.unlockAccess();
 			
 			// remote, figure out location
-			LookupRange locations = m_lookup.getLookupRange(p_chunkID);
-			if (locations == null) {
+			LookupRange lookupRange = m_lookup.getLookupRange(p_chunkID);
+			if (lookupRange == null) {
 				err = ErrorCode.CHUNK_NOT_AVAILABLE;
 			} else {
 	
-				short peer = locations.getPrimaryPeer();
+				short peer = lookupRange.getPrimaryPeer();
 				if (peer == m_boot.getNodeID()) {
 					// local unlock
 					if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {

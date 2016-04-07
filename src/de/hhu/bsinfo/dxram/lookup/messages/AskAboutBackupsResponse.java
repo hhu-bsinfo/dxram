@@ -65,15 +65,14 @@ public class AskAboutBackupsResponse extends AbstractResponse {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		if (m_mappings == null) {
-			p_buffer.put((byte) 0);
+		if (m_mappings == null || m_mappings.length == 0) {
+			p_buffer.putInt(0);
 		} else {
-			p_buffer.put((byte) 1);
 			p_buffer.putInt(m_mappings.length);
 			p_buffer.put(m_mappings);
 		}
 
-		if (m_trees == null) {
+		if (m_trees == null || m_trees.size() == 0) {
 			p_buffer.putInt(0);
 		} else {
 			p_buffer.putInt(m_trees.size());
@@ -85,13 +84,17 @@ public class AskAboutBackupsResponse extends AbstractResponse {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		if (p_buffer.get() != 0) {
-			m_mappings = new byte[p_buffer.getInt()];
+		int length;
+
+		length = p_buffer.getInt();
+		if (length != 0) {
+			m_mappings = new byte[length];
 			p_buffer.get(m_mappings);
 		}
 
-		m_trees = new ArrayList<LookupTree>(p_buffer.getInt());
-		for (int i = 0; i < m_trees.size(); i++) {
+		m_trees = new ArrayList<LookupTree>();
+		length = p_buffer.getInt();
+		for (int i = 0; i < length; i++) {
 			m_trees.add(LookupTree.readCIDTree(p_buffer));
 		}
 	}
@@ -100,13 +103,13 @@ public class AskAboutBackupsResponse extends AbstractResponse {
 	protected final int getPayloadLengthForWrite() {
 		int ret;
 
-		ret = Byte.BYTES;
-		if (m_mappings != null) {
-			ret += Integer.BYTES + m_mappings.length;
+		ret = Integer.BYTES;
+		if (m_mappings != null && m_mappings.length > 0) {
+			ret += m_mappings.length;
 		}
 
 		ret += Integer.BYTES;
-		if (m_trees != null) {
+		if (m_trees != null && m_trees.size() > 0) {
 			for (LookupTree tree : m_trees) {
 				ret += LookupTree.getCIDTreeWriteLength(tree);
 			}

@@ -15,6 +15,10 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
 import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryRequest;
@@ -35,11 +39,13 @@ import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutFailedPeerMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewPredecessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SendBackupsMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.StartRecoveryMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -79,7 +85,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	private ArrayList<Short> m_peers;
 
 	private LookupTree[] m_nodeTable;
-	private ArrayList<Short> m_nodeList;
+	private ArrayList<Short> m_assignedPeersIncludingBackup;
 
 	private CRC16 m_hashGenerator = new CRC16();
 	private NameserviceHashTable m_idTable;
@@ -124,7 +130,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		registerNetworkMessageListener();
 
 		m_nodeTable = new LookupTree[65536];
-		m_nodeList = new ArrayList<Short>();
+		m_assignedPeersIncludingBackup = new ArrayList<Short>();
 		m_idTable = new NameserviceHashTable(1000, 0.9f);
 
 		m_superpeers = new ArrayList<Short>();
@@ -222,6 +228,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 	}
 
 	/**
+	 * Returns all peers
+	 * @return all peers
+	 */
+	protected ArrayList<Short> getPeers() {
+		return m_peers;
+	}
+
+	/**
 	 * Determines all peers that are in the responsible area
 	 * @param p_oldSuperpeer
 	 *            the old superpeer
@@ -237,25 +251,25 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		peers = new ArrayList<Short>();
 		m_dataLock.lock();
-		if (0 != m_nodeList.size()) {
-			index = Collections.binarySearch(m_nodeList, p_oldSuperpeer);
+		if (0 != m_assignedPeersIncludingBackup.size()) {
+			index = Collections.binarySearch(m_assignedPeersIncludingBackup, p_oldSuperpeer);
 			if (0 > index) {
 				index = index * -1 - 1;
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 			}
 			startIndex = index;
-			currentPeer = m_nodeList.get(index++);
+			currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			while (OverlayHelper.isNodeInRange(currentPeer, p_oldSuperpeer, p_currentSuperpeer, OPEN_INTERVAL)) {
 				peers.add(Collections.binarySearch(peers, currentPeer) * -1 - 1, currentPeer);
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 				if (index == startIndex) {
 					break;
 				}
-				currentPeer = m_nodeList.get(index++);
+				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
 		}
 		m_dataLock.unlock();
@@ -274,7 +288,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		m_dataLock.lock();
 		// Remove failedPeer from all backup peer lists
-		iter = m_nodeList.iterator();
+		iter = m_assignedPeersIncludingBackup.iterator();
 		while (iter.hasNext()) {
 			getCIDTree(iter.next()).removeBackupPeer(p_failedPeer, DUMMY);
 		}
@@ -306,16 +320,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_dataLock.lock();
 		lowerBound = m_predecessor;
 		// Compare m_nodeList with given list, add missing entries to "trees"
-		if (0 != m_nodeList.size()) {
-			index = Collections.binarySearch(m_nodeList, lowerBound);
+		if (0 != m_assignedPeersIncludingBackup.size()) {
+			index = Collections.binarySearch(m_assignedPeersIncludingBackup, lowerBound);
 			if (0 > index) {
 				index = index * -1 - 1;
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 			}
 			startIndex = index;
-			currentPeer = m_nodeList.get(index++);
+			currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			while (OverlayHelper.isNodeInRange(currentPeer, lowerBound, m_nodeID, OPEN_INTERVAL)) {
 				if (0 > Collections.binarySearch(p_peers, currentPeer)) {
 					p_trees.add(getCIDTree(currentPeer));
@@ -330,15 +344,15 @@ public class OverlaySuperpeer implements MessageReceiver {
 						System.arraycopy(mappings, 0, allMappings, oldMappings.length, mappings.length);
 					}
 
-					m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
+					m_logger.trace(getClass(), "Spreading meta-data to " + m_successor);
 				}
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 				if (index == startIndex) {
 					break;
 				}
-				currentPeer = m_nodeList.get(index++);
+				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
 		}
 		m_dataLock.unlock();
@@ -380,27 +394,27 @@ public class OverlaySuperpeer implements MessageReceiver {
 		int index;
 
 		m_dataLock.lock();
-		if (0 != m_nodeList.size()) {
-			index = Collections.binarySearch(m_nodeList, p_responsibleArea[1]);
+		if (0 != m_assignedPeersIncludingBackup.size()) {
+			index = Collections.binarySearch(m_assignedPeersIncludingBackup, p_responsibleArea[1]);
 			if (0 > index) {
 				index = index * -1 - 1;
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 			}
-			currentPeer = m_nodeList.get(index);
+			currentPeer = m_assignedPeersIncludingBackup.get(index);
 			while (OverlayHelper.isNodeInRange(currentPeer, p_responsibleArea[1], p_responsibleArea[0], OPEN_INTERVAL)
 					&& p_responsibleArea[0] != p_responsibleArea[1]) {
 				deleteCIDTree(currentPeer);
 				m_idTable.remove(currentPeer);
 
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
-				if (0 == m_nodeList.size()) {
+				if (0 == m_assignedPeersIncludingBackup.size()) {
 					break;
 				}
-				currentPeer = m_nodeList.get(index);
+				currentPeer = m_assignedPeersIncludingBackup.get(index);
 			}
 		}
 		m_dataLock.unlock();
@@ -440,16 +454,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_overlayLock.unlock();
 
 		m_dataLock.lock();
-		if (0 != m_nodeList.size()) {
-			index = Collections.binarySearch(m_nodeList, firstPeer);
+		if (0 != m_assignedPeersIncludingBackup.size()) {
+			index = Collections.binarySearch(m_assignedPeersIncludingBackup, firstPeer);
 			if (0 > index) {
 				index = index * -1 - 1;
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 			}
 			startIndex = index;
-			currentPeer = m_nodeList.get(index++);
+			currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			while (OverlayHelper.isNodeInRange(currentPeer, firstPeer, p_nodeID, CLOSED_INTERVAL)) {
 				if (getCIDTree(currentPeer).getStatus()) {
 					if (0 > Collections.binarySearch(m_peers, currentPeer) && 0 > Collections.binarySearch(m_superpeers, currentPeer)) {
@@ -459,13 +473,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 						m_overlayLock.unlock();
 					}
 				}
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 				if (index == startIndex) {
 					break;
 				}
-				currentPeer = m_nodeList.get(index++);
+				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
 		}
 		m_dataLock.unlock();
@@ -591,7 +605,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 					// Remove peer in meta-data (and replace with new backup node; DUMMY element currently)
 					m_logger.info(getClass(), "Removing " + p_failedNode + " from local meta-data");
 					m_dataLock.lock();
-					iter = m_nodeList.iterator();
+					iter = m_assignedPeersIncludingBackup.iterator();
 					while (iter.hasNext()) {
 						tree = getCIDTree(iter.next());
 						if (tree != null) {
@@ -792,10 +806,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 */
 	private void addCIDTree(final short p_nodeID, final LookupTree p_tree) {
 		int index;
-		index = Collections.binarySearch(m_nodeList, p_nodeID);
+		index = Collections.binarySearch(m_assignedPeersIncludingBackup, p_nodeID);
 		if (0 > index) {
 			index = index * -1 - 1;
-			m_nodeList.add(index, p_nodeID);
+			m_assignedPeersIncludingBackup.add(index, p_nodeID);
 		}
 		m_nodeTable[p_nodeID & 0xFFFF] = p_tree;
 	}
@@ -808,10 +822,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 */
 	private void deleteCIDTree(final short p_nodeID) {
 		int index;
-		if (0 != m_nodeList.size()) {
-			index = Collections.binarySearch(m_nodeList, p_nodeID);
+		if (0 != m_assignedPeersIncludingBackup.size()) {
+			index = Collections.binarySearch(m_assignedPeersIncludingBackup, p_nodeID);
 			if (0 <= index) {
-				m_nodeList.remove(index);
+				m_assignedPeersIncludingBackup.remove(index);
 				m_nodeTable[p_nodeID & 0xFFFF] = null;
 			}
 		}
@@ -835,16 +849,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		trees = new ArrayList<LookupTree>();
 		m_dataLock.lock();
-		if (0 != m_nodeList.size()) {
-			index = Collections.binarySearch(m_nodeList, p_responsibleArea[0]);
+		if (0 != m_assignedPeersIncludingBackup.size()) {
+			index = Collections.binarySearch(m_assignedPeersIncludingBackup, p_responsibleArea[0]);
 			if (0 > index) {
 				index = index * -1 - 1;
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 			}
 			startIndex = index;
-			currentPeer = m_nodeList.get(index++);
+			currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			while (OverlayHelper.isNodeInRange(currentPeer, p_responsibleArea[0], p_nodeID, OPEN_INTERVAL)) {
 				trees.add(getCIDTree(currentPeer));
 
@@ -858,13 +872,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 					System.arraycopy(mappings, 0, allMappings, oldMappings.length, mappings.length);
 				}
 
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 				if (index == startIndex) {
 					break;
 				}
-				currentPeer = m_nodeList.get(index++);
+				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
 		}
 		m_dataLock.unlock();
@@ -895,27 +909,31 @@ public class OverlaySuperpeer implements MessageReceiver {
 		short lowerBound;
 		int index;
 		int startIndex;
+		boolean dataToTransmit = false;
+		boolean superpeerToSendData = false;
 		byte[] mappings;
 		byte[] oldMappings;
 		byte[] allMappings = null;
 		ArrayList<LookupTree> trees;
+		String str = "Spreaded data of ";
 
 		trees = new ArrayList<LookupTree>();
 		m_dataLock.lock();
 		lowerBound = m_predecessor;
-		if (0 != m_nodeList.size()) {
-			index = Collections.binarySearch(m_nodeList, lowerBound);
+		if (0 != m_assignedPeersIncludingBackup.size()) {
+			index = Collections.binarySearch(m_assignedPeersIncludingBackup, lowerBound);
 			if (0 > index) {
 				index = index * -1 - 1;
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 			}
 			startIndex = index;
-			currentPeer = m_nodeList.get(index++);
-			m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
+			currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			while (OverlayHelper.isNodeInRange(currentPeer, lowerBound, m_nodeID, OPEN_INTERVAL)) {
-				m_logger.info(getClass(), " " + currentPeer);
+				dataToTransmit = true;
+				str += currentPeer;
+
 				trees.add(getCIDTree(currentPeer));
 
 				mappings = m_idTable.toArray(currentPeer, currentPeer, false, CLOSED_INTERVAL);
@@ -928,13 +946,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 					System.arraycopy(mappings, 0, allMappings, oldMappings.length, mappings.length);
 				}
 
-				if (index == m_nodeList.size()) {
+				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
 				if (index == startIndex) {
 					break;
 				}
-				currentPeer = m_nodeList.get(index++);
+				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
 		}
 		m_dataLock.unlock();
@@ -950,19 +968,26 @@ public class OverlaySuperpeer implements MessageReceiver {
 			}
 			newBackupSuperpeer = m_superpeers.get(index);
 			m_overlayLock.unlock();
-			m_logger.info(getClass(), " to " + newBackupSuperpeer);
+
+			superpeerToSendData = true;
+			str += " to " + newBackupSuperpeer;
 
 			if (m_network.sendMessage(
 					new SendBackupsMessage(newBackupSuperpeer, allMappings, trees))
 					!= NetworkErrorCodes.SUCCESS) {
 				// Superpeer is not available anymore, remove from superpeer array and try next superpeer
-				m_logger.error(getClass(), "new backup superpeer failed, too");
+				m_logger.error(getClass(), "new backup superpeer (" + newBackupSuperpeer + ") failed, too");
 				m_failureLock.unlock();
 				failureHandling(newBackupSuperpeer);
 				m_failureLock.lock();
 				continue;
 			}
 			break;
+		}
+		if (dataToTransmit && superpeerToSendData) {
+			m_logger.info(getClass(), str);
+		} else {
+			m_logger.info(getClass(), "No need to spread data");
 		}
 	}
 
@@ -1015,25 +1040,25 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_dataLock.lock();
 				trees = new ArrayList<LookupTree>();
 				responsibleArea = OverlayHelper.getResponsibleArea(joiningNode, m_predecessor, m_superpeers);
-				if (0 != m_nodeList.size()) {
-					index = Collections.binarySearch(m_nodeList, responsibleArea[0]);
+				if (0 != m_assignedPeersIncludingBackup.size()) {
+					index = Collections.binarySearch(m_assignedPeersIncludingBackup, responsibleArea[0]);
 					if (0 > index) {
 						index = index * -1 - 1;
-						if (index == m_nodeList.size()) {
+						if (index == m_assignedPeersIncludingBackup.size()) {
 							index = 0;
 						}
 					}
 					startIndex = index;
-					currentPeer = m_nodeList.get(index++);
+					currentPeer = m_assignedPeersIncludingBackup.get(index++);
 					while (OverlayHelper.isNodeInRange(currentPeer, responsibleArea[0], responsibleArea[1], OPEN_INTERVAL)) {
 						trees.add(getCIDTree(currentPeer));
-						if (index == m_nodeList.size()) {
+						if (index == m_assignedPeersIncludingBackup.size()) {
 							index = 0;
 						}
 						if (index == startIndex) {
 							break;
 						}
-						currentPeer = m_nodeList.get(index++);
+						currentPeer = m_assignedPeersIncludingBackup.get(index++);
 					}
 				}
 				m_dataLock.unlock();
@@ -1455,7 +1480,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		m_logger.trace(getClass(), "Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
 
-		primaryAndBackupPeers = new LookupRangeWithBackupPeers(p_initRangeRequest.getLocations());
+		primaryAndBackupPeers = new LookupRangeWithBackupPeers(p_initRangeRequest.getLookupRange());
 		startChunkIDRangeID = p_initRangeRequest.getStartChunkIDOrRangeID();
 		creator = primaryAndBackupPeers.getPrimaryPeer();
 		isBackup = p_initRangeRequest.isBackup();
@@ -1658,6 +1683,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE, SendBackupsMessage.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE, NotifyAboutFailedPeerMessage.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE, StartRecoveryMessage.class);
+
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
+
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST, AskAboutBackupsRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE, AskAboutBackupsResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, AskAboutSuccessorRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, AskAboutSuccessorResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE, NotifyAboutNewPredecessorMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, NotifyAboutNewSuccessorMessage.class);
 	}
 
 	/**

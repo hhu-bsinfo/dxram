@@ -7,7 +7,7 @@ import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Stores locations
+ * Stores the primary peer, the lookup range boundaries and all backup peers.
  * @author Kevin Beineke
  *         03.09.2013
  */
@@ -29,7 +29,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	// Constructors
 	/**
-	 * Creates an instance of Locations
+	 * Creates an instance of LookupRangeWithBackupPeers
 	 * @param p_primaryPeer
 	 *            the primary peer
 	 * @param p_backupPeers
@@ -46,18 +46,18 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 	}
 
 	/**
-	 * Creates an instance of Locations
+	 * Creates an instance of LookupRangeWithBackupPeers
 	 * @param p_primaryAndBackupPeers
-	 *            the locations in long representation
+	 *            the LookupRangeWithBackupPeers in long representation
 	 */
 	public LookupRangeWithBackupPeers(final long p_primaryAndBackupPeers) {
 		this(p_primaryAndBackupPeers, null);
 	}
 
 	/**
-	 * Creates an instance of Locations
+	 * Creates an instance of LookupRangeWithBackupPeers
 	 * @param p_primaryAndBackupPeers
-	 *            the locations in long representation
+	 *            the LookupRangeWithBackupPeers in long representation
 	 * @param p_range
 	 *            the corresponding range
 	 */
@@ -203,8 +203,8 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 	}
 
 	/**
-	 * Prints the locations
-	 * @return String interpretation of locations
+	 * Prints the LookupRangeWithBackupPeers
+	 * @return String interpretation of LookupRangeWithBackupPeers
 	 */
 	@Override
 	public String toString() {

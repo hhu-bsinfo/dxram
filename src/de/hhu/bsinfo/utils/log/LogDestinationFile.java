@@ -87,7 +87,7 @@ public class LogDestinationFile implements LogDestination {
 			if (p_exception != null) {
 				str += "\n##### " + p_exception + "\n";
 				for (StackTraceElement ste : p_exception.getStackTrace()) {
-					str += "####" + ste + "\n";
+					str += "#### " + ste + "\n";
 				}
 			}
 			try {

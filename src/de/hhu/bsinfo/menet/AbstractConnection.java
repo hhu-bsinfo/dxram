@@ -474,9 +474,6 @@ public abstract class AbstractConnection {
 				case READ_HEADER:
 					readHeader(p_buffer);
 					break;
-				case VERIFY_PAYLOAD:
-					verifyPayload();
-					break;
 				case READ_PAYLOAD:
 					readPayload(p_buffer);
 					break;
@@ -497,40 +494,30 @@ public abstract class AbstractConnection {
 
 				if (p_buffer.remaining() < remaining) {
 					m_headerBytes.put(p_buffer);
+					// Header partially filled
 				} else {
 					m_headerBytes.put(p_buffer.array(), p_buffer.position(), remaining);
 					p_buffer.position(p_buffer.position() + remaining);
-					m_step = Step.VERIFY_PAYLOAD;
 
-					m_headerBytes.position(m_headerBytes.limit());
+					// Header complete
+
+					// Read payload size (copied at the end of m_headerBytes before)
+					final int payloadSize = m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+
+					// Create message buffer and copy header into (without payload size)
+					m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + payloadSize);
+					m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+
+					if (payloadSize == 0) {
+						// There is no payload -> message complete
+						m_step = Step.DONE;
+					} else {
+						// Payload must be read next
+						m_step = Step.READ_PAYLOAD;
+					}
 				}
 			} catch (final Exception e) {
 				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to read message header ", e);
-				clear();
-			}
-		}
-
-		/**
-		 * Analyzes the size of the message payload
-		 */
-		private void verifyPayload() {
-			try {
-				// Read payload size
-				final int payloadSize = m_headerBytes.getInt(m_headerBytes.position() - AbstractMessage.BYTES_PAYLOAD_SIZE);
-
-				// Create message buffer and copy header into (without payload size)
-				m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.BYTES_PAYLOAD_SIZE + payloadSize);
-				m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.BYTES_PAYLOAD_SIZE);
-
-				if (payloadSize == 0) {
-					// There is no payload -> message complete
-					m_step = Step.DONE;
-				} else {
-					// Payload must be read next
-					m_step = Step.READ_PAYLOAD;
-				}
-			} catch (final Exception e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to verify message header payload ", e);
 				clear();
 			}
 		}
@@ -574,7 +561,7 @@ public abstract class AbstractConnection {
 	private enum Step {
 
 		// Constants
-		READ_HEADER, VERIFY_PAYLOAD, READ_PAYLOAD, DONE
+		READ_HEADER, READ_PAYLOAD, DONE
 
 	}
 }
