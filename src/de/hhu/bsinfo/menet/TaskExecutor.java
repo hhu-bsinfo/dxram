@@ -42,7 +42,6 @@ public final class TaskExecutor {
 
 		m_taskMapLock = new ReentrantLock(false);
 
-		NetworkHandler.getLogger().info(getClass().getSimpleName(), m_name + ": Initialising " + p_threads + " threads");
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
 	}
 

@@ -34,14 +34,17 @@ public final class ClusterLogTest3 {
 	protected static final int THREADS = 8;
 
 	// Attributes
-	// Workload: 0 -> uniform, 1 -> zipfian
-	private static byte m_workload = 0;
+	private static byte m_workload;
 
 	// Constructors
 	/**
 	 * Creates an instance of ClusterLogTest3
+	 * @param p_workload
+	 *            the worload (0 -> uniform, 1 -> zipfian)
 	 */
-	private ClusterLogTest3() {}
+	private ClusterLogTest3(final byte p_workload) {
+		m_workload = p_workload;
+	}
 
 	/**
 	 * Program entry point
@@ -49,6 +52,9 @@ public final class ClusterLogTest3 {
 	 *            The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
+		// Workload: 0 -> uniform, 1 -> zipfian
+		new ClusterLogTest3((byte) 0);
+
 		if (p_arguments.length == 0) {
 			System.out.println("Missing program argument: Role (master, benchmark)");
 		} else if (p_arguments[0].equals("master")) {
@@ -137,6 +143,8 @@ public final class ClusterLogTest3 {
 		// Constructors
 		/**
 		 * Creates an instance of Client
+		 * @param p_chunkService
+		 *            the initialized ChunkService
 		 */
 		Benchmark(final ChunkService p_chunkService) {
 			m_chunkService = p_chunkService;
@@ -207,46 +215,75 @@ public final class ClusterLogTest3 {
 			System.out.println("Time to update " + BYTES_TO_UPDATE + " bytes of payload: " + (System.currentTimeMillis() - start));
 		}
 
-		long nextLong(final Random rng, final long n) {
-			// error checking and 2^x checking removed for simplicity.
-			long bits, val;
+		/**
+		 * Returns a random long
+		 * @param p_rng
+		 *            the random number generator
+		 * @param p_max
+		 *            the maximum value
+		 * @return a random long
+		 */
+		long nextLong(final Random p_rng, final long p_max) {
+			long bits;
+			long val;
+
 			do {
-				bits = rng.nextLong() << 1 >>> 1;
-				val = bits % n;
-			} while (bits - val + n - 1 < 0L);
+				bits = p_rng.nextLong() << 1 >>> 1;
+				val = bits % p_max;
+			} while (bits - val + p_max - 1 < 0L);
 			return val;
 		}
 	}
 
+	/**
+	 * A random number generator with zipfian distribution
+	 * Based on http://diveintodata.org/tag/zipf/
+	 */
 	static class FastZipfGenerator {
-		private Random random = new Random(0);
-		private NavigableMap<Double, Integer> map;
+		private Random m_random = new Random(0);
+		private NavigableMap<Double, Integer> m_map;
 
-		FastZipfGenerator(final int size, final double skew) {
-			map = computeMap(size, skew);
+		/**
+		 * Creates an instance of FastZipfGenerator
+		 * @param p_size
+		 *            the number of iterations during generation
+		 * @param p_skew
+		 *            the skew
+		 */
+		FastZipfGenerator(final int p_size, final double p_skew) {
+			m_map = computeMap(p_size, p_skew);
 		}
 
-		private NavigableMap<Double, Integer> computeMap(final int size, final double skew) {
-			NavigableMap<Double, Integer> map =
-					new TreeMap<Double, Integer>();
+		/**
+		 * Computes a map with zipfian distribution
+		 * @param p_size
+		 *            the number of iterations during generation
+		 * @param p_skew
+		 *            the skew
+		 * @return the map
+		 */
+		private NavigableMap<Double, Integer> computeMap(final int p_size, final double p_skew) {
+			final NavigableMap<Double, Integer> map = new TreeMap<Double, Integer>();
 
 			double div = 0;
-			for (int i = 1; i <= size; i++) {
-				div += 1 / Math.pow(i, skew);
+			for (int i = 1; i <= p_size; i++) {
+				div += 1 / Math.pow(i, p_skew);
 			}
 
 			double sum = 0;
-			for (int i = 1; i <= size; i++) {
-				double p = 1.0d / Math.pow(i, skew) / div;
-				sum += p;
+			for (int i = 1; i <= p_size; i++) {
+				sum += 1.0d / Math.pow(i, p_skew) / div;
 				map.put(sum, i - 1);
 			}
 			return map;
 		}
 
+		/**
+		 * Returns a random integer with zipfian distribution
+		 * @return a random integer
+		 */
 		public int next() {
-			double value = random.nextDouble();
-			return map.ceilingEntry(value).getValue() + 1;
+			return m_map.ceilingEntry(m_random.nextDouble()).getValue() + 1;
 		}
 
 	}
