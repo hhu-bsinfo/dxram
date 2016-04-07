@@ -1,6 +1,9 @@
 package de.hhu.bsinfo.dxram.logger;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.logger.tcmds.TcmdChangeLogLevel;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
+import de.hhu.bsinfo.utils.log.LogLevel;
 
 /**
  * Service to allow the application to use the same logger as DXRAM.
@@ -9,6 +12,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMService;
 public class LoggerService extends DXRAMService {
 
 	private LoggerComponent m_logger = null;
+	private TerminalComponent m_terminal = null;
 	
 	/**
 	 * Log an error message.
@@ -115,6 +119,12 @@ public class LoggerService extends DXRAMService {
 		m_logger.trace(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
+	public void setLogLevel(String p_logLevel)
+	{
+		LogLevel level = LogLevel.toLogLevel(p_logLevel);
+		m_logger.setLogLevel(level);
+	}
+	
 	@Override
 	protected void registerDefaultSettingsService(Settings p_settings) {
 
@@ -124,6 +134,9 @@ public class LoggerService extends DXRAMService {
 	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
 		m_logger = getComponent(LoggerComponent.class);
+		
+		m_terminal = getComponent(TerminalComponent.class);
+		m_terminal.registerCommand(new TcmdChangeLogLevel());
 		
 		return true;
 	}
