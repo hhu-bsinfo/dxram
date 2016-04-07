@@ -20,7 +20,6 @@ public class TcmdChunkGet extends TerminalCommand{
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Chunk ID");
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");
 	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node ID");
-	private static final Argument MS_ARG_SIZ = new Argument("size", null, false, "Size of data to read from the specified chunk");
 	private static final Argument MS_ARG_OFF = new Argument("offset", "0", true, "offset to read data from chunk");
 	private static final Argument MS_ARG_LEN = new Argument("length", null, true, "how much to read from data");
 	private static final Argument MS_ARG_HEX = new Argument("isHex", "false", true, "print in HEX?");
@@ -45,7 +44,6 @@ public class TcmdChunkGet extends TerminalCommand{
 		p_arguments.setArgument(MS_ARG_CID);
 		p_arguments.setArgument(MS_ARG_LID);
 		p_arguments.setArgument(MS_ARG_NID);
-		p_arguments.setArgument(MS_ARG_SIZ);
 		p_arguments.setArgument(MS_ARG_OFF);
 		p_arguments.setArgument(MS_ARG_LEN);
 		p_arguments.setArgument(MS_ARG_HEX);
@@ -57,7 +55,6 @@ public class TcmdChunkGet extends TerminalCommand{
 		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
 		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
 		Short 	nid   = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
-		Integer	size  = p_arguments.getArgumentValue(MS_ARG_SIZ, Integer.class);
 		Integer	off   = p_arguments.getArgumentValue(MS_ARG_OFF, Integer.class);
 		Integer	len   = p_arguments.getArgumentValue(MS_ARG_LEN, Integer.class);
 		Boolean isHex = p_arguments.getArgumentValue(MS_ARG_HEX, Boolean.class);
@@ -65,16 +62,14 @@ public class TcmdChunkGet extends TerminalCommand{
 		
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
 		
-		if (__checkIDandSize(size, cid, lid))	// check if size, cid and lid are valid
+		if (__checkID(cid, lid))	// check if size, cid and lid are valid
 			return false;						// if the values are not valid the function will do nothing and returns
 		
 		cid = __getCid(cid, lid, nid);
 		
-		Chunk chunk = new Chunk(cid, size);
+		Chunk chunk = chunkService.get(new long[] {cid})[0]; 
 		
-		int num = chunkService.get(chunk);
-		
-		if(num == 0)
+		if(chunk == null)
 		{
 			System.out.println("Getting Chunk with id '"+ Long.toHexString(cid) +"' failed");
 			return false;
@@ -162,13 +157,8 @@ public class TcmdChunkGet extends TerminalCommand{
 		return cid;
 	}
 	
-	private boolean __checkIDandSize(Integer size, Long cid, Long lid)
+	private boolean __checkID(Long cid, Long lid)
 	{
-		if (size < 0)
-		{
-			System.out.println("Error: specified size lower than Zero!");
-			return true;
-		}
 		
 		if (cid == null && lid == null)
 		{
