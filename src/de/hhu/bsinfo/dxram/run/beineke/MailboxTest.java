@@ -78,7 +78,7 @@ public final class MailboxTest {
 
 			// Initialize DXRAM
 			final DXRAM dxram = new DXRAM();
-			dxram.initialize("config/dxram.conf", "config/dxram.nodes.local.conf");
+			dxram.initialize("config/dxram.conf");
 			final ChunkService chunkService = dxram.getService(ChunkService.class);
 			final NameserviceService nameService = dxram.getService(NameserviceService.class);
 

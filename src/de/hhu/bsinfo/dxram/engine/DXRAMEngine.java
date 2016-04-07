@@ -243,37 +243,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 	 * via vm arguments (dxram.config, dxram.network.ip, dxram.network.port, dxram.role)
 	 * @return True if successful, false otherwise.
 	 */
-	public boolean init() {
-		ArrayList<String> configurations = new ArrayList<String>();
-
-		// check for configuration items dxram.config
-		// or dxram.config.0, dxram.config.1 etc
-		String[] keyValue;
-		keyValue = new String[2];
-		
-		keyValue[0] = "dxram.config";
-		keyValue[1] = System.getProperty(keyValue[0]);
-		if (keyValue[1] != null) {
-			configurations.add(keyValue[1]);
-		}
-		
-		// allow a max of 100 configs (should be plenty enough)
-		for (int i = 0; i < 100; i++) {
-			keyValue[0] = "dxram.config." + i;
-			keyValue[1] = System.getProperty(keyValue[0]);
-			// break if don't have a chain of configs
-			if (keyValue[1] == null) {
-				break;
-			}
-			
-			configurations.add(keyValue[1]);
-		}
-		
-		if (configurations.isEmpty()) {
-			System.out.println("[WARN][DXRAMEngine] No dxram configuraiton specified via vm args.");
-		}
-		
-		return init(null, null, null, configurations.toArray(new String[0]));
+	public boolean init() {		
+		return init(null, null, null, new String[0]);
 	}
 	
 	/**
@@ -532,8 +503,43 @@ public class DXRAMEngine implements DXRAMServiceAccessor
 	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 */
 	private void bootstrap(final String p_overrideNetworkIP, final String p_overridePort, 
-			final NodeRole p_overrideRole, final String... p_configurationFiles)
+			final NodeRole p_overrideRole, String... p_configurationFiles)
 	{
+		ArrayList<String> configurations = new ArrayList<String>();
+
+		// check for configuration items dxram.config
+		// or dxram.config.0, dxram.config.1 etc
+		String[] keyValue;
+		keyValue = new String[2];
+		
+		keyValue[0] = "dxram.config";
+		keyValue[1] = System.getProperty(keyValue[0]);
+		if (keyValue[1] != null) {
+			configurations.add(keyValue[1]);
+		}
+		
+		// allow a max of 100 configs (should be plenty enough)
+		for (int i = 0; i < 100; i++) {
+			keyValue[0] = "dxram.config." + i;
+			keyValue[1] = System.getProperty(keyValue[0]);
+			// break if don't have a chain of configs
+			if (keyValue[1] == null) {
+				break;
+			}
+			
+			configurations.add(keyValue[1]);
+		}
+		
+		if (configurations.isEmpty() && p_configurationFiles.length == 0) {
+			System.out.println("[WARN][DXRAMEngine] No dxram configuraiton specified via vm args.");
+		}
+		
+		// override configuration files provided via api call with vm arguments
+		// if any vm args exist
+		if (!configurations.isEmpty()) {
+			p_configurationFiles = configurations.toArray(new String[0]);
+		}
+		
 		m_configuration = new Configuration("DXRAMEngine");
 			
 		// overriding order:
