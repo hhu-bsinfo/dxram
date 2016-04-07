@@ -17,11 +17,7 @@ public class GetRequest extends AbstractRequest {
 	// the data structure is stored for the sender of the request
 	// to write the incoming data of the response to it
 	// the requesting IDs are taken from the structures
-<<<<<<< HEAD
-	private DataStructure[] m_dataStructures = null;
-=======
-	private DataStructure[] m_dataStructure;
->>>>>>> nothaas
+	private DataStructure[] m_dataStructures;
 	// this is only used when receiving the request
 	private long[] m_chunkIDs;
 
@@ -90,9 +86,11 @@ public class GetRequest extends AbstractRequest {
 	@Override
 	protected final int getPayloadLength() {
 		if (m_dataStructures != null) {
-			return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructures.length;
+			return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode())
+					+ Long.BYTES * m_dataStructures.length;
 		} else {
-			return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
+			return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode())
+					+ Long.BYTES * m_chunkIDs.length;
 		}
 	}
 }
