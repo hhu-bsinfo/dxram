@@ -2,14 +2,14 @@ package de.hhu.bsinfo.dxram.net;
 
 import java.net.InetSocketAddress;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.menet.NodeMap;
 
 public class NodeMappings implements NodeMap {
 
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	
-	public NodeMappings(final BootComponent p_bootComponent)
+	public NodeMappings(final AbstractBootComponent p_bootComponent)
 	{
 		m_boot = p_bootComponent;
 	}

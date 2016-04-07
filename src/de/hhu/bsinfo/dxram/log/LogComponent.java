@@ -3,10 +3,10 @@ package de.hhu.bsinfo.dxram.log;
 
 import java.io.IOException;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
@@ -20,9 +20,9 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
  * Component for remote logging of chunks.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class LogComponent extends DXRAMComponent {
+public class LogComponent extends AbstractDXRAMComponent {
 
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
 
@@ -143,7 +143,7 @@ public class LogComponent extends DXRAMComponent {
 	@Override
 	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 
-		m_boot = getDependentComponent(BootComponent.class);
+		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 

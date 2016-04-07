@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxram.boot;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -14,7 +14,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * failure report...)
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public abstract class BootComponent extends DXRAMComponent {
+public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
@@ -25,7 +25,7 @@ public abstract class BootComponent extends DXRAMComponent {
 	 *            Priority for shutting down this component.
 	 *            When choosing the order, consider component dependencies here.
 	 */
-	public BootComponent(int p_priorityInit, int p_priorityShutdown) {
+	public AbstractBootComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
@@ -55,6 +55,7 @@ public abstract class BootComponent extends DXRAMComponent {
 
 	/**
 	 * Get the role of another nodeID.
+	 * @param p_nodeID Node id of the node.
 	 * @return Role of other nodeID or null if node does not exist.
 	 */
 	public abstract NodeRole getNodeRole(final short p_nodeID);
@@ -97,7 +98,7 @@ public abstract class BootComponent extends DXRAMComponent {
 
 	/**
 	 * Report that we detected a node failure.
-	 * @param p_failedNode
+	 * @param p_nodeID
 	 *            the failed node
 	 * @param p_isSuperpeer
 	 *            whether the failed node was a superpeer or not

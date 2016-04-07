@@ -1,8 +1,8 @@
 
 package de.hhu.bsinfo.dxram.net;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
@@ -15,10 +15,10 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  * to other nodes.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class NetworkComponent extends DXRAMComponent {
+public class NetworkComponent extends AbstractDXRAMComponent {
 
 	private LoggerComponent m_logger = null;
-	private BootComponent m_boot = null;
+	private AbstractBootComponent m_boot = null;
 
 	// Attributes
 	private NetworkHandler m_networkHandler = null;
@@ -116,7 +116,7 @@ public class NetworkComponent extends DXRAMComponent {
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
-		m_boot = getDependentComponent(BootComponent.class);
+		m_boot = getDependentComponent(AbstractBootComponent.class);
 
 		m_networkHandler = new NetworkHandler(
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR),

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.job.event.JobEventListener;
 import de.hhu.bsinfo.dxram.job.event.JobEvents;
@@ -257,7 +257,7 @@ public abstract class Job implements Importable, Exportable
 	 * 					or abstract class to get the registered instance.
 	 * @return Reference to the service if available and enabled, null otherwise.
 	 */
-	protected <T extends DXRAMService> T getService(final Class<T> p_class)
+	protected <T extends AbstractDXRAMService> T getService(final Class<T> p_class)
 	{
 		if (m_serviceAccessor != null)
 			return m_serviceAccessor.getService(p_class);

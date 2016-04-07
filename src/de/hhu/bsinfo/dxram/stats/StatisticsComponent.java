@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
@@ -14,7 +14,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  *
  */
-public class StatisticsComponent extends DXRAMComponent {
+public class StatisticsComponent extends AbstractDXRAMComponent {
 
 	private LoggerComponent m_logger = null;
 	

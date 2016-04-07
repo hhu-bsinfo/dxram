@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.job.event.JobEventListener;
 import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.job.messages.JobEventTriggeredMessage;
@@ -34,9 +34,9 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public class JobService extends DXRAMService implements MessageReceiver, JobEventListener {
+public class JobService extends AbstractDXRAMService implements MessageReceiver, JobEventListener {
 
-	private BootComponent m_boot = null;
+	private AbstractBootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
 	private JobComponent m_job = null;
 	private StatisticsComponent m_statistics = null;
@@ -282,7 +282,7 @@ public class JobService extends DXRAMService implements MessageReceiver, JobEven
 	@Override
 	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
-		m_boot = getComponent(BootComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_job = getComponent(JobComponent.class);
 		m_statistics = getComponent(StatisticsComponent.class);

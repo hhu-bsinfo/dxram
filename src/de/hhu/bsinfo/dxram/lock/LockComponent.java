@@ -1,12 +1,12 @@
 package de.hhu.bsinfo.dxram.lock;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 
 /**
  * Interface for a lock component providing locking of chunks.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public abstract class LockComponent extends DXRAMComponent {
+public abstract class LockComponent extends AbstractDXRAMComponent {
 
 	public static final int MS_TIMEOUT_UNLIMITED = -1;
 	

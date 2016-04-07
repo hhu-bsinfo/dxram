@@ -21,7 +21,7 @@ public class PutMessage extends AbstractMessage {
 	// These are also used by the response to directly write the
 	// receiving data to the structures
 	// Chunks are created and used when receiving a put request
-	private DataStructure[] m_dataStructures = null;
+	private DataStructure[] m_dataStructures;
 
 	/**
 	 * Creates an instance of PutRequest.
@@ -35,27 +35,30 @@ public class PutMessage extends AbstractMessage {
 	 * Creates an instance of PutRequest
 	 * @param p_destination
 	 *            the destination
-	 * @param p_dataStructure
-	 *            Data structure with the data to put.
-	 * @param p_releaseLock
+	 * @param p_unlockOperation
 	 *            if true a potential lock will be released
+	 * @param p_dataStructures
+	 *            Data structure with the data to put.
 	 */
-	public PutMessage(final short p_destination, final ChunkLockOperation m_unlockOperation, final DataStructure... p_dataStructures) {
+	public PutMessage(final short p_destination, final ChunkLockOperation p_unlockOperation,
+			final DataStructure... p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE);
 
 		m_dataStructures = p_dataStructures;
 
 		byte tmpCode = getStatusCode();
-		switch (m_unlockOperation)
-		{
-		case NO_LOCK_OPERATION:
-			break;
-		case READ_LOCK:
-			ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
-		case WRITE_LOCK:
-			ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
-		default:
-			assert 1 == 2;
+		switch (p_unlockOperation) {
+			case NO_LOCK_OPERATION:
+				break;
+			case READ_LOCK:
+				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+				break;
+			case WRITE_LOCK:
+				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+				break;
+			default:
+				assert 1 == 2;
+				break;
 		}
 
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
@@ -109,6 +112,7 @@ public class PutMessage extends AbstractMessage {
 		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
 
 		m_dataStructures = new Chunk[numChunks];
+
 		for (int i = 0; i < m_dataStructures.length; i++) {
 			long id = p_buffer.getLong();
 			int size = p_buffer.getInt();

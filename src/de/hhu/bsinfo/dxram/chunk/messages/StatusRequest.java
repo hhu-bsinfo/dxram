@@ -1,7 +1,12 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.menet.AbstractRequest;
 
+/**
+ * Request to get status information from a remote chunk service.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 07.04.16
+ */
 public class StatusRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of StatusRequest.

@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.term;
 
 import java.util.Map.Entry;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -17,10 +17,10 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
  * about current or remote DXRAM instances.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
-public class TerminalService extends DXRAMService implements TerminalDelegate
+public class TerminalService extends AbstractDXRAMService implements TerminalDelegate
 {
 	private LoggerComponent m_logger = null;
-	private BootComponent m_boot = null;
+	private AbstractBootComponent m_boot = null;
 	private TerminalComponent m_terminal = null;
 	
 	private boolean m_loop = true;
@@ -135,7 +135,7 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
 		m_logger = getComponent(LoggerComponent.class);
-		m_boot = getComponent(BootComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_terminal = getComponent(TerminalComponent.class);
 		
 		return true;
@@ -203,7 +203,7 @@ public class TerminalService extends DXRAMService implements TerminalDelegate
 	}
 
 	@Override
-	public <T extends DXRAMService> T getDXRAMService(Class<T> p_class) {
+	public <T extends AbstractDXRAMService> T getDXRAMService(Class<T> p_class) {
 		return getServiceAccessor().getService(p_class);
 	}
 	

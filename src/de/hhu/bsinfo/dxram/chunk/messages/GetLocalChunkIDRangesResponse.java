@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -5,9 +6,13 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.menet.AbstractResponse;
 
+/**
+ * Response to the request sending the chunk id ranges of all locally stored chunks.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ */
 public class GetLocalChunkIDRangesResponse extends AbstractResponse {
-	private ArrayList<Long> m_chunkIDRanges = null;
-	
+	private ArrayList<Long> m_chunkIDRanges;
+
 	/**
 	 * Creates an instance of StatusResponse.
 	 * This constructor is used when receiving this message.
@@ -21,19 +26,24 @@ public class GetLocalChunkIDRangesResponse extends AbstractResponse {
 	 * This constructor is used when sending this message.
 	 * @param p_request
 	 *            the corresponding StatusRequest
-	 * @param p_status
-	 *            the requested Status
+	 * @param p_chunkIDRanges
+	 *            Chunk id ranges to send
 	 */
-	public GetLocalChunkIDRangesResponse(final GetLocalChunkIDRangesRequest p_request, final ArrayList<Long> p_chunkIDRanges) {
+	public GetLocalChunkIDRangesResponse(final GetLocalChunkIDRangesRequest p_request,
+			final ArrayList<Long> p_chunkIDRanges) {
 		super(p_request, ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE);
 
 		m_chunkIDRanges = p_chunkIDRanges;
 	}
-	
+
+	/**
+	 * Get the chunk id ranges from this message.
+	 * @return List of chunk id ranges from the remote node.
+	 */
 	public ArrayList<Long> getChunkIDRanges() {
 		return m_chunkIDRanges;
 	}
-	
+
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_chunkIDRanges.size());

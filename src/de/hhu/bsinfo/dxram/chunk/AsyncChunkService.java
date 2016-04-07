@@ -6,13 +6,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.PutMessage;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.lock.LockComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -32,19 +32,15 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  * It does not replace the normal ChunkService, but extends it capabilities with async operations.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.02.16
  */
-public class AsyncChunkService extends DXRAMService implements MessageReceiver
-{
-	private BootComponent m_boot = null;
-	private LoggerComponent m_logger = null;
-	private MemoryManagerComponent m_memoryManager = null;
-	private NetworkComponent m_network = null;
-	private LookupComponent m_lookup = null;
-	private LockComponent m_lock = null;
-	private StatisticsComponent m_statistics = null;
-	private TerminalComponent m_terminal = null;
-	// private BackupComponent m_backup = null;
-
-	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs = null;
+public class AsyncChunkService extends AbstractDXRAMService implements MessageReceiver {
+	private AbstractBootComponent m_boot;
+	private LoggerComponent m_logger;
+	private MemoryManagerComponent m_memoryManager;
+	private NetworkComponent m_network;
+	private LookupComponent m_lookup;
+	private LockComponent m_lock;
+	private StatisticsComponent m_statistics;
+	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	/**
 	 * Constructor
@@ -54,19 +50,18 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(Settings p_settings) {}
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
 
 	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings)
-	{
-		m_boot = getComponent(BootComponent.class);
+	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
 		m_lock = getComponent(LockComponent.class);
 		m_statistics = getComponent(StatisticsComponent.class);
-		m_terminal = getComponent(TerminalComponent.class);
+		getComponent(TerminalComponent.class);
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();
@@ -80,8 +75,7 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 	}
 
 	@Override
-	protected boolean shutdownService()
-	{
+	protected boolean shutdownService() {
 		m_memoryManager = null;
 		m_network = null;
 		m_lookup = null;
@@ -105,23 +99,25 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 	 * @param p_dataStructures
 	 *            Data structures to put/update.
 	 */
-	public void put(final ChunkLockOperation p_chunkUnlockOperation, DataStructure... p_dataStructures)
-	{
+	public void put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
 		if (p_dataStructures.length == 0) {
 			return;
 		}
 
 		if (p_dataStructures[0] == null) {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					+ p_dataStructures.length + ") ...]");
 		} else {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					+ p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
 		}
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not put chunks");
 		}
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync, p_dataStructures.length);
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_putAsync,
+				p_dataStructures.length);
 
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
 
@@ -134,8 +130,7 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 			}
 
 			MemoryErrorCodes err = m_memoryManager.put(dataStructure);
-			switch (err)
-			{
+			switch (err) {
 			case SUCCESS: {
 				// unlock chunks
 				if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
@@ -166,7 +161,8 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 				break;
 			}
 			default: {
-				m_logger.error(getClass(), "Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+				m_logger.error(getClass(),
+						"Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
 				break;
 			}
 			}
@@ -183,17 +179,20 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 				m_memoryManager.lockAccess();
 				for (final DataStructure dataStructure : entry.getValue()) {
 					if (m_memoryManager.put(dataStructure) != MemoryErrorCodes.SUCCESS) {
-						m_logger.error(getClass(), "Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+						m_logger.error(getClass(),
+								"Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
 					}
 				}
 				m_memoryManager.unlockAccess();
 			} else {
 				// Remote put
 				ArrayList<DataStructure> chunksToPut = entry.getValue();
-				PutMessage message = new PutMessage(peer, p_chunkUnlockOperation, chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
+				PutMessage message = new PutMessage(peer, p_chunkUnlockOperation,
+						chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
 				NetworkErrorCodes error = m_network.sendMessage(message);
 				if (error != NetworkErrorCodes.SUCCESS) {
-					m_logger.error(getClass(), "Sending chunk put message to peer " + Integer.toHexString(peer & 0xFFFF) + " failed: " + error);
+					m_logger.error(getClass(), "Sending chunk put message to peer " + Integer.toHexString(peer & 0xFFFF)
+							+ " failed: " + error);
 
 					// TODO
 					// m_lookup.invalidate(dataStructure.getID());
@@ -203,12 +202,14 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 			}
 		}
 
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync);
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_putAsync);
 
 		if (p_dataStructures[0] == null) {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					+ p_dataStructures.length + ") ...]");
 		} else {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					+ p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
 		}
 		return;
 	}
@@ -237,29 +238,28 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 	/**
 	 * Register network messages we use in here.
 	 */
-	private void registerNetworkMessages()
-	{
+	private void registerNetworkMessages() {
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE, PutMessage.class);
 	}
 
 	/**
 	 * Register network messages we want to listen to in here.
 	 */
-	private void registerNetworkMessageListener()
-	{
+	private void registerNetworkMessageListener() {
 		m_network.register(PutMessage.class, this);
 	}
 
 	/**
 	 * Register statistics operations for this service.
 	 */
-	private void registerStatisticsOperations()
-	{
+	private void registerStatisticsOperations() {
 		m_statisticsRecorderIDs = new ChunkStatisticsRecorderIDs();
 		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
 
-		m_statisticsRecorderIDs.m_operations.m_putAsync = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_PUT_ASYNC);
-		m_statisticsRecorderIDs.m_operations.m_incomingPutAsync = m_statistics.createOperation(m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_INCOMING_PUT_ASYNC);
+		m_statisticsRecorderIDs.OPERATIONS.m_putAsync = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+				ChunkStatisticsRecorderIDs.Operations.MS_PUT_ASYNC);
+		m_statisticsRecorderIDs.OPERATIONS.m_incomingPutAsync = m_statistics.createOperation(
+				m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_INCOMING_PUT_ASYNC);
 	}
 
 	// -----------------------------------------------------------------------------------
@@ -272,7 +272,8 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 	private void incomingPutMessage(final PutMessage p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync, chunks.length);
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_incomingPutAsync,
+				chunks.length);
 
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < chunks.length; i++) {
@@ -296,6 +297,6 @@ public class AsyncChunkService extends DXRAMService implements MessageReceiver
 			}
 		}
 
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync);
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_incomingPutAsync);
 	}
 }

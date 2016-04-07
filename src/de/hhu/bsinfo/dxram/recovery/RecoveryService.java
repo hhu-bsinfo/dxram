@@ -5,12 +5,12 @@ import java.io.File;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -27,9 +27,9 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  * This service provides all recovery functionality.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.03.16
  */
-public class RecoveryService extends DXRAMService implements MessageReceiver {
+public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
 	// Attributes
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
 	private LogComponent m_log;
@@ -83,7 +83,7 @@ public class RecoveryService extends DXRAMService implements MessageReceiver {
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 
-		m_boot = getComponent(BootComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);
 		m_chunk = getComponent(ChunkComponent.class);
 		m_log = getComponent(LogComponent.class);

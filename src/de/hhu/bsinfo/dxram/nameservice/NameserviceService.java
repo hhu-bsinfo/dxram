@@ -1,11 +1,11 @@
 
 package de.hhu.bsinfo.dxram.nameservice;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.NameServiceIndexData;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * the convert class for details.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class NameserviceService extends DXRAMService {
+public class NameserviceService extends AbstractDXRAMService {
 
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
@@ -44,7 +44,7 @@ public class NameserviceService extends DXRAMService {
 
 		m_indexData = new NameServiceIndexData();
 
-		if (getComponent(BootComponent.class).getNodeRole() != NodeRole.SUPERPEER) {
+		if (getComponent(AbstractBootComponent.class).getNodeRole() != NodeRole.SUPERPEER) {
 			m_indexData.setID(m_memoryManager.createIndex(m_indexData.sizeofObject()));
 			if (m_indexData.getID() == ChunkID.INVALID_ID) {
 				m_logger.error(getClass(), "Creating root index chunk failed.");

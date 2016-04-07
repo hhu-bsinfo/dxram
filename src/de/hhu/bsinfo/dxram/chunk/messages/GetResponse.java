@@ -19,11 +19,11 @@ public class GetResponse extends AbstractResponse {
 	// The chunk objects here are used when sending the response only
 	// when the response is received, the data structures from the request are
 	// used to directly write the data to them and avoiding further copying
-	private DataStructure[] m_dataStructures = null;
+	private DataStructure[] m_dataStructures;
 
 	// when receiving the repsonse, tells us how many chunks were successfully
 	// grabbed from the remote machine
-	private int m_numChunksGot = 0;
+	private int m_numChunksGot;
 
 	/**
 	 * Creates an instance of GetResponse.
@@ -40,8 +40,10 @@ public class GetResponse extends AbstractResponse {
 	 * not exist, no data and a length of 0 indicates this situation.
 	 * @param p_request
 	 *            the corresponding GetRequest
-	 * @param p_chunk
-	 *            the requested Chunk
+	 * @param p_numChunksGot
+	 *            Number of chunks successfully read from memory.
+	 * @param p_dataStructures
+	 *            Data structures filled with the read data from memory
 	 */
 	public GetResponse(final GetRequest p_request, final int p_numChunksGot, final DataStructure... p_dataStructures) {
 		super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);

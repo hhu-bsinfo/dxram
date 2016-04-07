@@ -8,11 +8,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -30,9 +30,9 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  * Migration service providing migration of chunks.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class MigrationService extends DXRAMService implements MessageReceiver {
+public class MigrationService extends AbstractDXRAMService implements MessageReceiver {
 
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
 	private LookupComponent m_lookup;
@@ -258,7 +258,7 @@ public class MigrationService extends DXRAMService implements MessageReceiver {
 	@Override
 	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			final Settings p_settings) {
-		m_boot = getComponent(BootComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);
 		m_chunk = getComponent(ChunkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);

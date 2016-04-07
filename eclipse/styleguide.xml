@@ -5,7 +5,7 @@
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
 <!--
-    Checkstyle-Configuration: DXRAM
+    Checkstyle-Configuration: dxram
     Description: none
 -->
 <module name="Checker">
@@ -58,13 +58,11 @@
     </module>
     <module name="ModifierOrder"/>
     <module name="RedundantModifier"/>
-    <module name="AvoidNestedBlocks"/>
     <module name="LeftCurly">
       <property name="maxLineLength" value="160"/>
     </module>
     <module name="NeedBraces"/>
     <module name="RightCurly"/>
-    <module name="AvoidInlineConditionals"/>
     <module name="EmptyStatement"/>
     <module name="EqualsHashCode"/>
     <module name="HiddenField"/>
@@ -116,9 +114,6 @@
     <module name="ExplicitInitialization"/>
     <module name="FallThrough">
       <property name="checkLastCaseGroup" value="true"/>
-    </module>
-    <module name="FinalLocalVariable">
-      <property name="tokens" value="PARAMETER_DEF,VARIABLE_DEF"/>
     </module>
     <module name="IllegalThrows">
       <property name="illegalClassNames" value="java.lang.Throwable, java.lang.Error, java.lang.RuntimeException, java.lang.Exception"/>

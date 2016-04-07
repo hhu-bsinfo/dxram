@@ -1,15 +1,13 @@
 package de.hhu.bsinfo.dxcompute.coord.messages;
 
-/**
- * Response by a slave if he is looking to sync with a master barrier.
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.02.16
- */
-public class SlaveSyncBarrierSignOnMessage extends SyncMessage {
+import de.hhu.bsinfo.menet.AbstractMessage;
+
+public class SlaveSignOnMessage extends AbstractMessage {
 	/**
 	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
 	 * This constructor is used when receiving this message.
 	 */
-	public SlaveSyncBarrierSignOnMessage() {
+	public SlaveSignOnMessage() {
 		super();
 	}
 
@@ -21,7 +19,7 @@ public class SlaveSyncBarrierSignOnMessage extends SyncMessage {
 	 * @param p_syncToken Token to correctly identify responses to a sync message
 	 * @param p_data Some custom data to pass along.
 	 */
-	public SlaveSyncBarrierSignOnMessage(final short p_destination, final int p_syncToken, final long p_data) {
-		super(p_destination, CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, p_syncToken, p_data);
+	public SlaveSignOnMessage(final short p_destination) {
+		super(p_destination, CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_SLAVE_SIGN_ON_MESSAGE);
 	}
 }

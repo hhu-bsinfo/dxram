@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.menet.TaskExecutor;
 
@@ -14,7 +14,7 @@ import de.hhu.bsinfo.menet.TaskExecutor;
  * something specified that happened.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
-public class EventComponent extends DXRAMComponent {
+public class EventComponent extends AbstractDXRAMComponent {
 
 	private LoggerComponent m_logger = null;
 

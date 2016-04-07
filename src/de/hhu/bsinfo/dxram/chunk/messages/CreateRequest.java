@@ -11,7 +11,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.01.16
  */
 public class CreateRequest extends AbstractRequest {
-	private int[] m_sizes = null;
+	private int[] m_sizes;
 
 	/**
 	 * Creates an instance of CreateRequest.
@@ -66,6 +66,7 @@ public class CreateRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLength() {
-		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Integer.BYTES * m_sizes.length;
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode())
+				+ Integer.BYTES * m_sizes.length;
 	}
 }

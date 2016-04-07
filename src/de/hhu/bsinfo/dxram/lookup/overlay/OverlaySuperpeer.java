@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -72,7 +72,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	// Attributes
 	private NetworkComponent m_network;
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private EventComponent m_event;
 	private LoggerComponent m_logger;
 
@@ -117,7 +117,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 *            the EventComponent
 	 */
 	public OverlaySuperpeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers, final int p_sleepInterval,
-			final BootComponent p_boot, final LoggerComponent p_logger, final NetworkComponent p_network, final EventComponent p_event) {
+			final AbstractBootComponent p_boot, final LoggerComponent p_logger, final NetworkComponent p_network, final EventComponent p_event) {
 		m_boot = p_boot;
 		m_event = p_event;
 		m_logger = p_logger;

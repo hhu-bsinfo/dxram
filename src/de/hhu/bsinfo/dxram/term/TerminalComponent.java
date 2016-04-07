@@ -3,14 +3,14 @@ package de.hhu.bsinfo.dxram.term;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
  * Component providing data/commands for an interactive terminal to be run on a node.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
-public class TerminalComponent extends DXRAMComponent {
+public class TerminalComponent extends AbstractDXRAMComponent {
 
 	private LoggerComponent m_logger = null;
 	

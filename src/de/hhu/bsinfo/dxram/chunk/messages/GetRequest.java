@@ -17,9 +17,13 @@ public class GetRequest extends AbstractRequest {
 	// the data structure is stored for the sender of the request
 	// to write the incoming data of the response to it
 	// the requesting IDs are taken from the structures
+<<<<<<< HEAD
 	private DataStructure[] m_dataStructures = null;
+=======
+	private DataStructure[] m_dataStructure;
+>>>>>>> nothaas
 	// this is only used when receiving the request
-	private long[] m_chunkIDs = null;
+	private long[] m_chunkIDs;
 
 	/**
 	 * Creates an instance of GetRequest.

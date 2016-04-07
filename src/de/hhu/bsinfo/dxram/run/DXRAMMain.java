@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxram.run;
 
 import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.term.TerminalService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -98,7 +98,7 @@ public class DXRAMMain extends Main {
 	 * @param p_class Class of the service to get.
 	 * @return DXRAM service or null if not available.
 	 */
-	protected <T extends DXRAMService> T getService(final Class<T> p_class)
+	protected <T extends AbstractDXRAMService> T getService(final Class<T> p_class)
 	{
 		return m_dxram.getService(p_class);
 	}
