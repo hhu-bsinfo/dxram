@@ -72,7 +72,7 @@ public class InitRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Long.BYTES + Short.BYTES;
 	}
 }

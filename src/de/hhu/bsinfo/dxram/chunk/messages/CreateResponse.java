@@ -68,7 +68,7 @@ public class CreateResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + m_chunkIDs.length * Long.BYTES;
 	}
 }

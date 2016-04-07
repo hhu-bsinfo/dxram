@@ -17,7 +17,7 @@ public class GetRequest extends AbstractRequest {
 	// the data structure is stored for the sender of the request
 	// to write the incoming data of the response to it
 	// the requesting IDs are taken from the structures
-	private DataStructure[] m_dataStructure = null;
+	private DataStructure[] m_dataStructures = null;
 	// this is only used when receiving the request
 	private long[] m_chunkIDs = null;
 
@@ -40,7 +40,7 @@ public class GetRequest extends AbstractRequest {
 	public GetRequest(final short p_destination, final DataStructure... p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
 
-		m_dataStructure = p_dataStructures;
+		m_dataStructures = p_dataStructures;
 
 		byte tmpCode = getStatusCode();
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
@@ -61,14 +61,14 @@ public class GetRequest extends AbstractRequest {
 	 * @return Data structures to store data to when the response arrived.
 	 */
 	public DataStructure[] getDataStructures() {
-		return m_dataStructure;
+		return m_dataStructures;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructure.length);
+		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
 
-		for (DataStructure dataStructure : m_dataStructure) {
+		for (DataStructure dataStructure : m_dataStructures) {
 			p_buffer.putLong(dataStructure.getID());
 		}
 	}
@@ -84,7 +84,11 @@ public class GetRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
-		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructure.length;
+	protected final int getPayloadLength() {
+		if (m_dataStructures != null) {
+			return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_dataStructures.length;
+		} else {
+			return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
+		}
 	}
 }

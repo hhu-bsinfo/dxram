@@ -212,7 +212,7 @@ public class JoinResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		int ret;
 
 		if (m_newContactSuperpeer == -1) {

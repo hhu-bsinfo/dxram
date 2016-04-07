@@ -198,7 +198,7 @@ public class NIOConnection extends AbstractConnection {
 	 *            the AbstractMessage to send
 	 */
 	@Override
-	protected void doWrite(final AbstractMessage p_message) {
+	protected void doWrite(final AbstractMessage p_message) throws NetworkException {
 		writeToChannel(p_message.getBuffer());
 	}
 

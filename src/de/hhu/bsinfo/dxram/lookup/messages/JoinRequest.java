@@ -85,7 +85,7 @@ public class JoinRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Short.BYTES + Byte.BYTES;
 	}
 

@@ -138,7 +138,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	 *             if the secondary log buffer could not be returned
 	 */
 	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		SecondaryLogBuffer ret = null;
 		LogCatalog cat;
 
@@ -356,8 +356,8 @@ public class LogService extends DXRAMService implements MessageReceiver {
 
 		if (m_loggingIsActive) {
 			// Stop reorganization thread
-			m_secondaryLogsReorgThread.shutdown();
 			m_secondaryLogsReorgThread.interrupt();
+			m_secondaryLogsReorgThread.shutdown();
 			try {
 				m_secondaryLogsReorgThread.join();
 				m_logger.info(getClass(), "Shutdown of SecondaryLogsReorgThread successful.");

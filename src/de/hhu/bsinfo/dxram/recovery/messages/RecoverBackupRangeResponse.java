@@ -78,7 +78,7 @@ public class RecoverBackupRangeResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		int ret = 4;
 
 		for (Chunk chunk : m_chunks) {

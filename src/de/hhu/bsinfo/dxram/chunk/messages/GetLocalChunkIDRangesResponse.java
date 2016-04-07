@@ -51,7 +51,7 @@ public class GetLocalChunkIDRangesResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Integer.BYTES + Long.BYTES * m_chunkIDRanges.size();
 	}
 }

@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -211,11 +212,21 @@ public abstract class AbstractConnection {
 				m_flowControlCond.await();
 			} catch (final InterruptedException e) { /* ignore */}
 		}
+		try {
+			m_unconfirmedBytes += p_message.getBuffer().remaining();
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
+			return;
+		} finally {
+			m_flowControlCondLock.unlock();
+		}
 
-		m_unconfirmedBytes += p_message.getBuffer().remaining();
-		m_flowControlCondLock.unlock();
-
-		doWrite(p_message);
+		try {
+			doWrite(p_message);
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
+			return;
+		}
 
 		m_timestamp = System.currentTimeMillis();
 	}
@@ -224,10 +235,10 @@ public abstract class AbstractConnection {
 	 * Writes data to the connection
 	 * @param p_message
 	 *            the AbstractMessage to send
-	 * @throws IOException
-	 *             if the data could not be written
+	 * @throws NetworkException
+	 *             if message buffer is too small
 	 */
-	protected abstract void doWrite(final AbstractMessage p_message);
+	protected abstract void doWrite(final AbstractMessage p_message) throws NetworkException;
 
 	/**
 	 * Closes the connection
@@ -282,12 +293,22 @@ public abstract class AbstractConnection {
 		ByteBuffer messageBuffer;
 
 		message = new FlowControlMessage(m_receivedBytes);
-		messageBuffer = message.getBuffer();
+		try {
+			messageBuffer = message.getBuffer();
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			return;
+		}
 
 		// add sending bytes for consistency
 		m_unconfirmedBytes += messageBuffer.remaining();
 
-		doWrite(message);
+		try {
+			doWrite(message);
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			return;
+		}
 
 		// reset received bytes counter
 		m_receivedBytes = 0;
@@ -409,9 +430,21 @@ public abstract class AbstractConnection {
 					resp.setCorrespondingRequest(RequestMap.getRequest(resp));
 				}
 
-				message.readPayload(p_buffer);
+				try {
+					message.readPayload(p_buffer);
+				} catch (final BufferUnderflowException e) {
+					throw new IOException("Read beyond message buffer", e);
+				}
+
+				if (p_buffer.position() < message.getPayloadLength() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH) {
+					throw new IOException("Message buffer is too large");
+				}
 			} catch (final Exception e) {
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
+				if (message != null) {
+					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message: " + message, e);
+				} else {
+					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
+				}
 			}
 
 			return message;

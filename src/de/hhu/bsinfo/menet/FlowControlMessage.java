@@ -49,7 +49,7 @@ public final class FlowControlMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected int getPayloadLengthForWrite() {
+	protected int getPayloadLength() {
 		return 4;
 	}
 }

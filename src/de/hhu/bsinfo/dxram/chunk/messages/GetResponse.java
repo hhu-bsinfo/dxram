@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -23,7 +24,7 @@ public class GetResponse extends AbstractResponse {
 	// when receiving the repsonse, tells us how many chunks were successfully
 	// grabbed from the remote machine
 	private int m_numChunksGot = 0;
-	
+
 	/**
 	 * Creates an instance of GetResponse.
 	 * This constructor is used when receiving this message.
@@ -36,7 +37,7 @@ public class GetResponse extends AbstractResponse {
 	 * Creates an instance of GetResponse.
 	 * This constructor is used when sending this message.
 	 * Make sure to include all the chunks with IDs from the request in the correct order. If a chunk does
-	 * not exist, no data and a length of 0 indicates this situation. 
+	 * not exist, no data and a length of 0 indicates this situation.
 	 * @param p_request
 	 *            the corresponding GetRequest
 	 * @param p_chunk
@@ -48,7 +49,7 @@ public class GetResponse extends AbstractResponse {
 		m_dataStructures = p_dataStructures;
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_numChunksGot));
 	}
-	
+
 	/**
 	 * Tells how many chunks have successfully been retrieved from the remote machine.
 	 * @return Number of chunks retrieved from remote machine.
@@ -56,17 +57,17 @@ public class GetResponse extends AbstractResponse {
 	public int getNumberOfChunksGot() {
 		return m_numChunksGot;
 	}
-	
+
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
-		
+
 		// read the data to be sent to the remote from the chunk set for this message
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		for (DataStructure dataStructure : m_dataStructures) {
 			int size = dataStructure.sizeofObject();
 			// we keep the order of the chunks, so we don't have to send the ID again
-			//p_buffer.putLong(dataStructure.getID());
+			// p_buffer.putLong(dataStructure.getID());
 			exporter.setPayloadSize(size);
 			p_buffer.putInt(size);
 			p_buffer.order(ByteOrder.nativeOrder());
@@ -78,7 +79,7 @@ public class GetResponse extends AbstractResponse {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_numChunksGot = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
-		
+
 		// read the payload from the buffer and write it directly into
 		// the data structure provided by the request to avoid further copying of data
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
@@ -89,18 +90,19 @@ public class GetResponse extends AbstractResponse {
 			importer.importObject(dataStructure);
 			p_buffer.order(ByteOrder.BIG_ENDIAN);
 		}
+		m_dataStructures = request.getDataStructures();
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-		
+
 		size += m_dataStructures.length * Integer.BYTES;
-		
+
 		for (DataStructure dataStructure : m_dataStructures) {
 			size += dataStructure.sizeofObject();
 		}
-		
+
 		return size;
 	}
 

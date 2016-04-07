@@ -59,7 +59,7 @@ public class LoaderSlaveSignOnMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return m_indexEntry.sizeofObject();
 	}
 }

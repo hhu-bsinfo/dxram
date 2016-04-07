@@ -19,6 +19,8 @@ public class LogMessage extends AbstractMessage {
 	private DataStructure[] m_dataStructures;
 	private ByteBuffer m_buffer;
 
+	private int m_readBytes;
+
 	// Constructors
 	/**
 	 * Creates an instance of LogMessage
@@ -29,6 +31,8 @@ public class LogMessage extends AbstractMessage {
 		m_rangeID = -1;
 		m_dataStructures = null;
 		m_buffer = null;
+
+		m_readBytes = 0;
 	}
 
 	/**
@@ -59,6 +63,7 @@ public class LogMessage extends AbstractMessage {
 
 		m_rangeID = p_rangeID;
 		m_dataStructures = p_dataStructures;
+		;
 	}
 
 	// Getters
@@ -92,16 +97,22 @@ public class LogMessage extends AbstractMessage {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_buffer = p_buffer;
+
+		m_readBytes = p_buffer.remaining();
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
-		int ret = Byte.BYTES + Integer.BYTES;
+	protected final int getPayloadLength() {
+		if (m_dataStructures != null) {
+			int ret = Byte.BYTES + Integer.BYTES;
 
-		for (DataStructure dataStructure : m_dataStructures) {
-			ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+			for (DataStructure dataStructure : m_dataStructures) {
+				ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+			}
+
+			return ret;
+		} else {
+			return m_readBytes;
 		}
-
-		return ret;
 	}
 }

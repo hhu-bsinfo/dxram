@@ -6,25 +6,23 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 
 /**
- * Second test case for Cluster 2016.
- * Tests the performance of the log (without reorganization), chunk and network interfaces:
- * - One master creates new chunks until it runs out of memory. Every CHUNKS_PER_PUT chunks, the chunks are logged by calling put().
- * - Every Chunk is replicated on three backup peers.
- * - Network bandwidth is logged externally.
- * @author Kevin Beineke
- *         19.01.2016
+ * Test case for the distributed Chunk handling and migrations.
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 07.04.2016
  */
-public final class ClusterLogTest2 {
+public final class MigrationTest {
 
 	// Constants
 	protected static final int CHUNK_SIZE = 100;
+	protected static final int NUMBER_OF_CHUNKS = 100;
+	protected static final int NUMBER_OF_MIGRATIONS = 100;
 	protected static final int CHUNKS_PER_PUT = 100;
+	protected static final int CHUNKS_PER_MIGRATION = 1;
 
 	// Constructors
 	/**
-	 * Creates an instance of ClusterLogTest2
+	 * Creates an instance of MigrationTest
 	 */
-	private ClusterLogTest2() {}
+	private MigrationTest() {}
 
 	/**
 	 * Program entry point
@@ -36,9 +34,8 @@ public final class ClusterLogTest2 {
 	}
 
 	/**
-	 * The Master constantly creates new chunks and sends them automatically to backup peers if backup is enabled.
-	 * @author Kevin Beineke
-	 *         19.01.2016
+	 * The Master creates a fixed number of chunks and migrates some of them.
+	 * @author Kevin Beineke <kevin.beineke@hhu.de> 07.04.2016
 	 */
 	private static class Master {
 
@@ -70,17 +67,16 @@ public final class ClusterLogTest2 {
 			}
 
 			start = System.currentTimeMillis();
-			while (counter < 3221225472L) {
+			while (counter < NUMBER_OF_CHUNKS) {
 				// Create new chunks in MemoryManagement
 				chunkService.create(chunks);
 
 				// Store them in-memory and replicate them on backups' SSD
 				chunkService.put(chunks);
 
-				counter += CHUNKS_PER_PUT * CHUNK_SIZE;
-				// System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
+				counter += CHUNKS_PER_PUT;
 			}
-			System.out.println("Time to create 3GB payload: " + (System.currentTimeMillis() - start));
+			System.out.println("Time to create " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start));
 		}
 	}
 

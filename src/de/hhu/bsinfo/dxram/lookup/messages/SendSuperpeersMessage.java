@@ -75,7 +75,7 @@ public class SendSuperpeersMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		int ret;
 
 		ret = Integer.BYTES;

@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.menet;
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -227,6 +228,8 @@ public abstract class AbstractMessage {
 	 * Writes the message payload into the buffer
 	 * @param p_buffer
 	 *            the buffer
+	 * @throws BufferOverflowException
+	 *             if message buffer is too small
 	 */
 	protected void writePayload(final ByteBuffer p_buffer) {}
 
@@ -234,19 +237,21 @@ public abstract class AbstractMessage {
 	 * Get the total number of bytes the payload requires to create a buffer.
 	 * @return Number of bytes of the payload
 	 */
-	protected int getPayloadLengthForWrite() {
+	protected int getPayloadLength() {
 		return 0;
 	}
 
 	/**
 	 * Get a ByteBuffer with the Message as content
 	 * @return a ByteBuffer with the Message as content
+	 * @throws NetworkException
+	 *             if message buffer is too small
 	 */
-	protected final ByteBuffer getBuffer() {
+	protected final ByteBuffer getBuffer() throws NetworkException {
 		int payloadSize;
 		ByteBuffer buffer;
 
-		payloadSize = getPayloadLengthForWrite();
+		payloadSize = getPayloadLength();
 		buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
 		buffer = fillBuffer(buffer, payloadSize);
 		buffer.flip();
@@ -261,24 +266,34 @@ public abstract class AbstractMessage {
 	 * @param p_payloadSize
 	 *            the payload size
 	 * @return filled ByteBuffer
+	 * @throws NetworkException
+	 *             if message buffer is too small
 	 */
-	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) {
-		// Put 3 byte message ID
-		p_buffer.put((byte) (m_messageID >>> 16));
-		p_buffer.put((byte) (m_messageID >>> 8));
-		p_buffer.put((byte) m_messageID);
+	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) throws NetworkException {
+		try {
+			// Put 3 byte message ID
+			p_buffer.put((byte) (m_messageID >>> 16));
+			p_buffer.put((byte) (m_messageID >>> 8));
+			p_buffer.put((byte) m_messageID);
 
-		p_buffer.put(m_type);
-		p_buffer.put(m_subtype);
-		if (m_exclusivity) {
-			p_buffer.put((byte) 1);
-		} else {
-			p_buffer.put((byte) 0);
+			p_buffer.put(m_type);
+			p_buffer.put(m_subtype);
+			if (m_exclusivity) {
+				p_buffer.put((byte) 1);
+			} else {
+				p_buffer.put((byte) 0);
+			}
+			p_buffer.put(m_statusCode);
+			p_buffer.putInt(p_payloadSize);
+
+			writePayload(p_buffer);
+		} catch (final BufferOverflowException e) {
+			throw new NetworkException("Could not create message, because message buffer is too small", e);
 		}
-		p_buffer.put(m_statusCode);
-		p_buffer.putInt(p_payloadSize);
 
-		writePayload(p_buffer);
+		if (p_buffer.position() < getPayloadLength() + HEADER_SIZE) {
+			throw new NetworkException("Did not create message, because message buffer is too large");
+		}
 
 		return p_buffer;
 	}

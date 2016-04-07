@@ -61,7 +61,7 @@ public class NotifyAboutFailedPeerMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Short.BYTES;
 	}
 

@@ -181,8 +181,8 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		// Shutdown exclusive message handler
-		m_exclusiveMessageHandler.shutdown();
 		m_exclusiveMessageHandler.interrupt();
+		m_exclusiveMessageHandler.shutdown();
 		try {
 			m_exclusiveMessageHandler.join();
 			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of ExclusiveMessageHandler successful.");
@@ -474,6 +474,7 @@ public final class NetworkHandler implements DataReceiver {
 						try {
 							m_messageAvailable.await();
 						} catch (final InterruptedException e) {
+							m_shutdown = true;
 							break;
 						}
 					}

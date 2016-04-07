@@ -73,7 +73,7 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Integer.BYTES + BackupRange.sizeofObjectStatic() * m_backupRanges.length;
 	}
 

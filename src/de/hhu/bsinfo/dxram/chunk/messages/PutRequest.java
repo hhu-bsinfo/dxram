@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -44,20 +45,23 @@ public class PutRequest extends AbstractRequest {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
 
 		m_dataStructures = p_dataStructures;
-		
+
 		byte tmpCode = getStatusCode();
 		switch (m_unlockOperation)
 		{
-			case NO_LOCK_OPERATION:
-				break;
-			case READ_LOCK:
-				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true); break;
-			case WRITE_LOCK:
-				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true); break;
-			default:
-				assert 1 == 2; break;
+		case NO_LOCK_OPERATION:
+			break;
+		case READ_LOCK:
+			ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+			break;
+		case WRITE_LOCK:
+			ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+			break;
+		default:
+			assert 1 == 2;
+			break;
 		}
-		
+
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
 	}
 
@@ -89,11 +93,11 @@ public class PutRequest extends AbstractRequest {
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
-		
+
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		for (DataStructure dataStructure : m_dataStructures) {
 			int size = dataStructure.sizeofObject();
-			
+
 			p_buffer.putLong(dataStructure.getID());
 			exporter.setPayloadSize(size);
 			p_buffer.putInt(size);
@@ -107,13 +111,12 @@ public class PutRequest extends AbstractRequest {
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
-		
+
 		m_dataStructures = new Chunk[numChunks];
-		
 		for (int i = 0; i < m_dataStructures.length; i++) {
 			long id = p_buffer.getLong();
 			int size = p_buffer.getInt();
-			
+
 			importer.setPayloadSize(size);
 			m_dataStructures[i] = new Chunk(id, size);
 			p_buffer.order(ByteOrder.nativeOrder());
@@ -123,16 +126,16 @@ public class PutRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {	
+	protected final int getPayloadLength() {
 		int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-		
+
 		size += m_dataStructures.length * Long.BYTES;
 		size += m_dataStructures.length * Integer.BYTES;
-		
+
 		for (DataStructure dataStructure : m_dataStructures) {
 			size += dataStructure.sizeofObject();
 		}
-		
+
 		return size;
 	}
 

@@ -63,7 +63,7 @@ public class MigrationResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Integer.BYTES + m_failedMigrationIDs.length * Long.BYTES;
 	}
 }

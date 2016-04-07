@@ -70,7 +70,7 @@ public class PushJobQueueMessage extends AbstractMessage
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Byte.BYTES + Short.BYTES + m_job.sizeofObject();
 	}
 }
