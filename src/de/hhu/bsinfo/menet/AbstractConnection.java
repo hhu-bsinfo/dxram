@@ -18,7 +18,7 @@ public abstract class AbstractConnection {
 	private final ByteStreamInterpreter m_streamInterpreter;
 
 	private short m_destination;
-	protected NodeMap m_nodeMap;
+	private NodeMap m_nodeMap;
 	private final TaskExecutor m_taskExecutor;
 	private MessageDirectory m_messageDirectory;
 
@@ -118,6 +118,14 @@ public abstract class AbstractConnection {
 	 */
 	public final boolean isCongested() {
 		return m_unconfirmedBytes > m_flowControlWindowSize;
+	}
+
+	/**
+	 * Get node map
+	 * @return the NodeMap
+	 */
+	public final NodeMap getNodeMap() {
+		return m_nodeMap;
 	}
 
 	/**
@@ -371,7 +379,7 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final IOException e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "ERROR::Could not access network connection", e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "ERROR::Could not access network connection", e);
 			}
 		}
 
@@ -398,12 +406,12 @@ public abstract class AbstractConnection {
 				// before de-serializing the network buffer for every request.
 				if (message instanceof AbstractResponse) {
 					final AbstractResponse resp = (AbstractResponse) message;
-					resp.m_correspondingRequest = RequestMap.getRequest(resp);
+					resp.setCorrespondingRequest(RequestMap.getRequest(resp));
 				}
 
 				message.readPayload(p_buffer);
 			} catch (final Exception e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to create message", e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
 			}
 
 			return message;
@@ -517,7 +525,7 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final Exception e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to read message header ", e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to read message header ", e);
 				clear();
 			}
 		}
@@ -539,7 +547,7 @@ public abstract class AbstractConnection {
 					m_step = Step.DONE;
 				}
 			} catch (final Exception e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to read message payload ", e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to read message payload ", e);
 				clear();
 			}
 		}

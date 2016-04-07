@@ -5,7 +5,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
  * Type and list of subtypes for all lookup messages
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class LookupMessages {
+public final class LookupMessages {
+
 	// Constants
 	public static final byte TYPE = 5;
 	public static final byte SUBTYPE_JOIN_REQUEST = 1;
@@ -41,4 +42,9 @@ public class LookupMessages {
 	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE = 30;
 	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 31;
 	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 32;
+
+	/**
+	 * Hidden constructor
+	 */
+	private LookupMessages() {}
 }

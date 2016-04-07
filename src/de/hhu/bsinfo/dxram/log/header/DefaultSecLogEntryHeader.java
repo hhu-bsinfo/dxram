@@ -11,20 +11,24 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Attributes
-	private static final short MAX_SIZE = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_LID_SIZE + MAX_LOG_ENTRY_LEN_SIZE
-			+ LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_VER_SIZE + m_logEntryCRCSize);
-	private static final byte LID_OFFSET = LOG_ENTRY_TYP_SIZE;
+	private static short m_maximumSize;
+	private static byte m_lidOffset;
 
 	// Constructors
 	/**
 	 * Creates an instance of NormalSecondaryLogEntryHeader
 	 */
-	public DefaultSecLogEntryHeader() {}
+	public DefaultSecLogEntryHeader() {
+		m_maximumSize = (short) (LOG_ENTRY_TYP_SIZE + MAX_LOG_ENTRY_LID_SIZE + MAX_LOG_ENTRY_LEN_SIZE
+				+ LOG_ENTRY_EPO_SIZE + MAX_LOG_ENTRY_VER_SIZE + AbstractLogEntryHeader.getCRCSize());
+		m_lidOffset = LOG_ENTRY_TYP_SIZE;
+	}
 
 	// Methods
 	@Override
 	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final byte p_rangeID, final short p_source) {
-		m_logger.warn(DefaultSecLogEntryHeader.class, "Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
+		AbstractLogEntryHeader.getLogger().warn(DefaultSecLogEntryHeader.class,
+				"Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
 		return null;
 	}
 
@@ -35,19 +39,19 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public byte getRangeID(final byte[] p_buffer, final int p_offset) {
-		m_logger.error(DefaultSecLogEntryHeader.class, "No RangeID available!");
+		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No RangeID available!");
 		return -1;
 	}
 
 	@Override
 	public short getSource(final byte[] p_buffer, final int p_offset) {
-		m_logger.error(DefaultSecLogEntryHeader.class, "No source available!");
+		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No source available!");
 		return -1;
 	}
 
 	@Override
 	public short getNodeID(final byte[] p_buffer, final int p_offset) {
-		m_logger.error(DefaultSecLogEntryHeader.class, "No NodeID available!");
+		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No NodeID available!");
 		return -1;
 	}
 
@@ -61,7 +65,7 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 	 */
 	public long getLID(final byte[] p_buffer, final int p_offset) {
 		long ret = -1;
-		final int offset = p_offset + LID_OFFSET;
+		final int offset = p_offset + m_lidOffset;
 		final byte length = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		if (length == 0) {
@@ -128,12 +132,12 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 		int ret;
 		int offset;
 
-		if (m_useChecksum) {
+		if (AbstractLogEntryHeader.useChecksum()) {
 			offset = p_offset + getCRCOffset(p_buffer, p_offset);
 			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
 					+ ((p_buffer[offset + 3] & 0xff) << 24);
 		} else {
-			m_logger.error(DefaultSecLogEntryHeader.class, "No checksum available!");
+			AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No checksum available!");
 			ret = -1;
 		}
 
@@ -150,8 +154,8 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 		short ret;
 		byte versionSize;
 
-		if (m_useChecksum) {
-			ret = (short) (getCRCOffset(p_buffer, p_offset) + m_logEntryCRCSize);
+		if (AbstractLogEntryHeader.useChecksum()) {
+			ret = (short) (getCRCOffset(p_buffer, p_offset) + AbstractLogEntryHeader.getCRCSize());
 		} else {
 			versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
 			ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
@@ -162,12 +166,12 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public short getMaxHeaderSize() {
-		return MAX_SIZE;
+		return m_maximumSize;
 	}
 
 	@Override
 	public short getConversionOffset() {
-		m_logger.error(DefaultSecLogEntryHeader.class, "No conversion offset available!");
+		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No conversion offset available!");
 		return -1;
 	}
 
@@ -178,18 +182,18 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	protected short getNIDOffset() {
-		m_logger.error(DefaultSecLogEntryHeader.class, "No NodeID available!");
+		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No NodeID available!");
 		return -1;
 	}
 
 	@Override
 	protected short getLIDOffset() {
-		return LID_OFFSET;
+		return m_lidOffset;
 	}
 
 	@Override
 	protected short getLENOffset(final byte[] p_buffer, final int p_offset) {
-		short ret = LID_OFFSET;
+		short ret = m_lidOffset;
 		final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		switch (localIDSize) {
@@ -206,7 +210,7 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 			ret += 6;
 			break;
 		default:
-			m_logger.error(DefaultSecLogEntryHeader.class, "LocalID's lenght unknown!");
+			AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "LocalID's lenght unknown!");
 			break;
 		}
 
@@ -226,10 +230,10 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 		short ret = (short) (getVEROffset(p_buffer, p_offset) + LOG_ENTRY_EPO_SIZE);
 		final byte versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 
-		if (m_useChecksum) {
+		if (AbstractLogEntryHeader.useChecksum()) {
 			ret += versionSize;
 		} else {
-			m_logger.error(DefaultSecLogEntryHeader.class, "No checksum available!");
+			AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No checksum available!");
 			ret = -1;
 		}
 
@@ -244,7 +248,7 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
 		System.out.println("* Length: " + getLength(p_buffer, p_offset));
 		System.out.println("* Version: " + version.getEpoch() + ", " + version.getVersion());
-		if (m_useChecksum) {
+		if (AbstractLogEntryHeader.useChecksum()) {
 			System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
 		}
 		System.out.println("***************************************************************************");

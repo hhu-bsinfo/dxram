@@ -120,7 +120,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		while (!ret.isConnected()) {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > m_connectionTimeout) {
-				NetworkHandler.ms_logger.debug(getClass().getSimpleName(), "connection time-out");
+				NetworkHandler.getLogger().debug(getClass().getSimpleName(), "connection time-out");
 
 				condLock.unlock();
 				throw new IOException("Timeout occurred");
@@ -149,7 +149,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			connection = m_nioInterface.initIncomingConnection(m_nodeMap, m_taskExecutor, m_messageDirectory, p_channel, m_nioSelector, m_numberOfBuffers);
 			fireConnectionCreated(connection);
 		} catch (final IOException e) {
-			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not create connection!");
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not create connection!");
 			throw e;
 		}
 	}
@@ -168,7 +168,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			try {
 				p_connection.getChannel().close();
 			} catch (final IOException e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not close connection to " + p_connection.getDestination() + "!");
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not close connection to " + p_connection.getDestination() + "!");
 			}
 			fireConnectionClosed(p_connection);
 		}

@@ -138,7 +138,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 			p_buffer.put((byte) 0);
 		} else {
 			data = parseCIDTree(p_tree);
-			p_buffer.put((byte) (data != null ? 1 : 0));
+			if (data == null) {
+				p_buffer.put((byte) 0);
+			} else {
+				p_buffer.put((byte) 1);
+			}
 			if (data != null) {
 				p_buffer.putInt(data.length);
 				p_buffer.put(data);

@@ -122,7 +122,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 		if (m_response != null && p_class.isAssignableFrom(m_response.getClass())) {
 			ret = p_class.cast(m_response);
-			m_response.m_correspondingRequest = this;
+			m_response.setCorrespondingRequest(this);
 		}
 
 		return ret;

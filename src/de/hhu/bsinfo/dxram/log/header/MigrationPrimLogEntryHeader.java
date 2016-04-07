@@ -12,20 +12,26 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	// Attributes
-	private static final short MAX_SIZE =
-			(short) (LOG_ENTRY_TYP_SIZE + LOG_ENTRY_RID_SIZE + LOG_ENTRY_SRC_SIZE + MAX_LOG_ENTRY_CID_SIZE + LOG_ENTRY_EPO_SIZE
-					+ MAX_LOG_ENTRY_LEN_SIZE + MAX_LOG_ENTRY_VER_SIZE + m_logEntryCRCSize);
-	private static final byte TYP_OFFSET = 0;
-	private static final byte RID_OFFSET = LOG_ENTRY_TYP_SIZE;
-	private static final byte SRC_OFFSET = RID_OFFSET + LOG_ENTRY_RID_SIZE;
-	private static final byte NID_OFFSET = SRC_OFFSET + LOG_ENTRY_SRC_SIZE;
-	private static final byte LID_OFFSET = NID_OFFSET + LOG_ENTRY_NID_SIZE;
+	private static short m_maximumSize;
+	private static byte m_typeOffset;
+	private static byte m_ridOffset;
+	private static byte m_srcOffset;
+	private static byte m_nidOffset;
+	private static byte m_lidOffset;
 
 	// Constructors
 	/**
 	 * Creates an instance of MigrationLogEntryHeader
 	 */
-	public MigrationPrimLogEntryHeader() {}
+	public MigrationPrimLogEntryHeader() {
+		m_maximumSize = (short) (LOG_ENTRY_TYP_SIZE + LOG_ENTRY_RID_SIZE + LOG_ENTRY_SRC_SIZE + MAX_LOG_ENTRY_CID_SIZE + LOG_ENTRY_EPO_SIZE
+				+ MAX_LOG_ENTRY_LEN_SIZE + MAX_LOG_ENTRY_VER_SIZE + AbstractLogEntryHeader.getCRCSize());
+		m_typeOffset = 0;
+		m_ridOffset = LOG_ENTRY_TYP_SIZE;
+		m_srcOffset = (byte) (m_ridOffset + LOG_ENTRY_RID_SIZE);
+		m_nidOffset = (byte) (m_srcOffset + LOG_ENTRY_SRC_SIZE);
+		m_lidOffset = (byte) (m_nidOffset + LOG_ENTRY_NID_SIZE);
+	}
 
 	// Methods
 	@Override
@@ -41,19 +47,19 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		lengthSize = getSizeForLengthField(p_size);
 		versionSize = getSizeForVersionField(p_version.getVersion());
 
-		if (m_useChecksum) {
-			checksumSize = m_logEntryCRCSize;
+		if (AbstractLogEntryHeader.useChecksum()) {
+			checksumSize = AbstractLogEntryHeader.getCRCSize();
 		}
 
 		type = generateTypeField(type, localIDSize, lengthSize, versionSize);
 
-		result = new byte[LID_OFFSET + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize];
+		result = new byte[m_lidOffset + localIDSize + lengthSize + LOG_ENTRY_EPO_SIZE + versionSize + checksumSize];
 
-		putType(result, type, TYP_OFFSET);
-		putRangeID(result, p_rangeID, RID_OFFSET);
-		putSource(result, p_source, SRC_OFFSET);
+		putType(result, type, m_typeOffset);
+		putRangeID(result, p_rangeID, m_ridOffset);
+		putSource(result, p_source, m_srcOffset);
 
-		putChunkID(result, p_chunkID, localIDSize, NID_OFFSET);
+		putChunkID(result, p_chunkID, localIDSize, m_nidOffset);
 
 		if (lengthSize == 1) {
 			putLength(result, (byte) p_size, getLENOffset(result, 0));
@@ -82,19 +88,19 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public byte getRangeID(final byte[] p_buffer, final int p_offset) {
-		return p_buffer[p_offset + RID_OFFSET];
+		return p_buffer[p_offset + m_ridOffset];
 	}
 
 	@Override
 	public short getSource(final byte[] p_buffer, final int p_offset) {
-		final int offset = p_offset + SRC_OFFSET;
+		final int offset = p_offset + m_srcOffset;
 
 		return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 	}
 
 	@Override
 	public short getNodeID(final byte[] p_buffer, final int p_offset) {
-		final int offset = p_offset + NID_OFFSET;
+		final int offset = p_offset + m_nidOffset;
 
 		return (short) ((p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8));
 	}
@@ -109,7 +115,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 	 */
 	public long getLID(final byte[] p_buffer, final int p_offset) {
 		long ret = -1;
-		final int offset = p_offset + LID_OFFSET;
+		final int offset = p_offset + m_lidOffset;
 		final byte length = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		if (length == 0) {
@@ -176,12 +182,12 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		int ret;
 		int offset;
 
-		if (m_useChecksum) {
+		if (AbstractLogEntryHeader.useChecksum()) {
 			offset = p_offset + getCRCOffset(p_buffer, p_offset);
 			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
 					+ ((p_buffer[offset + 3] & 0xff) << 24);
 		} else {
-			m_logger.error(MigrationPrimLogEntryHeader.class, "No checksum available!");
+			AbstractLogEntryHeader.getLogger().error(MigrationPrimLogEntryHeader.class, "No checksum available!");
 			ret = -1;
 		}
 
@@ -198,8 +204,8 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		short ret;
 		byte versionSize;
 
-		if (m_useChecksum) {
-			ret = (short) (getCRCOffset(p_buffer, p_offset) + m_logEntryCRCSize);
+		if (AbstractLogEntryHeader.useChecksum()) {
+			ret = (short) (getCRCOffset(p_buffer, p_offset) + AbstractLogEntryHeader.getCRCSize());
 		} else {
 			versionSize = (byte) (((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT) + LOG_ENTRY_EPO_SIZE);
 			ret = (short) (getVEROffset(p_buffer, p_offset) + versionSize);
@@ -210,7 +216,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public short getMaxHeaderSize() {
-		return MAX_SIZE;
+		return m_maximumSize;
 	}
 
 	@Override
@@ -225,17 +231,17 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	protected short getNIDOffset() {
-		return NID_OFFSET;
+		return m_nidOffset;
 	}
 
 	@Override
 	protected short getLIDOffset() {
-		return LID_OFFSET;
+		return m_lidOffset;
 	}
 
 	@Override
 	protected short getLENOffset(final byte[] p_buffer, final int p_offset) {
-		short ret = LID_OFFSET;
+		short ret = m_lidOffset;
 		final byte localIDSize = (byte) ((getType(p_buffer, p_offset) & LID_LENGTH_MASK) >> LID_LENGTH_SHFT);
 
 		switch (localIDSize) {
@@ -252,7 +258,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 			ret += 6;
 			break;
 		default:
-			m_logger.error(MigrationPrimLogEntryHeader.class, "LocalID's length unknown!");
+			AbstractLogEntryHeader.getLogger().error(MigrationPrimLogEntryHeader.class, "LocalID's length unknown!");
 			break;
 		}
 
@@ -272,10 +278,10 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		short ret = (short) (getVEROffset(p_buffer, p_offset) + LOG_ENTRY_EPO_SIZE);
 		final byte versionSize = (byte) ((getType(p_buffer, p_offset) & VER_LENGTH_MASK) >> VER_LENGTH_SHFT);
 
-		if (m_useChecksum) {
+		if (AbstractLogEntryHeader.useChecksum()) {
 			ret += versionSize;
 		} else {
-			m_logger.error(MigrationPrimLogEntryHeader.class, "No checksum available!");
+			AbstractLogEntryHeader.getLogger().error(MigrationPrimLogEntryHeader.class, "No checksum available!");
 			ret = -1;
 		}
 
@@ -291,7 +297,7 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		System.out.println("* LocalID: " + getLID(p_buffer, p_offset));
 		System.out.println("* Length: " + getLength(p_buffer, p_offset));
 		System.out.println("* Version: " + version.getEpoch() + ", " + version.getVersion());
-		if (m_useChecksum) {
+		if (AbstractLogEntryHeader.useChecksum()) {
 			System.out.println("* Checksum: " + getChecksum(p_buffer, p_offset));
 		}
 		System.out.println("****************************************************************************");

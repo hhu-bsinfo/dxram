@@ -81,12 +81,13 @@ public class EventComponent extends DXRAMComponent {
 	}
 
 	@Override
-	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			Settings p_settings) {
+	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 
 		if (p_settings.getValue(EventConfigurationValues.Component.USE_EXECUTOR)) {
-			m_executor = new TaskExecutor("EventExecutor", p_settings.getValue(EventConfigurationValues.Component.THREAD_COUNT));
+			final int threadCount = p_settings.getValue(EventConfigurationValues.Component.THREAD_COUNT);
+			m_logger.info(getClass().getSimpleName(), "EventExecutor: Initialising " + threadCount + " threads");
+			m_executor = new TaskExecutor("EventExecutor", threadCount);
 		}
 
 		return true;

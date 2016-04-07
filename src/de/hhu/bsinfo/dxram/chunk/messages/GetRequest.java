@@ -34,7 +34,7 @@ public class GetRequest extends AbstractRequest {
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.
-	 * @param p_dataStructure
+	 * @param p_dataStructures
 	 *            Data structure with the ID of the chunk to get.
 	 */
 	public GetRequest(final short p_destination, final DataStructure... p_dataStructures) {

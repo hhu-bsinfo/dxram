@@ -42,7 +42,6 @@ public final class TaskExecutor {
 
 		m_taskMapLock = new ReentrantLock(false);
 
-		NetworkHandler.ms_logger.info(getClass().getSimpleName(), m_name + ": Initialising " + p_threads + " threads");
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
 	}
 
@@ -70,7 +69,7 @@ public final class TaskExecutor {
 		try {
 			m_executor.execute(p_runnable);
 		} catch (final RejectedExecutionException e) {
-			NetworkHandler.ms_logger.error(getClass().getSimpleName(), m_name + ":" + e.getMessage());
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":" + e.getMessage());
 		}
 	}
 
@@ -174,7 +173,7 @@ public final class TaskExecutor {
 			try {
 				runnable.run();
 			} catch (final Exception e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
 			} finally {
 				m_queueLock.lock();
 				// remove executed task

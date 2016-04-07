@@ -21,7 +21,7 @@ import de.hhu.bsinfo.utils.log.LoggerNull;
 public final class NetworkHandler implements DataReceiver {
 
 	// Attributes
-	public static LoggerInterface ms_logger = new LoggerNull();
+	private static LoggerInterface m_loggerInterface;
 
 	private final TaskExecutor m_messageCreatorExecutor;
 	private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
@@ -48,8 +48,12 @@ public final class NetworkHandler implements DataReceiver {
 	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads) {
 		final byte networkType;
 
+		m_loggerInterface = new LoggerNull();
+
 		m_numMessageHandlerThreads = p_numMessageHandlerThreads;
 
+		NetworkHandler.getLogger().info(getClass().getSimpleName(),
+				"Network: NetworkMessageCreator: Initialising " + p_numMessageCreatorThreads + " threads");
 		m_messageCreatorExecutor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
 		m_receivers = new HashMap<>();
 		m_receiversLock = new ReentrantLock(false);
@@ -70,12 +74,20 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	/**
-	 * Sets the LoggerComponent
+	 * Returns the LoggerInterface
+	 * @return the LoggerInterface
+	 */
+	public static LoggerInterface getLogger() {
+		return m_loggerInterface;
+	}
+
+	/**
+	 * Sets the LoggerInterface
 	 * @param p_logger
-	 *            the LoggerComponent
+	 *            the LoggerInterface
 	 */
 	public void setLogger(final LoggerInterface p_logger) {
-		ms_logger = p_logger;
+		m_loggerInterface = p_logger;
 
 	}
 
@@ -94,7 +106,7 @@ public final class NetworkHandler implements DataReceiver {
 		ret = m_messageDirectory.register(p_type, p_subtype, p_class);
 
 		if (!ret) {
-			ms_logger.warn(getClass().getSimpleName(), "Registering network message " + p_class.getSimpleName()
+			m_loggerInterface.warn(getClass().getSimpleName(), "Registering network message " + p_class.getSimpleName()
 					+ " for type " + p_type + " and subtype " + p_subtype + " failed, type and subtype already used.");
 		}
 	}
@@ -119,7 +131,7 @@ public final class NetworkHandler implements DataReceiver {
 	 */
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
 			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
-		ms_logger.trace(getClass().getSimpleName(), "Entering initialize");
+		m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
 
 		m_nodeMap = p_nodeMap;
 
@@ -129,7 +141,7 @@ public final class NetworkHandler implements DataReceiver {
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
 
-		ms_logger.trace(getClass().getSimpleName(), "Exiting initialize");
+		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
 
 	/**
@@ -154,18 +166,18 @@ public final class NetworkHandler implements DataReceiver {
 		m_messageCreatorExecutor.shutdown();
 		try {
 			m_messageCreatorExecutor.awaitTermination();
-			ms_logger.info(getClass().getSimpleName(), "Shutdown of MessageCreator(s) successful.");
+			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of MessageCreator(s) successful.");
 		} catch (final InterruptedException e) {
-			ms_logger.warn(getClass().getSimpleName(), "Could not wait for message creator thread pool to finish. Interrupted.");
+			m_loggerInterface.warn(getClass().getSimpleName(), "Could not wait for message creator thread pool to finish. Interrupted.");
 		}
 
 		// Shutdown default message handler(s)
 		m_defaultMessageHandler.m_executor.shutdown();
 		try {
 			m_defaultMessageHandler.m_executor.awaitTermination();
-			ms_logger.info(getClass().getSimpleName(), "Shutdown of DefaultMessageHandler(s) successful.");
+			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of DefaultMessageHandler(s) successful.");
 		} catch (final InterruptedException e) {
-			ms_logger.warn(getClass().getSimpleName(), "Could not wait for default message handler thread pool to finish. Interrupted.");
+			m_loggerInterface.warn(getClass().getSimpleName(), "Could not wait for default message handler thread pool to finish. Interrupted.");
 		}
 
 		// Shutdown exclusive message handler
@@ -173,9 +185,9 @@ public final class NetworkHandler implements DataReceiver {
 		m_exclusiveMessageHandler.interrupt();
 		try {
 			m_exclusiveMessageHandler.join();
-			ms_logger.info(getClass().getSimpleName(), "Shutdown of ExclusiveMessageHandler successful.");
+			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of ExclusiveMessageHandler successful.");
 		} catch (final InterruptedException e) {
-			ms_logger.warn(getClass().getSimpleName(), "Could not wait for exclusive message handler to finish. Interrupted.");
+			m_loggerInterface.warn(getClass().getSimpleName(), "Could not wait for exclusive message handler to finish. Interrupted.");
 		}
 
 		// Close connection manager (shuts down selector thread, too)
@@ -201,7 +213,7 @@ public final class NetworkHandler implements DataReceiver {
 			}
 			entry.add(p_receiver);
 
-			ms_logger.info(getClass().getSimpleName(), "new MessageReceiver for " + p_message.getSimpleName());
+			m_loggerInterface.info(getClass().getSimpleName(), "new MessageReceiver for " + p_message.getSimpleName());
 			m_receiversLock.unlock();
 		}
 	}
@@ -222,7 +234,7 @@ public final class NetworkHandler implements DataReceiver {
 			if (entry != null) {
 				entry.remove(p_receiver);
 
-				ms_logger.info(getClass().getSimpleName(), "MessageReceiver removed");
+				m_loggerInterface.info(getClass().getSimpleName(), "MessageReceiver removed");
 			}
 			m_receiversLock.unlock();
 		}
@@ -239,7 +251,7 @@ public final class NetworkHandler implements DataReceiver {
 
 		p_message.beforeSend();
 
-		ms_logger.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
+		m_loggerInterface.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
 			/*
@@ -278,7 +290,7 @@ public final class NetworkHandler implements DataReceiver {
 
 		p_message.afterSend();
 
-		ms_logger.trace(getClass().getSimpleName(), "Exiting sendMessage");
+		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting sendMessage");
 
 		return 0;
 	}
@@ -290,7 +302,7 @@ public final class NetworkHandler implements DataReceiver {
 	 */
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
-		ms_logger.trace(getClass().getSimpleName(), "NewMessage: " + p_message);
+		m_loggerInterface.trace(getClass().getSimpleName(), "NewMessage: " + p_message);
 
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);
@@ -347,6 +359,8 @@ public final class NetworkHandler implements DataReceiver {
 			m_defaultMessages = new ArrayDeque<>();
 			m_defaultMessagesLock = new ReentrantLock(false);
 
+			NetworkHandler.getLogger().info(getClass().getSimpleName(),
+					"Network: DefaultMessageHandler: Initialising " + p_numMessageHandlerThreads + " threads");
 			m_executor = new TaskExecutor("Network: DefaultMessageHandler", p_numMessageHandlerThreads);
 		}
 
@@ -387,7 +401,7 @@ public final class NetworkHandler implements DataReceiver {
 			if (entry != null) {
 				entry.newMessage(message);
 			} else {
-				ms_logger.error(getClass().getSimpleName(), "Default message queue is empty!");
+				m_loggerInterface.error(getClass().getSimpleName(), "Default message queue is empty!");
 			}
 		}
 	}
@@ -447,6 +461,7 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		@Override
+		@SuppressWarnings("null")
 		public void run() {
 			AbstractMessage message = null;
 			Entry entry;
@@ -472,7 +487,7 @@ public final class NetworkHandler implements DataReceiver {
 				if (entry != null) {
 					entry.newMessage(message);
 				} else {
-					ms_logger.error(getClass().getSimpleName(), "Exclusive message queue is empty!");
+					m_loggerInterface.error(getClass().getSimpleName(), "Exclusive message queue is empty!");
 				}
 				message = null;
 			}

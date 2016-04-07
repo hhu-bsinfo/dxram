@@ -37,12 +37,13 @@ public abstract class AbstractLogEntryHeader {
 	protected static final byte LOG_ENTRY_RID_SIZE = 1;
 	protected static final byte LOG_ENTRY_SRC_SIZE = 2;
 	protected static final byte LOG_ENTRY_EPO_SIZE = 2;
-	protected static byte m_logEntryCRCSize = (byte) 4;
-
-	protected static boolean m_useChecksum = true;
 
 	// Attributes
-	protected static LoggerComponent m_logger;
+	private static byte m_logEntryCRCSize = (byte) 4;
+	private static boolean m_useChecksum = true;
+
+	private static LoggerComponent m_logger;
+
 	private static final Checksum CRC = new CRC32();
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
@@ -450,6 +451,30 @@ public abstract class AbstractLogEntryHeader {
 		final int offset = p_offset + p_logEntryHeader.getVEROffset(p_buffer, p_offset);
 
 		p_buffer[offset + 1] = (byte) (p_buffer[offset + 1] ^ 1 << 15);
+	}
+
+	/**
+	 * Returns the LoggerComponent
+	 * @return the LoggerComponent
+	 */
+	protected static LoggerComponent getLogger() {
+		return m_logger;
+	}
+
+	/**
+	 * Returns whether there is a checksum in log entry header or not
+	 * @return whether there is a checksum in log entry header or not
+	 */
+	protected static boolean useChecksum() {
+		return m_useChecksum;
+	}
+
+	/**
+	 * Returns the checksum length
+	 * @return the checksum length
+	 */
+	protected static byte getCRCSize() {
+		return m_logEntryCRCSize;
 	}
 
 	/**

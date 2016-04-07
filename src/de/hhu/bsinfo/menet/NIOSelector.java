@@ -71,7 +71,7 @@ class NIOSelector extends Thread {
 			} catch (final IOException e) {
 				exception = e;
 
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
 
 				try {
 					Thread.sleep(1000);
@@ -80,7 +80,7 @@ class NIOSelector extends Thread {
 		}
 
 		if (exception != null) {
-			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not create network channel!");
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not create network channel!");
 		}
 	}
 
@@ -114,7 +114,7 @@ class NIOSelector extends Thread {
 					try {
 						connection.getChannel().register(m_selector, interest, connection);
 					} catch (final ClosedChannelException e) {
-						NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not change operations!");
+						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not change operations!");
 					}
 				} else {
 					m_connectionCreator.closeConnection(connection);
@@ -141,7 +141,7 @@ class NIOSelector extends Thread {
 					}
 				}
 			} catch (final Exception e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Key selection failed!");
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Key selection failed!");
 			}
 		}
 	}
@@ -180,7 +180,7 @@ class NIOSelector extends Thread {
 						try {
 							successful = m_nioInterface.read(connection);
 						} catch (final IOException e) {
-							NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not read from channel (" + connection.getDestination() + ")!");
+							NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not read from channel (" + connection.getDestination() + ")!");
 							successful = false;
 						}
 						if (!successful) {
@@ -191,7 +191,7 @@ class NIOSelector extends Thread {
 					try {
 						complete = m_nioInterface.write(connection);
 					} catch (final IOException e) {
-						NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not write to channel (" + connection.getDestination() + ")!");
+						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not write to channel (" + connection.getDestination() + ")!");
 						complete = false;
 					}
 					if (complete) {
@@ -202,7 +202,7 @@ class NIOSelector extends Thread {
 					NIOInterface.connect(connection);
 				}
 			} catch (final IOException e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Could not access channel properly!");
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not access channel properly!");
 			}
 		}
 	}
@@ -244,16 +244,16 @@ class NIOSelector extends Thread {
 		try {
 			m_serverChannel.close();
 		} catch (final IOException e) {
-			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to close channel!");
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to close channel!");
 		}
-		NetworkHandler.ms_logger.info(getClass().getSimpleName(), "Closing ServerSocketChannel successful.");
+		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Closing ServerSocketChannel successful.");
 
 		try {
 			m_selector.close();
 		} catch (final IOException e) {
-			NetworkHandler.ms_logger.error(getClass().getSimpleName(), "Unable to shutdown selector!");
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to shutdown selector!");
 		}
-		NetworkHandler.ms_logger.info(getClass().getSimpleName(), "Shutdown of Selector successful.");
+		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Shutdown of Selector successful.");
 	}
 
 	/**
