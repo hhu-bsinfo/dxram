@@ -945,12 +945,12 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		// go for remote ones by each peer
 		for (final Entry<Short, ArrayList<Integer>> peerWithChunks : remoteChunkIDsByPeers.entrySet()) {
 			short peer = peerWithChunks.getKey();
-			ArrayList<Integer> remoteChunkIDs = peerWithChunks.getValue();
+			ArrayList<Integer> remoteChunkIDIndexes = peerWithChunks.getValue();
 
 			if (peer == m_boot.getNodeID()) {
 				// local get, migrated data to current node
 				m_memoryManager.lockAccess();
-				for (final int index : remoteChunkIDs) {
+				for (final int index : remoteChunkIDIndexes) {
 					long chunkID = p_chunkIDs[index];
 					byte[] data = m_memoryManager.get(chunkID);
 					if (data != null) {
@@ -962,9 +962,11 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 				m_memoryManager.unlockAccess();
 			} else {
 				// Remote get from specified peer
-				Chunk[] chunks = new Chunk[remoteChunkIDs.size()];
-				for (int i = 0; i < chunks.length; i++) {
-					chunks[i] = new Chunk(remoteChunkIDs.get(i));
+				int i = 0;
+				Chunk[] chunks = new Chunk[remoteChunkIDIndexes.size()];
+				for (int index : remoteChunkIDIndexes) {
+					ret[index] = new Chunk(p_chunkIDs[index]);
+					chunks[i++] = ret[index];
 				}
 				GetRequest request = new GetRequest(peer, chunks);
 				NetworkErrorCodes error = m_network.sendSync(request);
@@ -976,7 +978,7 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 
 				GetResponse response = request.getResponse(GetResponse.class);
 				if (response != null) {
-					if (response.getNumberOfChunksGot() != remoteChunkIDs.size())
+					if (response.getNumberOfChunksGot() != remoteChunkIDIndexes.size())
 					{
 						// TODO not all chunks were found
 						m_logger.warn(getClass(), "Could not find all chunks on peer " + Integer.toHexString(peer & 0xFFFF) + " for chunk request.");
