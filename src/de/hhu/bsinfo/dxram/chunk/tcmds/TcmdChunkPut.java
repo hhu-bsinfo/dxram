@@ -59,7 +59,6 @@ public class TcmdChunkPut extends TerminalCommand{
 		if (__checkIDandSize(size, cid, lid))	// check if size, cid and lid are valid
 			return true;						// if the values are not valid the function will do nothing and returns
 		
-		System.out.println("Should not be visible");
 		
 		cid = __getCid(cid, lid, nid);
 		

@@ -106,6 +106,8 @@ public class ChunkService extends DXRAMService implements MessageReceiver
 		m_terminal.registerCommand(new TcmdChunkRemove());
 		m_terminal.registerCommand(new TcmdChunkGet());
 		m_terminal.registerCommand(new TcmdChunkPut());
+		m_terminal.registerCommand(new TcmdChunkList());
+		
 
 		if (m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_backup.registerPeer();
