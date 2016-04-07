@@ -80,7 +80,7 @@ public class NIOConnection extends AbstractConnection {
 		m_nioSelector = p_nioSelector;
 		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_CONNECT);
 
-		m_channel.connect(m_nodeMap.getAddress(p_destination));
+		m_channel.connect(super.getNodeMap().getAddress(p_destination));
 
 		m_incoming = new ArrayDeque<>();
 		m_outgoing = new ArrayDeque<>();
@@ -316,7 +316,7 @@ public class NIOConnection extends AbstractConnection {
 		}
 
 		temp = ByteBuffer.allocate(2);
-		temp.putShort(m_nodeMap.getOwnNodeID());
+		temp.putShort(super.getNodeMap().getOwnNodeID());
 		temp.flip();
 
 		writeToChannel(temp);

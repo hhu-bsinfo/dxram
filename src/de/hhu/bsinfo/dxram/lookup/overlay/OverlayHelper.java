@@ -12,10 +12,15 @@ import de.hhu.bsinfo.dxram.util.NodeID;
  * Helper methods for superpeer overlay
  * @author Kevin Beineke <kevin.beineke@hhu.de> 02.04.16
  */
-public class OverlayHelper {
+public final class OverlayHelper {
 
 	private static final short CLOSED_INTERVAL = 0;
 	private static final short UPPER_CLOSED_INTERVAL = 1;
+
+	/**
+	 * Hidden constructor
+	 */
+	private OverlayHelper() {}
 
 	/**
 	 * Verifies if node is between start and end
