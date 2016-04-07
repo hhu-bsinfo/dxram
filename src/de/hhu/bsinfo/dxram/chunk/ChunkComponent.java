@@ -2,45 +2,51 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
-public class ChunkComponent extends DXRAMComponent {
+/**
+ * Component for chunk handling.
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
+ *
+ */
+public class ChunkComponent extends AbstractDXRAMComponent {
 
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 	private LogComponent m_log;
 
+	/**
+	 * Constructor
+	 * @param p_priorityInit
+	 *            Priority for initialization of this component.
+	 *            When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown
+	 *            Priority for shutting down this component.
+	 *            When choosing the order, consider component dependencies here.
+	 */
 	public ChunkComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
+	/**
+	 * Put a recovered chunks into local memory.
+	 * @param p_chunks Chunks to put.
+	 */
 	public void putRecoveredChunks(final Chunk[] p_chunks) {
 
 		if (!m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			putForeignChunks(p_chunks);
 		}
-	}
-
-	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-
-		m_boot = getDependentComponent(BootComponent.class);
-		m_backup = getDependentComponent(BackupComponent.class);
-		m_memoryManager = getDependentComponent(MemoryManagerComponent.class);
-		m_network = getDependentComponent(NetworkComponent.class);
-		m_log = getDependentComponent(LogComponent.class);
-
-		return true;
 	}
 
 	/**
@@ -64,7 +70,8 @@ public class ChunkComponent extends DXRAMComponent {
 			m_memoryManager.put(chunk);
 
 			if (m_backup.isActive()) {
-				logEntrySize = chunk.getDataSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getID()), ChunkID.getLocalID(chunk.getID()),
+				logEntrySize = chunk.getDataSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getID()),
+						ChunkID.getLocalID(chunk.getID()),
 						chunk.getDataSize());
 				if (m_backup.fitsInCurrentMigrationBackupRange(size, logEntrySize)) {
 					// Chunk fits in current migration backup range
@@ -104,6 +111,19 @@ public class ChunkComponent extends DXRAMComponent {
 
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
+
+	@Override
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
+			final Settings p_settings) {
+
+		m_boot = getDependentComponent(AbstractBootComponent.class);
+		m_backup = getDependentComponent(BackupComponent.class);
+		m_memoryManager = getDependentComponent(MemoryManagerComponent.class);
+		m_network = getDependentComponent(NetworkComponent.class);
+		m_log = getDependentComponent(LogComponent.class);
+
+		return true;
+	}
 
 	@Override
 	protected boolean shutdownComponent() {

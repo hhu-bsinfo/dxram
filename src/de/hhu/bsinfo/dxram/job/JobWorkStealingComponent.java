@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.job;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.job.ws.Worker;
 import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -15,7 +15,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 public class JobWorkStealingComponent extends JobComponent implements WorkerDelegate {
 
 	private LoggerComponent m_logger = null;
-	private BootComponent m_boot = null;
+	private AbstractBootComponent m_boot = null;
 	
 	private Worker[] m_workers = null;
 	private AtomicLong m_unfinishedJobs = new AtomicLong(0);
@@ -80,7 +80,7 @@ public class JobWorkStealingComponent extends JobComponent implements WorkerDele
 	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
-		m_boot = getDependentComponent(BootComponent.class);
+		m_boot = getDependentComponent(AbstractBootComponent.class);
 		
 		m_workers = new Worker[p_settings.getValue(JobConfigurationValues.Component.NUM_WORKERS)];
 		

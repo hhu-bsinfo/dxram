@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.utils.log.LogLevel;
 import de.hhu.bsinfo.utils.log.LoggerInterface;
@@ -20,7 +20,7 @@ import de.hhu.bsinfo.utils.log.LoggerInterface;
  * 
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class LoggerComponent extends DXRAMComponent implements LoggerInterface
+public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInterface
 {
 	private Map<String, LogLevel> m_logLevels = new HashMap<String, LogLevel>();
 	

@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.stats;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkCreate;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.stats.tcmds.TcmdAvailableStatisticsRecorders;
 import de.hhu.bsinfo.dxram.stats.tcmds.TcmdPrintAllStatistics;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
@@ -14,7 +14,7 @@ import de.hhu.bsinfo.dxram.term.TerminalComponent;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  *
  */
-public class StatisticsService extends DXRAMService {
+public class StatisticsService extends AbstractDXRAMService {
 
 	private StatisticsComponent m_statistics = null;
 	private TerminalComponent m_terminal = null;

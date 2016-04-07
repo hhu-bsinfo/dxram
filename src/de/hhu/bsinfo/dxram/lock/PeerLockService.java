@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxram.lock;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -27,7 +27,7 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  */
 public class PeerLockService extends LockService implements MessageReceiver, EventListener<NodeFailureEvent> {
 	
-	private BootComponent m_boot = null;
+	private AbstractBootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
 	private NetworkComponent m_network = null;
 	private MemoryManagerComponent m_memoryManager = null;
@@ -50,7 +50,7 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 	
-		m_boot = getComponent(BootComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_memoryManager = getComponent(MemoryManagerComponent.class);

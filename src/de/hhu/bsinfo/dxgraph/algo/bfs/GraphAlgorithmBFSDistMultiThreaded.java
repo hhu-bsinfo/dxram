@@ -161,31 +161,31 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 					// check periodically if threads are done
 					// to detect end of bfs level
 					boolean previousAllIdle = false;
-					while (!m_globalFinishedCurLevel)
-					{
-						boolean allIdle = true;
-						for (int t = 0; t < m_threads.length; t++) {	
-							if (!m_threads[t].isIdle()) {
-								allIdle = false;
-								break;
-							}
-						}
-						
-						if (!previousAllIdle && allIdle)
-						{
-							// signal we are bored
-							// TODO send message to master we are currently bored
-							// incoming level done message
-						}
-						else if (previousAllIdle && !allIdle)
-						{
-							// TODO send message to master that we are running and got work 
-						}
-						
-						previousAllIdle = allIdle;
-						
-						Thread.yield();
-					}
+//					while (!m_globalFinishedCurLevel)
+//					{
+//						boolean allIdle = true;
+//						for (int t = 0; t < m_threads.length; t++) {	
+//							if (!m_threads[t].isIdle()) {
+//								allIdle = false;
+//								break;
+//							}
+//						}
+//						
+//						if (!previousAllIdle && allIdle)
+//						{
+//							// signal we are bored
+//							// TODO send message to master we are currently bored
+//							// incoming level done message
+//						}
+//						else if (previousAllIdle && !allIdle)
+//						{
+//							// TODO send message to master that we are running and got work 
+//						}
+//						
+//						previousAllIdle = allIdle;
+//						
+//						Thread.yield();
+//					}
 					
 					// pause idling threads
 					for (int t = 0; t < m_threads.length; t++) {	
@@ -200,9 +200,9 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 							continue;
 						}
 					}
-					
-					m_totalVisitedCounter += lastLevelVisitedCounter;
-					m_totalBfsLevels++;
+//					
+//					m_totalVisitedCounter += lastLevelVisitedCounter;
+//					m_totalBfsLevels++;
 				
 					bfsLevel++;
 				}
@@ -249,11 +249,11 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 			// for each level
 			while (true)
 			{
-				// use this to send our visited counter of the last iteration to the master
-				m_levelBarrier.execute(2222 + m_totalBfsLevels, lastLevelVisitedCounter);
-				// we received an exit signal
-				if (m_levelBarrier.getBarrierData() == -1)
-					break;
+//				// use this to send our visited counter of the last iteration to the master
+//				m_levelBarrier.execute(2222 + m_totalBfsLevels, lastLevelVisitedCounter);
+//				// we received an exit signal
+//				if (m_levelBarrier.getBarrierData() == -1)
+//					break;
 
 				// frontier swap
 				FrontierList tmp = m_curFrontier;
@@ -267,7 +267,7 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 				}
 				
 				// TODO send message to master that we are running and got work 
-				m_networkService.sendMessage(new SlaveRunning(masterNodeId))
+				m_networkService.sendMessage(new SlaveRunning(masterNodeId));
 				
 				
 				// kick off threads with current frontier
@@ -339,8 +339,8 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 			// TODO send slaves our current iteration and how many iterations we have left
 			// master: wait for all slaves to sign on
 			// TODO catch error on execute
-			m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 1111, m_networkService, m_bootService, m_loggerService);
-			m_syncBarrierMaster.execute();
+//			m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 1111, m_networkService, m_bootService, m_loggerService);
+//			m_syncBarrierMaster.execute();
 
 			short entryNodeId = ChunkID.getCreatorID(entryNode);
 			if (entryNodeId != m_bootService.getNodeID())
@@ -369,8 +369,8 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 			}
 			
 			// master: wait for all slaves to finish this
-			m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 2222, m_networkService, m_bootService, m_loggerService);
-			m_syncBarrierMaster.execute();
+//			m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 2222, m_networkService, m_bootService, m_loggerService);
+//			m_syncBarrierMaster.execute();
 			
 			// frontier swap for everything, because we must put our entry node in next
 			FrontierList tmp = m_curFrontier;
@@ -404,8 +404,8 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 		
 		// one last wait for everyone 
 		// TODO remove? have this external?
-		m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 3333, m_networkService, m_bootService, m_loggerService);
-		m_syncBarrierMaster.execute();
+//		m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 3333, m_networkService, m_bootService, m_loggerService);
+//		m_syncBarrierMaster.execute();
 	}
 	
 	private void executeSlave()
@@ -414,12 +414,12 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 		int bfsIteration = 0;
 
 		// TODO get from master how many iterations we got in total and how many are left
-		m_syncBarrierSlave = new SyncBarrierSlave(1111, m_networkService, m_loggerService);
-		m_syncBarrierSlave.execute();
-
-		
-		m_syncBarrierSlave = new SyncBarrierSlave(2222, m_networkService, m_loggerService);
-		m_syncBarrierSlave.execute();
+//		m_syncBarrierSlave = new SyncBarrierSlave(1111, m_networkService, m_loggerService);
+//		m_syncBarrierSlave.execute();
+//
+//		
+//		m_syncBarrierSlave = new SyncBarrierSlave(2222, m_networkService, m_loggerService);
+//		m_syncBarrierSlave.execute();
 		
 		// frontier swap for everything, because we must put our entry node in next
 		FrontierList tmp = m_curFrontier;
@@ -451,8 +451,8 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 			}
 		}
 		
-		m_syncBarrierSlave = new SyncBarrierSlave(3333, m_networkService, m_loggerService);
-		m_syncBarrierSlave.execute();
+//		m_syncBarrierSlave = new SyncBarrierSlave(3333, m_networkService, m_loggerService);
+//		m_syncBarrierSlave.execute();
 	}
 	
 	private Pair<Long, Integer> runBFS(final int p_currentBFSIteration)
@@ -470,24 +470,24 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 			m_loggerService.debug(getClass(), "Iteration level " + curIterationLevel + " cur frontier size: " + m_curFrontier.size());
 			
 			
-			// kick off threads with current frontier
-			for (int t = 0; t < m_threads.length; t++) {	
-				m_threads[t].triggerNextIteration();
-			}
+//			// kick off threads with current frontier
+//			for (int t = 0; t < m_threads.length; t++) {	
+//				m_threads[t].triggerNextIteration();
+//			}
+//			
+//			// join forked threads
+//			int i = 0;
+//			long tmpVisitedCounter = 0;
+//			while (i < m_threads.length) {
+//				if (!m_threads[i].isIterationLevelDone()) {
+//					Thread.yield();
+//					continue;
+//				}
+//				tmpVisitedCounter += m_threads[i].getVisitedCountLastRun();
+//				i++;
+//			}
 			
-			// join forked threads
-			int i = 0;
-			long tmpVisitedCounter = 0;
-			while (i < m_threads.length) {
-				if (!m_threads[i].isIterationLevelDone()) {
-					Thread.yield();
-					continue;
-				}
-				tmpVisitedCounter += m_threads[i].getVisitedCountLastRun();
-				i++;
-			}
-			
-			visitedCounter += tmpVisitedCounter;
+//			visitedCounter += tmpVisitedCounter;
 		
 		
 			m_loggerService.debug(getClass(), "Finished iteration of level " + curIterationLevel);

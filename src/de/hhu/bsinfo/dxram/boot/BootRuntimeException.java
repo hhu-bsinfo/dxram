@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.boot;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class BootRuntimeException extends RuntimeException {
-	
+
 	private static final long serialVersionUID = 7264524354993522197L;
 
 	// Constructors

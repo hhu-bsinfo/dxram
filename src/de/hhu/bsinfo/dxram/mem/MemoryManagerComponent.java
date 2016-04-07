@@ -4,10 +4,10 @@ package de.hhu.bsinfo.dxram.mem;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
@@ -26,14 +26,14 @@ import de.hhu.bsinfo.soh.StorageJNINativeMemory;
  *         13.02.2014
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
-public final class MemoryManagerComponent extends DXRAMComponent {
+public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	private ReentrantReadWriteLock m_lock;
 	private long m_numActiveChunks;
 
-	private BootComponent m_boot = null;
+	private AbstractBootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
 	private StatisticsComponent m_statistics = null;
 
@@ -74,7 +74,7 @@ public final class MemoryManagerComponent extends DXRAMComponent {
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings)
 	{
-		m_boot = getDependentComponent(BootComponent.class);
+		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_statistics = getDependentComponent(StatisticsComponent.class);
 

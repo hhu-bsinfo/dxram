@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -10,7 +11,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.01.16
  */
 public class CreateRequest extends AbstractRequest {
-	private int[] m_sizes = null;
+	private int[] m_sizes;
 
 	/**
 	 * Creates an instance of CreateRequest.
@@ -32,10 +33,10 @@ public class CreateRequest extends AbstractRequest {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
 
 		m_sizes = p_sizes;
-		
+
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_sizes.length));
 	}
-	
+
 	/**
 	 * Get the sizes received.
 	 * @return Array of sizes to create chunks of.
@@ -47,7 +48,7 @@ public class CreateRequest extends AbstractRequest {
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_sizes.length);
-		
+
 		for (int size : m_sizes) {
 			p_buffer.putInt(size);
 		}
@@ -56,7 +57,7 @@ public class CreateRequest extends AbstractRequest {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		int numSizes = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
-		
+
 		m_sizes = new int[numSizes];
 		for (int i = 0; i < m_sizes.length; i++) {
 			m_sizes[i] = p_buffer.getInt();
@@ -65,6 +66,7 @@ public class CreateRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Integer.BYTES * m_sizes.length;
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode())
+				+ Integer.BYTES * m_sizes.length;
 	}
 }

@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxram.logger;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.tcmds.TcmdChangeLogLevel;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.utils.log.LogLevel;
@@ -9,7 +9,7 @@ import de.hhu.bsinfo.utils.log.LogLevel;
  * Service to allow the application to use the same logger as DXRAM.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 02.02.16
  */
-public class LoggerService extends DXRAMService {
+public class LoggerService extends AbstractDXRAMService {
 
 	private LoggerComponent m_logger = null;
 	private TerminalComponent m_terminal = null;

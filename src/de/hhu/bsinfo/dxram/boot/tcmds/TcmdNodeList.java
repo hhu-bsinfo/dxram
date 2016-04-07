@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.boot.tcmds;
 
 import java.util.List;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.term.TerminalCommand;
 import de.hhu.bsinfo.dxram.util.NodeRole;

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -12,8 +13,8 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  */
 public class RemoveRequest extends AbstractRequest {
 
-	private Long[] m_chunkIDs = null;
-	
+	private Long[] m_chunkIDs;
+
 	/**
 	 * Creates an instance of RemoveRequest.
 	 * This constructor is used when receiving this message.
@@ -27,14 +28,14 @@ public class RemoveRequest extends AbstractRequest {
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination
-	 * @param p_chunkID
-	 *            the ID for the Chunk to remove
+	 * @param p_chunkIds
+	 *            the chunk IDs to remove
 	 */
 	public RemoveRequest(final short p_destination, final Long... p_chunkIds) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST);
 
 		m_chunkIDs = p_chunkIds;
-		
+
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), m_chunkIDs.length));
 	}
 
@@ -49,7 +50,7 @@ public class RemoveRequest extends AbstractRequest {
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_chunkIDs.length);
-		
+
 		for (long chunkId : m_chunkIDs) {
 			p_buffer.putLong(chunkId);
 		}
@@ -58,9 +59,9 @@ public class RemoveRequest extends AbstractRequest {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
-		
+
 		m_chunkIDs = new Long[numChunks];
-		
+
 		for (int i = 0; i < numChunks; i++) {
 			m_chunkIDs[i] = p_buffer.getLong();
 		}
@@ -68,7 +69,8 @@ public class RemoveRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLengthForWrite() {
-		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode()) + Long.BYTES * m_chunkIDs.length;
+		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode())
+				+ Long.BYTES * m_chunkIDs.length;
 	}
 
 }

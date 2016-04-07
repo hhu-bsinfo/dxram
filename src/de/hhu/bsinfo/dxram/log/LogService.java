@@ -9,10 +9,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
@@ -39,7 +39,7 @@ import de.hhu.bsinfo.utils.Tools;
  * This service provides access to the backend storage system.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
-public class LogService extends DXRAMService implements MessageReceiver {
+public class LogService extends AbstractDXRAMService implements MessageReceiver {
 	// Constants
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
@@ -297,7 +297,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_loggingIsActive = (getComponent(BootComponent.class).getNodeRole() == NodeRole.PEER) && getComponent(BackupComponent.class).isActive();
+		m_loggingIsActive = (getComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER) && getComponent(BackupComponent.class).isActive();
 		if (m_loggingIsActive) {
 			m_useChecksum = p_settings.getValue(LogConfigurationValues.Service.LOG_CHECKSUM);
 
@@ -311,7 +311,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 
 			m_network = getComponent(NetworkComponent.class);
 			m_logger = getComponent(LoggerComponent.class);
-			m_nodeID = getComponent(BootComponent.class).getNodeID();
+			m_nodeID = getComponent(AbstractBootComponent.class).getNodeID();
 
 			m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
 

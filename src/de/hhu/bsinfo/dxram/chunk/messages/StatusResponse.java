@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -6,10 +7,14 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
+/**
+ * Response with status information about a remote chunk service.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 07.04.16
+ */
 public class StatusResponse extends AbstractResponse {
-	
-	private ChunkService.Status m_status = null;
-	
+
+	private ChunkService.Status m_status;
+
 	/**
 	 * Creates an instance of StatusResponse.
 	 * This constructor is used when receiving this message.
@@ -31,7 +36,7 @@ public class StatusResponse extends AbstractResponse {
 
 		m_status = p_status;
 	}
-	
+
 	/**
 	 * Get the chunk service status.
 	 * @return Chunk service status.
@@ -39,10 +44,10 @@ public class StatusResponse extends AbstractResponse {
 	public final ChunkService.Status getStatus() {
 		return m_status;
 	}
-	
+
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);	
+		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		exporter.exportObject(m_status);
 	}
 

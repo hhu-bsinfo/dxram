@@ -95,31 +95,31 @@ public class DXComputeMaster implements MessageReceiver
 		
 		
 		m_networkService.registerReceiver(SlaveSyncBarrierSignOnMessage.class, this);
-		
-		// wait until all slaves have signed on
-		while (m_slavesSynced.size() != m_numSlaves)
-		{
-		
-
-			try {
-				Thread.sleep(m_broadcastIntervalMs);
-			} catch (InterruptedException e) {
-			}		
-		}
-		
-		m_loggerService.info(getClass(), m_numSlaves + " slaves have signed on.");
-		
-		// release barrier
-		for (Pair<Short, Long> slaves : m_slavesSynced)
-		{
-			m_loggerService.debug(getClass(), "Releasing slave " + slaves.first());
-			MasterSyncBarrierReleaseMessage message = new MasterSyncBarrierReleaseMessage(slaves.first(), m_barrierIdentifer, p_data);
-			NetworkErrorCodes error = m_networkService.sendMessage(message);
-			if (error != NetworkErrorCodes.SUCCESS) {
-				m_loggerService.error(getClass(), "Sending release to " + slaves.first() + " failed: " + error);
-				return false;
-			} 
-		}
+//		
+//		// wait until all slaves have signed on
+//		while (m_slavesSynced.size() != m_numSlaves)
+//		{
+//		
+//
+//			try {
+//				Thread.sleep(m_broadcastIntervalMs);
+//			} catch (InterruptedException e) {
+//			}		
+//		}
+//		
+//		m_loggerService.info(getClass(), m_numSlaves + " slaves have signed on.");
+//		
+//		// release barrier
+//		for (Pair<Short, Long> slaves : m_slavesSynced)
+//		{
+//			m_loggerService.debug(getClass(), "Releasing slave " + slaves.first());
+//			MasterSyncBarrierReleaseMessage message = new MasterSyncBarrierReleaseMessage(slaves.first(), m_barrierIdentifer, p_data);
+//			NetworkErrorCodes error = m_networkService.sendMessage(message);
+//			if (error != NetworkErrorCodes.SUCCESS) {
+//				m_loggerService.error(getClass(), "Sending release to " + slaves.first() + " failed: " + error);
+//				return false;
+//			} 
+//		}
 		
 		m_loggerService.info(getClass(), "Barrier releaseed.");
 		

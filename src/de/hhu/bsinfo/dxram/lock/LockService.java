@@ -1,13 +1,13 @@
 package de.hhu.bsinfo.dxram.lock;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 
 /**
  * Service to lock chunks.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public abstract class LockService extends DXRAMService {
+public abstract class LockService extends AbstractDXRAMService {
 
 	public static final int MS_TIMEOUT_UNLIMITED = -1;
 	
