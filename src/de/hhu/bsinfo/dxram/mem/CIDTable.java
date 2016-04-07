@@ -475,16 +475,15 @@ public final class CIDTable {
 					} else {
 						if (range == 0) {
 							range = 1;
+							ret.add(p_unfinishedCID + i);
 						} else if (range == 1) {
-							range = 2;
-						} else if (range == 2) {
 							ret.remove(ret.size() - 1);
 						}
 						ret.add(p_unfinishedCID + i);
 					}
-				} else {
-					range = 0;
 				}
+			} else {
+				range = 0;
 			}
 		}
 

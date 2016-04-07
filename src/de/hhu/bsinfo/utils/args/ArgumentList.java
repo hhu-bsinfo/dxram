@@ -229,7 +229,7 @@ public class ArgumentList
 		private String m_key = null;
 		private String m_value = null;
 		private String m_convert = new String();
-		private boolean m_isOptional = false;
+		private boolean m_isOptional;
 		private String m_description = new String();
 		
 		private static Map<Class<?>, DataTypeParser> ms_dataTypeParsers = new HashMap<Class<?>, DataTypeParser>();
@@ -278,6 +278,7 @@ public class ArgumentList
 		{
 			m_key = p_key;
 			m_value = p_value;
+			m_isOptional = false;
 		}
 		
 		/**
@@ -290,6 +291,7 @@ public class ArgumentList
 		{
 			m_key = p_key;
 			m_value = p_value;
+			m_isOptional = false;
 			m_convert = p_convert;
 		}
 		

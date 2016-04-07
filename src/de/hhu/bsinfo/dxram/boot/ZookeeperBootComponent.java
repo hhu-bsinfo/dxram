@@ -574,7 +574,8 @@ public class ZookeeperBootComponent extends BootComponent implements Watcher {
 
 				if (m_ownIP.equals(entry.getIP()) && m_ownPort == entry.getPort()) {
 					if (entry.getRole() != p_cmdLineNodeRole) {
-						m_logger.error(getClass(), "NodeRole in configuration differs from command line given NodeRole");
+						m_logger.error(getClass(), "NodeRole in configuration differs from command line given NodeRole: "
+								+ entry.getRole() + " != " + p_cmdLineNodeRole);
 						return false;
 					}
 					m_nodesConfiguration.setOwnNodeID(nodeID);
