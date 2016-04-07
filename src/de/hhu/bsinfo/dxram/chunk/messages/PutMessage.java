@@ -12,7 +12,6 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
  * (Async) Message for updating a Chunk on a remote node
- * @author Florian Klein 09.03.2012
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class PutMessage extends AbstractMessage {

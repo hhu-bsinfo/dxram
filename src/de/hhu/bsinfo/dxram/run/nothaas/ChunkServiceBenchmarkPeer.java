@@ -71,13 +71,13 @@ public class ChunkServiceBenchmarkPeer extends DXRAMMain {
 		int batchSize = numChunks / numBatches;
 		for (int i = 0; i < numBatches; i++)
 		{
-			if (chunkService.put(ChunkLockOperation.NO_LOCK_OPERATION, chunks, batchSize * i, batchSize) != chunks.length)
+			if (chunkService.put(ChunkLockOperation.NO_LOCK_OPERATION, chunks, batchSize * i, batchSize) != batchSize)
 			{
 				System.out.println("ERROR: Putting chunks failed.");
 				return -2;
 			}
 			
-			if (chunkService.get(chunks, batchSize * i, batchSize) != chunks.length)
+			if (chunkService.get(chunks, batchSize * i, batchSize) != batchSize)
 			{
 				System.out.println("ERROR: Getting chunks failed.");
 				return -3;

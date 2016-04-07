@@ -12,8 +12,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class AbstractMessage {
 
 	// Constants
-	static final byte BYTES_PAYLOAD_SIZE = 4;
-
 	public static final int INVALID_MESSAGE_ID = -1;
 	public static final byte DEFAULT_TYPE = 0;
 	public static final byte DEFAULT_SUBTYPE = 0;
@@ -21,14 +19,21 @@ public abstract class AbstractMessage {
 	public static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
 	public static final byte DEFAULT_RATING_VALUE = 1;
 
+	/*- Header size:
+	 *  messageID + type + subtype + exclusivity + statusCode + payloadSize
+	 *  3b        + 1b   + 1b      + 1b          + 1b         + 4b           = 11 bytes
+	 */
 	public static final byte HEADER_SIZE = 11;
+	public static final byte PAYLOAD_SIZE_LENGTH = 4;
 
 	// Attributes
+	// (!) MessageID occupies only 3 byte in message header
 	private int m_messageID;
 	private short m_source;
 	private short m_destination;
 	private byte m_type;
 	private byte m_subtype;
+	// (!) Exclusivity is written as a byte (0 -> false, 1 -> true)
 	private boolean m_exclusivity;
 	// status code for all messages to indicate success, errors etc.
 	private byte m_statusCode;
@@ -48,7 +53,7 @@ public abstract class AbstractMessage {
 		m_subtype = DEFAULT_SUBTYPE;
 
 		m_exclusivity = DEFAULT_EXCLUSIVITY_VALUE;
-		
+
 		m_statusCode = 0;
 	}
 
@@ -105,10 +110,13 @@ public abstract class AbstractMessage {
 	 *            the message type
 	 * @param p_subtype
 	 *            the message subtype
-	 * @param p_ratingValue
-	 *            the rating value of the message
+	 * @param p_exclusivity
+	 *            whether this is an exclusive message or not
+	 * @param p_statusCode
+	 *            the status code
 	 */
-	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity, final byte p_statusCode) {
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity,
+			final byte p_statusCode) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_messageID = p_messageID;
@@ -116,7 +124,7 @@ public abstract class AbstractMessage {
 		m_destination = p_destination;
 		m_type = p_type;
 		m_subtype = p_subtype;
-		
+
 		m_exclusivity = p_exclusivity;
 		m_statusCode = p_statusCode;
 	}
@@ -179,7 +187,7 @@ public abstract class AbstractMessage {
 	}
 
 	// Setters
-	
+
 	/**
 	 * Set the status code (definable error, success,...)
 	 * @param p_statusCode
@@ -300,9 +308,11 @@ public abstract class AbstractMessage {
 	protected void afterSend() {}
 
 	/**
-	 * Creates a Message from the given byte buffer
+	 * Creates a Message from the given incoming byte buffer
 	 * @param p_buffer
 	 *            the byte buffer
+	 * @param p_messageDirectory
+	 *            the message directory
 	 * @return the created Message
 	 * @throws NetworkException
 	 *             if the message header could not be created
@@ -317,7 +327,8 @@ public abstract class AbstractMessage {
 
 		assert p_buffer != null;
 
-		if (p_buffer.remaining() < HEADER_SIZE - BYTES_PAYLOAD_SIZE) {
+		// The message header does not contain the payload size
+		if (p_buffer.remaining() < HEADER_SIZE - PAYLOAD_SIZE_LENGTH) {
 			throw new NetworkException("Incomplete header");
 		}
 
@@ -326,7 +337,7 @@ public abstract class AbstractMessage {
 		subtype = p_buffer.get();
 		exclusivity = p_buffer.get() == 1;
 		statusCode = p_buffer.get();
-		
+
 		try {
 			ret = p_messageDirectory.getInstance(type, subtype);
 		} catch (final Exception e) {
@@ -344,7 +355,11 @@ public abstract class AbstractMessage {
 
 	@Override
 	public final String toString() {
-		return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+		if (m_source != -1) {
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+		} else {
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_destination + "]";
+		}
 	}
 
 }

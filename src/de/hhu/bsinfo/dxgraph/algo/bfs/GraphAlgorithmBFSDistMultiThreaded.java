@@ -1,0 +1,280 @@
+package de.hhu.bsinfo.dxgraph.algo.bfs;
+
+import de.hhu.bsinfo.dxcompute.coord.SyncBarrierMaster;
+import de.hhu.bsinfo.dxcompute.coord.SyncBarrierSlave;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
+import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
+import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.Pair;
+
+public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implements MessageReceiver {
+
+	private int m_vertexBatchCountPerThread = 100;
+	private int m_vertexMessageBatchCount = 100;
+	
+	private int m_numSlaves = 0; // 0 is slave, > 0 is master
+	private int m_broadcastIntervalMs = 2000;
+	private int m_barrierIdentifer = -1;
+	
+	private SyncBarrierMaster m_syncBarrierMaster = null;
+	private SyncBarrierSlave m_syncBarrierSlave = null;
+	
+	private FrontierList m_curFrontier = null;
+	private FrontierList m_nextFrontier = null;
+	
+	private BFSThreadDist[] m_threads = null;
+	
+	public GraphAlgorithmBFSDistMultiThreaded(final int p_vertexBatchCountPerThread, final int p_vertexMessageBatchCount, 
+			final int p_numSlaves, final int p_barrierBroadcastIntervalMs, final int p_barrierIdentifier, 
+			final int p_threadCount, final GraphLoaderResultDelegate p_loaderResultsDelegate, final long... p_entryNodes)
+	{
+		super(p_loaderResultsDelegate, p_entryNodes);
+		m_vertexBatchCountPerThread = p_vertexBatchCountPerThread;		
+		m_vertexMessageBatchCount = p_vertexMessageBatchCount;
+		m_numSlaves = p_numSlaves;
+		m_broadcastIntervalMs = p_barrierBroadcastIntervalMs;
+		m_barrierIdentifer = p_barrierIdentifier;
+		m_threads = new BFSThreadDist[p_threadCount];
+	}
+	
+	@Override
+	public void onIncomingMessage(AbstractMessage p_message) {
+		if (p_message != null) {
+			if (p_message.getType() == BFSMessages.TYPE) {
+				switch (p_message.getSubtype()) {
+				case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE:
+					incomingVerticesForNextFrontierMessage((VerticesForNextFrontierMessage) p_message);
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+	
+	@Override
+	protected boolean setup(final long p_totalVertexCount) {		
+		m_curFrontier = new ConcurrentBitVector(p_totalVertexCount);
+		m_nextFrontier = new ConcurrentBitVector(p_totalVertexCount);
+		
+		return true;
+	}
+	
+	@Override
+	protected boolean execute(long[] p_entryNodes) 
+	{
+		m_loggerService.info(getClass(), "Starting " + m_threads.length + " BFS Threads...");
+		
+		for (int i = 0; i < m_threads.length; i++) {
+			m_threads[i] = new BFSThreadDist(i, m_loggerService, m_chunkService, m_networkService, 
+					m_bootService.getNodeID(), m_vertexBatchCountPerThread, m_vertexMessageBatchCount, m_curFrontier, m_nextFrontier);
+			m_threads[i].start();
+		}
+		
+		if (m_numSlaves > 0) {
+			executeMaster(p_entryNodes);
+		} else {
+			executeSlave();
+		}
+
+		m_loggerService.info(getClass(), "Finished BFS.");
+		return true;
+	}
+	
+	private void executeMaster(long[] p_entryNodes)
+	{
+		// execute a full BFS for each node, master's task
+		int bfsIteration = 0;
+		for (long entryNode : p_entryNodes)
+		{			
+			// TODO send slaves our current iteration and how many iterations we have left
+			// master: wait for all slaves to sign on
+			// TODO catch error on execute
+			m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 1111, m_networkService, m_bootService, m_loggerService);
+			m_syncBarrierMaster.execute();
+
+			short entryNodeId = ChunkID.getCreatorID(entryNode);
+			if (entryNodeId != m_bootService.getNodeID())
+			{
+				// send to remote 
+				VerticesForNextFrontierMessage msg = new VerticesForNextFrontierMessage(entryNodeId, 1);
+				msg.getVertexIDBuffer()[0] = entryNode;
+				msg.setNumVerticesInBatch(1);
+				
+				if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+					m_loggerService.error(getClass(), "Sending entry vertex " + Long.toHexString(entryNode) + " to node " + 
+								Integer.toHexString(entryNodeId) + " failed");
+					continue; 
+				}
+			}
+			else
+			{
+				m_nextFrontier.pushBack(ChunkID.getLocalID(entryNode));
+			}
+			
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			// master: wait for all slaves to finish this
+			m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 2222, m_networkService, m_bootService, m_loggerService);
+			m_syncBarrierMaster.execute();
+			
+			// frontier swap for everything, because we must put our entry node in next
+			FrontierList tmp = m_curFrontier;
+			m_curFrontier = m_nextFrontier;
+			m_nextFrontier = tmp;
+			m_nextFrontier.reset();
+			
+			// also swap them for threads!
+			for (int t = 0; t < m_threads.length; t++) {	
+				m_threads[t].triggerFrontierSwap();
+			}
+			
+			m_loggerService.info(getClass(), "Executing BFS iteration (" + bfsIteration + ") with root node " + Long.toHexString(entryNode));
+			Pair<Long, Integer> results = runBFS(bfsIteration);
+			m_loggerService.info(getClass(), "Results BFS iteration (" + bfsIteration + ") for root node " + Long.toHexString(entryNode) + ": Iteration depth " + results.second() + ", total visited vertices " + results.first());
+		
+			bfsIteration++;
+		}
+		
+		for (int i = 0; i < m_threads.length; i++) {
+			m_threads[i].exitThread();
+		}
+		
+		m_loggerService.info(getClass(), "Joining BFS threads...");
+		for (int i = 0; i < m_threads.length; i++) {
+			try {
+				m_threads[i].join();
+			} catch (InterruptedException e) {
+			}
+		}
+		
+		// one last wait for everyone 
+		// TODO remove? have this external?
+		m_syncBarrierMaster = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, 3333, m_networkService, m_bootService, m_loggerService);
+		m_syncBarrierMaster.execute();
+	}
+	
+	private void executeSlave()
+	{
+		// execute a full BFS for each node, master's task
+		int bfsIteration = 0;
+
+		// TODO get from master how many iterations we got in total and how many are left
+		m_syncBarrierSlave = new SyncBarrierSlave(1111, m_networkService, m_loggerService);
+		m_syncBarrierSlave.execute();
+
+		
+		m_syncBarrierSlave = new SyncBarrierSlave(2222, m_networkService, m_loggerService);
+		m_syncBarrierSlave.execute();
+		
+		// frontier swap for everything, because we must put our entry node in next
+		FrontierList tmp = m_curFrontier;
+		m_curFrontier = m_nextFrontier;
+		m_nextFrontier = tmp;
+		m_nextFrontier.reset();
+		
+		// also swap them for threads!
+		for (int t = 0; t < m_threads.length; t++) {	
+			m_threads[t].triggerFrontierSwap();
+		}
+		
+		m_loggerService.info(getClass(), "Executing BFS iteration (" + bfsIteration + ")");
+		Pair<Long, Integer> results = runBFS(bfsIteration);
+		m_loggerService.info(getClass(), "Results BFS iteration (" + bfsIteration + "): Iteration depth " + results.second() + ", total visited vertices " + results.first());
+	
+		bfsIteration++;
+		
+		
+		for (int i = 0; i < m_threads.length; i++) {
+			m_threads[i].exitThread();
+		}
+		
+		m_loggerService.info(getClass(), "Joining BFS threads...");
+		for (int i = 0; i < m_threads.length; i++) {
+			try {
+				m_threads[i].join();
+			} catch (InterruptedException e) {
+			}
+		}
+		
+		m_syncBarrierSlave = new SyncBarrierSlave(3333, m_networkService, m_loggerService);
+		m_syncBarrierSlave.execute();
+	}
+	
+	private Pair<Long, Integer> runBFS(final int p_currentBFSIteration)
+	{
+		long visitedCounter = 0;
+		int curIterationLevel = 0;
+		
+		// make sure the threads are marking the vertices with different values on every iteration
+		for (int t = 0; t < m_threads.length; t++) {	
+			m_threads[t].setCurrentBFSIterationLevel(p_currentBFSIteration);
+		}
+		
+		while (true)
+		{
+			m_loggerService.debug(getClass(), "Iteration level " + curIterationLevel + " cur frontier size: " + m_curFrontier.size());
+			
+			
+			// kick off threads with current frontier
+			for (int t = 0; t < m_threads.length; t++) {	
+				m_threads[t].triggerNextIteration();
+			}
+			
+			// join forked threads
+			int i = 0;
+			long tmpVisitedCounter = 0;
+			while (i < m_threads.length) {
+				if (!m_threads[i].isIterationLevelDone()) {
+					Thread.yield();
+					continue;
+				}
+				tmpVisitedCounter += m_threads[i].getVisitedCountLastRun();
+				i++;
+			}
+			
+			visitedCounter += tmpVisitedCounter;
+		
+		
+			m_loggerService.debug(getClass(), "Finished iteration of level " + curIterationLevel);
+			
+			// swap buffers at the end of the round when iteration level done
+			FrontierList tmp = m_curFrontier;
+			m_curFrontier = m_nextFrontier;
+			m_nextFrontier = tmp;
+			m_nextFrontier.reset();
+			
+			// also swap them for threads!
+			for (int t = 0; t < m_threads.length; t++) {	
+				m_threads[t].triggerFrontierSwap();
+			}
+			
+			if (m_curFrontier.isEmpty())
+			{
+				break;
+			}
+			
+			curIterationLevel++;
+		}
+		
+		return new Pair<Long, Integer>(visitedCounter, curIterationLevel);
+	}
+	
+	private void incomingVerticesForNextFrontierMessage(final VerticesForNextFrontierMessage p_message) {
+		long[] vertexIds = p_message.getVertexIDBuffer();
+		for (int i = 0; i < p_message.getNumVerticesInBatch(); i++) {
+			m_nextFrontier.pushBack(vertexIds[i]);
+		}
+	}
+}

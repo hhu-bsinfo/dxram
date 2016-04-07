@@ -34,14 +34,15 @@ public final class MessageDirectory {
 	 *            the subtype of the Message
 	 * @param p_class
 	 *            Message class
+	 * @return True if successful, false if the specified type and subtype are already in use.
 	 */
-	public void register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
+	public boolean register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		Constructor<?>[][] constructors = m_constructors;
 		Constructor<?> constructor;
 
 		m_lock.lock();
 		if (contains(p_type, p_subtype)) {
-			throw new IllegalArgumentException("Type " + p_type + " with subtype " + p_subtype + " is already registered");
+			return false;
 		}
 
 		try {
@@ -72,6 +73,7 @@ public final class MessageDirectory {
 
 		constructors[p_type][p_subtype] = constructor;
 		m_lock.unlock();
+		return true;
 	}
 
 	/**
@@ -122,8 +124,6 @@ public final class MessageDirectory {
 	 * @param p_subtype
 	 *            the subtype of the Message
 	 * @return a new Message instance
-	 * @throws de.hhu.bsinfo.menet.NetworkException
-	 *             if the instance could not be created
 	 */
 	public AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
 		AbstractMessage ret;

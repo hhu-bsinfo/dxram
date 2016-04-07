@@ -4,11 +4,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import de.hhu.bsinfo.dxcompute.DXCompute;
-import de.hhu.bsinfo.dxcompute.NullPipeline;
 import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxram.run.DXRAMMain;
-import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
@@ -36,7 +33,7 @@ public class DXComputePipeline extends DXRAMMain {
 	 */
 	protected DXComputePipeline() 
 	{
-		super(null, null, NodeRole.PEER);
+		super("DXComputePipeline main entry point.");
 	}
 	
 	@Override

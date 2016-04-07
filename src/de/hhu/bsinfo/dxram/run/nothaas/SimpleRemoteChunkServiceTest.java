@@ -3,6 +3,8 @@ package de.hhu.bsinfo.dxram.run.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
@@ -20,6 +22,7 @@ public class SimpleRemoteChunkServiceTest extends Main
 	
 	private DXRAM m_dxram;
 	private ChunkService m_chunkService;
+	private NameserviceService m_nameserviceService;
 
 	/**
 	 * Java main entry point.
@@ -40,6 +43,7 @@ public class SimpleRemoteChunkServiceTest extends Main
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
+		m_nameserviceService = m_dxram.getService(NameserviceService.class);
 	}
 	
 	@Override
@@ -72,6 +76,7 @@ public class SimpleRemoteChunkServiceTest extends Main
 		
 		System.out.println("Setting chunk payload...");
 		for (Chunk chunk : chunks) {
+			m_nameserviceService.register(chunk, "C" + ChunkID.getLocalID(chunk.getID()));
 			System.out.println(Long.toHexString(chunk.getID()) + ": " + Long.toHexString(chunk.getID()));
 			chunk.getData().putLong(chunk.getID());
 		}
@@ -81,11 +86,14 @@ public class SimpleRemoteChunkServiceTest extends Main
 		System.out.println("Putting chunks results: " + ret);
 		
 		System.out.println("Getting chunks...");
-		ret = m_chunkService.get(chunksCopy);
-		System.out.println("Getting chunks restults: " + ret);
-		
-		System.out.println("Data got: ");
-		for (Chunk chunk : chunksCopy) {
+		for (int i = 0; i < chunkIDs.length; i++) {
+			long chunkid = m_nameserviceService.getChunkID("C" + (i + 1));
+			Chunk chunk = new Chunk(chunkid, sizes[i]);
+			if (m_chunkService.get(chunk) != 1)
+			{
+				System.out.println("Getting chunk failed.");
+				return -1;
+			}
 			System.out.println(Long.toHexString(chunk.getData().getLong()));
 		}
 		

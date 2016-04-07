@@ -21,7 +21,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void error(final Class<T> clazz, final String msg)
 	{
-		m_logger.error(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.error(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -32,7 +32,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void error(final Class<T> clazz, final String msg, final Exception e)
 	{
-		m_logger.error(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.error(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -42,7 +42,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void warn(final Class<T> clazz, final String msg)
 	{
-		m_logger.warn(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.warn(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -53,7 +53,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void warn(final Class<T> clazz, final String msg, final Exception e)
 	{
-		m_logger.warn(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.warn(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -63,7 +63,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void info(final Class<T> clazz, final String msg)
 	{
-		m_logger.info(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.info(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -74,7 +74,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void info(final Class<T> clazz, final String msg, final Exception e)
 	{
-		m_logger.info(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.info(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -84,7 +84,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void debug(final Class<T> clazz, final String msg)
 	{
-		m_logger.debug(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.debug(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -95,7 +95,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void debug(final Class<T> clazz, final String msg, final Exception e)
 	{
-		m_logger.debug(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.debug(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -105,7 +105,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void trace(final Class<T> clazz, final String msg)
 	{
-		m_logger.trace(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.trace(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	/**
@@ -116,7 +116,7 @@ public class LoggerService extends DXRAMService {
 	 */
 	public <T> void trace(final Class<T> clazz, final String msg, final Exception e)
 	{
-		m_logger.trace(getClass(), clazz.getSimpleName() + ": " + msg);
+		m_logger.trace(getClass(), "[" + clazz.getSimpleName() + "] " + msg);
 	}
 	
 	public void setLogLevel(String p_logLevel)

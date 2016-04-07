@@ -12,6 +12,7 @@
 	<property name="build_proj_dir" value="${build_dir}/${name}" />
 	<property name="build_proj_conf_dir" value="${build_proj_dir}/${conf_dir}" />	
 	<property name="build_proj_lib_dir" value="${build_proj_dir}/${lib_dir}" />	
+	<property name="build_proj_jni_dir" value="${build_proj_dir}/${jni_dir}" />	
 	<property name="build_proj_log_dir" value="${build_proj_dir}/${log_dir}" />	
 	
 	<target name="build-all" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release" description="builds all files" />
@@ -29,12 +30,10 @@
 	</target>
 	
 	<target name="copy_jni" depends="create_base_dirs" description="copies the jni libs">
-		<copy file="${jni_dir}/libJNILock.so" todir="${build_proj_lib_dir}" />
-		<copy file="${jni_dir}/libJNIconsole.so" todir="${build_proj_lib_dir}" />
-		<copy file="${jni_dir}/libJNINativeMemory.so" todir="${build_proj_lib_dir}" />
-		<copy file="${jni_dir}/libJNILock.dylib" todir="${build_proj_lib_dir}" />
-		<copy file="${jni_dir}/libJNIconsole.dylib" todir="${build_proj_lib_dir}" />
-		<copy file="${jni_dir}/libJNINativeMemory.dylib" todir="${build_proj_lib_dir}" />
+		<copy file="${jni_dir}/libJNIconsole.so" todir="${build_proj_jni_dir}" />
+		<copy file="${jni_dir}/libJNINativeMemory.so" todir="${build_proj_jni_dir}" />
+		<copy file="${jni_dir}/libJNIconsole.dylib" todir="${build_proj_jni_dir}" />
+		<copy file="${jni_dir}/libJNINativeMemory.dylib" todir="${build_proj_jni_dir}" />
 	</target>
 
 	<target name="copy_config" depends="create_base_dirs" description="copies the config files">
@@ -61,6 +60,7 @@
 		<antcall target="compile">
 			<param name="buildtype" value="release"/>
 		</antcall>
+		<copy file="${build_proj_dir}/${name}-release.jar" tofile="${build_proj_dir}/DXRAM.jar" />
 	</target>
 	
 	<target name="compile" depends="create_base_dirs" description="builds class files">
@@ -77,10 +77,10 @@
 		</condition>
 		
 		<path id="build.classpath">
-			<pathelement path="${lib_dir}/log4j-1.2.16.jar" />
-			<pathelement path="${lib_dir}/slf4j-log4j12-1.6.1.jar" />
-			<pathelement path="${lib_dir}/slf4j-api-1.6.1.jar" />
-			<pathelement path="${lib_dir}/zookeeper-3.4.3.jar" />
+			<pathelement path="${build_proj_dir}/${lib_dir}/log4j-1.2.16.jar" />
+			<pathelement path="${build_proj_dir}/${lib_dir}/slf4j-log4j12-1.6.1.jar" />
+			<pathelement path="${build_proj_dir}/${lib_dir}/slf4j-api-1.6.1.jar" />
+			<pathelement path="${build_proj_dir}/${lib_dir}/zookeeper-3.4.3.jar" />
 			<pathelement path="${build_proj_conf_dir}" />
 		</path>
 		<manifestclasspath property="jar.classpath" jarfile="${build_proj_dir}/${name}-${buildtype}.jar">
@@ -101,7 +101,7 @@
 		
 		<jar destfile="${build_proj_dir}/${name}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
 			<manifest>
-				<attribute name="Main-Class" value="de.hhu.bsinfo.dxram.run.LibMain" />
+				<attribute name="Main-Class" value="de.hhu.bsinfo.dxram.run.DXRAMMain" />
 				<attribute name="Class-Path" value="${jar.classpath}" />
 			</manifest>
 		</jar>
@@ -111,4 +111,3 @@
 		<delete dir="${build_proj_dir}" failonerror="false" />
 	</target>
 </project>
-

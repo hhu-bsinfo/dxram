@@ -31,7 +31,7 @@ public class SimpleDXRAMTest extends Main {
 		super("Simple test to verify if DXRAM starts and shuts down properly");
 		
 		m_dxram = new DXRAM();
-		m_dxram.initialize("config/dxram.conf", true);
+		m_dxram.initialize(true);
 	}
 	
 	@Override

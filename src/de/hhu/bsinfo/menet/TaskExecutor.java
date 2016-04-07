@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -41,7 +42,6 @@ public final class TaskExecutor {
 
 		m_taskMapLock = new ReentrantLock(false);
 
-		NetworkHandler.ms_logger.info(getClass().getSimpleName(), m_name + ": Initialising " + p_threads + " threads");
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
 	}
 
@@ -69,7 +69,7 @@ public final class TaskExecutor {
 		try {
 			m_executor.execute(p_runnable);
 		} catch (final RejectedExecutionException e) {
-			NetworkHandler.ms_logger.error(getClass().getSimpleName(), m_name + ":" + e.getMessage());
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":" + e.getMessage());
 		}
 	}
 
@@ -114,8 +114,17 @@ public final class TaskExecutor {
 	 * Initiate a graceful shutdown of the thread pool
 	 */
 	public void shutdown() {
-		NetworkHandler.ms_logger.info(getClass().getSimpleName(), "Shutdown TaskExecutor " + m_name);
 		m_executor.shutdown();
+	}
+
+	/**
+	 * Waits until thread pool is terminated
+	 * @return whether the shut-down is finished or not
+	 * @throws InterruptedException
+	 *             if awaiting termination was interrupted
+	 */
+	public boolean awaitTermination() throws InterruptedException {
+		return m_executor.awaitTermination(100, TimeUnit.MILLISECONDS);
 	}
 
 	// Classes
@@ -164,7 +173,7 @@ public final class TaskExecutor {
 			try {
 				runnable.run();
 			} catch (final Exception e) {
-				NetworkHandler.ms_logger.error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
 			} finally {
 				m_queueLock.lock();
 				// remove executed task

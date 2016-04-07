@@ -2,8 +2,7 @@ package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.JNIconsole;
-import de.hhu.bsinfo.utils.locks.JNILock;
-import de.hhu.bsinfo.utils.locks.JNIReadWriteSpinLock;
+import de.hhu.bsinfo.utils.OSValidator;
 import de.hhu.bsinfo.utils.log.Logger;
 
 /**
@@ -32,45 +31,34 @@ public class DXRAMJNIManager
 	 */
 	public void setup(final DXRAMEngine.Settings p_settings)
 	{
-		// check selected profile
-		String profile = new String();
-		profile = p_settings.getValue("JNI/Profile", String.class);
-		
-		// profile override via vm arguments
-		String profileOverride = System.getProperty("dxram.jni.profile");
-		if (profileOverride != null) {
-			profile = profileOverride;
-		}
-		
-		// no profile specified, try default
-		if (profile == null)
-		{
-			profile = "Default";
-		}
-		
-		m_logger.debug(LOG_HEADER, "Setting up JNI classes with profile '" + profile + "'..." );
+		m_logger.debug(LOG_HEADER, "Setting up JNI classes..." );
 		
 		String path;
+		String cwd = System.getProperty("user.dir");
+		String extension = null;
 		
-		path = p_settings.getValue("JNI/" + profile + "/JNILock", String.class);
-		if (path == null) {
-			m_logger.error(LOG_HEADER, "Missing path for JNILock.");
+		if (OSValidator.isUnix()) {
+			extension = "so";
+		} else if (OSValidator.isMac()) {
+			extension = "dylib";
 		} else {
-			JNILock.load(path);
+			m_logger.error(LOG_HEADER, "Non supported OS.");
+			return;
 		}
 		
-		path = p_settings.getValue("JNI/" + profile + "/JNIconsole", String.class);
+		path = p_settings.getValue("JNI/JNIconsole", String.class);
 		if (path == null) {
-			m_logger.error(LOG_HEADER, "Missing path for JNIconsole.");
-		} else {
-			JNIconsole.load(path);
+			path = cwd + "/jni/libJNIconsole." + extension;
 		}
+		m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
+		JNIconsole.load(path);
 		
-		path = p_settings.getValue("JNI/" + profile + "/JNINativeMemory", String.class);
+		path = p_settings.getValue("JNI/JNINativeMemory", String.class);
 		if (path == null) {
-			m_logger.error(LOG_HEADER, "Missing path for JNINativeMemory.");
-		} else {
-			JNINativeMemory.load(path);
+			path = cwd + "/jni/libJNINativeMemory." + extension;
 		}
+		m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
+		JNINativeMemory.load(path);
 	}
+
 }

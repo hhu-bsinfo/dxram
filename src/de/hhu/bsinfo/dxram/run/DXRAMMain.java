@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.run;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.engine.DXRAMService;
-import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxram.term.TerminalService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
@@ -14,14 +14,20 @@ import de.hhu.bsinfo.utils.main.Main;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.02.16
  *
  */
-public abstract class DXRAMMain extends Main {
+public class DXRAMMain extends Main {
 
-	private static final Argument ARG_DXRAM_CONF = new Argument("dxramConfig", "config/dxram.conf", true, "Configuration file for DXRAM");
+	private static final Argument ARG_DXRAM_TERMINAL = new Argument("dxramTerminal", "false", true, "Run the built in terminal of dxram after system launch");
 	
 	private DXRAM m_dxram = null;
-	private String m_ip = null;
-	private String m_port = null;
-	private NodeRole m_role = null;
+
+	/**
+	 * Main entry point
+	 * @param args Program arguments.
+	 */
+	public static void main(final String[] args) {
+		Main main = new DXRAMMain();
+		main.run(args);
+	}
 	
 	/**
 	 * Default constructor
@@ -34,27 +40,24 @@ public abstract class DXRAMMain extends Main {
 	
 	/**
 	 * Constructor
-	 * @param p_ip Ip address overriding the configuration value.
-	 * @param p_port Port overriding the configuration value.
-	 * @param p_role Node role overriding the configuration value.
+	 * @param p_description Override the description for main.
 	 */
-	public DXRAMMain(final String p_ip, final String p_port, final NodeRole p_role)
+	public DXRAMMain(final String p_description)
 	{
-		super("DXRAM main entry point.");
-		m_role = p_role;
+		super(p_description);
 		m_dxram = new DXRAM();
 	}
 	
 	@Override
 	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
-		p_arguments.setArgument(ARG_DXRAM_CONF);
+		p_arguments.setArgument(ARG_DXRAM_TERMINAL);
 	}
 	
 	@Override
 	protected int main(ArgumentList p_arguments) {
-		if (!m_dxram.initialize(p_arguments.getArgument(ARG_DXRAM_CONF).getValue(String.class), m_ip, m_port, m_role, true))
+		if (!m_dxram.initialize(true))
 		{
-			System.out.println("Initializing DXRAM with configuration '" + p_arguments.getArgument(ARG_DXRAM_CONF).getValue(String.class) + "' failed.");
+			System.out.println("Initializing DXRAM failed.");
 			return -1;
 		}
 		
@@ -66,7 +69,29 @@ public abstract class DXRAMMain extends Main {
 	 * @param p_arguments Arguments provided by the application.
 	 * @return Exit code of the application.
 	 */
-	protected abstract int mainApplication(final ArgumentList p_arguments);
+	protected int mainApplication(final ArgumentList p_arguments)
+	{
+		boolean runTerminal = p_arguments.getArgument(ARG_DXRAM_TERMINAL).getValue(Boolean.class);
+		
+		if (runTerminal) {
+			System.out.println("DXRAM Terminal started.");
+			
+			if (!runTerminal()) {
+				return -1;
+			} else {
+				return 0;
+			}
+		} else {
+			System.out.println("DXRAM started");
+			
+			while (true) {
+				// Wait a moment
+				try {
+					Thread.sleep(3000);
+				} catch (final InterruptedException e) {}
+			}
+		}
+	}
 	
 	/**
 	 * Get a service from DXRAM.
@@ -85,5 +110,20 @@ public abstract class DXRAMMain extends Main {
 	protected DXRAM getDXRAM()
 	{
 		return m_dxram;
+	}
+	
+	/**
+	 * Run the built in terminal. The calling thread will be used for this.
+	 * @return True if execution was successful and finished, false if starting the terminal failed.
+	 */
+	protected boolean runTerminal() {
+		TerminalService term = getService(TerminalService.class);
+		if (term == null) {
+			System.out.println("ERROR: Cannot run terminal, missing service.");
+			return false;
+		}
+		
+		term.loop();
+		return true;
 	}
 }

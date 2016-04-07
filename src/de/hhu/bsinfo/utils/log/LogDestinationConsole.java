@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.utils.log;
 
 import java.text.SimpleDateFormat;
@@ -6,13 +7,12 @@ import java.util.Date;
 /**
  * Implementation to log to the console.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
- *
  */
 public class LogDestinationConsole implements LogDestination {
 
 	private LogLevel m_logLevel = LogLevel.DEBUG;
 	private long m_timeMsStarted = 0;
-	
+
 	@Override
 	public void setLogLevel(LogLevel p_level) {
 		m_logLevel = p_level;
@@ -39,7 +39,10 @@ public class LogDestinationConsole implements LogDestination {
 			str += "[" + p_header + "] ";
 			str += p_message;
 			if (p_exception != null) {
-				str += " ##### " + p_exception + " #####";
+				str += "\n##### " + p_exception + "\n";
+				for (StackTraceElement ste : p_exception.getStackTrace()) {
+					str += "#### " + ste + "\n";
+				}
 			}
 			System.out.println(str);
 		}

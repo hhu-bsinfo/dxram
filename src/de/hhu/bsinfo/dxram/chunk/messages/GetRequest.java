@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 import java.nio.ByteBuffer;
@@ -33,18 +34,18 @@ public class GetRequest extends AbstractRequest {
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.
-	 * @param p_dataStructure
+	 * @param p_dataStructures
 	 *            Data structure with the ID of the chunk to get.
 	 */
 	public GetRequest(final short p_destination, final DataStructure... p_dataStructures) {
 		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
 
 		m_dataStructure = p_dataStructures;
-		
+
 		byte tmpCode = getStatusCode();
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
 	}
-	
+
 	/**
 	 * Get the chunk IDs of this request (when receiving it).
 	 * @return Chunk ID.
@@ -52,21 +53,21 @@ public class GetRequest extends AbstractRequest {
 	public long[] getChunkIDs() {
 		return m_chunkIDs;
 	}
-	
+
 	/**
 	 * Get the data structures stored with this request.
 	 * This is used to write the received data to the provided object to avoid
 	 * using multiple buffers.
 	 * @return Data structures to store data to when the response arrived.
 	 */
-	DataStructure[] getDataStructures() {
+	public DataStructure[] getDataStructures() {
 		return m_dataStructure;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructure.length);
-		
+
 		for (DataStructure dataStructure : m_dataStructure) {
 			p_buffer.putLong(dataStructure.getID());
 		}
@@ -75,7 +76,7 @@ public class GetRequest extends AbstractRequest {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		int numChunks = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
-		
+
 		m_chunkIDs = new long[numChunks];
 		for (int i = 0; i < m_chunkIDs.length; i++) {
 			m_chunkIDs[i] = p_buffer.getLong();

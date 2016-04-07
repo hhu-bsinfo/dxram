@@ -14,28 +14,55 @@ import java.nio.channels.SocketChannel;
 final class NIOInterface {
 
 	// Attributes
-	private static ByteBuffer m_readBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.SEND_BYTES);
-	private static ByteBuffer m_writeBuffer = ByteBuffer.allocateDirect(NIOConnectionCreator.SEND_BYTES);
+	private int m_incomingBufferSize;
+	private int m_outgoingBufferSize;
+	private int m_flowControlWindowSize;
+
+	private ByteBuffer m_readBuffer;
+	private ByteBuffer m_writeBuffer;
 
 	/**
-	 * Hidden constructor as this class only contains static members and methods
+	 * Creates an instance of NIOInterface
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	private NIOInterface() {}
+	NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) {
+		m_incomingBufferSize = p_incomingBufferSize;
+		m_outgoingBufferSize = p_outgoingBufferSize;
+		m_flowControlWindowSize = p_flowControlWindowSize;
+
+		m_readBuffer = ByteBuffer.allocateDirect(p_incomingBufferSize);
+		m_writeBuffer = ByteBuffer.allocateDirect(m_outgoingBufferSize);
+	}
 
 	/**
 	 * Creates a new connection
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_taskExecutor
+	 *            the task executor
+	 * @param p_messageDirectory
+	 *            the message directory
 	 * @param p_channel
 	 *            the channel of the connection
 	 * @param p_nioSelector
 	 *            the NIOSelector
+	 * @param p_numberOfBuffers
+	 *            the number of buffers to schedule
 	 * @throws IOException
 	 *             if the connection could not be created
 	 * @return the new NIOConnection
 	 */
-	protected static NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory, final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers) throws IOException {
+	protected NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+			final MessageDirectory p_messageDirectory, final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers)
+			throws IOException {
 		NIOConnection connection = null;
 		ByteBuffer buffer;
-		
+
 		m_readBuffer.clear();
 
 		if (p_channel.read(m_readBuffer) == -1) {
@@ -44,7 +71,8 @@ final class NIOInterface {
 		} else {
 			m_readBuffer.flip();
 
-			connection = new NIOConnection(m_readBuffer.getShort(), p_nodeMap, p_taskExecutor, p_messageDirectory, p_channel, p_nioSelector, p_numberOfBuffers);
+			connection = new NIOConnection(m_readBuffer.getShort(), p_nodeMap, p_taskExecutor, p_messageDirectory, p_channel, p_nioSelector, p_numberOfBuffers,
+					m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 			p_channel.register(p_nioSelector.getSelector(), SelectionKey.OP_READ, connection);
 
 			if (m_readBuffer.hasRemaining()) {
@@ -68,39 +96,34 @@ final class NIOInterface {
 	 *             if the data could not be read
 	 * @return whether reading from channel was successful or not (connection is closed then)
 	 */
-	protected static boolean read(final NIOConnection p_connection) throws IOException {
+	protected boolean read(final NIOConnection p_connection) throws IOException {
 		boolean ret = true;
-		ByteBuffer buffer;
 		long readBytes = 0;
+		ByteBuffer buffer;
 
-		try {
-			m_readBuffer.clear();
-			while (m_readBuffer.position() + NIOConnectionCreator.INCOMING_BUFFER_SIZE <= m_readBuffer.capacity()) {
-				m_readBuffer.limit(m_readBuffer.position() + NIOConnectionCreator.INCOMING_BUFFER_SIZE);
-
-				try {
-					readBytes = p_connection.getChannel().read(m_readBuffer);
-				} catch (final ClosedChannelException e) {
-					// Channel is closed -> ignore
-					break;
-				}
-				if (readBytes == -1) {
-					ret = false;
-					break;
-				} else if (readBytes == 0 && m_readBuffer.position() != 0) {
-					m_readBuffer.limit(m_readBuffer.position());
-					m_readBuffer.position(0);
-
-					buffer = ByteBuffer.allocate(m_readBuffer.limit());
-					buffer.put(m_readBuffer);
-					buffer.flip();
-					p_connection.addIncoming(buffer);
-					break;
-				}
+		m_readBuffer.clear();
+		while (true) {
+			try {
+				readBytes = p_connection.getChannel().read(m_readBuffer);
+			} catch (final ClosedChannelException e) {
+				// Channel is closed -> ignore
+				break;
 			}
-		} catch (final IOException e) {
-			System.out.println("WARN::Could not read from channel (" + p_connection.getDestination() + ")");
-			throw e;
+			if (readBytes == -1) {
+				// Connection closed
+				ret = false;
+				break;
+			} else if (readBytes == 0 && m_readBuffer.position() != 0) {
+				// There is nothing more to read at the moment
+				m_readBuffer.flip();
+				buffer = ByteBuffer.allocate(m_readBuffer.limit());
+				buffer.put(m_readBuffer);
+				buffer.rewind();
+
+				p_connection.addIncoming(buffer);
+
+				break;
+			}
 		}
 
 		return ret;
@@ -110,66 +133,52 @@ final class NIOInterface {
 	 * Writes to the given connection
 	 * @param p_connection
 	 *            the connection
+	 * @return whether all data could be written or data is left
 	 * @throws IOException
 	 *             if the data could not be written
 	 */
-	protected static void write(final NIOConnection p_connection) throws IOException {
-		int length = 0;
+	protected boolean write(final NIOConnection p_connection) throws IOException {
+		boolean ret = true;
 		int bytes;
 		int size;
-		ByteBuffer view;
 		ByteBuffer buffer;
+		ByteBuffer view;
+		ByteBuffer slice;
+		ByteBuffer buf;
 
-		buffer = p_connection.getOutgoingBytes(m_writeBuffer, NIOConnectionCreator.SEND_BYTES);
-		try {
-			if (buffer != null) {
-				if (buffer.remaining() > NIOConnectionCreator.SEND_BYTES) {
-					// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
-					// the length of the actual written data -> simulate a smaller buffer by slicing it
-					outerloop: while (buffer.remaining() > 0) {
-						size = Math.min(buffer.remaining(), NIOConnectionCreator.SEND_BYTES);
-						view = buffer.slice();
-						view.limit(size);
+		buffer = p_connection.getOutgoingBytes(m_writeBuffer, m_outgoingBufferSize);
+		if (buffer != null) {
+			if (buffer.remaining() > m_outgoingBufferSize) {
+				// The write-Method for NIO SocketChannels is very slow for large buffers to write regardless of
+				// the length of the actual written data -> simulate a smaller buffer by slicing it
+				outerloop: while (buffer.remaining() > 0) {
+					size = Math.min(buffer.remaining(), m_outgoingBufferSize);
+					view = buffer.slice();
+					view.limit(size);
 
-						length = view.remaining();
-						int tries = 0;
-						while (length > 0) {
-							try {
-								bytes = p_connection.getChannel().write(view);
-								length -= bytes;
-
-								if (bytes == 0) {
-									if (++tries == 1000000) {
-										System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
-										buffer.position(buffer.position() + size - length);
-										view = buffer.slice();
-										p_connection.addBuffer(view);
-
-										break outerloop;
-									}
-								} else {
-									tries = 0;
-								}
-							} catch (final ClosedChannelException e) {
-								// Channel is closed -> ignore
-								break;
-							}
-						}
-						buffer.position(buffer.position() + size);
-					}
-				} else {
-					length = buffer.remaining();
 					int tries = 0;
-					while (length > 0) {
+					while (view.remaining() > 0) {
 						try {
-							bytes = p_connection.getChannel().write(buffer);
-							length -= bytes;
-
+							bytes = p_connection.getChannel().write(view);
 							if (bytes == 0) {
-								if (++tries == 1000000) {
-									System.out.println("Cannot write buffer because receive buffer has not been read for a while.");
-									p_connection.addBuffer(buffer);
-									break;
+								if (++tries == 1000) {
+									// Read-buffer on the other side is full. Abort writing and schedule buffer for next
+									// write
+									buffer.position(buffer.position() + size - view.remaining());
+
+									if (buffer == m_writeBuffer) {
+										// Copy buffer to avoid manipulation of scheduled data
+										slice = buffer.slice();
+										buf = ByteBuffer.allocateDirect(slice.remaining());
+										buf.put(slice);
+										buf.rewind();
+
+										p_connection.addBuffer(buf);
+									} else {
+										p_connection.addBuffer(buffer);
+									}
+									ret = false;
+									break outerloop;
 								}
 							} else {
 								tries = 0;
@@ -179,13 +188,44 @@ final class NIOInterface {
 							break;
 						}
 					}
+					buffer.position(buffer.position() + size);
 				}
-				// ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
+			} else {
+				int tries = 0;
+				while (buffer.remaining() > 0) {
+					try {
+						bytes = p_connection.getChannel().write(buffer);
+						if (bytes == 0) {
+							if (++tries == 1000) {
+								// Read-buffer on the other side is full. Abort writing and schedule buffer for next
+								// write
+								if (buffer == m_writeBuffer) {
+									// Copy buffer to avoid manipulation of scheduled data
+									slice = buffer.slice();
+									buf = ByteBuffer.allocateDirect(slice.remaining());
+									buf.put(slice);
+									buf.rewind();
+
+									p_connection.addBuffer(buf);
+								} else {
+									p_connection.addBuffer(buffer);
+								}
+								ret = false;
+								break;
+							}
+						} else {
+							tries = 0;
+						}
+					} catch (final ClosedChannelException e) {
+						// Channel is closed -> ignore
+						break;
+					}
+				}
 			}
-		} catch (final IOException e) {
-			System.out.println("WARN::Could not write to channel (" + p_connection.getDestination() + ")");
-			throw e;
+			// ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
 		}
+
+		return ret;
 	}
 
 	/**

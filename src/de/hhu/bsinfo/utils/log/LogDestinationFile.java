@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.utils.log;
 
 import java.io.File;
@@ -16,15 +17,15 @@ public class LogDestinationFile implements LogDestination {
 	private long m_timeMsStarted = 0;
 	private File m_logFile = null;
 	private FileWriter m_logWriter = null;
-	
+
 	public LogDestinationFile(final String p_pathLogFile, boolean p_backupOld)
-	{		
+	{
 		m_logFile = new File(p_pathLogFile);
 		String pathWithoutExt = p_pathLogFile.substring(0, p_pathLogFile.lastIndexOf("."));
 		String ext = p_pathLogFile.substring(p_pathLogFile.lastIndexOf(".") + 1);
-		
+
 		// backup old log file
-		if (m_logFile.exists() && p_backupOld) 
+		if (m_logFile.exists() && p_backupOld)
 		{
 			// test for .i names until a name is found that does not exist
 			int i = 0;
@@ -34,8 +35,8 @@ public class LogDestinationFile implements LogDestination {
 			}
 			m_logFile.renameTo(f);
 		}
-		
-		// create log file if it does not exist 
+
+		// create log file if it does not exist
 		if (!m_logFile.exists()) {
 			try {
 				m_logFile.createNewFile();
@@ -43,15 +44,15 @@ public class LogDestinationFile implements LogDestination {
 				System.out.println("ERROR: Could not create logfile! Reason: " + e.getMessage());
 			}
 		}
-		
+
 		// initialize writer
 		try {
 			m_logWriter = new FileWriter(m_logFile);
 		} catch (IOException e) {
 			System.out.println("ERROR: Could not get Writer for logfile! Reason: " + e.getMessage());
-		}		
+		}
 	}
-	
+
 	@Override
 	public void setLogLevel(LogLevel p_level) {
 		m_logLevel = p_level;
@@ -84,7 +85,10 @@ public class LogDestinationFile implements LogDestination {
 			str += "[" + p_header + "] ";
 			str += p_message;
 			if (p_exception != null) {
-				str += " ##### " + p_exception + " #####";
+				str += "\n##### " + p_exception + "\n";
+				for (StackTraceElement ste : p_exception.getStackTrace()) {
+					str += "#### " + ste + "\n";
+				}
 			}
 			try {
 				m_logWriter.append(str + "\n");
@@ -109,7 +113,7 @@ public class LogDestinationFile implements LogDestination {
 		} catch (IOException e) {
 			// don't care if that goes wrong
 			System.out.println("ERROR: Flushing and closing log writer failed: " + e.getMessage());
-		}	
+		}
 	}
 
 }

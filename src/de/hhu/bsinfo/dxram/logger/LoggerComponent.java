@@ -22,7 +22,6 @@ import de.hhu.bsinfo.utils.log.LoggerInterface;
  */
 public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 {
-	private LogLevel m_defaultLogLevel = LogLevel.DISABLED;
 	private Map<String, LogLevel> m_logLevels = new HashMap<String, LogLevel>();
 	
 	/**
@@ -47,7 +46,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
@@ -64,7 +63,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
@@ -80,7 +79,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
@@ -97,7 +96,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
@@ -113,7 +112,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
@@ -130,7 +129,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
@@ -146,7 +145,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
@@ -163,7 +162,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
@@ -179,7 +178,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
@@ -196,7 +195,7 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 	{
 		LogLevel logLevel = m_logLevels.get(clazz.getSimpleName());
 		if (logLevel == null) {
-			logLevel = m_defaultLogLevel;
+			logLevel = LogLevel.TRACE;
 		}
 		
 		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
@@ -207,13 +206,12 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 
 	@Override
 	protected void registerDefaultSettingsComponent(Settings p_settings) {
-		p_settings.setDefaultValue(LoggerConfigurationValues.Component.LOG_LEVEL);
+		
 	}
 
 	@Override
 	protected boolean initComponent(DXRAMEngine.Settings p_engineSettings,
 			Settings p_settings) {		
-		m_defaultLogLevel = LogLevel.toLogLevel(p_settings.getValue(LoggerConfigurationValues.Component.LOG_LEVEL));
 		
 		// get further configuration values for 
 		Map<Integer, String> classNames = p_settings.getValues("Class/Name", String.class);
@@ -239,61 +237,111 @@ public class LoggerComponent extends DXRAMComponent implements LoggerInterface
 
 	@Override
 	public void error(String p_header, String p_msg) {
-		if (LogLevel.ERROR.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
 			getLogger().error(p_header, p_msg);
 	}
 
 	@Override
 	public void error(String p_header, String p_msg, Exception p_e) {
-		if (LogLevel.ERROR.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.ERROR.ordinal() <= logLevel.ordinal())
 			getLogger().error(p_header, p_msg, p_e);
 	}
 
 	@Override
 	public void warn(String p_header, String p_msg) {
-		if (LogLevel.WARN.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
 			getLogger().warn(p_header, p_msg);
 	}
 
 	@Override
 	public void warn(String p_header, String p_msg, Exception p_e) {
-		if (LogLevel.WARN.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.WARN.ordinal() <= logLevel.ordinal())
 			getLogger().warn(p_header, p_msg, p_e);
 	}
 
 	@Override
 	public void info(String p_header, String p_msg) {
-		if (LogLevel.INFO.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
 			getLogger().info(p_header, p_msg);
 	}
 
 	@Override
 	public void info(String p_header, String p_msg, Exception p_e) {
-		if (LogLevel.INFO.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.INFO.ordinal() <= logLevel.ordinal())
 			getLogger().info(p_header, p_msg, p_e);
 	}
 
 	@Override
 	public void debug(String p_header, String p_msg) {
-		if (LogLevel.DEBUG.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
 			getLogger().debug(p_header, p_msg);
 	}
 
 	@Override
 	public void debug(String p_header, String p_msg, Exception p_e) {
-		if (LogLevel.DEBUG.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.DEBUG.ordinal() <= logLevel.ordinal())
 			getLogger().debug(p_header, p_msg, p_e);
 	}
 
 	@Override
 	public void trace(String p_header, String p_msg) {
-		if (LogLevel.TRACE.ordinal() <= m_defaultLogLevel.ordinal())
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
 			getLogger().trace(p_header, p_msg);
 	}
 
 	@Override
-	public void trace(String p_header, String p_msg, Exception p_e) {		
-		if (LogLevel.TRACE.ordinal() <= m_defaultLogLevel.ordinal())
+	public void trace(String p_header, String p_msg, Exception p_e) {	
+		LogLevel logLevel = m_logLevels.get(p_header);
+		if (logLevel == null) {
+			logLevel = LogLevel.TRACE;
+		}
+		
+		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal())
 			getLogger().trace(p_header, p_msg, p_e);
 	}
 

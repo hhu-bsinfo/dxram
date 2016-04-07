@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Records statistics for a number of operations. Create one recorder
@@ -122,7 +123,7 @@ public class StatisticsRecorder
 		private boolean m_enabled = true;
 		
 		// stats per thread, avoids having locks
-		private Map<Long, Stats> m_statsMap = new HashMap<Long, Stats>();
+		private Map<Long, Stats> m_statsMap = new ConcurrentHashMap<Long, Stats>();
 		
 		/**
 		 * Constructor
@@ -252,7 +253,7 @@ public class StatisticsRecorder
 		 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 		 *
 		 */
-		private static class Stats
+		public static class Stats
 		{
 			private long m_threadId = -1;
 			
