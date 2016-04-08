@@ -3,11 +3,11 @@ package de.hhu.bsinfo.dxram.chunk.tcmds;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-public class TcmdChunkRemove extends TerminalCommand {
+public class TcmdChunkRemove extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Full chunk id of the chunk to remove");
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local id of the chunk to remove. If missing node id, current node is assumed");

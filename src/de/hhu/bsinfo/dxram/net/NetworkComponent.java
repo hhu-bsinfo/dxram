@@ -17,49 +17,79 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  */
 public class NetworkComponent extends AbstractDXRAMComponent {
 
-	private LoggerComponent m_logger = null;
-	private AbstractBootComponent m_boot = null;
+	private LoggerComponent m_logger;
+	private AbstractBootComponent m_boot;
 
 	// Attributes
-	private NetworkHandler m_networkHandler = null;
+	private NetworkHandler m_networkHandler;
 	private int m_requestTimeoutMs = -1;
 
+	/**
+	 * Constructor
+	 * @param p_priorityInit
+	 *            Priority for initialization of this component.
+	 *            When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown
+	 *            Priority for shutting down this component.
+	 *            When choosing the order, consider component dependencies here.
+	 */
 	public NetworkComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
 	// --------------------------------------------------------------------------------------
 
+	/**
+	 * Activates the connection manager
+	 */
 	public void activateConnectionManager() {
 		m_networkHandler.activateConnectionManager();
 	}
 
+	/**
+	 * Deactivates the connection manager
+	 */
 	public void deactivateConnectionManager() {
 		m_networkHandler.deactivateConnectionManager();
 	}
 
+	/**
+	 * Registers a message type
+	 * @param p_type
+	 *            the unique type
+	 * @param p_subtype
+	 *            the unique subtype
+	 * @param p_class
+	 *            the calling class
+	 */
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		m_networkHandler.registerMessageType(p_type, p_subtype, p_class);
 	}
 
+	/**
+	 * Send a message.
+	 * @param p_message
+	 *            Message to send
+	 * @return NetworkErrorCode, refer to enum
+	 */
 	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
 		m_logger.trace(getClass(), "Sending message " + p_message);
 		int res = m_networkHandler.sendMessage(p_message);
 		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
 
 		switch (res) {
-		case 0:
-			errCode = NetworkErrorCodes.SUCCESS;
-			break;
-		case -1:
-			errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
-			break;
-		case -2:
-			errCode = NetworkErrorCodes.SEND_DATA;
-			break;
-		default:
-			assert 1 == 2;
-			break;
+			case 0:
+				errCode = NetworkErrorCodes.SUCCESS;
+				break;
+			case -1:
+				errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
+				break;
+			case -2:
+				errCode = NetworkErrorCodes.SEND_DATA;
+				break;
+			default:
+				assert 1 == 2;
+				break;
 		}
 
 		if (errCode != NetworkErrorCodes.SUCCESS) {
@@ -81,7 +111,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		if (err == NetworkErrorCodes.SUCCESS) {
 			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
 			if (!p_request.waitForResponses(m_requestTimeoutMs)) {
-				m_logger.error(this.getClass(), "Sending sync, waiting for responses " + p_request + " failed, timeout.");
+				m_logger.error(this.getClass(),
+						"Sending sync, waiting for responses " + p_request + " failed, timeout.");
 				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
 			} else {
 				m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
@@ -91,10 +122,24 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		return err;
 	}
 
+	/**
+	 * Registers a message receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
+	 */
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.register(p_message, p_receiver);
 	}
 
+	/**
+	 * Unregisters a message receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
+	 */
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.unregister(p_message, p_receiver);
 	}

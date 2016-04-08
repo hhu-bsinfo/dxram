@@ -8,7 +8,7 @@ import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Main entry point to start a computing pipeline with DXCompute.
@@ -24,7 +24,7 @@ public class DXComputePipeline extends DXRAMMain {
 	 * @param args Console arguments.
 	 */
 	public static void main(final String[] args) {
-		Main main = new DXComputePipeline();
+		AbstractMain main = new DXComputePipeline();
 		main.run(args);
 	}
 	

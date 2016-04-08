@@ -6,12 +6,12 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 //TODO mike refactoring: refer to chunk create/remove commands
-public class TcmdChunkPut extends TerminalCommand{
+public class TcmdChunkPut extends AbstractTerminalCommand{
 		
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Chunk ID");
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");

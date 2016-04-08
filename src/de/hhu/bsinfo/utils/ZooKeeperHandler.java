@@ -33,9 +33,17 @@ public final class ZooKeeperHandler {
 	// Constructors
 	/**
 	 * Creates an instance of ZooKeeperHandler
+	 * @param p_path
+	 *            Path in zookeeper to handle.
+	 * @param p_connection
+	 *            Connection string
+	 * @param p_timeout
+	 *            Timeout in ms
+	 * @param p_logger
+	 *            Logger for log messages
 	 */
-	public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout, final LoggerInterface p_logger)
-	{
+	public ZooKeeperHandler(final String p_path, final String p_connection, final int p_timeout,
+			final LoggerInterface p_logger) {
 		m_path = p_path;
 		m_connection = p_connection;
 		m_timeout = p_timeout;
@@ -218,7 +226,8 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	public void create(final String p_path, final byte[] p_data) throws ZooKeeperException, KeeperException, InterruptedException {
+	public void create(final String p_path, final byte[] p_data)
+			throws ZooKeeperException, KeeperException, InterruptedException {
 		create(p_path, p_data, CreateMode.PERSISTENT);
 	}
 
@@ -237,8 +246,9 @@ public final class ZooKeeperHandler {
 	 * @throws KeeperException
 	 *             if node already exists in ZooKeeper
 	 */
-	private void create(final String p_path, final byte[] p_data, final CreateMode p_mode) throws ZooKeeperException, KeeperException,
-	InterruptedException {
+	private void create(final String p_path, final byte[] p_data, final CreateMode p_mode)
+			throws ZooKeeperException, KeeperException,
+			InterruptedException {
 		assert p_path != null;
 		assert p_data != null;
 		assert p_mode != null;

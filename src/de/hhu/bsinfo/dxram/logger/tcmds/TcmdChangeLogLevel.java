@@ -1,12 +1,12 @@
 package de.hhu.bsinfo.dxram.logger.tcmds;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 
-public class TcmdChangeLogLevel extends TerminalCommand{
+public class TcmdChangeLogLevel extends AbstractTerminalCommand{
 
 	private static final Argument MS_ARG_LEVEL = new Argument("level", null, false, "available LogLevels: DISABLED ERROR WARN INFO DEBUG TRACE");
 	

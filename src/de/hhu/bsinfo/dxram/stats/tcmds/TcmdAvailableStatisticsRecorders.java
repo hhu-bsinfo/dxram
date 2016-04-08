@@ -3,10 +3,10 @@ package de.hhu.bsinfo.dxram.stats.tcmds;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
-public class TcmdAvailableStatisticsRecorders extends TerminalCommand{
+public class TcmdAvailableStatisticsRecorders extends AbstractTerminalCommand{
 
 	@Override
 	public String getName() {

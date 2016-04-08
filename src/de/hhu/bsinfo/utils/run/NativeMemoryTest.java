@@ -6,7 +6,7 @@ import java.util.Random;
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Test and verify if the native memory implementation is working correctly 
@@ -14,7 +14,7 @@ import de.hhu.bsinfo.utils.main.Main;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  *
  */
-public class NativeMemoryTest extends Main {
+public class NativeMemoryTest extends AbstractMain {
 
 	public static final Argument ARG_JNI_PATH = new Argument("jniPath", null, false, "Path to JNI file with native memory implementation");
 	
@@ -23,7 +23,7 @@ public class NativeMemoryTest extends Main {
 	 * @param args Main arguments.
 	 */
 	public static void main(final String[] args) {
-		Main main = new NativeMemoryTest();
+		AbstractMain main = new NativeMemoryTest();
 		main.run(args);
 	}
 	

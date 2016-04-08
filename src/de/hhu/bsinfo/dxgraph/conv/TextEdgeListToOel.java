@@ -9,7 +9,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import de.hhu.bsinfo.utils.Pair;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 public class TextEdgeListToOel extends Converter 
 {
@@ -18,7 +18,7 @@ public class TextEdgeListToOel extends Converter
 	 * @param args Console arguments.
 	 */
 	public static void main(final String[] args) {
-		Main main = new TextEdgeListToOel();
+		AbstractMain main = new TextEdgeListToOel();
 		main.run(args);
 	}
 	

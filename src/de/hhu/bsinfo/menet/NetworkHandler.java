@@ -129,14 +129,16 @@ public final class NetworkHandler implements DataReceiver {
 	 * @param p_connectionTimeout
 	 *            the connection timeout
 	 */
-	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
+	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize,
+			final int p_outgoingBufferSize,
 			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 		m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
 
 		m_nodeMap = p_nodeMap;
 
 		final AbstractConnectionCreator connectionCreator =
-				new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize, p_outgoingBufferSize,
+				new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize,
+						p_outgoingBufferSize,
 						p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
@@ -168,7 +170,8 @@ public final class NetworkHandler implements DataReceiver {
 			m_messageCreatorExecutor.awaitTermination();
 			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of MessageCreator(s) successful.");
 		} catch (final InterruptedException e) {
-			m_loggerInterface.warn(getClass().getSimpleName(), "Could not wait for message creator thread pool to finish. Interrupted.");
+			m_loggerInterface.warn(getClass().getSimpleName(),
+					"Could not wait for message creator thread pool to finish. Interrupted.");
 		}
 
 		// Shutdown default message handler(s)
@@ -177,7 +180,8 @@ public final class NetworkHandler implements DataReceiver {
 			m_defaultMessageHandler.m_executor.awaitTermination();
 			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of DefaultMessageHandler(s) successful.");
 		} catch (final InterruptedException e) {
-			m_loggerInterface.warn(getClass().getSimpleName(), "Could not wait for default message handler thread pool to finish. Interrupted.");
+			m_loggerInterface.warn(getClass().getSimpleName(),
+					"Could not wait for default message handler thread pool to finish. Interrupted.");
 		}
 
 		// Shutdown exclusive message handler
@@ -187,7 +191,8 @@ public final class NetworkHandler implements DataReceiver {
 			m_exclusiveMessageHandler.join();
 			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of ExclusiveMessageHandler successful.");
 		} catch (final InterruptedException e) {
-			m_loggerInterface.warn(getClass().getSimpleName(), "Could not wait for exclusive message handler to finish. Interrupted.");
+			m_loggerInterface.warn(getClass().getSimpleName(),
+					"Could not wait for exclusive message handler to finish. Interrupted.");
 		}
 
 		// Close connection manager (shuts down selector thread, too)
@@ -461,7 +466,6 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		@Override
-		@SuppressWarnings("null")
 		public void run() {
 			AbstractMessage message = null;
 			Entry entry;

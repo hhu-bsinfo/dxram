@@ -4,12 +4,12 @@ import java.util.List;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-public class TcmdNodeList extends TerminalCommand {
+public class TcmdNodeList extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_NODE_ROLE = new Argument("role", null, true, "Filter list by role if specified");
 	

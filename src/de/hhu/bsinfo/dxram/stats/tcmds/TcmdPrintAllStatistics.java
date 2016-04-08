@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxram.stats.tcmds;
 
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -8,7 +8,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 
-public class TcmdPrintAllStatistics extends TerminalCommand{
+public class TcmdPrintAllStatistics extends AbstractTerminalCommand{
 
 	private static final Argument MS_ARG_STAT = new Argument("by-class", null, true, "filter statistics by class name");
 	

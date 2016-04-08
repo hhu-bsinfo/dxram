@@ -55,25 +55,27 @@ public class Cache<KeyType, ValueType> {
 
 	/**
 	 * Creates an instance of Cache
+	 * @param p_maxSize
+	 *            Max size of the cache
 	 * @param p_policyEnum
 	 *            the POLICY
 	 */
 	public Cache(final int p_maxSize, final POLICY p_policyEnum) {
-		
+
 		EvictionPolicy<KeyType, ValueType> policy = null;
 
 		assert p_maxSize > 0;
 		assert p_policyEnum != null;
 
 		switch (p_policyEnum) {
-		case DUMMY:
-			policy = new DummyPolicy<KeyType, ValueType>();
-			break;
-		case LRU:
-			policy = new LRUPolicy<KeyType, ValueType>();
-			break;
-		default:
-			break;
+			case DUMMY:
+				policy = new DummyPolicy<KeyType, ValueType>();
+				break;
+			case LRU:
+				policy = new LRUPolicy<KeyType, ValueType>();
+				break;
+			default:
+				break;
 		}
 
 		m_map = new HashMap<KeyType, CacheEntry<KeyType, ValueType>>();
@@ -211,6 +213,8 @@ public class Cache<KeyType, ValueType> {
 
 	/**
 	 * Enables TTL for cache entries
+	 * @param p_ttl
+	 *            ttl for the cache entries
 	 */
 	public final synchronized void enableTTL(final long p_ttl) {
 		Thread t;
@@ -553,7 +557,8 @@ public class Cache<KeyType, ValueType> {
 		 *            the current cache entries
 		 */
 		@Override
-		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
+		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry,
+				final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
 
 	}
 
@@ -623,7 +628,8 @@ public class Cache<KeyType, ValueType> {
 		 *            the current cache entries
 		 */
 		@Override
-		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry, final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
+		public void removeEntry(final CacheEntry<KeyType, ValueType> p_entry,
+				final Collection<CacheEntry<KeyType, ValueType>> p_entries) {}
 
 	}
 

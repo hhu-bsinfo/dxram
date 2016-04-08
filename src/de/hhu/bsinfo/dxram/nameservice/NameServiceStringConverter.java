@@ -12,18 +12,17 @@ import java.util.Map;
  */
 public final class NameServiceStringConverter {
 
-	// Attributes
-	private String m_nameserviceType = null;
+	private String m_nameserviceType;
 	private Map<Character, Integer> m_charMap = new HashMap<Character, Integer>();
 
-	// Constructors
 	/**
 	 * Creates an instance of StringConverter
+	 * @param p_nameserviceType
+	 *            Type of the string converter to use
 	 */
-	public NameServiceStringConverter(final String p_nameserviceType) 
-	{
+	public NameServiceStringConverter(final String p_nameserviceType) {
 		m_nameserviceType = p_nameserviceType;
-		
+
 		if (m_nameserviceType.equals("NAME")) {
 			m_charMap = new HashMap<Character, Integer>();
 			m_charMap.put('0', 1);
@@ -95,7 +94,6 @@ public final class NameServiceStringConverter {
 		}
 	}
 
-	// Methods
 	/**
 	 * Converts a String into an integer. String length is limited to 5 chars.
 	 * If the string is longer, all other characters are ignored.

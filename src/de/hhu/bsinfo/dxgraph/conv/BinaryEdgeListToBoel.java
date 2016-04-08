@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Single threaded converter, expecting edge list in binary form:
@@ -15,7 +15,7 @@ public class BinaryEdgeListToBoel extends BinaryEdgeListTo
 	 * @param args Console arguments.
 	 */
 	public static void main(final String[] args) {
-		Main main = new BinaryEdgeListToBoel();
+		AbstractMain main = new BinaryEdgeListToBoel();
 		main.run(args);
 	}
 	

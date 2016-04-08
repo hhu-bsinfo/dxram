@@ -1,13 +1,14 @@
+
 package de.hhu.bsinfo.dxram.run.nothaas;
 
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
+import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -15,86 +16,83 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Very simple/minimal benchmark to test and verify the core operations
  * of the ChunkService.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
- *
  */
-public class LinkedListBenchmark extends Main
-{
-	private static final Argument ARG_ITEM_COUNT = new Argument("itemCount", "100", true, "Number of items for the linked list");
-	
-	private DXRAM m_dxram = null;
-	private ChunkService m_chunkService = null;
-	private LocalMonitorService m_localMonitorService = null;
+public class LinkedListBenchmark extends AbstractMain {
+	private static final Argument ARG_ITEM_COUNT =
+			new Argument("itemCount", "100", true, "Number of items for the linked list");
+
+	private DXRAM m_dxram;
+	private ChunkService m_chunkService;
+	private StatisticsService m_statisticsService;
 	private Stopwatch m_stopwatch = new Stopwatch();
-	
-	/**
-	 * Java main entry point.
-	 * @param args Main arguments.
-	 */
-	public static void main(final String[] args) {
-		Main main = new LinkedListBenchmark();
-		main.run(args);
-	}
-	
+
 	/**
 	 * Constructor
 	 */
-	public LinkedListBenchmark()
-	{
+	public LinkedListBenchmark() {
 		super("Small benchmark, which creates a linked list in DXRAM and iterates it");
-		
+
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
-		m_localMonitorService = m_dxram.getService(LocalMonitorService.class);
+		m_statisticsService = m_dxram.getService(StatisticsService.class);
 	}
-	
+
+	/**
+	 * Java main entry point.
+	 * @param p_args
+	 *            Main arguments.
+	 */
+	public static void main(final String[] p_args) {
+		AbstractMain main = new LinkedListBenchmark();
+		main.run(p_args);
+	}
+
 	@Override
-	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
+	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_ITEM_COUNT);
 	}
 
 	@Override
-	protected int main(ArgumentList p_arguments) {
+	protected int main(final ArgumentList p_arguments) {
 		final int itemCount = p_arguments.getArgument(ARG_ITEM_COUNT).getValue(Integer.class);
-		
+
 		System.out.println("Creating linked list with " + itemCount + " items.");
 		m_stopwatch.start();
 		long listHead = createLinkedList(itemCount);
 		m_stopwatch.stop();
 		m_stopwatch.print("create", true);
 		System.out.println("Done creating linked list.");
-		
+
 		System.out.println("Walking linked list, head " + listHead);
 		m_stopwatch.start();
 		long itemsTouched = walkLinkedList(listHead);
 		m_stopwatch.stop();
 		m_stopwatch.print("walk", true);
 		System.out.println("Walking linked list done, total elements touched: " + itemsTouched);
-		
+
 		System.out.println("Done");
-		
-		m_localMonitorService.printStatisticsToConsole();
-		
+
+		m_statisticsService.printStatistics();
+
 		return 0;
 	}
-	
+
 	/**
 	 * Create the linked list using the ChunkService.
-	 * @param numItems Length of the linked list.
+	 * @param p_numItems
+	 *            Length of the linked list.
 	 * @return ChunkID of the root.
 	 */
-	private long createLinkedList(int numItems)
-	{	
-		LinkedListElement[] chunks = new LinkedListElement[numItems];
-		long[] chunkIDs = m_chunkService.create(8, numItems);
+	private long createLinkedList(final int p_numItems) {
+		LinkedListElement[] chunks = new LinkedListElement[p_numItems];
+		long[] chunkIDs = m_chunkService.create(8, p_numItems);
 		LinkedListElement head = null;
 		LinkedListElement previousChunk = null;
-		
-		for (int i = 0; i < chunkIDs.length; i++)
-		{
+
+		for (int i = 0; i < chunkIDs.length; i++) {
 			chunks[i] = new LinkedListElement(chunkIDs[i]);
-			if (previousChunk == null)
-			{
+			if (previousChunk == null) {
 				// init head
 				head = chunks[i];
 				previousChunk = head;
@@ -103,84 +101,82 @@ public class LinkedListBenchmark extends Main
 				previousChunk = chunks[i];
 			}
 		}
-		
+
 		// mark end
 		chunks[chunks.length - 1].setNextID(-1);
-		
-		if (m_chunkService.put(chunks) != chunks.length)
-		{
+
+		if (m_chunkService.put(chunks) != chunks.length) {
 			System.out.println("Putting linked list failed.");
 			return -1;
 		}
-		
+
 		return head.getID();
 	}
-	
+
 	/**
 	 * Walk the linked list.
-	 * @param headChunkID Head of the linked list to start at.
+	 * @param p_headChunkID
+	 *            Head of the linked list to start at.
 	 * @return Number of visited elements.
 	 */
-	private long walkLinkedList(long headChunkID)
-	{	
+	private long walkLinkedList(final long p_headChunkID) {
 		long counter = 0;
-		LinkedListElement chunk = new LinkedListElement(headChunkID);
-		if (m_chunkService.get(chunk) != 1)
-		{
+		LinkedListElement chunk = new LinkedListElement(p_headChunkID);
+		if (m_chunkService.get(chunk) != 1) {
 			System.out.println("Getting head chunk if linked list failed.");
 			return 0;
 		}
 		counter++;
-		
-		while (chunk != null)
-		{
+
+		while (chunk != null) {
 			long nextChunkID = chunk.getNextID();
-			if (nextChunkID == -1)
+			if (nextChunkID == -1) {
 				break;
+			}
 			// reuse same chunk to avoid allocations
 			chunk.setOwnID(nextChunkID);
 			m_chunkService.get(chunk);
 			counter++;
 		}
-		
+
 		return counter;
 	}
-	
+
 	/**
 	 * Simple linked list element.
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
-	 *
 	 */
-	private static class LinkedListElement implements DataStructure
-	{
+	private static class LinkedListElement implements DataStructure {
 		private long m_ownID = -1;
 		private long m_nextID = -1;
-		
+
 		/**
 		 * Constructor
-		 * @param p_ownID ChunkID of the element.
+		 * @param p_ownID
+		 *            ChunkID of the element.
 		 */
-		public LinkedListElement(final long p_ownID)
-		{
+		LinkedListElement(final long p_ownID) {
 			m_ownID = p_ownID;
 		}
-		
+
 		/**
 		 * Set the chunkID of the element.
-		 * @param p_ownID ChunkID.
+		 * @param p_ownID
+		 *            ChunkID.
 		 */
 		public void setOwnID(final long p_ownID) {
 			m_ownID = p_ownID;
 		}
-		
+
 		/**
 		 * Set the chunkID of the next element.
-		 * @param p_nextID ChunkID.
+		 * @param p_nextID
+		 *            ChunkID.
 		 */
 		public void setNextID(final long p_nextID) {
 			m_nextID = p_nextID;
 		}
-		
+
 		/**
 		 * Get the chunkID of the next element.
 		 * @return ChunkID.
@@ -188,11 +184,11 @@ public class LinkedListBenchmark extends Main
 		public long getNextID() {
 			return m_nextID;
 		}
-		
+
 		@Override
-		public int importObject(Importer p_importer, int p_size) {
+		public int importObject(final Importer p_importer, final int p_size) {
 			m_nextID = p_importer.readLong();
-			
+
 			return Long.BYTES;
 		}
 
@@ -207,7 +203,7 @@ public class LinkedListBenchmark extends Main
 		}
 
 		@Override
-		public int exportObject(Exporter p_exporter, int p_size) {
+		public int exportObject(final Exporter p_exporter, final int p_size) {
 			p_exporter.writeLong(m_nextID);
 			return Long.BYTES;
 		}
@@ -218,9 +214,9 @@ public class LinkedListBenchmark extends Main
 		}
 
 		@Override
-		public void setID(long p_id) {
+		public void setID(final long p_id) {
 			m_ownID = p_id;
 		}
-		
+
 	}
 }

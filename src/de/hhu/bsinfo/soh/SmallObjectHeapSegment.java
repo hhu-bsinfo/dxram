@@ -356,33 +356,33 @@ public final class SmallObjectHeapSegment {
 			leftMarker = readLeftPartOfMarker(address - 1);
 			leftFree = true;
 			switch (leftMarker) {
-			case 0:
-				// Left neighbor block (<= 12 byte) is free -> merge free blocks
-				// -1, length field size is 1
-				leftSize = read(address - SIZE_MARKER_BYTE - 1, 1);
-				// merge marker byte
-				leftSize += SIZE_MARKER_BYTE;
-				break;
-			case 1:
-			case 2:
-			case 3:
-			case 4:
-			case 5:
-				// Left neighbor block is free -> merge free blocks
-				leftSize = read(address - SIZE_MARKER_BYTE - leftMarker, leftMarker);
-				// skip leftSize and marker byte from address to get block offset
-				unhookFreeBlock(address - leftSize - SIZE_MARKER_BYTE);
-				// we also merge the marker byte
-				leftSize += SIZE_MARKER_BYTE;
-				break;
-			case SINGLE_BYTE_MARKER:
-				// Left byte is free -> merge free blocks
-				leftSize = 1;
-				break;
-			default:
-				leftSize = 0;
-				leftFree = false;
-				break;
+				case 0:
+					// Left neighbor block (<= 12 byte) is free -> merge free blocks
+					// -1, length field size is 1
+					leftSize = read(address - SIZE_MARKER_BYTE - 1, 1);
+					// merge marker byte
+					leftSize += SIZE_MARKER_BYTE;
+					break;
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5:
+					// Left neighbor block is free -> merge free blocks
+					leftSize = read(address - SIZE_MARKER_BYTE - leftMarker, leftMarker);
+					// skip leftSize and marker byte from address to get block offset
+					unhookFreeBlock(address - leftSize - SIZE_MARKER_BYTE);
+					// we also merge the marker byte
+					leftSize += SIZE_MARKER_BYTE;
+					break;
+				case SINGLE_BYTE_MARKER:
+					// Left byte is free -> merge free blocks
+					leftSize = 1;
+					break;
+				default:
+					leftSize = 0;
+					leftFree = false;
+					break;
 			}
 		} else {
 			// Do not merge across segments
@@ -400,33 +400,33 @@ public final class SmallObjectHeapSegment {
 			rightMarker = readRightPartOfMarker(p_address + lengthFieldSize + blockSize);
 			rightFree = true;
 			switch (rightMarker) {
-			case 0:
-				// Right neighbor block (<= 12 byte) is free -> merge free blocks
-				// + 1 to skip marker byte
-				rightSize = read(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE, 1);
-				// merge marker byte
-				rightSize += SIZE_MARKER_BYTE;
-				break;
-			case 1:
-			case 2:
-			case 3:
-			case 4:
-			case 5:
-				// Right neighbor block is free -> merge free blocks
-				// + 1 to skip marker byte
-				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
-				unhookFreeBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
-				// we also merge the marker byte
-				rightSize += SIZE_MARKER_BYTE;
-				break;
-			case 15:
-				// Right byte is free -> merge free blocks
-				rightSize = 1;
-				break;
-			default:
-				rightSize = 0;
-				rightFree = false;
-				break;
+				case 0:
+					// Right neighbor block (<= 12 byte) is free -> merge free blocks
+					// + 1 to skip marker byte
+					rightSize = read(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE, 1);
+					// merge marker byte
+					rightSize += SIZE_MARKER_BYTE;
+					break;
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5:
+					// Right neighbor block is free -> merge free blocks
+					// + 1 to skip marker byte
+					rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+					unhookFreeBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+					// we also merge the marker byte
+					rightSize += SIZE_MARKER_BYTE;
+					break;
+				case 15:
+					// Right byte is free -> merge free blocks
+					rightSize = 1;
+					break;
+				default:
+					rightSize = 0;
+					rightFree = false;
+					break;
 			}
 		} else {
 			// Do not merge across segments
@@ -632,8 +632,8 @@ public final class SmallObjectHeapSegment {
 	 *            Number of elements to read.
 	 * @return Number of elements read.
 	 */
-	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, int p_offsetArray, int p_length)
-	{
+	public int readBytes(final long p_address, final long p_offset, final byte[] p_buffer, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int bytesRead = -1;
@@ -667,8 +667,8 @@ public final class SmallObjectHeapSegment {
 	 *            Number of elements to read.
 	 * @return Number of elements read.
 	 */
-	public int readShorts(final long p_address, final long p_offset, final short[] p_buffer, int p_offsetArray, int p_length)
-	{
+	public int readShorts(final long p_address, final long p_offset, final short[] p_buffer, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int itemsRead = -1;
@@ -702,8 +702,8 @@ public final class SmallObjectHeapSegment {
 	 *            Number of elements to read.
 	 * @return Number of elements read.
 	 */
-	public int readInts(final long p_address, final long p_offset, final int[] p_buffer, int p_offsetArray, int p_length)
-	{
+	public int readInts(final long p_address, final long p_offset, final int[] p_buffer, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int itemsRead = -1;
@@ -737,8 +737,8 @@ public final class SmallObjectHeapSegment {
 	 *            Number of elements to read.
 	 * @return Number of elements read.
 	 */
-	public int readLongs(final long p_address, final long p_offset, final long[] p_buffer, int p_offsetArray, int p_length)
-	{
+	public int readLongs(final long p_address, final long p_offset, final long[] p_buffer, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int itemsRead = -1;
@@ -866,10 +866,14 @@ public final class SmallObjectHeapSegment {
 	 *            Offset to add to the address.
 	 * @param p_value
 	 *            Bytes to write.
+	 * @param p_offsetArray
+	 *            Offset within the buffer.
 	 * @param p_length
-	 *            Number of bytes to write.
+	 *            Number of elements to read.
+	 * @return Number of elements written.
 	 */
-	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray, final int p_length) {
+	public int writeBytes(final long p_address, final long p_offset, final byte[] p_value, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int bytesWritten = -1;
@@ -904,7 +908,8 @@ public final class SmallObjectHeapSegment {
 	 *            Number of elements to write.
 	 * @return Number of elements written.
 	 */
-	public int writeShorts(final long p_address, final long p_offset, final short[] p_value, final int p_offsetArray, final int p_length) {
+	public int writeShorts(final long p_address, final long p_offset, final short[] p_value, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int bytesWritten = -1;
@@ -939,7 +944,8 @@ public final class SmallObjectHeapSegment {
 	 *            Number of elements to write.
 	 * @return Number of elements written.
 	 */
-	public int writeInts(final long p_address, final long p_offset, final int[] p_value, final int p_offsetArray, final int p_length) {
+	public int writeInts(final long p_address, final long p_offset, final int[] p_value, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int bytesWritten = -1;
@@ -974,7 +980,8 @@ public final class SmallObjectHeapSegment {
 	 *            Number of elements to write.
 	 * @return Number of elements written.
 	 */
-	public int writeLongs(final long p_address, final long p_offset, final long[] p_value, final int p_offsetArray, final int p_length) {
+	public int writeLongs(final long p_address, final long p_offset, final long[] p_value, final int p_offsetArray,
+			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
 		int bytesWritten = -1;
@@ -1119,6 +1126,7 @@ public final class SmallObjectHeapSegment {
 	 * Check the segment bounds with the specified address.
 	 * @param p_address
 	 *            Address to check if within segment.
+	 * @return Dummy return for assert
 	 */
 	private boolean assertSegmentBounds(final long p_address) {
 		if (p_address < m_base || p_address > m_base + m_fullSize) {
@@ -1134,6 +1142,7 @@ public final class SmallObjectHeapSegment {
 	 *            Address to check if within bounds.
 	 * @param p_length
 	 *            Number of bytes starting at address.
+	 * @return Dummy return for assert
 	 */
 	private boolean assertSegmentBounds(final long p_address, final long p_length) {
 		if (p_address < m_base || p_address > m_base + m_fullSize
@@ -1149,6 +1158,7 @@ public final class SmallObjectHeapSegment {
 	 * Check if the specified size is within the range of the max blocksize.
 	 * @param p_size
 	 *            Size to check if not exceeding max blocksize.
+	 * @return Dummy return for assert
 	 */
 	public boolean assertSegmentMaxBlocksize(final long p_size) {
 		if (p_size > MAX_SIZE_MEMORY_BLOCK) {
@@ -1183,33 +1193,33 @@ public final class SmallObjectHeapSegment {
 
 			// Calculate the number of bytes for the length field
 			size = p_size >> 8;
-		while (size > 0) {
-			lengthFieldSize++;
+			while (size > 0) {
+				lengthFieldSize++;
 
-			size = size >> 8;
-		}
+				size = size >> 8;
+			}
 
-		// Get the corresponding list
-		listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
+			// Get the corresponding list
+			listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
 
-		// Hook block in list
-		anchor = readPointer(listOffset);
+			// Hook block in list
+			anchor = readPointer(listOffset);
 
-		// Write pointer to list and successor
-		writePointer(p_address + lengthFieldSize, listOffset);
-		writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-		if (anchor != 0) {
-			// Write pointer of successor
-			int marker;
-			marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
-			writePointer(anchor + marker, p_address);
-		}
-		// Write pointer of list
-		writePointer(listOffset, p_address);
+			// Write pointer to list and successor
+			writePointer(p_address + lengthFieldSize, listOffset);
+			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+			if (anchor != 0) {
+				// Write pointer of successor
+				int marker;
+				marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
+				writePointer(anchor + marker, p_address);
+			}
+			// Write pointer of list
+			writePointer(listOffset, p_address);
 
-		// Write length
-		write(p_address, p_size, lengthFieldSize);
-		write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+			// Write length
+			write(p_address, p_size, lengthFieldSize);
+			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
 		}
 
 		// Write right and left marker
@@ -1479,7 +1489,8 @@ public final class SmallObjectHeapSegment {
 
 		@Override
 		public String toString() {
-			return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks=" + m_freeSmall64ByteBlocks + "]";
+			return "Status [m_freeSpace=" + m_freeSpace + ", m_freeBlocks=" + m_freeBlocks + ", m_smallBlocks="
+					+ m_freeSmall64ByteBlocks + "]";
 		}
 
 	}

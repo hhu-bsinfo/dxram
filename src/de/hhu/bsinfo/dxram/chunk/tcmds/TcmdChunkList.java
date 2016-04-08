@@ -3,11 +3,11 @@ package de.hhu.bsinfo.dxram.chunk.tcmds;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-public class TcmdChunkList extends TerminalCommand{
+public class TcmdChunkList extends AbstractTerminalCommand{
 
 	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node ID");
 

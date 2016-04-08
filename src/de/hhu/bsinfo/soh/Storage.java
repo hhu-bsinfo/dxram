@@ -61,6 +61,7 @@ public interface Storage {
 	 *            Start offset in array to start writing the bytes to.
 	 * @param p_length
 	 *            Number of bytes to read from specified start.
+	 * @return Number of read elements.
 	 */
 	int readBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length);
 
@@ -74,6 +75,7 @@ public interface Storage {
 	 *            Start offset in array to start writing the shorts to.
 	 * @param p_length
 	 *            Number of shorts to read from specified start.
+	 * @return Number of read elements.
 	 */
 	int readShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length);
 
@@ -87,6 +89,7 @@ public interface Storage {
 	 *            Start offset in array to start writing the ints to.
 	 * @param p_length
 	 *            Number of ints to read from specified start.
+	 * @return Number of read elements.
 	 */
 	int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length);
 
@@ -100,6 +103,7 @@ public interface Storage {
 	 *            Start offset in array to start writing the longs to.
 	 * @param p_length
 	 *            Number of longs to read from specified start.
+	 * @return Number of read elements.
 	 */
 	int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length);
 
@@ -145,6 +149,7 @@ public interface Storage {
 	 *            Offset in array to start reading the data from.
 	 * @param p_length
 	 *            Number of elements to write.
+	 * @return Number of written elements
 	 */
 	int writeBytes(final long p_ptr, final byte[] p_array, final int p_arrayOffset, final int p_length);
 
@@ -158,6 +163,7 @@ public interface Storage {
 	 *            Offset in array to start reading the data from.
 	 * @param p_length
 	 *            Number of elements to write.
+	 * @return Number of written elements
 	 */
 	int writeShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length);
 
@@ -171,6 +177,7 @@ public interface Storage {
 	 *            Offset in array to start reading the data from.
 	 * @param p_length
 	 *            Number of elements to write.
+	 * @return Number of written elements
 	 */
 	int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length);
 
@@ -184,6 +191,7 @@ public interface Storage {
 	 *            Offset in array to start reading the data from.
 	 * @param p_length
 	 *            Number of elements to write.
+	 * @return Number of written elements
 	 */
 	int writeLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length);
 

@@ -1,11 +1,11 @@
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-public class TcmdChunkCreate extends TerminalCommand {
+public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_SIZE = new Argument("size", null, false, "Size of the chunk to create");
 	private static final Argument MS_ARG_NODEID = new Argument("nodeid", null, true, "Node id of the peer to create the chunk on. If not specified, creates chunk on current node");

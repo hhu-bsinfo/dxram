@@ -2,12 +2,12 @@ package de.hhu.bsinfo.dxram.boot.tcmds;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 // get information about current node on or another remote node
-public class TcmdNodeInfo extends TerminalCommand {
+public class TcmdNodeInfo extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_NODE_ID = new Argument("nodeid", null, true, "If specified, gets information of this node, otherwise current node");
 	

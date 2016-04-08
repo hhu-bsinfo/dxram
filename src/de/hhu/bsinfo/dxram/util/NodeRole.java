@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.util;
 
 /**
@@ -6,14 +7,14 @@ package de.hhu.bsinfo.dxram.util;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 9.12.15
  */
 public enum NodeRole {
-	
+
 	// Constants
 	PEER('P'), SUPERPEER('S'), MONITOR('M');
 
 	public static final String SUPERPEER_STR = "superpeer";
 	public static final String PEER_STR = "peer";
 	public static final String MONITOR_STR = "monitor";
-	
+
 	// Attributes
 	private char m_acronym;
 
@@ -26,13 +27,14 @@ public enum NodeRole {
 	NodeRole(final char p_acronym) {
 		m_acronym = p_acronym;
 	}
-	
+
 	/**
 	 * Get the node role from a full string.
-	 * @param p_str String to parse.
+	 * @param p_str
+	 *            String to parse.
 	 * @return Role node of string.
 	 */
-	static public NodeRole toNodeRole(final String p_str) {
+	public static NodeRole toNodeRole(final String p_str) {
 		String str = p_str.toLowerCase();
 		if (str.equals(SUPERPEER_STR) || str.equals("s")) {
 			return NodeRole.SUPERPEER;
@@ -51,16 +53,16 @@ public enum NodeRole {
 	public char getAcronym() {
 		return m_acronym;
 	}
-	
+
 	@Override
-	public String toString()
-	{
-		if (equals(PEER))
+	public String toString() {
+		if (equals(PEER)) {
 			return PEER_STR;
-		else if (equals(MONITOR))
+		} else if (equals(MONITOR)) {
 			return MONITOR_STR;
-		else
+		} else {
 			return SUPERPEER_STR;
+		}
 	}
 
 	// Methods
@@ -83,5 +85,4 @@ public enum NodeRole {
 
 		return ret;
 	}
-
 }
