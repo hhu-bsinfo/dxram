@@ -135,3 +135,10 @@ java -Ddxram.config=config/dxram-student.conf -Ddxram.config.0=config/dxram.node
 ```
 
 When running this on a distributed setup (like a cluster), make sure to adjust the network addresses.
+
+## Style guides
+If you are using eclipse as your development environment we would like you to stick to our style guide.
+In the eclipse subfolder, you can find a format template for eclipse, which
+provides you with automatic code formating. Furthermore, we are using the
+plugin Checkstyle to aid with further style rules. A configuration for Checkstyle
+can be found in the eclipse subfolder.
