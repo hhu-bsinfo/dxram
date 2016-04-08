@@ -8,7 +8,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public abstract class JobComponent extends AbstractDXRAMComponent {
+public abstract class AbstractJobComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
@@ -17,7 +17,7 @@ public abstract class JobComponent extends AbstractDXRAMComponent {
 	 * @param p_priorityShutdown Priority for shutting down this component. 
 	 * 			When choosing the order, consider component dependencies here.
 	 */
-	public JobComponent(int p_priorityInit, int p_priorityShutdown) {
+	public AbstractJobComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 

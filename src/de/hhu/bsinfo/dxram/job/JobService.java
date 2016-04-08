@@ -38,7 +38,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	private AbstractBootComponent m_boot = null;
 	private LoggerComponent m_logger = null;
-	private JobComponent m_job = null;
+	private AbstractJobComponent m_job = null;
 	private StatisticsComponent m_statistics = null;
 	private NetworkComponent m_network = null;
 	
@@ -284,7 +284,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 			Settings p_settings) {
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
-		m_job = getComponent(JobComponent.class);
+		m_job = getComponent(AbstractJobComponent.class);
 		m_statistics = getComponent(StatisticsComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		

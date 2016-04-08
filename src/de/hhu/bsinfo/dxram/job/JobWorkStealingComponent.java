@@ -12,7 +12,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public class JobWorkStealingComponent extends JobComponent implements WorkerDelegate {
+public class JobWorkStealingComponent extends AbstractJobComponent implements WorkerDelegate {
 
 	private LoggerComponent m_logger = null;
 	private AbstractBootComponent m_boot = null;
