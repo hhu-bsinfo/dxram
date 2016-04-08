@@ -5,7 +5,7 @@ import java.util.Random;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.lock.LockService;
+import de.hhu.bsinfo.dxram.lock.AbstractLockService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.Main;
@@ -23,7 +23,7 @@ public class SimpleLocalLockServiceTest extends Main {
 	
 	private DXRAM m_dxram = null;
 	private ChunkService m_chunkService = null;
-	private LockService m_lockService = null;
+	private AbstractLockService m_lockService = null;
 
 	/**
 	 * Java main entry point.
@@ -44,7 +44,7 @@ public class SimpleLocalLockServiceTest extends Main {
 		m_dxram = new DXRAM();
 		m_dxram.initialize("config/dxram.conf");
 		m_chunkService = m_dxram.getService(ChunkService.class);
-		m_lockService = m_dxram.getService(LockService.class);
+		m_lockService = m_dxram.getService(AbstractLockService.class);
 	}
 	
 	@Override
@@ -100,7 +100,7 @@ public class SimpleLocalLockServiceTest extends Main {
 	private static class LockerThread extends Thread {
 		
 		private Random m_random = new Random();
-		private LockService m_lockService = null;
+		private AbstractLockService m_lockService = null;
 		private Chunk[] m_chunks = null;
 		
 		/**
@@ -108,7 +108,7 @@ public class SimpleLocalLockServiceTest extends Main {
 		 * @param p_lockService LockService to execute lock operations on.
 		 * @param p_chunks List of chunks to lock.
 		 */
-		public LockerThread(final LockService p_lockService, final Chunk[] p_chunks) {
+		public LockerThread(final AbstractLockService p_lockService, final Chunk[] p_chunks) {
 			m_lockService = p_lockService;
 			m_chunks = p_chunks;
 		}
@@ -116,8 +116,8 @@ public class SimpleLocalLockServiceTest extends Main {
 		@Override
 		public void run() {
 			for (Chunk chunk : m_chunks) {
-				LockService.ErrorCode err = m_lockService.lock(true, 1000, chunk);
-				if (err != LockService.ErrorCode.SUCCESS) {
+				AbstractLockService.ErrorCode err = m_lockService.lock(true, 1000, chunk);
+				if (err != AbstractLockService.ErrorCode.SUCCESS) {
 					System.out.println("[Thread " + currentThread().getId() + "] Locking of chunk " + chunk + " failed: " + err);
 					continue;
 				}
@@ -132,7 +132,7 @@ public class SimpleLocalLockServiceTest extends Main {
 				}
 				
 				err = m_lockService.unlock(true, chunk);
-				if (err != LockService.ErrorCode.SUCCESS) {
+				if (err != AbstractLockService.ErrorCode.SUCCESS) {
 					System.out.println("[Thread " + currentThread().getId() + "] Unlocking chunk " + chunk + " failed: " + err);
 				} else {
 					System.out.println("[Thread " + currentThread().getId() + "] Chunk " + chunk + " unlocked.");

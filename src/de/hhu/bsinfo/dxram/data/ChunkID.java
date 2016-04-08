@@ -2,8 +2,7 @@
 package de.hhu.bsinfo.dxram.data;
 
 /**
- * Helper class for ChunkID related issues. 
- *
+ * Helper class for ChunkID related issues.
  * @author Florian Klein
  *         23.07.2013
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
@@ -23,7 +22,8 @@ public final class ChunkID {
 
 	/**
 	 * Get the CreatorID/NodeID part of the ChunkID.
-	 * @param p_chunkID ChunkID.
+	 * @param p_chunkID
+	 *            ChunkID.
 	 * @return The NodeID/CreatorID part.
 	 */
 	public static short getCreatorID(final long p_chunkID) {
@@ -43,15 +43,16 @@ public final class ChunkID {
 
 		return p_chunkID & LOCALID_BITMASK;
 	}
-	
+
 	/**
 	 * Create a full chunkID from a local and node ID.
-	 * @param p_nid Node ID part.
-	 * @param p_lid Local ID part.
+	 * @param p_nid
+	 *            Node ID part.
+	 * @param p_lid
+	 *            Local ID part.
 	 * @return Full Chunk ID.
 	 */
-	public static long getChunkID(final short p_nid, final long p_lid)
-	{
-		return ((((long) p_nid) << 48) | p_lid);
+	public static long getChunkID(final short p_nid, final long p_lid) {
+		return (((long) p_nid) << 48) | p_lid;
 	}
 }

@@ -184,7 +184,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	/**
 	 * Initialize the engine. Executes various bootstrapping tasks,
 	 * initializes components and services.
-	 * @param p_overrideIp
+	 * @param p_overrideNetworkIP
 	 *            Overriding the configuration file provided IP address (example: 127.0.0.1).
 	 * @param p_overridePort
 	 *            Overriding the configuration file provided port number (example: 22223).

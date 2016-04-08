@@ -16,10 +16,10 @@ import de.hhu.bsinfo.menet.TaskExecutor;
  */
 public class EventComponent extends AbstractDXRAMComponent {
 
-	private LoggerComponent m_logger = null;
+	private LoggerComponent m_logger;
 
-	private Map<String, ArrayList<EventListener<? extends Event>>> m_eventListener = new HashMap<>();
-	private TaskExecutor m_executor = null;
+	private Map<String, ArrayList<EventListener<? extends AbstractEvent>>> m_eventListener = new HashMap<>();
+	private TaskExecutor m_executor;
 
 	/**
 	 * Constructor
@@ -30,19 +30,20 @@ public class EventComponent extends AbstractDXRAMComponent {
 	 *            Priority for shutting down this component.
 	 *            When choosing the order, consider component dependencies here.
 	 */
-	public EventComponent(int p_priorityInit, int p_priorityShutdown) {
+	public EventComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
 	/**
 	 * Register a listener to listen to specific event.
+	 * @param <T>
+	 *            Type of the event to listen to
 	 * @param p_listener
 	 *            Listener to register.
 	 * @param p_class
 	 *            Event to listen to.
 	 */
-	public <T extends Event> void registerListener(final EventListener<T> p_listener, final Class<T> p_class)
-	{
+	public <T extends AbstractEvent> void registerListener(final EventListener<T> p_listener, final Class<T> p_class) {
 		ArrayList<EventListener<?>> listeners = m_eventListener.get(p_class.getName());
 		if (listeners == null) {
 			listeners = new ArrayList<EventListener<?>>();
@@ -50,20 +51,21 @@ public class EventComponent extends AbstractDXRAMComponent {
 		}
 
 		listeners.add(p_listener);
-		m_logger.debug(getClass(), "Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
+		m_logger.debug(getClass(),
+				"Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
 	}
 
 	/**
 	 * Fire an event.
+	 * @param <T>
+	 *            Type of event to fire.
 	 * @param p_event
 	 *            Event to fire.
 	 */
-	public <T extends Event> void fireEvent(final T p_event)
-	{
+	public <T extends AbstractEvent> void fireEvent(final T p_event) {
 		m_logger.trace(getClass(), "Event fired: " + p_event);
 		ArrayList<EventListener<?>> listeners = m_eventListener.get(p_event.getClass().getName());
-		if (listeners != null)
-		{
+		if (listeners != null) {
 			FireEvent<T> task = new FireEvent<T>(p_event, listeners);
 
 			if (m_executor != null) {
@@ -75,13 +77,14 @@ public class EventComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(Settings p_settings) {
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(EventConfigurationValues.Component.USE_EXECUTOR);
 		p_settings.setDefaultValue(EventConfigurationValues.Component.THREAD_COUNT);
 	}
 
 	@Override
-	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, Settings p_settings) {
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
+			final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 
 		if (p_settings.getValue(EventConfigurationValues.Component.USE_EXECUTOR)) {
@@ -101,7 +104,8 @@ public class EventComponent extends AbstractDXRAMComponent {
 				m_executor.awaitTermination();
 				m_logger.info(getClass().getSimpleName(), "Shutdown of EventExecutor successful.");
 			} catch (final InterruptedException e) {
-				m_logger.warn(getClass().getSimpleName(), "Could not wait for event executor thread pool to finish. Interrupted.");
+				m_logger.warn(getClass().getSimpleName(),
+						"Could not wait for event executor thread pool to finish. Interrupted.");
 			}
 			m_executor = null;
 		}
@@ -112,12 +116,14 @@ public class EventComponent extends AbstractDXRAMComponent {
 	/**
 	 * Wrapper class to execute the firing of an event i.e. the calling
 	 * of the listeners with the event fired as parameter in a separate thread.
+	 * @param <T>
+	 *            Type of the event.
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
 	 */
-	private static class FireEvent<T extends Event> implements Runnable {
+	private static class FireEvent<T extends AbstractEvent> implements Runnable {
 
-		private Event m_event = null;
-		private ArrayList<EventListener<?>> m_listener = null;
+		private AbstractEvent m_event;
+		private ArrayList<EventListener<?>> m_listener;
 
 		/**
 		 * Constructor
@@ -126,8 +132,7 @@ public class EventComponent extends AbstractDXRAMComponent {
 		 * @param p_listener
 		 *            List of listeners to receive the event.
 		 */
-		public FireEvent(final T p_event, final ArrayList<EventListener<?>> p_listener)
-		{
+		FireEvent(final T p_event, final ArrayList<EventListener<?>> p_listener) {
 			m_event = p_event;
 			m_listener = p_listener;
 		}

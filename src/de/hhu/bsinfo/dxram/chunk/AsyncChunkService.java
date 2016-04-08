@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.lock.LockComponent;
+import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -38,7 +38,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 	private LookupComponent m_lookup;
-	private LockComponent m_lock;
+	private AbstractLockComponent m_lock;
 	private StatisticsComponent m_statistics;
 	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs;
 
@@ -59,7 +59,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
-		m_lock = getComponent(LockComponent.class);
+		m_lock = getComponent(AbstractLockComponent.class);
 		m_statistics = getComponent(StatisticsComponent.class);
 		getComponent(TerminalComponent.class);
 
@@ -116,7 +116,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			m_logger.error(getClass(), "a superpeer must not put chunks");
 		}
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_putAsync,
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync,
 				p_dataStructures.length);
 
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
@@ -202,7 +202,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			}
 		}
 
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_putAsync);
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync);
 
 		if (p_dataStructures[0] == null) {
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
@@ -256,9 +256,9 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		m_statisticsRecorderIDs = new ChunkStatisticsRecorderIDs();
 		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
 
-		m_statisticsRecorderIDs.OPERATIONS.m_putAsync = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+		m_statisticsRecorderIDs.m_operations.m_putAsync = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
 				ChunkStatisticsRecorderIDs.Operations.MS_PUT_ASYNC);
-		m_statisticsRecorderIDs.OPERATIONS.m_incomingPutAsync = m_statistics.createOperation(
+		m_statisticsRecorderIDs.m_operations.m_incomingPutAsync = m_statistics.createOperation(
 				m_statisticsRecorderIDs.m_id, ChunkStatisticsRecorderIDs.Operations.MS_INCOMING_PUT_ASYNC);
 	}
 
@@ -272,7 +272,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	private void incomingPutMessage(final PutMessage p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_incomingPutAsync,
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync,
 				chunks.length);
 
 		m_memoryManager.lockAccess();
@@ -297,6 +297,6 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			}
 		}
 
-		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.OPERATIONS.m_incomingPutAsync);
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync);
 	}
 }

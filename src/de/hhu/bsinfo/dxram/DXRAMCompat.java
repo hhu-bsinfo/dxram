@@ -6,7 +6,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
-import de.hhu.bsinfo.dxram.lock.LockService;
+import de.hhu.bsinfo.dxram.lock.AbstractLockService;
 import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 
@@ -20,7 +20,7 @@ public class DXRAMCompat
 	private ChunkService m_chunkService = null;
 	private AsyncChunkService m_asyncChunkService = null;
 	private NameserviceService m_nameserviceService = null;
-	private LockService m_lockService = null;
+	private AbstractLockService m_lockService = null;
 	private LocalMonitorService m_localMonitorService = null;
 	private BootService m_bootService = null;
 	
@@ -67,7 +67,7 @@ public class DXRAMCompat
 		m_chunkService = m_dxram.getService(ChunkService.class);
 		m_asyncChunkService = m_dxram.getService(AsyncChunkService.class);
 		m_nameserviceService = m_dxram.getService(NameserviceService.class);
-		m_lockService = m_dxram.getService(LockService.class);
+		m_lockService = m_dxram.getService(AbstractLockService.class);
 		m_localMonitorService = m_dxram.getService(LocalMonitorService.class);
 		m_bootService = m_dxram.getService(BootService.class);
 	}
@@ -340,7 +340,7 @@ public class DXRAMCompat
 				// gets resized automatically, because dynamic sized data structure
 				ret = new Chunk(p_chunkID, 0);
 				
-				if (m_lockService.lock(!p_readLock, LockService.MS_TIMEOUT_UNLIMITED, ret) != LockService.ErrorCode.SUCCESS) {
+				if (m_lockService.lock(!p_readLock, AbstractLockService.MS_TIMEOUT_UNLIMITED, ret) != AbstractLockService.ErrorCode.SUCCESS) {
 					throw new DXRAMException("Locking chunk " + p_chunkID + " failed.");
 				}
 				

@@ -10,7 +10,6 @@ import de.hhu.bsinfo.menet.AbstractResponse;
  */
 public class LockResponse extends AbstractResponse {
 
-	// Constructors
 	/**
 	 * Creates an instance of LockResponse as a receiver.
 	 */

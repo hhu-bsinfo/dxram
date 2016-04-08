@@ -1,7 +1,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.event;
 
-import de.hhu.bsinfo.dxram.event.Event;
+import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
@@ -9,7 +9,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * An event for node failure
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class NodeFailureEvent extends Event {
+public class NodeFailureEvent extends AbstractEvent {
 
 	private short m_nodeID = NodeID.INVALID_ID;
 	private NodeRole m_role = NodeRole.PEER;

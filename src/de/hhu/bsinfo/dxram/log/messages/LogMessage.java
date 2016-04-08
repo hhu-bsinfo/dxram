@@ -63,7 +63,6 @@ public class LogMessage extends AbstractMessage {
 
 		m_rangeID = p_rangeID;
 		m_dataStructures = p_dataStructures;
-		;
 	}
 
 	// Getters

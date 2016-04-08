@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lock.messages;
 
 import java.nio.ByteBuffer;
@@ -13,10 +14,8 @@ import de.hhu.bsinfo.menet.AbstractMessage;
  */
 public class UnlockMessage extends AbstractMessage {
 
-	// Attributes
 	private long m_chunkID = ChunkID.INVALID_ID;
 
-	// Constructors
 	/**
 	 * Creates an instance of UnlockRequest as a receiver.
 	 */
@@ -30,14 +29,14 @@ public class UnlockMessage extends AbstractMessage {
 	 *            the destination node ID.
 	 * @param p_writeLock
 	 *            True for the write lock, false for read lock.
-	 * @param p_dataStructure
-	 * 			  Data structure to be unlocked.
+	 * @param p_chunkID
+	 *            Chunk id to unlock
 	 */
 	public UnlockMessage(final short p_destination, final boolean p_writeLock, final long p_chunkID) {
 		super(p_destination, LockMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE);
 
 		m_chunkID = p_chunkID;
-		
+
 		if (p_writeLock) {
 			setStatusCode(ChunkMessagesMetadataUtils.setWriteLockFlag(getStatusCode(), true));
 		} else {
@@ -52,18 +51,14 @@ public class UnlockMessage extends AbstractMessage {
 	public long getChunkID() {
 		return m_chunkID;
 	}
-	
+
 	/**
 	 * Get the lock operation to execute (when receiving).
 	 * @return True for write lock, false read lock.
 	 */
 	public boolean isWriteLockOperation() {
 		if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
-			if (ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode())) {
-				return false;
-			} else {
-				return true;
-			}
+			return !ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode());
 		} else {
 			assert 1 == 2;
 			return true;
