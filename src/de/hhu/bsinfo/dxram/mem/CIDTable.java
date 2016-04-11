@@ -95,7 +95,7 @@ public final class CIDTable {
 
 	/**
 	 * Get a free LID from the CIDTable
-	 * @return a free LID and version, or null if there is none
+	 * @return a free LID and version, or -1 if there is none
 	 */
 	public long getFreeLID() {
 		long ret = -1;
