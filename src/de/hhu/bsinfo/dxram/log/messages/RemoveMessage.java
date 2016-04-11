@@ -16,8 +16,6 @@ public class RemoveMessage extends AbstractMessage {
 	private byte m_rangeID;
 	private ByteBuffer m_buffer;
 
-	private int m_readBytes;
-
 	// Constructors
 	/**
 	 * Creates an instance of RemoveMessage
@@ -28,8 +26,6 @@ public class RemoveMessage extends AbstractMessage {
 		m_chunkIDs = null;
 		m_rangeID = -1;
 		m_buffer = null;
-
-		m_readBytes = 0;
 	}
 
 	/**
@@ -102,7 +98,6 @@ public class RemoveMessage extends AbstractMessage {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_buffer = p_buffer;
-		m_readBytes = p_buffer.remaining();
 	}
 
 	@Override
@@ -110,7 +105,7 @@ public class RemoveMessage extends AbstractMessage {
 		if (m_chunkIDs != null) {
 			return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.length;
 		} else {
-			return m_readBytes;
+			return 0;
 		}
 	}
 

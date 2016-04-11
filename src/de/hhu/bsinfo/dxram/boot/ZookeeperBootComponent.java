@@ -166,6 +166,26 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
+	public List<Short> getOtherOnlinePeerNodeIDs() {
+		short childID;
+		List<Short> ids = new ArrayList<Short>();
+
+		if (zookeeperPathExists("nodes/peers")) {
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/peers");
+				for (String child : children) {
+					childID = Short.parseShort(child);
+					if (childID != getNodeID()) {
+						ids.add(Short.parseShort(child));
+					}
+				}
+			} catch (final ZooKeeperException e) {}
+		}
+
+		return ids;
+	}
+
+	@Override
 	public short getNodeID() {
 		return m_nodesConfiguration.getOwnNodeID();
 	}
@@ -647,7 +667,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Create a path in zookeeper.
-	 * @param p_path Path to create.
+	 * @param p_path
+	 *            Path to create.
 	 */
 	private void zookeeperCreate(final String p_path) {
 		try {
@@ -659,7 +680,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get the status of a path.
-	 * @param p_path Path to get the status of.
+	 * @param p_path
+	 *            Path to get the status of.
 	 * @return Status of the path.
 	 */
 	private Stat zookeeperGetStatus(final String p_path) {
@@ -676,8 +698,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Delete a path in zookeeper.
-	 * @param p_path Path to delete.
-	 * @param p_version Version of the path to delete.
+	 * @param p_path
+	 *            Path to delete.
+	 * @param p_version
+	 *            Version of the path to delete.
 	 */
 	private void zookeeperDelete(final String p_path, final int p_version) {
 		try {
@@ -689,7 +713,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get data from a path.
-	 * @param p_path Path to get the data of.
+	 * @param p_path
+	 *            Path to get the data of.
 	 * @return Data stored with the path.
 	 */
 	private byte[] zookeeperGetData(final String p_path) {
@@ -706,8 +731,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get data from a path.
-	 * @param p_path Path to get the data of.
-	 * @param p_status Status of the node.
+	 * @param p_path
+	 *            Path to get the data of.
+	 * @param p_status
+	 *            Status of the node.
 	 * @return Data from the path.
 	 */
 	private byte[] zookeeperGetData(final String p_path, final Stat p_status) {
@@ -724,9 +751,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Set data for a path.
-	 * @param p_path Path to set the data for.
-	 * @param p_data Data to set.
-	 * @param p_version Version of the path.
+	 * @param p_path
+	 *            Path to set the data for.
+	 * @param p_data
+	 *            Data to set.
+	 * @param p_version
+	 *            Version of the path.
 	 * @return True if successful, false otherwise.
 	 */
 	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) {
@@ -741,7 +771,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Check if a path exists.
-	 * @param p_path Path to check.
+	 * @param p_path
+	 *            Path to check.
 	 * @return True if exists, false otherwise.
 	 */
 	private boolean zookeeperPathExists(final String p_path) {

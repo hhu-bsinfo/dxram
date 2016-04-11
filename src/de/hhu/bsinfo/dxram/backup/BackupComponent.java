@@ -257,7 +257,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 		List<Short> peers = null;
 		// Get all other online peers
-		peers = m_boot.getOnlinePeerNodeIDs();
+		peers = m_boot.getOtherOnlinePeerNodeIDs();
 		numberOfPeers = (short) peers.size();
 		/*-allPeers = new short[3];
 		allPeers[0] = -15999;

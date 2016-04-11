@@ -42,6 +42,12 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
 	public abstract List<Short> getOnlinePeerNodeIDs();
 
 	/**
+	 * Get IDs of all available (online) peer nodes except the own.
+	 * @return List of IDs of nodes available without own ID.
+	 */
+	public abstract List<Short> getOtherOnlinePeerNodeIDs();
+
+	/**
 	 * Get the node ID, which is currently assigned to this running instance.
 	 * @return Own NodeID.
 	 */
@@ -55,7 +61,8 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Get the role of another nodeID.
-	 * @param p_nodeID Node id of the node.
+	 * @param p_nodeID
+	 *            Node id of the node.
 	 * @return Role of other nodeID or null if node does not exist.
 	 */
 	public abstract NodeRole getNodeRole(final short p_nodeID);

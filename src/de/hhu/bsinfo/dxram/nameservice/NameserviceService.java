@@ -113,6 +113,14 @@ public class NameserviceService extends AbstractDXRAMService {
 	}
 
 	/**
+	 * Remove the name of a registered DataStructure from lookup.
+	 * @return the number of entries in name service
+	 */
+	public int getEntryCount() {
+		return m_lookup.getNameserviceEntryCount();
+	}
+
+	/**
 	 * Inserts the nameservice entry to chunk with LocalID 0 for backup
 	 * @param p_key
 	 *            the key
