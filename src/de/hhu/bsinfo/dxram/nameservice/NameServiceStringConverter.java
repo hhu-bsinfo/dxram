@@ -100,13 +100,19 @@ public final class NameServiceStringConverter {
 	 * @param p_name
 	 *            the String
 	 * @return the integer
+	 * @throws IllegalArgumentException
+	 *             if name is too long (longer than 5 characters)
 	 */
-	public int convert(final String p_name) {
+	public int convert(final String p_name) throws IllegalArgumentException {
 		int ret = 0;
 		int value = 0;
 		char[] chars;
 
 		if (m_nameserviceType.equals("NAME")) {
+			if (p_name.length() > 5) {
+				throw new IllegalArgumentException("String is too long! Only five characters are allowed. For greater numbers set configuration to ID");
+			}
+
 			chars = p_name.toCharArray();
 			for (int i = 0; i < 32 / 6 && i < chars.length; i++) {
 				value = m_charMap.get(chars[i]);

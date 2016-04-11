@@ -10,7 +10,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
-import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
@@ -77,8 +76,16 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 				if (chunk != null) {
 					// LOGGER.trace("Send request to " + p_target);
-					if (m_network.sendSync(new MigrationRequest(p_target, new Chunk[] {chunk})) != NetworkErrorCodes.SUCCESS) {
+					MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
+					if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 						m_logger.error(getClass(), "Could not migrate chunks");
+						return false;
+					}
+
+					MigrationResponse response = (MigrationResponse) request.getResponse();
+					if (response.getStatusCode() == -1) {
+						m_logger.error(getClass(), "Could not migrate chunks");
+						return false;
 					}
 
 					// Update superpeers
@@ -159,7 +166,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 								m_memoryManager.get(chunk);
 
 								chunks[counter] = chunk;
-								chunkIDs[counter] = chunk.getID();
+								chunkIDs[counter++] = chunk.getID();
 								size += chunk.getDataSize();
 							} else {
 								m_logger.error(getClass(), "Chunk with ChunkID " + iter + " could not be migrated");
@@ -280,16 +287,21 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 *            the MigrationRequest
 	 */
 	private void incomingMigrationRequest(final MigrationRequest p_request) {
-		m_chunk.putForeignChunks((Chunk[]) p_request.getDataStructures());
+		MigrationResponse response = new MigrationResponse(p_request);
+
+		if (!m_chunk.putForeignChunks((Chunk[]) p_request.getDataStructures())) {
+			response.setStatusCode((byte) -1);
+		}
+		m_network.sendMessage(response);
 	}
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 
 		if (p_message != null) {
-			if (p_message.getType() == ChunkMessages.TYPE) {
+			if (p_message.getType() == MigrationMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case MigrationMessages.SUBTYPE_MIGRATION_MESSAGE:
+				case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
 					incomingMigrationRequest((MigrationRequest) p_message);
 					break;
 				default:

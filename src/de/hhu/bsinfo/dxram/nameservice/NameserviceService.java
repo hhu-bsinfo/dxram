@@ -87,7 +87,16 @@ public class NameserviceService extends AbstractDXRAMService {
 	 *            Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final DataStructure p_dataStructure, final String p_name) {
-		register(p_dataStructure.getID(), p_name);
+		try {
+			final int id = m_converter.convert(p_name);
+			m_logger.trace(getClass(), "Registering chunkID 0x" + Long.toHexString(p_dataStructure.getID()) + ", name "
+					+ p_name + ", id " + id);
+
+			m_lookup.insertNameserviceEntry(id, p_dataStructure.getID());
+			insertMapping(id, p_dataStructure.getID());
+		} catch (final IllegalArgumentException e) {
+			m_logger.error(getClass(), "Lookup in name service failed", e);
+		}
 	}
 
 	/**
@@ -97,12 +106,17 @@ public class NameserviceService extends AbstractDXRAMService {
 	 * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
 	 */
 	public long getChunkID(final String p_name) {
-		final int id = m_converter.convert(p_name);
-		m_logger.trace(getClass(), "Lookup name " + p_name + ", id " + id);
+		long ret = -1;
+		try {
+			final int id = m_converter.convert(p_name);
+			m_logger.trace(getClass(), "Lookup name " + p_name + ", id " + id);
 
-		final long ret = m_lookup.getChunkIDForNameserviceEntry(id);
+			ret = m_lookup.getChunkIDForNameserviceEntry(id);
 
-		m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID 0x" + Long.toHexString(ret));
+			m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID 0x" + Long.toHexString(ret));
+		} catch (final IllegalArgumentException e) {
+			m_logger.error(getClass(), "Lookup in name service failed", e);
+		}
 
 		return ret;
 	}
