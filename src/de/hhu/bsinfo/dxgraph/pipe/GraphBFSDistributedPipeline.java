@@ -1,9 +1,9 @@
 package de.hhu.bsinfo.dxgraph.pipe;
 
 
-import de.hhu.bsinfo.dxcompute.Pipeline;
 import de.hhu.bsinfo.dxcompute.coord.SyncBarrierMasterTask;
 import de.hhu.bsinfo.dxcompute.coord.SyncBarrierSlaveTask;
+import de.hhu.bsinfo.dxcompute.old.Pipeline;
 import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSDistMultiThreaded;

@@ -3,8 +3,8 @@ package de.hhu.bsinfo.dxcompute.run;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import de.hhu.bsinfo.dxcompute.DXCompute;
-import de.hhu.bsinfo.dxcompute.Pipeline;
+import de.hhu.bsinfo.dxcompute.old.DXCompute;
+import de.hhu.bsinfo.dxcompute.old.Pipeline;
 import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;

@@ -1,9 +1,9 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import de.hhu.bsinfo.dxcompute.Task;
+import de.hhu.bsinfo.dxcompute.ms.Task2;
 import de.hhu.bsinfo.dxgraph.load.GraphLoaderResultDelegate;
 
-public abstract class GraphAlgorithm extends Task {
+public abstract class GraphAlgorithm extends Task2 {
 
 	private GraphLoaderResultDelegate m_loaderResultDelegate;
 	private long[] m_entryNodes = new long[0];

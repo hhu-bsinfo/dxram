@@ -1,5 +1,6 @@
-package de.hhu.bsinfo.dxcompute;
+package de.hhu.bsinfo.dxcompute.old;
 
+import de.hhu.bsinfo.dxcompute.ms.NullTask;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**

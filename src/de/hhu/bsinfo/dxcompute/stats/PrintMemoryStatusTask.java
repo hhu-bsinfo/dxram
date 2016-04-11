@@ -2,10 +2,10 @@ package de.hhu.bsinfo.dxcompute.stats;
 
 import java.io.PrintStream;
 
-import de.hhu.bsinfo.dxcompute.Task;
+import de.hhu.bsinfo.dxcompute.ms.Task2;
 import de.hhu.bsinfo.dxram.chunk.ChunkService.Status;
 
-public abstract class PrintMemoryStatusTask extends Task {
+public abstract class PrintMemoryStatusTask extends Task2 {
 
 	public PrintMemoryStatusTask()
 	{

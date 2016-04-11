@@ -6,10 +6,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import de.hhu.bsinfo.dxcompute.Task;
+import de.hhu.bsinfo.dxcompute.ms.Task2;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 
-public abstract class PrintStatisticsTask extends Task {
+public abstract class PrintStatisticsTask extends Task2 {
 
 	public PrintStatisticsTask()
 	{

@@ -1,8 +1,9 @@
 
-package de.hhu.bsinfo.dxcompute;
+package de.hhu.bsinfo.dxcompute.old;
 
 import java.util.Vector;
 
+import de.hhu.bsinfo.dxcompute.ms.Task2;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -21,7 +22,7 @@ public abstract class Pipeline {
 	protected BootService m_bootService = null;
 
 	private boolean m_recordTaskStatistics = false;
-	private Vector<Task> m_tasks = new Vector<Task>();
+	private Vector<Task2> m_tasks = new Vector<Task2>();
 
 	protected ArgumentList m_arguments = new ArgumentList();
 
@@ -53,7 +54,7 @@ public abstract class Pipeline {
 		}
 
 		m_loggerService.info(getClass(), "Executing pipeline with " + m_tasks.size() + " tasks...");
-		for (Task task : m_tasks) {
+		for (Task2 task : m_tasks) {
 			m_loggerService.info(getClass(), "Executing task " + task + "...");
 			task.setDXRAM(m_dxram);
 			if (!task.executeTask(m_recordTaskStatistics)) {
@@ -101,7 +102,7 @@ public abstract class Pipeline {
 	 * @param p_task
 	 *            Task to add to the pipeline.
 	 */
-	protected void pushTask(final Task p_task) {
+	protected void pushTask(final Task2 p_task) {
 		m_tasks.add(p_task);
 	}
 }

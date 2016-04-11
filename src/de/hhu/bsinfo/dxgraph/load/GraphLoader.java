@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxgraph.load;
 
-import de.hhu.bsinfo.dxcompute.Task;
+import de.hhu.bsinfo.dxcompute.ms.Task2;
 
-public abstract class GraphLoader extends Task implements GraphLoaderResultDelegate
+public abstract class GraphLoader extends Task2 implements GraphLoaderResultDelegate
 {
 	public static final String MS_DEFAULT_PATH = "DEFAULT";
 	
