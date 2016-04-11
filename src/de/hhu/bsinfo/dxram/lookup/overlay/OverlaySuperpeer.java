@@ -131,7 +131,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		m_nodeTable = new LookupTree[65536];
 		m_assignedPeersIncludingBackup = new ArrayList<Short>();
-		m_idTable = new NameserviceHashTable(1000, 0.9f);
+		m_idTable = new NameserviceHashTable(1000, 0.9f, m_logger);
 
 		m_superpeers = new ArrayList<Short>();
 		m_peers = new ArrayList<Short>();

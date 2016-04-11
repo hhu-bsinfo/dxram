@@ -99,8 +99,8 @@ public class MigrationRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLength() {
-		int length = 0;
-		length += Long.BYTES * m_dataStructures.length;
+		int length = Integer.BYTES;
+		length += (Long.BYTES + Integer.BYTES) * m_dataStructures.length;
 		for (DataStructure dataStructure : m_dataStructures) {
 			length += dataStructure.sizeofObject();
 		}

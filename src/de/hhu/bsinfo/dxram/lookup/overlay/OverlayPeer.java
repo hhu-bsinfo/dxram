@@ -303,6 +303,8 @@ public class OverlayPeer implements MessageReceiver {
 			}
 		}
 
+		// TODO: Aggregate counts and add command to service
+
 		return ret;
 	}
 

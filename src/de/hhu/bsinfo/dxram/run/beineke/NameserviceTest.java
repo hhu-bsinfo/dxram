@@ -4,27 +4,24 @@ package de.hhu.bsinfo.dxram.run.beineke;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 
 /**
- * Second test case for Cluster 2016.
- * Tests the performance of the log (without reorganization), chunk and network interfaces:
- * - One master creates new chunks until it runs out of memory. Every CHUNKS_PER_PUT chunks, the chunks are logged by calling put().
- * - Every Chunk is replicated on three backup peers.
- * - Network bandwidth is logged externally.
- * @author Kevin Beineke
- *         19.01.2016
+ * Test case for the distributed Chunk handling and nameservice.
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 11.04.2016
  */
-public final class ClusterLogTest2 {
+public final class NameserviceTest {
 
 	// Constants
 	protected static final int CHUNK_SIZE = 100;
+	protected static final int NUMBER_OF_CHUNKS = 1000;
 	protected static final int CHUNKS_PER_PUT = 100;
 
 	// Constructors
 	/**
-	 * Creates an instance of ClusterLogTest2
+	 * Creates an instance of NameserviceTest
 	 */
-	private ClusterLogTest2() {}
+	private NameserviceTest() {}
 
 	/**
 	 * Program entry point
@@ -36,9 +33,8 @@ public final class ClusterLogTest2 {
 	}
 
 	/**
-	 * The Master constantly creates new chunks and sends them automatically to backup peers if backup is enabled.
-	 * @author Kevin Beineke
-	 *         19.01.2016
+	 * The Master creates a fixed number of chunks and registers them in name service.
+	 * @author Kevin Beineke <kevin.beineke@hhu.de> 07.04.2016
 	 */
 	private static class Master {
 
@@ -53,6 +49,7 @@ public final class ClusterLogTest2 {
 		 * Starts the Master
 		 */
 		public void start() {
+			int j = 0;
 			long counter = 0;
 			long start;
 			Chunk[] chunks;
@@ -61,6 +58,7 @@ public final class ClusterLogTest2 {
 			final DXRAM dxram = new DXRAM();
 			dxram.initialize("config/dxram.conf");
 			final ChunkService chunkService = dxram.getService(ChunkService.class);
+			final NameserviceService nameService = dxram.getService(NameserviceService.class);
 
 			// Create array of Chunks
 			chunks = new Chunk[CHUNKS_PER_PUT];
@@ -70,17 +68,26 @@ public final class ClusterLogTest2 {
 			}
 
 			start = System.currentTimeMillis();
-			while (counter < 3221225472L) {
+			while (counter < NUMBER_OF_CHUNKS) {
 				// Create new chunks in MemoryManagement
 				chunkService.create(chunks);
 
 				// Store them in-memory and replicate them on backups' SSD
 				chunkService.put(chunks);
 
-				counter += CHUNKS_PER_PUT * CHUNK_SIZE;
-				// System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
+				counter += CHUNKS_PER_PUT;
+
+				for (Chunk c : chunks) {
+					nameService.register(c, (j++) + "");
+				}
 			}
-			System.out.println("Time to create 3GB payload: " + (System.currentTimeMillis() - start) + " ms");
+			System.out.println("Time to create " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
+
+			start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER_OF_CHUNKS; i++) {
+				nameService.getChunkID(i + "");
+			}
+			System.out.println("Time to get ChunkIDs of " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
 		}
 	}
 

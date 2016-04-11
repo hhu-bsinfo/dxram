@@ -8,6 +8,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -15,7 +16,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 /**
  * Component for chunk handling.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
- *
  */
 public class ChunkComponent extends AbstractDXRAMComponent {
 
@@ -24,6 +24,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
 	private LogComponent m_log;
+	private LoggerComponent m_logger;
 
 	/**
 	 * Constructor
@@ -40,7 +41,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Put a recovered chunks into local memory.
-	 * @param p_chunks Chunks to put.
+	 * @param p_chunks
+	 *            Chunks to put.
 	 */
 	public void putRecoveredChunks(final Chunk[] p_chunks) {
 
@@ -53,8 +55,10 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	 * Puts migrated or recovered Chunks
 	 * @param p_chunks
 	 *            the Chunks
+	 * @return whether storing foreign chunks was successful or not
 	 */
-	public void putForeignChunks(final Chunk[] p_chunks) {
+	public boolean putForeignChunks(final Chunk[] p_chunks) {
+		boolean ret = true;
 		byte rangeID;
 		int logEntrySize;
 		long size = 0;
@@ -68,6 +72,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 			m_memoryManager.create(chunk.getID(), chunk.getDataSize());
 			m_memoryManager.put(chunk);
+
+			m_logger.trace(getClass(), "Stored migrated chunk " + chunk + " locally");
 
 			if (m_backup.isActive()) {
 				logEntrySize = chunk.getDataSize() + m_log.getAproxHeaderSize(ChunkID.getCreatorID(chunk.getID()),
@@ -107,6 +113,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 				}
 			}
 		}
+
+		return ret;
 	}
 
 	@Override
@@ -121,6 +129,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 		m_memoryManager = getDependentComponent(MemoryManagerComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
 		m_log = getDependentComponent(LogComponent.class);
+		m_logger = getDependentComponent(LoggerComponent.class);
 
 		return true;
 	}
