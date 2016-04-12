@@ -5,7 +5,7 @@ import de.hhu.bsinfo.dxcompute.ms.ComputeMSBase;
 import de.hhu.bsinfo.dxcompute.ms.ComputeMaster;
 import de.hhu.bsinfo.dxcompute.ms.ComputeSlave;
 import de.hhu.bsinfo.dxcompute.ms.Task;
-import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -63,8 +63,12 @@ public class DXComputeMasterSlave extends DXRAMMain {
 			ComputeMaster computeMaster = new ComputeMaster(getDXRAM(), computeGroupId, false);
 
 			// TODO have this as argument to test the master slave system
+			// test1: test with null payload
+			// test2: tes twith wait payload
 			for (int i = 0; i < 10; i++) {
-				computeMaster.submitTask(new Task(new NullTaskPayload(), "Test" + i));
+				WaitTaskPayload task = new WaitTaskPayload();
+				task.setWaitTimeMs(1000);
+				computeMaster.submitTask(new Task(task, "Test" + i));
 			}
 			computeMs = computeMaster;
 		} else {

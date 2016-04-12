@@ -113,29 +113,37 @@ public class BarrierMaster implements MessageReceiver {
 	 *            Message to handle.
 	 */
 	private void incomingBarrierSlaveSignOnRequest(final BarrierSlaveSignOnRequest p_message) {
+		BarrierSlaveSignOnResponse response = new BarrierSlaveSignOnResponse(p_message, p_message.getSyncToken());
+
 		// from different sync call
 		if (p_message.getSyncToken() != m_barrierIdentifer) {
 			m_loggerService.warn(getClass(),
 					"Received barrier sign on message by slave " + NodeID.toHexString(p_message.getSource())
 							+ " with sync token " + p_message.getSyncToken() + ", does not match master token "
 							+ m_barrierIdentifer);
-			return;
-		}
-
-		BarrierSlaveSignOnResponse response = new BarrierSlaveSignOnResponse(p_message, m_barrierIdentifer);
-		NetworkErrorCodes err = m_networkService.sendMessage(response);
-		if (err != NetworkErrorCodes.SUCCESS) {
-			m_loggerService.error(getClass(), "Could not sign on slave " + NodeID.toHexString(p_message.getSource())
-					+ " sending response for sign on failed: " + err);
-		} else {
-			synchronized (m_slavesSynced) {
-				// avoid dupes
-				if (!m_slavesSynced.contains(p_message.getSource())) {
-					m_slavesSynced.add(new Pair<Short, Long>(p_message.getSource(), p_message.getData()));
-				}
+			response.setStatusCode((byte) 1);
+			NetworkErrorCodes err = m_networkService.sendMessage(response);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_loggerService.error(getClass(),
+						"Could send invalid token status to slave " + NodeID.toHexString(p_message.getSource())
+								+ ": " + err);
 			}
+		} else {
+			NetworkErrorCodes err = m_networkService.sendMessage(response);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_loggerService.error(getClass(), "Could not sign on slave " + NodeID.toHexString(p_message.getSource())
+						+ " sending response for sign on failed: " + err);
+			} else {
+				synchronized (m_slavesSynced) {
+					// avoid dupes
+					if (!m_slavesSynced.contains(p_message.getSource())) {
+						m_slavesSynced.add(new Pair<Short, Long>(p_message.getSource(), p_message.getData()));
+					}
+				}
 
-			m_loggerService.debug(getClass(), "Slave " + NodeID.toHexString(p_message.getSource()) + " has signed on.");
+				m_loggerService.debug(getClass(),
+						"Slave " + NodeID.toHexString(p_message.getSource()) + " has signed on.");
+			}
 		}
 	}
 }

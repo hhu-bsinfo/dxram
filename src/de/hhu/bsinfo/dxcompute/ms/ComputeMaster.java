@@ -17,8 +17,8 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 
 public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
@@ -30,6 +30,8 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	private AtomicInteger m_taskCount = new AtomicInteger(0);
 	private int m_executeBarrierIdentifier;
 	private BarrierMaster m_executionBarrier;
+
+	private long m_payloadIdCounter;
 
 	public ComputeMaster(final DXRAM p_dxram, final int p_computeGroupId, boolean runDedicatedThread) {
 		super(p_dxram, p_computeGroupId);
@@ -141,12 +143,16 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		// get next task
 		m_taskCount.decrementAndGet();
 		Task task = m_tasks.poll();
-		if (task.getPayload() == null) {
+		AbstractTaskPayload taskPayload = task.getPayload();
+		if (taskPayload == null) {
 			m_loggerService.error(getClass(), "Cannot proceed with task " + task + ", missing payload.");
 			m_state = State.STATE_IDLE;
 			m_joinLock.unlock();
 			return;
 		}
+
+		// set unique payload id
+		taskPayload.setPayloadId(m_payloadIdCounter++);
 
 		m_loggerService.info(getClass(),
 				"Starting execution of task " + task + " with " + m_signedOnSlaves.size() + " slaves.");
@@ -155,10 +161,12 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 		// send task to slaves
 		int numberOfSlavesOnExecution = 0;
-		m_executeBarrierIdentifier = ++m_executeBarrierIdentifier % 2;
+		m_executeBarrierIdentifier++;
 		for (Short slaveId : m_signedOnSlaves) {
+			// set incremental slave id, 0 based
+			taskPayload.setSlaveId(numberOfSlavesOnExecution);
 			// pass barrier identifier for syncing after task along
-			ExecuteTaskRequest request = new ExecuteTaskRequest(slaveId, m_executeBarrierIdentifier, task.getPayload());
+			ExecuteTaskRequest request = new ExecuteTaskRequest(slaveId, m_executeBarrierIdentifier % 2, taskPayload);
 
 			NetworkErrorCodes err = m_networkService.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
@@ -180,10 +188,12 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 			}
 		}
 
+		taskPayload.setSlaveId(-1);
+
 		m_loggerService.info(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
 
-		m_executionBarrier.execute(numberOfSlavesOnExecution, m_executeBarrierIdentifier, -1);
+		m_executionBarrier.execute(numberOfSlavesOnExecution, m_executeBarrierIdentifier % 2, -1);
 
 		m_loggerService.debug(getClass(),
 				"Syncing done.");

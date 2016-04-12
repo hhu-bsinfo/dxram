@@ -14,8 +14,8 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 
 public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 
@@ -154,10 +154,17 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		m_loggerService.info(getClass(),
 				"Starting execution of task " + m_task);
 
+		m_executeTaskLock.lock();
 		int result = m_task.execute(m_dxram);
+		m_task = null;
+		m_executeTaskLock.unlock();
 
 		m_loggerService.info(getClass(),
 				"Syncing with master " + NodeID.toHexString(m_masterNodeId) + " ...");
+
+		// set idle state before sync to avoid race condition with master sending
+		// new tasks right after the sync
+		m_state = State.STATE_IDLE;
 
 		// sync back with master and pass result to it via barrier
 		m_barrier.execute(m_masterNodeId, m_taskFinishedBarrierIdentifier, result);
@@ -165,7 +172,6 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		m_loggerService.info(getClass(),
 				"Syncing done.");
 
-		m_state = State.STATE_IDLE;
 		m_loggerService.debug(getClass(), "Entering idle state");
 	}
 

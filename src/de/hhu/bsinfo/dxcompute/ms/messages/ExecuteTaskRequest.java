@@ -51,6 +51,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
+		p_buffer.putInt(m_barrierIdentifier);
 		p_buffer.putShort(m_task.getTypeId());
 		p_buffer.putShort(m_task.getSubtypeId());
 		exporter.exportObject(m_task);
@@ -60,6 +61,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
+		m_barrierIdentifier = p_buffer.getInt();
 		short type = p_buffer.getShort();
 		short subtype = p_buffer.getShort();
 		m_task = AbstractTaskPayload.createInstance(type, subtype);
@@ -71,9 +73,9 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	@Override
 	protected final int getPayloadLength() {
 		if (m_task != null) {
-			return 2 * Short.BYTES + m_task.sizeofObject();
+			return 2 * Short.BYTES + Integer.BYTES + m_task.sizeofObject();
 		} else {
-			return 2 * Short.BYTES;
+			return 2 * Short.BYTES + Integer.BYTES;
 		}
 	}
 }

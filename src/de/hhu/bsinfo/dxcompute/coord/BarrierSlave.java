@@ -9,8 +9,8 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Counterpart for the SyncBarrierMaster, this is used on a slave node to sync
@@ -53,26 +53,34 @@ public class BarrierSlave implements MessageReceiver {
 
 		m_loggerService.debug(getClass(),
 				"Sign on request to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
-						+ p_barrierIdentifier + "...");
+						+ m_barrierIdentifer + "...");
 
 		// request for sign on and retry until we succeed
 		do {
 			BarrierSlaveSignOnRequest request =
-					new BarrierSlaveSignOnRequest(p_masterNodeId, p_barrierIdentifier, p_data);
+					new BarrierSlaveSignOnRequest(p_masterNodeId, m_barrierIdentifer, p_data);
 			NetworkErrorCodes err = m_networkService.sendSync(request);
 			if (err == NetworkErrorCodes.SUCCESS) {
 				BarrierSlaveSignOnResponse response = (BarrierSlaveSignOnResponse) request.getResponse();
-				if (response.getSyncToken() == p_barrierIdentifier) {
-					m_loggerService.debug(getClass(),
-							"Signed on to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
-									+ p_barrierIdentifier);
-					break;
+				if (response.getSyncToken() == m_barrierIdentifer) {
+					if (response.getStatusCode() == 1) {
+						m_loggerService.error(getClass(),
+								"Signed on to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
+										+ m_barrierIdentifer + " failed, invalid sync token");
+					} else {
+						m_loggerService.debug(getClass(),
+								"Signed on to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
+										+ m_barrierIdentifer);
+						break;
+					}
 				}
+			} else {
+				m_loggerService.debug(getClass(), "Sign on in progress: " + err);
 			}
 
 			try {
 				Thread.sleep(1000);
-			} catch (InterruptedException e) {}
+			} catch (final InterruptedException e) {}
 		} while (true);
 
 		while (!m_masterBarrierReleased) {
@@ -80,7 +88,7 @@ public class BarrierSlave implements MessageReceiver {
 		}
 
 		m_loggerService.debug(getClass(),
-				"Master barrier " + p_barrierIdentifier + " released, data received: " + m_barrierDataFromMaster);
+				"Master barrier " + m_barrierIdentifer + " released, data received: " + m_barrierDataFromMaster);
 
 		return true;
 	}
@@ -90,7 +98,7 @@ public class BarrierSlave implements MessageReceiver {
 	}
 
 	@Override
-	public void onIncomingMessage(AbstractMessage p_message) {
+	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
 			if (p_message.getType() == CoordinatorMessages.TYPE) {
 				switch (p_message.getSubtype()) {

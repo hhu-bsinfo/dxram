@@ -378,9 +378,10 @@ public abstract class AbstractMessage {
 	@Override
 	public final String toString() {
 		if (m_source != -1) {
-			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + NodeID.toHexString(m_source) + ", "
+					+ NodeID.toHexString(m_destination) + "]";
 		} else {
-			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_destination + "]";
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + NodeID.toHexString(m_destination) + "]";
 		}
 	}
 

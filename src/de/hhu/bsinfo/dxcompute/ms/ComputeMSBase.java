@@ -1,7 +1,6 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
-import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
@@ -44,13 +43,13 @@ public abstract class ComputeMSBase extends Thread {
 		assert m_computeGroupId >= 0 && m_computeGroupId <= 99;
 		m_nameserviceMasterNodeIdKey = new String("MAS" + m_computeGroupId);
 
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
+		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
+		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
+		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
-		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
+		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
 
 		registerTaskPayloads();

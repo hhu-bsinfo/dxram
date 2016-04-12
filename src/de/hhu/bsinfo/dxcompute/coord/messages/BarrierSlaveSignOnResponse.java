@@ -27,7 +27,7 @@ public class BarrierSlaveSignOnResponse extends AbstractResponse {
 	 *            Some custom data to pass along.
 	 */
 	public BarrierSlaveSignOnResponse(final BarrierSlaveSignOnRequest p_request, final int p_syncToken) {
-		super(p_request, CoordinatorMessages.SUBTYPE_BARRIER_SLAVE_SIGN_ON_REQUEST);
+		super(p_request, CoordinatorMessages.SUBTYPE_BARRIER_SLAVE_SIGN_ON_RESPONSE);
 
 		m_syncToken = p_syncToken;
 	}
