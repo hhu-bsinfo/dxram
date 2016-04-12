@@ -53,7 +53,8 @@ public abstract class AbstractConnection {
 	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+			final MessageDirectory p_messageDirectory,
 			final int p_flowControlWindowSize) {
 		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null, p_flowControlWindowSize);
 	}
@@ -73,7 +74,8 @@ public abstract class AbstractConnection {
 	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+			final MessageDirectory p_messageDirectory,
 			final DataReceiver p_listener, final int p_flowControlWindowSize) {
 		assert p_destination != NodeID.INVALID_ID;
 
@@ -400,7 +402,8 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final IOException e) {
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "ERROR::Could not access network connection", e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(),
+						"ERROR::Could not access network connection", e);
 			}
 		}
 
@@ -436,12 +439,16 @@ public abstract class AbstractConnection {
 					throw new IOException("Read beyond message buffer", e);
 				}
 
-				if (p_buffer.position() < message.getPayloadLength() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH) {
-					throw new IOException("Message buffer is too large");
+				int bufPos = p_buffer.position();
+				int readPayloadSize =
+						message.getPayloadLength() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH;
+				if (bufPos < readPayloadSize) {
+					throw new IOException("Message buffer is too large: " + readPayloadSize + " > " + bufPos);
 				}
 			} catch (final Exception e) {
 				if (message != null) {
-					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message: " + message, e);
+					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message: " + message,
+							e);
 				} else {
 					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
 				}
@@ -512,14 +519,14 @@ public abstract class AbstractConnection {
 
 			while (m_step != Step.DONE && p_buffer.hasRemaining()) {
 				switch (m_step) {
-				case READ_HEADER:
-					readHeader(p_buffer);
-					break;
-				case READ_PAYLOAD:
-					readPayload(p_buffer);
-					break;
-				default:
-					break;
+					case READ_HEADER:
+						readHeader(p_buffer);
+						break;
+					case READ_PAYLOAD:
+						readPayload(p_buffer);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -543,11 +550,14 @@ public abstract class AbstractConnection {
 					// Header complete
 
 					// Read payload size (copied at the end of m_headerBytes before)
-					final int payloadSize = m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+					final int payloadSize =
+							m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
 
 					// Create message buffer and copy header into (without payload size)
-					m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + payloadSize);
-					m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+					m_messageBytes = ByteBuffer
+							.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + payloadSize);
+					m_messageBytes.put(m_headerBytes.array(), 0,
+							AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
 
 					if (payloadSize == 0) {
 						// There is no payload -> message complete

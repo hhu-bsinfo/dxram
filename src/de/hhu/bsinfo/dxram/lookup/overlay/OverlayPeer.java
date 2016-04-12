@@ -39,8 +39,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.CRC16;
 
@@ -256,7 +256,9 @@ public class OverlayPeer implements MessageReceiver {
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
 			check = true;
 		}
-		while (-1 == ret) {
+		final long timeoutMs = 1000;
+		long start = System.currentTimeMillis();
+		while (System.currentTimeMillis() - start < timeoutMs) {
 			responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
 
 			if (-1 != responsibleSuperpeer) {
@@ -265,7 +267,7 @@ public class OverlayPeer implements MessageReceiver {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(200);
 					} catch (final InterruptedException e1) {}
 					continue;
 				}
@@ -384,7 +386,8 @@ public class OverlayPeer implements MessageReceiver {
 	 * @param p_primaryAndBackupPeers
 	 *            the creator and all backup peers
 	 */
-	public void initRange(final long p_firstChunkIDOrRangeID, final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
+	public void initRange(final long p_firstChunkIDOrRangeID,
+			final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
 		short responsibleSuperpeer;
 		boolean finished = false;
 
@@ -393,7 +396,8 @@ public class OverlayPeer implements MessageReceiver {
 		while (!finished) {
 			responsibleSuperpeer = m_mySuperpeer;
 
-			request = new InitRangeRequest(responsibleSuperpeer, p_firstChunkIDOrRangeID, p_primaryAndBackupPeers.convertToLong(), NO_BACKUP);
+			request = new InitRangeRequest(responsibleSuperpeer, p_firstChunkIDOrRangeID,
+					p_primaryAndBackupPeers.convertToLong(), NO_BACKUP);
 			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
@@ -459,7 +463,8 @@ public class OverlayPeer implements MessageReceiver {
 		while (true) {
 			responsibleSuperpeer = getResponsibleSuperpeer(p_owner, check);
 
-			if (m_network.sendMessage(new SetRestorerAfterRecoveryMessage(responsibleSuperpeer, p_owner)) != NetworkErrorCodes.SUCCESS) {
+			if (m_network.sendMessage(
+					new SetRestorerAfterRecoveryMessage(responsibleSuperpeer, p_owner)) != NetworkErrorCodes.SUCCESS) {
 				// Responsible superpeer is not available, try again (superpeers will be updated
 				// automatically by network thread)
 				try {
@@ -521,7 +526,8 @@ public class OverlayPeer implements MessageReceiver {
 		}
 
 		while (-1 != contactSuperpeer) {
-			m_logger.trace(getClass(), "Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + m_nodeID);
+			m_logger.trace(getClass(),
+					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + m_nodeID);
 
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_NOT_SUPERPEER);
 			if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
@@ -558,7 +564,8 @@ public class OverlayPeer implements MessageReceiver {
 		AskAboutSuccessorRequest request = null;
 		AskAboutSuccessorResponse response = null;
 
-		m_logger.trace(OverlayHelper.class, "Entering getResponsibleSuperpeer with: p_nodeID=0x" + Integer.toHexString(p_nodeID));
+		m_logger.trace(OverlayHelper.class,
+				"Entering getResponsibleSuperpeer with: p_nodeID=0x" + Integer.toHexString(p_nodeID));
 
 		m_overlayLock.lock();
 		if (!m_superpeers.isEmpty()) {
@@ -643,11 +650,11 @@ public class OverlayPeer implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
-					incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
-					break;
-				default:
-					break;
+					case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
+						incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -661,33 +668,56 @@ public class OverlayPeer implements MessageReceiver {
 	private void registerNetworkMessages() {
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST, JoinRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_JOIN_RESPONSE, JoinResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST, GetLookupRangeRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_RESPONSE, GetLookupRangeResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST, RemoveChunkIDsRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_RESPONSE, RemoveChunkIDsResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST, InsertNameserviceEntriesRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_RESPONSE, InsertNameserviceEntriesResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST,
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST,
+				GetLookupRangeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_RESPONSE,
+				GetLookupRangeResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST,
+				RemoveChunkIDsRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_RESPONSE,
+				RemoveChunkIDsResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST,
+				InsertNameserviceEntriesRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_RESPONSE,
+				InsertNameserviceEntriesResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE,
+				LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST,
 				GetChunkIDForNameserviceEntryRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_RESPONSE,
+		m_network.registerMessageType(LookupMessages.TYPE,
+				LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_RESPONSE,
 				GetChunkIDForNameserviceEntryResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST, GetNameserviceEntryCountRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE, GetNameserviceEntryCountResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST, MigrateRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE, MigrateResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST, MigrateRangeRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_RESPONSE, MigrateRangeResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST, InitRangeRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE, InitRangeResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST, GetAllBackupRangesRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE, GetAllBackupRangesResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE, SetRestorerAfterRecoveryMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST,
+				GetNameserviceEntryCountRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE,
+				GetNameserviceEntryCountResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST,
+				MigrateRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE,
+				MigrateResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST,
+				MigrateRangeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_RESPONSE,
+				MigrateRangeResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST,
+				InitRangeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_RESPONSE,
+				InitRangeResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST,
+				GetAllBackupRangesRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE,
+				GetAllBackupRangesResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE,
+				SetRestorerAfterRecoveryMessage.class);
 
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE,
+				PingSuperpeerMessage.class);
 
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST, AskAboutSuccessorRequest.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE, AskAboutSuccessorResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE, SendSuperpeersMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST,
+				AskAboutSuccessorRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE,
+				AskAboutSuccessorResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE,
+				SendSuperpeersMessage.class);
 	}
 
 	/**

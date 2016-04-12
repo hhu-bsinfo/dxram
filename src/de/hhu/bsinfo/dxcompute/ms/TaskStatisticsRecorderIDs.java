@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxcompute;
+package de.hhu.bsinfo.dxcompute.ms;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 

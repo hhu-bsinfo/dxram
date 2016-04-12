@@ -218,7 +218,8 @@ public final class NetworkHandler implements DataReceiver {
 			}
 			entry.add(p_receiver);
 
-			m_loggerInterface.info(getClass().getSimpleName(), "new MessageReceiver for " + p_message.getSimpleName());
+			m_loggerInterface.info(getClass().getSimpleName(),
+					"Added new MessageReceiver " + p_receiver + " for " + p_message.getSimpleName());
 			m_receiversLock.unlock();
 		}
 	}
@@ -239,7 +240,8 @@ public final class NetworkHandler implements DataReceiver {
 			if (entry != null) {
 				entry.remove(p_receiver);
 
-				m_loggerInterface.info(getClass().getSimpleName(), "MessageReceiver removed");
+				m_loggerInterface.info(getClass().getSimpleName(),
+						"Removed MessageReceiver " + p_receiver + " from listening to " + p_message.getSimpleName());
 			}
 			m_receiversLock.unlock();
 		}
@@ -307,7 +309,7 @@ public final class NetworkHandler implements DataReceiver {
 	 */
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
-		m_loggerInterface.trace(getClass().getSimpleName(), "NewMessage: " + p_message);
+		m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
 
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);

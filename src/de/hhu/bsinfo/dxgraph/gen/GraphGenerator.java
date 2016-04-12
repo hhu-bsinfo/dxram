@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxgraph.gen;
 
-import de.hhu.bsinfo.dxcompute.Task;
+import de.hhu.bsinfo.dxcompute.ms.Task2;
 
-public abstract class GraphGenerator extends Task
+public abstract class GraphGenerator extends Task2
 {
 	private int m_numNodes = 1;
 	

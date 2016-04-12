@@ -2,20 +2,27 @@
 package de.hhu.bsinfo.menet;
 
 /**
- * Wrapper class for a NodeID
- * @author Florian Klein
- *         23.07.2013
+ * Helper class for NodeID related issues.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public final class NodeID {
-
-	// Constants
 	public static final short INVALID_ID = -1;
 
 	public static final int MAX_ID = 65535;
 
-	// Constructors
 	/**
-	 * Creates an instance of NodeID
+	 * Utils class
 	 */
-	private NodeID() {}
+	private NodeID() {};
+
+	/**
+	 * Convert a node id to a proper string representation in hex.
+	 * @param p_nodeId
+	 *            Node id to convert.
+	 * @return Hex string of node id, example: 0x1111
+	 */
+	public static String toHexString(final short p_nodeId) {
+		int tmp = p_nodeId & 0xFFFF;
+		return "0x" + Integer.toHexString(tmp).toUpperCase();
+	}
 }

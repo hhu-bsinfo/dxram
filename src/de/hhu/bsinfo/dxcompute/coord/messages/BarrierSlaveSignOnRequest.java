@@ -3,38 +3,32 @@ package de.hhu.bsinfo.dxcompute.coord.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.AbstractRequest;
 
-/**
- * Base class for any kind of sync message used for coordination.
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.02.16
- */
-public class SyncMessage extends AbstractMessage {
+public class BarrierSlaveSignOnRequest extends AbstractRequest {
 	private int m_syncToken = -1;
 	private long m_data = -1;
 
 	/**
-	 * Creates an instance of MasterSyncBarrierBroadcastMessage.
+	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
 	 * This constructor is used when receiving this message.
 	 */
-	public SyncMessage() {
+	public BarrierSlaveSignOnRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of MasterSyncBarrierBroadcastMessage.
+	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.
-	 * @param p_subtype
-	 *            Message subtype
 	 * @param p_syncToken
 	 *            Token to correctly identify responses to a sync message
 	 * @param p_data
-	 *            Some custom data.
+	 *            Some custom data to pass along.
 	 */
-	public SyncMessage(final short p_destination, final byte p_subtype, final int p_syncToken, final long p_data) {
-		super(p_destination, CoordinatorMessages.TYPE, p_subtype);
+	public BarrierSlaveSignOnRequest(final short p_destination, final int p_syncToken, final long p_data) {
+		super(p_destination, CoordinatorMessages.TYPE, CoordinatorMessages.SUBTYPE_BARRIER_SLAVE_SIGN_ON_REQUEST);
 
 		m_syncToken = p_syncToken;
 		m_data = p_data;

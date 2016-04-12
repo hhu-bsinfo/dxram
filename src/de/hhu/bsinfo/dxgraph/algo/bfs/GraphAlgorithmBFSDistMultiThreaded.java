@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import de.hhu.bsinfo.dxcompute.coord.SyncBarrierMaster;
-import de.hhu.bsinfo.dxcompute.coord.SyncBarrierSlave;
+import de.hhu.bsinfo.dxcompute.coord.BarrierMaster;
+import de.hhu.bsinfo.dxcompute.coord.BarrierSlave;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
@@ -99,11 +99,11 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 	
 	private class Master
 	{
-		private SyncBarrierMaster m_barrier;
+		private BarrierMaster m_barrier;
 		
 		public Master()
 		{
-			m_barrier = new SyncBarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
+			m_barrier = new BarrierMaster(m_numSlaves, m_broadcastIntervalMs, m_networkService, m_bootService, m_loggerService);
 		}
 		
 		public void execute(long[] p_entryNodes)
@@ -214,7 +214,7 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 	
 	private class Slave implements MessageReceiver
 	{
-		private SyncBarrierSlave m_barrier;
+		private BarrierSlave m_barrier;
 		private volatile boolean m_globalFinishedCurLevel = false;
 		
 		private long m_totalVisitedCounter = 0;
@@ -222,7 +222,7 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 		
 		public Slave()
 		{
-			m_barrier = new SyncBarrierSlave(m_networkService, m_loggerService);
+			m_barrier = new BarrierSlave(m_networkService, m_loggerService);
 		}
 		
 		public long getTotalVisitedCounter() {

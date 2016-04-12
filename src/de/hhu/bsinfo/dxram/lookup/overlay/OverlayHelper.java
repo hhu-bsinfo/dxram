@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.util.NodeID;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Helper methods for superpeer overlay

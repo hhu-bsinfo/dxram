@@ -53,6 +53,16 @@ public final class ChunkID {
 	 * @return Full Chunk ID.
 	 */
 	public static long getChunkID(final short p_nid, final long p_lid) {
-		return (((long) p_nid) << 48) | p_lid;
+		return (((long) p_nid) << 48) | p_lid & LOCALID_BITMASK;
+	}
+
+	/**
+	 * Convert a chunk id to a hex string
+	 * @param p_chunkId
+	 *            Chunk id to convert to a hex string.
+	 * @return Converted chunk id, example: 0x1111000000000001
+	 */
+	public static String toHexString(final long p_chunkId) {
+		return "0x" + Long.toHexString(p_chunkId).toUpperCase();
 	}
 }

@@ -138,7 +138,8 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 		rand = new Random();
 		m_lock.lock();
-		dismiss = ((Entry<Short, AbstractConnection>[]) m_connections.entrySet().toArray())[rand.nextInt(m_connections.size())].getValue();
+		dismiss = ((Entry<Short, AbstractConnection>[]) m_connections.entrySet().toArray())[rand
+				.nextInt(m_connections.size())].getValue();
 
 		if (dismiss != null) {
 			dismiss.close();

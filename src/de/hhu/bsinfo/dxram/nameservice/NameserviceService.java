@@ -40,7 +40,8 @@ public class NameserviceService extends AbstractDXRAMService {
 		m_lookup = getComponent(LookupComponent.class);
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 
-		m_converter = new NameServiceStringConverter(p_settings.getValue(NameserviceConfigurationValues.Component.TYPE));
+		m_converter =
+				new NameServiceStringConverter(p_settings.getValue(NameserviceConfigurationValues.Component.TYPE));
 
 		m_indexData = new NameServiceIndexData();
 
@@ -63,6 +64,22 @@ public class NameserviceService extends AbstractDXRAMService {
 	}
 
 	/**
+	 * Register a chunk id for a specific name.
+	 * @param p_chunkId
+	 *            Chunk id to register.
+	 * @param p_name
+	 *            Name to associate with the ID of the DataStructure.
+	 */
+	public void register(final long p_chunkId, final String p_name) {
+		final int id = m_converter.convert(p_name);
+		m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_chunkId) + ", name "
+				+ p_name + ", id " + id);
+
+		m_lookup.insertNameserviceEntry(id, p_chunkId);
+		insertMapping(id, p_chunkId);
+	}
+
+	/**
 	 * Register a DataStructure for a specific name.
 	 * @param p_dataStructure
 	 *            DataStructure to register.
@@ -72,7 +89,8 @@ public class NameserviceService extends AbstractDXRAMService {
 	public void register(final DataStructure p_dataStructure, final String p_name) {
 		try {
 			final int id = m_converter.convert(p_name);
-			m_logger.trace(getClass(), "Registering chunkID 0x" + Long.toHexString(p_dataStructure.getID()) + ", name " + p_name + ", id " + id);
+			m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_dataStructure.getID()) + ", name "
+					+ p_name + ", id " + id);
 
 			m_lookup.insertNameserviceEntry(id, p_dataStructure.getID());
 			insertMapping(id, p_dataStructure.getID());
@@ -85,7 +103,7 @@ public class NameserviceService extends AbstractDXRAMService {
 	 * Get the chunk ID of the specific name from the service.
 	 * @param p_name
 	 *            Registered name to get the chunk ID for.
-	 * @return If the name was registered with a chunk ID before, returns the chunk ID, null otherwise.
+	 * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
 	 */
 	public long getChunkID(final String p_name) {
 		long ret = -1;
@@ -95,7 +113,7 @@ public class NameserviceService extends AbstractDXRAMService {
 
 			ret = m_lookup.getChunkIDForNameserviceEntry(id);
 
-			m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID 0x" + Long.toHexString(ret));
+			m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID " + ChunkID.toHexString(ret));
 		} catch (final IllegalArgumentException e) {
 			m_logger.error(getClass(), "Lookup in name service failed", e);
 		}
