@@ -1,20 +1,18 @@
-package de.hhu.bsinfo.dxcompute.stats;
+
+package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import java.io.PrintStream;
 
-import de.hhu.bsinfo.dxcompute.ms.Task2;
+import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.chunk.ChunkService.Status;
 
-public abstract class PrintMemoryStatusTask extends Task2 {
+public abstract class PrintMemoryStatusTaskPayload extends AbstractTaskPayload {
 
-	public PrintMemoryStatusTask()
-	{
-		
+	public PrintMemoryStatusTaskPayload(short p_typeId, short p_subtypeId) {
+		super(p_typeId, p_subtypeId);
 	}
-	
-	protected void printMemoryStatusToOutput(final PrintStream p_outputStream)
-	{		
-		Status status = m_chunkService.getStatus();
+
+	protected void printMemoryStatusToOutput(final PrintStream p_outputStream, final Status status) {
 		p_outputStream.println("---------------------------------------------------------");
 		p_outputStream.println("---------------------------------------------------------");
 		p_outputStream.println("---------------------------------------------------------");
@@ -24,6 +22,6 @@ public abstract class PrintMemoryStatusTask extends Task2 {
 		p_outputStream.println("Free: " + status.getFreeMemory());
 		p_outputStream.println("---------------------------------------------------------");
 		p_outputStream.println("---------------------------------------------------------");
-		p_outputStream.println("---------------------------------------------------------");		
+		p_outputStream.println("---------------------------------------------------------");
 	}
 }

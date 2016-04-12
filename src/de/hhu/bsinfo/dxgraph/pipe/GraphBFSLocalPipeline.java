@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxgraph.pipe;
 
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxcompute.old.Pipeline;
-import de.hhu.bsinfo.dxcompute.stats.PrintMemoryStatusToConsoleTask;
-import de.hhu.bsinfo.dxcompute.stats.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalMultiThreaded;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalMultiThreaded2;
 import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSLocalMultiThreaded3;
