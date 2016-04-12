@@ -11,7 +11,6 @@ import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Component for chunk handling.
@@ -45,10 +44,18 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	 *            Chunks to put.
 	 */
 	public void putRecoveredChunks(final Chunk[] p_chunks) {
+		Chunk chunk = null;
 
-		if (!m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-			putForeignChunks(p_chunks);
+		m_memoryManager.lockManage();
+		for (int i = 0; i < p_chunks.length; i++) {
+			chunk = p_chunks[i];
+
+			m_memoryManager.create(chunk.getID(), chunk.getDataSize());
+			m_memoryManager.put(chunk);
+
+			m_logger.trace(getClass(), "Stored recovered chunk " + chunk + " locally");
 		}
+		m_memoryManager.unlockManage();
 	}
 
 	/**

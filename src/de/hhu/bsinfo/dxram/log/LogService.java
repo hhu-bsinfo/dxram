@@ -77,6 +77,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	private long m_primaryLogSize;
 	private long m_secondaryLogSize;
 	private int m_writeBufferSize;
+	private int m_secondaryLogBufferSize;
 
 	private int m_reorgUtilizationThreshold;
 
@@ -298,8 +299,10 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		p_settings.setDefaultValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
 		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
 		p_settings.setDefaultValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
+		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
 
 		p_settings.setDefaultValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
+		p_settings.setDefaultValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING);
 	}
 
 	@Override
@@ -319,6 +322,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			m_primaryLogSize = p_settings.getValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
 			m_secondaryLogSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
 			m_writeBufferSize = p_settings.getValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
+			m_secondaryLogBufferSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
 
 			m_reorgUtilizationThreshold =
 					p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
@@ -340,10 +344,12 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			} catch (final IOException | InterruptedException e) {
 				m_logger.error(LogService.class, "Primary log creation failed: " + e);
 			}
+			m_logger.trace(getClass(), "Initialized primary log (" + m_primaryLogSize + ")");
 
 			// Create primary log buffer
-			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize, m_flashPageSize,
-					m_logSegmentSize, m_useChecksum);
+			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize,
+					m_flashPageSize, m_secondaryLogBufferSize, m_logSegmentSize, m_useChecksum,
+					p_settings.getValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING));
 
 			// Create secondary log and secondary log buffer catalogs
 			m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -703,7 +709,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 									m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
 									m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_flashPageSize, m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize, m_logSegmentSize);
 				}
 			} else {
 				if (!cat.exists(-1, (byte) firstChunkIDOrRangeID)) {
@@ -713,7 +719,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 							m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
 							m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_flashPageSize, m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize, m_logSegmentSize);
 				}
 			}
 		} catch (final IOException | InterruptedException e) {

@@ -356,7 +356,7 @@ public abstract class AbstractMessage {
 		try {
 			ret = p_messageDirectory.getInstance(type, subtype);
 		} catch (final Exception e) {
-			throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype, e);
+			throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory", e);
 		}
 
 		ret.m_messageID = messageID;

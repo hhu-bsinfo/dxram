@@ -9,8 +9,8 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -20,6 +20,8 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
+import de.hhu.bsinfo.dxram.recovery.tcmds.TcmdRecover;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 
@@ -98,6 +100,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Recovery service will not work!");
 		}
 		m_backupDirectory = m_backup.getBackupDirectory();
+
+		getComponent(TerminalComponent.class).registerCommand(new TcmdRecover());
 
 		return true;
 	}

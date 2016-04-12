@@ -124,6 +124,8 @@ public class SecondaryLog extends AbstractLog {
 		m_reorgVector = new byte[(int) (p_secondaryLogSize / p_logSegmentSize)];
 
 		createLogAndWriteHeader(SECLOG_HEADER);
+
+		m_logger.trace(getClass(), "Initialized secondary log (" + m_secondaryLogSize + ")");
 	}
 
 	// Getter
@@ -789,7 +791,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @note executed only by reorganization thread
 	 */
 	private static byte[][] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[][] result = null;
 		int numberOfSegments;
 		RandomAccessFile randomAccessFile;

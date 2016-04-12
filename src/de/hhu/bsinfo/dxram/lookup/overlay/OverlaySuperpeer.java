@@ -622,7 +622,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 						m_logger.info(getClass(), "Informing " + superpeer + " to remove " + p_failedNode + " from meta-data");
 						if (m_network.sendMessage(
 								new NotifyAboutFailedPeerMessage(superpeer, p_failedNode))
-						!= NetworkErrorCodes.SUCCESS) {
+								!= NetworkErrorCodes.SUCCESS) {
 							// Superpeer is not available anymore, remove from superpeer array and continue
 							m_logger.error(getClass(), "superpeer failed, too");
 							m_failureLock.unlock();
@@ -766,7 +766,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		if (m_bootstrap != m_nodeID) {
 			if (m_network.sendMessage(
 					new PingSuperpeerMessage(m_bootstrap))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// New bootstrap is not available, start failure handling to
 				// remove bootstrap from superpeer array and to determine a new bootstrap
 				m_logger.error(getClass(), "new bootstrap failed, too");
@@ -871,7 +871,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
 			if (m_network.sendMessage(
 					new SendBackupsMessage(m_successor, allMappings, trees))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Successor is not available anymore, remove from superpeer array and try next superpeer
 				m_logger.error(getClass(), "successor failed, too");
 				m_failureLock.unlock();
@@ -951,7 +951,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 			if (m_network.sendMessage(
 					new SendBackupsMessage(newBackupSuperpeer, allMappings, trees))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Superpeer is not available anymore, remove from superpeer array and try next superpeer
 				m_logger.error(getClass(), "new backup superpeer (" + newBackupSuperpeer + ") failed, too");
 				m_failureLock.unlock();
@@ -1045,7 +1045,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_mappingLock.unlock();
 
 				if (m_network.sendMessage(new JoinResponse(p_joinRequest, (short) -1, joiningNodesPredecessor, m_nodeID, mappings, m_superpeers, peers, trees))
-				!= NetworkErrorCodes.SUCCESS) {
+						!= NetworkErrorCodes.SUCCESS) {
 					// Joining node is not available anymore -> ignore request and return directly
 					m_overlayLock.unlock();
 					return;
@@ -1144,7 +1144,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 					m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_nodeID);
 					if (m_network.sendMessage(
 							new RemoveChunkIDsResponse(p_removeChunkIDsRequest, new short[] {-1}))
-					!= NetworkErrorCodes.SUCCESS) {
+							!= NetworkErrorCodes.SUCCESS) {
 						// Requesting peer is not available anymore, ignore it
 					}
 				} else {
@@ -1156,7 +1156,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 					m_overlayLock.unlock();
 					if (m_network.sendMessage(
 							new RemoveChunkIDsResponse(p_removeChunkIDsRequest, backupSuperpeers))
-					!= NetworkErrorCodes.SUCCESS) {
+							!= NetworkErrorCodes.SUCCESS) {
 						// Requesting peer is not available anymore, ignore it
 					}
 				}
@@ -1171,14 +1171,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_dataLock.unlock();
 				if (m_network.sendMessage(
 						new RemoveChunkIDsResponse(p_removeChunkIDsRequest, null))
-				!= NetworkErrorCodes.SUCCESS) {
+						!= NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
 				}
 			} else {
 				// Not responsible for requesting peer
 				if (m_network.sendMessage(
 						new RemoveChunkIDsResponse(p_removeChunkIDsRequest, null))
-				!= NetworkErrorCodes.SUCCESS) {
+						!= NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
 				}
 			}
@@ -1207,7 +1207,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_overlayLock.unlock();
 			if (m_network.sendMessage(
 					new InsertNameserviceEntriesResponse(p_insertIDRequest, backupSuperpeers))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		} else if (p_insertIDRequest.isBackup()) {
@@ -1217,14 +1217,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 			if (m_network.sendMessage(
 					new InsertNameserviceEntriesResponse(p_insertIDRequest, null))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		} else {
 			// Not responsible for that chunk
 			if (m_network.sendMessage(
 					new InsertNameserviceEntriesResponse(p_insertIDRequest, null))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		}
@@ -1270,7 +1270,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		if (m_network.sendMessage(
 				new GetNameserviceEntryCountResponse(p_getNameserviceEntryCountRequest,
 						m_idTable.getNumberOfOwnEntries(m_predecessor, m_nodeID, m_superpeers.isEmpty(), UPPER_CLOSED_INTERVAL, m_hashGenerator)))
-				!= NetworkErrorCodes.SUCCESS) {
+						!= NetworkErrorCodes.SUCCESS) {
 			// Requesting peer is not available anymore, ignore it
 		}
 	}
@@ -1304,7 +1304,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_nodeID);
 				if (m_network.sendMessage(
 						new MigrateResponse(p_migrateRequest, false))
-						!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore request it
 				}
 			} else {
@@ -1326,7 +1326,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				}
 				if (m_network.sendMessage(
 						new MigrateResponse(p_migrateRequest, true))
-						!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
 				}
 			}
@@ -1341,7 +1341,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_dataLock.unlock();
 			if (m_network.sendMessage(
 					new MigrateResponse(p_migrateRequest, true))
-					!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 
@@ -1349,7 +1349,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			// Not responsible for requesting peer
 			if (m_network.sendMessage(
 					new MigrateResponse(p_migrateRequest, false))
-					!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		}
@@ -1391,7 +1391,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_nodeID);
 				if (m_network.sendMessage(
 						new MigrateRangeResponse(p_migrateRangeRequest, false))
-						!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
 				}
 			} else {
@@ -1413,7 +1413,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				}
 				if (m_network.sendMessage(
 						new MigrateRangeResponse(p_migrateRangeRequest, true))
-						!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
 				}
 			}
@@ -1428,14 +1428,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_dataLock.unlock();
 			if (m_network.sendMessage(
 					new MigrateRangeResponse(p_migrateRangeRequest, true))
-					!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		} else {
 			// Not responsible for requesting peer
 			if (m_network.sendMessage(
 					new MigrateRangeResponse(p_migrateRangeRequest, false))
-					!= NetworkErrorCodes.SUCCESS) {
+				!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore request it
 			}
 		}
@@ -1491,7 +1491,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			}
 			if (m_network.sendMessage(
 					new InitRangeResponse(p_initRangeRequest, true))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		} else if (isBackup) {
@@ -1509,14 +1509,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_dataLock.unlock();
 			if (m_network.sendMessage(
 					new InitRangeResponse(p_initRangeRequest, true))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
 		} else {
 			// Not responsible for requesting peer
 			if (m_network.sendMessage(
 					new InitRangeResponse(p_initRangeRequest, false))
-				!= NetworkErrorCodes.SUCCESS) {
+					!= NetworkErrorCodes.SUCCESS) {
 				// Requesting node is not available anymore, ignore it
 			}
 		}
@@ -1660,6 +1660,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_BACKUPS_MESSAGE, SendBackupsMessage.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE, NotifyAboutFailedPeerMessage.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE, StartRecoveryMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE, SetRestorerAfterRecoveryMessage.class);
 
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE, PingSuperpeerMessage.class);
 
