@@ -126,7 +126,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
-	public List<Short> getAvailableNodeIDs() {
+	public List<Short> getIDsOfOnlineNodes() {
+		// TODO: Don't use ZooKeeper for this
+
 		List<Short> ids = new ArrayList<Short>();
 
 		if (zookeeperPathExists("nodes/superpeers")) {
@@ -150,23 +152,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
-	public List<Short> getOnlinePeerNodeIDs() {
-		List<Short> ids = new ArrayList<Short>();
+	public List<Short> getIDsOfOnlinePeers() {
+		// TODO: Don't use ZooKeeper for this
 
-		if (zookeeperPathExists("nodes/peers")) {
-			try {
-				List<String> children = m_zookeeper.getChildren("nodes/peers");
-				for (String child : children) {
-					ids.add(Short.parseShort(child));
-				}
-			} catch (final ZooKeeperException e) {}
-		}
-
-		return ids;
-	}
-
-	@Override
-	public List<Short> getOtherOnlinePeerNodeIDs() {
 		short childID;
 		List<Short> ids = new ArrayList<Short>();
 
@@ -578,6 +566,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 								"NodeRole in configuration differs from command line given NodeRole: "
 										+ entry.getRole() + " != " + p_cmdLineNodeRole);
 						return false;
+					} else if (p_cmdLineNodeRole.equals(NodeRole.TERMINAL)) {
+						m_logger.error(getClass(), "A Terminal node should not be in nodes list");
+						return false;
 					}
 					m_nodesConfiguration.setOwnNodeID(nodeID);
 					m_bootstrap = nodeID;
@@ -601,7 +592,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				splits = node.split("/");
 
 				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.PEER));
+						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2])));
 
 				if (nodeID == m_nodesConfiguration.getOwnNodeID()) {
 					// NodeID was already re-used
@@ -613,7 +604,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				// Add this node if it was not in start configuration
 				m_logger.warn(this.getClass(), "node not in nodes.config (" + m_ownIP + ", " + m_ownPort + ")");
 
-				node = m_ownIP + "/" + m_ownPort + "/" + "P" + "/" + 0 + "/" + 0;
+				node = m_ownIP + "/" + m_ownPort + "/" + p_cmdLineNodeRole.getAcronym() + "/" + 0 + "/" + 0;
 
 				childs = m_zookeeper.getChildren("nodes/free");
 				if (!childs.isEmpty()) {
@@ -637,7 +628,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 				// Set routing information for that node
 				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(m_ownIP, m_ownPort, (short) 0, (short) 0, NodeRole.PEER));
+						new NodeEntry(m_ownIP, m_ownPort, (short) 0, (short) 0, p_cmdLineNodeRole));
 			} else {
 				// Remove NodeID if this node failed before
 				nodeID = m_nodesConfiguration.getOwnNodeID();
@@ -649,7 +640,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			m_zookeeper.setChildrenWatch("nodes/new", this);
 			m_zookeeper.setChildrenWatch("nodes/free", this);
 
-			// Register peer/superpeer
+			// Register peer/superpeer (a terminal node is not registered to exclude it from backup)
 			if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.SUPERPEER)) {
 				m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
 			} else if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.PEER)) {

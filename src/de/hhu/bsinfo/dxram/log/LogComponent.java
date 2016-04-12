@@ -88,7 +88,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 				}
 			}
 		}
-		m_logger.info(LogService.class, "Time to init range: " + (System.currentTimeMillis() - time));
+		m_logger.trace(LogService.class, "Time to initialize range: " + (System.currentTimeMillis() - time));
 	}
 
 	/**

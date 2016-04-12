@@ -76,7 +76,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_statistics = getDependentComponent(StatisticsComponent.class);
 
-		if (m_boot.getNodeRole() != NodeRole.SUPERPEER) {
+		if (m_boot.getNodeRole() == NodeRole.PEER) {
 			registerStatisticsOperations();
 
 			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
@@ -98,7 +98,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	@Override
 	protected boolean shutdownComponent() {
-		if (m_boot.getNodeRole() != NodeRole.SUPERPEER) {
+		if (m_boot.getNodeRole() == NodeRole.PEER) {
 			m_cidTable.disengage();
 			m_rawMemory.disengage();
 

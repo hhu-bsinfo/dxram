@@ -16,6 +16,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.messages.GetUtilizationRequest;
+import de.hhu.bsinfo.dxram.log.messages.GetUtilizationResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
@@ -27,9 +29,11 @@ import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.Version;
+import de.hhu.bsinfo.dxram.log.tcmds.TcmdLogInfo;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -300,6 +304,11 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+		m_network = getComponent(NetworkComponent.class);
+		m_logger = getComponent(LoggerComponent.class);
+		registerNetworkMessages();
+		registerNetworkMessageListener();
+
 		m_loggingIsActive = (getComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER)
 				&& getComponent(BackupComponent.class).isActive();
 		if (m_loggingIsActive) {
@@ -314,8 +323,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			m_reorgUtilizationThreshold =
 					p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
 
-			m_network = getComponent(NetworkComponent.class);
-			m_logger = getComponent(LoggerComponent.class);
 			m_nodeID = getComponent(AbstractBootComponent.class).getNodeID();
 
 			m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
@@ -324,8 +331,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum, m_secondaryLogSize,
 					m_logSegmentSize);
 
-			registerNetworkMessages();
-			registerNetworkMessageListener();
 			// Set the log entry header crc size (must be called before the first log entry header is created)
 			AbstractLogEntryHeader.setCRCSize(m_useChecksum);
 
@@ -354,6 +359,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 			m_flushLock = new ReentrantLock(false);
 		}
+
+		getComponent(TerminalComponent.class).registerCommand(new TcmdLogInfo());
 
 		return true;
 	}
@@ -467,8 +474,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 				array =
 						new String(Arrays.copyOfRange(p_payload,
 								p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset), p_offset
-										+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH))
-												.trim().getBytes();
+								+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH))
+								.trim().getBytes();
 
 				if (Tools.looksLikeUTF8(array)) {
 					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
@@ -530,8 +537,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	 * Returns the current utilization of primary log and all secondary logs
 	 * @return the current utilization
 	 */
-	@SuppressWarnings("unused")
-	private String getCurrentUtilization() {
+	public String getCurrentUtilization() {
 		String ret;
 		long counter;
 		SecondaryLog[] secondaryLogs;
@@ -583,6 +589,25 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
 
 		return ret;
+	}
+
+	/**
+	 * Returns the current utilization of given node
+	 * @param p_nodeID
+	 *            the NodeID of the peer whose utilization is printed
+	 * @return the current utilization
+	 */
+	public String getCurrentUtilization(final short p_nodeID) {
+		final GetUtilizationRequest request = new GetUtilizationRequest(p_nodeID);
+
+		NetworkErrorCodes err = m_network.sendSync(request);
+
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(), "Could not get log utilization of " + p_nodeID);
+			return "";
+		} else {
+			return ((GetUtilizationResponse) request.getResponse()).getUtilization();
+		}
 	}
 
 	/**
@@ -648,18 +673,18 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Handles an incoming InitRequest
-	 * @param p_message
+	 * @param p_request
 	 *            the InitRequest
 	 */
-	private void incomingInitRequest(final InitRequest p_message) {
+	private void incomingInitRequest(final InitRequest p_request) {
 		short owner;
 		long firstChunkIDOrRangeID;
 		boolean success = true;
 		LogCatalog cat;
 		SecondaryLog secLog = null;
 
-		owner = p_message.getOwner();
-		firstChunkIDOrRangeID = p_message.getFirstCIDOrRangeID();
+		owner = p_request.getOwner();
+		firstChunkIDOrRangeID = p_request.getFirstCIDOrRangeID();
 
 		m_secondaryLogCreationLock.writeLock().lock();
 		cat = m_logCatalogs[owner & 0xFFFF];
@@ -698,9 +723,30 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		}
 		m_secondaryLogCreationLock.writeLock().unlock();
 
-		final NetworkErrorCodes err = m_network.sendMessage(new InitResponse(p_message, success));
+		final NetworkErrorCodes err = m_network.sendMessage(new InitResponse(p_request, success));
 		if (err != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(LogService.class, "Could not acknowledge initilization of backup range: " + err);
+		}
+	}
+
+	/**
+	 * Handles an incoming GetUtilizationRequest
+	 * @param p_request
+	 *            the GetUtilizationRequest
+	 */
+	private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
+
+		if (m_loggingIsActive) {
+			final NetworkErrorCodes err = m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(LogService.class, "Could not answer GetUtilizationRequest: " + err);
+			}
+		} else {
+			m_logger.warn(getClass(), "Incoming GetUtilizationRequest, but superpeers do not store backups");
+			final NetworkErrorCodes err = m_network.sendMessage(new GetUtilizationResponse(p_request, null));
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(LogService.class, "Could not answer GetUtilizationRequest: " + err);
+			}
 		}
 	}
 
@@ -717,6 +763,9 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 					break;
 				case LogMessages.SUBTYPE_INIT_REQUEST:
 					incomingInitRequest((InitRequest) p_message);
+					break;
+				case LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST:
+					incomingGetUtilizationRequest((GetUtilizationRequest) p_message);
 					break;
 				default:
 					break;
@@ -735,6 +784,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
+		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
+		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
 	}
 
 	/**
@@ -744,6 +795,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		m_network.register(LogMessage.class, this);
 		m_network.register(RemoveMessage.class, this);
 		m_network.register(InitRequest.class, this);
+		m_network.register(GetUtilizationRequest.class, this);
 	}
 
 }

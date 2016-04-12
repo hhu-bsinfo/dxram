@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -7,12 +8,13 @@ import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+// TODO: A terminal node does not store chunks
 public class TcmdChunkRemove extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Full chunk id of the chunk to remove");
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local id of the chunk to remove. If missing node id, current node is assumed");
 	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node id to remove the chunk with specified local id");
-	
+
 	@Override
 	public String getName() {
 		return "chunkremove";
@@ -23,7 +25,7 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 		return "Remove an existing chunk. Usable with either full chunk id or split into lid and nid with nid being"
 				+ " optional. Not providing the nid will default to the current node's id.";
 	}
-	
+
 	@Override
 	public void registerArguments(final ArgumentList p_arguments)
 	{
@@ -37,10 +39,10 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
 		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
 		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
-		
+
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
 		BootService bootService = getTerminalDelegate().getDXRAMService(BootService.class);
-		
+
 		// we favor full cid
 		if (cid != null)
 		{
@@ -58,7 +60,7 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 				if (nid == null) {
 					nid = bootService.getNodeID();
 				}
-				
+
 				// create cid
 				cid = ChunkID.getChunkID(nid, lid);
 				if (chunkService.remove(cid) != 1)
@@ -73,7 +75,7 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 				return false;
 			}
 		}
-		
+
 		System.out.println("Chunk " + Long.toHexString(cid) + " removed.");
 		return true;
 	}

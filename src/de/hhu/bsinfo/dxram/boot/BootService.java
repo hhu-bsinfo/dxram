@@ -29,8 +29,8 @@ public class BootService extends AbstractDXRAMService {
 	 * Get IDs of all available (online) nodes.
 	 * @return List of IDs of nodes available.
 	 */
-	public List<Short> getAvailableNodeIDs() {
-		return m_boot.getAvailableNodeIDs();
+	public List<Short> getIDsOfOnlineNodes() {
+		return m_boot.getIDsOfOnlineNodes();
 	}
 
 	/**
@@ -65,7 +65,7 @@ public class BootService extends AbstractDXRAMService {
 	 * @return List of IDs of nodes available.
 	 */
 	public List<Short> getAvailablePeerNodeIDs() {
-		return m_boot.getAvailableNodeIDs();
+		return m_boot.getIDsOfOnlineNodes();
 	}
 
 	/**

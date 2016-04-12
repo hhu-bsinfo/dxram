@@ -44,7 +44,7 @@ public class NameserviceService extends AbstractDXRAMService {
 
 		m_indexData = new NameServiceIndexData();
 
-		if (getComponent(AbstractBootComponent.class).getNodeRole() != NodeRole.SUPERPEER) {
+		if (getComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER) {
 			m_indexData.setID(m_memoryManager.createIndex(m_indexData.sizeofObject()));
 			if (m_indexData.getID() == ChunkID.INVALID_ID) {
 				m_logger.error(getClass(), "Creating root index chunk failed.");
