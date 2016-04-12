@@ -5,6 +5,8 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
+import de.hhu.bsinfo.dxram.lock.Tcmd.TcmdLock;
+import de.hhu.bsinfo.dxram.lock.Tcmd.TcmdUnlock;
 import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
@@ -17,6 +19,7 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -40,6 +43,8 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 	
 	private int m_remoteLockSendIntervalMs = -1;
 	private int m_remoteLockTryTimeoutMs = -1;
+	
+	private TerminalComponent m_terminal = null;
 	
 	@Override
 	protected void registerDefaultSettingsService(Settings p_settings) {
@@ -77,6 +82,10 @@ public class PeerLockService extends LockService implements MessageReceiver, Eve
 		
 		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
 		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
+		
+		m_terminal = getComponent(TerminalComponent.class);
+		m_terminal.registerCommand(new TcmdUnlock());
+		m_terminal.registerCommand(new TcmdLock());
 		
 		return true;
 	}
