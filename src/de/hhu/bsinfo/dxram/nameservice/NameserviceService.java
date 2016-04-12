@@ -72,7 +72,7 @@ public class NameserviceService extends AbstractDXRAMService {
 	 */
 	public void register(final long p_chunkId, final String p_name) {
 		final int id = m_converter.convert(p_name);
-		m_logger.trace(getClass(), "Registering chunkID 0x" + Long.toHexString(p_chunkId) + ", name "
+		m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_chunkId) + ", name "
 				+ p_name + ", id " + id);
 
 		m_lookup.insertNameserviceEntry(id, p_chunkId);
@@ -89,7 +89,7 @@ public class NameserviceService extends AbstractDXRAMService {
 	public void register(final DataStructure p_dataStructure, final String p_name) {
 		try {
 			final int id = m_converter.convert(p_name);
-			m_logger.trace(getClass(), "Registering chunkID 0x" + Long.toHexString(p_dataStructure.getID()) + ", name "
+			m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_dataStructure.getID()) + ", name "
 					+ p_name + ", id " + id);
 
 			m_lookup.insertNameserviceEntry(id, p_dataStructure.getID());
@@ -113,7 +113,7 @@ public class NameserviceService extends AbstractDXRAMService {
 
 			ret = m_lookup.getChunkIDForNameserviceEntry(id);
 
-			m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID 0x" + Long.toHexString(ret));
+			m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID " + ChunkID.toHexString(ret));
 		} catch (final IllegalArgumentException e) {
 			m_logger.error(getClass(), "Lookup in name service failed", e);
 		}

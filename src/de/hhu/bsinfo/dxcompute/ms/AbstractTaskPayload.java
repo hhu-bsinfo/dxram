@@ -17,14 +17,18 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	protected static Map<Integer, Class<? extends AbstractTaskPayload>> ms_registeredTaskClasses =
 			new HashMap<Integer, Class<? extends AbstractTaskPayload>>();
 
-	private int m_typeId = -1;
+	private short m_typeId = -1;
+	private short m_subtypeId = -1;
 	private long m_payloadId = -1;
 	private int m_slaveId = -1;
 
-	public static AbstractTaskPayload createInstance(final int p_typeId) {
-		Class<? extends AbstractTaskPayload> clazz = ms_registeredTaskClasses.get(p_typeId);
+	public static AbstractTaskPayload createInstance(final short p_typeId, final short p_subtypeId) {
+		Class<? extends AbstractTaskPayload> clazz =
+				ms_registeredTaskClasses.get(((p_typeId & 0xFFFF) << 16) | p_subtypeId);
 		if (clazz == null) {
-			return null;
+			throw new RuntimeException(
+					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId
+							+ ", not registered.");
 		}
 
 		try {
@@ -32,24 +36,37 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 			return ctor.newInstance();
 		} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
 				| IllegalArgumentException | InvocationTargetException e) {
-			return null;
+			throw new RuntimeException(
+					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId + ": "
+							+ e.getMessage());
 		}
 	}
 
-	protected static void registerTaskClass(final int p_id, final Class<? extends AbstractTaskPayload> p_class) {
-		Class<? extends AbstractTaskPayload> clazz = ms_registeredTaskClasses.put(p_id, p_class);
+	protected static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
+			final Class<? extends AbstractTaskPayload> p_class) {
+		Class<? extends AbstractTaskPayload> clazz =
+				ms_registeredTaskClasses.put(((p_typeId & 0xFFFF) << 16) | p_subtypeId, p_class);
 		if (clazz != null) {
-			throw new RuntimeException("Cannot register class " + p_class.getName() + " for task id " + p_id
-					+ ", already used by class " + clazz.getName());
+			return false;
 		}
+
+		return true;
 	}
 
-	public AbstractTaskPayload(final int p_typeId) {
+	// we are expecting a default constructor for the class extending this one
+	// (see create instance code)
+	// also make sure to register each task payload implementation prior usage
+	public AbstractTaskPayload(final short p_typeId, final short p_subtypeId) {
 		m_typeId = p_typeId;
+		m_subtypeId = p_subtypeId;
 	}
 
-	public int getTaskTypeId() {
+	public short getTypeId() {
 		return m_typeId;
+	}
+
+	public short getSubtypeId() {
+		return m_subtypeId;
 	}
 
 	public long getPayloadId() {
@@ -90,7 +107,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	@Override
 	public String toString() {
-		return "AbstractTaskPayload " + m_payloadId;
+		return getClass().getSimpleName() + "[" + m_typeId + ", " + m_subtypeId + ", " + m_payloadId + ", " + m_slaveId
+				+ "]";
 	}
 
 	void setPayloadId(final long p_payloadId) {

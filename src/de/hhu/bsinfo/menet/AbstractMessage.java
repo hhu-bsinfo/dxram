@@ -82,7 +82,8 @@ public abstract class AbstractMessage {
 	 * @param p_exclusivity
 	 *            whether this message type allows parallel execution
 	 */
-	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype,
+			final boolean p_exclusivity) {
 		this(getNextMessageID(), p_destination, p_type, p_subtype, p_exclusivity, DEFAULT_STATUS_CODE);
 	}
 
@@ -97,7 +98,8 @@ public abstract class AbstractMessage {
 	 * @param p_subtype
 	 *            the message subtype
 	 */
-	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type,
+			final byte p_subtype) {
 		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
 	}
 
@@ -116,7 +118,8 @@ public abstract class AbstractMessage {
 	 * @param p_statusCode
 	 *            the status code
 	 */
-	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity,
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype,
+			final boolean p_exclusivity,
 			final byte p_statusCode) {
 		assert p_destination != NodeID.INVALID_ID;
 
@@ -288,11 +291,14 @@ public abstract class AbstractMessage {
 
 			writePayload(p_buffer);
 		} catch (final BufferOverflowException e) {
-			throw new NetworkException("Could not create message, because message buffer is too small", e);
+			throw new NetworkException("Could not create message " + this + ", because message buffer is too small", e);
 		}
 
-		if (p_buffer.position() < getPayloadLength() + HEADER_SIZE) {
-			throw new NetworkException("Did not create message, because message buffer is too large");
+		int pos = p_buffer.position();
+		int payloadSize = getPayloadLength() + HEADER_SIZE;
+		if (pos < payloadSize) {
+			throw new NetworkException("Did not create message " + this
+					+ ", because message buffer is larger than expected payload size: " + pos + " > " + payloadSize);
 		}
 
 		return p_buffer;
@@ -332,7 +338,8 @@ public abstract class AbstractMessage {
 	 * @throws NetworkException
 	 *             if the message header could not be created
 	 */
-	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer, final MessageDirectory p_messageDirectory) throws NetworkException {
+	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer,
+			final MessageDirectory p_messageDirectory) throws NetworkException {
 		AbstractMessage ret = null;
 		int messageID;
 		byte type;

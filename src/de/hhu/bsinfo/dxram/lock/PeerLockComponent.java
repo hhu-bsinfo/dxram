@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.util.NodeID;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Implementation of the lock component interface. This provides a peer side locking i.e.

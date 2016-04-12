@@ -13,8 +13,8 @@ import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderMasterSyncGraphIndexMessage
 import de.hhu.bsinfo.dxgraph.load.oel.messages.LoaderSlaveSignOnMessage;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.locks.SpinLock;

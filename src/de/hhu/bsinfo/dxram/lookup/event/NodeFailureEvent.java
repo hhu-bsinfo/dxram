@@ -2,8 +2,8 @@
 package de.hhu.bsinfo.dxram.lookup.event;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
-import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * An event for node failure

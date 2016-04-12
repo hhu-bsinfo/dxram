@@ -9,6 +9,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 
 public class ExecuteTaskRequest extends AbstractRequest {
 
+	private int m_barrierIdentifier = -1;
 	private AbstractTaskPayload m_task;
 
 	/**
@@ -17,10 +18,6 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	 */
 	public ExecuteTaskRequest() {
 		super();
-	}
-
-	public AbstractTaskPayload getTask() {
-		return m_task;
 	}
 
 	/**
@@ -35,16 +32,27 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	 * @param p_data
 	 *            Some custom data.
 	 */
-	public ExecuteTaskRequest(final short p_destination, final AbstractTaskPayload p_task) {
+	public ExecuteTaskRequest(final short p_destination, final int p_barrierIdentifier,
+			final AbstractTaskPayload p_task) {
 		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST);
+		m_barrierIdentifier = p_barrierIdentifier;
 		m_task = p_task;
+	}
+
+	public int getBarrierIdentifier() {
+		return m_barrierIdentifier;
+	}
+
+	public AbstractTaskPayload getTask() {
+		return m_task;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
-		p_buffer.putLong(m_task.getTaskTypeId());
+		p_buffer.putShort(m_task.getTypeId());
+		p_buffer.putShort(m_task.getSubtypeId());
 		exporter.exportObject(m_task);
 	}
 
@@ -52,8 +60,9 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-		int typeIdentifier = p_buffer.getInt();
-		m_task = AbstractTaskPayload.createInstance(typeIdentifier);
+		short type = p_buffer.getShort();
+		short subtype = p_buffer.getShort();
+		m_task = AbstractTaskPayload.createInstance(type, subtype);
 		if (m_task != null) {
 			importer.importObject(m_task);
 		}
@@ -61,6 +70,10 @@ public class ExecuteTaskRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLength() {
-		return Long.BYTES + m_task.sizeofObject();
+		if (m_task != null) {
+			return 2 * Short.BYTES + m_task.sizeofObject();
+		} else {
+			return 2 * Short.BYTES;
+		}
 	}
 }

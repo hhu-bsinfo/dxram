@@ -7,13 +7,16 @@ import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
+import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
+import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 
-public class DXComputeMSBase extends Thread {
+public abstract class ComputeMSBase extends Thread {
 	protected DXRAM m_dxram;
 	protected LoggerService m_loggerService;
 	protected NetworkService m_networkService;
@@ -30,7 +33,7 @@ public class DXComputeMSBase extends Thread {
 	protected int m_computeGroupId = -1;
 	protected String m_nameserviceMasterNodeIdKey;
 
-	public DXComputeMSBase(final DXRAM p_dxram, final int p_computeGroupId) {
+	public ComputeMSBase(final DXRAM p_dxram, final int p_computeGroupId) {
 		m_dxram = p_dxram;
 		m_loggerService = m_dxram.getService(LoggerService.class);
 		m_networkService = m_dxram.getService(NetworkService.class);
@@ -49,9 +52,25 @@ public class DXComputeMSBase extends Thread {
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
 		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
+
+		registerTaskPayloads();
 	}
 
 	public int getComputeGroupId() {
 		return m_computeGroupId;
+	}
+
+	@Override
+	public abstract void run();
+
+	public abstract void shutdown();
+
+	private void registerTaskPayloads() {
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK,
+				NullTaskPayload.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK,
+				WaitTaskPayload.class);
 	}
 }

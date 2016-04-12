@@ -3,15 +3,16 @@ package de.hhu.bsinfo.dxcompute.coord;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxcompute.coord.messages.BarrierSlaveSignOnRequest;
+import de.hhu.bsinfo.dxcompute.coord.messages.BarrierSlaveSignOnResponse;
 import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierReleaseMessage;
-import de.hhu.bsinfo.dxcompute.coord.messages.SlaveSyncBarrierSignOnMessage;
-import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 
 /**
@@ -22,14 +23,13 @@ import de.hhu.bsinfo.utils.Pair;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
 // TODO redoc
-public class SyncBarrierMaster implements MessageReceiver {
+public class BarrierMaster implements MessageReceiver {
 
 	private int m_barrierIdentifer = -1;
 	private ArrayList<Pair<Short, Long>> m_slavesSynced = new ArrayList<Pair<Short, Long>>();
 
-	private NetworkService m_networkService = null;
-	private BootService m_bootService = null;
-	private LoggerService m_loggerService = null;
+	private NetworkService m_networkService;
+	private LoggerService m_loggerService;
 
 	/**
 	 * Constructor
@@ -40,16 +40,16 @@ public class SyncBarrierMaster implements MessageReceiver {
 	 * @param p_barrierIdentifier
 	 *            Token to identify this barrier (if using multiple barriers), which is used as a sync token.
 	 */
-	public SyncBarrierMaster(final NetworkService p_networkService,
-			final BootService p_bootService, final LoggerService p_loggerService) {
+	public BarrierMaster(final NetworkService p_networkService, final LoggerService p_loggerService) {
 		m_networkService = p_networkService;
-		m_bootService = p_bootService;
 		m_loggerService = p_loggerService;
 
 		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
-				CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON, SlaveSyncBarrierSignOnMessage.class);
+				CoordinatorMessages.SUBTYPE_BARRIER_SLAVE_SIGN_ON_REQUEST, BarrierSlaveSignOnRequest.class);
 		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
-				CoordinatorMessages.SUBTYPE_MASTER_SYNC_BARRIER_RELEASE, MasterSyncBarrierReleaseMessage.class);
+				CoordinatorMessages.SUBTYPE_BARRIER_SLAVE_SIGN_ON_RESPONSE, BarrierSlaveSignOnResponse.class);
+		m_networkService.registerMessageType(CoordinatorMessages.TYPE,
+				CoordinatorMessages.SUBTYPE_BARRIER_MASTER_RELEASE, MasterSyncBarrierReleaseMessage.class);
 	}
 
 	public boolean execute(final int p_barrierCount, final int p_barrierIdentifier, final long p_data) {
@@ -57,7 +57,9 @@ public class SyncBarrierMaster implements MessageReceiver {
 		m_barrierIdentifer = p_barrierIdentifier;
 		m_slavesSynced.clear();
 
-		m_networkService.registerReceiver(SlaveSyncBarrierSignOnMessage.class, this);
+		m_networkService.registerReceiver(BarrierSlaveSignOnRequest.class, this);
+
+		m_loggerService.debug(getClass(), "Waiting for " + p_barrierCount + " slaves to signed on...");
 
 		// wait until all slaves have signed on
 		while (m_slavesSynced.size() < p_barrierCount) {
@@ -68,19 +70,20 @@ public class SyncBarrierMaster implements MessageReceiver {
 
 		// release barrier
 		for (Pair<Short, Long> slaves : m_slavesSynced) {
-			m_loggerService.debug(getClass(), "Releasing slave " + slaves.first());
+			m_loggerService.debug(getClass(), "Releasing slave " + NodeID.toHexString(slaves.first()));
 			MasterSyncBarrierReleaseMessage message =
 					new MasterSyncBarrierReleaseMessage(slaves.first(), m_barrierIdentifer, p_data);
 			NetworkErrorCodes error = m_networkService.sendMessage(message);
 			if (error != NetworkErrorCodes.SUCCESS) {
-				m_loggerService.error(getClass(), "Sending release to " + slaves.first() + " failed: " + error);
+				m_loggerService.error(getClass(),
+						"Sending release to " + NodeID.toHexString(slaves.first()) + " failed: " + error);
 				return false;
 			}
 		}
 
-		m_loggerService.info(getClass(), "Barrier releaseed.");
+		m_loggerService.debug(getClass(), "Barrier released.");
 
-		m_networkService.unregisterReceiver(SlaveSyncBarrierSignOnMessage.class, this);
+		m_networkService.unregisterReceiver(BarrierSlaveSignOnRequest.class, this);
 
 		return true;
 	}
@@ -94,8 +97,8 @@ public class SyncBarrierMaster implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == CoordinatorMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case CoordinatorMessages.SUBTYPE_SLAVE_SYNC_BARRIER_SIGN_ON:
-						incomingSlaveSyncBarrierSignOn((SlaveSyncBarrierSignOnMessage) p_message);
+					case CoordinatorMessages.SUBTYPE_BARRIER_SLAVE_SIGN_ON_REQUEST:
+						incomingBarrierSlaveSignOnRequest((BarrierSlaveSignOnRequest) p_message);
 						break;
 					default:
 						break;
@@ -109,24 +112,30 @@ public class SyncBarrierMaster implements MessageReceiver {
 	 * @param p_message
 	 *            Message to handle.
 	 */
-	private void incomingSlaveSyncBarrierSignOn(final SlaveSyncBarrierSignOnMessage p_message) {
+	private void incomingBarrierSlaveSignOnRequest(final BarrierSlaveSignOnRequest p_message) {
 		// from different sync call
 		if (p_message.getSyncToken() != m_barrierIdentifer) {
 			m_loggerService.warn(getClass(),
-					"Received sync barrier sign on message by slave " + Integer.toHexString(p_message.getSource())
+					"Received barrier sign on message by slave " + NodeID.toHexString(p_message.getSource())
 							+ " with sync token " + p_message.getSyncToken() + ", does not match master token "
 							+ m_barrierIdentifer);
 			return;
 		}
 
-		synchronized (m_slavesSynced) {
-			// avoid dupes
-			if (!m_slavesSynced.contains(p_message.getSource())) {
-				m_slavesSynced.add(new Pair<Short, Long>(p_message.getSource(), p_message.getData()));
+		BarrierSlaveSignOnResponse response = new BarrierSlaveSignOnResponse(p_message, m_barrierIdentifer);
+		NetworkErrorCodes err = m_networkService.sendMessage(response);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_loggerService.error(getClass(), "Could not sign on slave " + NodeID.toHexString(p_message.getSource())
+					+ " sending response for sign on failed: " + err);
+		} else {
+			synchronized (m_slavesSynced) {
+				// avoid dupes
+				if (!m_slavesSynced.contains(p_message.getSource())) {
+					m_slavesSynced.add(new Pair<Short, Long>(p_message.getSource(), p_message.getData()));
+				}
 			}
+
+			m_loggerService.debug(getClass(), "Slave " + NodeID.toHexString(p_message.getSource()) + " has signed on.");
 		}
-
-		m_loggerService.debug(getClass(), "Slave " + p_message.getSource() + " has signed on.");
 	}
-
 }

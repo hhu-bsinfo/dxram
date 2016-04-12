@@ -74,15 +74,14 @@ public class DXRAMMain extends AbstractMain {
 		boolean runTerminal = p_arguments.getArgument(ARG_DXRAM_TERMINAL).getValue(Boolean.class);
 
 		if (runTerminal) {
-			System.out.println("DXRAM Terminal started.");
-
+			System.out.println(">>> DXRAM Terminal started <<<");
 			if (!runTerminal()) {
 				return -1;
 			} else {
 				return 0;
 			}
 		} else {
-			System.out.println("DXRAM started");
+			System.out.println(">>> DXRAM started <<<");
 
 			while (true) {
 				// Wait a moment
