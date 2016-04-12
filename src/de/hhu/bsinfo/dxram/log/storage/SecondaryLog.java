@@ -968,8 +968,7 @@ public class SecondaryLog extends AbstractLog {
 							// Get current version
 							currentVersion = p_allVersions.get(chunkID);
 							if (currentVersion == null || (short) (currentVersion.getEpoch() + 1) == entryVersion.getEpoch()) {
-								// There is no entry in hashtable or element is more current -> get latest version from
-								// cache
+								// There is no entry in hashtable or element is more current -> get latest version from cache
 								// (Epoch can only be 1 greater because there is no flushing during reorganization)
 								currentVersion = m_versionsBuffer.get(chunkID);
 							}
@@ -1009,6 +1008,11 @@ public class SecondaryLog extends AbstractLog {
 				}
 			} else {
 				m_segmentAssignmentlock.unlock();
+			}
+
+			if (readBytes - writtenBytes > 0) {
+				m_logger.info(getClass(), "Freed " + (readBytes - writtenBytes) + " bytes during reorganization of:"
+						+ p_segmentIndex + "  " + m_nodeID + "," + m_rangeIDOrFirstLocalID + "\t " + determineLogSize() / 1024 / 1024);
 			}
 		}
 	}

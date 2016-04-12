@@ -9,11 +9,11 @@ package de.hhu.bsinfo.dxram.util;
 public enum NodeRole {
 
 	// Constants
-	PEER('P'), SUPERPEER('S'), MONITOR('M');
+	PEER('P'), SUPERPEER('S'), TERMINAL('T');
 
 	public static final String SUPERPEER_STR = "superpeer";
 	public static final String PEER_STR = "peer";
-	public static final String MONITOR_STR = "monitor";
+	public static final String TERMINAL_STR = "terminal";
 
 	// Attributes
 	private char m_acronym;
@@ -38,8 +38,8 @@ public enum NodeRole {
 		String str = p_str.toLowerCase();
 		if (str.equals(SUPERPEER_STR) || str.equals("s")) {
 			return NodeRole.SUPERPEER;
-		} else if (str.equals(MONITOR_STR) || str.equals("m")) {
-			return NodeRole.MONITOR;
+		} else if (str.equals(TERMINAL_STR) || str.equals("t")) {
+			return NodeRole.TERMINAL;
 		} else {
 			return NodeRole.PEER;
 		}
@@ -58,8 +58,8 @@ public enum NodeRole {
 	public String toString() {
 		if (equals(PEER)) {
 			return PEER_STR;
-		} else if (equals(MONITOR)) {
-			return MONITOR_STR;
+		} else if (equals(TERMINAL)) {
+			return TERMINAL_STR;
 		} else {
 			return SUPERPEER_STR;
 		}

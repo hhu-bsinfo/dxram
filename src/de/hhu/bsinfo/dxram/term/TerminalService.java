@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -35,6 +36,11 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		byte[] arr;
 		ArgumentListParser argsParser = new DefaultArgumentListParser();
 		ArgumentList argsList = new ArgumentList();
+
+		if (!m_boot.getNodeRole().equals(NodeRole.TERMINAL)) {
+			System.out.println("A Terminal node must have the NodeRole \"terminal\". Aborting");
+			return;
+		}
 
 		m_logger.info(getClass(), "Running terminal...");
 
@@ -161,7 +167,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			System.out.print("Are you sure (y/n)?");
 
 			arr = JNIconsole.readline("");
-			if (arr != null) {
+			if (arr != null && arr.length > 0) {
 				if (arr[0] == 'y' || arr[0] == 'Y') {
 					ret = true;
 					break;

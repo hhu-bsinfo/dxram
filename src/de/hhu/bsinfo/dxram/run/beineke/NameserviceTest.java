@@ -88,6 +88,8 @@ public final class NameserviceTest {
 				nameService.getChunkID(i + "");
 			}
 			System.out.println("Time to get ChunkIDs of " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
+
+			System.out.println("Number of entries: " + nameService.getEntryCount());
 		}
 	}
 

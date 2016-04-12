@@ -171,8 +171,8 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	 * Get the number of entries in name service
 	 * @return the number of name service entries
 	 */
-	public long getNameserviceEntryCount() {
-		long ret = -1;
+	public int getNameserviceEntryCount() {
+		int ret = -1;
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");

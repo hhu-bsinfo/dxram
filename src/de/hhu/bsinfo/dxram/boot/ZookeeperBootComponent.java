@@ -126,7 +126,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
-	public List<Short> getAvailableNodeIDs() {
+	public List<Short> getIDsOfOnlineNodes() {
+		// TODO: Don't use ZooKeeper for this
+
 		List<Short> ids = new ArrayList<Short>();
 
 		if (zookeeperPathExists("nodes/superpeers")) {
@@ -150,14 +152,20 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
-	public List<Short> getOnlinePeerNodeIDs() {
+	public List<Short> getIDsOfOnlinePeers() {
+		// TODO: Don't use ZooKeeper for this
+
+		short childID;
 		List<Short> ids = new ArrayList<Short>();
 
 		if (zookeeperPathExists("nodes/peers")) {
 			try {
 				List<String> children = m_zookeeper.getChildren("nodes/peers");
 				for (String child : children) {
-					ids.add(Short.parseShort(child));
+					childID = Short.parseShort(child);
+					if (childID != getNodeID()) {
+						ids.add(Short.parseShort(child));
+					}
 				}
 			} catch (final ZooKeeperException e) {}
 		}
@@ -558,6 +566,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 								"NodeRole in configuration differs from command line given NodeRole: "
 										+ entry.getRole() + " != " + p_cmdLineNodeRole);
 						return false;
+					} else if (p_cmdLineNodeRole.equals(NodeRole.TERMINAL)) {
+						m_logger.error(getClass(), "A Terminal node should not be in nodes list");
+						return false;
 					}
 					m_nodesConfiguration.setOwnNodeID(nodeID);
 					m_bootstrap = nodeID;
@@ -581,7 +592,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				splits = node.split("/");
 
 				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.PEER));
+						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2])));
 
 				if (nodeID == m_nodesConfiguration.getOwnNodeID()) {
 					// NodeID was already re-used
@@ -593,7 +604,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				// Add this node if it was not in start configuration
 				m_logger.warn(this.getClass(), "node not in nodes.config (" + m_ownIP + ", " + m_ownPort + ")");
 
-				node = m_ownIP + "/" + m_ownPort + "/" + "P" + "/" + 0 + "/" + 0;
+				node = m_ownIP + "/" + m_ownPort + "/" + p_cmdLineNodeRole.getAcronym() + "/" + 0 + "/" + 0;
 
 				childs = m_zookeeper.getChildren("nodes/free");
 				if (!childs.isEmpty()) {
@@ -617,7 +628,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 				// Set routing information for that node
 				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(m_ownIP, m_ownPort, (short) 0, (short) 0, NodeRole.PEER));
+						new NodeEntry(m_ownIP, m_ownPort, (short) 0, (short) 0, p_cmdLineNodeRole));
 			} else {
 				// Remove NodeID if this node failed before
 				nodeID = m_nodesConfiguration.getOwnNodeID();
@@ -629,7 +640,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			m_zookeeper.setChildrenWatch("nodes/new", this);
 			m_zookeeper.setChildrenWatch("nodes/free", this);
 
-			// Register peer/superpeer
+			// Register peer/superpeer (a terminal node is not registered to exclude it from backup)
 			if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.SUPERPEER)) {
 				m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
 			} else if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.PEER)) {
@@ -647,7 +658,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Create a path in zookeeper.
-	 * @param p_path Path to create.
+	 * @param p_path
+	 *            Path to create.
 	 */
 	private void zookeeperCreate(final String p_path) {
 		try {
@@ -659,7 +671,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get the status of a path.
-	 * @param p_path Path to get the status of.
+	 * @param p_path
+	 *            Path to get the status of.
 	 * @return Status of the path.
 	 */
 	private Stat zookeeperGetStatus(final String p_path) {
@@ -676,8 +689,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Delete a path in zookeeper.
-	 * @param p_path Path to delete.
-	 * @param p_version Version of the path to delete.
+	 * @param p_path
+	 *            Path to delete.
+	 * @param p_version
+	 *            Version of the path to delete.
 	 */
 	private void zookeeperDelete(final String p_path, final int p_version) {
 		try {
@@ -689,7 +704,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get data from a path.
-	 * @param p_path Path to get the data of.
+	 * @param p_path
+	 *            Path to get the data of.
 	 * @return Data stored with the path.
 	 */
 	private byte[] zookeeperGetData(final String p_path) {
@@ -706,8 +722,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get data from a path.
-	 * @param p_path Path to get the data of.
-	 * @param p_status Status of the node.
+	 * @param p_path
+	 *            Path to get the data of.
+	 * @param p_status
+	 *            Status of the node.
 	 * @return Data from the path.
 	 */
 	private byte[] zookeeperGetData(final String p_path, final Stat p_status) {
@@ -724,9 +742,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Set data for a path.
-	 * @param p_path Path to set the data for.
-	 * @param p_data Data to set.
-	 * @param p_version Version of the path.
+	 * @param p_path
+	 *            Path to set the data for.
+	 * @param p_data
+	 *            Data to set.
+	 * @param p_version
+	 *            Version of the path.
 	 * @return True if successful, false otherwise.
 	 */
 	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) {
@@ -741,7 +762,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Check if a path exists.
-	 * @param p_path Path to check.
+	 * @param p_path
+	 *            Path to check.
 	 * @return True if exists, false otherwise.
 	 */
 	private boolean zookeeperPathExists(final String p_path) {

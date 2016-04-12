@@ -9,6 +9,7 @@ import java.util.TreeSet;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.utils.CRC16;
 
 /**
  * HashTable to store ID-Mappings (Linear probing)
@@ -373,28 +374,59 @@ public class NameserviceHashTable {
 	 *            whether this is the only superpeer or not
 	 * @param p_interval
 	 *            the type of interval
+	 * @param p_hashGenerator
+	 *            the CRC16 hash generator
 	 * @return all data in IDHashTable
 	 */
-	public final byte[] toArray(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer, final short p_interval) {
+	public final byte[] toArray(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer,
+			final short p_interval, final CRC16 p_hashGenerator) {
 		int count = 0;
 		int iter;
-		long value;
 		ByteBuffer data;
 
 		data = ByteBuffer.allocate(m_count * 12);
 
 		for (int i = 0; i < m_elementCapacity; i++) {
 			iter = getKey(i);
-			value = getValue(i);
 			if (iter != 0) {
-				if (p_isOnlySuperpeer || OverlayHelper.isNodeInRange(ChunkID.getCreatorID(value), p_bound1, p_bound2, p_interval)) {
-					data.putInt(iter);
+				if (p_isOnlySuperpeer || OverlayHelper.isNodeInRange(p_hashGenerator.hash(iter - 1), p_bound1, p_bound2, p_interval)) {
+					data.putInt(iter - 1);
 					data.putLong(getValue(i));
 					count++;
 				}
 			}
 		}
 		return Arrays.copyOfRange(data.array(), 0, count);
+	}
+
+	/**
+	 * Returns the number of entries without backups
+	 * @param p_bound1
+	 *            the first bound
+	 * @param p_bound2
+	 *            the second bound
+	 * @param p_isOnlySuperpeer
+	 *            whether this is the only superpeer or not
+	 * @param p_interval
+	 *            the type of interval
+	 * @param p_hashGenerator
+	 *            the CRC16 hash generator
+	 * @return number of own entries
+	 */
+	public final int getNumberOfOwnEntries(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer,
+			final short p_interval, final CRC16 p_hashGenerator) {
+		int count = 0;
+		int iter;
+
+		for (int i = 0; i < m_elementCapacity; i++) {
+			iter = getKey(i);
+			if (iter != 0) {
+				if (p_isOnlySuperpeer || OverlayHelper.isNodeInRange(p_hashGenerator.hash(iter - 1), p_bound1, p_bound2, p_interval)) {
+					count++;
+				}
+			}
+		}
+		return count;
 	}
 
 	/**

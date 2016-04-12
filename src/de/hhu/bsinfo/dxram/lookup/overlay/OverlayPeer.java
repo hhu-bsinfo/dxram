@@ -283,8 +283,8 @@ public class OverlayPeer implements MessageReceiver {
 	 * Get the number of entries in name service
 	 * @return the number of name service entries
 	 */
-	public long getNameserviceEntryCount() {
-		long ret = 0;
+	public int getNameserviceEntryCount() {
+		int ret = 0;
 		Short[] superpeers;
 		GetNameserviceEntryCountRequest request;
 		GetNameserviceEntryCountResponse response;
@@ -304,8 +304,6 @@ public class OverlayPeer implements MessageReceiver {
 				ret += response.getCount();
 			}
 		}
-
-		// TODO: Aggregate counts and add command to service
 
 		return ret;
 	}

@@ -65,6 +65,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	private static final short ORDER = 10;
 
 	private static final short CLOSED_INTERVAL = 0;
+	private static final short UPPER_CLOSED_INTERVAL = 1;
 	private static final short OPEN_INTERVAL = 2;
 	private static final boolean IS_SUPERPEER = true;
 	private static final boolean BACKUP = true;
@@ -313,8 +314,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 		int startIndex;
 		short currentPeer;
 		short lowerBound;
-		byte[] mappings;
-		byte[] oldMappings;
 		byte[] allMappings = null;
 
 		m_dataLock.lock();
@@ -333,18 +332,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			while (OverlayHelper.isNodeInRange(currentPeer, lowerBound, m_nodeID, OPEN_INTERVAL)) {
 				if (0 > Collections.binarySearch(p_peers, currentPeer)) {
 					p_trees.add(getCIDTree(currentPeer));
-
-					mappings = m_idTable.toArray(currentPeer, currentPeer, false, CLOSED_INTERVAL);
-					if (null == allMappings) {
-						allMappings = mappings;
-					} else {
-						oldMappings = allMappings;
-						allMappings = new byte[oldMappings.length + mappings.length];
-						System.arraycopy(oldMappings, 0, allMappings, 0, oldMappings.length);
-						System.arraycopy(mappings, 0, allMappings, oldMappings.length, mappings.length);
-					}
-
-					m_logger.trace(getClass(), "Spreading meta-data to " + m_successor);
+					m_logger.trace(getClass(), "Spreading meta-data of " + currentPeer + " to " + m_successor);
 				}
 				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
@@ -354,6 +342,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 				}
 				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
+
+			m_mappingLock.lock();
+			allMappings = m_idTable.toArray(lowerBound, m_nodeID, false, UPPER_CLOSED_INTERVAL, m_hashGenerator);
+			m_mappingLock.unlock();
 		}
 		m_dataLock.unlock();
 
@@ -583,8 +575,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 				existsInZooKeeper = m_boot.nodeAvailable(p_failedNode);
 
 				if (!existsInZooKeeper) {
-					// Failed node was a monitor
-					m_logger.error(getClass(), "Failed node was a monitor, NodeID: " + p_failedNode);
+					// Failed node was a terminal
+					m_logger.error(getClass(), "Failed node was a terminal, NodeID: " + p_failedNode);
 
 					// Remove peer
 					m_overlayLock.lock();
@@ -594,7 +586,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 					m_logger.info(getClass(), "Failed node " + p_failedNode + ": no further actions required");
 
 					// notify others about failure
-					m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_failedNode, NodeRole.MONITOR));
+					m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_failedNode, NodeRole.TERMINAL));
 				} else {
 					// Failed node was a peer
 					m_logger.error(getClass(), "Failed node was a peer, NodeID: " + p_failedNode);
@@ -842,13 +834,11 @@ public class OverlaySuperpeer implements MessageReceiver {
 		short currentPeer;
 		int index;
 		int startIndex;
-		byte[] mappings;
-		byte[] oldMappings;
 		byte[] allMappings = null;
 		ArrayList<LookupTree> trees;
 
-		trees = new ArrayList<LookupTree>();
 		m_dataLock.lock();
+		trees = new ArrayList<LookupTree>();
 		if (0 != m_assignedPeersIncludingBackup.size()) {
 			index = Collections.binarySearch(m_assignedPeersIncludingBackup, p_responsibleArea[0]);
 			if (0 > index) {
@@ -862,16 +852,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 			while (OverlayHelper.isNodeInRange(currentPeer, p_responsibleArea[0], p_nodeID, OPEN_INTERVAL)) {
 				trees.add(getCIDTree(currentPeer));
 
-				mappings = m_idTable.toArray(currentPeer, currentPeer, false, CLOSED_INTERVAL);
-				if (null == allMappings) {
-					allMappings = mappings;
-				} else {
-					oldMappings = allMappings;
-					allMappings = new byte[oldMappings.length + mappings.length];
-					System.arraycopy(oldMappings, 0, allMappings, 0, oldMappings.length);
-					System.arraycopy(mappings, 0, allMappings, oldMappings.length, mappings.length);
-				}
-
 				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
@@ -880,8 +860,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 				}
 				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
+
+			m_mappingLock.lock();
+			allMappings = m_idTable.toArray(p_responsibleArea[0], p_nodeID, false, UPPER_CLOSED_INTERVAL, m_hashGenerator);
+			m_mappingLock.unlock();
 		}
 		m_dataLock.unlock();
+
 		while (!m_superpeers.isEmpty()) {
 			m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
 			if (m_network.sendMessage(
@@ -911,14 +896,12 @@ public class OverlaySuperpeer implements MessageReceiver {
 		int startIndex;
 		boolean dataToTransmit = false;
 		boolean superpeerToSendData = false;
-		byte[] mappings;
-		byte[] oldMappings;
 		byte[] allMappings = null;
 		ArrayList<LookupTree> trees;
 		String str = "Spreaded data of ";
 
-		trees = new ArrayList<LookupTree>();
 		m_dataLock.lock();
+		trees = new ArrayList<LookupTree>();
 		lowerBound = m_predecessor;
 		if (0 != m_assignedPeersIncludingBackup.size()) {
 			index = Collections.binarySearch(m_assignedPeersIncludingBackup, lowerBound);
@@ -936,16 +919,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 				trees.add(getCIDTree(currentPeer));
 
-				mappings = m_idTable.toArray(currentPeer, currentPeer, false, CLOSED_INTERVAL);
-				if (null == allMappings) {
-					allMappings = mappings;
-				} else {
-					oldMappings = allMappings;
-					allMappings = new byte[oldMappings.length + mappings.length];
-					System.arraycopy(oldMappings, 0, allMappings, 0, oldMappings.length);
-					System.arraycopy(mappings, 0, allMappings, oldMappings.length, mappings.length);
-				}
-
 				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
 				}
@@ -954,6 +927,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 				}
 				currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			}
+
+			m_mappingLock.lock();
+			allMappings = m_idTable.toArray(lowerBound, m_nodeID, false, UPPER_CLOSED_INTERVAL, m_hashGenerator);
+			m_mappingLock.unlock();
 		}
 		m_dataLock.unlock();
 
@@ -1064,7 +1041,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_dataLock.unlock();
 
 				m_mappingLock.lock();
-				mappings = m_idTable.toArray(responsibleArea[0], responsibleArea[1], m_superpeers.isEmpty(), CLOSED_INTERVAL);
+				mappings = m_idTable.toArray(responsibleArea[0], responsibleArea[1], m_superpeers.isEmpty(), UPPER_CLOSED_INTERVAL, m_hashGenerator);
 				m_mappingLock.unlock();
 
 				if (m_network.sendMessage(new JoinResponse(p_joinRequest, (short) -1, joiningNodesPredecessor, m_nodeID, mappings, m_superpeers, peers, trees))
@@ -1220,7 +1197,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		id = p_insertIDRequest.getID();
 		m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource() + ", id " + id);
 
-		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID, CLOSED_INTERVAL)) {
+		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID, UPPER_CLOSED_INTERVAL)) {
 			m_mappingLock.lock();
 			m_idTable.put(id, p_insertIDRequest.getChunkID());
 			m_mappingLock.unlock();
@@ -1266,7 +1243,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from " + p_getChunkIDForNameserviceEntryRequest.getSource()
 				+ ", id " + id);
 
-		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID, CLOSED_INTERVAL)) {
+		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID, UPPER_CLOSED_INTERVAL)) {
 			m_mappingLock.lock();
 			chunkID = m_idTable.get(id);
 			m_mappingLock.unlock();
@@ -1292,7 +1269,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		if (m_network.sendMessage(
 				new GetNameserviceEntryCountResponse(p_getNameserviceEntryCountRequest,
-						m_idTable.toArray(m_predecessor, m_nodeID, false, CLOSED_INTERVAL).length))
+						m_idTable.getNumberOfOwnEntries(m_predecessor, m_nodeID, m_superpeers.isEmpty(), UPPER_CLOSED_INTERVAL, m_hashGenerator)))
 				!= NetworkErrorCodes.SUCCESS) {
 			// Requesting peer is not available anymore, ignore it
 		}
