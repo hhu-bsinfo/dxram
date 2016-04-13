@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -51,8 +52,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		System.out.println("Use '!' or '! <command>' for interactive mode.");
 
 		while (m_loop) {
-			arr = JNIconsole
-					.readline("$0x" + Integer.toHexString(m_boot.getNodeID()).substring(4).toUpperCase() + "> ");
+			arr = JNIconsole.readline(NodeID.toHexString(m_boot.getNodeID()) + "> ");
 			if (arr != null) {
 				command = new String(arr, 0, arr.length);
 				arguments = command.split(" ");
