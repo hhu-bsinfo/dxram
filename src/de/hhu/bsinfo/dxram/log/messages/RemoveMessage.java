@@ -101,7 +101,12 @@ public class RemoveMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
-		return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.length;
+	protected final int getPayloadLength() {
+		if (m_chunkIDs != null) {
+			return Byte.BYTES + Integer.BYTES + Long.BYTES * m_chunkIDs.length;
+		} else {
+			return 0;
+		}
 	}
+
 }

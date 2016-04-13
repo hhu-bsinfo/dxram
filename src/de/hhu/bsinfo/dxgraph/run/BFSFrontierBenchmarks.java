@@ -17,14 +17,14 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.eval.EvaluationTables;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Benchmark and compare execution time of various frontier lists used for BFS in dxgraph.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  *
  */
-public class BFSFrontierBenchmarks extends Main {
+public class BFSFrontierBenchmarks extends AbstractMain {
 
 	private static final Argument ARG_ITEM_COUNT = new Argument("itemCount", "100", true, "Number of items to add and get from the list. "
 			+ "Make sure this is a multiple of the thread count, otherwise the multi threaded part will fail on validation");
@@ -41,7 +41,7 @@ public class BFSFrontierBenchmarks extends Main {
 	 * @param args Main arguments.
 	 */
 	public static void main(final String[] args) {
-		Main main = new BFSFrontierBenchmarks();
+		AbstractMain main = new BFSFrontierBenchmarks();
 		main.run(args);
 	}
 	

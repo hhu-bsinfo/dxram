@@ -9,9 +9,9 @@ import com.sun.org.apache.xpath.internal.operations.Bool;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
-public abstract class Converter extends Main 
+public abstract class Converter extends AbstractMain 
 {
 	private static final Argument ARG_INPUT = new Argument("in", null, false, "Input file of specific format");
 	private static final Argument ARG_INPUT_ROOTS = new Argument("inRoots", null, true, "Input file of specific format with BFS roots");

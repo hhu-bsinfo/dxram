@@ -75,7 +75,7 @@ public class GetLookupRangeResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		int ret;
 
 		if (m_lookupRange == null) {

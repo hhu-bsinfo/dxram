@@ -5,12 +5,12 @@ import java.io.File;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -20,6 +20,8 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
+import de.hhu.bsinfo.dxram.recovery.tcmds.TcmdRecover;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 
@@ -27,9 +29,9 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
  * This service provides all recovery functionality.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.03.16
  */
-public class RecoveryService extends DXRAMService implements MessageReceiver {
+public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
 	// Attributes
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
 	private LogComponent m_log;
@@ -83,7 +85,7 @@ public class RecoveryService extends DXRAMService implements MessageReceiver {
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 
-		m_boot = getComponent(BootComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);
 		m_chunk = getComponent(ChunkComponent.class);
 		m_log = getComponent(LogComponent.class);
@@ -98,6 +100,8 @@ public class RecoveryService extends DXRAMService implements MessageReceiver {
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Recovery service will not work!");
 		}
 		m_backupDirectory = m_backup.getBackupDirectory();
+
+		getComponent(TerminalComponent.class).registerCommand(new TcmdRecover());
 
 		return true;
 	}
@@ -129,7 +133,7 @@ public class RecoveryService extends DXRAMService implements MessageReceiver {
 					firstChunkIDOrRangeID = backupRange.getRangeID();
 
 					// Get Chunks from backup peers (or locally if this is the primary backup peer)
-					for (short backupPeer : backupPeers) {
+					/*-for (short backupPeer : backupPeers) {
 						if (backupPeer == m_boot.getNodeID()) {
 							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
 								chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
@@ -146,6 +150,12 @@ public class RecoveryService extends DXRAMService implements MessageReceiver {
 							chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
 						}
 						break;
+					}*/
+
+					if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
+						chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
+					} else {
+						chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
 					}
 
 					m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks.");

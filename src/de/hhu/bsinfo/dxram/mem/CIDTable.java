@@ -27,8 +27,6 @@ public final class CIDTable {
 	public static final int ENTRIES_FOR_NID_LEVEL = (int) Math.pow(2.0, BITS_FOR_NID_LEVEL);
 	public static final int LID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_PER_LID_LEVEL + 7;
 	public static final int NID_TABLE_SIZE = ENTRY_SIZE * ENTRIES_FOR_NID_LEVEL + 7;
-	// private static final int LID_LOCK_OFFSET = LID_TABLE_SIZE - 4;
-	// private static final int NID_LOCK_OFFSET = NID_TABLE_SIZE - 4;
 
 	protected static final long BITMASK_ADDRESS = 0x7FFFFFFFFFL;
 	protected static final long BIT_FLAG = 0x8000000000L;
@@ -37,22 +35,30 @@ public final class CIDTable {
 
 	private short m_ownNodeID = -1;
 	private long m_addressTableDirectory = -1;
-	private SmallObjectHeap m_rawMemory = null;
+	private SmallObjectHeap m_rawMemory;
 
-	private LIDStore m_store = null;
+	private LIDStore m_store;
 
-	private LoggerComponent m_logger = null;
-	private StatisticsComponent m_statistics = null;
+	private LoggerComponent m_logger;
+	private StatisticsComponent m_statistics;
 
-	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
+	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs;
 
-	private AtomicLong m_nextLocalID = null;
+	private AtomicLong m_nextLocalID;
 
-	// Constructors
 	/**
 	 * Creates an instance of CIDTable
+	 * @param p_ownNodeID
+	 *            ID of the current node.
+	 * @param p_statistics
+	 *            Statistics component for recording.
+	 * @param p_statisticsRecorderIDs
+	 *            Metadata for statistics recording
+	 * @param p_logger
+	 *            Logger component for logging.
 	 */
-	public CIDTable(final short p_ownNodeID, final StatisticsComponent p_statistics, final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs,
+	public CIDTable(final short p_ownNodeID, final StatisticsComponent p_statistics,
+			final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs,
 			final LoggerComponent p_logger) {
 		m_ownNodeID = p_ownNodeID;
 		m_statistics = p_statistics;
@@ -73,7 +79,8 @@ public final class CIDTable {
 		m_store = new LIDStore();
 		m_nextLocalID = new AtomicLong(1);
 
-		m_logger.info(getClass(), "CIDTable: init success (page directory at: 0x" + Long.toHexString(m_addressTableDirectory) + ")");
+		m_logger.info(getClass(),
+				"CIDTable: init success (page directory at: 0x" + Long.toHexString(m_addressTableDirectory) + ")");
 	}
 
 	/**
@@ -88,7 +95,7 @@ public final class CIDTable {
 
 	/**
 	 * Get a free LID from the CIDTable
-	 * @return a free LID and version, or null if there is none
+	 * @return a free LID and version, or -1 if there is none
 	 */
 	public long getFreeLID() {
 		long ret = -1;
@@ -170,7 +177,8 @@ public final class CIDTable {
 				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
 				if (entry > 0) {
 					if (i == (m_ownNodeID & 0xFFFF)) {
-						ret.addAll(getAllRanges((long) i << 48, readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
+						ret.addAll(getAllRanges((long) i << 48,
+								readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
 								LID_TABLE_LEVELS - 1));
 					}
 				}
@@ -189,7 +197,7 @@ public final class CIDTable {
 
 					// can we merge intervals?
 					if (intervalEnd + 1 == intervalStart) {
-						// System.out.println("   remove el.");
+						// System.out.println(" remove el.");
 						ret.remove(i + 1);
 						ret.remove(i + 1);
 						i -= 2;
@@ -226,35 +234,14 @@ public final class CIDTable {
 	// -----------------------------------------------------------------------------------------
 
 	/**
-	 * Disengages a table
-	 * @param p_addressTable
-	 *            the table
-	 * @param p_level
-	 *            the table level
-	 */
-	private void disengage(final long p_addressTable, final int p_level) {
-		long entry;
-
-		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {
-			entry = readEntry(p_addressTable, i) & BITMASK_ADDRESS;
-
-			if (entry > 0) {
-				if (p_level > 0) {
-					disengage(entry, p_level - 1);
-				}
-				m_rawMemory.free(entry);
-			}
-		}
-	}
-
-	/**
 	 * Creates the NodeID table
 	 * @return the address of the table
 	 */
 	private long createNIDTable() {
 		long ret;
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable, NID_TABLE_SIZE);
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable,
+				NID_TABLE_SIZE);
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, NID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
@@ -273,7 +260,8 @@ public final class CIDTable {
 	private long createLIDTable() {
 		long ret;
 
-		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable, LID_TABLE_SIZE);
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable,
+				LID_TABLE_SIZE);
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, LID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
@@ -367,7 +355,8 @@ public final class CIDTable {
 	 * @param p_level
 	 *            the table level
 	 */
-	private void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable, final int p_level) {
+	private void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable,
+			final int p_level) {
 		long index;
 		long entry;
 
@@ -408,7 +397,8 @@ public final class CIDTable {
 	 *            allocated but remove it from the table index.
 	 * @return the entry
 	 */
-	private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level, final boolean p_flagZombie) {
+	private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level,
+			final boolean p_flagZombie) {
 		long ret = -1;
 		long index;
 		long entry;
@@ -471,7 +461,8 @@ public final class CIDTable {
 				if ((entry & DELETED_FLAG) == 0) {
 
 					if (p_level > 0) {
-						ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1));
+						ret.addAll(getAllRanges(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level),
+								entry & BITMASK_ADDRESS, p_level - 1));
 					} else {
 						if (range == 0) {
 							range = 1;
@@ -511,7 +502,8 @@ public final class CIDTable {
 			entry = readEntry(p_table, i);
 			if (entry > 0) {
 				if (p_level > 0) {
-					ret.addAll(getAllEntries(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level), entry & BITMASK_ADDRESS, p_level - 1));
+					ret.addAll(getAllEntries(p_unfinishedCID + (i << BITS_PER_LID_LEVEL * p_level),
+							entry & BITMASK_ADDRESS, p_level - 1));
 				} else {
 					ret.add(p_unfinishedCID + i);
 				}
@@ -671,7 +663,8 @@ public final class CIDTable {
 		 * Finds free LIDs in the CIDTable
 		 */
 		private void findFreeLIDs() {
-			findFreeLIDs(readEntry(m_addressTableDirectory, m_ownNodeID & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1, 0);
+			findFreeLIDs(readEntry(m_addressTableDirectory, m_ownNodeID & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
+					LID_TABLE_LEVELS - 1, 0);
 		}
 
 		/**

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
 import java.nio.charset.StandardCharsets;
@@ -6,13 +7,14 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+//TODO: A terminal node does not store chunks
 //TODO mike refactoring: refer to chunk create/remove commands
-public class TcmdChunkPut extends TerminalCommand{
-		
+public class TcmdChunkPut extends AbstractTerminalCommand {
+
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Chunk ID");
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");
 	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node ID");
@@ -20,19 +22,19 @@ public class TcmdChunkPut extends TerminalCommand{
 	
 	
 	@Override
-	public String getName() 
+	public String getName()
 	{
 		return "chunkput";
 	}
-	
+
 	@Override
-	public String getDescription() 
+	public String getDescription()
 	{
 
-		return 		"Put a String in the specified chunk."
-				+ 	"If the specified string is too long it will be trunced";
+		return "Put a String in the specified chunk."
+				+ "If the specified string is too long it will be trunced";
 	}
-	
+
 	@Override
 	public void registerArguments(final ArgumentList p_arguments)
 	{
@@ -41,9 +43,9 @@ public class TcmdChunkPut extends TerminalCommand{
 		p_arguments.setArgument(MS_ARG_NID);
 		p_arguments.setArgument(MS_ARG_DAT);
 	}
-	
+
 	@Override
-	public boolean execute(ArgumentList p_arguments) 
+	public boolean execute(ArgumentList p_arguments)
 	{
 		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
 		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
@@ -81,29 +83,29 @@ public class TcmdChunkPut extends TerminalCommand{
 	private boolean __checkID(Long cid, Short nid, Long lid)
 	{
 		
-		if (cid == null && (lid == null || nid == null))
-		{
+		if (cid == null && (lid == null || nid == null)){
 			System.out.println("Error: Neither CID nor NID and LID specified");
 			return true;
 		}
 		return false;
 	}
-	
+
 	private long __getCid(Long cid, Long lid, Short nid)
 	{
-		BootService   bootService 	= getTerminalDelegate().getDXRAMService(BootService.class);
+		BootService bootService = getTerminalDelegate().getDXRAMService(BootService.class);
 		// we favor full cid
 		// take lid
 		if (cid == null)
 		{
-			if (nid == null) 
+			if (nid == null) {
 				nid = bootService.getNodeID();
-			
+			}
+
 			// create cid
 			cid = ChunkID.getChunkID(nid, lid);
 		}
-		
+
 		return cid;
 	}
-	
+
 }

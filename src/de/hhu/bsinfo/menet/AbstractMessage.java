@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.menet;
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -81,7 +82,8 @@ public abstract class AbstractMessage {
 	 * @param p_exclusivity
 	 *            whether this message type allows parallel execution
 	 */
-	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
+	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype,
+			final boolean p_exclusivity) {
 		this(getNextMessageID(), p_destination, p_type, p_subtype, p_exclusivity, DEFAULT_STATUS_CODE);
 	}
 
@@ -96,7 +98,8 @@ public abstract class AbstractMessage {
 	 * @param p_subtype
 	 *            the message subtype
 	 */
-	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype) {
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type,
+			final byte p_subtype) {
 		this(p_messageID, p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
 	}
 
@@ -115,7 +118,8 @@ public abstract class AbstractMessage {
 	 * @param p_statusCode
 	 *            the status code
 	 */
-	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity,
+	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype,
+			final boolean p_exclusivity,
 			final byte p_statusCode) {
 		assert p_destination != NodeID.INVALID_ID;
 
@@ -227,6 +231,8 @@ public abstract class AbstractMessage {
 	 * Writes the message payload into the buffer
 	 * @param p_buffer
 	 *            the buffer
+	 * @throws BufferOverflowException
+	 *             if message buffer is too small
 	 */
 	protected void writePayload(final ByteBuffer p_buffer) {}
 
@@ -234,19 +240,21 @@ public abstract class AbstractMessage {
 	 * Get the total number of bytes the payload requires to create a buffer.
 	 * @return Number of bytes of the payload
 	 */
-	protected int getPayloadLengthForWrite() {
+	protected int getPayloadLength() {
 		return 0;
 	}
 
 	/**
 	 * Get a ByteBuffer with the Message as content
 	 * @return a ByteBuffer with the Message as content
+	 * @throws NetworkException
+	 *             if message buffer is too small
 	 */
-	protected final ByteBuffer getBuffer() {
+	protected final ByteBuffer getBuffer() throws NetworkException {
 		int payloadSize;
 		ByteBuffer buffer;
 
-		payloadSize = getPayloadLengthForWrite();
+		payloadSize = getPayloadLength();
 		buffer = ByteBuffer.allocate(HEADER_SIZE + payloadSize);
 		buffer = fillBuffer(buffer, payloadSize);
 		buffer.flip();
@@ -261,24 +269,37 @@ public abstract class AbstractMessage {
 	 * @param p_payloadSize
 	 *            the payload size
 	 * @return filled ByteBuffer
+	 * @throws NetworkException
+	 *             if message buffer is too small
 	 */
-	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) {
-		// Put 3 byte message ID
-		p_buffer.put((byte) (m_messageID >>> 16));
-		p_buffer.put((byte) (m_messageID >>> 8));
-		p_buffer.put((byte) m_messageID);
+	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) throws NetworkException {
+		try {
+			// Put 3 byte message ID
+			p_buffer.put((byte) (m_messageID >>> 16));
+			p_buffer.put((byte) (m_messageID >>> 8));
+			p_buffer.put((byte) m_messageID);
 
-		p_buffer.put(m_type);
-		p_buffer.put(m_subtype);
-		if (m_exclusivity) {
-			p_buffer.put((byte) 1);
-		} else {
-			p_buffer.put((byte) 0);
+			p_buffer.put(m_type);
+			p_buffer.put(m_subtype);
+			if (m_exclusivity) {
+				p_buffer.put((byte) 1);
+			} else {
+				p_buffer.put((byte) 0);
+			}
+			p_buffer.put(m_statusCode);
+			p_buffer.putInt(p_payloadSize);
+
+			writePayload(p_buffer);
+		} catch (final BufferOverflowException e) {
+			throw new NetworkException("Could not create message " + this + ", because message buffer is too small", e);
 		}
-		p_buffer.put(m_statusCode);
-		p_buffer.putInt(p_payloadSize);
 
-		writePayload(p_buffer);
+		int pos = p_buffer.position();
+		int payloadSize = getPayloadLength() + HEADER_SIZE;
+		if (pos < payloadSize) {
+			throw new NetworkException("Did not create message " + this
+					+ ", because message buffer is larger than expected payload size: " + pos + " > " + payloadSize);
+		}
 
 		return p_buffer;
 	}
@@ -317,7 +338,8 @@ public abstract class AbstractMessage {
 	 * @throws NetworkException
 	 *             if the message header could not be created
 	 */
-	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer, final MessageDirectory p_messageDirectory) throws NetworkException {
+	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer,
+			final MessageDirectory p_messageDirectory) throws NetworkException {
 		AbstractMessage ret = null;
 		int messageID;
 		byte type;
@@ -341,7 +363,7 @@ public abstract class AbstractMessage {
 		try {
 			ret = p_messageDirectory.getInstance(type, subtype);
 		} catch (final Exception e) {
-			throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype, e);
+			throw new NetworkException("Unable to create message of type " + type + ", subtype " + subtype + ". Type is missing in message directory", e);
 		}
 
 		ret.m_messageID = messageID;
@@ -356,9 +378,10 @@ public abstract class AbstractMessage {
 	@Override
 	public final String toString() {
 		if (m_source != -1) {
-			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_source + ", " + m_destination + "]";
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + NodeID.toHexString(m_source) + ", "
+					+ NodeID.toHexString(m_destination) + "]";
 		} else {
-			return getClass().getSimpleName() + "[" + m_messageID + ", " + m_destination + "]";
+			return getClass().getSimpleName() + "[" + m_messageID + ", " + NodeID.toHexString(m_destination) + "]";
 		}
 	}
 

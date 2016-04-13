@@ -61,7 +61,7 @@ public final class HeapIntegrityChecker {
 		/**
 		 * Constructor
 		 */
-		public CheckMemoryBlocksSegmentBounds() {
+		CheckMemoryBlocksSegmentBounds() {
 			super(5, "CheckMemoryBlocksSegmentBounds");
 		}
 
@@ -91,7 +91,7 @@ public final class HeapIntegrityChecker {
 		/**
 		 * Constructor
 		 */
-		public CheckSegmentCheckFreeBlockListBounds() {
+		CheckSegmentCheckFreeBlockListBounds() {
 			super(4, "CheckSegmentCheckFreeBlockListBounds");
 		}
 
@@ -100,8 +100,8 @@ public final class HeapIntegrityChecker {
 			boolean ret = true;
 
 			for (HeapWalker.Segment segment : p_walkerResults.m_segments) {
-				if (segment.m_segmentBlock.m_startAddressFreeBlocksList < segment.m_segmentBlock.m_startAddress ||
-						segment.m_segmentBlock.m_startAddressFreeBlocksList > segment.m_segmentBlock.m_endAddress) {
+				if (segment.m_segmentBlock.m_startAddressFreeBlocksList < segment.m_segmentBlock.m_startAddress
+						|| segment.m_segmentBlock.m_startAddressFreeBlocksList > segment.m_segmentBlock.m_endAddress) {
 					System.out.println("FreeBlockList is not within segment bounds: " + segment);
 					ret = false;
 					break;
@@ -128,7 +128,7 @@ public final class HeapIntegrityChecker {
 		/**
 		 * Constructor
 		 */
-		public CheckSegmentBounds() {
+		CheckSegmentBounds() {
 			super(3, "CheckSegmentBounds");
 		}
 
@@ -169,7 +169,7 @@ public final class HeapIntegrityChecker {
 		/**
 		 * Constructor
 		 */
-		public CheckSegmentCount() {
+		CheckSegmentCount() {
 			super(2, "SegmentCount");
 		}
 
@@ -186,7 +186,7 @@ public final class HeapIntegrityChecker {
 		/**
 		 * Constructor
 		 */
-		public CheckHeapSizeBounds() {
+		CheckHeapSizeBounds() {
 			super(1, "HeapSizeBounds");
 		}
 
@@ -211,7 +211,7 @@ public final class HeapIntegrityChecker {
 		 * @param p_name
 		 *            Name of the check.
 		 */
-		public AbstractCheck(final int p_id, final String p_name) {
+		AbstractCheck(final int p_id, final String p_name) {
 			m_id = p_id;
 			m_name = p_name;
 		}

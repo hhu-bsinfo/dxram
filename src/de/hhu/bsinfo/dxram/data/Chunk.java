@@ -17,13 +17,12 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Florian Klein 09.03.2012
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class Chunk implements DataStructure
-{
+public class Chunk implements DataStructure {
 	public static final long INVALID_CHUNKID = ChunkID.INVALID_ID;
 	public static final int MAX_CHUNK_SIZE = 1024 * 1024 * 16;
 
 	private long m_chunkID = INVALID_CHUNKID;
-	private ByteBuffer m_data = null;
+	private ByteBuffer m_data;
 
 	/**
 	 * Constructor

@@ -44,6 +44,7 @@ public class PrimaryWriteBuffer {
 	private LoggerComponent m_logger;
 	private int m_writeBufferSize;
 	private int m_flashPageSize;
+	private int m_secondaryLogBufferSize;
 	private int m_logSegmentSize;
 	private boolean m_useChecksum;
 
@@ -73,9 +74,10 @@ public class PrimaryWriteBuffer {
 	private Condition m_dataAvailableCond;
 	private Condition m_finishedCopyingCond;
 
-	private ArrayList<byte[]> m_segmentPoolLarge = new ArrayList<byte[]>();
-	private ArrayList<byte[]> m_segmentPoolMedium = new ArrayList<byte[]>();
-	private ArrayList<byte[]> m_segmentPoolSmall = new ArrayList<byte[]>();
+	private boolean m_poolBuffers;
+	private ArrayList<byte[]> m_segmentPoolLarge;
+	private ArrayList<byte[]> m_segmentPoolMedium;
+	private ArrayList<byte[]> m_segmentPoolSmall;
 
 	// Constructors
 	/**
@@ -91,20 +93,27 @@ public class PrimaryWriteBuffer {
 	 *            the size of the write buffer
 	 * @param p_flashPageSize
 	 *            the size of a flash page
+	 * @param p_secondaryLogBufferSize
+	 *            the secondary log buffer size
 	 * @param p_logSegmentSize
 	 *            the segment size
 	 * @param p_useChecksum
 	 *            whether checksums are used
+	 * @param p_sortBufferPooling
+	 *            whether buffer pooling is enabled or not
 	 */
-	public PrimaryWriteBuffer(final LogService p_logService, final LoggerComponent p_logger, final PrimaryLog p_primaryLog, final int p_writeBufferSize,
-			final int p_flashPageSize, final int p_logSegmentSize, final boolean p_useChecksum) {
+	public PrimaryWriteBuffer(final LogService p_logService, final LoggerComponent p_logger, final PrimaryLog p_primaryLog,
+			final int p_writeBufferSize, final int p_flashPageSize, final int p_secondaryLogBufferSize, final int p_logSegmentSize,
+			final boolean p_useChecksum, final boolean p_sortBufferPooling) {
 		m_logService = p_logService;
 		m_logger = p_logger;
 		m_primaryLog = p_primaryLog;
 		m_writeBufferSize = p_writeBufferSize;
 		m_flashPageSize = p_flashPageSize;
+		m_secondaryLogBufferSize = p_secondaryLogBufferSize;
 		m_logSegmentSize = p_logSegmentSize;
 		m_useChecksum = p_useChecksum;
+		m_poolBuffers = p_sortBufferPooling;
 
 		m_bufferReadPointer = 0;
 		m_bufferWritePointer = 0;
@@ -128,21 +137,28 @@ public class PrimaryWriteBuffer {
 			m_isShuttingDown = false;
 		}
 
-		// Creates some buffers for segment pooling (2 * 8 MB, 16 * 1 MB, 32 * 0.5 MB, total: 48 MB)
-		// TODO: Configuration
-		for (int i = 0; i < 2; i++) {
-			m_segmentPoolLarge.add(new byte[m_logSegmentSize]);
-		}
-		for (int i = 0; i < 16; i++) {
-			m_segmentPoolMedium.add(new byte[m_logSegmentSize / 8]);
-		}
-		for (int i = 0; i < 32; i++) {
-			m_segmentPoolSmall.add(new byte[m_logSegmentSize / 16]);
+		if (m_poolBuffers) {
+			// Creates buffers for segment pooling (2 * 8 MB, 16 * 1 MB, 32 * 0.5 MB, total: 48 MB)
+			m_segmentPoolLarge = new ArrayList<byte[]>();
+			m_segmentPoolMedium = new ArrayList<byte[]>();
+			m_segmentPoolSmall = new ArrayList<byte[]>();
+
+			for (int i = 0; i < 2; i++) {
+				m_segmentPoolLarge.add(new byte[m_logSegmentSize]);
+			}
+			for (int i = 0; i < 16; i++) {
+				m_segmentPoolMedium.add(new byte[m_logSegmentSize / 8]);
+			}
+			for (int i = 0; i < 32; i++) {
+				m_segmentPoolSmall.add(new byte[m_logSegmentSize / 16]);
+			}
 		}
 
 		m_writerThread = new PrimaryLogWriterThread();
 		m_writerThread.setName("Logging: Writer Thread");
 		m_writerThread.start();
+
+		m_logger.trace(getClass(), "Initialized primary write buffer (" + m_writeBufferSize + ")");
 	}
 
 	// Methods
@@ -518,7 +534,7 @@ public class PrimaryWriteBuffer {
 					entry = iter.next();
 					rangeID = entry.getKey();
 					segmentLength = entry.getValue();
-					if (segmentLength < m_flashPageSize * 32) {
+					if (segmentLength < m_secondaryLogBufferSize) {
 						// There is less than 4 KB data from this node -> store buffer in primary log (later)
 						primaryLogBufferSize += segmentLength;
 						bufferNode = new BufferNode(segmentLength, false);
@@ -591,7 +607,7 @@ public class PrimaryWriteBuffer {
 					segment = bufferNode.getData(i);
 					segmentLength = bufferNode.getSegmentLength(i);
 					while (segment != null && segmentLength > 0) {
-						if (bufferLength < m_flashPageSize * 32) {
+						if (bufferLength < m_secondaryLogBufferSize) {
 							// 1. Buffer in secondary log buffer
 							if (!bufferLogEntryInSecondaryLogBuffer(segment, 0, segmentLength, rangeID, source)) {
 								// 2. Copy log entry/range to write it in primary log subsequently if the buffer was not
@@ -600,16 +616,19 @@ public class PrimaryWriteBuffer {
 								primaryLogBufferOffset += segmentLength;
 							}
 						} else {
-							// Segment is larger than one flash page * 32 -> skip primary log
+							// Segment is larger than secondary log buffer size -> skip primary log
 							writeDirectlyToSecondaryLog(segment, 0, segmentLength, rangeID, source);
 						}
-						// Return byte array to segment pool
-						if (segment.length == m_logSegmentSize && m_segmentPoolLarge.size() < 2) {
-							m_segmentPoolLarge.add(segment);
-						} else if (segment.length == m_logSegmentSize / 8 && m_segmentPoolMedium.size() < 16) {
-							m_segmentPoolMedium.add(segment);
-						} else if (segment.length == m_logSegmentSize / 16 && m_segmentPoolSmall.size() < 32) {
-							m_segmentPoolSmall.add(segment);
+
+						if (m_poolBuffers) {
+							// Return byte array to segment pool
+							if (segment.length == m_logSegmentSize && m_segmentPoolLarge.size() < 2) {
+								m_segmentPoolLarge.add(segment);
+							} else if (segment.length == m_logSegmentSize / 8 && m_segmentPoolMedium.size() < 16) {
+								m_segmentPoolMedium.add(segment);
+							} else if (segment.length == m_logSegmentSize / 16 && m_segmentPoolSmall.size() < 32) {
+								m_segmentPoolSmall.add(segment);
+							}
 						}
 
 						segment = bufferNode.getData(++i);
@@ -662,7 +681,7 @@ public class PrimaryWriteBuffer {
 
 		/**
 		 * Writes a log entry/range directly to secondary log buffer if longer than
-		 * one flash page * 32 Has to flush the corresponding secondary log buffer if not
+		 * secondary log buffer size Has to flush the corresponding secondary log buffer if not
 		 * empty to maintain order
 		 * @param p_buffer
 		 *            data block
@@ -728,34 +747,40 @@ public class PrimaryWriteBuffer {
 			m_writtenBytesPerSegment = new int[m_numberOfSegments];
 			m_segments = new byte[m_numberOfSegments][];
 
-			for (int i = 0; i < m_segments.length; i++) {
-				if (length > m_logSegmentSize / 8) {
-					if (m_segmentPoolLarge.size() > 0) {
-						m_segments[i] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
-						length -= m_logSegmentSize;
+			if (m_poolBuffers) {
+				for (int i = 0; i < m_segments.length; i++) {
+					if (length > m_logSegmentSize / 8) {
+						if (m_segmentPoolLarge.size() > 0) {
+							m_segments[i] = m_segmentPoolLarge.remove(m_segmentPoolLarge.size() - 1);
+							length -= m_logSegmentSize;
+						} else {
+							m_segments[i] = new byte[Math.min(length, m_logSegmentSize)];
+							length -= m_segments[i].length;
+						}
+					} else if (length > m_logSegmentSize / 16) {
+						if (m_segmentPoolMedium.size() > 0) {
+							m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
+							length -= m_logSegmentSize / 8;
+						} else {
+							m_segments[i] = new byte[length];
+							length -= m_segments[i].length;
+						}
 					} else {
-						m_segments[i] = new byte[Math.min(length, m_logSegmentSize)];
-						length -= m_segments[i].length;
+						if (m_segmentPoolSmall.size() > 0) {
+							m_segments[i] = m_segmentPoolSmall.remove(m_segmentPoolSmall.size() - 1);
+							length -= m_logSegmentSize / 16;
+						} else if (m_segmentPoolMedium.size() > 0) {
+							m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
+							length -= m_logSegmentSize / 8;
+						} else {
+							m_segments[i] = new byte[length];
+							length -= m_segments[i].length;
+						}
 					}
-				} else if (length > m_logSegmentSize / 16) {
-					if (m_segmentPoolMedium.size() > 0) {
-						m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
-						length -= m_logSegmentSize / 8;
-					} else {
-						m_segments[i] = new byte[length];
-						length -= m_segments[i].length;
-					}
-				} else {
-					if (m_segmentPoolSmall.size() > 0) {
-						m_segments[i] = m_segmentPoolSmall.remove(m_segmentPoolSmall.size() - 1);
-						length -= m_logSegmentSize / 16;
-					} else if (m_segmentPoolMedium.size() > 0) {
-						m_segments[i] = m_segmentPoolMedium.remove(m_segmentPoolMedium.size() - 1);
-						length -= m_logSegmentSize / 8;
-					} else {
-						m_segments[i] = new byte[length];
-						length -= m_segments[i].length;
-					}
+				}
+			} else {
+				for (int i = 0; i < m_segments.length; i++) {
+					m_segments[i] = new byte[Math.min(length, m_logSegmentSize)];
 				}
 			}
 		}
@@ -862,12 +887,12 @@ public class PrimaryWriteBuffer {
 			}
 
 			if (m_convert) {
-				// More than 32 pages for this node: Convert primary log entry header to secondary log header and append
+				// More secondary log buffer size for this node: Convert primary log entry header to secondary log header and append
 				// entry to node buffer
 				m_writtenBytesPerSegment[index] += AbstractLogEntryHeader.convertAndPut(p_buffer, p_offset, m_segments[index],
 						m_writtenBytesPerSegment[index], p_logEntrySize, p_bytesUntilEnd, p_conversionOffset);
 			} else {
-				// Less than 32 pages for this node: Just append entry to node buffer without converting the log entry
+				// Less secondary log buffer size for this node: Just append entry to node buffer without converting the log entry
 				// header
 				if (p_logEntrySize <= p_bytesUntilEnd) {
 					System.arraycopy(p_buffer, p_offset, m_segments[index], m_writtenBytesPerSegment[index], p_logEntrySize);

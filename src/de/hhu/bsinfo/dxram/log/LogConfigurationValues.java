@@ -20,7 +20,9 @@ public class LogConfigurationValues {
 		public static final Pair<String, Long> PRIMARY_LOG_SIZE = new Pair<String, Long>("PrimaryLogSize", 256 * 1024 * 1024L);
 		public static final Pair<String, Long> SECONDARY_LOG_SIZE = new Pair<String, Long>("SecondaryLogSize", 256 * 1024 * 1024L);
 		public static final Pair<String, Integer> WRITE_BUFFER_SIZE = new Pair<String, Integer>("WriteBufferSize", 256 * 1024 * 1024);
+		public static final Pair<String, Integer> SECONDARY_LOG_BUFFER_SIZE = new Pair<String, Integer>("SecondaryLogBufferSize", 128 * 1024);
 
 		public static final Pair<String, Integer> REORG_UTILIZATION_THRESHOLD = new Pair<String, Integer>("ReorgUtilizationThreshold", 70);
+		public static final Pair<String, Boolean> SORT_BUFFER_POOLING = new Pair<String, Boolean>("SortBufferPooling", true);
 	}
 }

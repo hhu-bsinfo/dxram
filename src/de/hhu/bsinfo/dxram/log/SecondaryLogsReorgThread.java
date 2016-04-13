@@ -115,7 +115,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 		while (!m_shutdown) {
 			// Check if there is an urgent reorganization request -> reorganize complete secondary log and signal
 			if (m_secLog != null) {
-				m_logger.info(SecondaryLogsReorgThread.class, "Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
+				m_logger.trace(SecondaryLogsReorgThread.class, "Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
 				// Leave current secondary log
 				if (counter > 0) {
 					secondaryLog.resetReorgSegment();
@@ -157,7 +157,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 					iter = m_reorganizationRequests.iterator();
 					secondaryLog = iter.next();
 					iter.remove();
-					m_logger.info(SecondaryLogsReorgThread.class, "Got reorganization request for " + secondaryLog.getRangeIDOrFirstLocalID()
+					m_logger.trace(SecondaryLogsReorgThread.class, "Got reorganization request for " + secondaryLog.getRangeIDOrFirstLocalID()
 							+ ". Queue length: " + m_reorganizationRequests.size());
 					m_requestLock.unlock();
 
@@ -188,11 +188,11 @@ public final class SecondaryLogsReorgThread extends Thread {
 			}
 
 			// Reorganize one segment
-			m_logger.info(SecondaryLogsReorgThread.class, "Going to reorganize " + m_secLog.getRangeIDOrFirstLocalID() + ".");
+			m_logger.trace(SecondaryLogsReorgThread.class, "Going to reorganize " + secondaryLog.getRangeIDOrFirstLocalID() + ".");
 			m_logService.getAccessToSecLog(secondaryLog);
 			final long start = System.currentTimeMillis();
 			secondaryLog.reorganizeIteratively(m_reorgSegmentData, m_allVersions);
-			m_logger.info(SecondaryLogsReorgThread.class, "Time to reorganize segment: " + (System.currentTimeMillis() - start));
+			m_logger.trace(SecondaryLogsReorgThread.class, "Time to reorganize segment: " + (System.currentTimeMillis() - start));
 
 			if (counter++ == iterationsPerLog) {
 				// This was the last iteration for current secondary log -> clean-up

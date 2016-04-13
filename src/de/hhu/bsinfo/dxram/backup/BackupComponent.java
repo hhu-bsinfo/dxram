@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -19,7 +19,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * Component for managing backup ranges.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class BackupComponent extends DXRAMComponent {
+public class BackupComponent extends AbstractDXRAMComponent {
 
 	private boolean m_backupActive;
 	private String m_backupDirectory;
@@ -36,7 +36,7 @@ public class BackupComponent extends DXRAMComponent {
 	// ChunkID -> migration backup range
 	private MigrationBackupTree m_migrationsTree;
 
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private LogComponent m_log;
@@ -84,7 +84,7 @@ public class BackupComponent extends DXRAMComponent {
 	 *            the size of the new created chunk
 	 */
 	public void initBackupRange(final long p_chunkID, final int p_size) {
-		int size;
+		final int size;
 		final long localID = ChunkID.getLocalID(p_chunkID);
 		final short nodeID = m_boot.getNodeID();
 
@@ -219,7 +219,7 @@ public class BackupComponent extends DXRAMComponent {
 		m_backupDirectory = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_DIRECTORY);
 		m_backupRangeSize = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_RANGE_SIZE);
 		m_replicationFactor = p_settings.getValue(BackupConfigurationValues.Component.REPLICATION_FACTOR);
-		m_boot = getDependentComponent(BootComponent.class);
+		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_lookup = getDependentComponent(LookupComponent.class);
 		m_log = getDependentComponent(LogComponent.class);
@@ -257,7 +257,7 @@ public class BackupComponent extends DXRAMComponent {
 
 		List<Short> peers = null;
 		// Get all other online peers
-		peers = m_boot.getOnlinePeerNodeIDs();
+		peers = m_boot.getIDsOfOnlinePeers();
 		numberOfPeers = (short) peers.size();
 		/*-allPeers = new short[3];
 		allPeers[0] = -15999;

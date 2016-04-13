@@ -2,6 +2,10 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 
 import de.hhu.bsinfo.menet.AbstractRequest;
 
+/**
+ * Request for getting the chunk id ranges of locally stored chunk ids from another node.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
+ */
 public class GetLocalChunkIDRangesRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of GetLocalChunkIDRangesRequest.

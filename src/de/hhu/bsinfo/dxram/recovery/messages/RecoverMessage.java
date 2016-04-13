@@ -81,7 +81,7 @@ public class RecoverMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Short.BYTES + Byte.BYTES;
 	}
 

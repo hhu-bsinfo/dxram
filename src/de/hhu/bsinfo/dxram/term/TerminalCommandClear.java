@@ -7,7 +7,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
  * Terminal command to clear the console.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
-public class TerminalCommandClear extends TerminalCommand {
+public class TerminalCommandClear extends AbstractTerminalCommand {
 
 	/**
 	 * Constructor
@@ -23,10 +23,9 @@ public class TerminalCommandClear extends TerminalCommand {
 	public String getDescription() {
 		return "Clears the console.";
 	}
-	
+
 	@Override
-	public void registerArguments(ArgumentList p_arguments) {
-	}
+	public void registerArguments(final ArgumentList p_arguments) {}
 
 	@Override
 	public boolean execute(final ArgumentList p_arguments) {
@@ -34,5 +33,5 @@ public class TerminalCommandClear extends TerminalCommand {
 		System.out.print("\033[H\033[2J");
 		System.out.flush();
 		return true;
-	}	
+	}
 }

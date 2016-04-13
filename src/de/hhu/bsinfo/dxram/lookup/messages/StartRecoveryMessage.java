@@ -3,8 +3,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Start Recovery Message
@@ -77,7 +77,7 @@ public class StartRecoveryMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Short.BYTES + Long.BYTES;
 	}
 

@@ -73,7 +73,7 @@ public class AskAboutBackupsRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		int ret;
 
 		ret = Integer.BYTES;

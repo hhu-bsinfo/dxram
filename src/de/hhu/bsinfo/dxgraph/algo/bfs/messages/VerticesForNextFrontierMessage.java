@@ -67,7 +67,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {	
+	protected final int getPayloadLength() {	
 		int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
 		
 		return size + m_numOfVertices * Long.BYTES;

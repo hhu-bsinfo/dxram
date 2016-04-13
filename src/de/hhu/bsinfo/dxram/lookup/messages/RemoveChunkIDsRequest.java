@@ -88,7 +88,7 @@ public class RemoveChunkIDsRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Integer.BYTES + Long.BYTES * m_chunkIDs.length + Byte.BYTES;
 	}
 

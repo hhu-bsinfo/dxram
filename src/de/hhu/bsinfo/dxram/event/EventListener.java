@@ -6,7 +6,7 @@ package de.hhu.bsinfo.dxram.event;
  *
  * @param <T> Event to listen to.
  */
-public interface EventListener<T extends Event> {
+public interface EventListener<T extends AbstractEvent> {
 	/**
 	 * Called by the event system if the specified event was fired.
 	 * @param p_event Event that was fired.

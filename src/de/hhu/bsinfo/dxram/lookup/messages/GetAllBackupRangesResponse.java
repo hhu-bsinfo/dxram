@@ -68,12 +68,13 @@ public class GetAllBackupRangesResponse extends AbstractResponse {
 		m_backupRanges = new BackupRange[p_buffer.getInt()];
 		for (int i = 0; i < m_backupRanges.length; i++) {
 			m_backupRanges[i] = new BackupRange();
+			importer.setPayloadSize(BackupRange.sizeofObjectStatic());
 			importer.importObject(m_backupRanges[i]);
 		}
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Integer.BYTES + BackupRange.sizeofObjectStatic() * m_backupRanges.length;
 	}
 

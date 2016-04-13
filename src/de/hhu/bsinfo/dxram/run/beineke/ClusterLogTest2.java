@@ -36,7 +36,7 @@ public final class ClusterLogTest2 {
 	}
 
 	/**
-	 * The Master constantly creates new chunks and sends them to backup peers.
+	 * The Master constantly creates new chunks and sends them automatically to backup peers if backup is enabled.
 	 * @author Kevin Beineke
 	 *         19.01.2016
 	 */
@@ -80,7 +80,7 @@ public final class ClusterLogTest2 {
 				counter += CHUNKS_PER_PUT * CHUNK_SIZE;
 				// System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
 			}
-			System.out.println("Time to create 3GB payload: " + (System.currentTimeMillis() - start));
+			System.out.println("Time to create 3GB payload: " + (System.currentTimeMillis() - start) + " ms");
 		}
 	}
 

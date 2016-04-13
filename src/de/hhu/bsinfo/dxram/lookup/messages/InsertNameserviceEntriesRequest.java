@@ -98,7 +98,7 @@ public class InsertNameserviceEntriesRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Integer.BYTES + Long.BYTES + Byte.BYTES;
 	}
 

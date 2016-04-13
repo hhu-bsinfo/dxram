@@ -67,7 +67,7 @@ public class InitResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Byte.BYTES;
 	}
 

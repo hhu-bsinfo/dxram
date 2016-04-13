@@ -239,8 +239,8 @@ public final class LogCatalog {
 	 *            the new secondary log to link
 	 * @param p_logger
 	 *            the logger component
-	 * @param p_flashPageSize
-	 *            the size of a flash page
+	 * @param p_secondaryLogBufferSize
+	 *            the secondary log buffer size
 	 * @param p_logSegmentSize
 	 *            the segment size
 	 * @throws IOException
@@ -248,7 +248,7 @@ public final class LogCatalog {
 	 * @throws InterruptedException
 	 *             if no new secondary log could be created
 	 */
-	public void insertRange(final LoggerComponent p_logger, final long p_firstChunkIDOrRangeID, final SecondaryLog p_log, final int p_flashPageSize,
+	public void insertRange(final LoggerComponent p_logger, final long p_firstChunkIDOrRangeID, final SecondaryLog p_log, final int p_secondaryLogBufferSize,
 			final int p_logSegmentSize) throws IOException, InterruptedException {
 		SecondaryLogBuffer buffer;
 		int rangeID;
@@ -258,7 +258,7 @@ public final class LogCatalog {
 			m_creatorLogs.add(rangeID, p_log);
 
 			// Create new secondary log buffer
-			buffer = new SecondaryLogBuffer(p_logger, p_log, p_flashPageSize, p_logSegmentSize);
+			buffer = new SecondaryLogBuffer(p_logger, p_log, p_secondaryLogBufferSize, p_logSegmentSize);
 			m_creatorBuffers.add(rangeID, buffer);
 
 			// Insert range
@@ -267,7 +267,7 @@ public final class LogCatalog {
 			m_migrationLogs.add(m_currentRangeID, p_log);
 
 			// Create new secondary log buffer
-			buffer = new SecondaryLogBuffer(p_logger, p_log, p_flashPageSize, p_logSegmentSize);
+			buffer = new SecondaryLogBuffer(p_logger, p_log, p_secondaryLogBufferSize, p_logSegmentSize);
 			m_migrationBuffers.add(m_currentRangeID, buffer);
 
 			m_currentRangeID++;

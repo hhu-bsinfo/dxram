@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -11,7 +12,7 @@ import de.hhu.bsinfo.menet.AbstractResponse;
 public class GetNameserviceEntryCountResponse extends AbstractResponse {
 
 	// Attributes
-	private long m_count;
+	private int m_count;
 
 	// Constructors
 	/**
@@ -30,7 +31,7 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
 	 * @param p_count
 	 *            the count
 	 */
-	public GetNameserviceEntryCountResponse(final GetNameserviceEntryCountRequest p_request, final long p_count) {
+	public GetNameserviceEntryCountResponse(final GetNameserviceEntryCountRequest p_request, final int p_count) {
 		super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE);
 
 		m_count = p_count;
@@ -41,24 +42,24 @@ public class GetNameserviceEntryCountResponse extends AbstractResponse {
 	 * Get the count
 	 * @return the count
 	 */
-	public final long getCount() {
+	public final int getCount() {
 		return m_count;
 	}
 
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putLong(m_count);
+		p_buffer.putInt(m_count);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_count = p_buffer.getLong();
+		m_count = p_buffer.getInt();
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
-		return Long.BYTES;
+	protected final int getPayloadLength() {
+		return Integer.BYTES;
 	}
 
 }

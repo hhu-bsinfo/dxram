@@ -58,7 +58,7 @@ public class LoaderMasterSyncGraphIndexMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return m_index.sizeofObject();
 	}
 }

@@ -12,18 +12,17 @@ import java.util.Map;
  */
 public final class NameServiceStringConverter {
 
-	// Attributes
-	private String m_nameserviceType = null;
+	private String m_nameserviceType;
 	private Map<Character, Integer> m_charMap = new HashMap<Character, Integer>();
 
-	// Constructors
 	/**
 	 * Creates an instance of StringConverter
+	 * @param p_nameserviceType
+	 *            Type of the string converter to use
 	 */
-	public NameServiceStringConverter(final String p_nameserviceType) 
-	{
+	public NameServiceStringConverter(final String p_nameserviceType) {
 		m_nameserviceType = p_nameserviceType;
-		
+
 		if (m_nameserviceType.equals("NAME")) {
 			m_charMap = new HashMap<Character, Integer>();
 			m_charMap.put('0', 1);
@@ -95,20 +94,25 @@ public final class NameServiceStringConverter {
 		}
 	}
 
-	// Methods
 	/**
 	 * Converts a String into an integer. String length is limited to 5 chars.
 	 * If the string is longer, all other characters are ignored.
 	 * @param p_name
 	 *            the String
 	 * @return the integer
+	 * @throws IllegalArgumentException
+	 *             if name is too long (longer than 5 characters)
 	 */
-	public int convert(final String p_name) {
+	public int convert(final String p_name) throws IllegalArgumentException {
 		int ret = 0;
 		int value = 0;
 		char[] chars;
 
 		if (m_nameserviceType.equals("NAME")) {
+			if (p_name.length() > 5) {
+				throw new IllegalArgumentException("String is too long! Only five characters are allowed. For greater numbers set configuration to ID");
+			}
+
 			chars = p_name.toCharArray();
 			for (int i = 0; i < 32 / 6 && i < chars.length; i++) {
 				value = m_charMap.get(chars[i]);

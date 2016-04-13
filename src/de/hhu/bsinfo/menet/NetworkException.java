@@ -23,6 +23,15 @@ public class NetworkException extends Exception {
 
 	/**
 	 * Creates an instance of NetworkException
+	 * @param p_cause
+	 *            the cause
+	 */
+	public NetworkException(final Throwable p_cause) {
+		super(p_cause);
+	}
+
+	/**
+	 * Creates an instance of NetworkException
 	 * @param p_message
 	 *            the message
 	 * @param p_cause

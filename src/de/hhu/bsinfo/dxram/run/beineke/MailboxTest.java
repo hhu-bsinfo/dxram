@@ -16,9 +16,8 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
  * 4) Start clients: No parameters
  */
 /**
- * Test case for the distributed Chunk handling
- * @author Florian Klein
- *         22.07.2013
+ * Test case for the distributed Chunk handling.
+ * @author Kevin Beineke <kevin.beineke@hhu.de> 07.04.2016
  */
 public final class MailboxTest {
 
@@ -78,7 +77,7 @@ public final class MailboxTest {
 
 			// Initialize DXRAM
 			final DXRAM dxram = new DXRAM();
-			dxram.initialize("config/dxram.conf", "config/dxram.nodes.local.conf");
+			dxram.initialize("config/dxram.conf");
 			final ChunkService chunkService = dxram.getService(ChunkService.class);
 			final NameserviceService nameService = dxram.getService(NameserviceService.class);
 

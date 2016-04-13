@@ -61,7 +61,7 @@ public class AskAboutSuccessorResponse extends AbstractResponse {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Short.BYTES;
 	}
 

@@ -14,9 +14,7 @@ import de.hhu.bsinfo.utils.Endianness;
  * Important note: This is quite slow and will take up
  * as much disk space as memory is requested on initialization.
  * Used for testing/memory debugging only.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.2015
- *
  */
 public class StorageRandomAccessFile implements Storage {
 	private RandomAccessFile m_file;
@@ -24,9 +22,10 @@ public class StorageRandomAccessFile implements Storage {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_file File to use as storage.
-	 * @throws FileNotFoundException If creating random access file failed.
+	 * @param p_file
+	 *            File to use as storage.
+	 * @throws FileNotFoundException
+	 *             If creating random access file failed.
 	 */
 	public StorageRandomAccessFile(final File p_file) throws FileNotFoundException {
 		m_file = new RandomAccessFile(p_file, "rwd");
@@ -132,7 +131,7 @@ public class StorageRandomAccessFile implements Storage {
 		assert p_ptr >= 0;
 		assert p_ptr < m_size;
 		assert p_ptr + p_length <= m_size;
-		
+
 		int bytesRead = -1;
 
 		try {
@@ -141,7 +140,7 @@ public class StorageRandomAccessFile implements Storage {
 		} catch (final IOException e) {
 			throw new MemoryRuntimeException("reading bytes failed " + e);
 		}
-		
+
 		return bytesRead;
 	}
 
@@ -219,7 +218,7 @@ public class StorageRandomAccessFile implements Storage {
 		assert p_ptr + p_array.length <= m_size;
 
 		int bytesWritten = -1;
-		
+
 		try {
 			m_file.seek(p_ptr);
 			m_file.write(p_array, p_arrayOffset, p_length);
@@ -227,7 +226,7 @@ public class StorageRandomAccessFile implements Storage {
 		} catch (final IOException e) {
 			throw new MemoryRuntimeException("writing failed " + e);
 		}
-		
+
 		return bytesWritten;
 	}
 
@@ -342,7 +341,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public int readShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+	public int readShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
 			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Short.BYTES);
 		}
@@ -351,7 +350,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public int readInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+	public int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
 			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Integer.BYTES);
 		}
@@ -360,7 +359,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public int readLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+	public int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
 			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Long.BYTES);
 		}
@@ -369,7 +368,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public int writeShorts(long p_ptr, short[] p_array, int p_arrayOffset, int p_length) {
+	public int writeShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
 			writeShort(p_ptr + i * Short.BYTES, p_array[i + p_arrayOffset]);
 		}
@@ -378,7 +377,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public int writeInts(long p_ptr, int[] p_array, int p_arrayOffset, int p_length) {
+	public int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
 			writeInt(p_ptr + i * Integer.BYTES, p_array[i + p_arrayOffset]);
 		}
@@ -387,7 +386,7 @@ public class StorageRandomAccessFile implements Storage {
 	}
 
 	@Override
-	public int writeLongs(long p_ptr, long[] p_array, int p_arrayOffset, int p_length) {
+	public int writeLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
 			writeLong(p_ptr + i * Long.BYTES, p_array[i + p_arrayOffset]);
 		}

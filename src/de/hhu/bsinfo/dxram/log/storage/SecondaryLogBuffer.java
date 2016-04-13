@@ -21,7 +21,6 @@ public final class SecondaryLogBuffer {
 	private int m_bytesInBuffer;
 
 	private SecondaryLog m_secondaryLog;
-	private int m_flashPageSize;
 	private int m_logSegmentSize;
 
 	// Constructors
@@ -31,19 +30,19 @@ public final class SecondaryLogBuffer {
 	 *            the logger component
 	 * @param p_secondaryLog
 	 *            Instance of the corresponding secondary log. Used to write directly to secondary
-	 * @param p_flashPageSize
-	 *            the flash page size
+	 * @param p_bufferSize
+	 *            the secondary log buffer size
 	 * @param p_logSegmentSize
 	 *            the segment size
 	 */
-	public SecondaryLogBuffer(final LoggerComponent p_logger, final SecondaryLog p_secondaryLog, final int p_flashPageSize, final int p_logSegmentSize) {
+	public SecondaryLogBuffer(final LoggerComponent p_logger, final SecondaryLog p_secondaryLog, final int p_bufferSize, final int p_logSegmentSize) {
 		m_logger = p_logger;
 		m_secondaryLog = p_secondaryLog;
-		m_flashPageSize = p_flashPageSize;
 		m_logSegmentSize = p_logSegmentSize;
 
 		m_bytesInBuffer = 0;
-		m_buffer = new byte[m_flashPageSize * 32];
+		m_buffer = new byte[p_bufferSize];
+		m_logger.trace(getClass(), "Initialized secondary log buffer (" + p_bufferSize + ")");
 	}
 
 	// Getter
@@ -99,7 +98,7 @@ public final class SecondaryLogBuffer {
 
 		// Trim log entries (removes all NodeIDs)
 		buffer = processBuffer(p_buffer, p_bufferOffset, p_entryOrRangeSize);
-		if (m_bytesInBuffer + buffer.length >= m_flashPageSize * 32) {
+		if (m_bytesInBuffer + buffer.length >= m_buffer.length) {
 			// Merge current secondary log buffer and new buffer and write to secondary log
 
 			flushAllDataToSecLog(buffer, p_bufferOffset, buffer.length);

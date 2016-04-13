@@ -6,7 +6,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.eval.EvaluationTable;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 import sun.misc.Unsafe;
 
@@ -16,7 +16,7 @@ import sun.misc.Unsafe;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  *
  */
-public class NativeMemoryBenchmark extends Main
+public class NativeMemoryBenchmark extends AbstractMain
 {
 	private static final Argument ARG_NUM_RUNS = new Argument("numRuns", "100000", true, "Number of runs to execute for the final result");
 	private static final Argument ARG_PATH_JNI_NATIVE_MEMORY = new Argument("pathJNINativeMemory", null, false, "Absolute path to the compiled JNINativeMemory library files");
@@ -28,7 +28,7 @@ public class NativeMemoryBenchmark extends Main
 	 * @param args Main arguments.
 	 */
 	public static void main(final String[] args) {
-		Main main = new NativeMemoryBenchmark();
+		AbstractMain main = new NativeMemoryBenchmark();
 		main.run(args);
 	}
 	

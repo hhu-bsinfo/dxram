@@ -97,7 +97,7 @@ public class InitRangeRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Long.BYTES * 2 + Byte.BYTES;
 	}
 

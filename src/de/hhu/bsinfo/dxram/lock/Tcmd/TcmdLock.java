@@ -4,13 +4,13 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.lock.LockService;
-import de.hhu.bsinfo.dxram.lock.LockService.ErrorCode;
-import de.hhu.bsinfo.dxram.term.TerminalCommand;
+import de.hhu.bsinfo.dxram.lock.AbstractLockService;
+import de.hhu.bsinfo.dxram.lock.AbstractLockService.ErrorCode;
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-public class TcmdLock extends TerminalCommand{
+public class TcmdLock extends AbstractTerminalCommand{
 
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Chunk ID");
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");
@@ -46,7 +46,7 @@ public class TcmdLock extends TerminalCommand{
 		
 		
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		LockService   lockService	= getTerminalDelegate().getDXRAMService(LockService.class);
+		AbstractLockService   lockService	= getTerminalDelegate().getDXRAMService(AbstractLockService.class);
 		
 		
 		if (__checkID(cid, nid, lid))	// check if size, cid and lid are valid

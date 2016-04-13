@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,7 +53,8 @@ public abstract class AbstractConnection {
 	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+			final MessageDirectory p_messageDirectory,
 			final int p_flowControlWindowSize) {
 		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null, p_flowControlWindowSize);
 	}
@@ -72,7 +74,8 @@ public abstract class AbstractConnection {
 	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+			final MessageDirectory p_messageDirectory,
 			final DataReceiver p_listener, final int p_flowControlWindowSize) {
 		assert p_destination != NodeID.INVALID_ID;
 
@@ -211,11 +214,21 @@ public abstract class AbstractConnection {
 				m_flowControlCond.await();
 			} catch (final InterruptedException e) { /* ignore */}
 		}
+		try {
+			m_unconfirmedBytes += p_message.getBuffer().remaining();
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
+			return;
+		} finally {
+			m_flowControlCondLock.unlock();
+		}
 
-		m_unconfirmedBytes += p_message.getBuffer().remaining();
-		m_flowControlCondLock.unlock();
-
-		doWrite(p_message);
+		try {
+			doWrite(p_message);
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
+			return;
+		}
 
 		m_timestamp = System.currentTimeMillis();
 	}
@@ -224,10 +237,10 @@ public abstract class AbstractConnection {
 	 * Writes data to the connection
 	 * @param p_message
 	 *            the AbstractMessage to send
-	 * @throws IOException
-	 *             if the data could not be written
+	 * @throws NetworkException
+	 *             if message buffer is too small
 	 */
-	protected abstract void doWrite(final AbstractMessage p_message);
+	protected abstract void doWrite(final AbstractMessage p_message) throws NetworkException;
 
 	/**
 	 * Closes the connection
@@ -282,12 +295,22 @@ public abstract class AbstractConnection {
 		ByteBuffer messageBuffer;
 
 		message = new FlowControlMessage(m_receivedBytes);
-		messageBuffer = message.getBuffer();
+		try {
+			messageBuffer = message.getBuffer();
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			return;
+		}
 
 		// add sending bytes for consistency
 		m_unconfirmedBytes += messageBuffer.remaining();
 
-		doWrite(message);
+		try {
+			doWrite(message);
+		} catch (final NetworkException e) {
+			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			return;
+		}
 
 		// reset received bytes counter
 		m_receivedBytes = 0;
@@ -379,7 +402,8 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final IOException e) {
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "ERROR::Could not access network connection", e);
+				NetworkHandler.getLogger().error(getClass().getSimpleName(),
+						"ERROR::Could not access network connection", e);
 			}
 		}
 
@@ -409,9 +433,25 @@ public abstract class AbstractConnection {
 					resp.setCorrespondingRequest(RequestMap.getRequest(resp));
 				}
 
-				message.readPayload(p_buffer);
+				try {
+					message.readPayload(p_buffer);
+				} catch (final BufferUnderflowException e) {
+					throw new IOException("Read beyond message buffer", e);
+				}
+
+				int bufPos = p_buffer.position();
+				int readPayloadSize =
+						message.getPayloadLength() + AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH;
+				if (bufPos < readPayloadSize) {
+					throw new IOException("Message buffer is too large: " + readPayloadSize + " > " + bufPos);
+				}
 			} catch (final Exception e) {
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
+				if (message != null) {
+					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message: " + message,
+							e);
+				} else {
+					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
+				}
 			}
 
 			return message;
@@ -479,14 +519,14 @@ public abstract class AbstractConnection {
 
 			while (m_step != Step.DONE && p_buffer.hasRemaining()) {
 				switch (m_step) {
-				case READ_HEADER:
-					readHeader(p_buffer);
-					break;
-				case READ_PAYLOAD:
-					readPayload(p_buffer);
-					break;
-				default:
-					break;
+					case READ_HEADER:
+						readHeader(p_buffer);
+						break;
+					case READ_PAYLOAD:
+						readPayload(p_buffer);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -510,11 +550,14 @@ public abstract class AbstractConnection {
 					// Header complete
 
 					// Read payload size (copied at the end of m_headerBytes before)
-					final int payloadSize = m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+					final int payloadSize =
+							m_headerBytes.getInt(m_headerBytes.limit() - AbstractMessage.PAYLOAD_SIZE_LENGTH);
 
 					// Create message buffer and copy header into (without payload size)
-					m_messageBytes = ByteBuffer.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + payloadSize);
-					m_messageBytes.put(m_headerBytes.array(), 0, AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
+					m_messageBytes = ByteBuffer
+							.allocate(AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH + payloadSize);
+					m_messageBytes.put(m_headerBytes.array(), 0,
+							AbstractMessage.HEADER_SIZE - AbstractMessage.PAYLOAD_SIZE_LENGTH);
 
 					if (payloadSize == 0) {
 						// There is no payload -> message complete

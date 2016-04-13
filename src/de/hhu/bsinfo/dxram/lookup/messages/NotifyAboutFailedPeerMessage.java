@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.util.NodeID;
 import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Notify About Failed Peer Message
@@ -61,7 +61,7 @@ public class NotifyAboutFailedPeerMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Short.BYTES;
 	}
 

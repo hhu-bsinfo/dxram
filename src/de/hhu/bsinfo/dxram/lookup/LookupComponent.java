@@ -2,9 +2,9 @@
 package de.hhu.bsinfo.dxram.lookup;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -19,11 +19,11 @@ import de.hhu.bsinfo.utils.Cache;
  * Component for finding chunks in superpeer overlay.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class LookupComponent extends DXRAMComponent {
+public class LookupComponent extends AbstractDXRAMComponent {
 
 	private static final short ORDER = 10;
 
-	private BootComponent m_boot;
+	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 
 	private OverlaySuperpeer m_superpeer;
@@ -171,8 +171,8 @@ public class LookupComponent extends DXRAMComponent {
 	 * Get the number of entries in name service
 	 * @return the number of name service entries
 	 */
-	public long getNameserviceEntryCount() {
-		long ret = -1;
+	public int getNameserviceEntryCount() {
+		int ret = -1;
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -357,7 +357,7 @@ public class LookupComponent extends DXRAMComponent {
 
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_boot = getDependentComponent(BootComponent.class);
+		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 
 		m_cachesEnabled = p_settings.getValue(LookupConfigurationValues.Component.CACHES_ENABLED);

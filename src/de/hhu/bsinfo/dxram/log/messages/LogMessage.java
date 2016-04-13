@@ -95,13 +95,17 @@ public class LogMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
-		int ret = Byte.BYTES + Integer.BYTES;
+	protected final int getPayloadLength() {
+		if (m_dataStructures != null) {
+			int ret = Byte.BYTES + Integer.BYTES;
 
-		for (DataStructure dataStructure : m_dataStructures) {
-			ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+			for (DataStructure dataStructure : m_dataStructures) {
+				ret += Long.BYTES + Integer.BYTES + dataStructure.sizeofObject();
+			}
+
+			return ret;
+		} else {
+			return 0;
 		}
-
-		return ret;
 	}
 }

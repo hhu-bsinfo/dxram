@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -6,78 +7,43 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
-import de.hhu.bsinfo.dxram.lock.LockService;
-import de.hhu.bsinfo.dxram.monitor.LocalMonitorService;
+import de.hhu.bsinfo.dxram.lock.AbstractLockService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
+import de.hhu.bsinfo.dxram.stats.StatisticsService;
 
 /**
  * Compatibility wrapper to provide the old DXRAM Core API.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
  */
-public class DXRAMCompat 
-{	
-	private DXRAM m_dxram = null;
-	private ChunkService m_chunkService = null;
-	private AsyncChunkService m_asyncChunkService = null;
-	private NameserviceService m_nameserviceService = null;
-	private LockService m_lockService = null;
-	private LocalMonitorService m_localMonitorService = null;
-	private BootService m_bootService = null;
-	
-	/**
-	 * Exception for failed DXRAM accesses
-	 * @author Florian Klein
-	 *         09.03.2012
-	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
-	 */
-	public static class DXRAMException extends Exception {
+public class DXRAMCompat {
+	private DXRAM m_dxram;
+	private ChunkService m_chunkService;
+	private AsyncChunkService m_asyncChunkService;
+	private NameserviceService m_nameserviceService;
+	private AbstractLockService m_lockService;
+	private StatisticsService m_statisticsService;
+	private BootService m_bootService;
 
-		// Constants
-		private static final long serialVersionUID = 8402205300600257791L;
-
-		// Constructors
-		/**
-		 * Creates an instance of DXRAMException
-		 * @param p_message
-		 *            the message
-		 */
-		public DXRAMException(final String p_message) {
-			super(p_message);
-		}
-
-		/**
-		 * Creates an instance of DXRAMException
-		 * @param p_message
-		 *            the message
-		 * @param p_cause
-		 *            the cause
-		 */
-		public DXRAMException(final String p_message, final Throwable p_cause) {
-			super(p_message, p_cause);
-		}
-
-	}
-	
 	/**
 	 * Constructor
-	 * @param p_dxram DXRAM instance to wrap. Wrapper does not take care of init/shutdown.
+	 * @param p_dxram
+	 *            DXRAM instance to wrap. Wrapper does not take care of init/shutdown.
 	 */
 	public DXRAMCompat(final DXRAM p_dxram) {
 		m_dxram = p_dxram;
 		m_chunkService = m_dxram.getService(ChunkService.class);
 		m_asyncChunkService = m_dxram.getService(AsyncChunkService.class);
 		m_nameserviceService = m_dxram.getService(NameserviceService.class);
-		m_lockService = m_dxram.getService(LockService.class);
-		m_localMonitorService = m_dxram.getService(LocalMonitorService.class);
+		m_lockService = m_dxram.getService(AbstractLockService.class);
+		m_statisticsService = m_dxram.getService(StatisticsService.class);
 		m_bootService = m_dxram.getService(BootService.class);
 	}
-	
+
 	/**
 	 * Get the node ID of the current node on.
 	 * @return Local node ID.
 	 */
-	public short getNodeID()
-	{
+	public short getNodeID() {
 		return m_bootService.getNodeID();
 	}
 
@@ -97,7 +63,7 @@ public class DXRAMCompat
 			if (ids == null) {
 				throw new DXRAMException("Cannot create chunk.");
 			}
-			
+
 			ret = new Chunk(ids[0], p_size);
 		}
 
@@ -120,7 +86,7 @@ public class DXRAMCompat
 			if (ids == null) {
 				throw new DXRAMException("Cannot create chunks.");
 			}
-			
+
 			ret = new Chunk[ids.length];
 			for (int i = 0; i < ret.length; i++) {
 				ret[i] = new Chunk(ids[i], p_sizes[i]);
@@ -142,7 +108,7 @@ public class DXRAMCompat
 	 */
 	public Chunk createNewChunk(final int p_size, final String p_name) throws DXRAMException {
 		Chunk ret = null;
-		
+
 		ret = createNewChunk(p_size);
 		if (ret != null) {
 			if (m_nameserviceService != null) {
@@ -165,7 +131,7 @@ public class DXRAMCompat
 	 */
 	public Chunk[] createNewChunks(final int[] p_sizes, final String p_name) throws DXRAMException {
 		Chunk[] ret = null;
-		
+
 		ret = createNewChunks(p_sizes);
 		if (ret != null) {
 			if (m_nameserviceService != null) {
@@ -210,7 +176,7 @@ public class DXRAMCompat
 		Chunk[] ret = null;
 
 		if (m_chunkService != null) {
-			
+
 			ret = new Chunk[p_chunkIDs.length];
 			for (int i = 0; i < ret.length; i++) {
 				// gets resized automatically, because dynamic sized data structure
@@ -234,7 +200,7 @@ public class DXRAMCompat
 	 */
 	public Chunk get(final String p_name) throws DXRAMException {
 		Chunk ret = null;
-		
+
 		if (m_nameserviceService != null) {
 			long chunkID = m_nameserviceService.getChunkID(p_name);
 			if (chunkID != ChunkID.INVALID_ID) {
@@ -292,7 +258,7 @@ public class DXRAMCompat
 			} else {
 				lockOp = ChunkLockOperation.NO_LOCK_OPERATION;
 			}
-			
+
 			m_asyncChunkService.put(lockOp, p_chunk);
 		}
 	}
@@ -305,7 +271,7 @@ public class DXRAMCompat
 	 *             if the chunks could not be put
 	 */
 	public void put(final Chunk[] p_chunks) throws DXRAMException {
-		if (m_asyncChunkService != null) {			
+		if (m_asyncChunkService != null) {
 			m_asyncChunkService.put(p_chunks);
 		}
 	}
@@ -335,15 +301,16 @@ public class DXRAMCompat
 	public Chunk lock(final long p_chunkID, final boolean p_readLock) throws DXRAMException {
 		Chunk ret = null;
 
-		if (m_chunkService != null) {			
+		if (m_chunkService != null) {
 			if (m_lockService != null) {
 				// gets resized automatically, because dynamic sized data structure
 				ret = new Chunk(p_chunkID, 0);
-				
-				if (m_lockService.lock(!p_readLock, LockService.MS_TIMEOUT_UNLIMITED, ret) != LockService.ErrorCode.SUCCESS) {
+
+				if (m_lockService.lock(!p_readLock, AbstractLockService.MS_TIMEOUT_UNLIMITED,
+						ret) != AbstractLockService.ErrorCode.SUCCESS) {
 					throw new DXRAMException("Locking chunk " + p_chunkID + " failed.");
 				}
-				
+
 				if (m_chunkService.get(ret) != 1) {
 					throw new DXRAMException("Getting chunk " + p_chunkID + " after locking failed.");
 				}
@@ -396,9 +363,46 @@ public class DXRAMCompat
 		}
 	}
 
+	/**
+	 * Print all statistics to the console
+	 */
 	public void printStatistics() {
-		if (m_localMonitorService != null) {
-			m_localMonitorService.printStatisticsToConsole();
+		if (m_statisticsService != null) {
+			m_statisticsService.printStatistics();
 		}
+	}
+
+	/**
+	 * Exception for failed DXRAM accesses
+	 * @author Florian Klein
+	 *         09.03.2012
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
+	 */
+	public static class DXRAMException extends Exception {
+
+		// Constants
+		private static final long serialVersionUID = 8402205300600257791L;
+
+		// Constructors
+		/**
+		 * Creates an instance of DXRAMException
+		 * @param p_message
+		 *            the message
+		 */
+		public DXRAMException(final String p_message) {
+			super(p_message);
+		}
+
+		/**
+		 * Creates an instance of DXRAMException
+		 * @param p_message
+		 *            the message
+		 * @param p_cause
+		 *            the cause
+		 */
+		public DXRAMException(final String p_message, final Throwable p_cause) {
+			super(p_message, p_cause);
+		}
+
 	}
 }

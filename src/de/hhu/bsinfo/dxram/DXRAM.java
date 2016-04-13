@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.ManifestHelper;
 
@@ -105,7 +105,7 @@ public final class DXRAM
 	 * 			the common super class here.
 	 * @return Service requested or null if the service is not enabled/available.
 	 */
-	public <T extends DXRAMService> T getService(final Class<T> p_class) {		   
+	public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {		   
 		return m_engine.getService(p_class);
 	}
 
@@ -130,6 +130,8 @@ public final class DXRAM
 		if (buildUser != null) {
 			System.out.println("BuildUser: " + buildUser);
 		}
+		
+		System.out.println("Cwd: " + System.getProperty("user.dir"));
 		
 		BootService bootService = m_engine.getService(BootService.class);
 		

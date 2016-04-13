@@ -9,13 +9,15 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.messages.GetUtilizationRequest;
+import de.hhu.bsinfo.dxram.log.messages.GetUtilizationResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
@@ -27,9 +29,11 @@ import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.Version;
+import de.hhu.bsinfo.dxram.log.tcmds.TcmdLogInfo;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -39,7 +43,7 @@ import de.hhu.bsinfo.utils.Tools;
  * This service provides access to the backend storage system.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
-public class LogService extends DXRAMService implements MessageReceiver {
+public class LogService extends AbstractDXRAMService implements MessageReceiver {
 	// Constants
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
@@ -73,6 +77,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	private long m_primaryLogSize;
 	private long m_secondaryLogSize;
 	private int m_writeBufferSize;
+	private int m_secondaryLogBufferSize;
 
 	private int m_reorgUtilizationThreshold;
 
@@ -137,7 +142,8 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	 * @throws InterruptedException
 	 *             if the secondary log buffer could not be returned
 	 */
-	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID) throws IOException,
+	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID)
+			throws IOException,
 			InterruptedException {
 		SecondaryLogBuffer ret = null;
 		LogCatalog cat;
@@ -208,11 +214,13 @@ public class LogService extends DXRAMService implements MessageReceiver {
 				readBytes = offset;
 				offset = 0;
 				while (readBytes < segments[i].length) {
-					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], readBytes, p_owner != ChunkID.getCreatorID(p_chunkID));
+					logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(segments[i], readBytes,
+							p_owner != ChunkID.getCreatorID(p_chunkID));
 					chunkID = logEntryHeader.getCID(segments[i], readBytes);
 					length = logEntryHeader.getLength(segments[i], readBytes);
 					version = logEntryHeader.getVersion(segments[i], readBytes);
-					printMetadata(ChunkID.getCreatorID(p_chunkID), chunkID, segments[i], readBytes, length, version, j++, logEntryHeader);
+					printMetadata(ChunkID.getCreatorID(p_chunkID), chunkID, segments[i], readBytes, length, version,
+							j++, logEntryHeader);
 					readBytes += length + logEntryHeader.getHeaderSize(segments[i], readBytes);
 				}
 				i++;
@@ -291,13 +299,21 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		p_settings.setDefaultValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
 		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
 		p_settings.setDefaultValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
+		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
 
 		p_settings.setDefaultValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
+		p_settings.setDefaultValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING);
 	}
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_loggingIsActive = (getComponent(BootComponent.class).getNodeRole() == NodeRole.PEER) && getComponent(BackupComponent.class).isActive();
+		m_network = getComponent(NetworkComponent.class);
+		m_logger = getComponent(LoggerComponent.class);
+		registerNetworkMessages();
+		registerNetworkMessageListener();
+
+		m_loggingIsActive = (getComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER)
+				&& getComponent(BackupComponent.class).isActive();
 		if (m_loggingIsActive) {
 			m_useChecksum = p_settings.getValue(LogConfigurationValues.Service.LOG_CHECKSUM);
 
@@ -306,20 +322,19 @@ public class LogService extends DXRAMService implements MessageReceiver {
 			m_primaryLogSize = p_settings.getValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
 			m_secondaryLogSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
 			m_writeBufferSize = p_settings.getValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
+			m_secondaryLogBufferSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
 
-			m_reorgUtilizationThreshold = p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
+			m_reorgUtilizationThreshold =
+					p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
 
-			m_network = getComponent(NetworkComponent.class);
-			m_logger = getComponent(LoggerComponent.class);
-			m_nodeID = getComponent(BootComponent.class).getNodeID();
+			m_nodeID = getComponent(AbstractBootComponent.class).getNodeID();
 
 			m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
 
 			// Set attributes of log component that can only be set by log service
-			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum, m_secondaryLogSize, m_logSegmentSize);
+			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum, m_secondaryLogSize,
+					m_logSegmentSize);
 
-			registerNetworkMessages();
-			registerNetworkMessageListener();
 			// Set the log entry header crc size (must be called before the first log entry header is created)
 			AbstractLogEntryHeader.setCRCSize(m_useChecksum);
 
@@ -329,9 +344,12 @@ public class LogService extends DXRAMService implements MessageReceiver {
 			} catch (final IOException | InterruptedException e) {
 				m_logger.error(LogService.class, "Primary log creation failed: " + e);
 			}
+			m_logger.trace(getClass(), "Initialized primary log (" + m_primaryLogSize + ")");
 
 			// Create primary log buffer
-			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize, m_flashPageSize, m_logSegmentSize, m_useChecksum);
+			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize,
+					m_flashPageSize, m_secondaryLogBufferSize, m_logSegmentSize, m_useChecksum,
+					p_settings.getValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING));
 
 			// Create secondary log and secondary log buffer catalogs
 			m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -339,13 +357,16 @@ public class LogService extends DXRAMService implements MessageReceiver {
 			m_secondaryLogCreationLock = new ReentrantReadWriteLock(false);
 
 			// Create reorganization thread for secondary logs
-			m_secondaryLogsReorgThread = new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize, m_logSegmentSize);
+			m_secondaryLogsReorgThread =
+					new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize, m_logSegmentSize);
 			m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 			// Start secondary logs reorganization thread
 			m_secondaryLogsReorgThread.start();
 
 			m_flushLock = new ReentrantLock(false);
 		}
+
+		getComponent(TerminalComponent.class).registerCommand(new TcmdLogInfo());
 
 		return true;
 	}
@@ -356,8 +377,8 @@ public class LogService extends DXRAMService implements MessageReceiver {
 
 		if (m_loggingIsActive) {
 			// Stop reorganization thread
-			m_secondaryLogsReorgThread.shutdown();
 			m_secondaryLogsReorgThread.interrupt();
+			m_secondaryLogsReorgThread.shutdown();
 			try {
 				m_secondaryLogsReorgThread.join();
 				m_logger.info(getClass(), "Shutdown of SecondaryLogsReorgThread successful.");
@@ -448,7 +469,8 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	 * @param p_logEntryHeader
 	 *            the log entry header
 	 */
-	private void printMetadata(final short p_nodeID, final long p_localID, final byte[] p_payload, final int p_offset, final int p_length,
+	private void printMetadata(final short p_nodeID, final long p_localID, final byte[] p_payload, final int p_offset,
+			final int p_length,
 			final Version p_version, final int p_index, final AbstractLogEntryHeader p_logEntryHeader) {
 		final long chunkID = ((long) p_nodeID << 48) + p_localID;
 		byte[] array;
@@ -456,23 +478,33 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		try {
 			if (p_version.getVersion() != -1) {
 				array =
-						new String(Arrays.copyOfRange(p_payload, p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset), p_offset
-								+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH)).trim().getBytes();
+						new String(Arrays.copyOfRange(p_payload,
+								p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset), p_offset
+								+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH))
+								.trim().getBytes();
 
 				if (Tools.looksLikeUTF8(array)) {
-					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - "
-							+ p_length + "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload - " + new String(array, "UTF-8"));
+					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
+							+ (int) p_localID + ") \t Length - "
+							+ p_length + "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion()
+							+ " \t Payload - " + new String(array, "UTF-8"));
 				} else {
-					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - "
-							+ p_length + "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
+					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
+							+ (int) p_localID + ") \t Length - "
+							+ p_length + "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion()
+							+ " \t Payload is no String");
 				}
 			} else {
-				System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
-						+ "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Tombstones have no payload");
+				System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
+						+ (int) p_localID + ") \t Length - " + p_length
+						+ "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion()
+						+ " \t Tombstones have no payload");
 			}
 		} catch (final UnsupportedEncodingException | IllegalArgumentException e) {
-			System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", " + (int) p_localID + ") \t Length - " + p_length
-					+ "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion() + " \t Payload is no String");
+			System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
+					+ (int) p_localID + ") \t Length - " + p_length
+					+ "\t Version - " + p_version.getEpoch() + "," + p_version.getVersion()
+					+ " \t Payload is no String");
 		}
 		// p_localID: -1 can only be printed as an int
 	}
@@ -511,8 +543,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 	 * Returns the current utilization of primary log and all secondary logs
 	 * @return the current utilization
 	 */
-	@SuppressWarnings("unused")
-	private String getCurrentUtilization() {
+	public String getCurrentUtilization() {
 		String ret;
 		long counter;
 		SecondaryLog[] secondaryLogs;
@@ -538,7 +569,8 @@ public class LogService extends DXRAMService implements MessageReceiver {
 						if (secondaryLogs[j].isAccessed()) {
 							ret += "#Active log# ";
 						}
-						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: "
+								+ secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
 						counter += secondaryLogs[j].getOccupiedSpace();
 					}
@@ -551,7 +583,8 @@ public class LogService extends DXRAMService implements MessageReceiver {
 						if (secondaryLogs[j].isAccessed()) {
 							ret += "#Active log# ";
 						}
-						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: " + secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
+						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: "
+								+ secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
 						counter += secondaryLogs[j].getOccupiedSpace();
 					}
@@ -562,6 +595,25 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
 
 		return ret;
+	}
+
+	/**
+	 * Returns the current utilization of given node
+	 * @param p_nodeID
+	 *            the NodeID of the peer whose utilization is printed
+	 * @return the current utilization
+	 */
+	public String getCurrentUtilization(final short p_nodeID) {
+		final GetUtilizationRequest request = new GetUtilizationRequest(p_nodeID);
+
+		NetworkErrorCodes err = m_network.sendSync(request);
+
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(), "Could not get log utilization of " + p_nodeID);
+			return "";
+		} else {
+			return ((GetUtilizationResponse) request.getResponse()).getUtilization();
+		}
 	}
 
 	/**
@@ -627,18 +679,18 @@ public class LogService extends DXRAMService implements MessageReceiver {
 
 	/**
 	 * Handles an incoming InitRequest
-	 * @param p_message
+	 * @param p_request
 	 *            the InitRequest
 	 */
-	private void incomingInitRequest(final InitRequest p_message) {
+	private void incomingInitRequest(final InitRequest p_request) {
 		short owner;
 		long firstChunkIDOrRangeID;
 		boolean success = true;
 		LogCatalog cat;
 		SecondaryLog secLog = null;
 
-		owner = p_message.getOwner();
-		firstChunkIDOrRangeID = p_message.getFirstCIDOrRangeID();
+		owner = p_request.getOwner();
+		firstChunkIDOrRangeID = p_request.getFirstCIDOrRangeID();
 
 		m_secondaryLogCreationLock.writeLock().lock();
 		cat = m_logCatalogs[owner & 0xFFFF];
@@ -651,30 +703,56 @@ public class LogService extends DXRAMService implements MessageReceiver {
 				if (!cat.exists(firstChunkIDOrRangeID, (byte) -1)) {
 					// Create new secondary log
 					secLog =
-							new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner, ChunkID.getLocalID(firstChunkIDOrRangeID), cat.getNewID(false),
+							new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner,
+									ChunkID.getLocalID(firstChunkIDOrRangeID), cat.getNewID(false),
 									false,
-									m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize, m_reorgUtilizationThreshold, m_useChecksum);
+									m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
+									m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_flashPageSize, m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize, m_logSegmentSize);
 				}
 			} else {
 				if (!cat.exists(-1, (byte) firstChunkIDOrRangeID)) {
 					// Create new secondary log for migrations
-					secLog = new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner, firstChunkIDOrRangeID, cat.getNewID(true), true,
-							m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize, m_reorgUtilizationThreshold, m_useChecksum);
+					secLog = new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner, firstChunkIDOrRangeID,
+							cat.getNewID(true), true,
+							m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
+							m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_flashPageSize, m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize, m_logSegmentSize);
 				}
 			}
 		} catch (final IOException | InterruptedException e) {
-			m_logger.error(LogService.class, "Initialization of backup range " + firstChunkIDOrRangeID + " failed: " + e);
+			m_logger.error(LogService.class,
+					"Initialization of backup range " + firstChunkIDOrRangeID + " failed: " + e);
 			success = false;
 		}
 		m_secondaryLogCreationLock.writeLock().unlock();
 
-		final NetworkErrorCodes err = m_network.sendMessage(new InitResponse(p_message, success));
+		final NetworkErrorCodes err = m_network.sendMessage(new InitResponse(p_request, success));
 		if (err != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(LogService.class, "Could not acknowledge initilization of backup range: " + err);
+		}
+	}
+
+	/**
+	 * Handles an incoming GetUtilizationRequest
+	 * @param p_request
+	 *            the GetUtilizationRequest
+	 */
+	private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
+
+		if (m_loggingIsActive) {
+			final NetworkErrorCodes err = m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(LogService.class, "Could not answer GetUtilizationRequest: " + err);
+			}
+		} else {
+			m_logger.warn(getClass(), "Incoming GetUtilizationRequest, but superpeers do not store backups");
+			final NetworkErrorCodes err = m_network.sendMessage(new GetUtilizationResponse(p_request, null));
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(LogService.class, "Could not answer GetUtilizationRequest: " + err);
+			}
 		}
 	}
 
@@ -691,6 +769,9 @@ public class LogService extends DXRAMService implements MessageReceiver {
 					break;
 				case LogMessages.SUBTYPE_INIT_REQUEST:
 					incomingInitRequest((InitRequest) p_message);
+					break;
+				case LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST:
+					incomingGetUtilizationRequest((GetUtilizationRequest) p_message);
 					break;
 				default:
 					break;
@@ -709,6 +790,8 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
+		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
+		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
 	}
 
 	/**
@@ -718,6 +801,7 @@ public class LogService extends DXRAMService implements MessageReceiver {
 		m_network.register(LogMessage.class, this);
 		m_network.register(RemoveMessage.class, this);
 		m_network.register(InitRequest.class, this);
+		m_network.register(GetUtilizationRequest.class, this);
 	}
 
 }

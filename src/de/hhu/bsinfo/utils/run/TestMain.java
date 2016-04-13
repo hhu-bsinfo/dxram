@@ -2,14 +2,14 @@ package de.hhu.bsinfo.utils.run;
 
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.main.Main;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Example/Test implementation to show usage of the main application framwork.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  *
  */
-public class TestMain extends Main {
+public class TestMain extends AbstractMain {
 
 	private static final Argument PARAM_1 = new Argument("param1", "10", true, "First parameter");
 	private static final Argument PARAM_2 = new Argument("param2", "test", true, "Second parameter");
@@ -20,7 +20,7 @@ public class TestMain extends Main {
 	 * @param args Argument list.
 	 */
 	public static void main(final String[] args) {
-		Main main = new TestMain();
+		AbstractMain main = new TestMain();
 		main.run(args);
 	}
 

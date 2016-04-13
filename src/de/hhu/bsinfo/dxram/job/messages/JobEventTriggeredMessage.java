@@ -58,7 +58,7 @@ public class JobEventTriggeredMessage extends AbstractMessage {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Long.BYTES;
 	}
 }

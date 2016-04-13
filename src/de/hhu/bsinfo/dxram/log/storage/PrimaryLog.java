@@ -69,7 +69,7 @@ public final class PrimaryLog extends AbstractLog {
 
 	@Override
 	public int appendData(final byte[] p_data, final int p_offset, final int p_length) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		if (m_primaryLogSize - m_numberOfBytes < p_length) {
 			// Not enough free space in primary log -> flush to secondary logs and reset primary log
 			m_logService.flushDataToSecondaryLogs();

@@ -58,7 +58,7 @@ public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Integer.BYTES;
 	}
 

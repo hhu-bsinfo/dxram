@@ -107,7 +107,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 			try {
 				Thread.sleep(m_sleepInterval * 1000);
 			} catch (final InterruptedException e) {
-				m_logger.trace(getClass(), "Got an interrupt while sleeping");
+				m_shutdown = true;
 				break;
 			}
 

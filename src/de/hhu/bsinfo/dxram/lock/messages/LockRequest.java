@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lock.messages;
 
 import java.nio.ByteBuffer;
@@ -13,10 +14,8 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  */
 public class LockRequest extends AbstractRequest {
 
-	// Attributes
 	private long m_chunkID = ChunkID.INVALID_ID;
-	
-	// Constructors
+
 	/**
 	 * Creates an instance of LockRequest as a receiver.
 	 */
@@ -30,14 +29,14 @@ public class LockRequest extends AbstractRequest {
 	 *            the destination node ID.
 	 * @param p_writeLock
 	 *            True for write lock, false for read lock.
-	 * @param p_dataStructures
-	 *           Data structures to be locked.
+	 * @param p_chunkID
+	 *            ChunkIDs to lock
 	 */
 	public LockRequest(final short p_destination, final boolean p_writeLock, final long p_chunkID) {
 		super(p_destination, LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST);
 
 		m_chunkID = p_chunkID;
-		
+
 		if (p_writeLock) {
 			setStatusCode(ChunkMessagesMetadataUtils.setWriteLockFlag(getStatusCode(), true));
 		} else {
@@ -59,11 +58,7 @@ public class LockRequest extends AbstractRequest {
 	 */
 	public boolean isWriteLockOperation() {
 		if (ChunkMessagesMetadataUtils.isLockAcquireFlagSet(getStatusCode())) {
-			if (ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode())) {
-				return false;
-			} else {
-				return true;
-			}
+			return !ChunkMessagesMetadataUtils.isReadLockFlagSet(getStatusCode());
 		} else {
 			assert 1 == 2;
 			return true;
@@ -82,7 +77,7 @@ public class LockRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
+	protected final int getPayloadLength() {
 		return Long.BYTES;
 	}
 

@@ -87,7 +87,6 @@ public class MigrationRequest extends AbstractRequest {
 		final MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
 		m_dataStructures = new Chunk[p_buffer.getInt()];
-
 		for (int i = 0; i < m_dataStructures.length; i++) {
 			id = p_buffer.getLong();
 			size = p_buffer.getInt();
@@ -99,9 +98,9 @@ public class MigrationRequest extends AbstractRequest {
 	}
 
 	@Override
-	protected final int getPayloadLengthForWrite() {
-		int length = 0;
-		length += Long.BYTES * m_dataStructures.length;
+	protected final int getPayloadLength() {
+		int length = Integer.BYTES;
+		length += (Long.BYTES + Integer.BYTES) * m_dataStructures.length;
 		for (DataStructure dataStructure : m_dataStructures) {
 			length += dataStructure.sizeofObject();
 		}

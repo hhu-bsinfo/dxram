@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxram.term;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMService;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 
 /**
  * Delegate to allow terminal commands to access certain features of the
@@ -31,5 +31,5 @@ public interface TerminalDelegate {
 	 * @param p_class Class of the service to get.
 	 * @return DXRAMService or null if service not available.
 	 */
-	public <T extends DXRAMService> T getDXRAMService(final Class<T> p_class);
+	public <T extends AbstractDXRAMService> T getDXRAMService(final Class<T> p_class);
 }
