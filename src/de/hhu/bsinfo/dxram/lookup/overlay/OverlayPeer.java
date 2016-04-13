@@ -40,8 +40,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.CRC16;
 
 /**
@@ -650,11 +650,11 @@ public class OverlayPeer implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
-						incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
-						break;
-					default:
-						break;
+				case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
+					incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}

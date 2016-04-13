@@ -372,8 +372,11 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	 * @return the NodeID of the primary peer for given object
 	 */
 	public short getPrimaryPeer(final long p_chunkID) {
-		assert m_root != null;
-		return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
+		if (m_root != null) {
+			return getNodeIDOrSuccessorsNodeID(p_chunkID & 0x0000FFFFFFFFFFFFL);
+		} else {
+			return -1;
+		}
 	}
 
 	/**
@@ -391,32 +394,32 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 		Node node;
 		Entry predecessorEntry;
 
-		assert m_root != null;
-
-		localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
-		node = getNodeOrSuccessorsNode(localID);
-		if (node != null) {
-			index = node.indexOf(localID);
-			if (0 <= index) {
-				// LocalID was found: Store NodeID and determine successor
-				range = new long[2];
-				nodeID = node.getNodeID(index);
-				range[1] = localID;
-				// range[1] = getSuccessorsEntry(localID, node).getLocalID();
-			} else {
-				// LocalID was not found, but successor: Store NodeID and LocalID of successor
-				range = new long[2];
-				nodeID = node.getNodeID(index * -1 - 1);
-				range[1] = node.getLocalID(index * -1 - 1);
+		if (m_root != null) {
+			localID = p_chunkID & 0x0000FFFFFFFFFFFFL;
+			node = getNodeOrSuccessorsNode(localID);
+			if (node != null) {
+				index = node.indexOf(localID);
+				if (0 <= index) {
+					// LocalID was found: Store NodeID and determine successor
+					range = new long[2];
+					nodeID = node.getNodeID(index);
+					range[1] = localID;
+					// range[1] = getSuccessorsEntry(localID, node).getLocalID();
+				} else {
+					// LocalID was not found, but successor: Store NodeID and LocalID of successor
+					range = new long[2];
+					nodeID = node.getNodeID(index * -1 - 1);
+					range[1] = node.getLocalID(index * -1 - 1);
+				}
+				// Determine LocalID of predecessor
+				predecessorEntry = getPredecessorsEntry(range[1], node);
+				if (predecessorEntry != null) {
+					range[0] = predecessorEntry.getLocalID() + 1;
+				} else {
+					range[0] = 0;
+				}
+				ret = new LookupRange(nodeID, range);
 			}
-			// Determine LocalID of predecessor
-			predecessorEntry = getPredecessorsEntry(range[1], node);
-			if (predecessorEntry != null) {
-				range[0] = predecessorEntry.getLocalID() + 1;
-			} else {
-				range[0] = 0;
-			}
-			ret = new LookupRange(nodeID, range);
 		}
 
 		return ret;
@@ -1577,16 +1580,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_localID) {
-				low = mid + 1;
-			} else if (midVal > p_localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_localID) {
+					low = mid + 1;
+				} else if (midVal > p_localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1776,16 +1779,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLocalID(0);
+				midVal = m_children[mid].getLocalID(0);
 
-			if (midVal < localID) {
-				low = mid + 1;
-			} else if (midVal > localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < localID) {
+					low = mid + 1;
+				} else if (midVal > localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
