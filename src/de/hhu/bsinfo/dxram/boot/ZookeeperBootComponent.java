@@ -147,6 +147,14 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				}
 			} catch (final ZooKeeperException e) {}
 		}
+		if (zookeeperPathExists("nodes/terminals")) {
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/terminals");
+				for (String child : children) {
+					ids.add(Short.parseShort(child));
+				}
+			} catch (final ZooKeeperException e) {}
+		}
 
 		return ids;
 	}
@@ -592,7 +600,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				splits = node.split("/");
 
 				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2])));
+						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0,
+								NodeRole.toNodeRole(splits[2])));
 
 				if (nodeID == m_nodesConfiguration.getOwnNodeID()) {
 					// NodeID was already re-used
@@ -645,6 +654,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
 			} else if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.PEER)) {
 				m_zookeeper.create("nodes/peers/" + m_nodesConfiguration.getOwnNodeID());
+			} else if (m_nodesConfiguration.getOwnNodeEntry().getRole().equals(NodeRole.TERMINAL)) {
+				m_zookeeper.create("nodes/terminals/" + m_nodesConfiguration.getOwnNodeID());
 			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
 			m_logger.error(getClass(), "Parsing nodes normal failed", e);

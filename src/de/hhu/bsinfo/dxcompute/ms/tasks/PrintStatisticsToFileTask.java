@@ -6,8 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 
@@ -24,7 +24,7 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 	}
 
 	@Override
-	public int execute(final DXRAM p_dxram) {
+	public int execute(final DXRAMServiceAccessor p_dxram) {
 		BootService bootService = p_dxram.getService(BootService.class);
 		StatisticsService statisticsService = p_dxram.getService(StatisticsService.class);
 		LoggerService loggerService = p_dxram.getService(LoggerService.class);
@@ -38,7 +38,7 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 			file.delete();
 			try {
 				file.createNewFile();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				loggerService.error(getClass(), "Creating output file " + m_path + " for statistics failed", e);
 				return -2;
 			}
@@ -47,7 +47,7 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 		PrintStream out;
 		try {
 			out = new PrintStream(file);
-		} catch (FileNotFoundException e) {
+		} catch (final FileNotFoundException e) {
 			loggerService.error(getClass(), "Creating print stream for statistics failed", e);
 			return 03;
 		}

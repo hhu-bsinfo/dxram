@@ -5,7 +5,7 @@ import de.hhu.bsinfo.menet.AbstractResponse;
 
 public class ExecuteTaskResponse extends AbstractResponse {
 	/**
-	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
+	 * Creates an instance of ExecuteTaskResponse.
 	 * This constructor is used when receiving this message.
 	 */
 	public ExecuteTaskResponse() {
@@ -13,7 +13,7 @@ public class ExecuteTaskResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
+	 * Creates an instance of ExecuteTaskResponse.
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.

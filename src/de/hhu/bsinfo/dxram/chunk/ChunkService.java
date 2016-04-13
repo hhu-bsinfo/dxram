@@ -1061,26 +1061,26 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case ChunkMessages.SUBTYPE_GET_REQUEST:
-					incomingGetRequest((GetRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_PUT_REQUEST:
-					incomingPutRequest((PutRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
-					incomingRemoveRequest((RemoveRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_CREATE_REQUEST:
-					incomingCreateRequest((CreateRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_STATUS_REQUEST:
-					incomingStatusRequest((StatusRequest) p_message);
-					break;
-				case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
-					incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
-					break;
-				default:
-					break;
+					case ChunkMessages.SUBTYPE_GET_REQUEST:
+						incomingGetRequest((GetRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_PUT_REQUEST:
+						incomingPutRequest((PutRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
+						incomingRemoveRequest((RemoveRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_CREATE_REQUEST:
+						incomingCreateRequest((CreateRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_STATUS_REQUEST:
+						incomingStatusRequest((StatusRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
+						incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}

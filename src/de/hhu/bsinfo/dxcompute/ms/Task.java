@@ -3,14 +3,17 @@ package de.hhu.bsinfo.dxcompute.ms;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.Pair;
 
 public class Task {
 
 	private AbstractTaskPayload m_payload;
 	private String m_name;
+	private short m_nodeIdSubmitted;
 	private ArrayList<Pair<Short, Integer>> m_executionResults;
 	private ArrayList<TaskListener> m_completionListeners = new ArrayList<TaskListener>();
+	DXRAMServiceAccessor m_serviceAccessor;
 
 	// private TaskStatisticsRecorderIDs m_statisticsRecorderIDs;
 
@@ -23,12 +26,24 @@ public class Task {
 		return m_name;
 	}
 
+	/**
+	 * Get the node id which submitted the task.
+	 * @return Node id that submitted this task.
+	 */
+	public short getNodeIdSubmitted() {
+		return m_nodeIdSubmitted;
+	}
+
 	public boolean hasTaskExecutionCompleted() {
 		return m_executionResults != null;
 	}
 
 	public ArrayList<Pair<Short, Integer>> getTaskExecutionResults() {
 		return m_executionResults;
+	}
+
+	public void registerTaskListener(final TaskListener p_listener) {
+		m_completionListeners.add(p_listener);
 	}
 
 	@Override
@@ -49,6 +64,10 @@ public class Task {
 
 	AbstractTaskPayload getPayload() {
 		return m_payload;
+	}
+
+	void setNodeIdSubmitted(final short p_nodeId) {
+		m_nodeIdSubmitted = p_nodeId;
 	}
 
 	void setTaskExecutionResults(final ArrayList<Pair<Short, Integer>> p_results) {

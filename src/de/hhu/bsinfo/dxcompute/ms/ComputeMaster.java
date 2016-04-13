@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxcompute.ms;
 
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -13,8 +14,12 @@ import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
-import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -24,7 +29,7 @@ import de.hhu.bsinfo.utils.Pair;
 public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	private static final int MAX_TASK_COUNT = 100;
 
-	private ArrayList<Short> m_signedOnSlaves = new ArrayList<Short>();
+	private Vector<Short> m_signedOnSlaves = new Vector<Short>();
 	private Lock m_joinLock = new ReentrantLock(false);
 	private ConcurrentLinkedQueue<Task> m_tasks = new ConcurrentLinkedQueue<Task>();
 	private AtomicInteger m_taskCount = new AtomicInteger(0);
@@ -33,25 +38,28 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 	private long m_payloadIdCounter;
 
-	public ComputeMaster(final DXRAM p_dxram, final int p_computeGroupId, boolean runDedicatedThread) {
-		super(p_dxram, p_computeGroupId);
+	public ComputeMaster(final int p_computeGroupId, final DXRAMServiceAccessor p_serviceAccessor,
+			final NetworkComponent p_network,
+			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
+			final AbstractBootComponent p_boot) {
+		super(ComputeRole.MASTER, p_computeGroupId, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
 
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
-				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
-				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
-				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
-				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
+		p_network.register(SlaveJoinRequest.class, this);
 
-		m_networkService.registerReceiver(SlaveJoinRequest.class, this);
+		m_executionBarrier = new BarrierMaster(p_network, p_logger);
 
-		m_executionBarrier = new BarrierMaster(m_networkService, m_loggerService);
+		start();
+	}
 
-		if (runDedicatedThread) {
-			start();
+	public ArrayList<Short> getConnectedSlaves() {
+		@SuppressWarnings("unchecked")
+		Vector<Short> tmp = (Vector<Short>) m_signedOnSlaves.clone();
+		ArrayList<Short> ret = new ArrayList<Short>(tmp.size());
+		for (Short s : tmp) {
+			ret.add(s);
 		}
+
+		return ret;
 	}
 
 	public boolean submitTask(final Task p_task) {
@@ -81,6 +89,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 					break;
 				case STATE_EXECUTE:
 					stateExecute();
+					break;
+				case STATE_ERROR_DIE:
+					stateErrorDie();
 					break;
 				default:
 					assert 1 == 2;
@@ -115,16 +126,25 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	}
 
 	private void stateSetup() {
-		m_loggerService.info(getClass(), "Setting up master of compute group " + m_computeGroupId + ")");
+		m_logger.info(getClass(), "Setting up master of compute group " + m_computeGroupId);
+
+		// check first, if there is already a master registered for this compute group
+		long id = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey);
+		if (id != -1) {
+			m_logger.error(getClass(), "Cannot setup master for compute group id " + m_computeGroupId + ", node "
+					+ NodeID.toHexString(ChunkID.getCreatorID(id)) + " is already master of group");
+			m_state = State.STATE_ERROR_DIE;
+			return;
+		}
 
 		// setup bootstrapping for other slaves
 		// use the nameservice to store our node id
-		m_nameserviceService.register(ChunkID.getChunkID(m_bootService.getNodeID(), ChunkID.INVALID_ID),
+		m_nameservice.register(ChunkID.getChunkID(m_boot.getNodeID(), ChunkID.INVALID_ID),
 				m_nameserviceMasterNodeIdKey);
 
 		m_state = State.STATE_IDLE;
 
-		m_loggerService.debug(getClass(), "Entering idle state");
+		m_logger.debug(getClass(), "Entering idle state");
 	}
 
 	private void stateIdle() {
@@ -145,7 +165,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		Task task = m_tasks.poll();
 		AbstractTaskPayload taskPayload = task.getPayload();
 		if (taskPayload == null) {
-			m_loggerService.error(getClass(), "Cannot proceed with task " + task + ", missing payload.");
+			m_logger.error(getClass(), "Cannot proceed with task " + task + ", missing payload.");
 			m_state = State.STATE_IDLE;
 			m_joinLock.unlock();
 			return;
@@ -154,7 +174,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		// set unique payload id
 		taskPayload.setPayloadId(m_payloadIdCounter++);
 
-		m_loggerService.info(getClass(),
+		m_logger.info(getClass(),
 				"Starting execution of task " + task + " with " + m_signedOnSlaves.size() + " slaves.");
 
 		task.notifyListenersExecutionStarts();
@@ -168,9 +188,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 			// pass barrier identifier for syncing after task along
 			ExecuteTaskRequest request = new ExecuteTaskRequest(slaveId, m_executeBarrierIdentifier % 2, taskPayload);
 
-			NetworkErrorCodes err = m_networkService.sendSync(request);
+			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
-				m_loggerService.error(getClass(),
+				m_logger.error(getClass(),
 						"Sending task to slave " + NodeID.toHexString(slaveId) + " failed: " + err);
 				// remove slave from list
 				m_signedOnSlaves.remove(slaveId);
@@ -180,7 +200,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 			ExecuteTaskResponse response = (ExecuteTaskResponse) request.getResponse();
 			if (response.getStatusCode() != 0) {
 				// exclude slave from execution
-				m_loggerService.error(getClass(), "Slave " + NodeID.toHexString(slaveId) + " response "
+				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slaveId) + " response "
 						+ response.getStatusCode() + " on execution of task " + task
 						+ " excluding from current execution");
 			} else {
@@ -190,12 +210,12 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 		taskPayload.setSlaveId(-1);
 
-		m_loggerService.info(getClass(),
+		m_logger.info(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
 
 		m_executionBarrier.execute(numberOfSlavesOnExecution, m_executeBarrierIdentifier % 2, -1);
 
-		m_loggerService.debug(getClass(),
+		m_logger.debug(getClass(),
 				"Syncing done.");
 
 		// grab return codes from barrier
@@ -212,13 +232,20 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		// allow further slaves to join
 		m_joinLock.unlock();
 
-		m_loggerService.debug(getClass(), "Entering idle state");
+		m_logger.debug(getClass(), "Entering idle state");
+	}
+
+	private void stateErrorDie() {
+		m_logger.error(getClass(), "Master error state");
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {}
 	}
 
 	private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {
 		if (m_joinLock.tryLock()) {
 			if (m_signedOnSlaves.contains(p_message.getSource())) {
-				m_loggerService.warn(getClass(), "Joining slave, already joined: "
+				m_logger.warn(getClass(), "Joining slave, already joined: "
 						+ Integer.toHexString(p_message.getSource()));
 			} else {
 				m_signedOnSlaves.add(p_message.getSource());
@@ -226,26 +253,26 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 			SlaveJoinResponse response = new SlaveJoinResponse(p_message);
 			response.setStatusCode((byte) 0);
-			NetworkErrorCodes err = m_networkService.sendMessage(response);
+			NetworkErrorCodes err = m_network.sendMessage(response);
 			if (err != NetworkErrorCodes.SUCCESS) {
-				m_loggerService.error(getClass(), "Sending response to join request of slave "
+				m_logger.error(getClass(), "Sending response to join request of slave "
 						+ NodeID.toHexString(p_message.getSource()) + "failed: " + err);
 				// remove slave
 				m_signedOnSlaves.remove(p_message.getSource());
 			} else {
-				m_loggerService.info(getClass(), "Slave " + NodeID.toHexString(p_message.getSource()) + " has joined");
+				m_logger.info(getClass(), "Slave " + NodeID.toHexString(p_message.getSource()) + " has joined");
 			}
 
 			m_joinLock.unlock();
 		} else {
-			m_loggerService.trace(getClass(), "Cannot join slave, master not in idle state.");
+			m_logger.trace(getClass(), "Cannot join slave, master not in idle state.");
 
 			// send response that joining is not possible currently
 			SlaveJoinResponse response = new SlaveJoinResponse(p_message);
 			response.setStatusCode((byte) 1);
-			NetworkErrorCodes err = m_networkService.sendMessage(response);
+			NetworkErrorCodes err = m_network.sendMessage(response);
 			if (err != NetworkErrorCodes.SUCCESS) {
-				m_loggerService.error(getClass(), "Sending response to join request of slave "
+				m_logger.error(getClass(), "Sending response to join request of slave "
 						+ NodeID.toHexString(p_message.getSource()) + "failed: " + err);
 			}
 		}

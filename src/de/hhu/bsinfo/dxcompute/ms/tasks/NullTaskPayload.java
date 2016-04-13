@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
-import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 
 public class NullTaskPayload extends AbstractTaskPayload {
 
@@ -11,7 +11,7 @@ public class NullTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAM p_dxram) {
+	public int execute(final DXRAMServiceAccessor p_dxram) {
 		return 0;
 	}
 

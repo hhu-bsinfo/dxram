@@ -11,7 +11,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * Service providing information about the bootstrapping process like
  * node ids, node roles, addresses etc.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
- *
  */
 public class BootService extends AbstractDXRAMService {
 
@@ -26,7 +25,7 @@ public class BootService extends AbstractDXRAMService {
 	}
 
 	/**
-	 * Get IDs of all available (online) nodes.
+	 * Get IDs of all available (online) nodes including own.
 	 * @return List of IDs of nodes available.
 	 */
 	public List<Short> getIDsOfOnlineNodes() {
@@ -43,7 +42,8 @@ public class BootService extends AbstractDXRAMService {
 
 	/**
 	 * Get the role of another nodeID.
-	 * @param p_nodeID Node id to get the role of.
+	 * @param p_nodeID
+	 *            Node id to get the role of.
 	 * @return Role of other nodeID or null if node does not exist.
 	 */
 	public NodeRole getNodeRole(final short p_nodeID) {
@@ -61,11 +61,11 @@ public class BootService extends AbstractDXRAMService {
 	}
 
 	/**
-	 * Get IDs of all available (online) peer nodes.
+	 * Get IDs of all available (online) peer nodes exception our own.
 	 * @return List of IDs of nodes available.
 	 */
 	public List<Short> getAvailablePeerNodeIDs() {
-		return m_boot.getIDsOfOnlineNodes();
+		return m_boot.getIDsOfOnlinePeers();
 	}
 
 	/**

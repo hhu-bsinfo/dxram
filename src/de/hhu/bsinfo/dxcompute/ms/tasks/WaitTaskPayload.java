@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
-import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -19,7 +19,7 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAM p_dxram) {
+	public int execute(final DXRAMServiceAccessor p_dxram) {
 		try {
 			Thread.sleep(m_waitMs);
 		} catch (final InterruptedException e) {

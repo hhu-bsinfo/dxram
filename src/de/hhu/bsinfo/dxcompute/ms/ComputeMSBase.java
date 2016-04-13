@@ -9,50 +9,65 @@ import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
 import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
-import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.logger.LoggerService;
-import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.net.NetworkService;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 public abstract class ComputeMSBase extends Thread {
-	protected DXRAM m_dxram;
-	protected LoggerService m_loggerService;
-	protected NetworkService m_networkService;
-	protected BootService m_bootService;
-	protected NameserviceService m_nameserviceService;
+	public static final String NAMESERVICE_ENTRY_IDENT = "MAS";
 
 	protected enum State {
 		STATE_SETUP,
 		STATE_IDLE,
 		STATE_EXECUTE,
+		STATE_ERROR_DIE,
 	}
 
+	private DXRAMServiceAccessor m_serviceAccessor;
+
+	protected NetworkComponent m_network;
+	protected LoggerComponent m_logger;
+	protected NameserviceComponent m_nameservice;
+	protected AbstractBootComponent m_boot;
+
 	protected volatile State m_state = State.STATE_SETUP;
+	protected ComputeRole m_role;
 	protected int m_computeGroupId = -1;
 	protected String m_nameserviceMasterNodeIdKey;
 
-	public ComputeMSBase(final DXRAM p_dxram, final int p_computeGroupId) {
-		m_dxram = p_dxram;
-		m_loggerService = m_dxram.getService(LoggerService.class);
-		m_networkService = m_dxram.getService(NetworkService.class);
-		m_bootService = m_dxram.getService(BootService.class);
-		m_nameserviceService = m_dxram.getService(NameserviceService.class);
-
+	public ComputeMSBase(final ComputeRole p_role, final int p_computeGroupId,
+			final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
+			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
+			final AbstractBootComponent p_boot) {
+		super("ComputeMS-" + p_role + "-" + p_computeGroupId);
+		m_role = p_role;
 		m_computeGroupId = p_computeGroupId;
 		assert m_computeGroupId >= 0 && m_computeGroupId <= 99;
-		m_nameserviceMasterNodeIdKey = new String("MAS" + m_computeGroupId);
+		m_nameserviceMasterNodeIdKey = new String(NAMESERVICE_ENTRY_IDENT + m_computeGroupId);
 
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
+		m_serviceAccessor = p_serviceAccessor;
+
+		m_network = p_network;
+		m_logger = p_logger;
+		m_nameservice = p_nameservice;
+		m_boot = p_boot;
+
+		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
+		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
+		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
-		m_networkService.registerMessageType(MasterSlaveMessages.TYPE,
+		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
 
 		registerTaskPayloads();
+	}
+
+	public ComputeRole getRole() {
+		return m_role;
 	}
 
 	public int getComputeGroupId() {
@@ -63,6 +78,10 @@ public abstract class ComputeMSBase extends Thread {
 	public abstract void run();
 
 	public abstract void shutdown();
+
+	protected DXRAMServiceAccessor getServiceAccessor() {
+		return m_serviceAccessor;
+	}
 
 	private void registerTaskPayloads() {
 		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,

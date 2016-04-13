@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -77,7 +77,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 		return m_slaveId;
 	}
 
-	public abstract int execute(final DXRAM p_dxram);
+	public abstract int execute(final DXRAMServiceAccessor p_dxram);
 
 	@Override
 	public int exportObject(final Exporter p_exporter, final int p_size) {

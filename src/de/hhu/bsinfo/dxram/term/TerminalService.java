@@ -27,6 +27,16 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	private boolean m_loop = true;
 
 	/**
+	 * Register a new terminal command for the terminal.
+	 * @param p_command
+	 *            Command to register.
+	 * @return True if registering was successful, false if a command with the same name already exists.
+	 */
+	public boolean registerCommand(final AbstractTerminalCommand p_command) {
+		return m_terminal.registerCommand(p_command);
+	}
+
+	/**
 	 * Run the terminal loop.
 	 * Only returns if terminal was exited.
 	 */

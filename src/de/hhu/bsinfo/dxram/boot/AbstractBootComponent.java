@@ -30,7 +30,7 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
 	}
 
 	/**
-	 * Get IDs of all available (online) nodes.
+	 * Get IDs of all available (online) nodes including the own.
 	 * @return List of IDs of nodes available.
 	 */
 	public abstract List<Short> getIDsOfOnlineNodes();

@@ -6,8 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 
 public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTaskPayload {
@@ -23,7 +23,7 @@ public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAM p_dxram) {
+	public int execute(final DXRAMServiceAccessor p_dxram) {
 		ChunkService chunkService = p_dxram.getService(ChunkService.class);
 		LoggerService loggerService = p_dxram.getService(LoggerService.class);
 
@@ -36,7 +36,7 @@ public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTaskPayload {
 			file.delete();
 			try {
 				file.createNewFile();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				loggerService.error(getClass(), "Creating output file " + m_path + " for memory status failed", e);
 				return -2;
 			}
@@ -45,7 +45,7 @@ public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTaskPayload {
 		PrintStream out;
 		try {
 			out = new PrintStream(file);
-		} catch (FileNotFoundException e) {
+		} catch (final FileNotFoundException e) {
 			loggerService.error(getClass(), "Creating print stream for memory status failed", e);
 			return -3;
 		}
