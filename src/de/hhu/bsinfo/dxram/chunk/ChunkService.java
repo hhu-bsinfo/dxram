@@ -311,7 +311,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 *            List of sizes to create chunks for.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
-	public long[] create(final int... p_sizes) {
+	public long[] createSizes(final int... p_sizes) {
 		long[] chunkIDs = null;
 
 		if (p_sizes.length == 0) {
@@ -361,7 +361,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 *            Sizes to create chunks of.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
-	public long[] create(final short p_peer, final int... p_sizes) {
+	public long[] createRemote(final short p_peer, final int... p_sizes) {
 		long[] chunkIDs = null;
 
 		if (p_sizes.length == 0) {
@@ -918,6 +918,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	public Chunk[] get(final long[] p_chunkIDs) {
 		Chunk[] ret = null;
 
+		
 		if (!m_performanceFlag) {
 			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
 		}

@@ -45,7 +45,8 @@ public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 		long[] chunkIDs = null;
 
-		chunkIDs = chunkService.create(nodeID, size);
+		
+		chunkIDs = chunkService.createRemote(nodeID, size);
 
 		if (chunkIDs != null) {
 
