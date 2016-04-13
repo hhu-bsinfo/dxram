@@ -53,7 +53,7 @@ public class TcmdChunkPut extends TerminalCommand{
 				
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
 		
-		if (__checkID(cid, lid))	// check if size, cid and lid are valid
+		if (__checkID(cid, nid, lid))			// check if size, cid and lid are valid
 			return true;						// if the values are not valid the function will do nothing and returns
 		
 		
@@ -76,14 +76,14 @@ public class TcmdChunkPut extends TerminalCommand{
 	}
 	
 	
-	// this needs to be refactored in one helper class since these functions will be used throughout multiple classes
-	
-	private boolean __checkID(Long cid, Long lid)
+	// true if Error was found
+
+	private boolean __checkID(Long cid, Short nid, Long lid)
 	{
 		
-		if (cid == null && lid == null)
+		if (cid == null && (lid == null || nid == null))
 		{
-			System.out.println("Error: Neither CID nor LID specified");
+			System.out.println("Error: Neither CID nor NID and LID specified");
 			return true;
 		}
 		return false;

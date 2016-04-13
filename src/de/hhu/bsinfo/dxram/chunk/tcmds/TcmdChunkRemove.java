@@ -56,7 +56,8 @@ public class TcmdChunkRemove extends TerminalCommand {
 			{
 				// check for remote id, otherwise we assume local
 				if (nid == null) {
-					nid = bootService.getNodeID();
+					System.out.println("Error: Please specify Node ID");
+					return false;
 				}
 				
 				// create cid

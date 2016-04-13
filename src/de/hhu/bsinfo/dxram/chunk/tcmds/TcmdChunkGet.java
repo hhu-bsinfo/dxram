@@ -62,7 +62,7 @@ public class TcmdChunkGet extends TerminalCommand{
 		
 		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
 		
-		if (__checkID(cid, lid))	// check if size, cid and lid are valid
+		if (__checkID(cid, nid, lid))	// check if size, cid and lid are valid
 			return false;						// if the values are not valid the function will do nothing and returns
 		
 		cid = __getCid(cid, lid, nid);
@@ -142,14 +142,10 @@ public class TcmdChunkGet extends TerminalCommand{
 
 	private long __getCid(Long cid, Long lid, Short nid)
 	{
-		BootService   bootService 	= getTerminalDelegate().getDXRAMService(BootService.class);
 		// we favor full cid
-		// take lid
+		
 		if (cid == null)
-		{
-			if (nid == null) 
-				nid = bootService.getNodeID();
-			
+		{			
 			// create cid
 			cid = ChunkID.getChunkID(nid, lid);
 		}
@@ -157,12 +153,13 @@ public class TcmdChunkGet extends TerminalCommand{
 		return cid;
 	}
 	
-	private boolean __checkID(Long cid, Long lid)
+	// true if Error was found
+	private boolean __checkID(Long cid, Short nid, Long lid)
 	{
 		
-		if (cid == null && lid == null)
+		if (cid == null && (lid == null || nid == null))
 		{
-			System.out.println("Error: Neither CID nor LID specified");
+			System.out.println("Error: Neither CID nor NID and LID specified");
 			return true;
 		}
 		return false;

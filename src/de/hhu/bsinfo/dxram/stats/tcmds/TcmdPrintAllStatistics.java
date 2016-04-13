@@ -10,11 +10,11 @@ import de.hhu.bsinfo.dxram.stats.StatisticsService;
 
 public class TcmdPrintAllStatistics extends TerminalCommand{
 
-	private static final Argument MS_ARG_STAT = new Argument("by-class", null, true, "filter statistics by class name");
+	private static final Argument MS_ARG_STAT = new Argument("class", null, true, "filter statistics by class name");
 	
 	@Override
 	public String getName() {
-		return "print-statistics";
+		return "printstats";
 	}
 
 	@Override

@@ -13,7 +13,7 @@ public class TcmdChangeLogLevel extends TerminalCommand{
 	@Override
 	public String getName() {
 		
-		return "change-log-level";
+		return "loglevel";
 	}
 
 	@Override
