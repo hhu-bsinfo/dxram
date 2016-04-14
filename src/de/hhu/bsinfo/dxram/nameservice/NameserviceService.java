@@ -123,15 +123,6 @@ public class NameserviceService extends AbstractDXRAMService {
 
 	/**
 	 * Remove the name of a registered DataStructure from lookup.
-	 * @param p_dataStructure
-	 *            DataStructure/Chunk ID to remove the name entry of.
-	 */
-	public void remove(final DataStructure p_dataStructure) {
-		m_lookup.removeChunkIDs(new long[] {p_dataStructure.getID()});
-	}
-
-	/**
-	 * Remove the name of a registered DataStructure from lookup.
 	 * @return the number of entries in name service
 	 */
 	public int getEntryCount() {
