@@ -59,7 +59,7 @@ public class DXRAMCompat {
 		Chunk ret = null;
 
 		if (m_chunkService != null) {
-			long[] ids = m_chunkService.create(p_size);
+			long[] ids = m_chunkService.createSizes(p_size);
 			if (ids == null) {
 				throw new DXRAMException("Cannot create chunk.");
 			}
@@ -82,7 +82,7 @@ public class DXRAMCompat {
 		Chunk[] ret = null;
 
 		if (m_chunkService != null) {
-			long[] ids = m_chunkService.create(p_sizes);
+			long[] ids = m_chunkService.createSizes(p_sizes);
 			if (ids == null) {
 				throw new DXRAMException("Cannot create chunks.");
 			}

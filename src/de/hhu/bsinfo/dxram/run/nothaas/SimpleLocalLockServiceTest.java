@@ -69,7 +69,7 @@ public class SimpleLocalLockServiceTest extends AbstractMain {
 		}
 
 		System.out.println("Creating chunks...");
-		long[] chunkIDs = m_chunkService.create(sizes);
+		long[] chunkIDs = m_chunkService.createSizes(sizes);
 
 		for (int i = 0; i < chunks.length; i++) {
 			chunks[i] = new Chunk(chunkIDs[i], sizes[i]);

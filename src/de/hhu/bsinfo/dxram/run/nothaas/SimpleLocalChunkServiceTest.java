@@ -43,7 +43,7 @@ public class SimpleLocalChunkServiceTest extends AbstractMain {
 	protected int main(final ArgumentList p_arguments) {
 		int[] sizes = new int[] {100, 32, 432, 8};
 		System.out.println("Creating chunks...");
-		long[] chunkIDs = m_chunkService.create(sizes);
+		long[] chunkIDs = m_chunkService.createSizes(sizes);
 		Chunk[] chunks = new Chunk[chunkIDs.length];
 		Chunk[] chunksCopy = new Chunk[chunkIDs.length];
 		for (int i = 0; i < chunkIDs.length; i++) {

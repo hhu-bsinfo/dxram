@@ -57,7 +57,7 @@ public class SimpleRemoteChunkServiceTest extends AbstractMain {
 
 		int[] sizes = new int[] {155, 543, 99, 65, 233};
 		System.out.println("Creating remote chunks...");
-		long[] chunkIDs = m_chunkService.create(remotePeerID, sizes);
+		long[] chunkIDs = m_chunkService.createRemote(remotePeerID, sizes);
 		if (chunkIDs == null) {
 			System.out.println("Creating remote chunks failed.");
 			return -1;
