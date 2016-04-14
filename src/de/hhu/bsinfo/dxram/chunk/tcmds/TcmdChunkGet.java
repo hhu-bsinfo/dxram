@@ -18,7 +18,6 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Chunk ID");
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");
 	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node ID");
-	private static final Argument MS_ARG_SIZ = new Argument("size", null, false, "Size of data to read from the specified chunk");
 	private static final Argument MS_ARG_OFF = new Argument("offset", "0", true, "offset to read data from chunk");
 	private static final Argument MS_ARG_LEN = new Argument("length", null, true, "how much to read from data");
 	private static final Argument MS_ARG_HEX = new Argument("isHex", "false", true, "print in HEX?");
@@ -42,7 +41,6 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 		p_arguments.setArgument(MS_ARG_CID);
 		p_arguments.setArgument(MS_ARG_LID);
 		p_arguments.setArgument(MS_ARG_NID);
-		p_arguments.setArgument(MS_ARG_SIZ);
 		p_arguments.setArgument(MS_ARG_OFF);
 		p_arguments.setArgument(MS_ARG_LEN);
 		p_arguments.setArgument(MS_ARG_HEX);
@@ -51,29 +49,25 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
 
-		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
-		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
-		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
-		Integer size = p_arguments.getArgumentValue(MS_ARG_SIZ, Integer.class);
-		Integer off = p_arguments.getArgumentValue(MS_ARG_OFF, Integer.class);
-		Integer len = p_arguments.getArgumentValue(MS_ARG_LEN, Integer.class);
+
+		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
+		Short 	nid   = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
+		Integer	off   = p_arguments.getArgumentValue(MS_ARG_OFF, Integer.class);
+		Integer	len   = p_arguments.getArgumentValue(MS_ARG_LEN, Integer.class);
 		Boolean isHex = p_arguments.getArgumentValue(MS_ARG_HEX, Boolean.class);
-
-		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
-
-		if (__checkIDandSize(size, cid, lid))
-		{
-			return false; // if the values are not valid the function will do nothing and returns
-		}
-
+		
+		
+		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
+		
+		if (__checkID(cid, nid, lid))	// check if size, cid and lid are valid
+			return false;						// if the values are not valid the function will do nothing and returns
+		
 		cid = __getCid(cid, lid, nid);
-
-		Chunk chunk = new Chunk(cid, size);
-
-		int num = chunkService.get(chunk);
-
-		if (num == 0)
-		{
+		
+		Chunk chunk = chunkService.get(new long[] {cid})[0]; 
+		
+		if(chunk == null){
 			System.out.println("Getting Chunk with id '" + Long.toHexString(cid) + "' failed");
 			return false;
 		}
@@ -143,33 +137,23 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 
 	private long __getCid(Long cid, Long lid, Short nid)
 	{
-		BootService bootService = getTerminalDelegate().getDXRAMService(BootService.class);
-		// we favor full cid
-		// take lid
+		
+		// we favor full cid		
 		if (cid == null)
-		{
-			if (nid == null) {
-				nid = bootService.getNodeID();
-			}
-
+		{			
 			// create cid
 			cid = ChunkID.getChunkID(nid, lid);
 		}
 
 		return cid;
 	}
-
-	private boolean __checkIDandSize(Integer size, Long cid, Long lid)
+	
+	// true if Error was found
+	private boolean __checkID(Long cid, Short nid, Long lid)
 	{
-		if (size < 0)
-		{
-			System.out.println("Error: specified size lower than Zero!");
-			return true;
-		}
-
-		if (cid == null && lid == null)
-		{
-			System.out.println("Error: Neither CID nor LID specified");
+		
+		if (cid == null && (lid == null || nid == null)){
+			System.out.println("Error: Neither CID nor NID and LID specified");
 			return true;
 		}
 		return false;

@@ -19,8 +19,8 @@ public class TcmdChunkPut extends AbstractTerminalCommand {
 	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");
 	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node ID");
 	private static final Argument MS_ARG_DAT = new Argument("data", null, false, "Data string to store");
-	private static final Argument MS_ARG_SIZ = new Argument("size", null, false, "Size of the specified chunk");
-
+	
+	
 	@Override
 	public String getName()
 	{
@@ -42,61 +42,49 @@ public class TcmdChunkPut extends AbstractTerminalCommand {
 		p_arguments.setArgument(MS_ARG_LID);
 		p_arguments.setArgument(MS_ARG_NID);
 		p_arguments.setArgument(MS_ARG_DAT);
-		p_arguments.setArgument(MS_ARG_SIZ);
 	}
 
 	@Override
 	public boolean execute(ArgumentList p_arguments)
 	{
-		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
-		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
-		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
-		String data = p_arguments.getArgumentValue(MS_ARG_DAT, String.class);
-		Integer size = p_arguments.getArgumentValue(MS_ARG_SIZ, Integer.class);
-
-		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
-
-		if (__checkIDandSize(size, cid, lid))
-		{
-			return true; // if the values are not valid the function will do nothing and returns
-		}
-
-		System.out.println("Should not be visible");
-
+		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
+		Short 	nid   = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
+		String 	data  = p_arguments.getArgumentValue(MS_ARG_DAT, String.class);
+		
+				
+		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
+		
+		if (__checkID(cid, nid, lid))			// check if size, cid and lid are valid
+			return true;						// if the values are not valid the function will do nothing and returns
+		
+		
 		cid = __getCid(cid, lid, nid);
-
-		Chunk chunk = new Chunk(cid, size);
-
-		int num = chunkService.get(chunk);
-		if (num == 0) {
-			System.out.println("Getting Chunk with id '" + Long.toHexString(cid) + "' failed");
-		} else {
-			chunk.getData().put(data.getBytes(StandardCharsets.US_ASCII));
-		}
-
-		num = chunkService.put(chunk);
-		if (num == 0) {
-			System.out.println("Putting Chunk with id '" + Long.toHexString(cid) + "' failed");
-		} else {
-			System.out.println(data + " put in " + Long.toHexString(cid));
-		}
-
+		
+		Chunk chunk = chunkService.get(new long[] {cid})[0]; 
+		
+		if(chunk == null)
+			System.out.println("Getting Chunk with id '"+ Long.toHexString(cid) +"' failed");
+		else
+			chunk.getData().put( data.getBytes(StandardCharsets.US_ASCII) );
+		
+		int num = chunkService.put(chunk);
+		if(num == 0)
+			System.out.println("Putting Chunk with id '"+ Long.toHexString(cid) +"' failed");
+		else
+			System.out.println(data + " put in "+ Long.toHexString(cid));
+			
 		return true;
 	}
+	
+	
+	// true if Error was found
 
-	// this needs to be refactored in one helper class since these functions will be used throughout multiple classes
-
-	private boolean __checkIDandSize(Integer size, Long cid, Long lid)
+	private boolean __checkID(Long cid, Short nid, Long lid)
 	{
-		if (size < 0)
-		{
-			System.out.println("Error: specified size lower than Zero!");
-			return true;
-		}
-
-		if (cid == null && lid == null)
-		{
-			System.out.println("Error: Neither CID nor LID specified");
+		
+		if (cid == null && (lid == null || nid == null)){
+			System.out.println("Error: Neither CID nor NID and LID specified");
 			return true;
 		}
 		return false;

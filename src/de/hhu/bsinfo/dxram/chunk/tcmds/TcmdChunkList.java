@@ -39,7 +39,14 @@ public class TcmdChunkList extends AbstractTerminalCommand {
 		ArrayList<Long> chunkRanges;
 
 		chunkRanges = chunkService.getAllLocalChunkIDRanges(nid);
-
+		
+		
+		if(chunkRanges == null)
+		{
+			System.out.println("No Chunk Range to print");
+			return true;
+		}
+		
 		for (int i = 0; i < chunkRanges.size(); i++)
 		{
 			long currRange = chunkRanges.get(i);

@@ -1,15 +1,16 @@
 
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
+
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 
 public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_SIZE = new Argument("size", null, false, "Size of the chunk to create");
-	private static final Argument MS_ARG_NODEID = new Argument("nodeid", null, false, "Node id of the peer to create the chunk on");
+	private static final Argument MS_ARG_NODEID = new Argument("nid", null, false, "Node id of the peer to create the chunk on");
 
 	@Override
 	public String getName() {
@@ -36,6 +37,7 @@ public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
 
+		
 		if (size == null) {
 			System.out.println("Missing size parameter.");
 			return false;
@@ -43,7 +45,8 @@ public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 		long[] chunkIDs = null;
 
-		chunkIDs = chunkService.create(nodeID, size);
+		
+		chunkIDs = chunkService.createRemote(nodeID, size);
 
 		if (chunkIDs != null) {
 

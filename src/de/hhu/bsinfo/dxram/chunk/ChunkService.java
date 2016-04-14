@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkCreate;
 import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkGet;
+import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkList;
 import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkPut;
 import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkRemove;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -103,6 +104,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_terminal.registerCommand(new TcmdChunkRemove());
 		m_terminal.registerCommand(new TcmdChunkGet());
 		m_terminal.registerCommand(new TcmdChunkPut());
+		m_terminal.registerCommand(new TcmdChunkList());
+		
 
 		if (m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_backup.registerPeer();
@@ -308,7 +311,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 *            List of sizes to create chunks for.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
-	public long[] create(final int... p_sizes) {
+	public long[] createSizes(final int... p_sizes) {
 		long[] chunkIDs = null;
 
 		if (p_sizes.length == 0) {
@@ -358,7 +361,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 *            Sizes to create chunks of.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
-	public long[] create(final short p_peer, final int... p_sizes) {
+	public long[] createRemote(final short p_peer, final int... p_sizes) {
 		long[] chunkIDs = null;
 
 		if (p_sizes.length == 0) {
@@ -915,6 +918,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	public Chunk[] get(final long[] p_chunkIDs) {
 		Chunk[] ret = null;
 
+		
 		if (!m_performanceFlag) {
 			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
 		}

@@ -11,7 +11,7 @@ public class TcmdAvailableStatisticsRecorders extends AbstractTerminalCommand{
 	@Override
 	public String getName() {
 	
-		return "available-recorders";
+		return "availablerecorders";
 	}
 
 	@Override
