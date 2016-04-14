@@ -49,6 +49,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		READ,
 		WRITE,
 		OUT_OF_MEMORY,
+		INVALID_NODE_ROLE,
 	}
 
 	/**
@@ -114,28 +115,36 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * Lock the memory for a management task (create, put, remove).
 	 */
 	public void lockManage() {
-		m_lock.writeLock().lock();
+		if (m_boot.getNodeRole() == NodeRole.PEER) {
+			m_lock.writeLock().lock();
+		}
 	}
 
 	/**
 	 * Lock the memory for an access task (get).
 	 */
 	public void lockAccess() {
-		m_lock.readLock().lock();
+		if (m_boot.getNodeRole() == NodeRole.PEER) {
+			m_lock.readLock().lock();
+		}
 	}
 
 	/**
 	 * Unlock the memory after a management task (create, put, remove).
 	 */
 	public void unlockManage() {
-		m_lock.writeLock().unlock();
+		if (m_boot.getNodeRole() == NodeRole.PEER) {
+			m_lock.writeLock().unlock();
+		}
 	}
 
 	/**
 	 * Unlock the memory after an access task (get).
 	 */
 	public void unlockAccess() {
-		m_lock.readLock().unlock();
+		if (m_boot.getNodeRole() == NodeRole.PEER) {
+			m_lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -144,6 +153,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public Status getStatus() {
 		Status status = new Status();
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			status.m_freeMemoryBytes = 0;
+			status.m_totalMemoryBytes = 0;
+			m_logger.error(getClass(), "a " + role + " does not have any memory");
+			return null;
+		}
 
 		status.m_freeMemoryBytes = m_rawMemory.getFreeMemory();
 		status.m_totalMemoryBytes = m_rawMemory.getTotalMemory();
@@ -164,6 +181,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		long address = -1;
 		long chunkID = -1;
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " is not allowed to create an index chunk");
+			return chunkID;
+		}
 
 		if (m_cidTable.get(0) != -1) {
 			// delete old entry
@@ -200,6 +223,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		long address = -1;
 		long chunkID = -1;
 
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk with an id");
+			return chunkID;
+		}
+
 		// verify this id is not used
 		if (m_cidTable.get(p_chunkId) == 0) {
 			address = m_rawMemory.malloc(p_size);
@@ -229,6 +258,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		long address = -1;
 		long chunkID = -1;
 		long lid = -1;
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk");
+			return chunkID;
+		}
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 
@@ -273,6 +308,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		long address = -1;
 		int size = -1;
 
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			return size;
+		}
+
 		address = m_cidTable.get(p_chunkID);
 		if (address > 0) {
 			size = m_rawMemory.getSizeBlock(address);
@@ -292,6 +333,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	public MemoryErrorCodes get(final DataStructure p_dataStructure) {
 		long address;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
+			return ret;
+		}
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 
@@ -323,6 +370,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	public byte[] get(final long p_chunkID) {
 		byte[] ret = null;
 		long address;
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			return ret;
+		}
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 
@@ -364,6 +416,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		long address;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
 
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			ret = MemoryErrorCodes.DOES_NOT_EXIST;
+			return ret;
+		}
+
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
 
 		address = m_cidTable.get(p_dataStructure.getID());
@@ -393,6 +451,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		long addressDeletedChunk;
 		int size;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			ret = MemoryErrorCodes.INVALID_NODE_ROLE;
+			return ret;
+		}
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
 
@@ -438,7 +503,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * @return whether this Chunk is stored locally or not
 	 */
 	public boolean exists(final long p_chunkID) {
-		long address;
+		long address = -1;
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			return false;
+		}
 
 		// Get the address from the CIDTable
 		address = m_cidTable.get(p_chunkID);
@@ -463,6 +533,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 *            the ChunkID
 	 */
 	public void prepareChunkIDForReuse(final long p_chunkID) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			return;
+		}
+
 		m_cidTable.putChunkIDForReuse(p_chunkID);
 	}
 
@@ -471,6 +547,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * @return the ChunkIDs of all migrated Chunks
 	 */
 	public ArrayList<Long> getCIDOfAllMigratedChunks() {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			return null;
+		}
+
 		return m_cidTable.getCIDOfAllMigratedChunks();
 	}
 
@@ -479,6 +561,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * @return the ChunkID ranges in an ArrayList
 	 */
 	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			return null;
+		}
+
 		return m_cidTable.getCIDRangesOfAllLocalChunks();
 	}
 

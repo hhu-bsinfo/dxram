@@ -54,6 +54,7 @@ public class StatusResponse extends AbstractResponse {
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
+		m_status = new ChunkService.Status();
 		importer.importObject(m_status);
 	}
 

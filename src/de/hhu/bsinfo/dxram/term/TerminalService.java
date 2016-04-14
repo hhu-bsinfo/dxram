@@ -122,7 +122,12 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 					} else {
 						argsList.clear();
 						c.registerArguments(argsList);
-						argsParser.parseArguments(arguments, argsList);
+						try {
+							argsParser.parseArguments(arguments, argsList);
+						} catch (final Exception e) {
+							System.out.println("error: parsing arguments. most likely invalid syntax");
+							continue;
+						}
 
 						if (!argsList.checkArguments()) {
 							printUsage(c);

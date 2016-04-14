@@ -1,19 +1,19 @@
 
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
-import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-// TODO: A terminal node does not store chunks
 public class TcmdChunkRemove extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Full chunk id of the chunk to remove");
-	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local id of the chunk to remove. If missing node id, current node is assumed");
-	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node id to remove the chunk with specified local id");
+	private static final Argument MS_ARG_LID = new Argument("lid", null, true,
+			"Local id of the chunk to remove. If missing node id, current node is assumed");
+	private static final Argument MS_ARG_NID =
+			new Argument("nid", null, true, "Node id to remove the chunk with specified local id");
 
 	@Override
 	public String getName() {
@@ -22,13 +22,11 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 
 	@Override
 	public String getDescription() {
-		return "Remove an existing chunk. Usable with either full chunk id or split into lid and nid with nid being"
-				+ " optional. Not providing the nid will default to the current node's id.";
+		return "Remove an existing chunk. Usable with either full chunk id or split into nid and lid.";
 	}
 
 	@Override
-	public void registerArguments(final ArgumentList p_arguments)
-	{
+	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_CID);
 		p_arguments.setArgument(MS_ARG_LID);
 		p_arguments.setArgument(MS_ARG_NID);
@@ -41,43 +39,46 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
 
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
-		BootService bootService = getTerminalDelegate().getDXRAMService(BootService.class);
 
 		// we favor full cid
-		if (cid != null)
-		{
-			if (chunkService.remove(cid) != 1)
-			{
-				System.out.println("Removing chunk with ID " + Long.toHexString(cid) + " failed.");
+		if (cid != null) {
+			// don't allow removal of index chunk
+			if (ChunkID.getLocalID(cid) == 0) {
+				System.out.println("Removal of index chunk is not allowed.");
 				return true;
 			}
-		}
-		else
-		{
-			if (lid != null)
-			{
+
+			if (chunkService.remove(cid) != 1) {
+				System.out.println("Removing chunk with ID " + ChunkID.toHexString(cid) + " failed.");
+				return true;
+			}
+		} else {
+			if (lid != null) {
+				// don't allow removal of index chunk
+				if (lid == 0) {
+					System.out.println("Removal of index chunk is not allowed.");
+					return true;
+				}
+
 				// check for remote id, otherwise we assume local
 				if (nid == null) {
-					System.out.println("Error: Please specify Node ID");
+					System.out.println("error: missing nid for lid");
 					return false;
 				}
 
 				// create cid
 				cid = ChunkID.getChunkID(nid, lid);
-				if (chunkService.remove(cid) != 1)
-				{
-					System.out.println("Removing chunk with ID " + Long.toHexString(cid) + " failed.");
+				if (chunkService.remove(cid) != 1) {
+					System.out.println("Removing chunk with ID " + ChunkID.toHexString(cid) + " failed.");
 					return true;
 				}
-			}
-			else
-			{
-				System.out.println("No cid or lid specified.");
+			} else {
+				System.out.println("No cid or nid/lid specified.");
 				return false;
 			}
 		}
 
-		System.out.println("Chunk " + Long.toHexString(cid) + " removed.");
+		System.out.println("Chunk " + ChunkID.toHexString(cid) + " removed.");
 		return true;
 	}
 }

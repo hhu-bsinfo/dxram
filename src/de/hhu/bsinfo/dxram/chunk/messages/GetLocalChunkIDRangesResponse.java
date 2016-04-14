@@ -48,14 +48,15 @@ public class GetLocalChunkIDRangesResponse extends AbstractResponse {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_chunkIDRanges.size());
 		for (int i = 0; i < m_chunkIDRanges.size(); i++) {
-			p_buffer.putLong(m_chunkIDRanges.get(0));
+			p_buffer.putLong(m_chunkIDRanges.get(i));
 		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_chunkIDRanges = new ArrayList<Long>(p_buffer.getInt());
-		for (int i = 0; i < m_chunkIDRanges.size(); i++) {
+		int size = p_buffer.getInt();
+		m_chunkIDRanges = new ArrayList<Long>(size);
+		for (int i = 0; i < size; i++) {
 			m_chunkIDRanges.add(p_buffer.getLong());
 		}
 	}

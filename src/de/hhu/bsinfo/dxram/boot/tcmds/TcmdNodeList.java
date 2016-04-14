@@ -32,7 +32,9 @@ public class TcmdNodeList extends AbstractTerminalCommand {
 
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
+
 		String strRole = p_arguments.getArgumentValue(MS_ARG_NODE_ROLE, String.class);
+
 		if (strRole != null) {
 			NodeRole roleFilter = NodeRole.toNodeRole(strRole);
 			BootService boot = getTerminalDelegate().getDXRAMService(BootService.class);

@@ -1,111 +1,183 @@
 
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserByte;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserInt;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserLong;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserShort;
 
-//TODO: A terminal node does not store chunks
-//TODO mike refactoring: refer to chunk create/remove commands
 public class TcmdChunkPut extends AbstractTerminalCommand {
 
-	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Chunk ID");
-	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");
-	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node ID");
-	private static final Argument MS_ARG_DAT = new Argument("data", null, false, "Data string to store");
-	
-	
+	private static final Argument MS_ARG_CID =
+			new Argument("cid", null, true, "Full chunk ID of the chunk to put data to");
+	private static final Argument MS_ARG_LID =
+			new Argument("lid", null, true, "Separate local id part of chunk to put the data to");
+	private static final Argument MS_ARG_NID =
+			new Argument("nid", null, true, "Separate node id part of the chunk to put the data to");
+	private static final Argument MS_ARG_DATA_TYPE =
+			new Argument("type", "str", true, "Type of the data to store (str, byte, short, int, long, hex)");
+	private static final Argument MS_ARG_DATA = new Argument("data", null, false, "Data to store");
+	private static final Argument MS_ARG_OFFSET =
+			new Argument("offset", "-1", true,
+					"Offset within the existing to store the new data to. -1 to override existing data");
+
 	@Override
-	public String getName()
-	{
+	public String getName() {
 		return "chunkput";
 	}
 
 	@Override
-	public String getDescription()
-	{
+	public String getDescription() {
 
-		return "Put a String in the specified chunk."
-				+ "If the specified string is too long it will be trunced";
+		return "Put data in the specified chunk. Either use a full cid or separete nid + lid to specify the chunk id. "
+				+ "If no offset is specified, the whole chunk is overwritten with the new data. "
+				+ "Otherwise the data is inserted at the starting offset with its length. "
+				+ "If the specified data is too long it will be trunced";
 	}
 
 	@Override
-	public void registerArguments(final ArgumentList p_arguments)
-	{
+	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_CID);
 		p_arguments.setArgument(MS_ARG_LID);
 		p_arguments.setArgument(MS_ARG_NID);
-		p_arguments.setArgument(MS_ARG_DAT);
+		p_arguments.setArgument(MS_ARG_DATA_TYPE);
+		p_arguments.setArgument(MS_ARG_DATA);
+		p_arguments.setArgument(MS_ARG_OFFSET);
 	}
 
 	@Override
-	public boolean execute(ArgumentList p_arguments)
-	{
-		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
-		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
-		Short 	nid   = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
-		String 	data  = p_arguments.getArgumentValue(MS_ARG_DAT, String.class);
-		
-				
-		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		
-		if (__checkID(cid, nid, lid))			// check if size, cid and lid are valid
-			return true;						// if the values are not valid the function will do nothing and returns
-		
-		
-		cid = __getCid(cid, lid, nid);
-		
-		Chunk chunk = chunkService.get(new long[] {cid})[0]; 
-		
-		if(chunk == null)
-			System.out.println("Getting Chunk with id '"+ Long.toHexString(cid) +"' failed");
-		else
-			chunk.getData().put( data.getBytes(StandardCharsets.US_ASCII) );
-		
-		int num = chunkService.put(chunk);
-		if(num == 0)
-			System.out.println("Putting Chunk with id '"+ Long.toHexString(cid) +"' failed");
-		else
-			System.out.println(data + " put in "+ Long.toHexString(cid));
-			
-		return true;
-	}
-	
-	
-	// true if Error was found
+	public boolean execute(final ArgumentList p_arguments) {
+		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
+		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
+		String dataType = p_arguments.getArgumentValue(MS_ARG_DATA_TYPE, String.class);
+		String data = p_arguments.getArgumentValue(MS_ARG_DATA, String.class);
+		Integer offset = p_arguments.getArgumentValue(MS_ARG_OFFSET, Integer.class);
 
-	private boolean __checkID(Long cid, Short nid, Long lid)
-	{
-		
-		if (cid == null && (lid == null || nid == null)){
-			System.out.println("Error: Neither CID nor NID and LID specified");
+		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
+
+		long chunkId = -1;
+		// we favor full cid
+		if (cid != null) {
+			chunkId = cid;
+		} else {
+			if (lid != null) {
+				if (nid == null) {
+					System.out.println("error: missing nid for lid");
+					return false;
+				}
+
+				// create cid
+				chunkId = ChunkID.getChunkID(nid, lid);
+			} else {
+				System.out.println("No cid or nid/lid specified.");
+				return false;
+			}
+		}
+
+		// don't allow put of index chunk
+		if (ChunkID.getLocalID(chunkId) == 0) {
+			System.out.println("Put of index chunk is not allowed.");
 			return true;
 		}
-		return false;
-	}
 
-	private long __getCid(Long cid, Long lid, Short nid)
-	{
-		BootService bootService = getTerminalDelegate().getDXRAMService(BootService.class);
-		// we favor full cid
-		// take lid
-		if (cid == null)
-		{
-			if (nid == null) {
-				nid = bootService.getNodeID();
-			}
-
-			// create cid
-			cid = ChunkID.getChunkID(nid, lid);
+		Pair<Integer, Chunk[]> chunks = chunkService.get(new long[] {chunkId});
+		if (chunks.first() == 0) {
+			System.out.println("Getting chunk " + ChunkID.toHexString(chunkId) + " failed.");
+			return true;
 		}
 
-		return cid;
-	}
+		Chunk chunk = chunks.second()[0];
+		if (offset == -1) {
+			// create new chunk
+			chunk = new Chunk(chunk.getID(), chunk.getDataSize());
+			offset = 0;
+		}
 
+		ByteBuffer buffer = chunk.getData();
+		try {
+			buffer.position(offset);
+		} catch (final IllegalArgumentException e) {
+			// set to end
+			buffer.position(buffer.capacity());
+		}
+
+		dataType = dataType.toLowerCase();
+		if (dataType.equals("str")) {
+			byte[] bytes = data.getBytes(StandardCharsets.US_ASCII);
+
+			try {
+				buffer.put(bytes, 0, buffer.capacity() - buffer.position());
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("byte")) {
+			byte b = (byte) (new DataTypeParserByte()).parse(data);
+
+			try {
+				buffer.put(b);
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("short")) {
+			short v = (short) (new DataTypeParserShort()).parse(data);
+
+			try {
+				buffer.putShort(v);
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("int")) {
+			int v = (int) (new DataTypeParserInt()).parse(data);
+
+			try {
+				buffer.putInt(v);
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("long")) {
+			long v = (long) (new DataTypeParserLong()).parse(data);
+
+			try {
+				buffer.putLong(v);
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("hex")) {
+			DataTypeParserByte parser = new DataTypeParserByte();
+			String[] tokens = data.split(" ");
+
+			for (String token : tokens) {
+				byte b = (byte) parser.parse(token);
+				try {
+					buffer.put(b);
+				} catch (final BufferOverflowException e) {
+					// that's fine, trunc data
+					break;
+				}
+			}
+		} else {
+			System.out.println("error: Unsupported data type " + dataType);
+			return true;
+		}
+
+		// put chunk back
+		if (chunkService.put(chunk) != 1) {
+			System.out.println("error: Putting chunk " + ChunkID.toHexString(chunk.getID()) + " failed");
+			return true;
+		}
+
+		return true;
+	}
 }

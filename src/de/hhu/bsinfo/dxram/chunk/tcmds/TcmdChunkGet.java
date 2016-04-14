@@ -1,178 +1,177 @@
 
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-//TODO: A terminal node does not store chunks
-// TODO mike refactoring: refer to chunk create/remove commands
 public class TcmdChunkGet extends AbstractTerminalCommand {
 
-	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Chunk ID");
-	private static final Argument MS_ARG_LID = new Argument("lid", null, true, "Local Chunk ID");
-	private static final Argument MS_ARG_NID = new Argument("nid", null, true, "Node ID");
-	private static final Argument MS_ARG_OFF = new Argument("offset", "0", true, "offset to read data from chunk");
-	private static final Argument MS_ARG_LEN = new Argument("length", null, true, "how much to read from data");
-	private static final Argument MS_ARG_HEX = new Argument("isHex", "false", true, "print in HEX?");
+	private static final Argument MS_ARG_CID =
+			new Argument("cid", null, true, "Full chunk ID of the chunk to get data from");
+	private static final Argument MS_ARG_LID =
+			new Argument("lid", null, true, "Separate local id part of the chunk to get data from");
+	private static final Argument MS_ARG_NID =
+			new Argument("nid", null, true, "Separate node id part of the chunk to get data from");
+	private static final Argument MS_ARG_OFF =
+			new Argument("offset", "0", true, "Offset within the chunk to start getting data from");
+	private static final Argument MS_ARG_LEN = new Argument("length", null, true,
+			"Number of bytes to get starting at the specified offset (end of chunk will be truncated)");
+	private static final Argument MS_ARG_TYPE =
+			new Argument("type", "str", true, "Format to print the data (str, byte, short, int, long)");
+	private static final Argument MS_ARG_HEX =
+			new Argument("hex", "true", true, "For some representations, print as hex instead of decimal");
 
 	@Override
-	public String getName()
-	{
+	public String getName() {
 		return "chunkget";
 	}
 
 	@Override
-	public String getDescription()
-	{
-		return "Searches chunk which matches the specified CID";
+	public String getDescription() {
+		return "Get a chunk specified by either full cid or separted lid + nid from a storage";
 
 	}
 
 	@Override
-	public void registerArguments(final ArgumentList p_arguments)
-	{
+	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_CID);
 		p_arguments.setArgument(MS_ARG_LID);
 		p_arguments.setArgument(MS_ARG_NID);
 		p_arguments.setArgument(MS_ARG_OFF);
 		p_arguments.setArgument(MS_ARG_LEN);
+		p_arguments.setArgument(MS_ARG_TYPE);
 		p_arguments.setArgument(MS_ARG_HEX);
 	}
 
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
 
+		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
+		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
+		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
+		Integer off = p_arguments.getArgumentValue(MS_ARG_OFF, Integer.class);
+		Integer len = p_arguments.getArgumentValue(MS_ARG_LEN, Integer.class);
+		String dataType = p_arguments.getArgumentValue(MS_ARG_TYPE, String.class);
+		boolean hex = p_arguments.getArgumentValue(MS_ARG_HEX, Boolean.class);
 
-		Long 	cid   = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
-		Long 	lid   = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
-		Short 	nid   = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
-		Integer	off   = p_arguments.getArgumentValue(MS_ARG_OFF, Integer.class);
-		Integer	len   = p_arguments.getArgumentValue(MS_ARG_LEN, Integer.class);
-		Boolean isHex = p_arguments.getArgumentValue(MS_ARG_HEX, Boolean.class);
-		
-		
-		ChunkService  chunkService	= getTerminalDelegate().getDXRAMService(ChunkService.class);
-		
-		if (__checkID(cid, nid, lid))	// check if size, cid and lid are valid
-			return false;						// if the values are not valid the function will do nothing and returns
-		
-		cid = __getCid(cid, lid, nid);
-		
-		Chunk chunk = chunkService.get(new long[] {cid})[0]; 
-		
-		if(chunk == null){
-			System.out.println("Getting Chunk with id '" + Long.toHexString(cid) + "' failed");
-			return false;
+		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
+
+		long chunkId = -1;
+		// we favor full cid
+		if (cid != null) {
+			chunkId = cid;
+		} else {
+			if (lid != null) {
+				if (nid == null) {
+					System.out.println("error: missing nid for lid");
+					return false;
+				}
+
+				// create cid
+				chunkId = ChunkID.getChunkID(nid, lid);
+			} else {
+				System.out.println("No cid or nid/lid specified.");
+				return false;
+			}
 		}
 
-		byte[] chunkData = chunk.getData().array();
-		int lengthOfData = chunkData.length;
-		int lengthOfRead = lengthOfData;
+		Pair<Integer, Chunk[]> chunks = chunkService.get(new long[] {chunkId});
+		if (chunks.first() == 0) {
+			System.out.println("Getting chunk " + ChunkID.toHexString(chunkId) + " failed.");
+			return true;
+		}
+		Chunk chunk = chunks.second()[0];
 
-		if (len != null) {
-			lengthOfRead = len;
+		// full length if not specified
+		if (len == null) {
+			len = chunk.getDataSize();
 		}
 
-		if (__checkLengthAndOffset(lengthOfData, off, lengthOfRead)) {
-			return false;
+		ByteBuffer buffer = chunk.getData();
+		try {
+			buffer.position(off);
+		} catch (final IllegalArgumentException e) {
+			// set to end
+			buffer.position(buffer.capacity());
 		}
 
-		if (lengthOfData - off < lengthOfRead) {
-			lengthOfRead = lengthOfData - off;
+		String str = new String();
+		dataType = dataType.toLowerCase();
+		if (dataType.equals("str")) {
+			byte[] bytes = new byte[buffer.capacity() - buffer.position()];
+
+			try {
+				buffer.get(bytes, 0, len);
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+
+			str = new String(bytes, StandardCharsets.US_ASCII);
+		} else if (dataType.equals("byte")) {
+			try {
+				for (int i = 0; i < len; i += Byte.BYTES) {
+					if (hex) {
+						str += Integer.toHexString(buffer.get() & 0xFF) + " ";
+					} else {
+						str += buffer.get() + " ";
+					}
+				}
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("short")) {
+			try {
+				for (int i = 0; i < len; i += Short.BYTES) {
+					if (hex) {
+						str += Integer.toHexString(buffer.getShort() & 0xFFFF) + " ";
+					} else {
+						str += buffer.getShort() + " ";
+					}
+				}
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("int")) {
+			try {
+				for (int i = 0; i < len; i += Integer.BYTES) {
+					if (hex) {
+						str += Integer.toHexString(buffer.getInt() & 0xFFFFFFFF) + " ";
+					} else {
+						str += buffer.getInt() + " ";
+					}
+				}
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else if (dataType.equals("long")) {
+			try {
+				for (int i = 0; i < len; i += Long.BYTES) {
+					if (hex) {
+						str += Long.toHexString(buffer.getLong() & 0xFFFFFFFFFFFFFFFFL) + " ";
+					} else {
+						str += buffer.getLong() + " ";
+					}
+				}
+			} catch (final BufferOverflowException e) {
+				// that's fine, trunc data
+			}
+		} else {
+			System.out.println("error: Unsupported data type " + dataType);
+			return true;
 		}
 
-		byte[] readData = __crateByteArray(lengthOfRead, chunkData, off);
-
-		for (int i = 0; i < lengthOfRead; i++)
-		{
-			readData[i] = chunkData[i + off];
-		}
-
-		__printData(readData, isHex);
+		System.out.println("Chunk data of " + ChunkID.toHexString(chunkId) + ":");
+		System.out.println(str);
 
 		return true;
 	}
-
-	private byte[] __crateByteArray(int lengthOfRead, byte[] chunkData, Integer offset)
-	{
-		byte[] data = new byte[lengthOfRead];
-
-		for (int i = 0; i < lengthOfRead; i++)
-		{
-			data[i] = chunkData[i + offset];
-		}
-
-		return data;
-	}
-
-	private boolean __checkLengthAndOffset(int lengthOfData, int offset, int lengthOfRead)
-	{
-		if (lengthOfData < offset) // check if offset is larger than data
-		{
-			System.out.println("Error: specified offset is greater than the length of the chunk data\n");
-			return true;
-		}
-
-		if (offset < 0)
-		{
-			System.out.println("Error specified offset is less than Zero!");
-			return true;
-		}
-
-		if (lengthOfRead < 0)
-		{
-			System.out.println("Error: Negative length specified!");
-			return true;
-		}
-
-		return false;
-	}
-
-	private long __getCid(Long cid, Long lid, Short nid)
-	{
-		
-		// we favor full cid		
-		if (cid == null)
-		{			
-			// create cid
-			cid = ChunkID.getChunkID(nid, lid);
-		}
-
-		return cid;
-	}
-	
-	// true if Error was found
-	private boolean __checkID(Long cid, Short nid, Long lid)
-	{
-		
-		if (cid == null && (lid == null || nid == null)){
-			System.out.println("Error: Neither CID nor NID and LID specified");
-			return true;
-		}
-		return false;
-	}
-
-	private void __printData(byte[] data, boolean printHex)
-	{
-		if (printHex)
-		{
-			StringBuilder output = new StringBuilder();
-			for (byte b : data) {
-				output.append(String.format("%02X ", b));
-			}
-			System.out.println(output.toString());
-		} else
-		{
-			String output = new String(data, StandardCharsets.US_ASCII);
-			System.out.println(output);
-		}
-	}
-
 }
