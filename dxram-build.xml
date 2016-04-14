@@ -60,7 +60,7 @@
 		<antcall target="compile">
 			<param name="buildtype" value="release"/>
 		</antcall>
-		<copy file="${build_proj_dir}/${name}-release.jar" tofile="${build_proj_dir}/DXRAM.jar" />
+		<copy file="${build_proj_dir}/${name}-debug.jar" tofile="${build_proj_dir}/DXRAM.jar" />
 	</target>
 	
 	<target name="compile" depends="create_base_dirs" description="builds class files">

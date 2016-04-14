@@ -657,11 +657,11 @@ public class OverlayPeer implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
-						incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
-						break;
-					default:
-						break;
+				case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
+					incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}

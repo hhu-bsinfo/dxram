@@ -763,7 +763,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						(short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-						m_logger.info(ChunkService.class,
+						m_logger.trace(ChunkService.class,
 								"Logging " + dataStructures.length + " chunks to " + backupPeers[i]);
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
@@ -1286,7 +1286,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						(short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
-						m_logger.info(ChunkService.class,
+						m_logger.trace(ChunkService.class,
 								"Logging " + dataStructures.length + " chunks to " + backupPeers[i]);
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));

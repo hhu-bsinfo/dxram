@@ -130,16 +130,15 @@ public final class NetworkHandler implements DataReceiver {
 	 *            the connection timeout
 	 */
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize,
-			final int p_outgoingBufferSize,
-			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
+			final int p_outgoingBufferSize, final int p_numberOfBuffers, final int p_flowControlWindowSize,
+			final int p_connectionTimeout) {
 		m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
 
 		m_nodeMap = p_nodeMap;
 
 		final AbstractConnectionCreator connectionCreator =
 				new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize,
-						p_outgoingBufferSize,
-						p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
+						p_outgoingBufferSize, p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
 		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(connectionCreator, this);
 
@@ -472,7 +471,7 @@ public final class NetworkHandler implements DataReceiver {
 			AbstractMessage message = null;
 			Entry entry;
 
-			while (!m_shutdown) {
+			outerloop: while (!m_shutdown) {
 				while (message == null) {
 					m_exclusiveMessagesLock.lock();
 
@@ -481,7 +480,7 @@ public final class NetworkHandler implements DataReceiver {
 							m_messageAvailable.await();
 						} catch (final InterruptedException e) {
 							m_shutdown = true;
-							break;
+							break outerloop;
 						}
 					}
 

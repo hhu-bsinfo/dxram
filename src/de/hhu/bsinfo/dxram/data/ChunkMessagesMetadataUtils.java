@@ -101,7 +101,7 @@ public final class ChunkMessagesMetadataUtils {
 		int size = 0;
 
 		if ((p_statusCode & (1 << BIT_OFFSET_FLAG_LENGTH_FIELD)) > 0) {
-			size = (p_statusCode >> BIT_OFFSET_LENGTH_FIELD) & BIT_MASK_LENGTH_FIELD;
+			size = ((p_statusCode >> BIT_OFFSET_LENGTH_FIELD) & BIT_MASK_LENGTH_FIELD) / 8;
 			// 0 counts as 1 byte length field
 			size++;
 		}
@@ -170,10 +170,10 @@ public final class ChunkMessagesMetadataUtils {
 			numChunks = getNumberOfItemsSent(p_status);
 			break;
 		case 1:
-			numChunks = p_buffer.get();
+			numChunks = p_buffer.get() & 0xFF;
 			break;
 		case 2:
-			numChunks = p_buffer.getShort();
+			numChunks = p_buffer.getShort() & 0xFFFF;
 			break;
 		case 3:
 			if (Endianness.getEndianness() > 0) {

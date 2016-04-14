@@ -133,7 +133,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 					firstChunkIDOrRangeID = backupRange.getRangeID();
 
 					// Get Chunks from backup peers (or locally if this is the primary backup peer)
-					for (short backupPeer : backupPeers) {
+					/*-for (short backupPeer : backupPeers) {
 						if (backupPeer == m_boot.getNodeID()) {
 							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
 								chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
@@ -150,6 +150,12 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 							chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
 						}
 						break;
+					}*/
+
+					if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
+						chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
+					} else {
+						chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
 					}
 
 					m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks.");
