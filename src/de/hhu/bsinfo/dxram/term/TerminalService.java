@@ -1,6 +1,10 @@
 
 package de.hhu.bsinfo.dxram.term;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -221,8 +225,17 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	 */
 	private String getAvailableCommands() {
 		String str = new String();
-		for (Entry<String, AbstractTerminalCommand> entry : m_terminal.getRegisteredCommands().entrySet()) {
-			str += entry.getValue().getName() + ", ";
+		Collection<String> commands = m_terminal.getRegisteredCommands().keySet();
+		List<String> sortedList = new ArrayList<String>(commands);
+		Collections.sort(sortedList);
+		boolean first = true;
+		for (String cmd : sortedList) {
+			if (first) {
+				first = false;
+			} else {
+				str += ", ";
+			}
+			str += cmd;
 		}
 
 		return str;

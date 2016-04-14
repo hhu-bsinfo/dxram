@@ -33,15 +33,13 @@ public class TcmdNodeInfo extends AbstractTerminalCommand {
 		Short nodeID = p_arguments.getArgumentValue(MS_ARG_NODE_ID, Short.class);
 		BootService boot = getTerminalDelegate().getDXRAMService(BootService.class);
 
+		System.out.println("Node info " + NodeID.toHexString(boot.getNodeID()) + ":");
 		if (nodeID == null) {
 			// get info from own node
-			System.out.println("Node info " + NodeID.toHexString(boot.getNodeID()) + " ("
-					+ boot.getNodeID() + "):");
 			System.out.println("\tRole: " + boot.getNodeRole());
 			System.out.println("\tAddress: " + boot.getNodeAddress(boot.getNodeID()));
 		} else {
 			// get other node
-			System.out.println("Node info (" + NodeID.toHexString(nodeID) + "):");
 			if (boot.nodeAvailable(nodeID)) {
 				System.out.println("\tRole: " + boot.getNodeRole(nodeID));
 				System.out.println("\tAddress: " + boot.getNodeAddress(nodeID));

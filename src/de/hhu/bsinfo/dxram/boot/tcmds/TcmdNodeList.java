@@ -26,7 +26,9 @@ public class TcmdNodeList extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public void registerArguments(ArgumentList p_arguments) {}
+	public void registerArguments(ArgumentList p_arguments) {
+		p_arguments.setArgument(MS_ARG_NODE_ROLE);
+	}
 
 	@Override
 	public boolean execute(ArgumentList p_arguments) {
@@ -40,8 +42,8 @@ public class TcmdNodeList extends AbstractTerminalCommand {
 			for (short nodeId : nodeIDs) {
 				NodeRole curNodeRole = boot.getNodeRole(nodeId);
 				if (roleFilter.equals(curNodeRole)) {
-					System.out.println("\t" + NodeID.toHexString(nodeId) + " (" + nodeId
-							+ "), " + curNodeRole + ", " + boot.getNodeAddress(nodeId));
+					System.out.println("\t" + NodeID.toHexString(nodeId) + ", " + curNodeRole + ", "
+							+ boot.getNodeAddress(nodeId));
 				}
 			}
 		} else {
@@ -49,8 +51,8 @@ public class TcmdNodeList extends AbstractTerminalCommand {
 			List<Short> nodeIDs = boot.getIDsOfOnlineNodes();
 			System.out.println("Available nodes (" + nodeIDs.size() + "):");
 			for (short nodeId : nodeIDs) {
-				System.out.println("\t" + NodeID.toHexString(nodeId) + " (" + nodeId
-						+ "), " + boot.getNodeRole(nodeId) + ", " + boot.getNodeAddress(nodeId));
+				System.out.println("\t" + NodeID.toHexString(nodeId) + ", " + boot.getNodeRole(nodeId) + ", "
+						+ boot.getNodeAddress(nodeId));
 			}
 		}
 

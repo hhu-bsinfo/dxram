@@ -239,7 +239,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	@Override
 	public boolean nodeAvailable(final short p_nodeID) {
-		return zookeeperPathExists("nodes/superpeers/" + p_nodeID) || zookeeperPathExists("nodes/peers/" + p_nodeID);
+		return zookeeperPathExists("nodes/superpeers/" + p_nodeID)
+				|| zookeeperPathExists("nodes/peers/" + p_nodeID) || zookeeperPathExists("nodes/terminals/" + p_nodeID);
 	}
 
 	@Override
