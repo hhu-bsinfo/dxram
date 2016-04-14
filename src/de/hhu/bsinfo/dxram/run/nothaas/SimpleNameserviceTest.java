@@ -85,7 +85,7 @@ public class SimpleNameserviceTest extends AbstractMain {
 
 		System.out.println("Getting chunk IDs from name service and verifying...");
 		for (Entry<Long, String> entry : verificationMap.entrySet()) {
-			long chunkID = m_nameserviceService.getChunkID(entry.getValue());
+			long chunkID = m_nameserviceService.getChunkID(entry.getValue(), -1);
 			if (chunkID != entry.getKey().longValue()) {
 				System.out.println("ChunkID from name service (" + Long.toHexString(entry.getKey())
 						+ ") not matching original chunk ID (" + Long.toHexString(chunkID) + "), for name "

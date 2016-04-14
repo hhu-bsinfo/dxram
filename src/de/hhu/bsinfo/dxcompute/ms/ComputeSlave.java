@@ -105,7 +105,7 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 
 		// bootstrap: get master node id from nameservice
 		if (m_masterNodeId == NodeID.INVALID_ID) {
-			long tmp = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey);
+			long tmp = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey, 0);
 			if (tmp == -1) {
 				m_logger.error(getClass(),
 						"Setting up slave, cannot find nameservice entry for master node id for key "

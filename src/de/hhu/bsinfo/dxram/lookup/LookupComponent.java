@@ -68,8 +68,10 @@ public class LookupComponent extends AbstractDXRAMComponent {
 
 					// Add response to cache
 					if (ret != null) {
-						m_chunkIDCacheTree.cacheRange(((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
-								((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1], ret.getPrimaryPeer());
+						m_chunkIDCacheTree.cacheRange(
+								((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[0],
+								((long) ChunkID.getCreatorID(p_chunkID) << 48) + ret.getRange()[1],
+								ret.getPrimaryPeer());
 					}
 				}
 			} else {
@@ -131,9 +133,12 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	 * Get ChunkID for give AID
 	 * @param p_id
 	 *            the AID
+	 * @param p_timeoutMs
+	 *            Timeout for trying to get the entry (if it does not exist, yet).
+	 *            set this to -1 for infinite loop if you know for sure, that the entry has to exist
 	 * @return the corresponding ChunkID
 	 */
-	public long getChunkIDForNameserviceEntry(final int p_id) {
+	public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
 		long ret = -1;
 
 		// Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
@@ -150,7 +155,7 @@ public class LookupComponent extends AbstractDXRAMComponent {
 					// Cache miss -> ask superpeer
 					m_logger.trace(getClass(), "value not cached for application cache: " + p_id);
 
-					ret = m_peer.getChunkIDForNameserviceEntry(p_id);
+					ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
 
 					// Cache response
 					m_applicationIDCache.put(p_id, ret);
@@ -158,7 +163,7 @@ public class LookupComponent extends AbstractDXRAMComponent {
 					ret = chunkID.longValue();
 				}
 			} else {
-				ret = m_peer.getChunkIDForNameserviceEntry(p_id);
+				ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
 			}
 		}
 
@@ -218,7 +223,8 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	 */
 	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 
-		m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + p_startCID + ", p_endChunkID=" + p_endCID + ", p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + p_startCID + ", p_endChunkID="
+				+ p_endCID + ", p_nodeID=" + p_nodeID);
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -240,9 +246,11 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	 * @param p_primaryAndBackupPeers
 	 *            the creator and all backup peers
 	 */
-	public void initRange(final long p_firstChunkIDOrRangeID, final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
+	public void initRange(final long p_firstChunkIDOrRangeID,
+			final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
 
-		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x" + Long.toHexString(p_firstChunkIDOrRangeID) + ", p_primaryAndBackupPeers="
+		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x"
+				+ Long.toHexString(p_firstChunkIDOrRangeID) + ", p_primaryAndBackupPeers="
 				+ p_primaryAndBackupPeers);
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -366,16 +374,19 @@ public class LookupComponent extends AbstractDXRAMComponent {
 
 			m_chunkIDCacheTree = new CacheTree(m_maxCacheSize, ORDER);
 
-			m_applicationIDCache = new Cache<Integer, Long>(p_settings.getValue(LookupConfigurationValues.Component.NAMESERVICE_CACHE_ENTRIES));
+			m_applicationIDCache = new Cache<Integer, Long>(
+					p_settings.getValue(LookupConfigurationValues.Component.NAMESERVICE_CACHE_ENTRIES));
 			// m_aidCache.enableTTL();
 		}
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-			m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(),
+			m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
+					m_boot.getNumberOfAvailableSuperpeers(),
 					p_settings.getValue(LookupConfigurationValues.Component.PING_INTERVAL), m_boot, m_logger,
 					getDependentComponent(NetworkComponent.class), getDependentComponent(EventComponent.class));
 		} else {
-			m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(), m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_logger,
+			m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
+					m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_logger,
 					getDependentComponent(NetworkComponent.class));
 		}
 

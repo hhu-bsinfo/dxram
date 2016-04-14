@@ -202,7 +202,7 @@ public class DXRAMCompat {
 		Chunk ret = null;
 
 		if (m_nameserviceService != null) {
-			long chunkID = m_nameserviceService.getChunkID(p_name);
+			long chunkID = m_nameserviceService.getChunkID(p_name, -1);
 			if (chunkID != ChunkID.INVALID_ID) {
 				return get(chunkID);
 			}
@@ -223,7 +223,7 @@ public class DXRAMCompat {
 		long ret = -1;
 
 		if (m_nameserviceService != null) {
-			ret = m_nameserviceService.getChunkID(p_name);
+			ret = m_nameserviceService.getChunkID(p_name, -1);
 		}
 
 		return ret;

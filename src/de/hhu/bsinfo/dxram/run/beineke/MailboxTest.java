@@ -174,7 +174,7 @@ public final class MailboxTest {
 
 			System.out.println("Client started");
 
-			chunkID = nameService.getChunkID("anc");
+			chunkID = nameService.getChunkID("anc", -1);
 			anchor = new Chunk(chunkID);
 			chunkService.get(anchor);
 

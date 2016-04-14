@@ -48,7 +48,8 @@ public class GetMasterStatusResponse extends AbstractResponse {
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
-		if (getStatusCode() != 0) {
+		if (getStatusCode() == 0) {
+			m_statusMaster = new StatusMaster();
 			importer.importObject(m_statusMaster);
 		}
 	}

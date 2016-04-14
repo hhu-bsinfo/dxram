@@ -40,19 +40,13 @@ public class NameserviceService extends AbstractDXRAMService {
 	 * Get the chunk ID of the specific name from the service.
 	 * @param p_name
 	 *            Registered name to get the chunk ID for.
+	 * @param p_timeoutMs
+	 *            Timeout for trying to get the entry (if it does not exist, yet).
+	 *            set this to -1 for infinite loop if you know for sure, that the entry has to exist
 	 * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
 	 */
-	public long getChunkID(final String p_name) {
-		return m_nameservice.getChunkID(p_name);
-	}
-
-	/**
-	 * Remove the name of a registered DataStructure from lookup.
-	 * @param p_dataStructure
-	 *            DataStructure/Chunk ID to remove the name entry of.
-	 */
-	public void remove(final DataStructure p_dataStructure) {
-		m_nameservice.remove(p_dataStructure);
+	public long getChunkID(final String p_name, final int p_timeoutMs) {
+		return m_nameservice.getChunkID(p_name, p_timeoutMs);
 	}
 
 	/**

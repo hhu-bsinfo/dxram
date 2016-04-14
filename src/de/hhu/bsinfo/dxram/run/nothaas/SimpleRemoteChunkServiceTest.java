@@ -87,7 +87,7 @@ public class SimpleRemoteChunkServiceTest extends AbstractMain {
 
 		System.out.println("Getting chunks...");
 		for (int i = 0; i < chunkIDs.length; i++) {
-			long chunkid = m_nameserviceService.getChunkID("C" + (i + 1));
+			long chunkid = m_nameserviceService.getChunkID("C" + (i + 1), -1);
 			Chunk chunk = new Chunk(chunkid, sizes[i]);
 			if (m_chunkService.get(chunk) != 1) {
 				System.out.println("Getting chunk failed.");

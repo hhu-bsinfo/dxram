@@ -79,7 +79,8 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	@Override
 	public void run() {
 
-		while (true) {
+		boolean loop = true;
+		while (loop) {
 			switch (m_state) {
 				case STATE_SETUP:
 					stateSetup();
@@ -93,6 +94,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 				case STATE_ERROR_DIE:
 					stateErrorDie();
 					break;
+				case STATE_TERMINATE:
+					loop = false;
+					break;
 				default:
 					assert 1 == 2;
 					break;
@@ -102,12 +106,16 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 	@Override
 	public void shutdown() {
-		// TODO
-		if (isAlive()) {
-			// TODO dedicated thread shutdown
-		} else {
+		// shutdown main compute thread
+		m_state = State.STATE_TERMINATE;
+		try {
+			join();
+		} catch (InterruptedException e) {}
 
-		}
+		// TODO send termination to slaves and have them re-enter the setup stage?
+
+		// invalidate entry in nameservice
+		m_nameservice.register(-1, m_nameserviceMasterNodeIdKey);
 	}
 
 	@Override
@@ -129,7 +137,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.info(getClass(), "Setting up master of compute group " + m_computeGroupId);
 
 		// check first, if there is already a master registered for this compute group
-		long id = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey);
+		long id = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey, 0);
 		if (id != -1) {
 			m_logger.error(getClass(), "Cannot setup master for compute group id " + m_computeGroupId + ", node "
 					+ NodeID.toHexString(ChunkID.getCreatorID(id)) + " is already master of group");

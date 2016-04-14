@@ -289,6 +289,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			}
 
 			ret = true;
+		} else {
+			status = zookeeperGetStatus("nodes/terminals/" + p_nodeID);
+			if (null != status) {
+				zookeeperDelete("nodes/terminals/" + p_nodeID, status.getVersion());
+			}
 		}
 
 		return ret;
@@ -518,6 +523,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				m_zookeeper.create("nodes/superpeers", (numberOfSuperpeers + "").getBytes());
 			} else {
 				m_zookeeper.setData("nodes/superpeers", (numberOfSuperpeers + "").getBytes());
+			}
+			if (!m_zookeeper.exists("nodes/terminals")) {
+				m_zookeeper.create("nodes/terminals");
 			}
 
 			// Register superpeer

@@ -81,15 +81,18 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	 * Get the chunk ID of the specific name from the service.
 	 * @param p_name
 	 *            Registered name to get the chunk ID for.
+	 * @param p_timeoutMs
+	 *            Timeout for trying to get the entry (if it does not exist, yet).
+	 *            set this to -1 for infinite loop if you know for sure, that the entry has to exist
 	 * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
 	 */
-	public long getChunkID(final String p_name) {
+	public long getChunkID(final String p_name, final int p_timeoutMs) {
 		long ret = -1;
 		try {
 			final int id = m_converter.convert(p_name);
 			m_logger.trace(getClass(), "Lookup name " + p_name + ", id " + id);
 
-			ret = m_lookup.getChunkIDForNameserviceEntry(id);
+			ret = m_lookup.getChunkIDForNameserviceEntry(id, p_timeoutMs);
 
 			m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID " + ChunkID.toHexString(ret));
 		} catch (final IllegalArgumentException e) {
@@ -97,15 +100,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		}
 
 		return ret;
-	}
-
-	/**
-	 * Remove the name of a registered DataStructure from lookup.
-	 * @param p_dataStructure
-	 *            DataStructure/Chunk ID to remove the name entry of.
-	 */
-	public void remove(final DataStructure p_dataStructure) {
-		m_lookup.removeChunkIDs(new long[] {p_dataStructure.getID()});
 	}
 
 	/**

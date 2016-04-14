@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -55,14 +56,15 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		m_logger.info(getClass(), "Running terminal...");
 
 		System.out.println("DXRAM terminal v. 0.1");
-		System.out.println("Running on node " + m_boot.getNodeID() + ", role " + m_boot.getNodeRole());
+		System.out.println(
+				"Running on node " + NodeID.toHexString(m_boot.getNodeID()) + ", role " + m_boot.getNodeRole());
 		System.out.println("Enter '?' to list all available commands.");
 		System.out.println("Use '? <command>' to get information about a command.");
 		System.out.println("Use '!' or '! <command>' for interactive mode.");
 
 		while (m_loop) {
 			arr = JNIconsole
-					.readline("$0x" + Integer.toHexString(m_boot.getNodeID()).substring(4).toUpperCase() + "> ");
+					.readline("$" + NodeID.toHexString(m_boot.getNodeID()) + "> ");
 			if (arr != null) {
 				command = new String(arr, 0, arr.length);
 				arguments = command.split(" ");

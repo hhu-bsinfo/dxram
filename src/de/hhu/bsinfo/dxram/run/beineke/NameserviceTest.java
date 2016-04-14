@@ -81,13 +81,15 @@ public final class NameserviceTest {
 					nameService.register(c, (j++) + "");
 				}
 			}
-			System.out.println("Time to create " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
+			System.out.println(
+					"Time to create " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
 
 			start = System.currentTimeMillis();
 			for (int i = 0; i < NUMBER_OF_CHUNKS; i++) {
-				nameService.getChunkID(i + "");
+				nameService.getChunkID(i + "", -1);
 			}
-			System.out.println("Time to get ChunkIDs of " + NUMBER_OF_CHUNKS + " chunks: " + (System.currentTimeMillis() - start) + " ms");
+			System.out.println("Time to get ChunkIDs of " + NUMBER_OF_CHUNKS + " chunks: "
+					+ (System.currentTimeMillis() - start) + " ms");
 
 			System.out.println("Number of entries: " + nameService.getEntryCount());
 		}

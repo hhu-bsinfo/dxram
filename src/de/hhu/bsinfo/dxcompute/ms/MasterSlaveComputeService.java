@@ -11,6 +11,8 @@ import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.TaskRemoteCallbackMessage;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterList;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterStatus;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -18,9 +20,11 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -32,6 +36,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	private NameserviceComponent m_nameservice;
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
+	private TerminalComponent m_terminal;
 
 	private ComputeMSBase m_computeMSInstance;
 
@@ -43,16 +48,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Get a list of all available master nodes.
-	 * @return List of available master nodes
+	 * @return List of available master nodes with their compute group id
 	 */
-	public ArrayList<Short> getMasters() {
-		ArrayList<Short> masters = new ArrayList<Short>();
+	public ArrayList<Pair<Short, Byte>> getMasters() {
+		ArrayList<Pair<Short, Byte>> masters = new ArrayList<Pair<Short, Byte>>();
 
 		// check the name service entries
-		for (int i = 0; i < 100; i++) {
-			long tmp = m_nameservice.getChunkID(ComputeMSBase.NAMESERVICE_ENTRY_IDENT + i);
+		for (int i = 0; i <= ComputeMSBase.MAX_COMPUTE_GROUP_ID; i++) {
+			long tmp = m_nameservice.getChunkID(ComputeMSBase.NAMESERVICE_ENTRY_IDENT + i, 0);
 			if (tmp != -1) {
-				masters.add(ChunkID.getCreatorID(tmp));
+				masters.add(new Pair<Short, Byte>(ChunkID.getCreatorID(tmp), (byte) i));
 			}
 		}
 
@@ -202,6 +207,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_nameservice = getComponent(NameserviceComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_boot = getComponent(AbstractBootComponent.class);
+		m_terminal = getComponent(TerminalComponent.class);
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
 				SubmitTaskRequest.class);
@@ -218,6 +224,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_network.register(SubmitTaskRequest.class, this);
 		m_network.register(GetMasterStatusRequest.class, this);
 		m_network.register(TaskRemoteCallbackMessage.class, this);
+
+		m_terminal.registerCommand(new TcmdMSMasterList());
+		m_terminal.registerCommand(new TcmdMSMasterStatus());
 
 		switch (role) {
 			case MASTER:
@@ -334,9 +343,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	}
 
-	public class StatusMaster implements Importable, Exportable {
+	public static class StatusMaster implements Importable, Exportable {
 		private ArrayList<Short> m_connectedSlaves;
 		private int m_numTasksQueued;
+
+		public StatusMaster() {
+			m_connectedSlaves = new ArrayList<Short>();
+			m_numTasksQueued = 0;
+		}
 
 		public StatusMaster(final ArrayList<Short> p_connectedSlaves, final int p_numTasksQueued) {
 			m_connectedSlaves = p_connectedSlaves;
@@ -382,6 +396,17 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		@Override
 		public boolean hasDynamicObjectSize() {
 			return true;
+		}
+
+		@Override
+		public String toString() {
+			String str = new String();
+			str += "Connected slaves(" + m_connectedSlaves.size() + "):\n";
+			for (short slave : m_connectedSlaves) {
+				str += NodeID.toHexString(slave) + "\n";
+			}
+			str += "Tasks queued: " + m_numTasksQueued;
+			return str;
 		}
 	}
 }

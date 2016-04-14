@@ -17,12 +17,15 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 public abstract class ComputeMSBase extends Thread {
 	public static final String NAMESERVICE_ENTRY_IDENT = "MAS";
+	public static final byte MIN_COMPUTE_GROUP_ID = 0;
+	public static final byte MAX_COMPUTE_GROUP_ID = 99;
 
 	protected enum State {
 		STATE_SETUP,
 		STATE_IDLE,
 		STATE_EXECUTE,
 		STATE_ERROR_DIE,
+		STATE_TERMINATE,
 	}
 
 	private DXRAMServiceAccessor m_serviceAccessor;
@@ -44,7 +47,7 @@ public abstract class ComputeMSBase extends Thread {
 		super("ComputeMS-" + p_role + "-" + p_computeGroupId);
 		m_role = p_role;
 		m_computeGroupId = p_computeGroupId;
-		assert m_computeGroupId >= 0 && m_computeGroupId <= 99;
+		assert m_computeGroupId >= MIN_COMPUTE_GROUP_ID && m_computeGroupId <= MAX_COMPUTE_GROUP_ID;
 		m_nameserviceMasterNodeIdKey = new String(NAMESERVICE_ENTRY_IDENT + m_computeGroupId);
 
 		m_serviceAccessor = p_serviceAccessor;

@@ -40,8 +40,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.CRC16;
 
 /**
@@ -241,12 +241,16 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
-	 * Get ChunkID for give AID
+	 * Get ChunkID for give nameservice id. Use this if you assume
+	 * that your entry has to exist.
 	 * @param p_id
-	 *            the AID
+	 *            the nameservice id
+	 * @param p_timeoutMs
+	 *            Timeout for trying to get the entry (if it does not exist, yet).
+	 *            set this to -1 for infinite loop if you know for sure, that the entry has to exist
 	 * @return the corresponding ChunkID
 	 */
-	public long getChunkIDForNameserviceEntry(final int p_id) {
+	public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
 		long ret = -1;
 		short responsibleSuperpeer;
 		boolean check = false;
@@ -256,9 +260,8 @@ public class OverlayPeer implements MessageReceiver {
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
 			check = true;
 		}
-		final long timeoutMs = 1000;
 		long start = System.currentTimeMillis();
-		while (System.currentTimeMillis() - start < timeoutMs) {
+		do {
 			responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
 
 			if (-1 != responsibleSuperpeer) {
@@ -267,14 +270,18 @@ public class OverlayPeer implements MessageReceiver {
 					// Responsible superpeer is not available, try again (superpeers will be updated
 					// automatically by network thread)
 					try {
-						Thread.sleep(200);
+						Thread.sleep(1000);
 					} catch (final InterruptedException e1) {}
 					continue;
 				}
 
 				ret = request.getResponse(GetChunkIDForNameserviceEntryResponse.class).getChunkID();
+				// 0 is considered invalid, but outside of this scope, we always consider -1 as invalid
+				if (ret == 0) {
+					ret = ChunkID.INVALID_ID;
+				}
 			}
-		}
+		} while (p_timeoutMs == -1 || System.currentTimeMillis() - start < p_timeoutMs);
 
 		return ret;
 	}
