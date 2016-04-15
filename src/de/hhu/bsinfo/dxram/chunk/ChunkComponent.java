@@ -107,7 +107,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 			}
 		}
 
-		return false;
+		return true;
 	}
 
 	/**

@@ -257,7 +257,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_nameservice = null;
 		m_logger = null;
 
-		// TODO shutdown of compute instance
+		m_computeMSInstance.shutdown();
+		m_computeMSInstance = null;
 
 		return true;
 	}
