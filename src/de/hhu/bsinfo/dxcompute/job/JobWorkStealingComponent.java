@@ -1,58 +1,57 @@
-package de.hhu.bsinfo.dxram.job;
+
+package de.hhu.bsinfo.dxcompute.job;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import de.hhu.bsinfo.dxcompute.job.ws.Worker;
+import de.hhu.bsinfo.dxcompute.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.job.ws.Worker;
-import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
  * Implementation of a JobComponent using a work stealing approach for scheduling/load balancing.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
- *
  */
 public class JobWorkStealingComponent extends AbstractJobComponent implements WorkerDelegate {
 
-	private LoggerComponent m_logger = null;
-	private AbstractBootComponent m_boot = null;
-	
-	private Worker[] m_workers = null;
+	private LoggerComponent m_logger;
+	private AbstractBootComponent m_boot;
+
+	private Worker[] m_workers;
 	private AtomicLong m_unfinishedJobs = new AtomicLong(0);
-	
+
 	/**
 	 * Constructor
-	 * @param p_priorityInit Priority for initialization of this component. 
-	 * 			When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component. 
-	 * 			When choosing the order, consider component dependencies here.
+	 * @param p_priorityInit
+	 *            Priority for initialization of this component.
+	 *            When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown
+	 *            Priority for shutting down this component.
+	 *            When choosing the order, consider component dependencies here.
 	 */
-	public JobWorkStealingComponent(int p_priorityInit, int p_priorityShutdown) {
+	public JobWorkStealingComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
 	@Override
-	public boolean pushJob(final Job p_job) {	
+	public boolean pushJob(final AbstractJob p_job) {
 		// cause we are using a work stealing approach, we do not need to
 		// care about which worker to assign this job to
-		
+
 		boolean success = false;
-		for (Worker worker : m_workers)
-		{
-			if (worker.pushJob(p_job))
-			{
+		for (Worker worker : m_workers) {
+			if (worker.pushJob(p_job)) {
 				// causes the garbage collector to go crazy if too many jobs are pushed very quickly
-				//m_logger.debug(getClass(), "Submitted job " + p_job + " to worker " + worker);
+				// m_logger.debug(getClass(), "Submitted job " + p_job + " to worker " + worker);
 				success = true;
 				break;
 			}
 		}
-		
-		if (!success)
-		{
+
+		if (!success) {
 			m_logger.warn(getClass(), "Submiting job " + p_job + " failed.");
-		}	
-		
+		}
+
 		return success;
 	}
 
@@ -63,64 +62,59 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 	@Override
 	public boolean waitForSubmittedJobsToFinish() {
-		while (m_unfinishedJobs.get() > 0)
-		{
+		while (m_unfinishedJobs.get() > 0) {
 			Thread.yield();
 		}
-		
+
 		return true;
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(Settings p_settings) {
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(JobConfigurationValues.Component.NUM_WORKERS);
 	}
 
 	@Override
-	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			Settings p_settings) {
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
+			final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_boot = getDependentComponent(AbstractBootComponent.class);
-		
+
 		m_workers = new Worker[p_settings.getValue(JobConfigurationValues.Component.NUM_WORKERS)];
-		
+
 		for (int i = 0; i < m_workers.length; i++) {
 			m_workers[i] = new Worker(i, this);
 		}
-		
+
 		// avoid race condition by first creating all workers, then starting them
 		for (int i = 0; i < m_workers.length; i++) {
 			m_workers[i].start();
 		}
-		
+
 		// wait until all workers are running
-		for (int i = 0; i < m_workers.length; i++)
-		{
-			while (!m_workers[i].isRunning())
-			;
+		for (int i = 0; i < m_workers.length; i++) {
+			while (!m_workers[i].isRunning()) {}
 		}
-		
+
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownComponent() {
 		m_logger.debug(getClass(), "Waiting for unfinished jobs...");
-		
-		while (m_unfinishedJobs.get() > 0)
-		{
+
+		while (m_unfinishedJobs.get() > 0) {
 			Thread.yield();
 		}
-		
-		for (Worker worker : m_workers)
+
+		for (Worker worker : m_workers) {
 			worker.shutdown();
-		
+		}
+
 		m_logger.debug(getClass(), "Waiting for workers to shut down...");
-		
-		for (Worker worker : m_workers)
-		{
-			while (worker.isRunning())
-			{
+
+		for (Worker worker : m_workers) {
+			while (worker.isRunning()) {
 				Thread.yield();
 			}
 		}
@@ -129,39 +123,38 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 	}
 
 	@Override
-	public Job stealJobLocal(Worker p_thief) {
-		Job job = null;
-		
-		for (Worker worker : m_workers)
-		{
+	public AbstractJob stealJobLocal(final Worker p_thief) {
+		AbstractJob job = null;
+
+		for (Worker worker : m_workers) {
 			// don't steal from own queue
-			if (p_thief == worker)
+			if (p_thief == worker) {
 				continue;
-			
+			}
+
 			job = worker.stealJob();
-			if (job != null)
-			{
+			if (job != null) {
 				m_logger.trace(getClass(), "Job " + job + " stolen from worker " + worker);
 				break;
 			}
 		}
-		
+
 		return job;
 	}
 
 	@Override
-	public void scheduledJob(final Job p_job) {
+	public void scheduledJob(final AbstractJob p_job) {
 		m_unfinishedJobs.incrementAndGet();
 		p_job.notifyListenersJobScheduledForExecution(m_boot.getNodeID());
 	}
-	
+
 	@Override
-	public void executingJob(Job p_job) {
+	public void executingJob(final AbstractJob p_job) {
 		p_job.notifyListenersJobStartsExecution(m_boot.getNodeID());
 	}
 
 	@Override
-	public void finishedJob(final Job p_job) {
+	public void finishedJob(final AbstractJob p_job) {
 		m_unfinishedJobs.decrementAndGet();
 		p_job.notifyListenersJobFinishedExecution(m_boot.getNodeID());
 	}

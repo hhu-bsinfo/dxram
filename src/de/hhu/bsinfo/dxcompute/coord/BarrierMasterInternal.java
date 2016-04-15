@@ -7,9 +7,9 @@ import de.hhu.bsinfo.dxcompute.coord.messages.BarrierSlaveSignOnRequest;
 import de.hhu.bsinfo.dxcompute.coord.messages.BarrierSlaveSignOnResponse;
 import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierReleaseMessage;
-import de.hhu.bsinfo.dxram.logger.LoggerService;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
@@ -21,16 +21,15 @@ import de.hhu.bsinfo.utils.Pair;
  * nodes to sign on to the barrier. Until then it blocks execution. When
  * the number of signed on slaves is reached the barrier is released. It is
  * possible to use the sync mechanism to transfer primitive data as well
- * External version when using the dxram api
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
-public class BarrierMaster implements MessageReceiver {
+public class BarrierMasterInternal implements MessageReceiver {
 
 	private int m_barrierIdentifer = -1;
 	private ArrayList<Pair<Short, Long>> m_slavesSynced = new ArrayList<Pair<Short, Long>>();
 
-	private NetworkService m_network;
-	private LoggerService m_logger;
+	private NetworkComponent m_network;
+	private LoggerComponent m_logger;
 
 	/**
 	 * Constructor
@@ -39,7 +38,7 @@ public class BarrierMaster implements MessageReceiver {
 	 * @param p_logger
 	 *            Logger component needed by barrier
 	 */
-	public BarrierMaster(final NetworkService p_network, final LoggerService p_logger) {
+	public BarrierMasterInternal(final NetworkComponent p_network, final LoggerComponent p_logger) {
 		m_network = p_network;
 		m_logger = p_logger;
 
@@ -67,7 +66,7 @@ public class BarrierMaster implements MessageReceiver {
 		m_barrierIdentifer = p_barrierIdentifier;
 		m_slavesSynced.clear();
 
-		m_network.registerReceiver(BarrierSlaveSignOnRequest.class, this);
+		m_network.register(BarrierSlaveSignOnRequest.class, this);
 
 		m_logger.debug(getClass(), "Waiting for " + p_barrierCount + " slaves to signed on...");
 
@@ -93,7 +92,7 @@ public class BarrierMaster implements MessageReceiver {
 
 		m_logger.debug(getClass(), "Barrier released.");
 
-		m_network.unregisterReceiver(BarrierSlaveSignOnRequest.class, this);
+		m_network.unregister(BarrierSlaveSignOnRequest.class, this);
 
 		return true;
 	}

@@ -1,19 +1,19 @@
-package de.hhu.bsinfo.dxram.job.messages;
+
+package de.hhu.bsinfo.dxcompute.job.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxcompute.job.JobService;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
-import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
  * Response to the status request to get information about remote job systems.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
- *
  */
 public class StatusResponse extends AbstractResponse {
-	private JobService.Status m_status = null;
-	
+	private JobService.Status m_status;
+
 	/**
 	 * Creates an instance of StatusResponse.
 	 * This constructor is used when receiving this message.
@@ -35,7 +35,7 @@ public class StatusResponse extends AbstractResponse {
 
 		m_status = p_status;
 	}
-	
+
 	/**
 	 * Get the job service status.
 	 * @return Job service status.
@@ -43,10 +43,10 @@ public class StatusResponse extends AbstractResponse {
 	public final JobService.Status getStatus() {
 		return m_status;
 	}
-	
+
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);	
+		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 		exporter.exportObject(m_status);
 	}
 

@@ -211,7 +211,7 @@ public class Logger implements LoggerInterface {
 		str += "[" + p_header + "] ";
 		str += p_msg;
 		if (p_exception != null) {
-			str += "\n##########\n" + p_exception + "\n";
+			str += "\n##########\n#### " + p_exception + "\n";
 			for (StackTraceElement ste : p_exception.getStackTrace()) {
 				str += "#### " + ste + "\n";
 			}

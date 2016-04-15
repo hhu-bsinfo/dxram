@@ -4,12 +4,12 @@ package de.hhu.bsinfo.dxram.run.nothaas;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import de.hhu.bsinfo.dxcompute.job.AbstractJob;
+import de.hhu.bsinfo.dxcompute.job.JobService;
+import de.hhu.bsinfo.dxcompute.job.event.JobEventListener;
+import de.hhu.bsinfo.dxcompute.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.job.Job;
-import de.hhu.bsinfo.dxram.job.JobService;
-import de.hhu.bsinfo.dxram.job.event.JobEventListener;
-import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -100,11 +100,11 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 				if (remoteNode != -1 && numRemoteJobs > 0) {
 					numRemoteJobs--;
 					m_remoteJobCount.incrementAndGet();
-					Job job = new JobTest(ran.nextInt(10) * 500);
+					AbstractJob job = new JobTest(ran.nextInt(10) * 500);
 					job.registerEventListener(this);
 					m_jobService.pushJobRemote(job, remoteNode);
 				} else {
-					Job job = new JobTest(ran.nextInt(10) * 500);
+					AbstractJob job = new JobTest(ran.nextInt(10) * 500);
 					job.registerEventListener(this);
 					m_jobService.pushJob(job);
 				}
@@ -130,7 +130,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 	 * Implementation of a job for this test.
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
 	 */
-	public static class JobTest extends Job {
+	public static class JobTest extends AbstractJob {
 		public static final short MS_TYPE_ID = 1;
 
 		/**

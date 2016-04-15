@@ -1,14 +1,13 @@
-package de.hhu.bsinfo.dxram.job.messages;
+
+package de.hhu.bsinfo.dxcompute.job.messages;
 
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
  * Request the status of a the job service from a remote node.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.02.16
- *
  */
-public class StatusRequest extends AbstractRequest
-{
+public class StatusRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of StatusRequest.
 	 * This constructor is used when receiving this message.

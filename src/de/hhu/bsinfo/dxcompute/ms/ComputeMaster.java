@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxcompute.coord.BarrierMaster;
+import de.hhu.bsinfo.dxcompute.coord.BarrierMasterInternal;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
@@ -34,7 +34,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	private ConcurrentLinkedQueue<Task> m_tasks = new ConcurrentLinkedQueue<Task>();
 	private AtomicInteger m_taskCount = new AtomicInteger(0);
 	private int m_executeBarrierIdentifier;
-	private BarrierMaster m_executionBarrier;
+	private BarrierMasterInternal m_executionBarrier;
 
 	private long m_payloadIdCounter;
 
@@ -46,7 +46,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 		p_network.register(SlaveJoinRequest.class, this);
 
-		m_executionBarrier = new BarrierMaster(p_network, p_logger);
+		m_executionBarrier = new BarrierMasterInternal(p_network, p_logger);
 
 		start();
 	}

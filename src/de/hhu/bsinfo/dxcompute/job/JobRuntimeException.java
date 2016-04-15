@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.job;
+package de.hhu.bsinfo.dxcompute.job;
 
 /**
  * Runtime exception for non recoverable failure in job package.

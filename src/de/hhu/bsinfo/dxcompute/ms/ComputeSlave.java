@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxcompute.coord.BarrierSlave;
+import de.hhu.bsinfo.dxcompute.coord.BarrierSlaveInternal;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
@@ -29,7 +29,7 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 	private volatile AbstractTaskPayload m_task;
 	private Lock m_executeTaskLock = new ReentrantLock(false);
 
-	private BarrierSlave m_barrier;
+	private BarrierSlaveInternal m_barrier;
 
 	public ComputeSlave(final int p_computeGroupId, final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
@@ -49,7 +49,7 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		m_network.register(SlaveJoinResponse.class, this);
 		m_network.register(ExecuteTaskRequest.class, this);
 
-		m_barrier = new BarrierSlave(m_network, m_logger);
+		m_barrier = new BarrierSlaveInternal(m_network, m_logger);
 
 		start();
 	}

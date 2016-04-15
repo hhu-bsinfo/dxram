@@ -5,9 +5,9 @@ import de.hhu.bsinfo.dxcompute.coord.messages.BarrierSlaveSignOnRequest;
 import de.hhu.bsinfo.dxcompute.coord.messages.BarrierSlaveSignOnResponse;
 import de.hhu.bsinfo.dxcompute.coord.messages.CoordinatorMessages;
 import de.hhu.bsinfo.dxcompute.coord.messages.MasterSyncBarrierReleaseMessage;
-import de.hhu.bsinfo.dxram.logger.LoggerService;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
@@ -15,18 +15,17 @@ import de.hhu.bsinfo.menet.NodeID;
 /**
  * Counterpart for the master barrier. This is used on a slave node to sync
  * multiple slaves to a single master.
- * External version when using the dxram api.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
-public class BarrierSlave implements MessageReceiver {
+public class BarrierSlaveInternal implements MessageReceiver {
 
 	private int m_barrierIdentifer = -1;
 
 	private volatile boolean m_masterBarrierReleased;
 	private volatile long m_barrierDataFromMaster;
 
-	private NetworkService m_network;
-	private LoggerService m_logger;
+	private NetworkComponent m_network;
+	private LoggerComponent m_logger;
 
 	/**
 	 * Constructor
@@ -35,7 +34,7 @@ public class BarrierSlave implements MessageReceiver {
 	 * @param p_logger
 	 *            Logger component needed by barrier
 	 */
-	public BarrierSlave(final NetworkService p_network, final LoggerService p_logger) {
+	public BarrierSlaveInternal(final NetworkComponent p_network, final LoggerComponent p_logger) {
 		m_network = p_network;
 		m_logger = p_logger;
 
@@ -63,7 +62,7 @@ public class BarrierSlave implements MessageReceiver {
 		m_masterBarrierReleased = false;
 		m_barrierDataFromMaster = -1;
 
-		m_network.registerReceiver(MasterSyncBarrierReleaseMessage.class, this);
+		m_network.register(MasterSyncBarrierReleaseMessage.class, this);
 
 		m_logger.debug(getClass(),
 				"Sign on request to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
@@ -141,7 +140,7 @@ public class BarrierSlave implements MessageReceiver {
 			return;
 		}
 
-		m_network.unregisterReceiver(MasterSyncBarrierReleaseMessage.class, this);
+		m_network.unregister(MasterSyncBarrierReleaseMessage.class, this);
 
 		m_barrierDataFromMaster = p_message.getData();
 		m_masterBarrierReleased = true;
