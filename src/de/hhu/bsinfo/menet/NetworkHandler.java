@@ -130,8 +130,8 @@ public final class NetworkHandler implements DataReceiver {
 	 *            the connection timeout
 	 */
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize,
-			final int p_outgoingBufferSize,
-			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
+			final int p_outgoingBufferSize, final int p_numberOfBuffers, final int p_flowControlWindowSize,
+			final int p_connectionTimeout) {
 		m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
 
 		m_nodeMap = p_nodeMap;

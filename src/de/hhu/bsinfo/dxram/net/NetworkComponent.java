@@ -1,6 +1,11 @@
 
 package de.hhu.bsinfo.dxram.net;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
@@ -78,18 +83,18 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
 
 		switch (res) {
-			case 0:
-				errCode = NetworkErrorCodes.SUCCESS;
-				break;
-			case -1:
-				errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
-				break;
-			case -2:
-				errCode = NetworkErrorCodes.SEND_DATA;
-				break;
-			default:
-				assert 1 == 2;
-				break;
+		case 0:
+			errCode = NetworkErrorCodes.SUCCESS;
+			break;
+		case -1:
+			errCode = NetworkErrorCodes.DESTINATION_UNREACHABLE;
+			break;
+		case -2:
+			errCode = NetworkErrorCodes.SEND_DATA;
+			break;
+		default:
+			assert 1 == 2;
+			break;
 		}
 
 		if (errCode != NetworkErrorCodes.SUCCESS) {
@@ -168,6 +173,33 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER));
 
 		m_networkHandler.setLogger(m_logger);
+
+		// Check if given ip address is bound to one of this node's network interfaces
+		boolean found = false;
+		InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
+		try {
+			Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+			outerloop: while (networkInterfaces.hasMoreElements()) {
+				NetworkInterface currentNetworkInterface = (NetworkInterface) networkInterfaces.nextElement();
+				Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
+				while (addresses.hasMoreElements()) {
+					InetAddress currentAddress = (InetAddress) addresses.nextElement();
+					if (myAddress.equals(currentAddress)) {
+						m_logger.info(getClass(), myAddress.getHostAddress() + " is bound to " + currentNetworkInterface.getDisplayName());
+						found = true;
+						break outerloop;
+					}
+				}
+			}
+		} catch (final SocketException e1) {
+			m_logger.error(getClass(), "Could not get network interfaces for ip confirmation");
+		} finally {
+			if (!found) {
+				m_logger.error(getClass(), "Could not find network interface with address " + myAddress.getHostAddress());
+				return false;
+			}
+		}
+
 		m_networkHandler.initialize(
 				m_boot.getNodeID(),
 				new NodeMappings(m_boot),
