@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -24,6 +25,7 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Migration service providing migration of chunks.
@@ -111,7 +113,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					ret = true;
 				}
 			} else {
-				m_logger.error(getClass(), "Chunk with ChunkID " + p_chunkID + " could not be migrated");
+				m_logger.error(getClass(), "Chunk with ChunkID " + ChunkID.toHexString(p_chunkID) + " could not be migrated");
 				ret = false;
 			}
 			m_migrationLock.unlock();
@@ -169,13 +171,13 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 								chunkIDs[counter++] = chunk.getID();
 								size += chunk.getDataSize();
 							} else {
-								m_logger.error(getClass(), "Chunk with ChunkID " + iter + " could not be migrated");
+								m_logger.error(getClass(), "Chunk with ChunkID " + ChunkID.toHexString(iter) + " could not be migrated");
 							}
 							iter++;
 						}
 						m_memoryManager.unlockAccess();
 
-						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to " + p_target);
+						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to " + NodeID.toHexString(p_target));
 						if (m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter))) != NetworkErrorCodes.SUCCESS) {
 							m_logger.error(getClass(), "Could not migrate chunks");
 						}

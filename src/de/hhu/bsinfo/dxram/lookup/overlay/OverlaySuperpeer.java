@@ -336,7 +336,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			while (OverlayHelper.isNodeInRange(currentPeer, lowerBound, m_nodeID, OPEN_INTERVAL)) {
 				if (0 > Collections.binarySearch(p_peers, currentPeer)) {
 					p_trees.add(getCIDTree(currentPeer));
-					m_logger.trace(getClass(), "Spreading meta-data of " + currentPeer + " to " + m_successor);
+					m_logger.trace(getClass(), "Spreading meta-data of " + NodeID.toHexString(currentPeer)
+							+ " to " + NodeID.toHexString(m_successor));
 				}
 				if (index == m_assignedPeersIncludingBackup.size()) {
 					index = 0;
@@ -464,7 +465,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				if (getCIDTree(currentPeer).getStatus()) {
 					if (0 > Collections.binarySearch(m_peers, currentPeer)
 							&& 0 > Collections.binarySearch(m_superpeers, currentPeer)) {
-						m_logger.info(getClass(), "** Taking over " + currentPeer);
+						m_logger.info(getClass(), "** Taking over " + NodeID.toHexString(currentPeer));
 						m_overlayLock.lock();
 						OverlayHelper.insertPeer(currentPeer, m_peers);
 						m_overlayLock.unlock();
@@ -509,7 +510,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			if (0 <= Collections.binarySearch(m_superpeers, p_failedNode)) {
 				m_overlayLock.unlock();
 
-				m_logger.error(getClass(), "Failed node was a superpeer, NodeID: " + p_failedNode);
+				m_logger.error(getClass(), "Failed node was a superpeer, NodeID: " + NodeID.toHexString(p_failedNode));
 
 				// notify others about failure
 				m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_failedNode, NodeRole.SUPERPEER));
@@ -517,13 +518,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 				// Determine new bootstrap if failed node is current one
 				if (p_failedNode == m_bootstrap) {
 					determineNewBootstrap();
-					m_logger.info(getClass(),
-							"Failed node " + p_failedNode + " was bootstrap. New bootstrap is " + m_bootstrap);
+					m_logger.info(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
+							+ " was bootstrap. New bootstrap is " + NodeID.toHexString(m_bootstrap));
 				}
 				// Take over failed nodes peers and CIDTrees if it is this nodes predecessor
 				if (p_failedNode == m_predecessor) {
-					m_logger.info(getClass(),
-							"Failed node " + p_failedNode + " was my predecessor -> taking over all peers and data");
+					m_logger.info(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
+							+ " was my predecessor -> taking over all peers and data");
 					takeOverPeersAndCIDTrees(m_predecessor);
 				}
 				// Send failed nodes CIDTrees to this nodes successor if it is the first node in responsible area
@@ -533,8 +534,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 				if (3 < m_superpeers.size()
 						&& OverlayHelper.getResponsibleSuperpeer((short) (responsibleArea[0] + 1), m_superpeers,
 								m_overlayLock, m_logger) == p_failedNode) {
-					m_logger.info(getClass(),
-							"Failed node " + p_failedNode + " was in my responsible area -> spreading his data");
+					m_logger.info(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
+							+ " was in my responsible area -> spreading his data");
 					spreadDataOfFailedSuperpeer(p_failedNode, responsibleArea);
 				}
 				// Send this nodes CIDTrees to new backup node that replaces the failed node
@@ -543,8 +544,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_overlayLock.unlock();
 				if (3 < m_superpeers.size() && OverlayHelper.isNodeInRange(p_failedNode, backupSuperpeers[0],
 						backupSuperpeers[2], CLOSED_INTERVAL)) {
-					m_logger.info(getClass(),
-							"Failed node " + p_failedNode + " was one of my backup nodes -> spreading my data");
+					m_logger.info(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
+							+ " was one of my backup nodes -> spreading my data");
 					spreadBackupsOfThisSuperpeer(backupSuperpeers);
 				}
 				// Remove superpeer
@@ -587,14 +588,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 				if (!existsInZooKeeper) {
 					// Failed node was a terminal
-					m_logger.error(getClass(), "Failed node was a terminal, NodeID: " + p_failedNode);
+					m_logger.error(getClass(),
+							"Failed node was a terminal, NodeID: " + NodeID.toHexString(p_failedNode));
 
 					// Remove peer
 					m_overlayLock.lock();
 					OverlayHelper.removePeer(p_failedNode, m_peers);
 					m_overlayLock.unlock();
 
-					m_logger.info(getClass(), "Failed node " + p_failedNode + ": no further actions required");
+					m_logger.info(getClass(),
+							"Failed node " + NodeID.toHexString(p_failedNode) + ": no further actions required");
 
 					// notify others about failure
 					m_event.fireEvent(
@@ -604,13 +607,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 					m_boot.reportNodeFailure(p_failedNode, false);
 				} else {
 					// Failed node was a peer
-					m_logger.error(getClass(), "Failed node was a peer, NodeID: " + p_failedNode);
+					m_logger.error(getClass(), "Failed node was a peer, NodeID: " + NodeID.toHexString(p_failedNode));
 
 					// notify others about failure
 					m_event.fireEvent(new NodeFailureEvent(getClass().getSimpleName(), p_failedNode, NodeRole.PEER));
 
 					// Remove peer in meta-data (and replace with new backup node; DUMMY element currently)
-					m_logger.info(getClass(), "Removing " + p_failedNode + " from local meta-data");
+					m_logger.info(getClass(), "Removing " + NodeID.toHexString(p_failedNode) + " from local meta-data");
 					m_dataLock.lock();
 					iter = m_assignedPeersIncludingBackup.iterator();
 					while (iter.hasNext()) {
@@ -634,8 +637,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 							break;
 						}
 						// Inform superpeer about failed peer to initialize deletion
-						m_logger.info(getClass(),
-								"Informing " + superpeer + " to remove " + p_failedNode + " from meta-data");
+						m_logger.info(getClass(), "Informing " + NodeID.toHexString(superpeer)
+								+ " to remove " + NodeID.toHexString(p_failedNode) + " from meta-data");
 						if (m_network.sendMessage(
 								new NotifyAboutFailedPeerMessage(superpeer,
 										p_failedNode)) != NetworkErrorCodes.SUCCESS) {
@@ -648,7 +651,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 					}
 
 					// Start recovery
-					m_logger.info(getClass(), "Starting recovery for failed node " + p_failedNode);
+					m_logger.info(getClass(), "Starting recovery for failed node " + NodeID.toHexString(p_failedNode));
 					while (!finished) {
 						finished = true;
 						m_dataLock.lock();
@@ -692,7 +695,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 					m_failureLock.unlock();
 
-					m_logger.info(getClass(), "Recovery of failed node " + p_failedNode + " complete.");
+					m_logger.info(getClass(),
+							"Recovery of failed node " + NodeID.toHexString(p_failedNode) + " complete.");
 				}
 			}
 		}
@@ -713,8 +717,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		ArrayList<LookupTree> trees;
 		LookupTree tree;
 
-		m_logger.trace(getClass(),
-				"Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
+		m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer="
+				+ NodeID.toHexString(p_contactSuperpeer));
 
 		contactSuperpeer = p_contactSuperpeer;
 
@@ -725,7 +729,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		if (m_nodeID == contactSuperpeer) {
 			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
-				m_logger.trace(getClass(), "Setting up new ring, I am " + m_nodeID);
+				m_logger.trace(getClass(), "Setting up new ring, I am " + NodeID.toHexString(m_nodeID));
 				setSuccessor(m_nodeID);
 			} else {
 				m_logger.error(getClass(), "Bootstrap has to be a superpeer, exiting now.");
@@ -733,7 +737,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			}
 		} else {
 			while (-1 != contactSuperpeer) {
-				m_logger.trace(getClass(), "Contacting " + contactSuperpeer + " to join the ring, I am " + m_nodeID);
+				m_logger.trace(getClass(), "Contacting " + NodeID.toHexString(contactSuperpeer)
+						+ " to join the ring, I am " + NodeID.toHexString(m_nodeID));
 
 				joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_SUPERPEER);
 				if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
@@ -887,7 +892,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_dataLock.unlock();
 
 		while (!m_superpeers.isEmpty()) {
-			m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + m_successor);
+			m_logger.info(getClass(), "Spreading failed superpeers meta-data to " + NodeID.toHexString(m_successor));
 			if (m_network.sendMessage(
 					new SendBackupsMessage(m_successor, allMappings, trees)) != NetworkErrorCodes.SUCCESS) {
 				// Successor is not available anymore, remove from superpeer array and try next superpeer
@@ -933,7 +938,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			currentPeer = m_assignedPeersIncludingBackup.get(index++);
 			while (OverlayHelper.isNodeInRange(currentPeer, lowerBound, m_nodeID, OPEN_INTERVAL)) {
 				dataToTransmit = true;
-				str += currentPeer;
+				str += NodeID.toHexString(currentPeer);
 
 				trees.add(getCIDTree(currentPeer));
 
@@ -965,12 +970,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_overlayLock.unlock();
 
 			superpeerToSendData = true;
-			str += " to " + newBackupSuperpeer;
+			str += " to " + NodeID.toHexString(newBackupSuperpeer);
 
 			if (m_network.sendMessage(
 					new SendBackupsMessage(newBackupSuperpeer, allMappings, trees)) != NetworkErrorCodes.SUCCESS) {
 				// Superpeer is not available anymore, remove from superpeer array and try next superpeer
-				m_logger.error(getClass(), "new backup superpeer (" + newBackupSuperpeer + ") failed, too");
+				m_logger.error(getClass(),
+						"new backup superpeer (" + NodeID.toHexString(newBackupSuperpeer) + ") failed, too");
 				m_failureLock.unlock();
 				failureHandling(newBackupSuperpeer);
 				m_failureLock.lock();
@@ -1006,7 +1012,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		boolean newNodeisSuperpeer;
 
-		m_logger.trace(getClass(), "Got request: JOIN_REQUEST from " + p_joinRequest.getSource());
+		m_logger.trace(getClass(), "Got request: JOIN_REQUEST from " + NodeID.toHexString(p_joinRequest.getSource()));
 
 		joiningNode = p_joinRequest.getNewNode();
 		newNodeisSuperpeer = p_joinRequest.nodeIsSuperpeer();
@@ -1121,8 +1127,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 		LookupTree tree;
 
 		chunkID = p_getLookupRangeRequest.getChunkID();
-		m_logger.trace(getClass(), "Got request: GET_LOOKUP_RANGE_REQUEST " + p_getLookupRangeRequest.getSource()
-				+ " chunkID: " + Long.toHexString(chunkID));
+		m_logger.trace(getClass(),
+				"Got request: GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource())
+						+ " chunkID: " + ChunkID.toHexString(chunkID));
 
 		m_dataLock.lock();
 		tree = getCIDTree(ChunkID.getCreatorID(chunkID));
@@ -1131,9 +1138,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 		}
 		m_dataLock.unlock();
 
-		m_logger.trace(getClass(), "GET_LOOKUP_RANGE_REQUEST " + p_getLookupRangeRequest.getSource() + " chunkID "
-				+ Long.toHexString(chunkID)
-				+ " reply location: " + result);
+		m_logger.trace(getClass(),
+				"GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource()) + " chunkID "
+						+ ChunkID.toHexString(chunkID) + " reply location: " + result);
 
 		if (m_network.sendMessage(
 				new GetLookupRangeResponse(p_getLookupRangeRequest, result)) != NetworkErrorCodes.SUCCESS) {
@@ -1153,7 +1160,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		boolean isBackup;
 		LookupTree tree;
 
-		m_logger.trace(getClass(), "Got Message: REMOVE_CHUNKIDS_REQUEST from " + p_removeChunkIDsRequest.getSource());
+		m_logger.trace(getClass(),
+				"Got Message: REMOVE_CHUNKIDS_REQUEST from " + NodeID.toHexString(p_removeChunkIDsRequest.getSource()));
 
 		chunkIDs = p_removeChunkIDsRequest.getChunkIDs();
 		isBackup = p_removeChunkIDsRequest.isBackup();
@@ -1166,7 +1174,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 				tree = getCIDTree(creator);
 				if (null == tree) {
 					m_dataLock.unlock();
-					m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_nodeID);
+					m_logger.error(getClass(),
+							"CIDTree range not initialized on responsible superpeer " + NodeID.toHexString(m_nodeID));
 					if (m_network.sendMessage(
 							new RemoveChunkIDsResponse(p_removeChunkIDsRequest,
 									new short[] {-1})) != NetworkErrorCodes.SUCCESS) {
@@ -1189,7 +1198,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_dataLock.lock();
 				tree = getCIDTree(creator);
 				if (null == tree) {
-					m_logger.warn(getClass(), "CIDTree range not initialized on backup superpeer " + m_nodeID);
+					m_logger.warn(getClass(),
+							"CIDTree range not initialized on backup superpeer " + NodeID.toHexString(m_nodeID));
 				} else {
 					tree.removeObject(chunkID);
 				}
@@ -1218,8 +1228,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		short[] backupSuperpeers;
 
 		id = p_insertIDRequest.getID();
-		m_logger.trace(getClass(),
-				"Got request: INSERT_ID_REQUEST from " + p_insertIDRequest.getSource() + ", id " + id);
+		m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from "
+				+ NodeID.toHexString(p_insertIDRequest.getSource()) + ", id " + id);
 
 		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID,
 				UPPER_CLOSED_INTERVAL)) {
@@ -1265,19 +1275,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		id = p_getChunkIDForNameserviceEntryRequest.getID();
 		m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
-				+ p_getChunkIDForNameserviceEntryRequest.getSource()
-				+ ", id " + id);
+				+ NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource()) + ", id " + id);
 
 		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID,
 				UPPER_CLOSED_INTERVAL)) {
 			m_mappingLock.lock();
 			chunkID = m_idTable.get(id);
 			m_mappingLock.unlock();
-			m_logger.trace(
-					getClass(),
-					"GET_CHUNKID_REQUEST from " + p_getChunkIDForNameserviceEntryRequest.getSource() + ", id " + id
-							+ ", reply chunkID "
-							+ Long.toHexString(chunkID));
+			m_logger.trace(getClass(),
+					"GET_CHUNKID_REQUEST from " + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource())
+							+ ", id " + id + ", reply chunkID " + ChunkID.toHexString(chunkID));
 		}
 		if (m_network.sendMessage(
 				new GetChunkIDForNameserviceEntryResponse(p_getChunkIDForNameserviceEntryRequest,
@@ -1294,7 +1301,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	private void incomingGetNameserviceEntryCountRequest(
 			final GetNameserviceEntryCountRequest p_getNameserviceEntryCountRequest) {
 		m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
-				+ p_getNameserviceEntryCountRequest.getSource());
+				+ NodeID.toHexString(p_getNameserviceEntryCountRequest.getSource()));
 
 		if (m_network.sendMessage(
 				new GetNameserviceEntryCountResponse(p_getNameserviceEntryCountRequest,
@@ -1335,7 +1342,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		MigrateRequest request;
 		boolean isBackup;
 
-		m_logger.trace(getClass(), "Got Message: MIGRATE_REQUEST from " + p_migrateRequest.getSource());
+		m_logger.trace(getClass(),
+				"Got Message: MIGRATE_REQUEST from " + NodeID.toHexString(p_migrateRequest.getSource()));
 
 		nodeID = p_migrateRequest.getNodeID();
 		chunkID = p_migrateRequest.getChunkID();
@@ -1347,7 +1355,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			tree = getCIDTree(creator);
 			if (null == tree) {
 				m_dataLock.unlock();
-				m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_nodeID);
+				m_logger.error(getClass(),
+						"CIDTree range not initialized on responsible superpeer " + NodeID.toHexString(m_nodeID));
 				if (m_network.sendMessage(
 						new MigrateResponse(p_migrateRequest, false)) != NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore request it
@@ -1378,7 +1387,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_dataLock.lock();
 			tree = getCIDTree(creator);
 			if (null == tree) {
-				m_logger.warn(getClass(), "CIDTree range not initialized on backup superpeer " + m_nodeID);
+				m_logger.warn(getClass(),
+						"CIDTree range not initialized on backup superpeer " + NodeID.toHexString(m_nodeID));
 			} else {
 				tree.migrateObject(chunkID, nodeID);
 			}
@@ -1412,7 +1422,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		MigrateRangeRequest request;
 		boolean isBackup;
 
-		m_logger.trace(getClass(), "Got Message: MIGRATE_RANGE_REQUEST from " + p_migrateRangeRequest.getSource());
+		m_logger.trace(getClass(),
+				"Got Message: MIGRATE_RANGE_REQUEST from " + NodeID.toHexString(p_migrateRangeRequest.getSource()));
 
 		nodeID = p_migrateRangeRequest.getNodeID();
 		startChunkID = p_migrateRangeRequest.getStartChunkID();
@@ -1430,7 +1441,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			tree = getCIDTree(creator);
 			if (null == tree) {
 				m_dataLock.unlock();
-				m_logger.error(getClass(), "CIDTree range not initialized on responsible superpeer " + m_nodeID);
+				m_logger.error(getClass(),
+						"CIDTree range not initialized on responsible superpeer " + NodeID.toHexString(m_nodeID));
 				if (m_network.sendMessage(
 						new MigrateRangeResponse(p_migrateRangeRequest, false)) != NetworkErrorCodes.SUCCESS) {
 					// Requesting peer is not available anymore, ignore it
@@ -1462,7 +1474,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_dataLock.lock();
 			tree = getCIDTree(creator);
 			if (null == tree) {
-				m_logger.warn(getClass(), "CIDTree range not initialized on backup superpeer " + m_nodeID);
+				m_logger.warn(getClass(),
+						"CIDTree range not initialized on backup superpeer " + NodeID.toHexString(m_nodeID));
 			} else {
 				tree.migrateRange(startChunkID, endChunkID, nodeID);
 			}
@@ -1494,7 +1507,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		InitRangeRequest request;
 		boolean isBackup;
 
-		m_logger.trace(getClass(), "Got Message: INIT_RANGE_REQUEST from " + p_initRangeRequest.getSource());
+		m_logger.trace(getClass(),
+				"Got Message: INIT_RANGE_REQUEST from " + NodeID.toHexString(p_initRangeRequest.getSource()));
 
 		primaryAndBackupPeers = new LookupRangeWithBackupPeers(p_initRangeRequest.getLookupRange());
 		startChunkIDRangeID = p_initRangeRequest.getStartChunkIDOrRangeID();
@@ -1572,7 +1586,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		ArrayList<Long> migrationBackupRanges;
 
 		m_logger.trace(getClass(),
-				"Got request: GET_ALL_BACKUP_RANGES_REQUEST " + p_getAllBackupRangesRequest.getSource());
+				"Got request: GET_ALL_BACKUP_RANGES_REQUEST "
+						+ NodeID.toHexString(p_getAllBackupRangesRequest.getSource()));
 
 		m_dataLock.lock();
 		tree = getCIDTree(p_getAllBackupRangesRequest.getNodeID());
@@ -1606,8 +1621,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			final SetRestorerAfterRecoveryMessage p_setRestorerAfterRecoveryMessage) {
 		LookupTree tree;
 
-		m_logger.trace(getClass(),
-				"Got request: SET_RESTORER_AFTER_RECOVERY_MESSAGE " + p_setRestorerAfterRecoveryMessage.getSource());
+		m_logger.trace(getClass(), "Got request: SET_RESTORER_AFTER_RECOVERY_MESSAGE "
+				+ NodeID.toHexString(p_setRestorerAfterRecoveryMessage.getSource()));
 
 		m_dataLock.lock();
 		tree = getCIDTree(p_setRestorerAfterRecoveryMessage.getOwner());

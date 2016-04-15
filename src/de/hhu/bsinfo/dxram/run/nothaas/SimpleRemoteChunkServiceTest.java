@@ -71,13 +71,13 @@ public class SimpleRemoteChunkServiceTest extends AbstractMain {
 
 		System.out.println("Remote chunks created: ");
 		for (int i = 0; i < chunkIDs.length; i++) {
-			System.out.println(Long.toHexString(chunkIDs[i]));
+			System.out.println(ChunkID.toHexString(chunkIDs[i]));
 		}
 
 		System.out.println("Setting chunk payload...");
 		for (Chunk chunk : chunks) {
 			m_nameserviceService.register(chunk, "C" + ChunkID.getLocalID(chunk.getID()));
-			System.out.println(Long.toHexString(chunk.getID()) + ": " + Long.toHexString(chunk.getID()));
+			System.out.println(ChunkID.toHexString(chunk.getID()) + ": " + ChunkID.toHexString(chunk.getID()));
 			chunk.getData().putLong(chunk.getID());
 		}
 
@@ -93,7 +93,7 @@ public class SimpleRemoteChunkServiceTest extends AbstractMain {
 				System.out.println("Getting chunk failed.");
 				return -1;
 			}
-			System.out.println(Long.toHexString(chunk.getData().getLong()));
+			System.out.println(ChunkID.toHexString(chunk.getData().getLong()));
 		}
 
 		System.out.println("Removing chunks...");

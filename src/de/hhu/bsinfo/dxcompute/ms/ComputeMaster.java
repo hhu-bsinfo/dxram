@@ -82,24 +82,24 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		boolean loop = true;
 		while (loop) {
 			switch (m_state) {
-				case STATE_SETUP:
-					stateSetup();
-					break;
-				case STATE_IDLE:
-					stateIdle();
-					break;
-				case STATE_EXECUTE:
-					stateExecute();
-					break;
-				case STATE_ERROR_DIE:
-					stateErrorDie();
-					break;
-				case STATE_TERMINATE:
-					loop = false;
-					break;
-				default:
-					assert 1 == 2;
-					break;
+			case STATE_SETUP:
+				stateSetup();
+				break;
+			case STATE_IDLE:
+				stateIdle();
+				break;
+			case STATE_EXECUTE:
+				stateExecute();
+				break;
+			case STATE_ERROR_DIE:
+				stateErrorDie();
+				break;
+			case STATE_TERMINATE:
+				loop = false;
+				break;
+			default:
+				assert 1 == 2;
+				break;
 			}
 		}
 	}
@@ -123,11 +123,11 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == MasterSlaveMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
-						incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
-						break;
-					default:
-						break;
+				case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
+					incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -254,7 +254,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		if (m_joinLock.tryLock()) {
 			if (m_signedOnSlaves.contains(p_message.getSource())) {
 				m_logger.warn(getClass(), "Joining slave, already joined: "
-						+ Integer.toHexString(p_message.getSource()));
+						+ NodeID.toHexString(p_message.getSource()));
 			} else {
 				m_signedOnSlaves.add(p_message.getSource());
 			}

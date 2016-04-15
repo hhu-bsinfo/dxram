@@ -15,6 +15,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.OverlayPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
 
@@ -57,7 +58,7 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	public LookupRange getLookupRange(final long p_chunkID) {
 		LookupRange ret = null;
 
-		m_logger.trace(getClass(), "Entering get with: p_chunkID=0x" + Long.toHexString(p_chunkID));
+		m_logger.trace(getClass(), "Entering get with: p_chunkID=" + ChunkID.toHexString(p_chunkID));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -117,7 +118,7 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	public void insertNameserviceEntry(final int p_id, final long p_chunkID) {
 
 		// Insert ChunkID <-> ApplicationID mapping
-		m_logger.trace(getClass(), "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + p_chunkID);
+		m_logger.trace(getClass(), "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + ChunkID.toHexString(p_chunkID));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -216,7 +217,8 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	 */
 	public void migrate(final long p_chunkID, final short p_nodeID) {
 
-		m_logger.trace(getClass(), "Entering migrate with: p_chunkID=" + p_chunkID + ", p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering migrate with: p_chunkID=" + ChunkID.toHexString(p_chunkID)
+				+ ", p_nodeID=" + NodeID.toHexString(p_nodeID));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -242,8 +244,8 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	 */
 	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 
-		m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + p_startCID + ", p_endChunkID="
-				+ p_endCID + ", p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + ChunkID.toHexString(p_startCID)
+				+ ", p_endChunkID=" + ChunkID.toHexString(p_endCID) + ", p_nodeID=" + NodeID.toHexString(p_nodeID));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -268,8 +270,8 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	public void initRange(final long p_firstChunkIDOrRangeID,
 			final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
 
-		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID=0x"
-				+ Long.toHexString(p_firstChunkIDOrRangeID) + ", p_primaryAndBackupPeers="
+		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID="
+				+ ChunkID.toHexString(p_firstChunkIDOrRangeID) + ", p_primaryAndBackupPeers="
 				+ p_primaryAndBackupPeers);
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -290,7 +292,7 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	public BackupRange[] getAllBackupRanges(final short p_nodeID) {
 		BackupRange[] ret = null;
 
-		m_logger.trace(getClass(), "Entering getAllBackupRanges with: p_nodeID=" + p_nodeID);
+		m_logger.trace(getClass(), "Entering getAllBackupRanges with: p_nodeID=" + NodeID.toHexString(p_nodeID));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -309,7 +311,7 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	 */
 	public void setRestorerAfterRecovery(final short p_owner) {
 
-		m_logger.trace(getClass(), "Entering updateAllAfterRecovery with: p_owner=" + p_owner);
+		m_logger.trace(getClass(), "Entering updateAllAfterRecovery with: p_owner=" + NodeID.toHexString(p_owner));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");

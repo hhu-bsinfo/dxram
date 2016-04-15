@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.backup;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -75,7 +77,7 @@ public final class BackupRange implements Importable, Exportable {
 			if (m_backupPeers.length == 3) {
 				ret =
 						((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-								+ (m_backupPeers[0] & 0x000000000000FFFFL);
+						+ (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else if (m_backupPeers.length == 2) {
 				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else {
@@ -95,14 +97,15 @@ public final class BackupRange implements Importable, Exportable {
 	public String toString() {
 		String ret;
 
-		ret = "" + m_firstChunkIDORRangeID;
+		ret = "" + ChunkID.toHexString(m_firstChunkIDORRangeID);
 		if (null != m_backupPeers) {
 			if (m_backupPeers.length == 3) {
-				ret = "[" + m_backupPeers[0] + ", " + m_backupPeers[1] + ", " + m_backupPeers[2] + "]";
+				ret = "[" + NodeID.toHexString(m_backupPeers[0]) + ", " + NodeID.toHexString(m_backupPeers[1])
+						+ ", " + NodeID.toHexString(m_backupPeers[2]) + "]";
 			} else if (m_backupPeers.length == 2) {
-				ret = "[" + m_backupPeers[0] + ", " + m_backupPeers[1] + "]";
+				ret = "[" + NodeID.toHexString(m_backupPeers[0]) + ", " + NodeID.toHexString(m_backupPeers[1]) + "]";
 			} else {
-				ret = "[" + m_backupPeers[0] + "]";
+				ret = "[" + NodeID.toHexString(m_backupPeers[0]) + "]";
 			}
 		} else {
 			ret = "no backup peers";

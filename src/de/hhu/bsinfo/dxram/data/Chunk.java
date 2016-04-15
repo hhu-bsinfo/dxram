@@ -134,7 +134,7 @@ public class Chunk implements DataStructure {
 
 	@Override
 	public final String toString() {
-		return this.getClass().getSimpleName() + "[" + Long.toHexString(m_chunkID) + ", " + getDataSize() + "]";
+		return this.getClass().getSimpleName() + "[" + ChunkID.toHexString(m_chunkID) + ", " + getDataSize() + "]";
 	}
 
 	@Override

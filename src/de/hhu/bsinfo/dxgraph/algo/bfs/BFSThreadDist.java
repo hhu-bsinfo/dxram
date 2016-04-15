@@ -175,7 +175,7 @@ public class BFSThreadDist extends Thread {
 							
 							if (msg.getNumVerticesInBatch() == msg.getBatchSize()) {
 								if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
-									m_loggerService.error(getClass(), "Sending vertex message to node " + Integer.toHexString(creatorId) + " failed");
+									m_loggerService.error(getClass(), "Sending vertex message to node " + NodeID.toHexString(creatorId) + " failed");
 									return; 
 								}
 								

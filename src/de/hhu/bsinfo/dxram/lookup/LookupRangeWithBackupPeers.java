@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -213,24 +215,22 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 		if (null != m_backupPeers) {
 			if (m_backupPeers.length == 3) {
 				if (m_backupPeers[0] == -1) {
-					ret = "0x" + Integer.toHexString(m_primaryPeer) + ", backup peers unknown (ask 0x" + Integer.toHexString(m_primaryPeer) + ")";
+					ret = NodeID.toHexString(m_primaryPeer) + ", backup peers unknown (ask " + NodeID.toHexString(m_primaryPeer) + ")";
 				} else {
-					ret =
-							"0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x"
-									+ Integer.toHexString(m_backupPeers[1]) + ", 0x" + Integer.toHexString(m_backupPeers[2]) + "]";
+					ret = NodeID.toHexString(m_primaryPeer) + ", [" + NodeID.toHexString(m_backupPeers[0]) + ", "
+							+ NodeID.toHexString(m_backupPeers[1]) + ", " + NodeID.toHexString(m_backupPeers[2]) + "]";
 				}
 			} else if (m_backupPeers.length == 2) {
-				ret =
-						"0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + ", 0x"
-								+ Integer.toHexString(m_backupPeers[1]) + "]";
+				ret = NodeID.toHexString(m_primaryPeer) + ", [" + NodeID.toHexString(m_backupPeers[0]) + ", "
+						+ NodeID.toHexString(m_backupPeers[1]) + "]";
 			} else {
-				ret = "0x" + Integer.toHexString(m_primaryPeer) + ", [0x" + Integer.toHexString(m_backupPeers[0]) + "]";
+				ret = NodeID.toHexString(m_primaryPeer) + ", [" + NodeID.toHexString(m_backupPeers[0]) + "]";
 			}
 		} else {
-			ret = "0x" + Integer.toHexString(m_primaryPeer) + ", no backup peers";
+			ret = NodeID.toHexString(m_primaryPeer) + ", no backup peers";
 		}
 		if (null != m_range) {
-			ret += ", (0x" + Long.toHexString(m_range[0]) + ", 0x" + Long.toHexString(m_range[1]) + ")";
+			ret += ", (" + ChunkID.toHexString(m_range[0]) + ", " + ChunkID.toHexString(m_range[1]) + ")";
 		}
 		return ret;
 	}

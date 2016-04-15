@@ -495,7 +495,7 @@ public final class CIDTable {
 		ArrayList<Long> ret;
 		long entry;
 
-		// System.out.println("Entering with " + Long.toHexString(p_unfinishedCID));
+		// System.out.println("Entering with " + ChunkID.toHexString(p_unfinishedCID));
 
 		ret = new ArrayList<Long>();
 		for (int i = 0; i < ENTRIES_PER_LID_LEVEL; i++) {

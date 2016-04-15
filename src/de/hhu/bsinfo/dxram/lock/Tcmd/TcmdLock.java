@@ -48,15 +48,17 @@ public class TcmdLock extends AbstractTerminalCommand {
 		ChunkService chunkService = getTerminalDelegate().getDXRAMService(ChunkService.class);
 		AbstractLockService lockService = getTerminalDelegate().getDXRAMService(AbstractLockService.class);
 
-		if (__checkID(cid, nid, lid)) // check if size, cid and lid are valid
+		if (__checkID(cid, nid, lid))
+		{
 			return false; // if the values are not valid the function will do nothing and returns
+		}
 
 		cid = __getCid(cid, lid, nid);
 
 		Pair<Integer, Chunk[]> chunk = chunkService.get(new long[] {cid});
 
 		if (chunk.second() == null) {
-			System.out.println("Getting Chunk with id '" + Long.toHexString(cid) + "' failed");
+			System.out.println("Getting Chunk with id '" + ChunkID.toHexString(cid) + "' failed");
 			return false;
 		}
 
@@ -72,8 +74,9 @@ public class TcmdLock extends AbstractTerminalCommand {
 		// we favor full cid
 		// take lid
 		if (cid == null) {
-			if (nid == null)
+			if (nid == null) {
 				nid = bootService.getNodeID();
+			}
 
 			// create cid
 			cid = ChunkID.getChunkID(nid, lid);

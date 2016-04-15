@@ -30,7 +30,7 @@ public final class ClusterLogTest3 {
 	protected static final long BYTES_TO_UPDATE = 6000128000L;
 	protected static final int CHUNK_SIZE = 100;
 	protected static final int CHUNKS_PER_PUT = 100;
-	protected static final int CHUNKS_PER_UPDATE = 500;
+	protected static final int CHUNKS_PER_UPDATE = 512;
 	protected static final int THREADS = 8;
 
 	// Attributes
@@ -156,10 +156,12 @@ public final class ClusterLogTest3 {
 		 */
 		@Override
 		public void run() {
-			final short[] nodeIDs = new short[3];
+			/*-final short[] nodeIDs = new short[3];
 			nodeIDs[0] = 960;
 			nodeIDs[1] = 640;
-			nodeIDs[2] = -15807;
+			nodeIDs[2] = -15807;*/
+			final short[] nodeIDs = new short[1];
+			nodeIDs[0] = 320;
 
 			long start;
 			long counter = 0;
@@ -193,9 +195,9 @@ public final class ClusterLogTest3 {
 					m_chunkService.put(chunks);
 
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
-					if (counter % (10 * 1000 * 1000) == 0) {
+					if (counter % (10 * 1024 * 1024) == 0) {
 						System.out.println(Thread.currentThread().getName()
-								+ ": Updated 10.000.000 bytes with random distribution(left: " + (BYTES_TO_UPDATE / THREADS - counter) + ").");
+								+ ": Updated 10.485.760 bytes with random distribution(left: " + (BYTES_TO_UPDATE / THREADS - counter) + ").");
 					}
 				}
 			} else {
@@ -210,9 +212,9 @@ public final class ClusterLogTest3 {
 					m_chunkService.put(chunks);
 
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
-					if (counter % (10 * 1000 * 1000) == 0) {
+					if (counter % (10 * 1024 * 1024) == 0) {
 						System.out.println(Thread.currentThread().getName()
-								+ ": Updated 10.000.000 bytes with zipfian distribution(left: " + (BYTES_TO_UPDATE / THREADS - counter) + ").");
+								+ ": Updated 10.485.760 bytes with zipfian distribution(left: " + (BYTES_TO_UPDATE / THREADS - counter) + ").");
 					}
 				}
 			}

@@ -480,7 +480,7 @@ public class NameserviceHashTable {
 		for (int i = 0; i < m_elementCapacity; i++) {
 			iter = getKey(i);
 			if (iter != 0) {
-				System.out.println("Key: " + iter + ", value: " + getValue(i));
+				System.out.println("Key: " + iter + ", value: " + ChunkID.toHexString(getValue(i)));
 			}
 		}
 	}
@@ -509,7 +509,7 @@ public class NameserviceHashTable {
 		}
 
 		for (Entry entry : list) {
-			System.out.println("Key: " + entry.m_key + ", value: " + entry.m_value);
+			System.out.println("Key: " + entry.m_key + ", value: " + ChunkID.toHexString(entry.m_value));
 		}
 	}
 

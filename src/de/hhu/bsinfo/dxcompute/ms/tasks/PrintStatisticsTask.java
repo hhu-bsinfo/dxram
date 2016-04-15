@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import de.hhu.bsinfo.menet.NodeID;
 
 public abstract class PrintStatisticsTask extends AbstractTaskPayload {
 
@@ -27,7 +28,7 @@ public abstract class PrintStatisticsTask extends AbstractTaskPayload {
 		p_outputStream.println("---------------------------------------------------------");
 		p_outputStream.println(dateFormat.format(date));
 		short nodeId = p_bootService.getNodeID();
-		p_outputStream.println("NodeID: " + Integer.toHexString(nodeId) + " (" + nodeId + ")");
+		p_outputStream.println("NodeID: " + NodeID.toHexString(nodeId) + " (" + nodeId + ")");
 		p_outputStream.println("Role: " + p_bootService.getNodeRole(nodeId));
 		p_outputStream.println("---------------------------------------------------------");
 

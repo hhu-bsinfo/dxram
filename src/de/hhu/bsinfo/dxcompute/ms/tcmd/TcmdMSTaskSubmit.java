@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxcompute.ms.tcmd;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -45,7 +46,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand {
 
 		if (chunkIDs != null) {
 
-			System.out.println("Created chunk of size " + size + ": 0x" + Long.toHexString(chunkIDs[0]));
+			System.out.println("Created chunk of size " + size + ": 0x" + ChunkID.toHexString(chunkIDs[0]));
 		} else {
 			System.out.println("Creating chunk failed.");
 		}

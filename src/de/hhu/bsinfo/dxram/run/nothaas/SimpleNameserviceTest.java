@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -87,8 +88,8 @@ public class SimpleNameserviceTest extends AbstractMain {
 		for (Entry<Long, String> entry : verificationMap.entrySet()) {
 			long chunkID = m_nameserviceService.getChunkID(entry.getValue(), -1);
 			if (chunkID != entry.getKey().longValue()) {
-				System.out.println("ChunkID from name service (" + Long.toHexString(entry.getKey())
-						+ ") not matching original chunk ID (" + Long.toHexString(chunkID) + "), for name "
+				System.out.println("ChunkID from name service (" + ChunkID.toHexString(entry.getKey())
+						+ ") not matching original chunk ID (" + ChunkID.toHexString(chunkID) + "), for name "
 						+ entry.getValue() + ".");
 			}
 		}

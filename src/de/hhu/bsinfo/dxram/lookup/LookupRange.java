@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -119,9 +121,9 @@ public final class LookupRange implements Importable, Exportable {
 	public String toString() {
 		String ret;
 
-		ret = m_primaryPeer + "";
+		ret = NodeID.toHexString(m_primaryPeer) + "";
 		if (null != m_range) {
-			ret += ", (" + m_range[0] + ", " + m_range[1] + ")";
+			ret += ", (" + ChunkID.toHexString(m_range[0]) + ", " + ChunkID.toHexString(m_range[1]) + ")";
 		}
 		return ret;
 	}

@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.PutMessage;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -26,6 +27,7 @@ import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * This service provides access to the backend storage system.
@@ -109,7 +111,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 					+ p_dataStructures.length + ") ...]");
 		} else {
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+					+ p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
 		}
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -162,7 +164,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			}
 			default: {
 				m_logger.error(getClass(),
-						"Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+						"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
 				break;
 			}
 			}
@@ -180,7 +182,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				for (final DataStructure dataStructure : entry.getValue()) {
 					if (m_memoryManager.put(dataStructure) != MemoryErrorCodes.SUCCESS) {
 						m_logger.error(getClass(),
-								"Putting local chunk " + Long.toHexString(dataStructure.getID()) + " failed.");
+								"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
 					}
 				}
 				m_memoryManager.unlockAccess();
@@ -191,7 +193,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 						chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
 				NetworkErrorCodes error = m_network.sendMessage(message);
 				if (error != NetworkErrorCodes.SUCCESS) {
-					m_logger.error(getClass(), "Sending chunk put message to peer " + Integer.toHexString(peer & 0xFFFF)
+					m_logger.error(getClass(), "Sending chunk put message to peer " + NodeID.toHexString(peer)
 							+ " failed: " + error);
 
 					// TODO
@@ -209,7 +211,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 					+ p_dataStructures.length + ") ...]");
 		} else {
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") " + Long.toHexString(p_dataStructures[0].getID()) + ", ...]");
+					+ p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
 		}
 		return;
 	}
@@ -280,7 +282,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			MemoryErrorCodes err = m_memoryManager.put(chunks[i]);
 			if (err != MemoryErrorCodes.SUCCESS) {
 				// does not exist (anymore)
-				m_logger.warn(getClass(), "Putting chunk " + Long.toHexString(chunks[i].getID()) + " failed: " + err);
+				m_logger.warn(getClass(), "Putting chunk " + ChunkID.toHexString(chunks[i].getID()) + " failed: " + err);
 			}
 		}
 		m_memoryManager.unlockAccess();
