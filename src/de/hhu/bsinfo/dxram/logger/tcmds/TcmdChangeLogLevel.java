@@ -8,7 +8,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the loggerlevel command which changes the logger level.
- * The available logger levels are: ISABLED, ERROR, WARN, INFO, DEBUG, TRACE
+ * The available logger levels are: DISABLED, ERROR, WARN, INFO, DEBUG, TRACE
  * @author Mike
  */
 
