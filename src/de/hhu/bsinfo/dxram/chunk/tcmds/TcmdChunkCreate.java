@@ -7,6 +7,11 @@ import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * This class handles the chunkcreate command which creates a chunk via the terminal
+ * @author Mike Birkhoff
+ */
+
 public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_SIZE = new Argument("size", null, false, "Size of the chunk to create");
@@ -30,7 +35,7 @@ public class TcmdChunkCreate extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public boolean execute(ArgumentList p_arguments) {
+	public boolean execute(final ArgumentList p_arguments) {
 
 		Integer size = p_arguments.getArgumentValue(MS_ARG_SIZE, Integer.class);
 		Short nodeID = p_arguments.getArgumentValue(MS_ARG_NODEID, Short.class);

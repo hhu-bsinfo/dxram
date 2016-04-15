@@ -7,6 +7,11 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * This class handles the chunkstatus command which shows the Chunk Service status from a specified Node
+ * @author Mike
+ */
+
 public class TcmdChunkStatus extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_NID =

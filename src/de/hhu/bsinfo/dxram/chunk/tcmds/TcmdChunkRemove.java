@@ -7,6 +7,11 @@ import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * This class handles the chunkremove command which removes a chunk specified by CID or LID and NID
+ * @author Mike
+ */
+
 public class TcmdChunkRemove extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_CID = new Argument("cid", null, true, "Full chunk id of the chunk to remove");
@@ -33,7 +38,7 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public boolean execute(ArgumentList p_arguments) {
+	public boolean execute(final ArgumentList p_arguments) {
 		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
 		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
 		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);

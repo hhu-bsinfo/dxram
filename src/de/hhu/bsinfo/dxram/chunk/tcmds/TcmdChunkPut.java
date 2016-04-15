@@ -17,6 +17,11 @@ import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserInt;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserLong;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserShort;
 
+/**
+ * This class handles the chunkput command which puts a chunk of data into a chunk specified by CID or LID and NID
+ * @author Mike Birkhoff
+ */
+
 public class TcmdChunkPut extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_CID =

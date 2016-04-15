@@ -13,6 +13,11 @@ import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * This class handles the chunkget commando which lists the content of a specified chunk in the terminal
+ * @author Mike
+ */
+
 public class TcmdChunkGet extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_CID =
@@ -53,7 +58,7 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public boolean execute(ArgumentList p_arguments) {
+	public boolean execute(final ArgumentList p_arguments) {
 
 		Long cid = p_arguments.getArgumentValue(MS_ARG_CID, Long.class);
 		Long lid = p_arguments.getArgumentValue(MS_ARG_LID, Long.class);
