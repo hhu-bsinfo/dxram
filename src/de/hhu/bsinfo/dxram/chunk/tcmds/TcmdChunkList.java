@@ -10,6 +10,11 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * This class handles the chunklist command which lists all chunks from a node
+ * @author Mike Birkhoff
+ */
+
 public class TcmdChunkList extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_NID =
