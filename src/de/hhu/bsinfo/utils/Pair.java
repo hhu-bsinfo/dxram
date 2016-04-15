@@ -14,6 +14,13 @@ public class Pair<T, K> {
 	public K m_second;
 
 	/**
+	 * Default constructor
+	 */
+	public Pair() {
+
+	}
+
+	/**
 	 * Creates an instance of Pair
 	 * @param p_first
 	 *            first attribute

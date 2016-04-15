@@ -19,6 +19,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.InitRangeRequest;
@@ -43,6 +45,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.CRC16;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Peer functionality for overlay
@@ -313,6 +316,36 @@ public class OverlayPeer implements MessageReceiver {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * Get all available nameservice entries.
+	 * @return List of nameservice entries.
+	 */
+	public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
+		ArrayList<Pair<Integer, Long>> entries = new ArrayList<Pair<Integer, Long>>();
+		Short[] superpeers;
+		GetNameserviceEntriesRequest request;
+		GetNameserviceEntriesResponse response;
+
+		m_overlayLock.lock();
+		superpeers = m_superpeers.toArray(new Short[m_superpeers.size()]);
+		m_overlayLock.unlock();
+
+		for (short superpeer : superpeers) {
+			request = new GetNameserviceEntriesRequest(superpeer);
+			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(getClass(), "Could not determine nameservice entries");
+				entries = null;
+				break;
+			} else {
+				response = request.getResponse(GetNameserviceEntriesResponse.class);
+				ArrayList<Pair<Integer, Long>> tmpEntries = response.getEntries();
+				entries.addAll(tmpEntries);
+			}
+		}
+
+		return entries;
 	}
 
 	/* Migration */
@@ -657,11 +690,11 @@ public class OverlayPeer implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
-					incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
-					break;
-				default:
-					break;
+					case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
+						incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -697,6 +730,10 @@ public class OverlayPeer implements MessageReceiver {
 				GetNameserviceEntryCountRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE,
 				GetNameserviceEntryCountResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST,
+				GetNameserviceEntriesRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE,
+				GetNameserviceEntriesResponse.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST,
 				MigrateRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE,

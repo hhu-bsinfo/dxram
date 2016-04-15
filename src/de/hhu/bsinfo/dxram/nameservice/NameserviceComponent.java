@@ -1,6 +1,10 @@
 
 package de.hhu.bsinfo.dxram.nameservice;
 
+import java.util.ArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.NameServiceIndexData;
@@ -10,6 +14,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Nameservice component providing mappings of string identifiers to chunkIDs.
@@ -26,6 +31,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	private NameServiceStringConverter m_converter;
 
 	private NameServiceIndexData m_indexData;
+	private Lock m_indexDataLock;
 
 	/**
 	 * Constructor
@@ -41,22 +47,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	}
 
 	/**
-	 * Register a chunk id for a specific name.
-	 * @param p_chunkId
-	 *            Chunk id to register.
-	 * @param p_name
-	 *            Name to associate with the ID of the DataStructure.
-	 */
-	public void register(final long p_chunkId, final String p_name) {
-		final int id = m_converter.convert(p_name);
-		m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_chunkId) + ", name "
-				+ p_name + ", id " + id);
-
-		m_lookup.insertNameserviceEntry(id, p_chunkId);
-		insertMapping(id, p_chunkId);
-	}
-
-	/**
 	 * Register a DataStructure for a specific name.
 	 * @param p_dataStructure
 	 *            DataStructure to register.
@@ -64,13 +54,24 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	 *            Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final DataStructure p_dataStructure, final String p_name) {
+		register(p_dataStructure.getID(), p_name);
+	}
+
+	/**
+	 * Register a chunk id for a specific name.
+	 * @param p_chunkId
+	 *            Chunk id to register.
+	 * @param p_name
+	 *            Name to associate with the ID of the DataStructure.
+	 */
+	public void register(final long p_chunkId, final String p_name) {
 		try {
 			final int id = m_converter.convert(p_name);
-			m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_dataStructure.getID()) + ", name "
+			m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_chunkId) + ", name "
 					+ p_name + ", id " + id);
 
-			m_lookup.insertNameserviceEntry(id, p_dataStructure.getID());
-			insertMapping(id, p_dataStructure.getID());
+			m_lookup.insertNameserviceEntry(id, p_chunkId);
+			insertMapping(id, p_chunkId);
 		} catch (final IllegalArgumentException e) {
 			m_logger.error(getClass(), "Lookup in name service failed", e);
 		}
@@ -109,6 +110,22 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		return m_lookup.getNameserviceEntryCount();
 	}
 
+	/**
+	 * Get all available name mappings
+	 * @return List of available name mappings
+	 */
+	public ArrayList<Pair<String, Long>> getAllEntries() {
+		ArrayList<Pair<String, Long>> list = new ArrayList<Pair<String, Long>>();
+
+		ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
+		// convert index representation
+		for (Pair<Integer, Long> entry : entries) {
+			list.add(new Pair<String, Long>(m_converter.convert(entry.first()), entry.second()));
+		}
+
+		return list;
+	}
+
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(NameserviceConfigurationValues.Component.TYPE);
@@ -134,6 +151,8 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 			}
 		}
 
+		m_indexDataLock = new ReentrantLock(false);
+
 		return true;
 	}
 
@@ -146,6 +165,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		m_converter = null;
 
 		m_indexData = null;
+		m_indexDataLock = null;
 
 		return true;
 	}
@@ -159,6 +179,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	 * @return whether this operation was successful
 	 */
 	private boolean insertMapping(final int p_key, final long p_chunkID) {
+		m_indexDataLock.lock();
 		if (!m_indexData.insertMapping(p_key, p_chunkID)) {
 			// index chunk full, create new one
 			final NameServiceIndexData nextIndexChunk = new NameServiceIndexData();
@@ -172,6 +193,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 			m_indexData.setNextIndexDataChunk(nextIndexChunk.getID());
 			if (!m_chunk.putChunk(m_indexData)) {
 				m_logger.error(getClass(), "Updating current index chunk with successor failed.");
+				m_indexDataLock.unlock();
 				return false;
 			}
 
@@ -182,9 +204,11 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		m_indexData.insertMapping(p_key, p_chunkID);
 		if (!m_chunk.putChunk(m_indexData)) {
 			m_logger.error(getClass(), "Updating current index chunk failed.");
+			m_indexDataLock.unlock();
 			return false;
 		}
 
+		m_indexDataLock.unlock();
 		return true;
 	}
 }

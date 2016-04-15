@@ -14,6 +14,7 @@ public final class NameServiceStringConverter {
 
 	private String m_nameserviceType;
 	private Map<Character, Integer> m_charMap = new HashMap<Character, Integer>();
+	private Map<Integer, Character> m_inverseCharMap = new HashMap<Integer, Character>();
 
 	/**
 	 * Creates an instance of StringConverter
@@ -91,6 +92,74 @@ public final class NameServiceStringConverter {
 			m_charMap.put('Z', 62);
 
 			m_charMap.put('-', 63);
+
+			m_inverseCharMap = new HashMap<Integer, Character>();
+			m_inverseCharMap.put(1, '0');
+			m_inverseCharMap.put(2, '1');
+			m_inverseCharMap.put(3, '2');
+			m_inverseCharMap.put(4, '3');
+			m_inverseCharMap.put(5, '4');
+			m_inverseCharMap.put(6, '5');
+			m_inverseCharMap.put(7, '6');
+			m_inverseCharMap.put(8, '7');
+			m_inverseCharMap.put(9, '8');
+			m_inverseCharMap.put(10, '9');
+
+			m_inverseCharMap.put(11, 'a');
+			m_inverseCharMap.put(12, 'b');
+			m_inverseCharMap.put(13, 'c');
+			m_inverseCharMap.put(14, 'd');
+			m_inverseCharMap.put(15, 'e');
+			m_inverseCharMap.put(16, 'f');
+			m_inverseCharMap.put(17, 'g');
+			m_inverseCharMap.put(18, 'h');
+			m_inverseCharMap.put(19, 'i');
+			m_inverseCharMap.put(20, 'j');
+			m_inverseCharMap.put(21, 'k');
+			m_inverseCharMap.put(22, 'l');
+			m_inverseCharMap.put(23, 'm');
+			m_inverseCharMap.put(24, 'n');
+			m_inverseCharMap.put(25, 'o');
+			m_inverseCharMap.put(26, 'p');
+			m_inverseCharMap.put(27, 'q');
+			m_inverseCharMap.put(28, 'r');
+			m_inverseCharMap.put(29, 's');
+			m_inverseCharMap.put(30, 't');
+			m_inverseCharMap.put(31, 'u');
+			m_inverseCharMap.put(32, 'v');
+			m_inverseCharMap.put(33, 'w');
+			m_inverseCharMap.put(34, 'x');
+			m_inverseCharMap.put(35, 'y');
+			m_inverseCharMap.put(36, 'z');
+
+			m_inverseCharMap.put(37, 'A');
+			m_inverseCharMap.put(38, 'B');
+			m_inverseCharMap.put(39, 'C');
+			m_inverseCharMap.put(40, 'D');
+			m_inverseCharMap.put(41, 'E');
+			m_inverseCharMap.put(42, 'F');
+			m_inverseCharMap.put(43, 'G');
+			m_inverseCharMap.put(44, 'H');
+			m_inverseCharMap.put(45, 'I');
+			m_inverseCharMap.put(46, 'J');
+			m_inverseCharMap.put(47, 'K');
+			m_inverseCharMap.put(48, 'L');
+			m_inverseCharMap.put(49, 'M');
+			m_inverseCharMap.put(50, 'N');
+			m_inverseCharMap.put(51, 'O');
+			m_inverseCharMap.put(52, 'P');
+			m_inverseCharMap.put(53, 'Q');
+			m_inverseCharMap.put(54, 'R');
+			m_inverseCharMap.put(55, 'S');
+			m_inverseCharMap.put(56, 'T');
+			m_inverseCharMap.put(57, 'U');
+			m_inverseCharMap.put(58, 'V');
+			m_inverseCharMap.put(59, 'W');
+			m_inverseCharMap.put(60, 'X');
+			m_inverseCharMap.put(61, 'Y');
+			m_inverseCharMap.put(62, 'Z');
+
+			m_inverseCharMap.put(63, '-');
 		}
 	}
 
@@ -110,7 +179,8 @@ public final class NameServiceStringConverter {
 
 		if (m_nameserviceType.equals("NAME")) {
 			if (p_name.length() > 5) {
-				throw new IllegalArgumentException("String is too long! Only five characters are allowed. For greater numbers set configuration to ID");
+				throw new IllegalArgumentException(
+						"String is too long! Only five characters are allowed. For greater numbers set configuration to ID");
 			}
 
 			chars = p_name.toCharArray();
@@ -125,4 +195,28 @@ public final class NameServiceStringConverter {
 		return ret;
 	}
 
+	/**
+	 * Converts an integer index to a string. String length is is 5 chars.
+	 * @param p_index
+	 *            Index to convert
+	 * @return String representation
+	 */
+	public String convert(final int p_index) {
+		String ret = null;
+
+		if (m_nameserviceType.equals("NAME")) {
+			ret = new String();
+
+			for (int i = 0; i < 32 / 6; i++) {
+				Character c = m_inverseCharMap.get((p_index >> i * 6) & 0x3F);
+				if (c != null) {
+					ret += c;
+				}
+			}
+		} else {
+			ret = Integer.toString(p_index);
+		}
+
+		return ret;
+	}
 }

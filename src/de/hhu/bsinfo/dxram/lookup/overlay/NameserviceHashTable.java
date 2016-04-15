@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -10,6 +11,7 @@ import java.util.TreeSet;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.CRC16;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * HashTable to store ID-Mappings (Linear probing)
@@ -36,7 +38,8 @@ public class NameserviceHashTable {
 	 * @param p_logger
 	 *            the LoggerComponent
 	 */
-	public NameserviceHashTable(final int p_initialElementCapacity, final float p_loadFactor, final LoggerComponent p_logger) {
+	public NameserviceHashTable(final int p_initialElementCapacity, final float p_loadFactor,
+			final LoggerComponent p_logger) {
 		super();
 
 		m_logger = p_logger;
@@ -191,6 +194,24 @@ public class NameserviceHashTable {
 	}
 
 	/**
+	 * Get all entries of the nameservice map.
+	 * @return Array list with entries as pairs of index + value
+	 */
+	public ArrayList<Pair<Integer, Long>> get() {
+		ArrayList<Pair<Integer, Long>> entries = new ArrayList<Pair<Integer, Long>>(m_count);
+		int iter;
+
+		for (int i = 0; i < m_elementCapacity; i++) {
+			iter = getKey(i);
+			if (iter != 0) {
+				// rebase index: decrement by one (refer to insert calls)
+				entries.add(new Pair<Integer, Long>(iter - 1, getValue(i)));
+			}
+		}
+		return entries;
+	}
+
+	/**
 	 * Maps the given key to the given value in IDHashTable
 	 * @param p_key
 	 *            the key (is incremented before insertion to avoid 0)
@@ -313,12 +334,14 @@ public class NameserviceHashTable {
 		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newTable;
 
-		m_logger.trace(getClass(), "Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
+		m_logger.trace(getClass(),
+				"Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
 
 		m_count = 0;
 		while (index < oldElementCapacity) {
 			if (oldTable[index * 3] != 0) {
-				put(oldTable[index * 3] - 1, (long) oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2] & 0xFFFFFFFFL);
+				put(oldTable[index * 3] - 1,
+						(long) oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2] & 0xFFFFFFFFL);
 			}
 			index = (index + 1) % m_elementCapacity;
 		}
@@ -389,7 +412,8 @@ public class NameserviceHashTable {
 		for (int i = 0; i < m_elementCapacity; i++) {
 			iter = getKey(i);
 			if (iter != 0) {
-				if (p_isOnlySuperpeer || OverlayHelper.isNodeInRange(p_hashGenerator.hash(iter - 1), p_bound1, p_bound2, p_interval)) {
+				if (p_isOnlySuperpeer || OverlayHelper.isNodeInRange(p_hashGenerator.hash(iter - 1), p_bound1, p_bound2,
+						p_interval)) {
 					data.putInt(iter - 1);
 					data.putLong(getValue(i));
 					count++;
@@ -421,7 +445,8 @@ public class NameserviceHashTable {
 		for (int i = 0; i < m_elementCapacity; i++) {
 			iter = getKey(i);
 			if (iter != 0) {
-				if (p_isOnlySuperpeer || OverlayHelper.isNodeInRange(p_hashGenerator.hash(iter - 1), p_bound1, p_bound2, p_interval)) {
+				if (p_isOnlySuperpeer || OverlayHelper.isNodeInRange(p_hashGenerator.hash(iter - 1), p_bound1, p_bound2,
+						p_interval)) {
 					count++;
 				}
 			}

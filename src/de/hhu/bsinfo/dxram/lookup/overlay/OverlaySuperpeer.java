@@ -25,6 +25,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.InitRangeRequest;
@@ -1303,6 +1305,23 @@ public class OverlaySuperpeer implements MessageReceiver {
 	}
 
 	/**
+	 * Handles an incoming GetNameserviceEntriesRequest
+	 * @param p_getNameserviceEntriesRequest
+	 *            the GetNameserviceEntriesRequest
+	 */
+	private void incomingGetNameserviceEntriesRequest(
+			final GetNameserviceEntriesRequest p_getNameserviceEntriesRequest) {
+		m_logger.trace(getClass(), "Got request: GET_NAMESERVICE_ENTRIES from "
+				+ p_getNameserviceEntriesRequest.getSource());
+
+		if (m_network.sendMessage(
+				new GetNameserviceEntriesResponse(p_getNameserviceEntriesRequest,
+						m_idTable.get())) != NetworkErrorCodes.SUCCESS) {
+			// Requesting peer is not available anymore, ignore it
+		}
+	}
+
+	/**
 	 * Handles an incoming MigrateRequest
 	 * @param p_migrateRequest
 	 *            the MigrateRequest
@@ -1626,6 +1645,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 					case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST:
 						incomingGetNameserviceEntryCountRequest((GetNameserviceEntryCountRequest) p_message);
 						break;
+					case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST:
+						incomingGetNameserviceEntriesRequest((GetNameserviceEntriesRequest) p_message);
+						break;
 					case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
 						incomingMigrateRequest((MigrateRequest) p_message);
 						break;
@@ -1678,6 +1700,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 				GetNameserviceEntryCountRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE,
 				GetNameserviceEntryCountResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST,
+				GetNameserviceEntriesRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE,
+				GetNameserviceEntriesResponse.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST,
 				MigrateRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE,
@@ -1733,6 +1759,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.register(InsertNameserviceEntriesRequest.class, this);
 		m_network.register(GetChunkIDForNameserviceEntryRequest.class, this);
 		m_network.register(GetNameserviceEntryCountRequest.class, this);
+		m_network.register(GetNameserviceEntriesRequest.class, this);
 		m_network.register(MigrateRequest.class, this);
 		m_network.register(MigrateRangeRequest.class, this);
 		m_network.register(InitRangeRequest.class, this);

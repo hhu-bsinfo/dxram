@@ -21,27 +21,29 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_RESPONSE = 10;
 	public static final byte SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST = 11;
 	public static final byte SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_RESPONSE = 12;
-	public static final byte SUBTYPE_MIGRATE_REQUEST = 13;
-	public static final byte SUBTYPE_MIGRATE_RESPONSE = 14;
-	public static final byte SUBTYPE_MIGRATE_RANGE_REQUEST = 15;
-	public static final byte SUBTYPE_MIGRATE_RANGE_RESPONSE = 16;
-	public static final byte SUBTYPE_INIT_RANGE_REQUEST = 17;
-	public static final byte SUBTYPE_INIT_RANGE_RESPONSE = 18;
-	public static final byte SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST = 19;
-	public static final byte SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE = 20;
-	public static final byte SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE = 21;
-	public static final byte SUBTYPE_PING_SUPERPEER_MESSAGE = 22;
+	public static final byte SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST = 13;
+	public static final byte SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE = 14;
+	public static final byte SUBTYPE_MIGRATE_REQUEST = 15;
+	public static final byte SUBTYPE_MIGRATE_RESPONSE = 16;
+	public static final byte SUBTYPE_MIGRATE_RANGE_REQUEST = 17;
+	public static final byte SUBTYPE_MIGRATE_RANGE_RESPONSE = 18;
+	public static final byte SUBTYPE_INIT_RANGE_REQUEST = 19;
+	public static final byte SUBTYPE_INIT_RANGE_RESPONSE = 20;
+	public static final byte SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST = 21;
+	public static final byte SUBTYPE_GET_ALL_BACKUP_RANGES_RESPONSE = 22;
+	public static final byte SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE = 23;
+	public static final byte SUBTYPE_PING_SUPERPEER_MESSAGE = 24;
 
-	public static final byte SUBTYPE_SEND_BACKUPS_MESSAGE = 23;
-	public static final byte SUBTYPE_SEND_SUPERPEERS_MESSAGE = 24;
-	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST = 25;
-	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE = 26;
-	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST = 27;
-	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE = 28;
-	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE = 29;
-	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE = 30;
-	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 31;
-	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 32;
+	public static final byte SUBTYPE_SEND_BACKUPS_MESSAGE = 25;
+	public static final byte SUBTYPE_SEND_SUPERPEERS_MESSAGE = 26;
+	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_REQUEST = 27;
+	public static final byte SUBTYPE_ASK_ABOUT_BACKUPS_RESPONSE = 28;
+	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_REQUEST = 29;
+	public static final byte SUBTYPE_ASK_ABOUT_SUCCESSOR_RESPONSE = 30;
+	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE = 31;
+	public static final byte SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE = 32;
+	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 33;
+	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 34;
 
 	/**
 	 * Hidden constructor

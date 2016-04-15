@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -14,6 +16,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Cache;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Component for finding chunks in superpeer overlay.
@@ -183,6 +186,22 @@ public class LookupComponent extends AbstractDXRAMComponent {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
 		} else {
 			ret = m_peer.getNameserviceEntryCount();
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Get all available nameservice entries.
+	 * @return List of nameservice entries.
+	 */
+	public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
+		ArrayList<Pair<Integer, Long>> ret = null;
+
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			m_logger.error(getClass(), "Superpeer must not call this method!");
+		} else {
+			ret = m_peer.getNameserviceEntries();
 		}
 
 		return ret;

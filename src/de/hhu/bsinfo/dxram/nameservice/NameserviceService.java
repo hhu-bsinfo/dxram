@@ -1,8 +1,24 @@
 
 package de.hhu.bsinfo.dxram.nameservice;
 
+import java.util.ArrayList;
+
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
+import de.hhu.bsinfo.dxram.nameservice.messages.RegisterMessage;
+import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameList;
+import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameRegister;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
+import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Nameservice service providing mappings of string identifiers to chunkIDs.
@@ -10,9 +26,13 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
  * the convert class for details.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class NameserviceService extends AbstractDXRAMService {
+public class NameserviceService extends AbstractDXRAMService implements MessageReceiver {
 
 	private NameserviceComponent m_nameservice;
+	private AbstractBootComponent m_boot;
+	private NetworkComponent m_network;
+	private LoggerComponent m_logger;
+	private TerminalComponent m_terminal;
 
 	/**
 	 * Register a chunk id for a specific name.
@@ -22,7 +42,18 @@ public class NameserviceService extends AbstractDXRAMService {
 	 *            Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final long p_chunkId, final String p_name) {
-		m_nameservice.register(p_chunkId, p_name);
+		// let each node manage its own index (the chunk part)
+		short nodeId = ChunkID.getCreatorID(p_chunkId);
+		if (m_boot.getNodeID() == nodeId) {
+			m_nameservice.register(p_chunkId, p_name);
+		} else {
+			RegisterMessage message = new RegisterMessage(nodeId, p_chunkId, p_name);
+			NetworkErrorCodes err = m_network.sendMessage(message);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(getClass(),
+						"Sending register message to " + NodeID.toHexString(nodeId) + " failed: " + err);
+			}
+		}
 	}
 
 	/**
@@ -33,7 +64,7 @@ public class NameserviceService extends AbstractDXRAMService {
 	 *            Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final DataStructure p_dataStructure, final String p_name) {
-		m_nameservice.register(p_dataStructure, p_name);
+		register(p_dataStructure.getID(), p_name);
 	}
 
 	/**
@@ -57,6 +88,29 @@ public class NameserviceService extends AbstractDXRAMService {
 		return m_nameservice.getEntryCount();
 	}
 
+	/**
+	 * Get all available name mappings
+	 * @return List of available name mappings
+	 */
+	public ArrayList<Pair<String, Long>> getAllEntries() {
+		return m_nameservice.getAllEntries();
+	}
+
+	@Override
+	public void onIncomingMessage(final AbstractMessage p_message) {
+		if (p_message != null) {
+			if (p_message.getType() == NameserviceMessages.TYPE) {
+				switch (p_message.getSubtype()) {
+					case NameserviceMessages.SUBTYPE_REGISTER_MESSAGE:
+						incomingRegisterMessage((RegisterMessage) p_message);
+						break;
+					default:
+						break;
+				}
+			}
+		}
+	}
+
 	@Override
 	protected void registerDefaultSettingsService(final Settings p_settings) {
 
@@ -66,6 +120,18 @@ public class NameserviceService extends AbstractDXRAMService {
 	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			final Settings p_settings) {
 		m_nameservice = getComponent(NameserviceComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
+		m_network = getComponent(NetworkComponent.class);
+		m_logger = getComponent(LoggerComponent.class);
+		m_terminal = getComponent(TerminalComponent.class);
+
+		m_network.registerMessageType(NameserviceMessages.TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE,
+				RegisterMessage.class);
+
+		m_network.register(RegisterMessage.class, this);
+
+		m_terminal.registerCommand(new TcmdNameRegister());
+		m_terminal.registerCommand(new TcmdNameList());
 
 		return true;
 	}
@@ -73,7 +139,20 @@ public class NameserviceService extends AbstractDXRAMService {
 	@Override
 	protected boolean shutdownService() {
 		m_nameservice = null;
+		m_boot = null;
+		m_network = null;
+		m_logger = null;
+		m_terminal = null;
 
 		return true;
+	}
+
+	/**
+	 * Process an incoming RegisterMessage
+	 * @param p_message
+	 *            Message to process
+	 */
+	private void incomingRegisterMessage(final RegisterMessage p_message) {
+		m_nameservice.register(p_message.getChunkId(), p_message.getName());
 	}
 }
