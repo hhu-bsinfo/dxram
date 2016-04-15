@@ -264,12 +264,11 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		List<Short> peers = null;
 		// Get all other online peers
 		peers = m_boot.getIDsOfOnlinePeers();
-		numberOfPeers = (short) peers.size();
-		/*-allPeers = new short[3];
-		allPeers[0] = -15999;
-		allPeers[1] = 320;
-		allPeers[2] = -15615;
-		numberOfPeers = 3;*/
+
+		/*-peers = new ArrayList<Short>();
+		peers.add((short) -15999);
+		peers.add((short) 320);
+		peers.add((short) -15615);*/
 
 		if (3 > numberOfPeers) {
 			m_logger.warn(BackupComponent.class,
