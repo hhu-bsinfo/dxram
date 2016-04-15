@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 public final class ClusterLogTest2 {
 
 	// Constants
+	protected static final int THREADS = 1;
 	protected static final int CHUNK_SIZE = 100;
 	protected static final int CHUNKS_PER_PUT = 100;
 
@@ -32,7 +33,19 @@ public final class ClusterLogTest2 {
 	 *            The program arguments
 	 */
 	public static void main(final String[] p_arguments) {
-		new Master().start();
+		// Initialize DXRAM
+		final DXRAM dxram = new DXRAM();
+		dxram.initialize("config/dxram.conf");
+		final ChunkService chunkService = dxram.getService(ChunkService.class);
+
+		Master currentThread = null;
+		for (int i = 0; i < THREADS; i++) {
+			currentThread = new Master(chunkService);
+			currentThread.start();
+		}
+		try {
+			currentThread.join();
+		} catch (final InterruptedException e) {}
 	}
 
 	/**
@@ -40,27 +53,30 @@ public final class ClusterLogTest2 {
 	 * @author Kevin Beineke
 	 *         19.01.2016
 	 */
-	private static class Master {
+	private static class Master extends Thread {
+
+		// Attributes
+		private ChunkService m_chunkService;
 
 		// Constructors
 		/**
 		 * Creates an instance of Master
+		 * @param p_chunkService
+		 *            the initialized ChunkService
 		 */
-		Master() {}
+		Master(final ChunkService p_chunkService) {
+			m_chunkService = p_chunkService;
+		}
 
 		// Methods
 		/**
 		 * Starts the Master
 		 */
-		public void start() {
-			long counter = 0;
+		@Override
+		public void run() {
+			int counter = 0;
 			long start;
 			Chunk[] chunks;
-
-			// Initialize DXRAM
-			final DXRAM dxram = new DXRAM();
-			dxram.initialize("config/dxram.conf");
-			final ChunkService chunkService = dxram.getService(ChunkService.class);
 
 			// Create array of Chunks
 			chunks = new Chunk[CHUNKS_PER_PUT];
@@ -70,17 +86,17 @@ public final class ClusterLogTest2 {
 			}
 
 			start = System.currentTimeMillis();
-			while (counter < 3221225472L) {
+			while (counter < 3221225472L / THREADS) {
 				// Create new chunks in MemoryManagement
-				chunkService.create(chunks);
+				m_chunkService.create(chunks);
 
 				// Store them in-memory and replicate them on backups' SSD
-				chunkService.put(chunks);
+				m_chunkService.put(chunks);
 
 				counter += CHUNKS_PER_PUT * CHUNK_SIZE;
 				// System.out.println("Created " + CHUNKS_PER_PUT + " chunks and replicated them.");
 			}
-			System.out.println("Time to create 3GB payload: " + (System.currentTimeMillis() - start) + " ms");
+			System.out.println("Time to distribute 3GB payload: " + (System.currentTimeMillis() - start) + " ms");
 		}
 	}
 

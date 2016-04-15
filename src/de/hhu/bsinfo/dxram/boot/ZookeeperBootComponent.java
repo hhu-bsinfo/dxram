@@ -332,7 +332,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 								splits = node.split("/");
 
 								m_nodesConfiguration.addNode(nodeID, new NodeEntry(splits[0],
-										Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.PEER));
+										Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2])));
 							}
 						}
 					}
