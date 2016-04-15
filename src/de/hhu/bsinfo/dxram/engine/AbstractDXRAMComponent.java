@@ -76,7 +76,7 @@ public abstract class AbstractDXRAMComponent {
 		String componentInterfaceIdentifier = new String();
 		// is superclass abstract and not DXRAMComponent -> interface
 		if (Modifier.isAbstract(this.getClass().getSuperclass().getModifiers())
-			&& !this.getClass().getSuperclass().equals(AbstractDXRAMComponent.class)) {
+				&& !this.getClass().getSuperclass().equals(AbstractDXRAMComponent.class)) {
 			componentInterfaceIdentifier = this.getClass().getSuperclass().getSimpleName();
 		}
 
@@ -121,7 +121,8 @@ public abstract class AbstractDXRAMComponent {
 	/**
 	 * Get a dependent component from the engine. Use it in this component if you have
 	 * to interact with other components.
-	 * @param <T> Class of the implemented component.
+	 * @param <T>
+	 *            Class of the implemented component.
 	 * @param p_class
 	 *            Class of the component to get. If a component has multiple implementations, always use the base
 	 *            class/interface here.
@@ -211,7 +212,8 @@ public abstract class AbstractDXRAMComponent {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T> Class of the value.
+		 * @param <T>
+		 *            Class of the value.
 		 * @param p_default
 		 *            Pair of configuration key and default value to set for the specified key.
 		 */
@@ -221,7 +223,8 @@ public abstract class AbstractDXRAMComponent {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T> Class of the value.
+		 * @param <T>
+		 *            Class of the value.
 		 * @param p_key
 		 *            Key for the value.
 		 * @param p_value
@@ -231,13 +234,15 @@ public abstract class AbstractDXRAMComponent {
 			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
 				// we added a default value => value was missing from configuration
 				m_logger.warn(this.getClass().getSimpleName(),
-						"Settings value for '" + p_key + "' was missing, using default value '" + p_value + "'.");
+						"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value '"
+								+ p_value + "'.");
 			}
 		}
 
 		/**
 		 * Get a value from the configuration for the component.
-		 * @param <T> Class of the value.
+		 * @param <T>
+		 *            Class of the value.
 		 * @param p_default
 		 *            Pair of key and default value to get value for.
 		 * @return Value associated with the provided key.
@@ -249,7 +254,8 @@ public abstract class AbstractDXRAMComponent {
 
 		/**
 		 * Get a value from the configuration for the component.
-		 * @param <T> Class of the value.
+		 * @param <T>
+		 *            Class of the value.
 		 * @param p_key
 		 *            Key to get the value for.
 		 * @param p_type
@@ -268,7 +274,8 @@ public abstract class AbstractDXRAMComponent {
 
 		/**
 		 * Get a list of values with the same key (but different indices).
-		 * @param <T> Class of the value.
+		 * @param <T>
+		 *            Class of the value.
 		 * @param p_key
 		 *            Key of the values to get.
 		 * @param p_type

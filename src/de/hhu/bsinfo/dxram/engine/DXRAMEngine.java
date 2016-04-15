@@ -719,7 +719,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 				// we added a default value => value was missing from configuration
 				if (m_logger != null) {
 					m_logger.warn(DXRAM_ENGINE_LOG_HEADER,
-							"Settings value for '" + p_key + "' was missing, using default value " + p_value);
+							"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value "
+									+ p_value);
 				}
 			}
 		}

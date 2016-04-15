@@ -78,7 +78,8 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Get a component from the engine.
-	 * @param <T> Class implementing DXRAMComponent
+	 * @param <T>
+	 *            Class implementing DXRAMComponent
 	 * @param p_class
 	 *            Class of the component to get. If a component has multiple implementations, always use the base
 	 *            class/interface here.
@@ -158,7 +159,8 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T> Type of the value.
+		 * @param <T>
+		 *            Type of the value.
 		 * @param p_default
 		 *            Pair of configuration key and default value to set for the specified key.
 		 */
@@ -168,7 +170,8 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T> Type of the value.
+		 * @param <T>
+		 *            Type of the value.
 		 * @param p_key
 		 *            Key for the value.
 		 * @param p_value
@@ -178,13 +181,15 @@ public abstract class AbstractDXRAMService {
 			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
 				// we added a default value => value was missing from configuration
 				m_logger.warn(this.getClass().getSimpleName(),
-						"Settings value for '" + p_key + "' was missing, using default value " + p_value);
+						"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value "
+								+ p_value);
 			}
 		}
 
 		/**
 		 * Get a value from the configuration for the service.
-		 * @param <T> Type of the value.
+		 * @param <T>
+		 *            Type of the value.
 		 * @param p_default
 		 *            Pair of key and default value to get value for.
 		 * @return Value associated with the provided key.
@@ -196,7 +201,8 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Get a value from the configuration for the service.
-		 * @param <T> Type of the value.
+		 * @param <T>
+		 *            Type of the value.
 		 * @param p_key
 		 *            Key to get the value for.
 		 * @param p_type
