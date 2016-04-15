@@ -118,7 +118,11 @@ public class TcmdChunkPut extends AbstractTerminalCommand {
 			byte[] bytes = data.getBytes(StandardCharsets.US_ASCII);
 
 			try {
-				buffer.put(bytes, 0, buffer.capacity() - buffer.position());
+				int size = buffer.capacity() - buffer.position();
+				if (bytes.length < size) {
+					size = bytes.length;
+				}
+				buffer.put(bytes, 0, size);
 			} catch (final BufferOverflowException e) {
 				// that's fine, trunc data
 			}
@@ -176,6 +180,8 @@ public class TcmdChunkPut extends AbstractTerminalCommand {
 		if (chunkService.put(chunk) != 1) {
 			System.out.println("error: Putting chunk " + ChunkID.toHexString(chunk.getID()) + " failed");
 			return true;
+		} else {
+			System.out.println("Put to chunk " + ChunkID.toHexString(chunk.getID()) + " successful.");
 		}
 
 		return true;
