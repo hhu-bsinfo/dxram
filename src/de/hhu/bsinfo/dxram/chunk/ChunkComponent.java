@@ -5,12 +5,15 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Component for chunk handling.
@@ -36,6 +39,75 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	 */
 	public ChunkComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
+	}
+
+	/**
+	 * Create the index chunk for the nameservice.
+	 * @param p_size
+	 *            Size of the index chunk.
+	 * @return Chunkid of the index chunk.
+	 */
+	public long createIndexChunk(final int p_size) {
+		long chunkId = -1;
+
+		m_memoryManager.lockManage();
+		chunkId = m_memoryManager.createIndex(p_size);
+		m_memoryManager.unlockManage();
+		if (chunkId != -1) {
+			m_backup.initBackupRange(chunkId, p_size);
+		}
+
+		return chunkId;
+	}
+
+	/**
+	 * Internal chunk create for management data
+	 * @param p_size
+	 *            Size of the chunk
+	 * @return Chunkid of the created chunk.
+	 */
+	public long createChunk(final int p_size) {
+		long chunkId = -1;
+
+		m_memoryManager.lockManage();
+		chunkId = m_memoryManager.create(p_size);
+		m_memoryManager.unlockManage();
+		if (chunkId != -1) {
+			m_backup.initBackupRange(chunkId, p_size);
+		}
+
+		return chunkId;
+	}
+
+	/**
+	 * Internal chunk put for management data.
+	 * @param p_dataStructure
+	 *            Data structure to put
+	 * @return True if successful, false otherwise
+	 */
+	public boolean putChunk(final DataStructure p_dataStructure) {
+
+		MemoryErrorCodes err;
+		m_memoryManager.lockAccess();
+		err = m_memoryManager.put(p_dataStructure);
+		m_memoryManager.unlockAccess();
+		if (err != MemoryErrorCodes.SUCCESS) {
+			return false;
+		}
+
+		if (m_backup.isActive()) {
+			short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
+			for (short peer : backupPeers) {
+				if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
+					m_logger.trace(getClass(),
+							"Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
+
+					m_network.sendMessage(new LogMessage(peer, p_dataStructure));
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**

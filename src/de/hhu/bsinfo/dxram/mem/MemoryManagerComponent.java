@@ -33,11 +33,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	private ReentrantReadWriteLock m_lock;
 	private long m_numActiveChunks;
 
-	private AbstractBootComponent m_boot = null;
-	private LoggerComponent m_logger = null;
-	private StatisticsComponent m_statistics = null;
+	private AbstractBootComponent m_boot;
+	private LoggerComponent m_logger;
+	private StatisticsComponent m_statistics;
 
-	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs = null;
+	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	/**
 	 * Error codes to be returned by some methods.
@@ -284,8 +284,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			} else {
 				// most likely out of memory
 				m_logger.error(getClass(),
-						"Creating chunk with size " + p_size + " failed, most likely out of memory, free " +
-								m_rawMemory.getFreeMemory() + ", total " + m_rawMemory.getTotalMemory());
+						"Creating chunk with size " + p_size + " failed, most likely out of memory, free "
+								+ m_rawMemory.getFreeMemory() + ", total " + m_rawMemory.getTotalMemory());
 
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
@@ -402,15 +402,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * This is an access call and has to be locked using lockAccess().
 	 * Note: lockAccess() does NOT take care of data races of the data to write.
 	 * The caller has to take care of proper locking to avoid consistency issue with his data.
-	 * @param p_chunkID
-	 *            ChunkID of the chunk.
-	 * @param p_buffer
-	 *            Buffer with data to put.
-	 * @param p_offset
-	 *            Start offset within the buffer.
-	 * @param p_length
-	 *            Number of bytes to put.
-	 * @return Number of bytes put/written to the chunk.
+	 * @param p_dataStructure
+	 *            Data structure to put
+	 * @return MemoryErrorCodes indicating success or failure
 	 */
 	public MemoryErrorCodes put(final DataStructure p_dataStructure) {
 		long address;
@@ -446,6 +440,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * This is a management call and has to be locked using lockManage().
 	 * @param p_chunkID
 	 *            the ChunkID of the Chunk
+	 * @return MemoryErrorCodes indicating success or failure
 	 */
 	public MemoryErrorCodes remove(final long p_chunkID) {
 		long addressDeletedChunk;
@@ -571,6 +566,37 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	}
 
 	/**
+	 * Register statistics operations for this component.
+	 */
+	private void registerStatisticsOperations() {
+		m_statisticsRecorderIDs = new MemoryStatisticsRecorderIDs();
+		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
+
+		m_statisticsRecorderIDs.m_operations.m_createNIDTable =
+				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+						MemoryStatisticsRecorderIDs.Operations.MS_CREATE_NID_TABLE);
+		m_statisticsRecorderIDs.m_operations.m_createLIDTable =
+				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+						MemoryStatisticsRecorderIDs.Operations.MS_CREATE_LID_TABLE);
+		m_statisticsRecorderIDs.m_operations.m_malloc =
+				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+						MemoryStatisticsRecorderIDs.Operations.MS_MALLOC);
+		m_statisticsRecorderIDs.m_operations.m_free =
+				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+						MemoryStatisticsRecorderIDs.Operations.MS_FREE);
+		m_statisticsRecorderIDs.m_operations.m_get = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+				MemoryStatisticsRecorderIDs.Operations.MS_GET);
+		m_statisticsRecorderIDs.m_operations.m_put = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+				MemoryStatisticsRecorderIDs.Operations.MS_PUT);
+		m_statisticsRecorderIDs.m_operations.m_create =
+				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+						MemoryStatisticsRecorderIDs.Operations.MS_CREATE);
+		m_statisticsRecorderIDs.m_operations.m_remove =
+				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
+						MemoryStatisticsRecorderIDs.Operations.MS_REMOVE);
+	}
+
+	/**
 	 * Object containing status information about the memory.
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
@@ -600,36 +626,5 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		public long getFreeMemory() {
 			return m_freeMemoryBytes;
 		}
-	}
-
-	/**
-	 * Register statistics operations for this component.
-	 */
-	private void registerStatisticsOperations() {
-		m_statisticsRecorderIDs = new MemoryStatisticsRecorderIDs();
-		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(this.getClass());
-
-		m_statisticsRecorderIDs.m_operations.m_createNIDTable =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_CREATE_NID_TABLE);
-		m_statisticsRecorderIDs.m_operations.m_createLIDTable =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_CREATE_LID_TABLE);
-		m_statisticsRecorderIDs.m_operations.m_malloc =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_MALLOC);
-		m_statisticsRecorderIDs.m_operations.m_free =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_FREE);
-		m_statisticsRecorderIDs.m_operations.m_get = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				MemoryStatisticsRecorderIDs.Operations.MS_GET);
-		m_statisticsRecorderIDs.m_operations.m_put = m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-				MemoryStatisticsRecorderIDs.Operations.MS_PUT);
-		m_statisticsRecorderIDs.m_operations.m_create =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_CREATE);
-		m_statisticsRecorderIDs.m_operations.m_remove =
-				m_statistics.createOperation(m_statisticsRecorderIDs.m_id,
-						MemoryStatisticsRecorderIDs.Operations.MS_REMOVE);
 	}
 }

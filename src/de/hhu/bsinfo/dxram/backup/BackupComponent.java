@@ -94,20 +94,23 @@ public class BackupComponent extends AbstractDXRAMComponent {
 				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
 				// This is the first put and p_localID is not reused
 				determineBackupPeers(0);
-				m_lookup.initRange((long) nodeID << 48, new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_lookup.initRange((long) nodeID << 48,
+						new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
 				m_log.initBackupRange((long) nodeID << 48, m_currentBackupRange.getBackupPeers());
 				m_rangeSize = size;
 				m_firstRangeInitialized = true;
 			} else if (m_rangeSize + size > m_backupRangeSize) {
 				determineBackupPeers(localID);
-				m_lookup.initRange(((long) nodeID << 48) + localID, new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_lookup.initRange(((long) nodeID << 48) + localID,
+						new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
 				m_log.initBackupRange(((long) nodeID << 48) + localID, m_currentBackupRange.getBackupPeers());
 				m_rangeSize = size;
 			} else {
 				m_rangeSize += size;
 			}
-		} else if (!m_firstRangeInitialized && localID == 1) {
-			m_lookup.initRange(((long) nodeID << 48) + 0xFFFFFFFFFFFFL, new LookupRangeWithBackupPeers(nodeID, new short[] {-1, -1, -1}, null));
+		} else if (!m_firstRangeInitialized) {
+			m_lookup.initRange(((long) nodeID << 48) + 0xFFFFFFFFFFFFL,
+					new LookupRangeWithBackupPeers(nodeID, new short[] {-1, -1, -1}, null));
 			m_firstRangeInitialized = true;
 		}
 	}
@@ -165,9 +168,11 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		determineBackupPeers(-1);
 		m_migrationsTree.initNewBackupRange();
 
-		m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), new LookupRangeWithBackupPeers(m_boot.getNodeID(),
-				m_currentMigrationBackupRange.getBackupPeers(), null));
-		m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(), m_currentMigrationBackupRange.getBackupPeers());
+		m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
+				new LookupRangeWithBackupPeers(m_boot.getNodeID(),
+						m_currentMigrationBackupRange.getBackupPeers(), null));
+		m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
+				m_currentMigrationBackupRange.getBackupPeers());
 	}
 
 	/**
@@ -213,7 +218,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
+			final Settings p_settings) {
 
 		m_backupActive = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_ACTIVE);
 		m_backupDirectory = p_settings.getValue(BackupConfigurationValues.Component.BACKUP_DIRECTORY);
@@ -266,14 +272,16 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		numberOfPeers = 3;*/
 
 		if (3 > numberOfPeers) {
-			m_logger.warn(BackupComponent.class, "Less than three peers for backup available. Replication will be incomplete!");
+			m_logger.warn(BackupComponent.class,
+					"Less than three peers for backup available. Replication will be incomplete!");
 
 			newBackupPeers = new short[numberOfPeers];
 			Arrays.fill(newBackupPeers, (short) -1);
 
 			insufficientPeers = true;
 		} else if (6 > numberOfPeers) {
-			m_logger.warn(BackupComponent.class, "Less than six peers for backup available. Some peers may store more" + " than one backup range of a node!");
+			m_logger.warn(BackupComponent.class, "Less than six peers for backup available. Some peers may store more"
+					+ " than one backup range of a node!");
 
 			oldBackupPeers = new short[m_replicationFactor];
 			Arrays.fill(oldBackupPeers, (short) -1);
@@ -313,20 +321,23 @@ public class BackupComponent extends AbstractDXRAMComponent {
 							}
 						}
 					}
-					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
+					m_logger.info(BackupComponent.class,
+							i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
 				}
 				if (p_localID > -1) {
 					m_currentBackupRange = new BackupRange(p_localID, newBackupPeers);
 				} else {
-					m_currentMigrationBackupRange = new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
+					m_currentMigrationBackupRange =
+							new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
 				}
 			} else {
 				if (p_localID > -1) {
 					m_currentBackupRange = new BackupRange(p_localID, null);
 				} else {
-					m_currentMigrationBackupRange = new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, null);
+					m_currentMigrationBackupRange =
+							new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, null);
 				}
 			}
 		} else {
@@ -342,14 +353,16 @@ public class BackupComponent extends AbstractDXRAMComponent {
 						}
 					}
 				}
-				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
+				m_logger.info(BackupComponent.class,
+						i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
 				newBackupPeers[i] = peers.get(index);
 				ready = false;
 			}
 			if (p_localID > -1) {
 				m_currentBackupRange = new BackupRange(p_localID, newBackupPeers);
 			} else {
-				m_currentMigrationBackupRange = new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
+				m_currentMigrationBackupRange =
+						new BackupRange(m_currentMigrationBackupRange.getRangeID() + 1, newBackupPeers);
 			}
 		}
 

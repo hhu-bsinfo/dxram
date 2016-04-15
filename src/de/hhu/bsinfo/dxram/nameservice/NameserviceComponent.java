@@ -2,14 +2,13 @@
 package de.hhu.bsinfo.dxram.nameservice;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.NameServiceIndexData;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -22,7 +21,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
-	private MemoryManagerComponent m_memoryManager;
+	private ChunkComponent m_chunk;
 
 	private NameServiceStringConverter m_converter;
 
@@ -120,7 +119,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 			final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_lookup = getDependentComponent(LookupComponent.class);
-		m_memoryManager = getDependentComponent(MemoryManagerComponent.class);
+		m_chunk = getDependentComponent(ChunkComponent.class);
 
 		m_converter =
 				new NameServiceStringConverter(p_settings.getValue(NameserviceConfigurationValues.Component.TYPE));
@@ -128,7 +127,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		m_indexData = new NameServiceIndexData();
 
 		if (getDependentComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER) {
-			m_indexData.setID(m_memoryManager.createIndex(m_indexData.sizeofObject()));
+			m_indexData.setID(m_chunk.createIndexChunk(m_indexData.sizeofObject()));
 			if (m_indexData.getID() == ChunkID.INVALID_ID) {
 				m_logger.error(getClass(), "Creating root index chunk failed.");
 				return false;
@@ -142,7 +141,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	protected boolean shutdownComponent() {
 		m_lookup = null;
 		m_converter = null;
-		m_memoryManager = null;
+		m_chunk = null;
 
 		m_converter = null;
 
@@ -163,7 +162,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		if (!m_indexData.insertMapping(p_key, p_chunkID)) {
 			// index chunk full, create new one
 			final NameServiceIndexData nextIndexChunk = new NameServiceIndexData();
-			nextIndexChunk.setID(m_memoryManager.create(nextIndexChunk.sizeofObject()));
+			nextIndexChunk.setID(m_chunk.createChunk(nextIndexChunk.sizeofObject()));
 			if (nextIndexChunk.getID() == ChunkID.INVALID_ID) {
 				m_logger.error(getClass(), "Creating next index chunk failed.");
 				return false;
@@ -171,7 +170,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 			// link previous to new and update
 			m_indexData.setNextIndexDataChunk(nextIndexChunk.getID());
-			if (m_memoryManager.put(m_indexData) != MemoryErrorCodes.SUCCESS) {
+			if (!m_chunk.putChunk(m_indexData)) {
 				m_logger.error(getClass(), "Updating current index chunk with successor failed.");
 				return false;
 			}
@@ -181,7 +180,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 		// insert mapping into current chunk and update
 		m_indexData.insertMapping(p_key, p_chunkID);
-		if (m_memoryManager.put(m_indexData) != MemoryErrorCodes.SUCCESS) {
+		if (!m_chunk.putChunk(m_indexData)) {
 			m_logger.error(getClass(), "Updating current index chunk failed.");
 			return false;
 		}
