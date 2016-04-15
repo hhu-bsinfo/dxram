@@ -1,61 +1,33 @@
 
 package de.hhu.bsinfo.utils.log;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /**
  * Implementation to log to the console.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class LogDestinationConsole implements LogDestination {
 
-	private LogLevel m_logLevel = LogLevel.DEBUG;
-	private long m_timeMsStarted = 0;
-
 	@Override
-	public void setLogLevel(LogLevel p_level) {
-		m_logLevel = p_level;
-	}
-
-	@Override
-	public void logStart() {
-		if (m_logLevel.ordinal() > LogLevel.DISABLED.ordinal())
-		{
-			System.out.println("--------------------------------------");
-			System.out.println("Log started: " + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date())).toString());
-			System.out.println("--------------------------------------");
-		}
-		m_timeMsStarted = System.currentTimeMillis();
-	}
-
-	@Override
-	public void log(LogLevel p_level, String p_header, String p_message, Exception p_exception) {
-		if (p_level.ordinal() <= m_logLevel.ordinal()) {
-			String str = new String();
-			str += "[" + (System.currentTimeMillis() - m_timeMsStarted) + "]";
-			str += "[" + p_level.toString() + "]";
-			str += "[TID: " + Thread.currentThread().getId() + "]";
-			str += "[" + p_header + "] ";
-			str += p_message;
-			if (p_exception != null) {
-				str += "\n##### " + p_exception + "\n";
-				for (StackTraceElement ste : p_exception.getStackTrace()) {
-					str += "#### " + ste + "\n";
-				}
-			}
-			System.out.println(str);
+	public void log(final LogLevel p_level, final String p_message) {
+		// add some color
+		switch (p_level) {
+			case TRACE:
+				System.out.println("\033[0;37m" + p_message + "\033[0m");
+				break;
+			case DEBUG:
+				System.out.println("\033[1;37m" + p_message + "\033[0m");
+				break;
+			case INFO:
+				System.out.println("\033[1;34m" + p_message + "\033[0m");
+				break;
+			case WARN:
+				System.out.println("\033[1;33m" + p_message + "\033[0m");
+				break;
+			case ERROR:
+				System.out.println("\033[1;31m" + p_message + "\033[0m");
+				break;
+			default:
+				break;
 		}
 	}
-
-	@Override
-	public void logEnd() {
-		if (m_logLevel.ordinal() > LogLevel.DISABLED.ordinal())
-		{
-			System.out.println("--------------------------------------");
-			System.out.println("Log finished: " + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date())).toString());
-			System.out.println("--------------------------------------");
-		}
-	}
-
 }

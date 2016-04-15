@@ -116,6 +116,10 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 						}
 					}
 				} else {
+					if (arguments[0].isEmpty()) {
+						continue;
+					}
+
 					final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[0]);
 					if (c == null) {
 						System.out.println("error: unknown command");

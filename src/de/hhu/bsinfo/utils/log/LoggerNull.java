@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.utils.log;
 
 /**
@@ -7,46 +8,35 @@ package de.hhu.bsinfo.utils.log;
 public class LoggerNull implements LoggerInterface {
 
 	@Override
-	public void setLogLevel(LogLevel p_logLevel) {
-	}
-	
-	@Override
-	public void error(String p_header, String p_msg) {
-	}
+	public void setLogLevel(final LogLevel p_logLevel) {}
 
 	@Override
-	public void error(String p_header, String p_msg, Exception p_e) {
-	}
+	public void error(final String p_header, final String p_msg) {}
 
 	@Override
-	public void warn(String p_header, String p_msg) {
-	}
+	public void error(final String p_header, final String p_msg, final Exception p_e) {}
 
 	@Override
-	public void warn(String p_header, String p_msg, Exception p_e) {
-	}
+	public void warn(final String p_header, final String p_msg) {}
 
 	@Override
-	public void info(String p_header, String p_msg) {
-	}
+	public void warn(final String p_header, final String p_msg, final Exception p_e) {}
 
 	@Override
-	public void info(String p_header, String p_msg, Exception p_e) {
-	}
+	public void info(final String p_header, final String p_msg) {}
 
 	@Override
-	public void debug(String p_header, String p_msg) {
-	}
+	public void info(final String p_header, final String p_msg, final Exception p_e) {}
 
 	@Override
-	public void debug(String p_header, String p_msg, Exception p_e) {
-	}
+	public void debug(final String p_header, final String p_msg) {}
 
 	@Override
-	public void trace(String p_header, String p_msg) {
-	}
+	public void debug(final String p_header, final String p_msg, final Exception p_e) {}
 
 	@Override
-	public void trace(String p_header, String p_msg, Exception p_e) {
-	}
+	public void trace(final String p_header, final String p_msg) {}
+
+	@Override
+	public void trace(final String p_header, final String p_msg, final Exception p_e) {}
 }

@@ -641,13 +641,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		m_logger.setLogLevel(LogLevel.toLogLevel(loggerLevel));
 		{
 			final LogDestination logDest = new LogDestinationConsole();
-			logDest.setLogLevel(LogLevel.toLogLevel(loggerConsoleLevel));
-			m_logger.addLogDestination(logDest);
+			m_logger.addLogDestination(logDest, LogLevel.toLogLevel(loggerConsoleLevel));
 		}
 		{
 			final LogDestination logDest = new LogDestinationFile(loggerFilePath, loggerFileBackupOld);
-			logDest.setLogLevel(LogLevel.toLogLevel(loggerFileLevel));
-			m_logger.addLogDestination(logDest);
+			m_logger.addLogDestination(logDest, LogLevel.toLogLevel(loggerFileLevel));
 		}
 	}
 
