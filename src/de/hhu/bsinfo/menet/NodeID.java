@@ -23,6 +23,7 @@ public final class NodeID {
 	 */
 	public static String toHexString(final short p_nodeId) {
 		int tmp = p_nodeId & 0xFFFF;
-		return "0x" + Integer.toHexString(tmp).toUpperCase();
+		// return "0x" + Integer.toHexString(tmp).toUpperCase();
+		return "0x" + String.format("%04x", tmp).toUpperCase();
 	}
 }

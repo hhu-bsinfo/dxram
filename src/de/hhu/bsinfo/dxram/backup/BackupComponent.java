@@ -14,6 +14,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Component for managing backup ranges.
@@ -264,11 +265,13 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		List<Short> peers = null;
 		// Get all other online peers
 		peers = m_boot.getIDsOfOnlinePeers();
+		numberOfPeers = (short) peers.size();
 
 		/*-peers = new ArrayList<Short>();
 		peers.add((short) -15999);
 		peers.add((short) 320);
-		peers.add((short) -15615);*/
+		peers.add((short) -15615);
+		numberOfPeers = 3;*/
 
 		if (3 > numberOfPeers) {
 			m_logger.warn(BackupComponent.class,
@@ -320,8 +323,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 							}
 						}
 					}
-					m_logger.info(BackupComponent.class,
-							i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
+					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + ChunkID.toHexString(p_localID)
+							+ ": " + NodeID.toHexString(peers.get(index)));
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
 				}
@@ -352,8 +355,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 						}
 					}
 				}
-				m_logger.info(BackupComponent.class,
-						i + 1 + ". backup peer determined for new range " + p_localID + ": " + peers.get(index));
+				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + ChunkID.toHexString(p_localID)
+						+ ": " + NodeID.toHexString(peers.get(index)));
 				newBackupPeers[i] = peers.get(index);
 				ready = false;
 			}

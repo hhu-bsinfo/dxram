@@ -180,7 +180,8 @@ class NIOSelector extends Thread {
 						try {
 							successful = m_nioInterface.read(connection);
 						} catch (final IOException e) {
-							NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not read from channel (" + connection.getDestination() + ")!");
+							NetworkHandler.getLogger().error(getClass().getSimpleName(),
+									"Could not read from channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
 							successful = false;
 						}
 						if (!successful) {
@@ -191,7 +192,8 @@ class NIOSelector extends Thread {
 					try {
 						complete = m_nioInterface.write(connection);
 					} catch (final IOException e) {
-						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not write to channel (" + connection.getDestination() + ")!");
+						NetworkHandler.getLogger().error(getClass().getSimpleName(),
+								"Could not write to channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
 						complete = false;
 					}
 					if (complete) {

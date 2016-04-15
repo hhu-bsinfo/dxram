@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxcompute.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.AbstractMain;
@@ -72,7 +73,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 	@Override
 	public void jobEventTriggered(final byte p_eventId, final long p_jobId, final short p_sourceNodeId) {
 		System.out.println("JobEvent: " + p_eventId + " | " + Long.toHexString(p_jobId) + " | "
-				+ Integer.toHexString(p_sourceNodeId));
+				+ NodeID.toHexString(p_sourceNodeId));
 		if (p_eventId == JobEvents.MS_JOB_FINISHED_EXECUTION_EVENT_ID && p_sourceNodeId != m_bootService.getNodeID()) {
 			m_remoteJobCount.decrementAndGet();
 		}

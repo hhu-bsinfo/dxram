@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxram.recovery.tcmds.TcmdRecover;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * This service provides all recovery functionality.
@@ -68,10 +69,10 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 				recoverLocallyFromFile(p_owner);
 			}
 		} else {
-			m_logger.info(RecoveryService.class, "Forwarding recovery to " + p_dest);
+			m_logger.info(RecoveryService.class, "Forwarding recovery to " + NodeID.toHexString(p_dest));
 			final NetworkErrorCodes err = m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
 			if (err != NetworkErrorCodes.SUCCESS) {
-				m_logger.error(RecoveryService.class, "Could not forward command to " + p_dest + ". Aborting recovery!");
+				m_logger.error(RecoveryService.class, "Could not forward command to " + NodeID.toHexString(p_dest) + ". Aborting recovery!");
 				ret = false;
 			}
 		}

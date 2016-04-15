@@ -343,7 +343,7 @@ public class DXRAMCompat {
 	public void remove(final long p_chunkID) throws DXRAMException {
 		if (m_chunkService != null) {
 			if (m_chunkService.remove(p_chunkID) != 1) {
-				throw new DXRAMException("Removing chunkID " + Long.toHexString(p_chunkID) + " failed.");
+				throw new DXRAMException("Removing chunkID " + ChunkID.toHexString(p_chunkID) + " failed.");
 			}
 		}
 	}
@@ -358,7 +358,7 @@ public class DXRAMCompat {
 	public void remove(final long[] p_chunkIDs) throws DXRAMException {
 		if (m_chunkService != null) {
 			if (m_chunkService.remove(p_chunkIDs) != p_chunkIDs.length) {
-				throw new DXRAMException("Removing chunkID " + Long.toHexString(p_chunkIDs[0]) + "... failed.");
+				throw new DXRAMException("Removing chunkID " + ChunkID.toHexString(p_chunkIDs[0]) + "... failed.");
 			}
 		}
 	}

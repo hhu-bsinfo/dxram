@@ -364,7 +364,7 @@ public class OverlayPeer implements MessageReceiver {
 
 		creator = ChunkID.getCreatorID(p_startCID);
 		if (creator != ChunkID.getCreatorID(p_endCID)) {
-			m_logger.error(getClass(), "Start and end objects creators not equal");
+			m_logger.error(getClass(), "Start and end object's creators not equal");
 		} else {
 			while (!finished) {
 				responsibleSuperpeer = m_mySuperpeer;
@@ -534,7 +534,7 @@ public class OverlayPeer implements MessageReceiver {
 
 		while (-1 != contactSuperpeer) {
 			m_logger.trace(getClass(),
-					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + m_nodeID);
+					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + NodeID.toHexString(m_nodeID));
 
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_NOT_SUPERPEER);
 			if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
@@ -572,7 +572,7 @@ public class OverlayPeer implements MessageReceiver {
 		AskAboutSuccessorResponse response = null;
 
 		m_logger.trace(OverlayHelper.class,
-				"Entering getResponsibleSuperpeer with: p_nodeID=0x" + Integer.toHexString(p_nodeID));
+				"Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
 
 		m_overlayLock.lock();
 		if (!m_superpeers.isEmpty()) {
@@ -633,7 +633,7 @@ public class OverlayPeer implements MessageReceiver {
 		short source;
 
 		source = p_sendSuperpeersMessage.getSource();
-		m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + source);
+		m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + NodeID.toHexString(source));
 
 		m_overlayLock.lock();
 		m_superpeers = p_sendSuperpeersMessage.getSuperpeers();

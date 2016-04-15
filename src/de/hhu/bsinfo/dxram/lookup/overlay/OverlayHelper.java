@@ -224,7 +224,7 @@ public final class OverlayHelper {
 		short responsibleSuperpeer = -1;
 		int index;
 
-		p_logger.trace(OverlayHelper.class, "Entering getResponsibleSuperpeer with: p_nodeID=0x" + Integer.toHexString(p_nodeID));
+		p_logger.trace(OverlayHelper.class, "Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
 
 		p_overlayLock.lock();
 		if (!p_superpeers.isEmpty()) {

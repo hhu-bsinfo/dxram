@@ -74,7 +74,7 @@ public final class ClusterLogTest2 {
 		 */
 		@Override
 		public void run() {
-			int counter = 0;
+			long counter = 0;
 			long start;
 			Chunk[] chunks;
 

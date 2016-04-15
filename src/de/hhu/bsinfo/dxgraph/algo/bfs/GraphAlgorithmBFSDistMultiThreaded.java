@@ -125,7 +125,7 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 					
 					if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
 						m_loggerService.error(getClass(), "Sending entry vertex " + Long.toHexString(entryNode) + " to node " + 
-									Integer.toHexString(entryNodeId) + " failed");
+									NodeID.toHexString(entryNodeId) + " failed");
 						continue; 
 					}
 				}
@@ -352,7 +352,7 @@ public class GraphAlgorithmBFSDistMultiThreaded extends GraphAlgorithm implement
 				
 				if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
 					m_loggerService.error(getClass(), "Sending entry vertex " + Long.toHexString(entryNode) + " to node " + 
-								Integer.toHexString(entryNodeId) + " failed");
+								NodeID.toHexString(entryNodeId) + " failed");
 					continue; 
 				}
 			}

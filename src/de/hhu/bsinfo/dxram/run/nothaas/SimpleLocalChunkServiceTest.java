@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.run.nothaas;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.main.AbstractMain;
 
@@ -58,7 +59,7 @@ public class SimpleLocalChunkServiceTest extends AbstractMain {
 
 		System.out.println("Setting chunk payload...");
 		for (Chunk chunk : chunks) {
-			System.out.println(Long.toHexString(chunk.getID()) + ": " + Long.toHexString(chunk.getID()));
+			System.out.println(ChunkID.toHexString(chunk.getID()) + ": " + ChunkID.toHexString(chunk.getID()));
 			chunk.getData().putLong(chunk.getID());
 		}
 
@@ -72,7 +73,7 @@ public class SimpleLocalChunkServiceTest extends AbstractMain {
 
 		System.out.println("Data got: ");
 		for (Chunk chunk : chunksCopy) {
-			System.out.println(Long.toHexString(chunk.getData().getLong()));
+			System.out.println(ChunkID.toHexString(chunk.getData().getLong()));
 		}
 
 		System.out.println("Removing chunks...");
