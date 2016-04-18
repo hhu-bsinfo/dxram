@@ -9,7 +9,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the chunkcreate command which creates a chunk via the terminal
- * @author Mike Birkhoff
+ * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
 public class TcmdChunkCreate extends AbstractTerminalCommand {

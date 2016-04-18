@@ -6,12 +6,12 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
-import de.hhu.bsinfo.dxram.lock.Tcmd.TcmdLock;
-import de.hhu.bsinfo.dxram.lock.Tcmd.TcmdUnlock;
 import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
 import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
+import de.hhu.bsinfo.dxram.lock.tcmd.TcmdLock;
+import de.hhu.bsinfo.dxram.lock.tcmd.TcmdUnlock;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -39,14 +39,13 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	private LookupComponent m_lookup;
 	private EventComponent m_event;
 	private StatisticsComponent m_statistics;
+	private TerminalComponent m_terminal;
 
 	private LockStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	private int m_remoteLockSendIntervalMs = -1;
 	private int m_remoteLockTryTimeoutMs = -1;
-	
-	private TerminalComponent m_terminal = null;
-	
+
 	@Override
 	protected void registerDefaultSettingsService(final Settings p_settings) {
 		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
@@ -64,6 +63,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_lookup = getComponent(LookupComponent.class);
 		m_event = getComponent(EventComponent.class);
 		m_statistics = getComponent(StatisticsComponent.class);
+		m_terminal = getComponent(TerminalComponent.class);
 
 		m_event.registerListener(this, NodeFailureEvent.class);
 
@@ -87,11 +87,10 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
 		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
-		
-		m_terminal = getComponent(TerminalComponent.class);
+
 		m_terminal.registerCommand(new TcmdUnlock());
 		m_terminal.registerCommand(new TcmdLock());
-		
+
 		return true;
 	}
 
@@ -157,19 +156,19 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						NetworkErrorCodes errNet = m_network.sendSync(request);
 						if (errNet != NetworkErrorCodes.SUCCESS) {
 							switch (errNet) {
-							case DESTINATION_UNREACHABLE:
-								err = ErrorCode.PEER_NOT_AVAILABLE;
-								break;
-							case SEND_DATA:
-								m_lookup.invalidate(p_chunkID);
-								err = ErrorCode.NETWORK;
-								break;
-							case RESPONSE_TIMEOUT:
-								err = ErrorCode.NETWORK;
-								break;
-							default:
-								assert 1 == 2;
-								break;
+								case DESTINATION_UNREACHABLE:
+									err = ErrorCode.PEER_NOT_AVAILABLE;
+									break;
+								case SEND_DATA:
+									m_lookup.invalidate(p_chunkID);
+									err = ErrorCode.NETWORK;
+									break;
+								case RESPONSE_TIMEOUT:
+									err = ErrorCode.NETWORK;
+									break;
+								default:
+									assert 1 == 2;
+									break;
 							}
 
 							break;
@@ -247,16 +246,16 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						NetworkErrorCodes errNet = m_network.sendMessage(message);
 						if (errNet != NetworkErrorCodes.SUCCESS) {
 							switch (errNet) {
-							case DESTINATION_UNREACHABLE:
-								err = ErrorCode.PEER_NOT_AVAILABLE;
-								break;
-							case SEND_DATA:
-								m_lookup.invalidate(p_chunkID);
-								err = ErrorCode.NETWORK;
-								break;
-							default:
-								assert 1 == 2;
-								break;
+								case DESTINATION_UNREACHABLE:
+									err = ErrorCode.PEER_NOT_AVAILABLE;
+									break;
+								case SEND_DATA:
+									m_lookup.invalidate(p_chunkID);
+									err = ErrorCode.NETWORK;
+									break;
+								default:
+									assert 1 == 2;
+									break;
 							}
 						}
 					}
@@ -289,14 +288,14 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		if (p_message != null) {
 			if (p_message.getType() == LockMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case LockMessages.SUBTYPE_LOCK_REQUEST:
-					incomingLockRequest((LockRequest) p_message);
-					break;
-				case LockMessages.SUBTYPE_UNLOCK_MESSAGE:
-					incomingUnlockMessage((UnlockMessage) p_message);
-					break;
-				default:
-					break;
+					case LockMessages.SUBTYPE_LOCK_REQUEST:
+						incomingLockRequest((LockRequest) p_message);
+						break;
+					case LockMessages.SUBTYPE_UNLOCK_MESSAGE:
+						incomingUnlockMessage((UnlockMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}

@@ -19,7 +19,7 @@ import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserShort;
 
 /**
  * This class handles the chunkput command which puts a chunk of data into a chunk specified by CID or LID and NID
- * @author Mike Birkhoff
+ * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
 public class TcmdChunkPut extends AbstractTerminalCommand {

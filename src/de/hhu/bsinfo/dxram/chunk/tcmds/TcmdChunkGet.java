@@ -15,7 +15,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the chunkget commando which lists the content of a specified chunk in the terminal
- * @author Mike
+ * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
 public class TcmdChunkGet extends AbstractTerminalCommand {

@@ -10,6 +10,10 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * List all available nodes
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.04.16
+ */
 public class TcmdNodeList extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_NODE_ROLE =
@@ -26,12 +30,12 @@ public class TcmdNodeList extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public void registerArguments(ArgumentList p_arguments) {
+	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_NODE_ROLE);
 	}
 
 	@Override
-	public boolean execute(ArgumentList p_arguments) {
+	public boolean execute(final ArgumentList p_arguments) {
 
 		String strRole = p_arguments.getArgumentValue(MS_ARG_NODE_ROLE, String.class);
 

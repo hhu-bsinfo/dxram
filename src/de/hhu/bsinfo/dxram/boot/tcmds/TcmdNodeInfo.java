@@ -7,7 +7,10 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-// get information about current node on or another remote node
+/**
+ * Get information about the current node or another remote node.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.04.16
+ */
 public class TcmdNodeInfo extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_NODE_ID =
@@ -24,7 +27,7 @@ public class TcmdNodeInfo extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public void registerArguments(ArgumentList p_arguments) {
+	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_NODE_ID);
 	}
 

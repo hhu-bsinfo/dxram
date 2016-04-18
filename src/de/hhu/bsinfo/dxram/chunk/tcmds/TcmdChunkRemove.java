@@ -9,7 +9,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the chunkremove command which removes a chunk specified by CID or LID and NID
- * @author Mike
+ * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
 public class TcmdChunkRemove extends AbstractTerminalCommand {

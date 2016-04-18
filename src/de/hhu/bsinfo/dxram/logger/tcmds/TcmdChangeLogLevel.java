@@ -9,13 +9,14 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 /**
  * This class handles the loggerlevel command which changes the logger level.
  * The available logger levels are: DISABLED, ERROR, WARN, INFO, DEBUG, TRACE
- * @author Mike
+ * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
 public class TcmdChangeLogLevel extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_LEVEL =
-			new Argument("level", null, false, "available LogLevels: DISABLED ERROR WARN INFO DEBUG TRACE");
+			new Argument("level", null, false,
+					"Log level to set, available levels: DISABLED ERROR WARN INFO DEBUG TRACE");
 
 	@Override
 	public String getName() {
@@ -26,7 +27,7 @@ public class TcmdChangeLogLevel extends AbstractTerminalCommand {
 	@Override
 	public String getDescription() {
 
-		return "changes log level via terminal";
+		return "Change the output level of the logger";
 	}
 
 	@Override

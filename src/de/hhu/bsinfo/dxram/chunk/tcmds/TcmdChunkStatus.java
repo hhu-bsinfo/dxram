@@ -9,7 +9,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the chunkstatus command which shows the Chunk Service status from a specified Node
- * @author Mike
+ * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
 public class TcmdChunkStatus extends AbstractTerminalCommand {

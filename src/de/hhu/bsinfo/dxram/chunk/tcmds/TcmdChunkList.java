@@ -12,7 +12,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the chunklist command which lists all chunks from a node
- * @author Mike Birkhoff
+ * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
 public class TcmdChunkList extends AbstractTerminalCommand {
