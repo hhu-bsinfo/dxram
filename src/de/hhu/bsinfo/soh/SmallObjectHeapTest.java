@@ -8,17 +8,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.utils.locks.JNILock;
-
-import sun.misc.Lock;
 
 /**
  * Tests concurrent allocation and freeing of memory
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public class SmallObjectHeapTest {
-	private static final Lock LOCK = new Lock();
+	private static final Lock LOCK = new ReentrantLock(false);
 
 	private SmallObjectHeap m_memory;
 	private int m_numThreads = -1;
@@ -60,8 +60,7 @@ public class SmallObjectHeapTest {
 		assert p_blockSizeMax > 0;
 		assert p_blockSizeMax > p_blockSizeMin;
 
-		// JNILock.load("/Users/rubbinnexx/Workspace/Uni/DXRAM/workspace/dxram/jni/libJNILock.dylib");
-		JNILock.load("/home/nothaas/Workspace/workspace_dxram/dxram/jni/libJNILock.so");
+		JNILock.load("/home/nothaas/Workspace/workspace_dxram/dxram/jni/libJNINativeMemory.so");
 
 		// m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
 		try {
@@ -72,7 +71,8 @@ public class SmallObjectHeapTest {
 			}
 
 			// m_memory = new SmallObjectHeap(new StorageRandomAccessFile(file));
-			m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
+			// m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
+			m_memory = new SmallObjectHeap(new StorageHybridUnsafeJNINativeMemory());
 		} catch (final IOException e1) {
 			e1.printStackTrace();
 		}
@@ -227,11 +227,7 @@ public class SmallObjectHeapTest {
 
 					long ptr = -1;
 
-					try {
-						LOCK.lock();
-					} catch (final InterruptedException e) {
-						e.printStackTrace();
-					}
+					LOCK.lock();
 					ptr = m_memory.malloc(size);
 					LOCK.unlock();
 					if (m_debugPrint) {
@@ -247,11 +243,7 @@ public class SmallObjectHeapTest {
 						Long memoryPtr = m_blocksAlloced.firstElement();
 						m_blocksAlloced.remove(0);
 
-						try {
-							LOCK.lock();
-						} catch (final InterruptedException e) {
-							e.printStackTrace();
-						}
+						LOCK.lock();
 						m_memory.free(memoryPtr);
 						LOCK.unlock();
 						if (m_debugPrint) {
@@ -273,10 +265,10 @@ public class SmallObjectHeapTest {
 
 		@Override
 		public String toString() {
-			return "MemoryThread: mallocOperations " + m_numMallocOperations +
-					", freeOperations: " + m_numFreeOperations +
-					",  blockSizeMin: " + m_blockSizeMin +
-					", blockSizeMax: " + m_blockSizeMax;
+			return "MemoryThread: mallocOperations " + m_numMallocOperations
+					+ ", freeOperations: " + m_numFreeOperations
+					+ ",  blockSizeMin: " + m_blockSizeMin
+					+ ", blockSizeMax: " + m_blockSizeMax;
 		}
 	}
 }

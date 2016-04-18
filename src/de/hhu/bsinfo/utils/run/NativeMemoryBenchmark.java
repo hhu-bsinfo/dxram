@@ -1,7 +1,6 @@
 
 package de.hhu.bsinfo.utils.run;
 
-import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -10,27 +9,20 @@ import de.hhu.bsinfo.utils.eval.EvaluationTable;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.main.AbstractMain;
 
+import sun.misc.Unsafe;
+
 /**
  * Benchmark the JNINativeMemory implementation compiled with various
  * compilers and optimization levels and compare it against Java's Unsafe class.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
-public class NativeMemoryBenchmark extends AbstractMain
-{
-	private static final Argument ARG_NUM_RUNS = new Argument("numRuns", "100000", true, "Number of runs to execute for the final result");
-	private static final Argument ARG_PATH_JNI_NATIVE_MEMORY = new Argument("pathJNINativeMemory", null, false, "Absolute path to the compiled JNINativeMemory library files or single library file");
+public class NativeMemoryBenchmark extends AbstractMain {
+	private static final Argument ARG_NUM_RUNS =
+			new Argument("numRuns", "100000", true, "Number of runs to execute for the final result");
+	private static final Argument ARG_PATH_JNI_NATIVE_MEMORY = new Argument("pathJNINativeMemory", null, false,
+			"Absolute path to the compiled JNINativeMemory library files or single library file");
 
 	private EvaluationTable m_table;
-
-	/**
-	 * Java main entry point.
-	 * @param args
-	 *            Main arguments.
-	 */
-	public static void main(final String[] args) {
-		AbstractMain main = new NativeMemoryBenchmark();
-		main.run(args);
-	}
 
 	/**
 	 * Constructor
@@ -39,14 +31,23 @@ public class NativeMemoryBenchmark extends AbstractMain
 		super("Benchmarks methods for accessing native/unsafe memory.");
 	}
 
+	/**
+	 * Java main entry point.
+	 * @param p_args
+	 *            Main arguments.
+	 */
+	public static void main(final String[] p_args) {
+		AbstractMain main = new NativeMemoryBenchmark();
+		main.run(p_args);
+	}
+
 	@Override
-	protected void registerDefaultProgramArguments(ArgumentList p_arguments) {
+	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(ARG_NUM_RUNS);
 	}
 
 	@Override
-	protected int main(ArgumentList p_arguments)
-	{
+	protected int main(final ArgumentList p_arguments) {
 		final int numRuns = p_arguments.getArgument(ARG_NUM_RUNS).getValue(Integer.class);
 		final String pathJniNativeMemory = p_arguments.getArgument(ARG_PATH_JNI_NATIVE_MEMORY).getValue(String.class);
 
@@ -62,10 +63,10 @@ public class NativeMemoryBenchmark extends AbstractMain
 	 * @param p_pathJniNativeMemory
 	 *            Path to folder with all compiled JNINativeLibraries
 	 */
-	private void mainEval(final int p_numRuns, final String p_pathJniNativeMemory)
-	{
+	private void mainEval(final int p_numRuns, final String p_pathJniNativeMemory) {
 		if (p_pathJniNativeMemory.endsWith(".so") || p_pathJniNativeMemory.endsWith(".dylib")) {
-			String libName = p_pathJniNativeMemory.substring(p_pathJniNativeMemory.lastIndexOf("/"), p_pathJniNativeMemory.length());
+			String libName = p_pathJniNativeMemory.substring(p_pathJniNativeMemory.lastIndexOf("/"),
+					p_pathJniNativeMemory.length());
 			System.out.println("Running with single library: " + libName);
 			prepareTableEval(libName);
 
@@ -110,9 +111,10 @@ public class NativeMemoryBenchmark extends AbstractMain
 
 	/**
 	 * Create the table for measured data
+	 * @param p_singleLibrary
+	 *            Name of library for the table entry
 	 */
-	private void prepareTableEval(final String p_singleLibrary)
-	{
+	private void prepareTableEval(final String p_singleLibrary) {
 		if (p_singleLibrary == null) {
 			m_table = new EvaluationTable(10, 6);
 
@@ -152,8 +154,7 @@ public class NativeMemoryBenchmark extends AbstractMain
 	 * @param p_rowName
 	 *            Name of the row in the table to put the data into.
 	 */
-	private void runUnsafe(final int p_numRuns, final String p_rowName)
-	{
+	private void runUnsafe(final int p_numRuns, final String p_rowName) {
 		Unsafe unsafe = UnsafeHandler.getInstance().getUnsafe();
 		Stopwatch[] stopwatches = new Stopwatch[6];
 		for (int i = 0; i < stopwatches.length; i++) {
@@ -166,8 +167,7 @@ public class NativeMemoryBenchmark extends AbstractMain
 			data[i] = (byte) i;
 		}
 
-		for (int i = 0; i < p_numRuns; i++)
-		{
+		for (int i = 0; i < p_numRuns; i++) {
 			stopwatches[0].start();
 			address = unsafe.allocateMemory(data.length);
 			stopwatches[0].stopAndAccumulate();
@@ -199,7 +199,7 @@ public class NativeMemoryBenchmark extends AbstractMain
 			// sleep to kill performance gains by continuous looping
 			try {
 				Thread.sleep(1);
-			} catch (InterruptedException e) {
+			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
@@ -219,8 +219,7 @@ public class NativeMemoryBenchmark extends AbstractMain
 	 * @param p_rowName
 	 *            Name of the row in the table to put the data into.
 	 */
-	private void runJNINativeMemory(final int p_numRuns, final String p_rowName)
-	{
+	private void runJNINativeMemory(final int p_numRuns, final String p_rowName) {
 		Stopwatch[] stopwatches = new Stopwatch[6];
 		for (int i = 0; i < stopwatches.length; i++) {
 			stopwatches[i] = new Stopwatch();
@@ -232,8 +231,7 @@ public class NativeMemoryBenchmark extends AbstractMain
 			data[i] = (byte) i;
 		}
 
-		for (int i = 0; i < p_numRuns; i++)
-		{
+		for (int i = 0; i < p_numRuns; i++) {
 			stopwatches[0].start();
 			address = JNINativeMemory.alloc(data.length);
 			stopwatches[0].stopAndAccumulate();
@@ -267,7 +265,7 @@ public class NativeMemoryBenchmark extends AbstractMain
 			// sleep to kill performance gains by continuous looping
 			try {
 				Thread.sleep(1);
-			} catch (InterruptedException e) {
+			} catch (final InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
