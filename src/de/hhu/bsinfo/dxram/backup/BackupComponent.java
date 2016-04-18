@@ -29,6 +29,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	private boolean m_firstRangeInitialized;
 	private short m_replicationFactor;
 
+	private short m_nodeID;
+
 	private BackupRange m_currentBackupRange;
 	private ArrayList<BackupRange> m_ownBackupRanges;
 
@@ -73,7 +75,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	 * Registers peer in superpeer overlay
 	 */
 	public void registerPeer() {
-		m_lookup.initRange(0, new LookupRangeWithBackupPeers(m_boot.getNodeID(), null, null));
+		m_lookup.initRange(0, new LookupRangeWithBackupPeers(m_nodeID, null, null));
 	}
 
 	/**
@@ -87,31 +89,30 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	public void initBackupRange(final long p_chunkID, final int p_size) {
 		final int size;
 		final long localID = ChunkID.getLocalID(p_chunkID);
-		final short nodeID = m_boot.getNodeID();
 
 		if (m_backupActive) {
-			size = p_size + m_log.getAproxHeaderSize(nodeID, localID, p_size);
+			size = p_size + m_log.getAproxHeaderSize(m_nodeID, localID, p_size);
 			if (!m_firstRangeInitialized) {
 				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
 				// This is the first put and p_localID is not reused
 				determineBackupPeers(0);
-				m_lookup.initRange((long) nodeID << 48,
-						new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange((long) nodeID << 48, m_currentBackupRange.getBackupPeers());
+				m_lookup.initRange((long) m_nodeID << 48,
+						new LookupRangeWithBackupPeers(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
 				m_rangeSize = size;
 				m_firstRangeInitialized = true;
 			} else if (m_rangeSize + size > m_backupRangeSize) {
 				determineBackupPeers(localID);
-				m_lookup.initRange(((long) nodeID << 48) + localID,
-						new LookupRangeWithBackupPeers(nodeID, m_currentBackupRange.getBackupPeers(), null));
-				m_log.initBackupRange(((long) nodeID << 48) + localID, m_currentBackupRange.getBackupPeers());
+				m_lookup.initRange(((long) m_nodeID << 48) + localID,
+						new LookupRangeWithBackupPeers(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
+				m_log.initBackupRange(((long) m_nodeID << 48) + localID, m_currentBackupRange.getBackupPeers());
 				m_rangeSize = size;
 			} else {
 				m_rangeSize += size;
 			}
 		} else if (!m_firstRangeInitialized) {
-			m_lookup.initRange(((long) nodeID << 48) + 0xFFFFFFFFFFFFL,
-					new LookupRangeWithBackupPeers(nodeID, new short[] {-1, -1, -1}, null));
+			m_lookup.initRange(((long) m_nodeID << 48) + 0xFFFFFFFFFFFFL,
+					new LookupRangeWithBackupPeers(m_nodeID, new short[] {-1, -1, -1}, null));
 			m_firstRangeInitialized = true;
 		}
 	}
@@ -125,7 +126,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	public short[] getBackupPeersForLocalChunks(final long p_chunkID) {
 		short[] ret = null;
 
-		if (ChunkID.getCreatorID(p_chunkID) == m_boot.getNodeID()) {
+		if (ChunkID.getCreatorID(p_chunkID) == m_nodeID) {
 			for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
 				if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
 					ret = m_ownBackupRanges.get(i).getBackupPeers();
@@ -148,7 +149,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	public long getBackupPeersForLocalChunksAsLong(final long p_chunkID) {
 		long ret = -1;
 
-		if (ChunkID.getCreatorID(p_chunkID) == m_boot.getNodeID()) {
+		if (ChunkID.getCreatorID(p_chunkID) == m_nodeID) {
 			for (int i = m_ownBackupRanges.size() - 1; i >= 0; i--) {
 				if (m_ownBackupRanges.get(i).getRangeID() <= ChunkID.getLocalID(p_chunkID)) {
 					ret = m_ownBackupRanges.get(i).getBackupPeersAsLong();
@@ -170,7 +171,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		m_migrationsTree.initNewBackupRange();
 
 		m_lookup.initRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
-				new LookupRangeWithBackupPeers(m_boot.getNodeID(),
+				new LookupRangeWithBackupPeers(m_nodeID,
 						m_currentMigrationBackupRange.getBackupPeers(), null));
 		m_log.initBackupRange(((long) -1 << 48) + m_currentMigrationBackupRange.getRangeID(),
 				m_currentMigrationBackupRange.getBackupPeers());
@@ -231,6 +232,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		m_lookup = getDependentComponent(LookupComponent.class);
 		m_log = getDependentComponent(LogComponent.class);
 
+		m_nodeID = m_boot.getNodeID();
 		if (m_backupActive && m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_ownBackupRanges = new ArrayList<BackupRange>();
 			m_migrationBackupRanges = new ArrayList<BackupRange>();
@@ -323,8 +325,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 							}
 						}
 					}
-					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + ChunkID.toHexString(p_localID)
-							+ ": " + NodeID.toHexString(peers.get(index)));
+					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
+							+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
 				}
@@ -355,8 +357,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 						}
 					}
 				}
-				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range " + ChunkID.toHexString(p_localID)
-						+ ": " + NodeID.toHexString(peers.get(index)));
+				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
+						+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
 				newBackupPeers[i] = peers.get(index);
 				ready = false;
 			}
