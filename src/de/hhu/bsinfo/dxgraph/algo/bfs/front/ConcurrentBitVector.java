@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
  * Thread safe, lock free implementation of a frontier listed based on
- * the BitVector.
+ * a bit vector.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  *
  */
