@@ -132,9 +132,10 @@ public final class CIDTable {
 	 *            the ChunkID of the entry
 	 * @param p_addressChunk
 	 *            the address of the chunk
+	 * @return True if successful, false if allocation of a new table failed, out of memory
 	 */
-	public void set(final long p_chunkID, final long p_addressChunk) {
-		setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
+	public boolean set(final long p_chunkID, final long p_addressChunk) {
+		return setEntry(p_chunkID, p_addressChunk, m_addressTableDirectory, LID_TABLE_LEVELS);
 	}
 
 	/**
@@ -246,7 +247,9 @@ public final class CIDTable {
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, NID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
-		m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
+		if (ret != -1) {
+			m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
+		}
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable);
 
@@ -266,8 +269,9 @@ public final class CIDTable {
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, LID_TABLE_SIZE);
 		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
-		m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
-
+		if (ret != -1) {
+			m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
+		}
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable);
 
 		return ret;
@@ -354,8 +358,9 @@ public final class CIDTable {
 	 *            the address of the current CID table
 	 * @param p_level
 	 *            the table level
+	 * @return True if successful, false if no further table could be allocated (out of memory)
 	 */
-	private void setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable,
+	private boolean setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable,
 			final int p_level) {
 		long index;
 		long entry;
@@ -370,18 +375,23 @@ public final class CIDTable {
 			entry = readEntry(p_addressTable, index);
 			if (entry == 0) {
 				entry = createLIDTable();
+				if (entry == -1) {
+					return false;
+				}
 				writeEntry(p_addressTable, index, entry);
 			}
 
 			if (entry > 0) {
 				// move on to next table
-				setEntry(p_chunkID, p_addressChunk, entry & BITMASK_ADDRESS, p_level - 1);
+				return setEntry(p_chunkID, p_addressChunk, entry & BITMASK_ADDRESS, p_level - 1);
 			}
 		} else {
 			// Set the level 0 entry
 			// valid and active entry, delete flag 0
 			writeEntry(p_addressTable, index, p_addressChunk & BITMASK_ADDRESS);
 		}
+
+		return true;
 	}
 
 	/**

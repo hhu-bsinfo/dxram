@@ -198,9 +198,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		address = m_rawMemory.malloc(p_size);
 		if (address >= 0) {
 			chunkID = ((long) m_boot.getNodeID() << 48) + 0;
-			// register new chunk
-			m_cidTable.set(chunkID, address);
-			m_numActiveChunks++;
+			// register new chunk in cid table
+			if (!m_cidTable.set(chunkID, address)) {
+				// on demand allocation of new table failed
+				// free previously created chunk for data to avoid memory leak
+				m_rawMemory.free(address);
+				chunkID = -1;
+			} else {
+				m_numActiveChunks++;
+			}
 		} else {
 			chunkID = -1;
 		}
@@ -234,8 +240,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			address = m_rawMemory.malloc(p_size);
 			if (address >= 0) {
 				// register new chunk
-				m_cidTable.set(p_chunkId, address);
-				m_numActiveChunks++;
+				// register new chunk in cid table
+				if (!m_cidTable.set(chunkID, address)) {
+					// on demand allocation of new table failed
+					// free previously created chunk for data to avoid memory leak
+					m_rawMemory.free(address);
+					address = -1;
+				} else {
+					m_numActiveChunks++;
+				}
 				chunkID = p_chunkId;
 			} else {
 				chunkID = -1;
@@ -278,9 +291,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 			if (address >= 0) {
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
-				// register new chunk
-				m_cidTable.set(chunkID, address);
-				m_numActiveChunks++;
+				// register new chunk in cid table
+				if (!m_cidTable.set(chunkID, address)) {
+					// on demand allocation of new table failed
+					// free previously created chunk for data to avoid memory leak
+					m_rawMemory.free(address);
+					chunkID = -1;
+				} else {
+					m_numActiveChunks++;
+				}
 			} else {
 				// most likely out of memory
 				m_logger.error(getClass(),
