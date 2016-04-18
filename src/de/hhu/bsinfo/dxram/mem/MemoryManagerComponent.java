@@ -245,11 +245,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 					// on demand allocation of new table failed
 					// free previously created chunk for data to avoid memory leak
 					m_rawMemory.free(address);
-					address = -1;
+					chunkID = -1;
 				} else {
 					m_numActiveChunks++;
+					chunkID = p_chunkId;
 				}
-				chunkID = p_chunkId;
 			} else {
 				chunkID = -1;
 			}
