@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -38,7 +39,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	private int m_executeBarrierIdentifier;
 	private BarrierMasterInternal m_executionBarrier;
 
-	private long m_payloadIdCounter;
+	private AtomicLong m_payloadIdCounter = new AtomicLong(0);
 
 	public ComputeMaster(final int p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
@@ -70,6 +71,8 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		if (m_taskCount.get() < MAX_TASK_COUNT) {
 			m_tasks.add(p_task);
 			m_taskCount.incrementAndGet();
+			// set unique payload id
+			p_task.getPayload().setPayloadId(m_payloadIdCounter.getAndIncrement());
 			return true;
 		} else {
 			return false;
@@ -208,9 +211,6 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 			m_joinLock.unlock();
 			return;
 		}
-
-		// set unique payload id
-		taskPayload.setPayloadId(m_payloadIdCounter++);
 
 		m_logger.info(getClass(),
 				"Starting execution of task " + task + " with " + m_signedOnSlaves.size() + " slaves.");

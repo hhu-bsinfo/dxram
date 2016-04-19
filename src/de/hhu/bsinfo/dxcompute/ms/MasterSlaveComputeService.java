@@ -148,10 +148,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		// get assigned payload id
 		p_task.getPayload().setPayloadId(response.getAssignedPayloadId());
 
-		m_logger.debug(getClass(), "Assigned payload id to task " + p_task);
-
 		// remember task for remote callbacks
 		m_remoteTasks.put(p_task.getPayload().getPayloadId(), p_task);
+
+		m_logger.info(getClass(), "Submitted task to node " + NodeID.toHexString(p_masterNodeId) + ": " + p_task);
 
 		return p_task.getPayload().getPayloadId();
 	}
@@ -173,7 +173,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	public void taskCompleted(final Task p_task) {
 		// only used for remote tasks to callback the node they were submitted on
 		TaskRemoteCallbackMessage message =
-				new TaskRemoteCallbackMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(), 0);
+				new TaskRemoteCallbackMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(), 1);
 
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
@@ -349,11 +349,17 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	private void incomingTaskRemoteCallbackMessage(final TaskRemoteCallbackMessage p_request) {
 
+		m_logger.debug(getClass(), "Got remote task callback: " + p_request);
+		// that's a little risky, but setting the id in the submit call
+		// is done quickly enough that we can keep blocking a little here
+		// though if we get weird timeouts or network message behavior
+		// this section might be the cause
 		Task task = m_remoteTasks.get(p_request.getTaskPayloadId());
 		while (task == null) {
 			task = m_remoteTasks.get(p_request.getTaskPayloadId());
 			Thread.yield();
 		}
+
 		switch (p_request.getCallbackId()) {
 			case 0: {
 				task.notifyListenersExecutionStarts();
@@ -362,7 +368,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			case 1: {
 				// done with task, remove
 				task.notifyListenersExecutionCompleted();
-				m_remoteTasks.remove(task);
+				m_remoteTasks.remove(p_request.getTaskPayloadId());
 				break;
 			}
 			default:

@@ -59,7 +59,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 			return true;
 		}
 
-		Task task = new Task(payload, name + ms_taskCounter);
+		Task task = new Task(payload, name + ms_taskCounter++);
 		task.registerTaskListener(this);
 
 		long taskId = computeService.submitTask(task, nid);
