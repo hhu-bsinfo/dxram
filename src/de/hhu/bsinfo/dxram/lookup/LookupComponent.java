@@ -370,7 +370,10 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 	@Override
 	public void eventTriggered(final NameserviceCacheEntryUpdateEvent p_event) {
-		m_applicationIDCache.put(p_event.getId(), p_event.getChunkID());
+		// update if available to avoid caching all entries
+		if (m_applicationIDCache.contains(p_event.getId())) {
+			m_applicationIDCache.put(p_event.getId(), p_event.getChunkID());
+		}
 	}
 
 	/**
