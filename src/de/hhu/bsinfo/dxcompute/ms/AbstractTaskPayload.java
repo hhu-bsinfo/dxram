@@ -42,6 +42,10 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 		}
 	}
 
+	public static Map<Integer, Class<? extends AbstractTaskPayload>> getRegisteredTaskPayloadClasses() {
+		return ms_registeredTaskClasses;
+	}
+
 	protected static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
 			final Class<? extends AbstractTaskPayload> p_class) {
 		Class<? extends AbstractTaskPayload> clazz =

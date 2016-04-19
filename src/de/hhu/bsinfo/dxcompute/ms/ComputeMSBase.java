@@ -38,15 +38,18 @@ public abstract class ComputeMSBase extends Thread {
 	protected volatile State m_state = State.STATE_SETUP;
 	protected ComputeRole m_role;
 	protected int m_computeGroupId = -1;
+	protected long m_pingIntervalMs;
+	protected long m_lastPingMs;
 	protected String m_nameserviceMasterNodeIdKey;
 
-	public ComputeMSBase(final ComputeRole p_role, final int p_computeGroupId,
+	public ComputeMSBase(final ComputeRole p_role, final int p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
 		super("ComputeMS-" + p_role + "-" + p_computeGroupId);
 		m_role = p_role;
 		m_computeGroupId = p_computeGroupId;
+		m_pingIntervalMs = p_pingIntervalMs;
 		assert m_computeGroupId >= MIN_COMPUTE_GROUP_ID && m_computeGroupId <= MAX_COMPUTE_GROUP_ID;
 		m_nameserviceMasterNodeIdKey = new String(NAMESERVICE_ENTRY_IDENT + m_computeGroupId);
 

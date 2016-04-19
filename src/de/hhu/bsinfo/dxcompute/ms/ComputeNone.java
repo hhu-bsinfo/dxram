@@ -9,11 +9,11 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 public class ComputeNone extends ComputeMSBase {
 
-	public ComputeNone(final int p_computeGroupId, final DXRAMServiceAccessor p_serviceAccessor,
+	public ComputeNone(final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
-		super(ComputeRole.NONE, p_computeGroupId, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
+		super(ComputeRole.NONE, -1, 0, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
 	}
 
 	@Override

@@ -30,6 +30,14 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
 	}
 
 	/**
+	 * Check if a specific node is online.
+	 * @param p_nodeID
+	 *            Node to check.
+	 * @return True if online, false offline.
+	 */
+	public abstract boolean isNodeOnline(final short p_nodeID);
+
+	/**
 	 * Get IDs of all available (online) nodes including the own.
 	 * @return List of IDs of nodes available.
 	 */

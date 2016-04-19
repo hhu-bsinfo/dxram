@@ -40,6 +40,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutFailedPeerMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewPredecessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
@@ -1245,6 +1246,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 							backupSuperpeers)) != NetworkErrorCodes.SUCCESS) {
 				// Requesting peer is not available anymore, ignore it
 			}
+
+			ArrayList<Short> peers = getPeers();
+			// notify peers about this to update caches
+			for (short peer : peers) {
+				NameserviceUpdatePeerCachesMessage message =
+						new NameserviceUpdatePeerCachesMessage(peer, id, p_insertIDRequest.getChunkID());
+				if (m_network.sendMessage(message) != NetworkErrorCodes.SUCCESS) {
+					// peer is not available anymore, ignore it
+				}
+			}
 		} else if (p_insertIDRequest.isBackup()) {
 			m_mappingLock.lock();
 			m_idTable.put(id, p_insertIDRequest.getChunkID());
@@ -1719,6 +1730,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 				GetNameserviceEntriesRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE,
 				GetNameserviceEntriesResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE,
+				LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE,
+				NameserviceUpdatePeerCachesMessage.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST,
 				MigrateRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE,

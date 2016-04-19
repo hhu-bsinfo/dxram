@@ -126,6 +126,42 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
+	public boolean isNodeOnline(final short p_nodeID) {
+		if (zookeeperPathExists("nodes/superpeers")) {
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/superpeers");
+				for (String child : children) {
+					if (p_nodeID == Short.parseShort(child)) {
+						return true;
+					}
+				}
+			} catch (final ZooKeeperException e) {}
+		}
+		if (zookeeperPathExists("nodes/peers")) {
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/peers");
+				for (String child : children) {
+					if (p_nodeID == Short.parseShort(child)) {
+						return true;
+					}
+				}
+			} catch (final ZooKeeperException e) {}
+		}
+		if (zookeeperPathExists("nodes/terminals")) {
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/terminals");
+				for (String child : children) {
+					if (p_nodeID == Short.parseShort(child)) {
+						return true;
+					}
+				}
+			} catch (final ZooKeeperException e) {}
+		}
+
+		return false;
+	}
+
+	@Override
 	public List<Short> getIDsOfOnlineNodes() {
 		// TODO: Don't use ZooKeeper for this
 
@@ -332,7 +368,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 								splits = node.split("/");
 
 								m_nodesConfiguration.addNode(nodeID, new NodeEntry(splits[0],
-										Integer.parseInt(splits[1]), (short) 0, (short) 0, NodeRole.toNodeRole(splits[2])));
+										Integer.parseInt(splits[1]), (short) 0, (short) 0,
+										NodeRole.toNodeRole(splits[2])));
 							}
 						}
 					}

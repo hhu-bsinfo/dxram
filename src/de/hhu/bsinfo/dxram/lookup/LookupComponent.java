@@ -9,7 +9,9 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.event.NameserviceCacheEntryUpdateEvent;
 import de.hhu.bsinfo.dxram.lookup.overlay.CacheTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
@@ -23,12 +25,13 @@ import de.hhu.bsinfo.utils.Pair;
  * Component for finding chunks in superpeer overlay.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class LookupComponent extends AbstractDXRAMComponent {
+public class LookupComponent extends AbstractDXRAMComponent implements EventListener<NameserviceCacheEntryUpdateEvent> {
 
 	private static final short ORDER = 10;
 
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
+	private EventComponent m_event;
 
 	private OverlaySuperpeer m_superpeer;
 	private OverlayPeer m_peer;
@@ -118,7 +121,8 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	public void insertNameserviceEntry(final int p_id, final long p_chunkID) {
 
 		// Insert ChunkID <-> ApplicationID mapping
-		m_logger.trace(getClass(), "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + ChunkID.toHexString(p_chunkID));
+		m_logger.trace(getClass(),
+				"Entering insertID with: p_id=" + p_id + ", p_chunkID=" + ChunkID.toHexString(p_chunkID));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -364,6 +368,11 @@ public class LookupComponent extends AbstractDXRAMComponent {
 		}
 	}
 
+	@Override
+	public void eventTriggered(final NameserviceCacheEntryUpdateEvent p_event) {
+		m_applicationIDCache.put(p_event.getId(), p_event.getChunkID());
+	}
+
 	/**
 	 * Clear the cache
 	 */
@@ -388,6 +397,7 @@ public class LookupComponent extends AbstractDXRAMComponent {
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
+		m_event = getDependentComponent(EventComponent.class);
 
 		m_cachesEnabled = p_settings.getValue(LookupConfigurationValues.Component.CACHES_ENABLED);
 		if (m_cachesEnabled) {
@@ -408,7 +418,8 @@ public class LookupComponent extends AbstractDXRAMComponent {
 		} else {
 			m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
 					m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_logger,
-					getDependentComponent(NetworkComponent.class));
+					getDependentComponent(NetworkComponent.class), m_event);
+			m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);
 		}
 
 		return true;
@@ -433,5 +444,4 @@ public class LookupComponent extends AbstractDXRAMComponent {
 
 		return true;
 	}
-
 }

@@ -8,9 +8,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
+import de.hhu.bsinfo.dxram.lookup.event.NameserviceCacheEntryUpdateEvent;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesRequest;
@@ -34,6 +36,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
@@ -63,6 +66,7 @@ public class OverlayPeer implements MessageReceiver {
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
+	private EventComponent m_event;
 
 	private short m_nodeID = -1;
 	private short m_mySuperpeer = -1;
@@ -86,12 +90,16 @@ public class OverlayPeer implements MessageReceiver {
 	 *            the LoggerComponent
 	 * @param p_network
 	 *            the NetworkComponent
+	 * @param p_event
+	 *            the EventComponent
 	 */
 	public OverlayPeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers,
-			final AbstractBootComponent p_boot, final LoggerComponent p_logger, final NetworkComponent p_network) {
+			final AbstractBootComponent p_boot, final LoggerComponent p_logger, final NetworkComponent p_network,
+			final EventComponent p_event) {
 		m_boot = p_boot;
 		m_logger = p_logger;
 		m_network = p_network;
+		m_event = p_event;
 
 		m_nodeID = m_boot.getNodeID();
 
@@ -567,7 +575,8 @@ public class OverlayPeer implements MessageReceiver {
 
 		while (-1 != contactSuperpeer) {
 			m_logger.trace(getClass(),
-					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am " + NodeID.toHexString(m_nodeID));
+					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am "
+							+ NodeID.toHexString(m_nodeID));
 
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_NOT_SUPERPEER);
 			if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
@@ -681,6 +690,16 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
+	 * Handles an incoming NameserviceUpdatePeerCachesMessage
+	 * @param p_message
+	 *            the NameserviceUpdatePeerCachesMessage
+	 */
+	private void incomingNameserviceUpdatePeerCachesMessage(final NameserviceUpdatePeerCachesMessage p_message) {
+		m_event.fireEvent(new NameserviceCacheEntryUpdateEvent(getClass().getSimpleName(), p_message.getID(),
+				p_message.getChunkID()));
+	}
+
+	/**
 	 * Handles an incoming Message
 	 * @param p_message
 	 *            the Message
@@ -692,6 +711,9 @@ public class OverlayPeer implements MessageReceiver {
 				switch (p_message.getSubtype()) {
 					case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
 						incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
+						break;
+					case LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE:
+						incomingNameserviceUpdatePeerCachesMessage((NameserviceUpdatePeerCachesMessage) p_message);
 						break;
 					default:
 						break;
@@ -734,6 +756,9 @@ public class OverlayPeer implements MessageReceiver {
 				GetNameserviceEntriesRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE,
 				GetNameserviceEntriesResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE,
+				LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE,
+				NameserviceUpdatePeerCachesMessage.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST,
 				MigrateRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RESPONSE,
@@ -769,6 +794,7 @@ public class OverlayPeer implements MessageReceiver {
 	 */
 	private void registerNetworkMessageListener() {
 		m_network.register(SendSuperpeersMessage.class, this);
+		m_network.register(NameserviceUpdatePeerCachesMessage.class, this);
 	}
 
 }

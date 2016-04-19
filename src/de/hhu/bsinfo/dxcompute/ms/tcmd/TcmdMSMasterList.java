@@ -26,7 +26,7 @@ public class TcmdMSMasterList extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public boolean execute(ArgumentList p_arguments) {
+	public boolean execute(final ArgumentList p_arguments) {
 		MasterSlaveComputeService masterSlaveComputeService =
 				getTerminalDelegate().getDXRAMService(MasterSlaveComputeService.class);
 

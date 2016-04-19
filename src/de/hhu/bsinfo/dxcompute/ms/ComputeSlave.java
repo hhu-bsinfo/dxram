@@ -31,11 +31,13 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 
 	private BarrierSlaveInternal m_barrier;
 
-	public ComputeSlave(final int p_computeGroupId, final DXRAMServiceAccessor p_serviceAccessor,
+	public ComputeSlave(final int p_computeGroupId, final long p_pintIntervalMs,
+			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
-		super(ComputeRole.SLAVE, p_computeGroupId, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
+		super(ComputeRole.SLAVE, p_computeGroupId, p_pintIntervalMs, p_serviceAccessor, p_network, p_logger,
+				p_nameservice, p_boot);
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
@@ -129,6 +131,9 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 			try {
 				Thread.sleep(1000);
 			} catch (final InterruptedException e) {}
+
+			// trigger a full retry. might happen that the master node has changed
+			m_masterNodeId = NodeID.INVALID_ID;
 		} else {
 			SlaveJoinResponse response = (SlaveJoinResponse) request.getResponse();
 			if (response.getStatusCode() != 0) {
@@ -150,6 +155,21 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		if (m_task != null) {
 			m_state = State.STATE_EXECUTE;
 		} else {
+			// check periodically if master is still available
+			if (m_lastPingMs + m_pingIntervalMs < System.currentTimeMillis()) {
+				if (!m_boot.isNodeOnline(m_masterNodeId)) {
+					// master is gone, go back to sign on
+					m_logger.info(getClass(),
+							"Master " + NodeID.toHexString(m_masterNodeId) + " went offline, logout.");
+					m_masterNodeId = NodeID.INVALID_ID;
+					m_state = State.STATE_SETUP;
+					return;
+				}
+
+				m_lastPingMs = System.currentTimeMillis();
+				m_logger.trace(getClass(), "Pinging master " + NodeID.toHexString(m_masterNodeId) + ": online.");
+			}
+
 			// do nothing
 			Thread.yield();
 		}
