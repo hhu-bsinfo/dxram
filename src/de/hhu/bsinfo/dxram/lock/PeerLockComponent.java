@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.lock;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Implementation of the lock component interface. This provides a peer side locking i.e.
@@ -58,6 +60,21 @@ public class PeerLockComponent extends AbstractLockComponent {
 		m_mapEntryCreationLock = null;
 
 		return true;
+	}
+
+	@Override
+	public ArrayList<Pair<Long, Short>> getLockedList() {
+		ArrayList<Pair<Long, Short>> ret = new ArrayList<Pair<Long, Short>>();
+		for (Entry<Long, LockEntry> entry : m_lockedChunks.entrySet()) {
+
+			LockEntry lockEntry = entry.getValue();
+			short node = lockEntry.m_nodeID;
+			if (node != NodeID.INVALID_ID) {
+				ret.add(new Pair<Long, Short>(entry.getKey(), node));
+			}
+		}
+
+		return ret;
 	}
 
 	@Override
