@@ -1,19 +1,58 @@
 
 package de.hhu.bsinfo.dxram.logger;
 
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
+import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
 import de.hhu.bsinfo.dxram.logger.tcmds.TcmdChangeLogLevel;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
+import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.log.LogLevel;
 
 /**
  * Service to allow the application to use the same logger as DXRAM.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 02.02.16
  */
-public class LoggerService extends AbstractDXRAMService {
+public class LoggerService extends AbstractDXRAMService implements MessageReceiver {
 
+	private NetworkComponent m_network;
+	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private TerminalComponent m_terminal;
+
+	/**
+	 * Set the log level for the logger.
+	 * @param p_logLevel
+	 *            Log level to set.
+	 */
+	public void setLogLevel(final LogLevel p_logLevel) {
+		m_logger.setLogLevel(p_logLevel);
+	}
+
+	/**
+	 * Set the log level for the logger on another node
+	 * @param p_logLevel
+	 *            Log level to set.
+	 * @param p_nodeId
+	 *            Id of the node to change the log level on
+	 */
+	public void setLogLevel(final LogLevel p_logLevel, final Short p_nodeId) {
+		if (m_boot.getNodeID() == p_nodeId) {
+			setLogLevel(p_logLevel);
+		} else {
+			SetLogLevelMessage message = new SetLogLevelMessage(p_nodeId, p_logLevel);
+			NetworkErrorCodes err = m_network.sendMessage(message);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(getClass(),
+						"Setting log level of node " + NodeID.toHexString(p_nodeId) + " failed: " + err);
+			}
+		}
+	}
 
 	/**
 	 * Log an error message.
@@ -155,14 +194,19 @@ public class LoggerService extends AbstractDXRAMService {
 		m_logger.trace(getClass(), "[" + p_class.getSimpleName() + "] " + p_msg);
 	}
 
-	/**
-	 * Set the log level for the logger.
-	 * @param p_logLevel
-	 *            Log level to set.
-	 */
-	public void setLogLevel(final String p_logLevel) {
-		LogLevel level = LogLevel.toLogLevel(p_logLevel);
-		m_logger.setLogLevel(level);
+	@Override
+	public void onIncomingMessage(final AbstractMessage p_message) {
+		if (p_message != null) {
+			if (p_message.getType() == LoggerMessages.TYPE) {
+				switch (p_message.getSubtype()) {
+					case LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE:
+						incomingSetLogLevelMessage((SetLogLevelMessage) p_message);
+						break;
+					default:
+						break;
+				}
+			}
+		}
 	}
 
 	@Override
@@ -173,9 +217,16 @@ public class LoggerService extends AbstractDXRAMService {
 	@Override
 	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
 			final Settings p_settings) {
+		m_network = getComponent(NetworkComponent.class);
+		m_boot = getComponent(AbstractBootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
-
 		m_terminal = getComponent(TerminalComponent.class);
+
+		m_network.registerMessageType(LoggerMessages.TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE,
+				SetLogLevelMessage.class);
+
+		m_network.register(SetLogLevelMessage.class, this);
+
 		m_terminal.registerCommand(new TcmdChangeLogLevel());
 
 		return true;
@@ -188,4 +239,12 @@ public class LoggerService extends AbstractDXRAMService {
 		return true;
 	}
 
+	/**
+	 * Handles an incoming SetLogLevelMessage
+	 * @param p_message
+	 *            the SetLogLevelMessage
+	 */
+	private void incomingSetLogLevelMessage(final SetLogLevelMessage p_message) {
+		m_logger.setLogLevel(p_message.getLogLevel());
+	}
 }

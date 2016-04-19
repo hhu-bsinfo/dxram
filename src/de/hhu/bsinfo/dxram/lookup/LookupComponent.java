@@ -198,7 +198,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 	/**
 	 * Get all available nameservice entries.
-	 * @return List of nameservice entries.
+	 * @return List of nameservice entries or null on error.
 	 */
 	public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
 		ArrayList<Pair<Integer, Long>> ret = null;

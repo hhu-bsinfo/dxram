@@ -328,7 +328,7 @@ public class OverlayPeer implements MessageReceiver {
 
 	/**
 	 * Get all available nameservice entries.
-	 * @return List of nameservice entries.
+	 * @return List of nameservice entries or null on error;
 	 */
 	public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
 		ArrayList<Pair<Integer, Long>> entries = new ArrayList<Pair<Integer, Long>>();

@@ -11,6 +11,13 @@ import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.TaskRemoteCallbackMessage;
+import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
+import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToFileTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterList;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterStatus;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskList;
@@ -141,6 +148,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		// get assigned payload id
 		p_task.getPayload().setPayloadId(response.getAssignedPayloadId());
 
+		m_logger.debug(getClass(), "Assigned payload id to task " + p_task);
+
 		// remember task for remote callbacks
 		m_remoteTasks.put(p_task.getPayload().getPayloadId(), p_task);
 
@@ -259,6 +268,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 				break;
 		}
 
+		registerTaskPayloads();
+
 		m_logger.info(getClass(), "Started compute node " + role + " with compute group id " + computeGroupId);
 
 		return true;
@@ -359,6 +370,27 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 				break;
 		}
 
+	}
+
+	private void registerTaskPayloads() {
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK,
+				NullTaskPayload.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK,
+				WaitTaskPayload.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_CONSOLE_TASK,
+				PrintMemoryStatusToConsoleTask.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_FILE_TASK,
+				PrintMemoryStatusToFileTask.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_CONSOLE_TASK,
+				PrintStatisticsToConsoleTask.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK,
+				PrintStatisticsToFileTask.class);
 	}
 
 	public static class StatusMaster implements Importable, Exportable {

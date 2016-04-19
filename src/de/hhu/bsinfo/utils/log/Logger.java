@@ -67,6 +67,10 @@ public class Logger implements LoggerInterface {
 	@Override
 	public void setLogLevel(final LogLevel p_logLevel) {
 		m_logLevel = p_logLevel;
+
+		for (Pair<LogDestination, LogLevel> dest : m_logDestinations) {
+			dest.first().log(LogLevel.INFO, "***** Setting log level to " + m_logLevel + " *****");
+		}
 	}
 
 	@Override

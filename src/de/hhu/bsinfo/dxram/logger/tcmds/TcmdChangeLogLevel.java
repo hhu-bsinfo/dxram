@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
+import de.hhu.bsinfo.utils.log.LogLevel;
 
 /**
  * This class handles the loggerlevel command which changes the logger level.
@@ -17,6 +18,8 @@ public class TcmdChangeLogLevel extends AbstractTerminalCommand {
 	private static final Argument MS_ARG_LEVEL =
 			new Argument("level", null, false,
 					"Log level to set, available levels: DISABLED ERROR WARN INFO DEBUG TRACE");
+	private static final Argument MS_ARG_NID =
+			new Argument("nid", null, true, "Change the log level of another node");
 
 	@Override
 	public String getName() {
@@ -33,19 +36,24 @@ public class TcmdChangeLogLevel extends AbstractTerminalCommand {
 	@Override
 	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_LEVEL);
+		p_arguments.setArgument(MS_ARG_NID);
 	}
 
 	@Override
 	public boolean execute(final ArgumentList p_arguments) {
 
 		String level = p_arguments.getArgumentValue(MS_ARG_LEVEL, String.class);
-
-		if (level == null) {
-			return false;
-		}
+		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
 
 		LoggerService logService = getTerminalDelegate().getDXRAMService(LoggerService.class);
-		logService.setLogLevel(level);
+
+		LogLevel logLevel = LogLevel.toLogLevel(level);
+
+		if (nid == null) {
+			logService.setLogLevel(logLevel);
+		} else {
+			logService.setLogLevel(logLevel, nid);
+		}
 
 		return true;
 	}
