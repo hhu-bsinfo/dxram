@@ -96,7 +96,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 		if (m_backupActive) {
 			size = p_size + m_log.getAproxHeaderSize(m_nodeID, localID, p_size);
-			if (!m_firstRangeInitialized) {
+			if (!m_firstRangeInitialized && localID == 1) {
 				// First Chunk has LocalID 1, but there is a Chunk with LocalID 0 for hosting the name service
 				// This is the first put and p_localID is not reused
 				determineBackupPeers(0);

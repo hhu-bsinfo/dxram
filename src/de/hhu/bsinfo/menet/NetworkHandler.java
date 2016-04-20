@@ -329,22 +329,26 @@ public final class NetworkHandler implements DataReceiver {
 			RequestMap.fulfill((AbstractResponse) p_message);
 		} else {
 			if (!p_message.isExclusive()) {
-				while (!m_defaultMessageHandler.newMessage(p_message, m_numMessageHandlerThreads * 2)) {
+				int maxMessages = m_numMessageHandlerThreads * 2;
+				while (!m_defaultMessageHandler.newMessage(p_message, maxMessages)) {
 					// Too many pending messages -> wait
 					if (m_manager.atLeastOneConnectionIsCongested()) {
 						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
 						// than limit) messages to task queue until flow control message arrives
-						break;
+						maxMessages = Integer.MAX_VALUE;
+						continue;
 					}
 					Thread.yield();
 				}
 			} else {
-				while (!m_exclusiveMessageHandler.newMessage(p_message, 4)) {
+				int maxMessages = 4;
+				while (!m_exclusiveMessageHandler.newMessage(p_message, maxMessages)) {
 					// Too many pending messages -> wait
 					if (m_manager.atLeastOneConnectionIsCongested()) {
 						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
 						// than limit) messages to task queue until flow control message arrives
-						break;
+						maxMessages = Integer.MAX_VALUE;
+						continue;
 					}
 					Thread.yield();
 				}
