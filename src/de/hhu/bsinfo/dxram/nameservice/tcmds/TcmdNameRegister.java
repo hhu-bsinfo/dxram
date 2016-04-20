@@ -34,6 +34,8 @@ public class TcmdNameRegister extends AbstractTerminalCommand {
 	@Override
 	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_CID);
+		p_arguments.setArgument(MS_ARG_LID);
+		p_arguments.setArgument(MS_ARG_NID);
 		p_arguments.setArgument(MS_ARG_NAME);
 	}
 

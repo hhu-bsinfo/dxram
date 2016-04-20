@@ -118,9 +118,11 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		ArrayList<Pair<String, Long>> list = new ArrayList<Pair<String, Long>>();
 
 		ArrayList<Pair<Integer, Long>> entries = m_lookup.getNameserviceEntries();
-		// convert index representation
-		for (Pair<Integer, Long> entry : entries) {
-			list.add(new Pair<String, Long>(m_converter.convert(entry.first()), entry.second()));
+		if (list != null) {
+			// convert index representation
+			for (Pair<Integer, Long> entry : entries) {
+				list.add(new Pair<String, Long>(m_converter.convert(entry.first()), entry.second()));
+			}
 		}
 
 		return list;

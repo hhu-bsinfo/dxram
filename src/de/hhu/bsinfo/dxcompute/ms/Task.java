@@ -82,7 +82,7 @@ public class Task {
 
 	void notifyListenersExecutionCompleted() {
 		for (TaskListener listener : m_completionListeners) {
-			listener.taskBeforeExecution(this);
+			listener.taskCompleted(this);
 		}
 	}
 }

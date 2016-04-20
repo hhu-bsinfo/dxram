@@ -43,7 +43,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 		return m_barrierIdentifier;
 	}
 
-	public AbstractTaskPayload getTask() {
+	public AbstractTaskPayload getTaskPayload() {
 		return m_task;
 	}
 

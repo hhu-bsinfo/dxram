@@ -33,12 +33,14 @@ public final class DXRAM {
 	 */
 	public boolean initialize(final boolean p_autoShutdown) {
 		boolean ret = m_engine.init();
-		if (ret == false)
+		if (!ret) {
 			return ret;
+		}
 
 		printNodeInfo();
-		if (ret & p_autoShutdown)
+		if (ret & p_autoShutdown) {
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+		}
 		return ret;
 	}
 
@@ -63,8 +65,9 @@ public final class DXRAM {
 	 */
 	public boolean initialize(final boolean p_autoShutdown, final String... p_configurationFiles) {
 		boolean ret = initialize(null, null, null, p_configurationFiles);
-		if (ret & p_autoShutdown)
+		if (ret & p_autoShutdown) {
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+		}
 		return ret;
 	}
 
@@ -105,14 +108,17 @@ public final class DXRAM {
 	public boolean initialize(final String p_overrideIp, final String p_overridePort,
 			final NodeRole p_overrideRole, final boolean p_autoShutdown, final String... p_configurationFiles) {
 		boolean ret = m_engine.init(p_overrideIp, p_overridePort, p_overrideRole, p_configurationFiles);
-		if (ret & p_autoShutdown)
+		if (ret & p_autoShutdown) {
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+		}
 		printNodeInfo();
 		return ret;
 	}
 
 	/**
 	 * Get a service from DXRAM.
+	 * @param <T>
+	 *            Type of service to get
 	 * @param p_class
 	 *            Class of the service to get. If one service has multiple implementations, use
 	 *            the common super class here.
@@ -164,7 +170,7 @@ public final class DXRAM {
 	 */
 	private static final class ShutdownThread extends Thread {
 
-		private DXRAM m_dxram = null;
+		private DXRAM m_dxram;
 
 		/**
 		 * Creates an instance of ShutdownThread

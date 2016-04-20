@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
 import de.hhu.bsinfo.dxram.nameservice.messages.RegisterMessage;
+import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameGet;
 import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameList;
 import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameRegister;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -132,6 +133,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 
 		m_terminal.registerCommand(new TcmdNameRegister());
 		m_terminal.registerCommand(new TcmdNameList());
+		m_terminal.registerCommand(new TcmdNameGet());
 
 		return true;
 	}

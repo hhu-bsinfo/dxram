@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 
 public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 
@@ -56,5 +57,12 @@ public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 		out.close();
 
 		return 0;
+	}
+
+	@Override
+	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
+		m_path = p_delegate.promptForUserInput("outputPath");
+
+		return true;
 	}
 }

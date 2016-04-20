@@ -1,7 +1,10 @@
 
 package de.hhu.bsinfo.dxram.lock;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Interface for a lock component providing locking of chunks.
@@ -23,6 +26,12 @@ public abstract class AbstractLockComponent extends AbstractDXRAMComponent {
 	public AbstractLockComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
+
+	/**
+	 * Get a list of all currently locked chunks.
+	 * @return List of currently locked chunks with nodes that locked them.
+	 */
+	public abstract ArrayList<Pair<Long, Short>> getLockedList();
 
 	/**
 	 * Lock a chunk with the specified id (nodeID + localID).

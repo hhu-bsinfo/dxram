@@ -1,8 +1,11 @@
 
 package de.hhu.bsinfo.dxram.lock;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Service to lock chunks.
@@ -26,6 +29,20 @@ public abstract class AbstractLockService extends AbstractDXRAMService {
 		PEER_NOT_AVAILABLE,
 		NETWORK
 	}
+
+	/**
+	 * Get a list of of locked chunk of the current node.
+	 * @return List of currently locked chunks, null on error.
+	 */
+	public abstract ArrayList<Pair<Long, Short>> getLockedList();
+
+	/**
+	 * Get a list of of locked chunk from a specific node.
+	 * @param p_nodeId
+	 *            Id of the node to get the list from.
+	 * @return List of currently locked chunks, null on error.
+	 */
+	public abstract ArrayList<Pair<Long, Short>> getLockedList(final short p_nodeId);
 
 	/**
 	 * Lock a DataStructure.

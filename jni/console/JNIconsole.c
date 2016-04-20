@@ -31,6 +31,89 @@ extern void exit();
 
 extern HIST_ENTRY **history_list ();
 
+static int g_autocomplete_cmd_count = 0;
+static char** g_autocomplete_cmds = NULL;
+
+static char* dupstr(char* s) 
+{
+	char *r;
+
+	r = (char*) malloc((strlen(s) + 1));
+	strcpy (r, s);
+	return (r);
+}
+
+static char* autocomplete_generator(const char* text, int state)
+{
+    static int list_index, len;
+    char *name;
+
+    if (!state) {
+        list_index = 0;
+        len = strlen (text);
+    }
+
+    while (name = g_autocomplete_cmds[list_index]) {
+        list_index++;
+
+        if (strncmp (name, text, len) == 0)
+            return (dupstr(name));
+    }
+
+    // If no names matched, then return NULL.
+    return ((char *)NULL);
+}
+
+static char** autocompletion(const char* text, int start, int end)
+{
+    char **matches;
+
+    matches = (char **)NULL;
+
+    if (start == 0)
+        matches = rl_completion_matches((char*)text, &autocomplete_generator);
+    else
+        rl_bind_key('\t',rl_abort);
+
+    return (matches);
+
+}
+
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_autocompleteCommands(JNIEnv *p_env, jclass p_class, jobjectArray p_commands) {
+ 	int stringCount = (*p_env)->GetArrayLength(p_env, p_commands);
+
+	if (g_autocomplete_cmds != NULL) {
+		for (int i = 0; i < g_autocomplete_cmd_count; i++) {
+			free(g_autocomplete_cmds[i]);
+		}
+
+		free(g_autocomplete_cmds);
+		g_autocomplete_cmds = NULL;
+	}
+	
+	g_autocomplete_cmds = (char**) malloc(sizeof(char*) * stringCount + 1);
+	// terminate
+	g_autocomplete_cmds[stringCount] = (char*) malloc(sizeof(char) * 1);
+	g_autocomplete_cmds[stringCount] = '\0';
+
+    for (int i = 0; i < stringCount; i++) {
+        jstring string = (jstring) (*p_env)->GetObjectArrayElement(p_env, p_commands, i);
+        const char *rawString = (*p_env)->GetStringUTFChars(p_env, string, 0);
+		int len = strlen(rawString);
+
+		g_autocomplete_cmds[i] = (char*) malloc(sizeof(char) * (len + 1)); // +1 null terminator
+		strcpy(g_autocomplete_cmds[i], rawString);
+
+		(*p_env)->ReleaseStringUTFChars(p_env, p_commands, rawString);
+		(*p_env)->DeleteLocalRef(p_env, string);
+    }
+
+	g_autocomplete_cmd_count = stringCount;
+
+	// bind autocomplete callback and enable for tab key
+	rl_attempted_completion_function = autocompletion;
+	rl_bind_key('\t', rl_complete);
+}
 
 JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv *p_env, jclass p_class, jstring p_prompt) {
     char *temp, *ptr;
@@ -70,3 +153,5 @@ JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv
     (*p_env)->SetByteArrayRegion(p_env, result, 0, len, buff);
     return result;
 }
+
+

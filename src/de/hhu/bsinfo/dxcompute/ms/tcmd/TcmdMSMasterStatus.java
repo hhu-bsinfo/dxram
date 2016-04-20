@@ -10,7 +10,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 public class TcmdMSMasterStatus extends AbstractTerminalCommand {
 	private static final Argument MS_ARG_NODEID =
-			new Argument("nodeid", null, false, "Node id of the master to get the status from");
+			new Argument("nid", null, false, "Node id of the master to get the status from");
 
 	@Override
 	public String getName() {
@@ -28,7 +28,7 @@ public class TcmdMSMasterStatus extends AbstractTerminalCommand {
 	}
 
 	@Override
-	public boolean execute(ArgumentList p_arguments) {
+	public boolean execute(final ArgumentList p_arguments) {
 		Short nodeID = p_arguments.getArgumentValue(MS_ARG_NODEID, Short.class);
 
 		MasterSlaveComputeService masterSlaveComputeService =

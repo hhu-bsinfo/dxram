@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -40,6 +41,10 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId + ": "
 							+ e.getMessage());
 		}
+	}
+
+	public static Map<Integer, Class<? extends AbstractTaskPayload>> getRegisteredTaskPayloadClasses() {
+		return ms_registeredTaskClasses;
 	}
 
 	protected static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
@@ -78,6 +83,12 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	}
 
 	public abstract int execute(final DXRAMServiceAccessor p_dxram);
+
+	// override this to allow terminal commands calling this to prompt for parameters
+	// that can be passed along with the payload
+	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
+		return true;
+	}
 
 	@Override
 	public int exportObject(final Exporter p_exporter, final int p_size) {

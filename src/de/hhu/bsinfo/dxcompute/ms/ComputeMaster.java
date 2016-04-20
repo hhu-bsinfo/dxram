@@ -2,9 +2,12 @@
 package de.hhu.bsinfo.dxcompute.ms;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,13 +39,15 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	private int m_executeBarrierIdentifier;
 	private BarrierMasterInternal m_executionBarrier;
 
-	private long m_payloadIdCounter;
+	private AtomicLong m_payloadIdCounter = new AtomicLong(0);
 
-	public ComputeMaster(final int p_computeGroupId, final DXRAMServiceAccessor p_serviceAccessor,
+	public ComputeMaster(final int p_computeGroupId, final long p_pingIntervalMs,
+			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
-		super(ComputeRole.MASTER, p_computeGroupId, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
+		super(ComputeRole.MASTER, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_logger,
+				p_nameservice, p_boot);
 
 		p_network.register(SlaveJoinRequest.class, this);
 
@@ -66,6 +71,8 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		if (m_taskCount.get() < MAX_TASK_COUNT) {
 			m_tasks.add(p_task);
 			m_taskCount.incrementAndGet();
+			// set unique payload id
+			p_task.getPayload().setPayloadId(m_payloadIdCounter.getAndIncrement());
 			return true;
 		} else {
 			return false;
@@ -82,24 +89,24 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		boolean loop = true;
 		while (loop) {
 			switch (m_state) {
-			case STATE_SETUP:
-				stateSetup();
-				break;
-			case STATE_IDLE:
-				stateIdle();
-				break;
-			case STATE_EXECUTE:
-				stateExecute();
-				break;
-			case STATE_ERROR_DIE:
-				stateErrorDie();
-				break;
-			case STATE_TERMINATE:
-				loop = false;
-				break;
-			default:
-				assert 1 == 2;
-				break;
+				case STATE_SETUP:
+					stateSetup();
+					break;
+				case STATE_IDLE:
+					stateIdle();
+					break;
+				case STATE_EXECUTE:
+					stateExecute();
+					break;
+				case STATE_ERROR_DIE:
+					stateErrorDie();
+					break;
+				case STATE_TERMINATE:
+					loop = false;
+					break;
+				default:
+					assert 1 == 2;
+					break;
 			}
 		}
 	}
@@ -110,9 +117,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_state = State.STATE_TERMINATE;
 		try {
 			join();
-		} catch (InterruptedException e) {}
-
-		// TODO send termination to slaves and have them re-enter the setup stage?
+		} catch (final InterruptedException e) {}
 
 		// invalidate entry in nameservice
 		m_nameservice.register(-1, m_nameserviceMasterNodeIdKey);
@@ -123,11 +128,11 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == MasterSlaveMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
-					incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
-					break;
-				default:
-					break;
+					case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
+						incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -156,9 +161,37 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	}
 
 	private void stateIdle() {
-		if (m_taskCount.get() > 0 && m_signedOnSlaves.size() > 0) {
-			m_state = State.STATE_EXECUTE;
+		if (m_taskCount.get() > 0) {
+			if (m_signedOnSlaves.size() < 1) {
+				m_logger.warn(getClass(), "Got " + m_taskCount.get() + " tasks queued but no slaves");
+				try {
+					Thread.sleep(2000);
+				} catch (final InterruptedException e) {}
+			} else {
+				m_state = State.STATE_EXECUTE;
+			}
 		} else {
+			// check if we have to ping the slaves to check if they are still online
+			if (m_lastPingMs + m_pingIntervalMs < System.currentTimeMillis()) {
+				// check if slaves are still alive
+				List<Short> onlineNodesList = m_boot.getIDsOfOnlineNodes();
+
+				m_joinLock.lock();
+				Iterator<Short> it = m_signedOnSlaves.iterator();
+				while (it.hasNext()) {
+					short slave = it.next();
+					if (!onlineNodesList.contains(slave)) {
+						m_logger.info(getClass(),
+								"Slave " + NodeID.toHexString(slave) + " is not available anymore, removing.");
+						it.remove();
+					}
+				}
+				m_joinLock.unlock();
+
+				m_lastPingMs = System.currentTimeMillis();
+				m_logger.trace(getClass(), "Pinging slaves, " + m_signedOnSlaves.size() + " online.");
+			}
+
 			// do nothing
 			Thread.yield();
 		}
@@ -178,9 +211,6 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 			m_joinLock.unlock();
 			return;
 		}
-
-		// set unique payload id
-		taskPayload.setPayloadId(m_payloadIdCounter++);
 
 		m_logger.info(getClass(),
 				"Starting execution of task " + task + " with " + m_signedOnSlaves.size() + " slaves.");
@@ -247,7 +277,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.error(getClass(), "Master error state");
 		try {
 			Thread.sleep(1000);
-		} catch (InterruptedException e) {}
+		} catch (final InterruptedException e) {}
 	}
 
 	private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {

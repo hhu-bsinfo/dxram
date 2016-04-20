@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
+import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 
 public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTaskPayload {
 
@@ -54,5 +55,12 @@ public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTaskPayload {
 		out.close();
 
 		return 0;
+	}
+
+	@Override
+	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
+		m_path = p_delegate.promptForUserInput("outputPath");
+
+		return true;
 	}
 }

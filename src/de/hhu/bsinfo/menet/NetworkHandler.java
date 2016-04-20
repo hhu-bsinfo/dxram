@@ -232,7 +232,7 @@ public final class NetworkHandler implements DataReceiver {
 			}
 			entry.add(p_receiver);
 
-			m_loggerInterface.info(getClass().getSimpleName(),
+			m_loggerInterface.debug(getClass().getSimpleName(),
 					"Added new MessageReceiver " + p_receiver + " for " + p_message.getSimpleName());
 			m_receiversLock.unlock();
 		}
@@ -254,7 +254,7 @@ public final class NetworkHandler implements DataReceiver {
 			if (entry != null) {
 				entry.remove(p_receiver);
 
-				m_loggerInterface.info(getClass().getSimpleName(),
+				m_loggerInterface.debug(getClass().getSimpleName(),
 						"Removed MessageReceiver " + p_receiver + " from listening to " + p_message.getSimpleName());
 			}
 			m_receiversLock.unlock();

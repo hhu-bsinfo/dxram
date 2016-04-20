@@ -14,7 +14,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 public class TcmdNodeInfo extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_NODE_ID =
-			new Argument("nodeid", null, true, "If specified, gets information of this node, otherwise current node");
+			new Argument("nid", null, true, "If specified, gets information of this node, otherwise current node");
 
 	@Override
 	public String getName() {

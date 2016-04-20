@@ -2,7 +2,6 @@
 package de.hhu.bsinfo.dxram.logger;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -279,6 +278,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 	}
 
 	@Override
+	public void setLogLevel(final LogLevel p_logLevel) {
+		getLogger().setLogLevel(p_logLevel);
+	}
+
+	@Override
 	public void error(final String p_header, final String p_msg) {
 		LogLevel logLevel = m_logLevels.get(p_header);
 		if (logLevel == null) {
@@ -396,18 +400,5 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 		if (LogLevel.TRACE.ordinal() <= logLevel.ordinal()) {
 			getLogger().trace(p_header, p_msg, p_e);
 		}
-	}
-
-	@Override
-	public void setLogLevel(final LogLevel p_logLevel) {
-
-		Iterator<Entry<String, LogLevel>> it = m_logLevels.entrySet().iterator();
-		Map.Entry<String, LogLevel> keyValue;
-		while (it.hasNext()) {
-
-			keyValue = it.next();
-			m_logLevels.put(keyValue.getKey(), p_logLevel);
-		}
-
 	}
 }

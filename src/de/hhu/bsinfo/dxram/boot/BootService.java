@@ -17,6 +17,16 @@ public class BootService extends AbstractDXRAMService {
 	private AbstractBootComponent m_boot;
 
 	/**
+	 * Check if a specific node is online.
+	 * @param p_nodeID
+	 *            Node to check.
+	 * @return True if online, false offline.
+	 */
+	public boolean isNodeOnline(final short p_nodeID) {
+		return m_boot.isNodeOnline(p_nodeID);
+	}
+
+	/**
 	 * Get the ID of the node, you are currently running on.
 	 * @return NodeID.
 	 */

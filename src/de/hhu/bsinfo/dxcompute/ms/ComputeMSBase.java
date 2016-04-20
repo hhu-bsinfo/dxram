@@ -6,9 +6,6 @@ import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
-import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
-import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -38,15 +35,18 @@ public abstract class ComputeMSBase extends Thread {
 	protected volatile State m_state = State.STATE_SETUP;
 	protected ComputeRole m_role;
 	protected int m_computeGroupId = -1;
+	protected long m_pingIntervalMs;
+	protected long m_lastPingMs;
 	protected String m_nameserviceMasterNodeIdKey;
 
-	public ComputeMSBase(final ComputeRole p_role, final int p_computeGroupId,
+	public ComputeMSBase(final ComputeRole p_role, final int p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
 		super("ComputeMS-" + p_role + "-" + p_computeGroupId);
 		m_role = p_role;
 		m_computeGroupId = p_computeGroupId;
+		m_pingIntervalMs = p_pingIntervalMs;
 		assert m_computeGroupId >= MIN_COMPUTE_GROUP_ID && m_computeGroupId <= MAX_COMPUTE_GROUP_ID;
 		m_nameserviceMasterNodeIdKey = new String(NAMESERVICE_ENTRY_IDENT + m_computeGroupId);
 
@@ -65,8 +65,6 @@ public abstract class ComputeMSBase extends Thread {
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
 		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
-
-		registerTaskPayloads();
 	}
 
 	public ComputeRole getRole() {
@@ -84,14 +82,5 @@ public abstract class ComputeMSBase extends Thread {
 
 	protected DXRAMServiceAccessor getServiceAccessor() {
 		return m_serviceAccessor;
-	}
-
-	private void registerTaskPayloads() {
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
-				MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK,
-				NullTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
-				MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK,
-				WaitTaskPayload.class);
 	}
 }

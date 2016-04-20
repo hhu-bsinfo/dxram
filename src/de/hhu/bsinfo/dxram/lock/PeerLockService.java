@@ -1,16 +1,21 @@
 
 package de.hhu.bsinfo.dxram.lock;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
+import de.hhu.bsinfo.dxram.lock.messages.GetLockedListRequest;
+import de.hhu.bsinfo.dxram.lock.messages.GetLockedListResponse;
 import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
 import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
 import de.hhu.bsinfo.dxram.lock.tcmd.TcmdLock;
+import de.hhu.bsinfo.dxram.lock.tcmd.TcmdLockList;
 import de.hhu.bsinfo.dxram.lock.tcmd.TcmdUnlock;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -24,6 +29,8 @@ import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
@@ -70,9 +77,14 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
 		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
 		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
+		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST,
+				GetLockedListRequest.class);
+		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE,
+				GetLockedListResponse.class);
 
 		m_network.register(LockRequest.class, this);
 		m_network.register(UnlockMessage.class, this);
+		m_network.register(GetLockedListRequest.class, this);
 
 		m_statisticsRecorderIDs = new LockStatisticsRecorderIDs();
 		m_statisticsRecorderIDs.m_id = m_statistics.createRecorder(getClass());
@@ -90,6 +102,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 		m_terminal.registerCommand(new TcmdUnlock());
 		m_terminal.registerCommand(new TcmdLock());
+		m_terminal.registerCommand(new TcmdLockList());
 
 		return true;
 	}
@@ -102,6 +115,33 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_lookup = null;
 
 		return true;
+	}
+
+	@Override
+	public ArrayList<Pair<Long, Short>> getLockedList() {
+		if (!m_boot.getNodeRole().equals(NodeRole.PEER)) {
+			m_logger.error(getClass(), "a " + m_boot.getNodeRole() + " must not lock chunks");
+			return null;
+		}
+
+		return m_lock.getLockedList();
+	}
+
+	@Override
+	public ArrayList<Pair<Long, Short>> getLockedList(final short p_nodeId) {
+		if (p_nodeId == m_boot.getNodeID()) {
+			return getLockedList();
+		}
+
+		GetLockedListRequest request = new GetLockedListRequest(p_nodeId);
+		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Sending request to get locked list from node " + NodeID.toHexString(p_nodeId) + " failed: " + err);
+			return null;
+		}
+
+		return ((GetLockedListResponse) request.getResponse()).getList();
 	}
 
 	@Override
@@ -294,6 +334,9 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 					case LockMessages.SUBTYPE_UNLOCK_MESSAGE:
 						incomingUnlockMessage((UnlockMessage) p_message);
 						break;
+					case LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST:
+						incomingLockedListRequest((GetLockedListRequest) p_message);
+						break;
 					default:
 						break;
 				}
@@ -338,5 +381,20 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_lock.unlock(ChunkID.getLocalID(p_message.getChunkID()), m_boot.getNodeID(), p_message.isWriteLockOperation());
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingUnlock);
+	}
+
+	/**
+	 * Handles an incoming GetLockedListRequest
+	 * @param p_request
+	 *            the GetLockedListRequest
+	 */
+	private void incomingLockedListRequest(final GetLockedListRequest p_request) {
+		ArrayList<Pair<Long, Short>> list = m_lock.getLockedList();
+
+		GetLockedListResponse response = new GetLockedListResponse(p_request, list);
+		NetworkErrorCodes err = m_network.sendMessage(response);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(), "Sending locked list response for request " + p_request + " failed: " + err);
+		}
 	}
 }
