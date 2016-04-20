@@ -10,9 +10,13 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.log.messages.InitRequest;
+import de.hhu.bsinfo.dxram.log.messages.InitResponse;
+import de.hhu.bsinfo.dxram.log.messages.LogMessages;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.NodeID;
 
@@ -240,6 +244,9 @@ public class BackupComponent extends AbstractDXRAMComponent {
 			m_currentBackupRange = null;
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
+
+			getDependentComponent(NetworkComponent.class).registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
+			getDependentComponent(NetworkComponent.class).registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
 		}
 		m_firstRangeInitialized = false;
 

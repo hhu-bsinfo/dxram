@@ -92,6 +92,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		m_nioSelector = null;
 	}
 
+	@Override
+	public String getSelectorStatus() {
+		return m_nioSelector.toString();
+	}
+
 	/**
 	 * Creates a new connection to the given destination
 	 * @param p_destination

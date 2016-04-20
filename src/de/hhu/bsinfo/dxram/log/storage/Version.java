@@ -1,16 +1,11 @@
 
 package de.hhu.bsinfo.dxram.log.storage;
 
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
-
 /**
  * Class for bundling the epoch and version of a log entry
  * @author Kevin Beineke
  */
 public class Version {
-
-	private static final Checksum CRC = new CRC32();
 
 	private short m_epoch;
 	private int m_version;
@@ -56,12 +51,12 @@ public class Version {
 
 	@Override
 	public int hashCode() {
-		final byte[] bytes = (m_epoch + "," + m_version).getBytes();
+		int ret = 97546154;
 
-		CRC.reset();
-		CRC.update(bytes, 0, bytes.length);
+		ret = 37 * ret + m_epoch;
+		ret = 37 * ret + m_version;
 
-		return (int) CRC.getValue();
+		return ret;
 	}
 
 	/**

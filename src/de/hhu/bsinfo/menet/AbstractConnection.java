@@ -33,6 +33,8 @@ public abstract class AbstractConnection {
 
 	private int m_unconfirmedBytes;
 	private int m_receivedBytes;
+	private int m_sentMessages;
+	private int m_receivedMessages;
 
 	private int m_flowControlWindowSize;
 
@@ -180,8 +182,8 @@ public abstract class AbstractConnection {
 
 		ret = doRead();
 
-		m_receivedBytes += ret.remaining();
 		m_flowControlCondLock.lock();
+		m_receivedBytes += ret.remaining();
 		if (m_receivedBytes > m_flowControlWindowSize * 0.8) {
 			sendFlowControlMessage();
 		}
@@ -214,14 +216,9 @@ public abstract class AbstractConnection {
 				m_flowControlCond.await();
 			} catch (final InterruptedException e) { /* ignore */}
 		}
-		try {
-			m_unconfirmedBytes += p_message.getBuffer().remaining();
-		} catch (final NetworkException e) {
-			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
-			return;
-		} finally {
-			m_flowControlCondLock.unlock();
-		}
+		m_unconfirmedBytes += p_message.getPayloadLength() + AbstractMessage.HEADER_SIZE;
+		m_sentMessages++;
+		m_flowControlCondLock.unlock();
 
 		try {
 			doWrite(p_message);
@@ -241,6 +238,18 @@ public abstract class AbstractConnection {
 	 *             if message buffer is too small
 	 */
 	protected abstract void doWrite(final AbstractMessage p_message) throws NetworkException;
+
+	/**
+	 * Returns whether there is data left to send in output queue
+	 * @return whether the output queue is empty (false) or not (true)
+	 */
+	protected abstract boolean dataLeftToWrite();
+
+	/**
+	 * Returns the size of input and output queues
+	 * @return the queue sizes
+	 */
+	protected abstract String getInputOutputQueueLength();
 
 	/**
 	 * Closes the connection
@@ -304,6 +313,7 @@ public abstract class AbstractConnection {
 
 		// add sending bytes for consistency
 		m_unconfirmedBytes += messageBuffer.remaining();
+		m_sentMessages++;
 
 		try {
 			doWrite(message);
@@ -335,7 +345,16 @@ public abstract class AbstractConnection {
 	 */
 	@Override
 	public String toString() {
-		return this.getClass().getSimpleName() + "[" + m_destination + ", " + m_connected + "]";
+		String ret;
+
+		m_flowControlCondLock.lock();
+		ret = this.getClass().getSimpleName() + "[" + m_destination + ", " + (m_connected ? "connected" : "not connected")
+				+ ", sent(messages): " + m_sentMessages + ", received(messages): " + m_receivedMessages
+				+ ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " + m_receivedBytes
+				+ ", buffer queues: " + getInputOutputQueueLength() + "]\n";
+		m_flowControlCondLock.unlock();
+
+		return ret;
 	}
 
 	// Classes
@@ -393,6 +412,7 @@ public abstract class AbstractConnection {
 								if (message != null) {
 									message.setDestination(m_nodeMap.getOwnNodeID());
 									message.setSource(m_destination);
+									m_receivedMessages++;
 									deliverMessage(message);
 								}
 							}
@@ -519,14 +539,14 @@ public abstract class AbstractConnection {
 
 			while (m_step != Step.DONE && p_buffer.hasRemaining()) {
 				switch (m_step) {
-					case READ_HEADER:
-						readHeader(p_buffer);
-						break;
-					case READ_PAYLOAD:
-						readPayload(p_buffer);
-						break;
-					default:
-						break;
+				case READ_HEADER:
+					readHeader(p_buffer);
+					break;
+				case READ_PAYLOAD:
+					readPayload(p_buffer);
+					break;
+				default:
+					break;
 				}
 			}
 		}

@@ -480,8 +480,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 				array =
 						new String(Arrays.copyOfRange(p_payload,
 								p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset), p_offset
-								+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH))
-								.trim().getBytes();
+										+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH))
+				.trim().getBytes();
 
 				if (Tools.looksLikeUTF8(array)) {
 					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
@@ -788,8 +788,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	private void registerNetworkMessages() {
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessage.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
 	}

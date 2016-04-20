@@ -8,9 +8,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.Queue;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,7 +26,7 @@ class NIOSelector extends Thread {
 	private NIOConnectionCreator m_connectionCreator;
 	private NIOInterface m_nioInterface;
 
-	private final Queue<ChangeOperationsRequest> m_changeRequests;
+	private final LinkedHashSet<ChangeOperationsRequest> m_changeRequests;
 	private ReentrantLock m_changeLock;
 
 	private boolean m_running;
@@ -49,7 +48,7 @@ class NIOSelector extends Thread {
 		m_nioInterface = p_nioInterface;
 		m_connectionCreator = p_connectionCreator;
 
-		m_changeRequests = new ArrayDeque<>();
+		m_changeRequests = new LinkedHashSet<ChangeOperationsRequest>();
 		m_changeLock = new ReentrantLock(false);
 
 		m_running = false;
@@ -95,6 +94,22 @@ class NIOSelector extends Thread {
 
 	// Methods
 	@Override
+	public String toString() {
+		String ret = "Current keys: ";
+
+		Set<SelectionKey> selected = m_selector.keys();
+		Iterator<SelectionKey> iterator = selected.iterator();
+		while (iterator.hasNext()) {
+			SelectionKey key = iterator.next();
+			if (key.attachment() != null) {
+				ret += "[" + ((NIOConnection) key.attachment()).getDestination() + ", " + key.interestOps() + "] ";
+			}
+		}
+
+		return ret;
+	}
+
+	@Override
 	public void run() {
 		int interest;
 		NIOConnection connection;
@@ -104,15 +119,18 @@ class NIOSelector extends Thread {
 		SelectionKey key;
 
 		while (m_running) {
-			// Handle pending ChangeOperationsRequests
 			m_changeLock.lock();
+			Iterator<ChangeOperationsRequest> iter;
 			while (!m_changeRequests.isEmpty()) {
-				changeRequest = m_changeRequests.poll();
+				iter = m_changeRequests.iterator();
+				changeRequest = iter.next();
+				iter.remove();
+
 				connection = changeRequest.getConnection();
 				interest = changeRequest.getOperations();
 				if (interest != -1) {
 					try {
-						connection.getChannel().register(m_selector, interest, connection);
+						key = connection.getChannel().register(m_selector, interest, connection);
 					} catch (final ClosedChannelException e) {
 						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not change operations!");
 					}
@@ -139,6 +157,7 @@ class NIOSelector extends Thread {
 							}
 						}
 					}
+					selected.clear();
 				}
 			} catch (final Exception e) {
 				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Key selection failed!");
@@ -196,10 +215,15 @@ class NIOSelector extends Thread {
 								"Could not write to channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
 						complete = false;
 					}
-					if (complete) {
-						// Set interest to READ after writing; do not if channel was blocked and data is left
-						p_key.interestOps(SelectionKey.OP_READ);
+
+					if (!complete) {
+						// If there is still data left to write on this connection, add another write request
+						m_changeLock.lock();
+						m_changeRequests.add(new ChangeOperationsRequest(connection, SelectionKey.OP_WRITE));
+						m_changeLock.unlock();
 					}
+					// Set interest to READ after writing; do not if channel was blocked and data is left
+					p_key.interestOps(SelectionKey.OP_READ);
 				} else if (p_key.isConnectable()) {
 					NIOInterface.connect(connection);
 				}
@@ -211,14 +235,12 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Append the given ChangeOperationsRequest to the Queue
-	 * @param p_connection
-	 *            the NIOConnection
-	 * @param p_interest
-	 *            the operation interest
+	 * @param p_request
+	 *            the ChangeOperationsRequest
 	 */
-	protected void changeOperationInterestAsync(final NIOConnection p_connection, final int p_interest) {
+	protected void changeOperationInterestAsync(final ChangeOperationsRequest p_request) {
 		m_changeLock.lock();
-		m_changeRequests.offer(new ChangeOperationsRequest(p_connection, p_interest));
+		m_changeRequests.add(p_request);
 		m_changeLock.unlock();
 
 		m_selector.wakeup();
@@ -231,7 +253,7 @@ class NIOSelector extends Thread {
 	 */
 	protected void closeConnectionAsync(final NIOConnection p_connection) {
 		m_changeLock.lock();
-		m_changeRequests.offer(new ChangeOperationsRequest(p_connection, -1));
+		m_changeRequests.add(new ChangeOperationsRequest(p_connection, -1));
 		m_changeLock.unlock();
 
 		m_selector.wakeup();
@@ -256,46 +278,5 @@ class NIOSelector extends Thread {
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to shutdown selector!");
 		}
 		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Shutdown of Selector successful.");
-	}
-
-	/**
-	 * Represents a request to change the connection options
-	 * @author Florian Klein 18.03.2012
-	 */
-	class ChangeOperationsRequest {
-
-		// Attributes
-		private NIOConnection m_connection;
-		private int m_operations;
-
-		// Constructors
-		/**
-		 * Creates an instance of ChangeOperationsRequest
-		 * @param p_connection
-		 *            the connection
-		 * @param p_operations
-		 *            the operations
-		 */
-		protected ChangeOperationsRequest(final NIOConnection p_connection, final int p_operations) {
-			m_connection = p_connection;
-			m_operations = p_operations;
-		}
-
-		// Getter
-		/**
-		 * Returns the connection
-		 * @return the NIOConnection
-		 */
-		public NIOConnection getConnection() {
-			return m_connection;
-		}
-
-		/**
-		 * Returns the operation interest
-		 * @return the operation interest
-		 */
-		public int getOperations() {
-			return m_operations;
-		}
 	}
 }
