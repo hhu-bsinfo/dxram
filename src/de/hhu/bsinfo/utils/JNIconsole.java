@@ -22,9 +22,9 @@ public final class JNIconsole {
 	}
 
 	/**
-	 * Provide commands for autocompletion using the tab key and enable it.
+	 * Provide commands for autocomplete using the tab key and enable it.
 	 * @param p_commands
-	 *            Commands to be used for autocompletetion
+	 *            Commands to be used for autocomplete
 	 */
 	public static native void autocompleteCommands(final String[] p_commands);
 
