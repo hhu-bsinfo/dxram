@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToFileTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterList;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterStatus;
@@ -298,13 +299,23 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		m_logger.debug(getClass(), "Incoming remote submit task request " + p_request);
 
+		// check if we were able to create an instance (missing task class registration)
+		if (p_request.getTaskPayload() == null) {
+			m_logger.error(getClass(), "Creating instance for task payload of request " + p_request
+					+ " failed, most likely non registered task payload type");
+			response = new SubmitTaskResponse(p_request, -1);
+			response.setStatusCode((byte) 3);
+			return;
+		}
+
 		if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
-			m_logger.error(getClass(), "Cannot submit remote task " + p_request.getTask() + " on non master node type");
+			m_logger.error(getClass(),
+					"Cannot submit remote task " + p_request.getTaskPayload() + " on non master node type");
 
 			response = new SubmitTaskResponse(p_request, -1);
 			response.setStatusCode((byte) 1);
 		} else {
-			Task task = new Task(p_request.getTask(), "RemoteTask" + p_request);
+			Task task = new Task(p_request.getTaskPayload(), "RemoteTask" + p_request);
 			task.setNodeIdSubmitted(p_request.getSource());
 			task.m_serviceAccessor = getServiceAccessor();
 			task.registerTaskListener(this);
@@ -385,6 +396,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK,
 				WaitTaskPayload.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK,
+				PrintTaskPayload.class);
 		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_CONSOLE_TASK,
 				PrintMemoryStatusToConsoleTask.class);

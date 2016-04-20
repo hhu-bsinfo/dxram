@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -55,6 +56,13 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		if (!m_boot.getNodeRole().equals(NodeRole.TERMINAL)) {
 			System.out.println("A Terminal node must have the NodeRole \"terminal\". Aborting");
 			return;
+		}
+
+		// register commands for autocompletion
+		{
+			Map<String, AbstractTerminalCommand> commands = m_terminal.getRegisteredCommands();
+			String[] commandNames = commands.keySet().toArray(new String[0]);
+			JNIconsole.autocompleteCommands(commandNames);
 		}
 
 		m_logger.info(getClass(), "Running terminal...");

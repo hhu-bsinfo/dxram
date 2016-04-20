@@ -59,6 +59,11 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 			return true;
 		}
 
+		// prompt for additional parameters for the payload
+		if (!payload.terminalCommandCallbackForParameters(getTerminalDelegate())) {
+			return false;
+		}
+
 		Task task = new Task(payload, name + ms_taskCounter++);
 		task.registerTaskListener(this);
 

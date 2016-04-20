@@ -35,7 +35,7 @@ public class SubmitTaskRequest extends AbstractRequest {
 		m_task = p_task;
 	}
 
-	public AbstractTaskPayload getTask() {
+	public AbstractTaskPayload getTaskPayload() {
 		return m_task;
 	}
 

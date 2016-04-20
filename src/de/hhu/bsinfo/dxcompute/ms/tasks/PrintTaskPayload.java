@@ -1,48 +1,35 @@
 
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
-public class WaitTaskPayload extends AbstractTaskPayload {
+public class PrintTaskPayload extends AbstractTaskPayload {
 
-	private int m_waitMs;
+	private String m_msg = new String();
 
-	public WaitTaskPayload() {
-		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK);
+	public PrintTaskPayload() {
+		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK);
 	}
 
-	public void setWaitTimeMs(final int p_timeMs) {
-		m_waitMs = p_timeMs;
+	public void setMessage(final String p_msg) {
+		m_msg = p_msg;
 	}
 
 	@Override
 	public int execute(final DXRAMServiceAccessor p_dxram) {
-		try {
-			Thread.sleep(m_waitMs);
-		} catch (final InterruptedException e) {
-			return -1;
-		}
-
+		System.out.println(m_msg);
 		return 0;
 	}
 
 	@Override
 	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		String time = p_delegate.promptForUserInput("timeMs");
-
-		try {
-			m_waitMs = Integer.parseInt(time);
-		} catch (final NumberFormatException e) {
-			return false;
-		}
-
-		if (m_waitMs < 0) {
-			m_waitMs = 0;
-		}
+		m_msg = p_delegate.promptForUserInput("msg");
 
 		return true;
 	}
@@ -51,22 +38,26 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 	public int exportObject(final Exporter p_exporter, final int p_size) {
 		int size = super.exportObject(p_exporter, p_size);
 
-		p_exporter.writeInt(m_waitMs);
+		p_exporter.writeInt(m_msg.length());
+		p_exporter.writeBytes(m_msg.getBytes(StandardCharsets.US_ASCII));
 
-		return size + Integer.BYTES;
+		return size + Integer.BYTES + m_msg.length();
 	}
 
 	@Override
 	public int importObject(final Importer p_importer, final int p_size) {
 		int size = super.importObject(p_importer, p_size);
 
-		m_waitMs = p_importer.readInt();
+		int strLength = p_importer.readInt();
+		byte[] tmp = new byte[strLength];
+		p_importer.readBytes(tmp);
+		m_msg = new String(tmp, StandardCharsets.US_ASCII);
 
-		return size + Integer.BYTES;
+		return size + Integer.BYTES + m_msg.length();
 	}
 
 	@Override
 	public int sizeofObject() {
-		return super.sizeofObject() + Integer.BYTES;
+		return super.sizeofObject() + Integer.BYTES + m_msg.length();
 	}
 }

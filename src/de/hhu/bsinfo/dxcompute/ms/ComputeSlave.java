@@ -206,7 +206,7 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 
 		if (m_executeTaskLock.tryLock() && m_state == State.STATE_IDLE) {
 			m_taskFinishedBarrierIdentifier = p_message.getBarrierIdentifier();
-			task = p_message.getTask();
+			task = p_message.getTaskPayload();
 			if (task == null) {
 				// could not create proper task object from message
 				// this could be a result that we are missing a registered class for this
