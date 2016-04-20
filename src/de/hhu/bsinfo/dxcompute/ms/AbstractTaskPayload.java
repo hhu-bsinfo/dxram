@@ -21,7 +21,11 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	private short m_typeId = -1;
 	private short m_subtypeId = -1;
 	private long m_payloadId = -1;
+	private int m_computeGroupId = -1;
 	private int m_slaveId = -1;
+	// list of all slaves of the same compute group sorted by their slave id (indexable)
+	private short[] m_slaveNodeIds = new short[0];
+	private int[] m_executionReturnCodes = new int[0];
 
 	public static AbstractTaskPayload createInstance(final short p_typeId, final short p_subtypeId) {
 		Class<? extends AbstractTaskPayload> clazz =
@@ -35,7 +39,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 		try {
 			Constructor<? extends AbstractTaskPayload> ctor = clazz.getConstructor();
 			return ctor.newInstance();
-		} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
+		} catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
 				| IllegalArgumentException | InvocationTargetException e) {
 			throw new RuntimeException(
 					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId + ": "
@@ -78,8 +82,20 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 		return m_payloadId;
 	}
 
+	public int getComputeGroupId() {
+		return m_computeGroupId;
+	}
+
 	public int getSlaveId() {
 		return m_slaveId;
+	}
+
+	public short[] getSlaveNodeIds() {
+		return m_slaveNodeIds;
+	}
+
+	public int[] getExecutionReturnCodes() {
+		return m_executionReturnCodes;
 	}
 
 	public abstract int execute(final DXRAMServiceAccessor p_dxram);
@@ -94,6 +110,10 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	public int exportObject(final Exporter p_exporter, final int p_size) {
 		p_exporter.writeLong(m_payloadId);
 		p_exporter.writeInt(m_slaveId);
+		p_exporter.writeInt(m_slaveNodeIds.length);
+		p_exporter.writeShorts(m_slaveNodeIds);
+		p_exporter.writeInt(m_executionReturnCodes.length);
+		p_exporter.writeInts(m_executionReturnCodes);
 
 		return sizeofObject();
 	}
@@ -102,13 +122,18 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	public int importObject(final Importer p_importer, final int p_size) {
 		m_payloadId = p_importer.readLong();
 		m_slaveId = p_importer.readInt();
+		m_slaveNodeIds = new short[p_importer.readInt()];
+		p_importer.readShorts(m_slaveNodeIds);
+		m_executionReturnCodes = new int[p_importer.readInt()];
+		p_importer.readInts(m_executionReturnCodes);
 
 		return sizeofObject();
 	}
 
 	@Override
 	public int sizeofObject() {
-		return Long.BYTES + Integer.BYTES;
+		return Long.BYTES + Integer.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES + Integer.BYTES
+				+ m_executionReturnCodes.length * Integer.BYTES;
 	}
 
 	@Override
@@ -118,15 +143,28 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + "[" + m_typeId + ", " + m_subtypeId + ", " + m_payloadId + ", " + m_slaveId
-				+ "]";
+		return getClass().getSimpleName() + "[" + m_typeId + ", " + m_subtypeId + ", " + m_computeGroupId + ", "
+				+ m_payloadId + ", " + m_slaveId
+				+ "/" + m_slaveNodeIds.length + "]";
 	}
 
 	void setPayloadId(final long p_payloadId) {
 		m_payloadId = p_payloadId;
 	}
 
+	void setComputeGroupId(final int p_computeGroupId) {
+		m_computeGroupId = p_computeGroupId;
+	}
+
 	void setSlaveId(final int p_slaveId) {
 		m_slaveId = p_slaveId;
+	}
+
+	void setSalves(final short[] p_slaveNodeIds) {
+		m_slaveNodeIds = p_slaveNodeIds;
+	}
+
+	void setExecutionReturnCodes(final int[] p_returnCodes) {
+		m_executionReturnCodes = p_returnCodes;
 	}
 }

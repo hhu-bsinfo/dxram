@@ -86,5 +86,11 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 	@Override
 	public void taskCompleted(final Task p_task) {
 		System.out.println("ComputeTask: Finished execution " + p_task);
+		System.out.println("Return codes of slave nodes: ");
+		int[] results = p_task.getExecutionReturnCodes();
+		short[] slaves = p_task.getSlaveNodeIdsExecutingTask();
+		for (int i = 0; i < results.length; i++) {
+			System.out.println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
+		}
 	}
 }

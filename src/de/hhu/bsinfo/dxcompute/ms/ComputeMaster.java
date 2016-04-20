@@ -73,6 +73,7 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 			m_taskCount.incrementAndGet();
 			// set unique payload id
 			p_task.getPayload().setPayloadId(m_payloadIdCounter.getAndIncrement());
+			p_task.getPayload().setComputeGroupId(m_computeGroupId);
 			return true;
 		} else {
 			return false;
@@ -215,30 +216,36 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.info(getClass(),
 				"Starting execution of task " + task + " with " + m_signedOnSlaves.size() + " slaves.");
 
+		short[] slaves = new short[m_signedOnSlaves.size()];
+		for (int i = 0; i < slaves.length; i++) {
+			slaves[i] = m_signedOnSlaves.get(i);
+		}
+		taskPayload.setSalves(slaves);
+
 		task.notifyListenersExecutionStarts();
 
 		// send task to slaves
 		int numberOfSlavesOnExecution = 0;
 		m_executeBarrierIdentifier++;
-		for (Short slaveId : m_signedOnSlaves) {
+		for (int i = 0; i < slaves.length; i++) {
 			// set incremental slave id, 0 based
 			taskPayload.setSlaveId(numberOfSlavesOnExecution);
 			// pass barrier identifier for syncing after task along
-			ExecuteTaskRequest request = new ExecuteTaskRequest(slaveId, m_executeBarrierIdentifier % 2, taskPayload);
+			ExecuteTaskRequest request = new ExecuteTaskRequest(slaves[i], m_executeBarrierIdentifier % 2, taskPayload);
 
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
 				m_logger.error(getClass(),
-						"Sending task to slave " + NodeID.toHexString(slaveId) + " failed: " + err);
+						"Sending task to slave " + NodeID.toHexString(slaves[i]) + " failed: " + err);
 				// remove slave from list
-				m_signedOnSlaves.remove(slaveId);
+				m_signedOnSlaves.remove(slaves[i]);
 				continue;
 			}
 
 			ExecuteTaskResponse response = (ExecuteTaskResponse) request.getResponse();
 			if (response.getStatusCode() != 0) {
 				// exclude slave from execution
-				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slaveId) + " response "
+				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slaves[i]) + " response "
 						+ response.getStatusCode() + " on execution of task " + task
 						+ " excluding from current execution");
 			} else {
@@ -258,12 +265,23 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 		// grab return codes from barrier
 		ArrayList<Pair<Short, Long>> barrierData = m_executionBarrier.getBarrierData();
-		ArrayList<Pair<Short, Integer>> returnCodes = new ArrayList<Pair<Short, Integer>>(barrierData.size());
+		int[] returnCodes = new int[barrierData.size()];
+		short[] slaveIds = task.getPayload().getSlaveNodeIds();
+
+		// sort them to match the indices of the slave list
 		for (Pair<Short, Long> item : barrierData) {
-			returnCodes.add(new Pair<Short, Integer>(item.first(), (int) item.second().longValue()));
+			int slaveId = 0;
+			for (int i = 0; i < slaveIds.length; i++) {
+				if (item.first() == slaveIds[i]) {
+					slaveId = i;
+					break;
+				}
+			}
+
+			returnCodes[slaveId] = (int) item.second().longValue();
 		}
 
-		task.setTaskExecutionResults(returnCodes);
+		task.getPayload().setExecutionReturnCodes(returnCodes);
 		task.notifyListenersExecutionCompleted();
 
 		m_state = State.STATE_IDLE;

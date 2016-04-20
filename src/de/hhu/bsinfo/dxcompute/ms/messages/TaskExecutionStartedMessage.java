@@ -1,0 +1,65 @@
+
+package de.hhu.bsinfo.dxcompute.ms.messages;
+
+import java.nio.ByteBuffer;
+
+import de.hhu.bsinfo.menet.AbstractMessage;
+
+public class TaskExecutionStartedMessage extends AbstractMessage {
+	private long m_taskPayloadId;
+	private short[] m_slavesAssignedForExecution;
+
+	/**
+	 * Creates an instance of TaskRemoteCallbackMessage.
+	 * This constructor is used when receiving this message.
+	 */
+	public TaskExecutionStartedMessage() {
+		super();
+	}
+
+	/**
+	 * Creates an instance of TaskRemoteCallbackMessage.
+	 * This constructor is used when sending this message.
+	 * @param p_destination
+	 *            the destination node id.
+	 */
+	public TaskExecutionStartedMessage(final short p_destination, final long p_taskPayloadId,
+			final short[] p_slavesAssignedForExecution) {
+		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE);
+
+		m_taskPayloadId = p_taskPayloadId;
+		m_slavesAssignedForExecution = p_slavesAssignedForExecution;
+	}
+
+	public long getTaskPayloadId() {
+		return m_taskPayloadId;
+	}
+
+	public short[] getSlavesAssignedForExecution() {
+		return m_slavesAssignedForExecution;
+	}
+
+	@Override
+	protected final void writePayload(final ByteBuffer p_buffer) {
+		p_buffer.putLong(m_taskPayloadId);
+		p_buffer.putInt(m_slavesAssignedForExecution.length);
+		for (int i = 0; i < m_slavesAssignedForExecution.length; i++) {
+			p_buffer.putShort(m_slavesAssignedForExecution[i]);
+		}
+	}
+
+	@Override
+	protected final void readPayload(final ByteBuffer p_buffer) {
+		m_taskPayloadId = p_buffer.getLong();
+		int slaveCount = p_buffer.getInt();
+		m_slavesAssignedForExecution = new short[slaveCount];
+		for (int i = 0; i < slaveCount; i++) {
+			m_slavesAssignedForExecution[i] = p_buffer.getShort();
+		}
+	}
+
+	@Override
+	protected final int getPayloadLength() {
+		return Long.BYTES + Integer.BYTES + Short.BYTES * m_slavesAssignedForExecution.length;
+	}
+}

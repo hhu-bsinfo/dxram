@@ -15,5 +15,6 @@ public class MasterSlaveMessages {
 	public static final byte SUBTYPE_SUBMIT_TASK_RESPONSE = 6;
 	public static final byte SUBTYPE_GET_MASTER_STATUS_REQUEST = 7;
 	public static final byte SUBTYPE_GET_MASTER_STATUS_RESPONSE = 8;
-	public static final byte SUBTYPE_TASK_REMOTE_CALLBACK_MESSAGE = 9;
+	public static final byte SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE = 9;
+	public static final byte SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE = 10;
 }

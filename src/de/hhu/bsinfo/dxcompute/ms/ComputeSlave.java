@@ -181,6 +181,7 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 
 		m_executeTaskLock.lock();
 		int result = m_task.execute(getServiceAccessor());
+		m_logger.info(getClass(), "Execution finished, return code: " + result);
 		m_task = null;
 		m_executeTaskLock.unlock();
 
@@ -228,6 +229,7 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 					+ NodeID.toHexString(p_message.getSource()) + " failed: " + err);
 		} else {
 			// assign and start execution if non null
+			task.setComputeGroupId(m_computeGroupId);
 			m_task = task;
 		}
 	}

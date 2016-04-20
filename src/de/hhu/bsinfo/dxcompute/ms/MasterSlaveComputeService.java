@@ -10,7 +10,8 @@ import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskResponse;
-import de.hhu.bsinfo.dxcompute.ms.messages.TaskRemoteCallbackMessage;
+import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionFinishedMessage;
+import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionStartedMessage;
 import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
 import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask;
@@ -18,6 +19,7 @@ import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToFileTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tasks.SlavePrintInfoTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterList;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSMasterStatus;
@@ -147,6 +149,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 
 		// get assigned payload id
+		p_task.getPayload().setComputeGroupId(response.getAssignedComputeGroupId());
 		p_task.getPayload().setPayloadId(response.getAssignedPayloadId());
 
 		// remember task for remote callbacks
@@ -160,8 +163,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	@Override
 	public void taskBeforeExecution(final Task p_task) {
 		// only used for remote tasks to callback the node they were submitted on
-		TaskRemoteCallbackMessage message =
-				new TaskRemoteCallbackMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(), 0);
+		TaskExecutionStartedMessage message =
+				new TaskExecutionStartedMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(),
+						p_task.getPayload().getSlaveNodeIds());
 
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
@@ -173,8 +177,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	@Override
 	public void taskCompleted(final Task p_task) {
 		// only used for remote tasks to callback the node they were submitted on
-		TaskRemoteCallbackMessage message =
-				new TaskRemoteCallbackMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(), 1);
+		TaskExecutionFinishedMessage message =
+				new TaskExecutionFinishedMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(),
+						p_task.getPayload().getExecutionReturnCodes());
 
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
@@ -197,8 +202,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 					case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
 						incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
 						break;
-					case MasterSlaveMessages.SUBTYPE_TASK_REMOTE_CALLBACK_MESSAGE:
-						incomingTaskRemoteCallbackMessage((TaskRemoteCallbackMessage) p_message);
+					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
+						incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
+						break;
+					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
+						incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
 						break;
 					default:
 						break;
@@ -237,12 +245,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE,
 				GetMasterStatusResponse.class);
 		m_network.registerMessageType(MasterSlaveMessages.TYPE,
-				MasterSlaveMessages.SUBTYPE_TASK_REMOTE_CALLBACK_MESSAGE,
-				TaskRemoteCallbackMessage.class);
+				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE,
+				TaskExecutionStartedMessage.class);
+		m_network.registerMessageType(MasterSlaveMessages.TYPE,
+				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE,
+				TaskExecutionFinishedMessage.class);
 
 		m_network.register(SubmitTaskRequest.class, this);
 		m_network.register(GetMasterStatusRequest.class, this);
-		m_network.register(TaskRemoteCallbackMessage.class, this);
+		m_network.register(TaskExecutionStartedMessage.class, this);
+		m_network.register(TaskExecutionFinishedMessage.class, this);
 
 		m_terminal.registerCommand(new TcmdMSMasterList());
 		m_terminal.registerCommand(new TcmdMSMasterStatus());
@@ -303,7 +315,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		if (p_request.getTaskPayload() == null) {
 			m_logger.error(getClass(), "Creating instance for task payload of request " + p_request
 					+ " failed, most likely non registered task payload type");
-			response = new SubmitTaskResponse(p_request, -1);
+			response = new SubmitTaskResponse(p_request, -1, -1);
 			response.setStatusCode((byte) 3);
 			return;
 		}
@@ -312,7 +324,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			m_logger.error(getClass(),
 					"Cannot submit remote task " + p_request.getTaskPayload() + " on non master node type");
 
-			response = new SubmitTaskResponse(p_request, -1);
+			response = new SubmitTaskResponse(p_request, -1, -1);
 			response.setStatusCode((byte) 1);
 		} else {
 			Task task = new Task(p_request.getTaskPayload(), "RemoteTask" + p_request);
@@ -325,10 +337,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			if (ret) {
 				m_remoteTasks.put(task.getPayload().getPayloadId(), task);
 
-				response = new SubmitTaskResponse(p_request, task.getPayload().getPayloadId());
+				response = new SubmitTaskResponse(p_request, task.getPayload().getComputeGroupId(),
+						task.getPayload().getPayloadId());
 				response.setStatusCode((byte) 0);
 			} else {
-				response = new SubmitTaskResponse(p_request, -1);
+				response = new SubmitTaskResponse(p_request, -1, -1);
 				response.setStatusCode((byte) 2);
 			}
 		}
@@ -358,41 +371,50 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 	}
 
-	private void incomingTaskRemoteCallbackMessage(final TaskRemoteCallbackMessage p_request) {
+	private void incomingTaskExecutionStartedMessage(final TaskExecutionStartedMessage p_message) {
 
-		m_logger.debug(getClass(), "Got remote task callback: " + p_request);
 		// that's a little risky, but setting the id in the submit call
 		// is done quickly enough that we can keep blocking a little here
 		// though if we get weird timeouts or network message behavior
 		// this section might be the cause
-		Task task = m_remoteTasks.get(p_request.getTaskPayloadId());
+		Task task = m_remoteTasks.get(p_message.getTaskPayloadId());
 		while (task == null) {
-			task = m_remoteTasks.get(p_request.getTaskPayloadId());
+			task = m_remoteTasks.get(p_message.getTaskPayloadId());
 			Thread.yield();
 		}
 
-		switch (p_request.getCallbackId()) {
-			case 0: {
-				task.notifyListenersExecutionStarts();
-				break;
-			}
-			case 1: {
-				// done with task, remove
-				task.notifyListenersExecutionCompleted();
-				m_remoteTasks.remove(p_request.getTaskPayloadId());
-				break;
-			}
-			default:
-				assert 1 == 2;
-				break;
+		task.getPayload().setPayloadId(p_message.getTaskPayloadId());
+		task.getPayload().setSalves(p_message.getSlavesAssignedForExecution());
+
+		task.notifyListenersExecutionStarts();
+	}
+
+	private void incomingTaskExecutionFinishedMessage(final TaskExecutionFinishedMessage p_message) {
+		// that's a little risky, but setting the id in the submit call
+		// is done quickly enough that we can keep blocking a little here
+		// though if we get weird timeouts or network message behavior
+		// this section might be the cause
+		Task task = m_remoteTasks.get(p_message.getTaskPayloadId());
+		while (task == null) {
+			task = m_remoteTasks.get(p_message.getTaskPayloadId());
+			Thread.yield();
 		}
 
+		// done with task, remove
+		// get return codes of execution
+		task.getPayload().setExecutionReturnCodes(p_message.getExecutionReturnCodes());
+		m_remoteTasks.remove(p_message.getTaskPayloadId());
+
+		task.notifyListenersExecutionCompleted();
 	}
 
 	private void registerTaskPayloads() {
 		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK,
 				NullTaskPayload.class);
+		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+				MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK,
+				SlavePrintInfoTaskPayload.class);
 		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK,
 				WaitTaskPayload.class);
