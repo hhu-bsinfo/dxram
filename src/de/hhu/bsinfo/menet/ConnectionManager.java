@@ -58,6 +58,21 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	}
 
 	/**
+	 * Returns the status of all connections
+	 * @return the statuses
+	 */
+	public String getConnectionStatuses() {
+		String ret = "";
+
+		Iterator<AbstractConnection> iter = m_connections.values().iterator();
+		while (iter.hasNext()) {
+			ret += iter.next().toString();
+		}
+
+		return ret;
+	}
+
+	/**
 	 * Checks if there is a congested connection
 	 * @return whether there is congested connection or not
 	 */
@@ -139,7 +154,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		rand = new Random();
 		m_lock.lock();
 		dismiss = ((Entry<Short, AbstractConnection>[]) m_connections.entrySet().toArray())[rand
-				.nextInt(m_connections.size())].getValue();
+		                                                                                    .nextInt(m_connections.size())].getValue();
 
 		if (dismiss != null) {
 			dismiss.close();

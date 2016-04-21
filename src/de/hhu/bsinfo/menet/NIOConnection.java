@@ -32,6 +32,8 @@ public class NIOConnection extends AbstractConnection {
 	private ReentrantLock m_outgoingAllLock;
 	private ReentrantLock m_outgoingLock;
 
+	private ChangeOperationsRequest m_writeOperation;
+
 	// Constructors
 	/**
 	 * Creates an instance of NIOConnection (this node creates a new connection with another node)
@@ -78,7 +80,7 @@ public class NIOConnection extends AbstractConnection {
 		m_channel.socket().setSendBufferSize(m_outgoingBufferSize);
 
 		m_nioSelector = p_nioSelector;
-		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_CONNECT);
+		m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
 		m_channel.connect(super.getNodeMap().getAddress(p_destination));
 
@@ -93,6 +95,8 @@ public class NIOConnection extends AbstractConnection {
 		m_outgoingLock = new ReentrantLock(false);
 
 		m_numberOfBuffers = p_numberOfBuffers;
+
+		m_writeOperation = new ChangeOperationsRequest(this, SelectionKey.OP_WRITE);
 	}
 
 	/**
@@ -148,6 +152,8 @@ public class NIOConnection extends AbstractConnection {
 		m_outgoingLock = new ReentrantLock(false);
 
 		m_numberOfBuffers = p_numberOfBuffers;
+
+		m_writeOperation = new ChangeOperationsRequest(this, SelectionKey.OP_WRITE);
 	}
 
 	// Getter
@@ -181,11 +187,16 @@ public class NIOConnection extends AbstractConnection {
 	 *            the ByteBuffer
 	 */
 	protected void addIncoming(final ByteBuffer p_buffer) {
+		m_incomingLock.lock();
 		// Avoid congestion by not allowing more than NUMBER_OF_BUFFERS buffers to be cached for reading
 		while (m_incoming.size() > m_numberOfBuffers) {
+			m_incomingLock.unlock();
+
 			Thread.yield();
+
+			m_incomingLock.lock();
 		}
-		m_incomingLock.lock();
+
 		m_incoming.offer(p_buffer);
 		m_incomingLock.unlock();
 
@@ -199,7 +210,37 @@ public class NIOConnection extends AbstractConnection {
 	 */
 	@Override
 	protected void doWrite(final AbstractMessage p_message) throws NetworkException {
-		writeToChannel(p_message.getBuffer());
+		if (p_message instanceof FlowControlMessage) {
+			writeToChannelForced(p_message.getBuffer());
+		} else {
+			writeToChannel(p_message.getBuffer());
+		}
+	}
+
+	@Override
+	protected boolean dataLeftToWrite() {
+		boolean ret;
+
+		m_outgoingLock.lock();
+		ret = !m_outgoing.isEmpty();
+		m_outgoingLock.unlock();
+
+		return ret;
+	}
+
+	@Override
+	protected String getInputOutputQueueLength() {
+		String ret = "";
+
+		m_outgoingLock.lock();
+		ret += "out: " + m_outgoing.size();
+		m_outgoingLock.unlock();
+
+		m_incomingLock.lock();
+		ret += ", in: " + m_incoming.size();
+		m_incomingLock.unlock();
+
+		return ret;
 	}
 
 	/**
@@ -208,18 +249,40 @@ public class NIOConnection extends AbstractConnection {
 	 *            Buffer
 	 */
 	private void writeToChannel(final ByteBuffer p_buffer) {
+		m_outgoingAllLock.lock();
+		m_outgoingLock.lock();
 		// Avoid congestion by not allowing more than NUMBER_OF_BUFFERS messages to be buffered for writing
 		while (m_outgoing.size() > m_numberOfBuffers) {
+			m_outgoingLock.unlock();
+			m_outgoingAllLock.unlock();
+
 			Thread.yield();
+
+			m_outgoingAllLock.lock();
+			m_outgoingLock.lock();
 		}
 
+		m_outgoing.offer(p_buffer);
+		m_outgoingLock.unlock();
+
+		// Change operation (read <-> write) and/or connection
+		m_nioSelector.changeOperationInterestAsync(m_writeOperation);
+		m_outgoingAllLock.unlock();
+	}
+
+	/**
+	 * Enqueue buffer to be written into the channel
+	 * @param p_buffer
+	 *            Buffer
+	 */
+	private void writeToChannelForced(final ByteBuffer p_buffer) {
 		m_outgoingAllLock.lock();
 		m_outgoingLock.lock();
 		m_outgoing.offer(p_buffer);
 		m_outgoingLock.unlock();
 
 		// Change operation (read <-> write) and/or connection
-		m_nioSelector.changeOperationInterestAsync(this, SelectionKey.OP_WRITE);
+		m_nioSelector.changeOperationInterestAsync(m_writeOperation);
 		m_outgoingAllLock.unlock();
 	}
 

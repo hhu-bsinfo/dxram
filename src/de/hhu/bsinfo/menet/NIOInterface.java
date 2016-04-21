@@ -162,8 +162,7 @@ final class NIOInterface {
 							bytes = p_connection.getChannel().write(view);
 							if (bytes == 0) {
 								if (++tries == 1000) {
-									// Read-buffer on the other side is full. Abort writing and schedule buffer for next
-									// write
+									// Read-buffer on the other side is full. Abort writing and schedule buffer for next write
 									buffer.position(buffer.position() + size - view.remaining());
 
 									if (buffer == m_writeBuffer) {
@@ -197,8 +196,7 @@ final class NIOInterface {
 						bytes = p_connection.getChannel().write(buffer);
 						if (bytes == 0) {
 							if (++tries == 1000) {
-								// Read-buffer on the other side is full. Abort writing and schedule buffer for next
-								// write
+								// Read-buffer on the other side is full. Abort writing and schedule buffer for next write
 								if (buffer == m_writeBuffer) {
 									// Copy buffer to avoid manipulation of scheduled data
 									slice = buffer.slice();
@@ -223,6 +221,9 @@ final class NIOInterface {
 				}
 			}
 			// ThroughputStatistic.getInstance().outgoingExtern(writtenBytes - length);
+		}
+		if (ret) {
+			ret = !p_connection.dataLeftToWrite();
 		}
 
 		return ret;

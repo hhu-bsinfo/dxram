@@ -323,8 +323,7 @@ public class SecondaryLog extends AbstractLog {
 					length = 0;
 				} else {
 					if (m_activeSegment != null) {
-						// There is not enough space in active segment to store the whole buffer -> first fill current
-						// one
+						// There is not enough space in active segment to store the whole buffer -> first fill current one
 						header = m_segmentHeaders[m_activeSegment.getIndex()];
 						while (true) {
 							logEntryHeader = AbstractLogEntryHeader.getSecondaryHeader(p_data, p_offset + rangeSize, m_storesMigrations);
@@ -791,7 +790,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @note executed only by reorganization thread
 	 */
 	private static byte[][] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize) throws IOException,
-	InterruptedException {
+			InterruptedException {
 		byte[][] result = null;
 		int numberOfSegments;
 		RandomAccessFile randomAccessFile;

@@ -134,7 +134,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 				secondaryLog = m_secLog;
 				m_secLog = null;
 
-				System.out.println("Requesting access to secondary log " + m_secLog.toString());
+				System.out.println("Requesting access to secondary log " + secondaryLog.toString());
 				m_logService.getAccessToSecLog(secondaryLog);
 
 				System.out.println("Got access to secondary log");

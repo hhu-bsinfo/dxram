@@ -61,6 +61,12 @@ abstract class AbstractConnectionCreator {
 	public abstract AbstractConnection createConnection(short p_destination, DataReceiver p_listener) throws IOException;
 
 	/**
+	 * Returns the selector status
+	 * @return the selector status
+	 */
+	public abstract String getSelectorStatus();
+
+	/**
 	 * Informs the ConnectionCreatorListener about a new connection
 	 * @param p_connection
 	 *            the new connection

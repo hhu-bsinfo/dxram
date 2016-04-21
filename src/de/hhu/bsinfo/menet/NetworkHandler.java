@@ -30,6 +30,7 @@ public final class NetworkHandler implements DataReceiver {
 	private final ExclusiveMessageHandler m_exclusiveMessageHandler;
 
 	private MessageDirectory m_messageDirectory;
+	private AbstractConnectionCreator m_connectionCreator;
 	private ConnectionManager m_manager;
 	private ReentrantLock m_receiversLock;
 
@@ -92,6 +93,19 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	/**
+	 * Returns the status of the network module
+	 * @return the status
+	 */
+	public String getStatus() {
+		String str = "";
+
+		str += m_manager.getConnectionStatuses();
+		str += m_connectionCreator.getSelectorStatus();
+
+		return str;
+	}
+
+	/**
 	 * Registers a message type
 	 * @param p_type
 	 *            the unique type
@@ -136,12 +150,12 @@ public final class NetworkHandler implements DataReceiver {
 
 		m_nodeMap = p_nodeMap;
 
-		final AbstractConnectionCreator connectionCreator =
+		m_connectionCreator =
 				new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize,
 						p_outgoingBufferSize,
 						p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
-		connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
-		m_manager = new ConnectionManager(connectionCreator, this);
+		m_connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
+		m_manager = new ConnectionManager(m_connectionCreator, this);
 
 		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
@@ -315,31 +329,29 @@ public final class NetworkHandler implements DataReceiver {
 			RequestMap.fulfill((AbstractResponse) p_message);
 		} else {
 			if (!p_message.isExclusive()) {
-				// Limit number of open tasks
-				while (m_defaultMessageHandler.getQueueSize() > m_numMessageHandlerThreads * 2) {
+				int maxMessages = m_numMessageHandlerThreads * 2;
+				while (!m_defaultMessageHandler.newMessage(p_message, maxMessages)) {
+					// Too many pending messages -> wait
 					if (m_manager.atLeastOneConnectionIsCongested()) {
 						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
-						// than limit) messages
-						// to task queue until flow control message arrives
-						break;
+						// than limit) messages to task queue until flow control message arrives
+						maxMessages = Integer.MAX_VALUE;
+						continue;
 					}
 					Thread.yield();
 				}
-
-				m_defaultMessageHandler.newMessage(p_message);
 			} else {
-				// Limit number of open tasks
-				while (m_exclusiveMessageHandler.getQueueSize() > 4) {
+				int maxMessages = 4;
+				while (!m_exclusiveMessageHandler.newMessage(p_message, maxMessages)) {
+					// Too many pending messages -> wait
 					if (m_manager.atLeastOneConnectionIsCongested()) {
 						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
-						// than limit) messages
-						// to task queue until flow control message arrives
-						break;
+						// than limit) messages to task queue until flow control message arrives
+						maxMessages = Integer.MAX_VALUE;
+						continue;
 					}
 					Thread.yield();
 				}
-
-				m_exclusiveMessageHandler.newMessage(p_message);
 			}
 		}
 	}
@@ -371,27 +383,30 @@ public final class NetworkHandler implements DataReceiver {
 			m_executor = new TaskExecutor("Network: DefaultMessageHandler", p_numMessageHandlerThreads);
 		}
 
-		// Getter
-		/**
-		 * Returns the number of messages in default message queue
-		 * @return the number of scheduled messages
-		 */
-		public int getQueueSize() {
-			return m_defaultMessages.size();
-		}
-
 		// Methods
 		/**
 		 * Enqueue a new message for delivering
 		 * @param p_message
 		 *            the message
+		 * @param p_maxMessages
+		 *            the maximal number of pending messages
+		 * @return whether the message was appended or not
 		 */
-		public void newMessage(final AbstractMessage p_message) {
-			m_defaultMessagesLock.lock();
-			m_defaultMessages.offer(p_message);
-			m_defaultMessagesLock.unlock();
+		public boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
+			boolean ret = true;
 
-			m_executor.execute(this);
+			m_defaultMessagesLock.lock();
+			if (m_defaultMessages.size() > p_maxMessages) {
+				ret = false;
+				m_defaultMessagesLock.unlock();
+			} else {
+				m_defaultMessages.offer(p_message);
+				m_defaultMessagesLock.unlock();
+
+				m_executor.execute(this);
+			}
+
+			return ret;
 		}
 
 		@Override
@@ -435,15 +450,6 @@ public final class NetworkHandler implements DataReceiver {
 			m_messageAvailable = m_exclusiveMessagesLock.newCondition();
 		}
 
-		// Getter
-		/**
-		 * Returns the number of messages in default message queue
-		 * @return the number of scheduled messages
-		 */
-		public int getQueueSize() {
-			return m_exclusiveMessages.size();
-		}
-
 		// Methods
 		/**
 		 * Closes the handler
@@ -456,15 +462,27 @@ public final class NetworkHandler implements DataReceiver {
 		 * Enqueue a new message for delivering
 		 * @param p_message
 		 *            the message
+		 * @param p_maxMessages
+		 *            the maximal number of pending messages
+		 * @return whether the message was appended or not
 		 */
-		public void newMessage(final AbstractMessage p_message) {
-			m_exclusiveMessagesLock.lock();
-			m_exclusiveMessages.offer(p_message);
+		public boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
+			boolean ret = true;
 
-			if (m_exclusiveMessages.size() == 1) {
-				m_messageAvailable.signal();
+			m_exclusiveMessagesLock.lock();
+			if (m_exclusiveMessages.size() > p_maxMessages) {
+				ret = false;
+				m_exclusiveMessagesLock.unlock();
+			} else {
+				m_exclusiveMessages.offer(p_message);
+
+				if (m_exclusiveMessages.size() == 1) {
+					m_messageAvailable.signal();
+				}
+				m_exclusiveMessagesLock.unlock();
 			}
-			m_exclusiveMessagesLock.unlock();
+
+			return ret;
 		}
 
 		@Override
