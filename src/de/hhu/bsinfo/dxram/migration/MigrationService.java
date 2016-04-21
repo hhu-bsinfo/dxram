@@ -18,10 +18,13 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationMessages;
+import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
+import de.hhu.bsinfo.dxram.migration.tcmd.TcmdMigrate;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -40,6 +43,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	private LoggerComponent m_logger;
 	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
+	private TerminalComponent m_terminal;
 
 	private Lock m_migrationLock;
 
@@ -113,12 +117,27 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					ret = true;
 				}
 			} else {
-				m_logger.error(getClass(), "Chunk with ChunkID " + ChunkID.toHexString(p_chunkID) + " could not be migrated");
+
+				
+				m_logger.error(getClass(),
+						"Chunk with ChunkID " + ChunkID.toHexString(p_chunkID) + " could not be migrated");
 				ret = false;
 			}
 			m_migrationLock.unlock();
 		}
 		return ret;
+	}
+
+	/**
+	 * Triggers a migrate call to the node a specified chunk
+	 * @param p_chunkID
+	 *            the ID
+	 * @param p_target
+	 *            the Node where to migrate the Chunk
+	 */
+	public void targetMigrate(final long p_chunkID, final short p_target) {
+
+		m_network.sendMessage(new MigrationRemoteMessage(ChunkID.getCreatorID(p_chunkID), p_chunkID, p_target));
 	}
 
 	/**
@@ -171,14 +190,17 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 								chunkIDs[counter++] = chunk.getID();
 								size += chunk.getDataSize();
 							} else {
-								m_logger.error(getClass(), "Chunk with ChunkID " + ChunkID.toHexString(iter) + " could not be migrated");
+								m_logger.error(getClass(),
+										"Chunk with ChunkID " + ChunkID.toHexString(iter) + " could not be migrated");
 							}
 							iter++;
 						}
 						m_memoryManager.unlockAccess();
 
-						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to " + NodeID.toHexString(p_target));
-						if (m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter))) != NetworkErrorCodes.SUCCESS) {
+						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to "
+								+ NodeID.toHexString(p_target));
+						if (m_network.sendSync(new MigrationRequest(p_target,
+								Arrays.copyOf(chunks, counter))) != NetworkErrorCodes.SUCCESS) {
 							m_logger.error(getClass(), "Could not migrate chunks");
 						}
 
@@ -214,7 +236,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					}
 					ret = true;
 				} else {
-					m_logger.error(getClass(), "Chunks could not be migrated because end of range is before start of range");
+					m_logger.error(getClass(),
+							"Chunks could not be migrated because end of range is before start of range");
 					ret = false;
 				}
 			} else {
@@ -275,6 +298,9 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 
+		m_terminal = getComponent(TerminalComponent.class);
+		m_terminal.registerCommand(new TcmdMigrate());
+
 		m_migrationLock = new ReentrantLock(false);
 
 		registerNetworkMessages();
@@ -297,17 +323,32 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 		m_network.sendMessage(response);
 	}
 
+	private void incomingMigrationMessage(final MigrationRemoteMessage p_message) {
+
+		boolean success = migrate(p_message.getChunkID(), p_message.getTargetNode());
+
+		if (!success) {
+			System.out.println("Failure! Could not migrate chunk "
+					+ ChunkID.toHexString(p_message.getChunkID()) + " to node "
+					+ ChunkID.toHexString(p_message.getTargetNode()));
+		}
+
+	}
+
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 
 		if (p_message != null) {
 			if (p_message.getType() == MigrationMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
-					incomingMigrationRequest((MigrationRequest) p_message);
-					break;
-				default:
-					break;
+					case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
+						incomingMigrationRequest((MigrationRequest) p_message);
+						break;
+					case MigrationMessages.SUBTYPE_MIGRATION_MESSAGE:
+						incomingMigrationMessage((MigrationRemoteMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -319,8 +360,12 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 * Register network messages we use in here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE, MigrationResponse.class);
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST,
+				MigrationRequest.class);
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE,
+				MigrationResponse.class);
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_MESSAGE,
+				MigrationRemoteMessage.class);
 	}
 
 	/**
@@ -328,6 +373,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 */
 	private void registerNetworkMessageListener() {
 		m_network.register(MigrationRequest.class, this);
+		m_network.register(MigrationRemoteMessage.class, this);
 	}
 
 }
