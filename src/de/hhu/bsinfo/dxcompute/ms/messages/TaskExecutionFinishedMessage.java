@@ -10,7 +10,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TaskExecutionFinishedMessage extends AbstractMessage {
-	private long m_taskPayloadId;
+	private int m_taskPayloadId;
 	private int[] m_executionReturnCodes;
 
 	/**
@@ -31,7 +31,7 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 	 * @param p_executionReturnCodes
 	 *            Return codes of all slaves that executed the task (Indexable by slave id).
 	 */
-	public TaskExecutionFinishedMessage(final short p_destination, final long p_taskPayloadId,
+	public TaskExecutionFinishedMessage(final short p_destination, final int p_taskPayloadId,
 			final int[] p_executionReturnCodes) {
 		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
 
@@ -43,7 +43,7 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 	 * Get the payload if of the task that finished execution.
 	 * @return Payload id of the finished task.
 	 */
-	public long getTaskPayloadId() {
+	public int getTaskPayloadId() {
 		return m_taskPayloadId;
 	}
 
@@ -57,7 +57,7 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putLong(m_taskPayloadId);
+		p_buffer.putInt(m_taskPayloadId);
 		p_buffer.putInt(m_executionReturnCodes.length);
 		for (int i = 0; i < m_executionReturnCodes.length; i++) {
 			p_buffer.putInt(m_executionReturnCodes[i]);
@@ -66,7 +66,7 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_taskPayloadId = p_buffer.getLong();
+		m_taskPayloadId = p_buffer.getInt();
 		int size = p_buffer.getInt();
 		m_executionReturnCodes = new int[size];
 		for (int i = 0; i < size; i++) {
@@ -76,6 +76,6 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 
 	@Override
 	protected final int getPayloadLength() {
-		return Long.BYTES + Integer.BYTES + Integer.BYTES * m_executionReturnCodes.length;
+		return Integer.BYTES + Integer.BYTES + Integer.BYTES * m_executionReturnCodes.length;
 	}
 }

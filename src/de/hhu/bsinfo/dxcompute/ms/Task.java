@@ -117,9 +117,9 @@ public class Task {
 	}
 
 	/**
-	 * Set the node id of the node/master this task was submitted to.
+	 * Set the node id of the node/master this task was submitted on.
 	 * @param p_nodeId
-	 *            Node id of the node this task was submitted to.
+	 *            Node id of the node this task was submitted on.
 	 */
 	void setNodeIdSubmitted(final short p_nodeId) {
 		m_nodeIdSubmitted = p_nodeId;

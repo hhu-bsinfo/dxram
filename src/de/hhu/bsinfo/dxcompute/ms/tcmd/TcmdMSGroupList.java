@@ -10,18 +10,18 @@ import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
- * Terminal command to list all currently available compute master nodes.
+ * Terminal command to list all currently available compute groups.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class TcmdMSMasterList extends AbstractTerminalCommand {
+public class TcmdMSGroupList extends AbstractTerminalCommand {
 	@Override
 	public String getName() {
-		return "compmasterlist";
+		return "compgrouplist";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Get a list of available compute master nodes";
+		return "Get a list of available compute groups";
 	}
 
 	@Override
@@ -36,9 +36,9 @@ public class TcmdMSMasterList extends AbstractTerminalCommand {
 
 		ArrayList<Pair<Short, Byte>> masters = masterSlaveComputeService.getMasters();
 
-		System.out.println("List of available compute master nodes (" + masters.size() + "):");
+		System.out.println("List of available compute groups with master nodes (" + masters.size() + "):");
 		for (Pair<Short, Byte> entry : masters) {
-			System.out.println(NodeID.toHexString(entry.first()) + ": " + entry.second());
+			System.out.println(entry.second() + ": " + NodeID.toHexString(entry.first()));
 		}
 
 		return true;

@@ -10,7 +10,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TaskExecutionStartedMessage extends AbstractMessage {
-	private long m_taskPayloadId;
+	private int m_taskPayloadId;
 	private short[] m_slavesAssignedForExecution;
 
 	/**
@@ -31,7 +31,7 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 	 * @param p_slavesAssignedForExecution
 	 *            List of slaves that are assigend for execution.
 	 */
-	public TaskExecutionStartedMessage(final short p_destination, final long p_taskPayloadId,
+	public TaskExecutionStartedMessage(final short p_destination, final int p_taskPayloadId,
 			final short[] p_slavesAssignedForExecution) {
 		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE);
 
@@ -43,7 +43,7 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 	 * Id of the task that started execution.
 	 * @return Id of the task.
 	 */
-	public long getTaskPayloadId() {
+	public int getTaskPayloadId() {
 		return m_taskPayloadId;
 	}
 
@@ -57,7 +57,7 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putLong(m_taskPayloadId);
+		p_buffer.putInt(m_taskPayloadId);
 		p_buffer.putInt(m_slavesAssignedForExecution.length);
 		for (int i = 0; i < m_slavesAssignedForExecution.length; i++) {
 			p_buffer.putShort(m_slavesAssignedForExecution[i]);
@@ -66,7 +66,7 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_taskPayloadId = p_buffer.getLong();
+		m_taskPayloadId = p_buffer.getInt();
 		int slaveCount = p_buffer.getInt();
 		m_slavesAssignedForExecution = new short[slaveCount];
 		for (int i = 0; i < slaveCount; i++) {
@@ -76,6 +76,6 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 
 	@Override
 	protected final int getPayloadLength() {
-		return Long.BYTES + Integer.BYTES + Short.BYTES * m_slavesAssignedForExecution.length;
+		return Integer.BYTES + Integer.BYTES + Short.BYTES * m_slavesAssignedForExecution.length;
 	}
 }

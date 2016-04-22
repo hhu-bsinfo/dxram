@@ -42,7 +42,7 @@ public abstract class AbstractComputeMSBase extends Thread {
 
 	protected volatile State m_state = State.STATE_SETUP;
 	protected ComputeRole m_role;
-	protected int m_computeGroupId = -1;
+	protected short m_computeGroupId = -1;
 	protected long m_pingIntervalMs;
 	protected long m_lastPingMs;
 	protected String m_nameserviceMasterNodeIdKey;
@@ -66,7 +66,7 @@ public abstract class AbstractComputeMSBase extends Thread {
 	 * @param p_boot
 	 *            BootComponent
 	 */
-	public AbstractComputeMSBase(final ComputeRole p_role, final int p_computeGroupId, final long p_pingIntervalMs,
+	public AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
@@ -106,7 +106,7 @@ public abstract class AbstractComputeMSBase extends Thread {
 	 * Get the compute group id this node is assigend to.
 	 * @return Compute group id assigned to.
 	 */
-	public int getComputeGroupId() {
+	public short getComputeGroupId() {
 		return m_computeGroupId;
 	}
 

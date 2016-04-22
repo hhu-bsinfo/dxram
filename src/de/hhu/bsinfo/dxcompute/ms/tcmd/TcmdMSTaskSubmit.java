@@ -19,8 +19,8 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 			new Argument("tid", null, false, "Type id of the task to submit");
 	private static final Argument MS_ARG_TASK_SUBTYPE_ID =
 			new Argument("stid", null, false, "Subtype id of the task to submit");
-	private static final Argument MS_ARG_NID =
-			new Argument("nid", null, false, "Master node id to submit the task to");
+	private static final Argument MS_ARG_CGID =
+			new Argument("cgid", null, false, "Id of the compute group to submit the task to");
 	private static final Argument MS_ARG_NAME =
 			new Argument("name", "TcmdTask", true, "Name for the task for easier identification");
 
@@ -40,7 +40,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 	public void registerArguments(final ArgumentList p_arguments) {
 		p_arguments.setArgument(MS_ARG_TASK_TYPE_ID);
 		p_arguments.setArgument(MS_ARG_TASK_SUBTYPE_ID);
-		p_arguments.setArgument(MS_ARG_NID);
+		p_arguments.setArgument(MS_ARG_CGID);
 		p_arguments.setArgument(MS_ARG_NAME);
 	}
 
@@ -48,7 +48,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 	public boolean execute(final ArgumentList p_arguments) {
 		Short tid = p_arguments.getArgumentValue(MS_ARG_TASK_TYPE_ID, Short.class);
 		Short stid = p_arguments.getArgumentValue(MS_ARG_TASK_SUBTYPE_ID, Short.class);
-		Short nid = p_arguments.getArgumentValue(MS_ARG_NID, Short.class);
+		Short cgid = p_arguments.getArgumentValue(MS_ARG_CGID, Short.class);
 		String name = p_arguments.getArgumentValue(MS_ARG_NAME, String.class);
 
 		MasterSlaveComputeService computeService =
@@ -71,13 +71,13 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 		Task task = new Task(payload, name + ms_taskCounter++);
 		task.registerTaskListener(this);
 
-		long taskId = computeService.submitTask(task, nid);
+		long taskId = computeService.submitTask(task, cgid);
 		if (taskId == -1) {
-			System.out.println("Submitting task " + task + " to node " + NodeID.toHexString(nid) + " failed.");
+			System.out.println("Submitting task " + task + " to compute group " + cgid + " failed.");
 			return true;
 		}
 
-		System.out.println("Task submitted to node " + NodeID.toHexString(nid) + ", task id " + taskId);
+		System.out.println("Task submitted to compute group " + cgid + ", task id " + taskId);
 
 		return true;
 	}

@@ -26,9 +26,9 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	private short m_typeId = -1;
 	private short m_subtypeId = -1;
-	private long m_payloadId = -1;
-	private int m_computeGroupId = -1;
-	private int m_slaveId = -1;
+	private int m_payloadId = -1;
+	private short m_computeGroupId = -1;
+	private short m_slaveId = -1;
 	// list of all slaves of the same compute group sorted by their slave id (indexable)
 	private short[] m_slaveNodeIds = new short[0];
 	private int[] m_executionReturnCodes = new int[0];
@@ -126,7 +126,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * Get the payload id assigned by the master node on submission.
 	 * @return Payload id.
 	 */
-	public long getPayloadId() {
+	public int getPayloadId() {
 		return m_payloadId;
 	}
 
@@ -134,7 +134,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * Get the compute group id this task is executed in.
 	 * @return Compute group id.
 	 */
-	public int getComputeGroupId() {
+	public short getComputeGroupId() {
 		return m_computeGroupId;
 	}
 
@@ -142,7 +142,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * Get the id of the slave that executes the task (0 based).
 	 * @return Id of the slave executing the task.
 	 */
-	public int getSlaveId() {
+	public short getSlaveId() {
 		return m_slaveId;
 	}
 
@@ -183,8 +183,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	@Override
 	public int exportObject(final Exporter p_exporter, final int p_size) {
-		p_exporter.writeLong(m_payloadId);
-		p_exporter.writeInt(m_slaveId);
+		p_exporter.writeInt(m_payloadId);
+		p_exporter.writeShort(m_slaveId);
 		p_exporter.writeInt(m_slaveNodeIds.length);
 		p_exporter.writeShorts(m_slaveNodeIds);
 		p_exporter.writeInt(m_executionReturnCodes.length);
@@ -195,8 +195,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	@Override
 	public int importObject(final Importer p_importer, final int p_size) {
-		m_payloadId = p_importer.readLong();
-		m_slaveId = p_importer.readInt();
+		m_payloadId = p_importer.readInt();
+		m_slaveId = p_importer.readShort();
 		m_slaveNodeIds = new short[p_importer.readInt()];
 		p_importer.readShorts(m_slaveNodeIds);
 		m_executionReturnCodes = new int[p_importer.readInt()];
@@ -207,7 +207,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	@Override
 	public int sizeofObject() {
-		return Long.BYTES + Integer.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES + Integer.BYTES
+		return Integer.BYTES + Short.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES + Integer.BYTES
 				+ m_executionReturnCodes.length * Integer.BYTES;
 	}
 
@@ -228,7 +228,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * @param p_payloadId
 	 *            Payload id to set.
 	 */
-	void setPayloadId(final long p_payloadId) {
+	void setPayloadId(final int p_payloadId) {
 		m_payloadId = p_payloadId;
 	}
 
@@ -237,7 +237,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * @param p_computeGroupId
 	 *            Id to set.
 	 */
-	void setComputeGroupId(final int p_computeGroupId) {
+	void setComputeGroupId(final short p_computeGroupId) {
 		m_computeGroupId = p_computeGroupId;
 	}
 
@@ -246,7 +246,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * @param p_slaveId
 	 *            Id to set.
 	 */
-	void setSlaveId(final int p_slaveId) {
+	void setSlaveId(final short p_slaveId) {
 		m_slaveId = p_slaveId;
 	}
 

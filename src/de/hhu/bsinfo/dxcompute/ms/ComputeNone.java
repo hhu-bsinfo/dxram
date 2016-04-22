@@ -31,7 +31,7 @@ public class ComputeNone extends AbstractComputeMSBase {
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
-		super(ComputeRole.NONE, -1, 0, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
+		super(ComputeRole.NONE, (short) -1, 0, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
 	}
 
 	@Override

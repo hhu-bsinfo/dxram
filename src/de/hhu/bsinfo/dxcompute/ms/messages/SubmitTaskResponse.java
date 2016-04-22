@@ -10,8 +10,8 @@ import de.hhu.bsinfo.menet.AbstractResponse;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class SubmitTaskResponse extends AbstractResponse {
-	private int m_assignedComputeGroupId;
-	private long m_assignedPayloadId;
+	private short m_assignedComputeGroupId;
+	private int m_assignedPayloadId;
 
 	/**
 	 * Creates an instance of SubmitTaskResponse.
@@ -31,8 +31,8 @@ public class SubmitTaskResponse extends AbstractResponse {
 	 * @param p_assignedPayloadId
 	 *            The payload id assigned by the master of the compute group.
 	 */
-	public SubmitTaskResponse(final SubmitTaskRequest p_request, final int p_assignedComputeGroupId,
-			final long p_assignedPayloadId) {
+	public SubmitTaskResponse(final SubmitTaskRequest p_request, final short p_assignedComputeGroupId,
+			final int p_assignedPayloadId) {
 		super(p_request, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE);
 
 		m_assignedComputeGroupId = p_assignedComputeGroupId;
@@ -40,10 +40,10 @@ public class SubmitTaskResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Get the compute group id of the compute group the task was assigend ot.
+	 * Get the compute group id of the compute group the task was assigned to.
 	 * @return Compute group id.
 	 */
-	public int getAssignedComputeGroupId() {
+	public short getAssignedComputeGroupId() {
 		return m_assignedComputeGroupId;
 	}
 
@@ -51,24 +51,24 @@ public class SubmitTaskResponse extends AbstractResponse {
 	 * Get the payload id that got assigned to the task by the master of the group.
 	 * @return Payload id.
 	 */
-	public long getAssignedPayloadId() {
+	public int getAssignedPayloadId() {
 		return m_assignedPayloadId;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putInt(m_assignedComputeGroupId);
-		p_buffer.putLong(m_assignedPayloadId);
+		p_buffer.putShort(m_assignedComputeGroupId);
+		p_buffer.putInt(m_assignedPayloadId);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_assignedComputeGroupId = p_buffer.getInt();
-		m_assignedPayloadId = p_buffer.getLong();
+		m_assignedComputeGroupId = p_buffer.getShort();
+		m_assignedPayloadId = p_buffer.getInt();
 	}
 
 	@Override
 	protected final int getPayloadLength() {
-		return Integer.BYTES + Long.BYTES;
+		return Short.BYTES + Integer.BYTES;
 	}
 }

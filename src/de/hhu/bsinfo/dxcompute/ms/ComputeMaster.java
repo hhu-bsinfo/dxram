@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,7 +43,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	private int m_executeBarrierIdentifier;
 	private BarrierMasterInternal m_executionBarrier;
 
-	private AtomicLong m_payloadIdCounter = new AtomicLong(0);
+	private AtomicInteger m_payloadIdCounter = new AtomicInteger(0);
 
 	/**
 	 * Constructor
@@ -63,7 +62,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	 * @param p_boot
 	 *            BootComponent
 	 */
-	public ComputeMaster(final int p_computeGroupId, final long p_pingIntervalMs,
+	public ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
@@ -271,7 +270,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 		task.notifyListenersExecutionStarts();
 
 		// send task to slaves
-		int numberOfSlavesOnExecution = 0;
+		short numberOfSlavesOnExecution = 0;
 		// avoid clashes with other compute groups, but still alter the flag on every next sync
 		m_executeBarrierIdentifier = (m_executeBarrierIdentifier + 1) % 2 + m_computeGroupId * 2;
 		for (int i = 0; i < slaves.length; i++) {
@@ -300,7 +299,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 			}
 		}
 
-		taskPayload.setSlaveId(-1);
+		taskPayload.setSlaveId((short) -1);
 
 		m_logger.info(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");

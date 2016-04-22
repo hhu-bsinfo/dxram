@@ -52,7 +52,7 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 	 * @param p_boot
 	 *            BootComponent
 	 */
-	public ComputeSlave(final int p_computeGroupId, final long p_pingIntervalMs,
+	public ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
