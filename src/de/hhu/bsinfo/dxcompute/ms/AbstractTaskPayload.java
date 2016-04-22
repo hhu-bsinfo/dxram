@@ -35,7 +35,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Constructor
-	 * We are expecting a default constructor for the sub classes extending this
+	 * Expecting a default constructor for the sub classes extending this
 	 * base class, otherwise the createInstance call won't work.
 	 * Make sure to register each task payload implementation prior usage.
 	 * @param p_typeId
