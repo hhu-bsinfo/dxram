@@ -51,7 +51,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 		return ms_registeredTaskClasses;
 	}
 
-	protected static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
+	public static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
 			final Class<? extends AbstractTaskPayload> p_class) {
 		Class<? extends AbstractTaskPayload> clazz =
 				ms_registeredTaskClasses.put(((p_typeId & 0xFFFF) << 16) | p_subtypeId, p_class);

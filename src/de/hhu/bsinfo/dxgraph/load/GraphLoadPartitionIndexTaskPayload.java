@@ -7,61 +7,124 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
-import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
+import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.serialization.Exporter;
+import de.hhu.bsinfo.utils.serialization.Importer;
 
-public abstract class AbstractGraphLoaderTaskPayload extends AbstractTaskPayload {
+/**
+ * Load a partition index of a partitioned graph for one compute group. The index is
+ * used to identify/convert single vertices or ranges of a partitioned graph on loading
+ * the graph data.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
+	public static final String MS_PART_INDEX_IDENT = "GPI";
 
-	private String m_path = new String("");
+	private LoggerService m_loggerService;
 
-	protected LoggerService m_loggerService;
-	protected BootService m_bootService;
-	protected ChunkService m_chunkService;
+	private String m_path = new String("./");
 
-	protected GraphPartitionIndex m_graphPartitionIndex;
-
-	public AbstractGraphLoaderTaskPayload(short p_typeId, short p_subtypeId) {
-		super(p_typeId, p_subtypeId);
+	/**
+	 * Constructor
+	 */
+	public GraphLoadPartitionIndexTaskPayload() {
+		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_PART_INDEX);
 	}
 
+	/**
+	 * Set the path where one or multiple partition index files are stored.
+	 * @param p_path
+	 *            Path where the files are located
+	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
+
+		// trim / at the end
+		if (m_path.charAt(m_path.length() - 1) == '/') {
+			m_path = m_path.substring(0, m_path.length() - 1);
+		}
 	}
 
 	@Override
 	public int execute(final DXRAMServiceAccessor p_dxram) {
-		m_loggerService = p_dxram.getService(LoggerService.class);
-		m_bootService = p_dxram.getService(BootService.class);
-		m_chunkService = p_dxram.getService(ChunkService.class);
 
-		// normalize path
-		int lastIndexPath = m_path.lastIndexOf('/');
-		if (lastIndexPath != -1) {
-			m_path = m_path.substring(lastIndexPath + 1);
+		// we don't have to execute this on all slaves
+		// slave 0 will do this for the whole compute group and
+		// store the result. every other slave can simply grab the
+		// index from chunk memory
+		if (getSlaveId() == 0) {
+			m_loggerService = p_dxram.getService(LoggerService.class);
+			ChunkService chunkService = p_dxram.getService(ChunkService.class);
+			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
+
+			GraphPartitionIndex graphPartIndex = loadGraphPartitionIndexFromIndexFiles(m_path);
+			if (graphPartIndex == null) {
+				return -1;
+			}
+
+			// store the index for our current compute group
+			if (chunkService.create(graphPartIndex) != 1) {
+				m_loggerService.error(getClass(), "Creating chunk for partition index failed.");
+				return -2;
+			}
+
+			if (chunkService.put(graphPartIndex) != 1) {
+				m_loggerService.error(getClass(), "Putting partition index failed.");
+				return -3;
+			}
+
+			// register chunk at nameservice that other slaves can find it
+			nameserviceService.register(graphPartIndex, MS_PART_INDEX_IDENT + getComputeGroupId());
+
+			m_loggerService.info(getClass(),
+					"Successfully loaded and stored graph partition index, nameservice entry name "
+							+ MS_PART_INDEX_IDENT + getComputeGroupId() + ":\n" + graphPartIndex);
 		}
 
-		// load graph partition index
-		m_loggerService.info(getClass(), "Loading graph partition index, path '" + m_path + "'...");
-		m_graphPartitionIndex = loadGraphPartitionIndexFromIndexFiles(m_path);
-		m_loggerService.debug(getClass(), "Graph partition index loaded:\n" + m_graphPartitionIndex);
-
-		m_loggerService.info(getClass(), "Loading graph, path '" + m_path + "' on slave id '" + getSlaveId() + "'...");
-		int ret = loadGraphData(m_path);
-		if (ret != 0) {
-			m_loggerService.info(getClass(), "Loading graph, path '" + m_path + "' successful.");
-		} else {
-			m_loggerService.error(getClass(), "Loading graph, path '" + m_path + "' failed.");
-		}
-
-		return ret;
+		return 0;
 	}
 
-	protected abstract int loadGraphData(final String p_path);
+	@Override
+	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
+		m_path = p_delegate.promptForUserInput("graphPath");
+		return true;
+	}
+
+	@Override
+	public int exportObject(final Exporter p_exporter, final int p_size) {
+		int size = super.exportObject(p_exporter, p_size);
+
+		p_exporter.writeInt(m_path.length());
+		p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
+
+		return size + Integer.BYTES + m_path.length();
+	}
+
+	@Override
+	public int importObject(final Importer p_importer, final int p_size) {
+		int size = super.importObject(p_importer, p_size);
+
+		int strLength = p_importer.readInt();
+		byte[] tmp = new byte[strLength];
+		p_importer.readBytes(tmp);
+		m_path = new String(tmp, StandardCharsets.US_ASCII);
+
+		return size + Integer.BYTES + m_path.length();
+	}
+
+	@Override
+	public int sizeofObject() {
+		return super.sizeofObject() + Integer.BYTES + m_path.length();
+	}
 
 	/**
 	 * Load the graph partition index from one or multiple graph partition index files from a specific path.
@@ -69,7 +132,7 @@ public abstract class AbstractGraphLoaderTaskPayload extends AbstractTaskPayload
 	 *            Path containing the graph partition index file(s).
 	 * @return Graph partition index object with partition entries loaded from the files.
 	 */
-	protected GraphPartitionIndex loadGraphPartitionIndexFromIndexFiles(final String p_path) {
+	private GraphPartitionIndex loadGraphPartitionIndexFromIndexFiles(final String p_path) {
 		GraphPartitionIndex index = new GraphPartitionIndex();
 
 		ArrayList<GraphPartitionIndex.Entry> entries = readIndexEntriesFromFiles(p_path);
@@ -77,6 +140,8 @@ public abstract class AbstractGraphLoaderTaskPayload extends AbstractTaskPayload
 			for (GraphPartitionIndex.Entry entry : entries) {
 				index.setPartitionEntry(entry);
 			}
+		} else {
+			return null;
 		}
 
 		return index;
@@ -158,7 +223,7 @@ public abstract class AbstractGraphLoaderTaskPayload extends AbstractTaskPayload
 
 			int partitionId = Integer.parseInt(tokens[0]);
 			GraphPartitionIndex.Entry entry = new GraphPartitionIndex.Entry(slaves[partitionId], partitionId,
-					Long.parseLong(tokens[1]), Long.parseLong(tokens[1]));
+					Long.parseLong(tokens[1]), Long.parseLong(tokens[2]));
 			entries.add(entry);
 		}
 

@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.dxgraph.load2.oel;
+package de.hhu.bsinfo.dxgraph.load.oel;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex2;
 
@@ -10,8 +10,10 @@ public interface OrderedEdgeList {
 
 	// when having multiple lists, identifies order
 	// (splitting the file and loading from multiple nodes)
+	// TODO remove this, have this with the index
 	int getNodeIndex();
 
+	// TODO remove this, have this with the index
 	long getTotalVertexCount();
 
 	// read vertex data. does not re-base

@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.dxgraph.load2.oel;
+package de.hhu.bsinfo.dxgraph.load.oel;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
