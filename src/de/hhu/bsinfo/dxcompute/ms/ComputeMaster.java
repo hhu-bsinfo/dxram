@@ -272,12 +272,13 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 
 		// send task to slaves
 		int numberOfSlavesOnExecution = 0;
-		m_executeBarrierIdentifier++;
+		// avoid clashes with other compute groups, but still alter the flag on every next sync
+		m_executeBarrierIdentifier = (m_executeBarrierIdentifier + 1) % 2 + m_computeGroupId * 2;
 		for (int i = 0; i < slaves.length; i++) {
 			// set incremental slave id, 0 based
 			taskPayload.setSlaveId(numberOfSlavesOnExecution);
 			// pass barrier identifier for syncing after task along
-			ExecuteTaskRequest request = new ExecuteTaskRequest(slaves[i], m_executeBarrierIdentifier % 2, taskPayload);
+			ExecuteTaskRequest request = new ExecuteTaskRequest(slaves[i], m_executeBarrierIdentifier, taskPayload);
 
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
@@ -304,7 +305,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 		m_logger.info(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
 
-		m_executionBarrier.execute(numberOfSlavesOnExecution, m_executeBarrierIdentifier % 2, -1);
+		m_executionBarrier.execute(numberOfSlavesOnExecution, m_executeBarrierIdentifier, -1);
 
 		m_logger.debug(getClass(),
 				"Syncing done.");
