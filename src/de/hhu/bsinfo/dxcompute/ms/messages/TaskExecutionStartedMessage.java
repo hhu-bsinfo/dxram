@@ -5,6 +5,10 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.menet.AbstractMessage;
 
+/**
+ * Notify all remote listeners about a task that started execution.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class TaskExecutionStartedMessage extends AbstractMessage {
 	private long m_taskPayloadId;
 	private short[] m_slavesAssignedForExecution;
@@ -22,6 +26,10 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.
+	 * @param p_taskPayloadId
+	 *            Id of the task that started execution.
+	 * @param p_slavesAssignedForExecution
+	 *            List of slaves that are assigend for execution.
 	 */
 	public TaskExecutionStartedMessage(final short p_destination, final long p_taskPayloadId,
 			final short[] p_slavesAssignedForExecution) {
@@ -31,10 +39,18 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 		m_slavesAssignedForExecution = p_slavesAssignedForExecution;
 	}
 
+	/**
+	 * Id of the task that started execution.
+	 * @return Id of the task.
+	 */
 	public long getTaskPayloadId() {
 		return m_taskPayloadId;
 	}
 
+	/**
+	 * List of slaves that execute the task.
+	 * @return List of slaves
+	 */
 	public short[] getSlavesAssignedForExecution() {
 		return m_slavesAssignedForExecution;
 	}

@@ -4,8 +4,15 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 
-public class PrintMemoryStatusToConsoleTask extends PrintMemoryStatusTaskPayload {
+/**
+ * Print the current memory status to the console.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class PrintMemoryStatusToConsoleTask extends AbstractPrintMemoryStatusTaskPayload {
 
+	/**
+	 * Constructor
+	 */
 	public PrintMemoryStatusToConsoleTask() {
 		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_CONSOLE_TASK);
 	}

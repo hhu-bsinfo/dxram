@@ -12,14 +12,26 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 
-public class PrintStatisticsToFileTask extends PrintStatisticsTask {
+/**
+ * Print the statistics to a file.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
 
-	private String m_path = null;
+	private String m_path;
 
-	public PrintStatisticsToFileTask(short p_typeId, short p_subtypeId) {
-		super(p_typeId, p_subtypeId);
+	/**
+	 * Constructor
+	 */
+	public PrintStatisticsToFileTask() {
+		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK);
 	}
 
+	/**
+	 * Set the filepath to the output file to print to.
+	 * @param p_path
+	 *            Filepath of the file to print to.
+	 */
 	public void setOutputFilePath(final String p_path) {
 		m_path = p_path;
 	}

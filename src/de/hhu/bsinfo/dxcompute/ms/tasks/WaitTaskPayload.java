@@ -7,14 +7,26 @@ import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Wait for specified amount of time.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class WaitTaskPayload extends AbstractTaskPayload {
 
 	private int m_waitMs;
 
+	/**
+	 * Constructor
+	 */
 	public WaitTaskPayload() {
 		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK);
 	}
 
+	/**
+	 * Set the time to wait in ms.
+	 * @param p_timeMs
+	 *            Time to wait in ms.
+	 */
 	public void setWaitTimeMs(final int p_timeMs) {
 		m_waitMs = p_timeMs;
 	}

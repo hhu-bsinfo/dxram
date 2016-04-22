@@ -5,7 +5,14 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.menet.NodeID;
 
+/**
+ * Print information about the current slave to the console.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class SlavePrintInfoTaskPayload extends AbstractTaskPayload {
+	/**
+	 * Constructor
+	 */
 	public SlavePrintInfoTaskPayload() {
 		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK);
 	}

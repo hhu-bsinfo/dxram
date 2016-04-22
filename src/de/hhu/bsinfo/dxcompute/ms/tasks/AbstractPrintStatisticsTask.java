@@ -13,12 +13,35 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.menet.NodeID;
 
-public abstract class PrintStatisticsTask extends AbstractTaskPayload {
+/**
+ * Base class to print the statistics.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
 
-	public PrintStatisticsTask(short p_typeId, short p_subtypeId) {
+	/**
+	 * Constructor
+	 * Expecting a default constructor for the sub classes extending this
+	 * base class, otherwise the createInstance call won't work.
+	 * Make sure to register each task payload implementation prior usage.
+	 * @param p_typeId
+	 *            Type id
+	 * @param p_subtypeId
+	 *            Subtype id
+	 */
+	public AbstractPrintStatisticsTask(final short p_typeId, final short p_subtypeId) {
 		super(p_typeId, p_subtypeId);
 	}
 
+	/**
+	 * Print the statistics to a stream.
+	 * @param p_outputStream
+	 *            Output stream to print to.
+	 * @param p_bootService
+	 *            BootService
+	 * @param p_statisticsService
+	 *            StatisticsService
+	 */
 	protected void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService,
 			final StatisticsService p_statisticsService) {
 		DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");

@@ -7,11 +7,15 @@ import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService.StatusMaster;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
+/**
+ * Response to the request to get the status of a master compute node.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class GetMasterStatusResponse extends AbstractResponse {
 	private StatusMaster m_statusMaster;
 
 	/**
-	 * Creates an instance of GetListOfSlavesResponse.
+	 * Creates an instance of GetMasterStatusResponse.
 	 * This constructor is used when receiving this message.
 	 */
 	public GetMasterStatusResponse() {
@@ -19,10 +23,12 @@ public class GetMasterStatusResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Creates an instance of GetListOfSlavesResponse.
+	 * Creates an instance of GetMasterStatusResponse.
 	 * This constructor is used when sending this message.
-	 * @param p_destination
-	 *            the destination node id.
+	 * @param p_request
+	 *            request to respond to.
+	 * @param p_statusMaster
+	 *            Status data of the master to send back
 	 */
 	public GetMasterStatusResponse(final GetMasterStatusRequest p_request,
 			final StatusMaster p_statusMaster) {
@@ -31,6 +37,10 @@ public class GetMasterStatusResponse extends AbstractResponse {
 		m_statusMaster = p_statusMaster;
 	}
 
+	/**
+	 * Current status of the master.
+	 * @return Status of the master.
+	 */
 	public StatusMaster getStatusMaster() {
 		return m_statusMaster;
 	}

@@ -5,6 +5,10 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.menet.AbstractMessage;
 
+/**
+ * Notify remote listeners that execution of a submitted task has finished.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class TaskExecutionFinishedMessage extends AbstractMessage {
 	private long m_taskPayloadId;
 	private int[] m_executionReturnCodes;
@@ -22,6 +26,10 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.
+	 * @param p_taskPayloadId
+	 *            Payload id of the task that finished
+	 * @param p_executionReturnCodes
+	 *            Return codes of all slaves that executed the task (Indexable by slave id).
 	 */
 	public TaskExecutionFinishedMessage(final short p_destination, final long p_taskPayloadId,
 			final int[] p_executionReturnCodes) {
@@ -31,10 +39,18 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 		m_executionReturnCodes = p_executionReturnCodes;
 	}
 
+	/**
+	 * Get the payload if of the task that finished execution.
+	 * @return Payload id of the finished task.
+	 */
 	public long getTaskPayloadId() {
 		return m_taskPayloadId;
 	}
 
+	/**
+	 * Get the return codes of all slaves that executed the task (Indexable by slave id).
+	 * @return Return codes.
+	 */
 	public int[] getExecutionReturnCodes() {
 		return m_executionReturnCodes;
 	}

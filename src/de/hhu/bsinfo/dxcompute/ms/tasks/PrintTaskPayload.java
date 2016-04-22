@@ -9,14 +9,26 @@ import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Print a message to the console.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class PrintTaskPayload extends AbstractTaskPayload {
 
 	private String m_msg = new String();
 
+	/**
+	 * Constructor
+	 */
 	public PrintTaskPayload() {
 		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK);
 	}
 
+	/**
+	 * Message to print.
+	 * @param p_msg
+	 *            Message.
+	 */
 	public void setMessage(final String p_msg) {
 		m_msg = p_msg;
 	}

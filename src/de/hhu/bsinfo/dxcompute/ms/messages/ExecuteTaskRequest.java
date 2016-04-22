@@ -7,6 +7,10 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
+/**
+ * Request to execute a task on another slave compute node.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class ExecuteTaskRequest extends AbstractRequest {
 
 	private int m_barrierIdentifier = -1;
@@ -25,12 +29,10 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.
-	 * @param p_subtype
-	 *            Message subtype
-	 * @param p_syncToken
-	 *            Token to correctly identify responses to a sync message
-	 * @param p_data
-	 *            Some custom data.
+	 * @param p_barrierIdentifier
+	 *            Barrier identifier for synchronization after done executing.
+	 * @param p_task
+	 *            Task to execute.
 	 */
 	public ExecuteTaskRequest(final short p_destination, final int p_barrierIdentifier,
 			final AbstractTaskPayload p_task) {
@@ -39,10 +41,18 @@ public class ExecuteTaskRequest extends AbstractRequest {
 		m_task = p_task;
 	}
 
+	/**
+	 * Get the barrier identifier to use after finishing execution and syncing to the master.
+	 * @return Barrier identifier for sync.
+	 */
 	public int getBarrierIdentifier() {
 		return m_barrierIdentifier;
 	}
 
+	/**
+	 * Get the task payload to execute.
+	 * @return Task payload.
+	 */
 	public AbstractTaskPayload getTaskPayload() {
 		return m_task;
 	}
