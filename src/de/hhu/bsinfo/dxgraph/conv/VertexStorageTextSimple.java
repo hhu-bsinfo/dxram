@@ -10,17 +10,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.utils.Pair;
 
+/**
+ * Very simple/naive implementation of a text based vertex storage.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
+ */
 public class VertexStorageTextSimple implements VertexStorageText {
-
-	private static class NeighbourListVertex {
-		public Pair<Long, String> m_neighbourList = new Pair<Long, String>(0L, new String());
-
-		public Lock m_mutex = new ReentrantLock(false);
-
-		public NeighbourListVertex() {
-
-		}
-	}
 
 	private Map<Long, Long> m_idMapping = new HashMap<Long, Long>();
 	private ArrayList<NeighbourListVertex> m_neighbourListsVertices = new ArrayList<NeighbourListVertex>();
@@ -29,6 +23,9 @@ public class VertexStorageTextSimple implements VertexStorageText {
 
 	private Lock m_mutex = new ReentrantLock(false);
 
+	/**
+	 * Constructor
+	 */
 	public VertexStorageTextSimple() {
 
 	}
@@ -52,7 +49,7 @@ public class VertexStorageTextSimple implements VertexStorageText {
 	}
 
 	@Override
-	public void putNeighbour(long p_vertexId, long p_neighbourVertexId) {
+	public void putNeighbour(final long p_vertexId, final long p_neighbourVertexId) {
 		NeighbourListVertex neighbourList = m_neighbourListsVertices.get((int) p_vertexId - 1);
 
 		neighbourList.m_mutex.lock();
@@ -81,5 +78,14 @@ public class VertexStorageTextSimple implements VertexStorageText {
 	@Override
 	public Pair<Long, String> getVertexNeighbourList(final long p_vertexId) {
 		return m_neighbourListsVertices.get((int) p_vertexId).m_neighbourList;
+	}
+
+	/**
+	 * Private container/helper class for a neighbour list.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
+	 */
+	private static class NeighbourListVertex {
+		public Pair<Long, String> m_neighbourList = new Pair<Long, String>(0L, new String());
+		public Lock m_mutex = new ReentrantLock(false);
 	}
 }

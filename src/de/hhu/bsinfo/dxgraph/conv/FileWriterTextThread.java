@@ -8,7 +8,25 @@ import java.io.IOException;
 
 import de.hhu.bsinfo.utils.Pair;
 
-public class FileWriterTextThread extends FileWriterThread {
+/**
+ * Implementation of a writer to write vertex data to a text file.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
+ */
+public class FileWriterTextThread extends AbstractFileWriterThread {
+
+	/**
+	 * Constructor
+	 * @param p_outputPath
+	 *            Output file to write to.
+	 * @param p_id
+	 *            Id of the writer (0 based index).
+	 * @param p_idRangeStartIncl
+	 *            Range of vertex ids to write to the file, start.
+	 * @param p_idRangeEndExcl
+	 *            Range of the vertex ids to write the file, end.
+	 * @param p_storage
+	 *            Storage to access for vertex data to write to the file.
+	 */
 	public FileWriterTextThread(final String p_outputPath, final int p_id, final long p_idRangeStartIncl,
 			final long p_idRangeEndExcl, final VertexStorage p_storage) {
 		super(p_outputPath, p_id, p_idRangeStartIncl, p_idRangeEndExcl, p_storage);
@@ -48,17 +66,20 @@ public class FileWriterTextThread extends FileWriterThread {
 		m_errorCode = 0;
 	}
 
+	/**
+	 * Write the vertex data to the file in ascending vertex id order. Also creates info file with metadata.
+	 * @param p_file
+	 *            File to write the vertex data to.
+	 * @param p_infoFile
+	 *            Info file with metadata.
+	 * @param p_rangeStartIncl
+	 *            Vertex id range start to write.
+	 * @param p_rangeEndExcl
+	 *            Vertex id range end to write.
+	 * @return True if successful, false on error.
+	 */
 	private boolean dumpOrdered(final BufferedWriter p_file, final BufferedWriter p_infoFile,
 			final long p_rangeStartIncl, final long p_rangeEndExcl) {
-		// write header (count)
-		try {
-			p_file.write(Long.toString(p_rangeEndExcl - p_rangeStartIncl) + "\n");
-			p_infoFile.write(Integer.toString(m_id));
-			p_infoFile.write("," + Long.toString(p_rangeEndExcl - p_rangeStartIncl));
-		} catch (final IOException e) {
-			return false;
-		}
-
 		long edgeCount = 0;
 		long vertexCount = 0;
 		for (long i = p_rangeStartIncl; i < p_rangeEndExcl; i++) {

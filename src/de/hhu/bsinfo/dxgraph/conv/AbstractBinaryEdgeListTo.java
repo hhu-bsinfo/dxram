@@ -17,13 +17,18 @@ import de.hhu.bsinfo.utils.Pair;
  * 8 bytes source nodeId and 8 bytes destination node id.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public abstract class BinaryEdgeListTo extends Converter {
-	protected BinaryEdgeListTo(final String p_description) {
+public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
+	/**
+	 * Constructor
+	 * @param p_description
+	 *            Description for the converter.
+	 */
+	protected AbstractBinaryEdgeListTo(final String p_description) {
 		super(p_description);
 	}
 
 	@Override
-	protected FileReaderThread createReaderInstance(final String p_inputPath,
+	protected AbstractFileReaderThread createReaderInstance(final String p_inputPath,
 			final Queue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize) {
 		return new FileReaderBinaryThread(p_inputPath, p_bufferQueue, p_maxQueueSize);
 	}
@@ -90,8 +95,21 @@ public abstract class BinaryEdgeListTo extends Converter {
 		}
 	}
 
-	protected static class FileReaderBinaryThread extends FileReaderThread {
-		public FileReaderBinaryThread(final String p_inputPath, final Queue<Pair<Long, Long>> p_bufferQueue,
+	/**
+	 * File reader for the binary edge list graph data.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
+	 */
+	protected static class FileReaderBinaryThread extends AbstractFileReaderThread {
+		/**
+		 * Constructor
+		 * @param p_inputPath
+		 *            Path of the file to read.
+		 * @param p_bufferQueue
+		 *            Shared buffer queue to read the data to.
+		 * @param p_maxQueueSize
+		 *            Max amount of items to add to the queue before blocking.
+		 */
+		FileReaderBinaryThread(final String p_inputPath, final Queue<Pair<Long, Long>> p_bufferQueue,
 				final int p_maxQueueSize) {
 			super(p_inputPath, p_bufferQueue, p_maxQueueSize);
 		}

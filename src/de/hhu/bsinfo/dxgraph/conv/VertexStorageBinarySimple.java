@@ -9,6 +9,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Very simple/naive implementation for a storage using a hash map.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
+ */
 public class VertexStorageBinarySimple implements VertexStorage {
 
 	private Map<Long, Long> m_idMapping = new HashMap<Long, Long>();
@@ -18,8 +22,21 @@ public class VertexStorageBinarySimple implements VertexStorage {
 
 	private Lock m_mutex = new ReentrantLock(false);
 
+	/**
+	 * Constructor
+	 */
 	public VertexStorageBinarySimple() {
 
+	}
+
+	/**
+	 * Get the full neighbor list of one vertex.
+	 * @param p_vertexId
+	 *            Id of the vertex.
+	 * @return Neighbor list.
+	 */
+	public ConcurrentLinkedQueue<Long> getVertexNeighbourList(final long p_vertexId) {
+		return m_neighbourListsVertices.get((int) p_vertexId).m_neighbourList;
 	}
 
 	@Override
@@ -59,15 +76,11 @@ public class VertexStorageBinarySimple implements VertexStorage {
 		return m_totalEdgeCount.get();
 	}
 
-	public ConcurrentLinkedQueue<Long> getVertexNeighbourList(final long p_vertexId) {
-		return m_neighbourListsVertices.get((int) p_vertexId).m_neighbourList;
-	}
-
+	/**
+	 * Helper/Container class for a neighbor list.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
+	 */
 	private static class NeighbourListVertex {
 		public ConcurrentLinkedQueue<Long> m_neighbourList = new ConcurrentLinkedQueue<Long>();
-
-		public NeighbourListVertex() {
-
-		}
 	}
 }

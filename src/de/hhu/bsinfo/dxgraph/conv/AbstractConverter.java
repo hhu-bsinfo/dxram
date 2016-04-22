@@ -10,7 +10,11 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.AbstractMain;
 
-public abstract class Converter extends AbstractMain {
+/**
+ * Base class for all graph converters.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
+ */
+public abstract class AbstractConverter extends AbstractMain {
 	private static final Argument ARG_INPUT = new Argument("in", null, false, "Input file of specific format");
 	private static final Argument ARG_INPUT_ROOTS =
 			new Argument("inRoots", null, true, "Input file of specific format with BFS roots");
@@ -30,11 +34,16 @@ public abstract class Converter extends AbstractMain {
 	private int m_numConverterThreads = -1;
 	private int m_maxBufferQueueSize = -1;
 	private Queue<Pair<Long, Long>> m_sharedBufferQueue = new ConcurrentLinkedQueue<Pair<Long, Long>>();
-	private ArrayList<FileReaderThread> m_fileReaderThreads = new ArrayList<FileReaderThread>();
+	private ArrayList<AbstractFileReaderThread> m_fileReaderThreads = new ArrayList<AbstractFileReaderThread>();
 	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<BufferToStorageThread>();
-	private ArrayList<FileWriterThread> m_fileWriterThreads = new ArrayList<FileWriterThread>();
+	private ArrayList<AbstractFileWriterThread> m_fileWriterThreads = new ArrayList<AbstractFileWriterThread>();
 
-	protected Converter(final String p_description) {
+	/**
+	 * Constructor
+	 * @param p_description
+	 *            Description for the converter.
+	 */
+	protected AbstractConverter(final String p_description) {
 		super(p_description);
 	}
 
@@ -85,23 +94,67 @@ public abstract class Converter extends AbstractMain {
 		return 0;
 	}
 
+	/**
+	 * Provide the vertex storage instance you want to use for the conversion process.
+	 * @return VertexStorage instance to use.
+	 */
 	protected abstract VertexStorage createVertexStorageInstance();
 
-	protected abstract FileReaderThread createReaderInstance(final String p_inputPath,
+	/**
+	 * Create the file reader thread implementation to use.
+	 * @param p_inputPath
+	 *            Input graph file.
+	 * @param p_bufferQueue
+	 *            Shared queue accross all threads to use for buffering input.
+	 * @param p_maxQueueSize
+	 *            Max buffer queue size for buffering data from the intput.
+	 * @return FileReader instance to use.
+	 */
+	protected abstract AbstractFileReaderThread createReaderInstance(final String p_inputPath,
 			final Queue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize);
 
-	protected abstract FileWriterThread createWriterInstance(final String p_outputPath, final int p_id,
+	/**
+	 * Create a writer instance for outputting the converted data.
+	 * @param p_outputPath
+	 *            Output file to write to.
+	 * @param p_id
+	 *            Id of the writer (0 based index).
+	 * @param p_idRangeStartIncl
+	 *            Range of vertex ids to write to the file, start.
+	 * @param p_idRangeEndExcl
+	 *            Range of the vertex ids to write the file, end.
+	 * @param p_storage
+	 *            Storage to access for vertex data to write to the file.
+	 * @return FileWriter instance to use.
+	 */
+	protected abstract AbstractFileWriterThread createWriterInstance(final String p_outputPath, final int p_id,
 			final long p_idRangeStartIncl, final long p_idRangeEndExcl, final VertexStorage p_storage);
 
+	/**
+	 * Convert the provided bfs root list to the desired representation.
+	 * @param p_outputPath
+	 *            Output path to write the converter list to.
+	 * @param p_inputRootFile
+	 *            Input bfs root list file.
+	 * @param p_storage
+	 *            VertexStorage to use for re-basing the roots.
+	 */
 	protected abstract void convertBFSRootList(final String p_outputPath, final String p_inputRootFile,
 			final VertexStorage p_storage);
 
+	/**
+	 * Parse and read the input graph data.
+	 * @param p_inputPaths
+	 *            List of filepaths with graph input data.
+	 * @return Error code of the operation.
+	 */
 	private int parse(final String... p_inputPaths) {
 
 		System.out.println("Starting file reader threads...");
 
 		for (String inputPath : p_inputPaths) {
-			FileReaderThread thread = createReaderInstance(inputPath, m_sharedBufferQueue, m_maxBufferQueueSize);
+			AbstractFileReaderThread thread =
+					createReaderInstance(inputPath, m_sharedBufferQueue, m_maxBufferQueueSize);
 			thread.start();
 			m_fileReaderThreads.add(thread);
 		}
@@ -117,7 +170,7 @@ public abstract class Converter extends AbstractMain {
 		System.out.println("Waiting for file reader threads to finish...");
 
 		// wait for file readers to finish and notify buffer threads afterwards
-		for (FileReaderThread thread : m_fileReaderThreads) {
+		for (AbstractFileReaderThread thread : m_fileReaderThreads) {
 			try {
 				thread.join();
 			} catch (final InterruptedException e) {
@@ -147,6 +200,13 @@ public abstract class Converter extends AbstractMain {
 		return 0;
 	}
 
+	/**
+	 * Dump the cached graph data to output files.
+	 * @param p_outputPath
+	 *            Path to write the output files to.
+	 * @param p_fileCount
+	 *            Number of files to split the graph into.
+	 */
 	private void dumpToFiles(final String p_outputPath, final int p_fileCount) {
 		// adjust output path
 		String outputPath = p_outputPath;
@@ -170,7 +230,7 @@ public abstract class Converter extends AbstractMain {
 				rangeEnd = vertexCount;
 			}
 
-			FileWriterThread thread = createWriterInstance(outputPath, i, rangeStart, rangeEnd, m_storage);
+			AbstractFileWriterThread thread = createWriterInstance(outputPath, i, rangeStart, rangeEnd, m_storage);
 			thread.start();
 			m_fileWriterThreads.add(thread);
 
@@ -178,7 +238,7 @@ public abstract class Converter extends AbstractMain {
 		}
 
 		// wait for all writers to finish
-		for (FileWriterThread thread : m_fileWriterThreads) {
+		for (AbstractFileWriterThread thread : m_fileWriterThreads) {
 			try {
 				thread.join();
 			} catch (final InterruptedException e) {

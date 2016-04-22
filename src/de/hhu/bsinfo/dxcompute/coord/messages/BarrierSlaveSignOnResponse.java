@@ -5,6 +5,10 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.menet.AbstractResponse;
 
+/**
+ * Response by the master for the sign on request by the slave.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+ */
 public class BarrierSlaveSignOnResponse extends AbstractResponse {
 	private int m_syncToken = -1;
 
@@ -19,12 +23,10 @@ public class BarrierSlaveSignOnResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
 	 * This constructor is used when sending this message.
-	 * @param p_destination
-	 *            the destination node id.
+	 * @param p_request
+	 *            the request to respond to.
 	 * @param p_syncToken
 	 *            Token to correctly identify responses to a sync message
-	 * @param p_data
-	 *            Some custom data to pass along.
 	 */
 	public BarrierSlaveSignOnResponse(final BarrierSlaveSignOnRequest p_request, final int p_syncToken) {
 		super(p_request, CoordinatorMessages.SUBTYPE_BARRIER_SLAVE_SIGN_ON_RESPONSE);
