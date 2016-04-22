@@ -21,7 +21,11 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 
-public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
+/**
+ * Implementation of a slave. The slave waits for tasks for execution from the master
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
 
 	private short m_masterNodeId = NodeID.INVALID_ID;
 
@@ -31,12 +35,29 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 
 	private BarrierSlaveInternal m_barrier;
 
-	public ComputeSlave(final int p_computeGroupId, final long p_pintIntervalMs,
+	/**
+	 * Constructor
+	 * @param p_computeGroupId
+	 *            Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs
+	 *            Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor
+	 *            Service accessor for tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 */
+	public ComputeSlave(final int p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
-		super(ComputeRole.SLAVE, p_computeGroupId, p_pintIntervalMs, p_serviceAccessor, p_network, p_logger,
+		super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_logger,
 				p_nameservice, p_boot);
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE,
@@ -102,6 +123,9 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Setup state of the slave. Connect to the master of the compute group assigend to.
+	 */
 	private void stateSetup() {
 		m_logger.info(getClass(), "Setting up slave for compute group " + m_computeGroupId + ")");
 
@@ -151,6 +175,9 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Idle state. Connected to the master of the compute group. Ping and wait for instructions.
+	 */
 	private void stateIdle() {
 		if (m_task != null) {
 			m_state = State.STATE_EXECUTE;
@@ -175,6 +202,9 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Execute state. Execute the assigned task.
+	 */
 	private void stateExecute() {
 		m_logger.info(getClass(),
 				"Starting execution of task " + m_task);
@@ -201,6 +231,11 @@ public class ComputeSlave extends ComputeMSBase implements MessageReceiver {
 		m_logger.debug(getClass(), "Entering idle state");
 	}
 
+	/**
+	 * Handle an incoming ExecuteTaskRequest
+	 * @param p_message
+	 *            ExecuteTaskRequest
+	 */
 	private void incomingExecuteTaskRequest(final ExecuteTaskRequest p_message) {
 		ExecuteTaskResponse response = new ExecuteTaskResponse(p_message);
 		AbstractTaskPayload task = null;

@@ -29,7 +29,12 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 
-public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
+/**
+ * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them
+ * to the conencted slaves for execution.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	private static final int MAX_TASK_COUNT = 100;
 
 	private Vector<Short> m_signedOnSlaves = new Vector<Short>();
@@ -41,6 +46,23 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 
 	private AtomicLong m_payloadIdCounter = new AtomicLong(0);
 
+	/**
+	 * Constructor
+	 * @param p_computeGroupId
+	 *            Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs
+	 *            Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor
+	 *            Service accessor for tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 */
 	public ComputeMaster(final int p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
@@ -56,6 +78,10 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		start();
 	}
 
+	/**
+	 * Get a list of currently connected salves.
+	 * @return List of currently connected slaves (node ids).
+	 */
 	public ArrayList<Short> getConnectedSlaves() {
 		@SuppressWarnings("unchecked")
 		Vector<Short> tmp = (Vector<Short>) m_signedOnSlaves.clone();
@@ -67,6 +93,12 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		return ret;
 	}
 
+	/**
+	 * Submit a task to this master.
+	 * @param p_task
+	 *            Task to submit.
+	 * @return True if submission was successful, false if the max number of tasks queued is reached.
+	 */
 	public boolean submitTask(final Task p_task) {
 		if (m_taskCount.get() < MAX_TASK_COUNT) {
 			m_tasks.add(p_task);
@@ -80,6 +112,10 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Get the number of tasks currently in the queue.
+	 * @return Number of tasks in the queue.
+	 */
 	public int getNumberOfTasksInQueue() {
 		return m_taskCount.get();
 	}
@@ -139,6 +175,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Setup state. Register node id in the nameservice to allow slaves to discover this master.
+	 */
 	private void stateSetup() {
 		m_logger.info(getClass(), "Setting up master of compute group " + m_computeGroupId);
 
@@ -161,6 +200,10 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.debug(getClass(), "Entering idle state");
 	}
 
+	/**
+	 * Idle state. Wait for slaves to sign on and for tasks to be submitted. Also ping and check if slaves
+	 * are still available and remove them from the group if not.
+	 */
 	private void stateIdle() {
 		if (m_taskCount.get() > 0) {
 			if (m_signedOnSlaves.size() < 1) {
@@ -198,6 +241,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Execute state. Execute a task from the queue. Send it to the slaves, wait for completion of all slaves.
+	 */
 	private void stateExecute() {
 		// lock joining of further slaves
 		m_joinLock.lock();
@@ -291,6 +337,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.debug(getClass(), "Entering idle state");
 	}
 
+	/**
+	 * Error state. Entered if an error happened and we can't recover.
+	 */
 	private void stateErrorDie() {
 		m_logger.error(getClass(), "Master error state");
 		try {
@@ -298,6 +347,11 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		} catch (final InterruptedException e) {}
 	}
 
+	/**
+	 * Handle a SlaveJoinRequest
+	 * @param p_message
+	 *            SlaveJoinRequest
+	 */
 	private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {
 		if (m_joinLock.tryLock()) {
 			if (m_signedOnSlaves.contains(p_message.getSource())) {

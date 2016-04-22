@@ -8,6 +8,10 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
+/**
+ * Terminal command to get a list of registered tasks allowed for submission.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class TcmdMSTaskList extends AbstractTerminalCommand {
 	@Override
 	public String getName() {

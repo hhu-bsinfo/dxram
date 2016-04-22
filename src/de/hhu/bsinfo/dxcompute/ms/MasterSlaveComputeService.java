@@ -42,6 +42,10 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * DXRAM service providing a master slave based distributed task execution framework for computation on DXRAM.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class MasterSlaveComputeService extends AbstractDXRAMService implements MessageReceiver, TaskListener {
 
 	private NetworkComponent m_network;
@@ -50,10 +54,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	private AbstractBootComponent m_boot;
 	private TerminalComponent m_terminal;
 
-	private ComputeMSBase m_computeMSInstance;
+	private AbstractComputeMSBase m_computeMSInstance;
 
 	private ConcurrentMap<Long, Task> m_remoteTasks = new ConcurrentHashMap<Long, Task>();
 
+	/**
+	 * Get the compute of the current node.
+	 * @return Compute role.
+	 */
 	public ComputeRole getComputeRole() {
 		return m_computeMSInstance.getRole();
 	}
@@ -66,8 +74,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		ArrayList<Pair<Short, Byte>> masters = new ArrayList<Pair<Short, Byte>>();
 
 		// check the name service entries
-		for (int i = 0; i <= ComputeMSBase.MAX_COMPUTE_GROUP_ID; i++) {
-			long tmp = m_nameservice.getChunkID(ComputeMSBase.NAMESERVICE_ENTRY_IDENT + i, 0);
+		for (int i = 0; i <= AbstractComputeMSBase.MAX_COMPUTE_GROUP_ID; i++) {
+			long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + i, 0);
 			if (tmp != -1) {
 				masters.add(new Pair<Short, Byte>(ChunkID.getCreatorID(tmp), (byte) i));
 			}
@@ -76,6 +84,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		return masters;
 	}
 
+	/**
+	 * Get the status of the current master node.
+	 * @return Status of the current master node or null if the current node is not a master.
+	 */
 	public StatusMaster getStatusMaster() {
 		if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
 			m_logger.error(getClass(), "Cannot get status on non master node type");
@@ -88,6 +100,12 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		return new StatusMaster(slaves, numTasksInQueue);
 	}
 
+	/**
+	 * Get the status of a remote master node.
+	 * @param p_masterNodeId
+	 *            Node id of the master node to get the status of.
+	 * @return Status of the remote master or null if remote node is not a master or getting the status failed.
+	 */
 	public StatusMaster getStatusMaster(final short p_masterNodeId) {
 		if (p_masterNodeId == m_boot.getNodeID()) {
 			return getStatusMaster();
@@ -110,6 +128,12 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		return response.getStatusMaster();
 	}
 
+	/**
+	 * Submit a task to this master.
+	 * @param p_task
+	 *            Task to submit to this master.
+	 * @return The task id assigned or -1 if the current node is not a master or submission failed.
+	 */
 	public long submitTask(final Task p_task) {
 		if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
 			m_logger.error(getClass(), "Cannot submit task " + p_task + " on non master node type");
@@ -126,7 +150,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 	}
 
-	// note remotely submitted tasks do not support
+	/**
+	 * Submit a task to remote master node.
+	 * @param p_task
+	 *            Task to submit to another master node.
+	 * @param p_masterNodeId
+	 *            Node id of the master node.
+	 * @return Task id assigned by the remote master node or -1 if the remote node is not a master or submission failed.
+	 */
 	public long submitTask(final Task p_task, final short p_masterNodeId) {
 		if (p_masterNodeId == m_boot.getNodeID()) {
 			return submitTask(p_task);
@@ -306,6 +337,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		return true;
 	}
 
+	/**
+	 * Handle an incoming SubmitTaskRequest
+	 * @param p_request
+	 *            SubmitTaskRequest
+	 */
 	private void incomingSubmitTaskRequest(final SubmitTaskRequest p_request) {
 		SubmitTaskResponse response;
 
@@ -352,6 +388,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 	}
 
+	/**
+	 * Handle an incoming GetMasterStatusRequest
+	 * @param p_request
+	 *            GetMasterStatusRequest
+	 */
 	private void incomingGetMasterStatusRequest(final GetMasterStatusRequest p_request) {
 		GetMasterStatusResponse response;
 
@@ -371,6 +412,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 	}
 
+	/**
+	 * Handle an incoming TaskExecutionStartedMessage
+	 * @param p_message
+	 *            TaskExecutionStartedMessage
+	 */
 	private void incomingTaskExecutionStartedMessage(final TaskExecutionStartedMessage p_message) {
 
 		// that's a little risky, but setting the id in the submit call
@@ -389,6 +435,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		task.notifyListenersExecutionStarts();
 	}
 
+	/**
+	 * Handle an incoming TaskExecutionFinishedMessage
+	 * @param p_message
+	 *            TaskExecutionFinishedMessage
+	 */
 	private void incomingTaskExecutionFinishedMessage(final TaskExecutionFinishedMessage p_message) {
 		// that's a little risky, but setting the id in the submit call
 		// is done quickly enough that we can keep blocking a little here
@@ -408,6 +459,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		task.notifyListenersExecutionCompleted();
 	}
 
+	/**
+	 * Register various (built in) task payloads
+	 */
 	private void registerTaskPayloads() {
 		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK,
@@ -435,24 +489,46 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 				PrintStatisticsToFileTask.class);
 	}
 
+	/**
+	 * Status object of a master compute node.
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
+	 */
 	public static class StatusMaster implements Importable, Exportable {
 		private ArrayList<Short> m_connectedSlaves;
 		private int m_numTasksQueued;
 
+		/**
+		 * Constructor
+		 */
 		public StatusMaster() {
 			m_connectedSlaves = new ArrayList<Short>();
 			m_numTasksQueued = 0;
 		}
 
+		/**
+		 * Constructor
+		 * @param p_connectedSlaves
+		 *            List of connected slave ids to this master.
+		 * @param p_numTasksQueued
+		 *            Number of tasks queued currently on this master.
+		 */
 		public StatusMaster(final ArrayList<Short> p_connectedSlaves, final int p_numTasksQueued) {
 			m_connectedSlaves = p_connectedSlaves;
 			m_numTasksQueued = p_numTasksQueued;
 		}
 
+		/**
+		 * Get the list of slaves that are connected to the master.
+		 * @return List of slave ids.
+		 */
 		public ArrayList<Short> getConnectedSlaves() {
 			return m_connectedSlaves;
 		}
 
+		/**
+		 * Get the number of currently queued tasks.
+		 * @return Number of queued tasks.
+		 */
 		public int getNumTasksQueued() {
 			return m_numTasksQueued;
 		}

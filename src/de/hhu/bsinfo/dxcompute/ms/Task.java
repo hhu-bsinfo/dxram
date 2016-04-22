@@ -5,6 +5,10 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 
+/**
+ * A task that can be submitted to a master-slave compute group.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class Task {
 
 	private AbstractTaskPayload m_payload;
@@ -13,6 +17,13 @@ public class Task {
 	private ArrayList<TaskListener> m_completionListeners = new ArrayList<TaskListener>();
 	protected DXRAMServiceAccessor m_serviceAccessor;
 
+	/**
+	 * Constructor
+	 * @param p_payload
+	 *            Payload for that task containing the code and data to execute.
+	 * @param p_name
+	 *            Name of the task (debug only).
+	 */
 	public Task(final AbstractTaskPayload p_payload, final String p_name) {
 		m_payload = p_payload;
 		m_name = p_name;

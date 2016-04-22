@@ -8,6 +8,10 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * Terminal command to get the current status of a master compute node.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class TcmdMSMasterStatus extends AbstractTerminalCommand {
 	private static final Argument MS_ARG_NODEID =
 			new Argument("nid", null, false, "Node id of the master to get the status from");

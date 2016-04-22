@@ -10,6 +10,10 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+/**
+ * Terminal command to submit a task to a compute group.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskListener {
 	private static final Argument MS_ARG_TASK_TYPE_ID =
 			new Argument("tid", null, false, "Type id of the task to submit");

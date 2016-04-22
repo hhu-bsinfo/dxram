@@ -9,6 +9,10 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
+/**
+ * Terminal command to list all currently available compute master nodes.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class TcmdMSMasterList extends AbstractTerminalCommand {
 	@Override
 	public String getName() {

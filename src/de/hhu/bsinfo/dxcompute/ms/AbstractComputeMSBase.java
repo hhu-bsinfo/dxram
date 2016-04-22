@@ -12,11 +12,19 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
-public abstract class ComputeMSBase extends Thread {
+/**
+ * Base class for the master slave compute framework.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public abstract class AbstractComputeMSBase extends Thread {
 	public static final String NAMESERVICE_ENTRY_IDENT = "MAS";
 	public static final byte MIN_COMPUTE_GROUP_ID = 0;
 	public static final byte MAX_COMPUTE_GROUP_ID = 99;
 
+	/**
+	 * States of the master/slave instances
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
+	 */
 	protected enum State {
 		STATE_SETUP,
 		STATE_IDLE,
@@ -39,7 +47,26 @@ public abstract class ComputeMSBase extends Thread {
 	protected long m_lastPingMs;
 	protected String m_nameserviceMasterNodeIdKey;
 
-	public ComputeMSBase(final ComputeRole p_role, final int p_computeGroupId, final long p_pingIntervalMs,
+	/**
+	 * Constructor
+	 * @param p_role
+	 *            Compute role of the instance.
+	 * @param p_computeGroupId
+	 *            Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs
+	 *            Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor
+	 *            Service accessor for tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 */
+	public AbstractComputeMSBase(final ComputeRole p_role, final int p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot) {
@@ -67,10 +94,18 @@ public abstract class ComputeMSBase extends Thread {
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
 	}
 
+	/**
+	 * Get the compute role assigned to this instance.
+	 * @return Compute role assigned.
+	 */
 	public ComputeRole getRole() {
 		return m_role;
 	}
 
+	/**
+	 * Get the compute group id this node is assigend to.
+	 * @return Compute group id assigned to.
+	 */
 	public int getComputeGroupId() {
 		return m_computeGroupId;
 	}
@@ -78,8 +113,15 @@ public abstract class ComputeMSBase extends Thread {
 	@Override
 	public abstract void run();
 
+	/**
+	 * Shut down this compute node.
+	 */
 	public abstract void shutdown();
 
+	/**
+	 * Get the service accessor of DXRAM to be passed to the tasks being executed
+	 * @return DXRAMService accessor
+	 */
 	protected DXRAMServiceAccessor getServiceAccessor() {
 		return m_serviceAccessor;
 	}

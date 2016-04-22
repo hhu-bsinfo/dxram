@@ -1,18 +1,19 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
+/**
+ * Different compute roles of the master slave framework.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public enum ComputeRole {
-	// Constants
 	MASTER('M'), SLAVE('S'), NONE('N');
 
 	public static final String MASTER_STR = "master";
 	public static final String SLAVE_STR = "slave";
 	public static final String NONE_STR = "none";
 
-	// Attributes
 	private char m_acronym;
 
-	// Constructors
 	/**
 	 * Creates an instance of Role
 	 * @param p_acronym
@@ -39,7 +40,6 @@ public enum ComputeRole {
 		}
 	}
 
-	// Getters
 	/**
 	 * Gets the acronym of the role
 	 * @return the acronym
@@ -59,7 +59,6 @@ public enum ComputeRole {
 		}
 	}
 
-	// Methods
 	/**
 	 * Gets the role for the given acronym
 	 * @param p_acronym
