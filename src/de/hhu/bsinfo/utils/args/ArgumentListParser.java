@@ -9,8 +9,8 @@ package de.hhu.bsinfo.utils.args;
 public interface ArgumentListParser {
 	/**
 	 * Parse the string array provided by the java main function.
-	 * @param args Array of strings from the java main function.
-	 * @param m_arguments Argument list to add the parsed arguments to.
+	 * @param p_args Array of strings from the java main function.
+	 * @param p_arguments Argument list to add the parsed arguments to.
 	 */
-	void parseArguments(final String[] args, final ArgumentList m_arguments);
+	void parseArguments(final String[] p_args, final ArgumentList p_arguments);
 }

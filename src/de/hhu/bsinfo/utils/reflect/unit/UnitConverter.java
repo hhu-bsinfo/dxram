@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.utils.reflect.unit;
 
 /**
@@ -6,18 +7,18 @@ package de.hhu.bsinfo.utils.reflect.unit;
  * on an integer/long value.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public interface UnitConverter
-{
+public interface UnitConverter {
 	/**
 	 * Get the string identifier for the unit we are targeting.
 	 * @return String identifier of targeting data type.
 	 */
-	public String getUnitIdentifier();
-	
+	String getUnitIdentifier();
+
 	/**
 	 * Convert the specified value.
-	 * @param p_value Value to convert.
+	 * @param p_value
+	 *            Value to convert.
 	 * @return Ouput of the conversion or null if failed.
 	 */
-	public Object convert(final Object p_value);
+	Object convert(final Object p_value);
 }
