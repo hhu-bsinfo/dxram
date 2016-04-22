@@ -7,12 +7,24 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex2;
+import de.hhu.bsinfo.dxgraph.data.Vertex;
 
-public class OrderedEdgeListBinaryFileThreadBuffering extends OrderedEdgeListThreadBuffering {
+/**
+ * Implementation reading vertex data from a buffer filled by a separate file reading thread.
+ * The vertex data is stored in binary format.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdgeListThreadBuffering {
 
 	private DataInputStream m_file;
 
+	/**
+	 * Constructor
+	 * @param p_path
+	 *            Filepath of the file to read.
+	 * @param p_bufferLimit
+	 *            Max vertices to keep buffered.
+	 */
 	public OrderedEdgeListBinaryFileThreadBuffering(final String p_path, final int p_bufferLimit) {
 		super(p_path, p_bufferLimit);
 	}
@@ -27,18 +39,8 @@ public class OrderedEdgeListBinaryFileThreadBuffering extends OrderedEdgeListThr
 	}
 
 	@Override
-	protected long readTotalVertexCount(final String p_path) {
-		// first long is total vertex count
-		try {
-			return m_file.readLong();
-		} catch (final NumberFormatException | IOException e) {
-			throw new RuntimeException("Cannot read vertex count (first line) from file '" + p_path + ".");
-		}
-	}
-
-	@Override
-	protected Vertex2 readFileVertex() {
-		Vertex2 vertex = new Vertex2();
+	protected Vertex readFileVertex() {
+		Vertex vertex = new Vertex();
 
 		try {
 			int count = m_file.readInt();

@@ -1,22 +1,19 @@
 
 package de.hhu.bsinfo.dxgraph.load.oel;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex2;
+import de.hhu.bsinfo.dxgraph.data.Vertex;
 
-// interface for an ordered edge list
-// which contains lists of neighbors for each vertex
-// vertex indices should start with id 1
+/**
+ * Interface for an ordered edge list providing vertices.
+ * This can be implemented by a file reading with buffering backend.
+ * Vertex indices have to start with id 1
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public interface OrderedEdgeList {
 
-	// when having multiple lists, identifies order
-	// (splitting the file and loading from multiple nodes)
-	// TODO remove this, have this with the index
-	int getNodeIndex();
-
-	// TODO remove this, have this with the index
-	long getTotalVertexCount();
-
-	// read vertex data. does not re-base
-	// the ids of the neighbors or modify the read data
-	Vertex2 readVertex();
+	/**
+	 * Read vertex data. This does not re-base the vertex id or any ids of the neighbors.
+	 * @return Vertex read or null if no vertices are left to read.
+	 */
+	Vertex readVertex();
 }

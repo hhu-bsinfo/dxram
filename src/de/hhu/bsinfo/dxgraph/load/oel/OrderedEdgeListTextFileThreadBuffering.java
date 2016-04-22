@@ -6,12 +6,24 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex2;
+import de.hhu.bsinfo.dxgraph.data.Vertex;
 
-public class OrderedEdgeListTextFileThreadBuffering extends OrderedEdgeListThreadBuffering {
+/**
+ * Implementation reading vertex data from a buffer filled by a separate file reading thread.
+ * The vertex data is stored in text format.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class OrderedEdgeListTextFileThreadBuffering extends AbstractOrderedEdgeListThreadBuffering {
 
 	private BufferedReader m_file;
 
+	/**
+	 * Constructor
+	 * @param p_path
+	 *            Filepath of the file to read.
+	 * @param p_bufferLimit
+	 *            Max vertices to keep buffered.
+	 */
 	public OrderedEdgeListTextFileThreadBuffering(final String p_path, final int p_bufferLimit) {
 		super(p_path, p_bufferLimit);
 	}
@@ -26,18 +38,8 @@ public class OrderedEdgeListTextFileThreadBuffering extends OrderedEdgeListThrea
 	}
 
 	@Override
-	protected long readTotalVertexCount(final String p_path) {
-		// first line is the total vertex/line count of the file
-		try {
-			return Long.parseLong(m_file.readLine());
-		} catch (final NumberFormatException | IOException e) {
-			throw new RuntimeException("Cannot read vertex count (first line) from file '" + p_path + ".");
-		}
-	}
-
-	@Override
-	protected Vertex2 readFileVertex() {
-		Vertex2 vertex = new Vertex2();
+	protected Vertex readFileVertex() {
+		Vertex vertex = new Vertex();
 
 		String line;
 		try {

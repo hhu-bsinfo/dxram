@@ -8,32 +8,67 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * List of root vertex ids used as entry points for various graph algorithms.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class GraphRootList implements DataStructure {
 	private long m_id = ChunkID.INVALID_ID;
 	private long[] m_roots = new long[0];
 
+	/**
+	 * Constructor
+	 */
 	public GraphRootList() {
 
 	}
 
+	/**
+	 * Constructor
+	 * @param p_id
+	 *            Chunk id to assign.
+	 */
 	public GraphRootList(final long p_id) {
 		m_id = p_id;
 	}
 
+	/**
+	 * Constructor
+	 * @param p_id
+	 *            Chunk id to assign.
+	 * @param p_roots
+	 *            Initial root list to assign,
+	 */
 	public GraphRootList(final long p_id, final long[] p_roots) {
 		m_id = p_id;
 		m_roots = p_roots;
 	}
 
+	/**
+	 * Constructor
+	 * @param p_id
+	 *            Chunk id to assign.
+	 * @param p_numRoots
+	 *            Pre-allocate space for a number of roots.
+	 */
 	public GraphRootList(final long p_id, final int p_numRoots) {
 		m_id = p_id;
 		m_roots = new long[p_numRoots];
 	}
 
+	/**
+	 * Get the list of roots.
+	 * @return List of roots.
+	 */
 	public long[] getRoots() {
 		return m_roots;
 	}
 
+	/**
+	 * Resize the static allocated root list.
+	 * @param p_count
+	 *            Number of roots to resize the list to.
+	 */
 	public void setRootCount(final int p_count) {
 		if (p_count != m_roots.length) {
 			// grow or shrink array

@@ -6,10 +6,19 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+/**
+ * Implementation reading roots buffered from a text file.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
 
 	private BufferedReader m_file;
 
+	/**
+	 * Constructor
+	 * @param p_path
+	 *            Filepath to read the roots from.
+	 */
 	public OrderedEdgeListRootsTextFile(final String p_path) {
 
 		String file = p_path;

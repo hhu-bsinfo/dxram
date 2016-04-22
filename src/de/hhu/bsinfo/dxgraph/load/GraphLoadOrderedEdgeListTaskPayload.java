@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
-import de.hhu.bsinfo.dxgraph.data.Vertex2;
+import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListTextFileThreadBuffering;
@@ -210,7 +210,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	 */
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
-		Vertex2[] vertexBuffer = new Vertex2[m_vertexBatchSize];
+		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
 		int readCount = 0;
 
 		GraphPartitionIndex.Entry currentPartitionIndexEntry = p_graphPartitionIndex.getPartitionIndex(getSlaveId());
@@ -232,7 +232,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		while (true) {
 			readCount = 0;
 			while (readCount < vertexBuffer.length) {
-				Vertex2 vertex = p_orderedEdgeList.readVertex();
+				Vertex vertex = p_orderedEdgeList.readVertex();
 				if (vertex == null) {
 					break;
 				}
