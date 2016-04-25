@@ -291,6 +291,8 @@ public class OverlayPeer implements MessageReceiver {
 				if (ret == 0) {
 					ret = ChunkID.INVALID_ID;
 				}
+
+				break;
 			}
 		} while (p_timeoutMs == -1 || System.currentTimeMillis() - start < p_timeoutMs);
 

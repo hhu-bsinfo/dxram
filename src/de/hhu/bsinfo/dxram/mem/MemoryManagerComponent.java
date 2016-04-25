@@ -32,6 +32,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	private CIDTable m_cidTable;
 	private ReentrantReadWriteLock m_lock;
 	private long m_numActiveChunks;
+	private long m_totalActiveChunkMemory;
 
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
@@ -92,6 +93,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			m_lock = new ReentrantReadWriteLock(false);
 
 			m_numActiveChunks = 0;
+			m_totalActiveChunkMemory = 0;
 		}
 
 		return true;
@@ -164,6 +166,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		status.m_freeMemoryBytes = m_rawMemory.getFreeMemory();
 		status.m_totalMemoryBytes = m_rawMemory.getTotalMemory();
+		status.m_totalPayloadMemoryBytes = m_rawMemory.getTotalPayloadMemory();
+		status.m_numberOfActiveMemoryBlocks = m_rawMemory.getNumberOfActiveMemoryBlocks();
+		status.m_totalChunkPayloadMemory = m_totalActiveChunkMemory;
+		status.m_numberOfActiveChunks = m_numActiveChunks;
+		status.m_cidTableCount = m_cidTable.getTableCount();
+		status.m_totalMemoryCIDTables = m_cidTable.getTotalMemoryTables();
 
 		return status;
 	}
@@ -188,10 +196,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			return chunkID;
 		}
 
-		if (m_cidTable.get(0) != -1) {
+		if (m_cidTable.get(0) != 0) {
 			// delete old entry
 			address = m_cidTable.delete(0, false);
 			m_rawMemory.free(address);
+			m_totalActiveChunkMemory -= m_rawMemory.getSizeBlock(address);
 			m_numActiveChunks--;
 		}
 
@@ -206,6 +215,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 				chunkID = -1;
 			} else {
 				m_numActiveChunks++;
+				m_totalActiveChunkMemory += p_size;
 			}
 		} else {
 			chunkID = -1;
@@ -248,6 +258,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 					chunkID = -1;
 				} else {
 					m_numActiveChunks++;
+					m_totalActiveChunkMemory += p_size;
 					chunkID = p_chunkId;
 				}
 			} else {
@@ -299,6 +310,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 					chunkID = -1;
 				} else {
 					m_numActiveChunks++;
+					m_totalActiveChunkMemory += p_size;
 				}
 			} else {
 				// most likely out of memory
@@ -491,6 +503,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			m_rawMemory.free(addressDeletedChunk);
 			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free);
 			m_numActiveChunks--;
+			m_totalActiveChunkMemory -= size;
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
@@ -498,14 +511,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
 
 		return ret;
-	}
-
-	/**
-	 * Get the number of currently active chunks/allocated blocks.
-	 * @return Number of currently active chunks.
-	 */
-	public long getNumberOfActiveChunks() {
-		return m_numActiveChunks;
 	}
 
 	/**
@@ -622,6 +627,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	public static class Status {
 		private long m_totalMemoryBytes = -1;
 		private long m_freeMemoryBytes = -1;
+		private long m_totalPayloadMemoryBytes = -1;
+		private long m_numberOfActiveMemoryBlocks = -1;
+		private long m_numberOfActiveChunks = -1;
+		private long m_totalChunkPayloadMemory = -1;
+		private long m_cidTableCount = -1;
+		private long m_totalMemoryCIDTables = -1;
 
 		/**
 		 * Constructor
@@ -644,6 +655,54 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		 */
 		public long getFreeMemory() {
 			return m_freeMemoryBytes;
+		}
+
+		/**
+		 * Get the total amount of allocated memory used for payload/chunk data.
+		 * @return Amount of memory allocated for payload in bytes.
+		 */
+		public long getTotalPayloadMemory() {
+			return m_totalPayloadMemoryBytes;
+		}
+
+		/**
+		 * Get the number of active/allocated memory blocks.
+		 * @return Number of active blocks.
+		 */
+		public long getNumberOfActiveMemoryBlocks() {
+			return m_numberOfActiveMemoryBlocks;
+		}
+
+		/**
+		 * Get the number of currently allocated chunks.
+		 * @return Number of currently allocated chunks.
+		 */
+		public long getNumberOfActiveChunks() {
+			return m_numberOfActiveChunks;
+		}
+
+		/**
+		 * Get the total amount of memory used for chunk payload.
+		 * @return Total amount of memory in bytes usable for chunk payload.
+		 */
+		public long getTotalChunkMemory() {
+			return m_totalChunkPayloadMemory;
+		}
+
+		/**
+		 * Get the number of cid tables.
+		 * @return Number of cid tables.
+		 */
+		public long getCIDTableCount() {
+			return m_cidTableCount;
+		}
+
+		/**
+		 * Get the amount of memory used by the cid tables.
+		 * @return Memory used by cid tables (in bytes).
+		 */
+		public long getTotalMemoryCIDTables() {
+			return m_totalMemoryCIDTables;
 		}
 	}
 }
