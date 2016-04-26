@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  */
 public abstract class AbstractComputeMSBase extends Thread {
 	public static final String NAMESERVICE_ENTRY_IDENT = "MAS";
-	public static final byte MIN_COMPUTE_GROUP_ID = 0;
+	public static final byte MIN_COMPUTE_GROUP_ID = -1;
 	public static final byte MAX_COMPUTE_GROUP_ID = 99;
 
 	/**

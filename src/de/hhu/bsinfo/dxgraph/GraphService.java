@@ -34,7 +34,6 @@ public class GraphService extends AbstractDXRAMService {
 
 	@Override
 	protected boolean shutdownService() {
-
 		return true;
 	}
 
