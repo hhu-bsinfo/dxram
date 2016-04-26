@@ -36,6 +36,8 @@ public final class CIDTable {
 	private short m_ownNodeID = -1;
 	private long m_addressTableDirectory = -1;
 	private SmallObjectHeap m_rawMemory;
+	private int m_tableCount = -1;
+	private long m_totalMemoryTables = -1;
 
 	private LIDStore m_store;
 
@@ -66,7 +68,6 @@ public final class CIDTable {
 		m_logger = p_logger;
 	}
 
-	// Methods
 	/**
 	 * Initializes the CIDTable
 	 * @param p_rawMemory
@@ -74,6 +75,8 @@ public final class CIDTable {
 	 */
 	public void initialize(final SmallObjectHeap p_rawMemory) {
 		m_rawMemory = p_rawMemory;
+		m_tableCount = 0;
+		m_totalMemoryTables = 0;
 		m_addressTableDirectory = createNIDTable();
 
 		m_store = new LIDStore();
@@ -91,6 +94,22 @@ public final class CIDTable {
 		m_nextLocalID = null;
 
 		m_addressTableDirectory = -1;
+	}
+
+	/**
+	 * Get the number of tables currently allocated.
+	 * @return Number of tables currently allocated.
+	 */
+	public int getTableCount() {
+		return m_tableCount;
+	}
+
+	/**
+	 * Get the total amount of memory used by the tables.
+	 * @return Amount of memory used by the tables (in bytes)
+	 */
+	public long getTotalMemoryTables() {
+		return m_totalMemoryTables;
 	}
 
 	/**
@@ -249,6 +268,8 @@ public final class CIDTable {
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 		if (ret != -1) {
 			m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
+			m_totalMemoryTables += NID_TABLE_SIZE;
+			m_tableCount++;
 		}
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable);
@@ -271,6 +292,8 @@ public final class CIDTable {
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
 		if (ret != -1) {
 			m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
+			m_totalMemoryTables += LID_TABLE_SIZE;
+			m_tableCount++;
 		}
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable);
 

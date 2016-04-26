@@ -31,7 +31,7 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 	private static final Argument MS_ARG_LEN = new Argument("length", null, true,
 			"Number of bytes to get starting at the specified offset (end of chunk will be truncated)");
 	private static final Argument MS_ARG_TYPE =
-			new Argument("type", "str", true, "Format to print the data (str, byte, short, int, long)");
+			new Argument("type", "byte", true, "Format to print the data (str, byte, short, int, long)");
 	private static final Argument MS_ARG_HEX =
 			new Argument("hex", "true", true, "For some representations, print as hex instead of decimal");
 

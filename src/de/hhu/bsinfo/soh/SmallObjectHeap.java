@@ -546,6 +546,34 @@ public final class SmallObjectHeap {
 		return size;
 	}
 
+	/**
+	 * Get the total amount of memory usable for actual data.
+	 * @return Total amount of memory usable for data in bytes.
+	 */
+	public long getTotalPayloadMemory() {
+		long size = 0;
+
+		for (SmallObjectHeapSegment segment : m_segments) {
+			size += segment.getSizeAllocatedPayload();
+		}
+
+		return size;
+	}
+
+	/**
+	 * Get the total number of active/allocated memory blocks.
+	 * @return Number of allocated memory blocks.
+	 */
+	public long getNumberOfActiveMemoryBlocks() {
+		long size = 0;
+
+		for (SmallObjectHeapSegment segment : m_segments) {
+			size += segment.getNumActiveMemoryBlocks();
+		}
+
+		return size;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder output;
