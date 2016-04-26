@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxgraph;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadOrderedEdgeListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadPartitionIndexTaskPayload;
@@ -28,6 +29,8 @@ public class GraphService extends AbstractDXRAMService {
 				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_OEL, GraphLoadOrderedEdgeListTaskPayload.class);
 		AbstractTaskPayload.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
 				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_BFS_ROOTS, GraphLoadBFSRootListTaskPayload.class);
+		AbstractTaskPayload.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
+				GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS, GraphAlgorithmBFSTaskPayload.class);
 
 		return true;
 	}
