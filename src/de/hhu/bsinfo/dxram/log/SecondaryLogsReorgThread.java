@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.log;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -89,21 +90,22 @@ public final class SecondaryLogsReorgThread extends Thread {
 	public void setLogToReorgImmediately(final SecondaryLog p_secLog, final boolean p_await) throws InterruptedException {
 
 		if (p_await) {
-			System.out.println("Try to get reorganization lock");
 			while (!m_reorganizationLock.tryLock()) {
 				// Grant access for reorganization thread to avoid deadlock
 				m_logService.grantReorgThreadAccessToCurrentLog();
 			}
-			System.out.println("Got reorganization lock");
 			m_secLog = p_secLog;
-			m_reorganizationFinishedCondition.await();
+			while (m_secLog == p_secLog) {
+				if (!m_reorganizationFinishedCondition.await(10, TimeUnit.MICROSECONDS)) {
+					// Grant access for reorganization thread to avoid deadlock
+					m_logService.grantReorgThreadAccessToCurrentLog();
+				}
+			}
 
-			System.out.println("Got reorganization finished signal");
 			m_reorganizationLock.unlock();
 		} else {
 			m_requestLock.lock();
 			m_reorganizationRequests.add(p_secLog);
-			System.out.println(m_reorganizationRequests.size() + " normal requests in queue");
 			m_requestLock.unlock();
 		}
 	}
@@ -118,6 +120,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 		SecondaryLog secondaryLog = null;
 
 		while (!m_shutdown) {
+			m_reorganizationLock.lock();
 			// Check if there is an urgent reorganization request -> reorganize complete secondary log and signal
 			if (m_secLog != null) {
 				m_logger.warn(SecondaryLogsReorgThread.class, "Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
@@ -128,31 +131,24 @@ public final class SecondaryLogsReorgThread extends Thread {
 					m_allVersions.clear();
 					counter = 0;
 				}
-				System.out.println("Left current secondary log");
 
 				// Reorganize complete secondary log
 				secondaryLog = m_secLog;
-				m_secLog = null;
 
-				System.out.println("Requesting access to secondary log " + secondaryLog.toString());
 				m_logService.getAccessToSecLog(secondaryLog);
 
-				System.out.println("Got access to secondary log");
 				secondaryLog.getCurrentVersions(m_allVersions);
-				System.out.println("Read all versions");
 				secondaryLog.reorganizeAll(m_reorgSegmentData, m_allVersions);
-				System.out.println("Reorganized all");
 				secondaryLog.resetReorgSegment();
 				m_logService.leaveSecLog(secondaryLog);
 				m_allVersions.clear();
 
-				System.out.println("Left secondary log");
-				m_reorganizationLock.lock();
+				m_secLog = null;
 				m_reorganizationFinishedCondition.signal();
 				m_reorganizationLock.unlock();
-				System.out.println("Signaled");
 				continue;
 			}
+			m_reorganizationLock.unlock();
 
 			// Check if there are normal reorganization requests -> reorganize complete secondary logs
 			m_requestLock.lock();
@@ -167,7 +163,15 @@ public final class SecondaryLogsReorgThread extends Thread {
 				}
 
 				// Process all reorganization requests
-				while (!m_reorganizationRequests.isEmpty()) {
+				while (!m_reorganizationRequests.isEmpty() && !m_shutdown) {
+					m_reorganizationLock.lock();
+					if (m_secLog != null) {
+						// Favor urgent request
+						m_reorganizationLock.unlock();
+						break;
+					}
+					m_reorganizationLock.unlock();
+
 					m_requestLock.lock();
 					iter = m_reorganizationRequests.iterator();
 					secondaryLog = iter.next();

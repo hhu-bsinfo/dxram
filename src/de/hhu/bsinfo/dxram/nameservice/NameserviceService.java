@@ -8,8 +8,8 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
-import de.hhu.bsinfo.dxram.nameservice.messages.RegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameGet;
 import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameList;
 import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameRegister;
@@ -48,7 +48,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 		if (m_boot.getNodeID() == nodeId) {
 			m_nameservice.register(p_chunkId, p_name);
 		} else {
-			RegisterMessage message = new RegisterMessage(nodeId, p_chunkId, p_name);
+			ForwardRegisterMessage message = new ForwardRegisterMessage(nodeId, p_chunkId, p_name);
 			NetworkErrorCodes err = m_network.sendMessage(message);
 			if (err != NetworkErrorCodes.SUCCESS) {
 				m_logger.error(getClass(),
@@ -102,11 +102,11 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 		if (p_message != null) {
 			if (p_message.getType() == NameserviceMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case NameserviceMessages.SUBTYPE_REGISTER_MESSAGE:
-						incomingRegisterMessage((RegisterMessage) p_message);
-						break;
-					default:
-						break;
+				case NameserviceMessages.SUBTYPE_REGISTER_MESSAGE:
+					incomingRegisterMessage((ForwardRegisterMessage) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -127,9 +127,9 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 		m_terminal = getComponent(TerminalComponent.class);
 
 		m_network.registerMessageType(NameserviceMessages.TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE,
-				RegisterMessage.class);
+				ForwardRegisterMessage.class);
 
-		m_network.register(RegisterMessage.class, this);
+		m_network.register(ForwardRegisterMessage.class, this);
 
 		m_terminal.registerCommand(new TcmdNameRegister());
 		m_terminal.registerCommand(new TcmdNameList());
@@ -154,7 +154,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	 * @param p_message
 	 *            Message to process
 	 */
-	private void incomingRegisterMessage(final RegisterMessage p_message) {
+	private void incomingRegisterMessage(final ForwardRegisterMessage p_message) {
 		m_nameservice.register(p_message.getChunkId(), p_message.getName());
 	}
 }

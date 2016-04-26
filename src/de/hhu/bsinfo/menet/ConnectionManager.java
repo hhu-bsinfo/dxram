@@ -80,6 +80,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		boolean ret = false;
 		Iterator<AbstractConnection> iter;
 
+		m_lock.lock();
 		iter = m_connections.values().iterator();
 		while (iter.hasNext()) {
 			if (iter.next().isCongested()) {
@@ -87,6 +88,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 				break;
 			}
 		}
+		m_lock.unlock();
 
 		return ret;
 	}
@@ -126,7 +128,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 			ret = m_connections.get(p_destination);
 			if (ret == null && !m_deactivated) {
 				if (m_connections.size() == MAX_CONNECTIONS) {
-					dismissConnection();
+					dismissRandomConnection();
 				}
 
 				ret = m_creator.createConnection(p_destination, m_connectionListener);
@@ -147,7 +149,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	 * Dismiss the connection randomly
 	 */
 	@SuppressWarnings("unchecked")
-	private void dismissConnection() {
+	private void dismissRandomConnection() {
 		AbstractConnection dismiss = null;
 		Random rand;
 

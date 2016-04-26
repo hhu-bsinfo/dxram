@@ -27,6 +27,6 @@ public class NetworkConfigurationValues {
 		public static final Pair<String, Integer> REQUEST_TIMEOUT_MS =
 				new Pair<String, Integer>("RequestTimeoutMs", 2000);
 		public static final Pair<String, Integer> CONNECTION_TIMEOUT_MS =
-				new Pair<String, Integer>("ConnectionTimeoutMs", 200);
+				new Pair<String, Integer>("ConnectionTimeoutMs", 2000);
 	}
 }

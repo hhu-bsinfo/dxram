@@ -92,6 +92,7 @@
 			<include name="de/hhu/bsinfo/menet/**/*.java"/>
 			<include name="de/hhu/bsinfo/soh/**/*.java"/>
 			<include name="de/hhu/bsinfo/utils/**/*.java"/>
+			<include name="de/hhu/bsinfo/dxcompute/**/*.java"/>
 			<classpath>
 				<fileset dir="${lib_dir}">
 					<include name="**/*.jar" />

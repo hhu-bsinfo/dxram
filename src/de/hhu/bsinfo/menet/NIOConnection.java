@@ -229,6 +229,17 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	@Override
+	protected boolean isIncomingQueueFull() {
+		boolean ret;
+
+		m_incomingLock.lock();
+		ret = m_incoming.size() >= m_numberOfBuffers;
+		m_incomingLock.unlock();
+
+		return ret;
+	}
+
+	@Override
 	protected String getInputOutputQueueLength() {
 		String ret = "";
 

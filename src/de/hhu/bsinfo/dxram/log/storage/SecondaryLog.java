@@ -138,6 +138,22 @@ public class SecondaryLog extends AbstractLog {
 	}
 
 	/**
+	 * Returns the log size on disk
+	 * @return the size
+	 */
+	public final long getLogFileSize() {
+		return super.getFileSize();
+	}
+
+	/**
+	 * Returns the versionsnl size on disk
+	 * @return the size
+	 */
+	public final long getVersionsFileSize() {
+		return m_versionsBuffer.getFileSize();
+	}
+
+	/**
 	 * Returns the next version for ChunkID
 	 * @param p_chunkID
 	 *            the ChunkID
@@ -286,7 +302,7 @@ public class SecondaryLog extends AbstractLog {
 			}
 
 			// Change epoch
-			if (m_versionsBuffer.size() >= VERSIONS_BUFFER_CAPACITY * 0.65) {
+			if (m_versionsBuffer.getEntryCount() >= VERSIONS_BUFFER_CAPACITY * 0.65) {
 				if (!m_isAccessed) {
 					// Write versions buffer to SSD
 					if (m_versionsBuffer.flush()) {
@@ -790,7 +806,7 @@ public class SecondaryLog extends AbstractLog {
 	 * @note executed only by reorganization thread
 	 */
 	private static byte[][] readAllSegmentsFromFile(final String p_path, final long p_secondaryLogSize, final int p_logSegmentSize) throws IOException,
-			InterruptedException {
+	InterruptedException {
 		byte[][] result = null;
 		int numberOfSegments;
 		RandomAccessFile randomAccessFile;

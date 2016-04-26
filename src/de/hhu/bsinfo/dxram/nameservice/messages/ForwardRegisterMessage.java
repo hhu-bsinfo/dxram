@@ -10,7 +10,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
  * (Async) Message for updating a Chunk on a remote node
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
-public class RegisterMessage extends AbstractMessage {
+public class ForwardRegisterMessage extends AbstractMessage {
 
 	private long m_chunkId;
 	private String m_name;
@@ -19,7 +19,7 @@ public class RegisterMessage extends AbstractMessage {
 	 * Creates an instance of RegisterMessage.
 	 * This constructor is used when receiving this message.
 	 */
-	public RegisterMessage() {
+	public ForwardRegisterMessage() {
 		super();
 	}
 
@@ -32,7 +32,7 @@ public class RegisterMessage extends AbstractMessage {
 	 * @param p_name
 	 *            The name to use for the mapping of the chunk id
 	 */
-	public RegisterMessage(final short p_destination, final long p_chunkId, final String p_name) {
+	public ForwardRegisterMessage(final short p_destination, final long p_chunkId, final String p_name) {
 		super(p_destination, NameserviceMessages.TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE);
 
 		m_chunkId = p_chunkId;
