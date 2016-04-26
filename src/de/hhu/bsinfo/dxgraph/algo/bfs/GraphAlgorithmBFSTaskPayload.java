@@ -29,6 +29,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
+import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
@@ -141,6 +142,22 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		return 0;
+	}
+
+	@Override
+	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
+		m_bfsRootNameserviceEntry = p_delegate.promptForUserInput("bfsRootNameserviceEntryName");
+		try {
+			m_vertexBatchSize = Integer.parseInt(p_delegate.promptForUserInput("vertexBatchSize"));
+		} catch (final NumberFormatException e) {}
+		try {
+			m_vertexMessageBatchSize = Integer.parseInt(p_delegate.promptForUserInput("vertexMessageBatchSize"));
+		} catch (final NumberFormatException e) {}
+		try {
+			m_numberOfThreadsPerNode = Integer.parseInt(p_delegate.promptForUserInput("numThreadsPerNode"));
+		} catch (final NumberFormatException e) {}
+
+		return true;
 	}
 
 	private abstract class AbstractBFSMS implements MessageReceiver {

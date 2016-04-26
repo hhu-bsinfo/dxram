@@ -21,8 +21,8 @@ import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.SlavePrintInfoTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSGroupList;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSComputeGroupStatus;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSGroupList;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskList;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskSubmit;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -96,8 +96,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		ArrayList<Short> slaves = ((ComputeMaster) m_computeMSInstance).getConnectedSlaves();
 		int numTasksInQueue = ((ComputeMaster) m_computeMSInstance).getNumberOfTasksInQueue();
+		AbstractComputeMSBase.State state = ((ComputeMaster) m_computeMSInstance).getComputeState();
 
-		return new StatusMaster(m_boot.getNodeID(), slaves, numTasksInQueue);
+		return new StatusMaster(m_boot.getNodeID(), state, slaves, numTasksInQueue);
 	}
 
 	/**
@@ -256,20 +257,20 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		if (p_message != null) {
 			if (p_message.getType() == MasterSlaveMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
-						incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
-						break;
-					case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
-						incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
-						break;
-					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
-						incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
-						break;
-					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
-						incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
-						break;
-					default:
-						break;
+				case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
+					incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
+					break;
+				case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
+					incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
+					break;
+				case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
+					incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
+					break;
+				case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
+					incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -322,23 +323,23 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_terminal.registerCommand(new TcmdMSTaskList());
 
 		switch (role) {
-			case MASTER:
-				m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
-						m_network, m_logger,
-						m_nameservice, m_boot);
-				break;
-			case SLAVE:
-				m_computeMSInstance =
-						new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
-								m_nameservice, m_boot);
-				break;
-			case NONE:
-				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
-						m_nameservice, m_boot);
-				break;
-			default:
-				assert 1 == 2;
-				break;
+		case MASTER:
+			m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
+					m_network, m_logger,
+					m_nameservice, m_boot);
+			break;
+		case SLAVE:
+			m_computeMSInstance =
+					new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
+							m_nameservice, m_boot);
+			break;
+		case NONE:
+			m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
+					m_nameservice, m_boot);
+			break;
+		default:
+			assert 1 == 2;
+			break;
 		}
 
 		registerTaskPayloads();
@@ -524,6 +525,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	 */
 	public static class StatusMaster implements Importable, Exportable {
 		private short m_masterNodeId;
+		private AbstractComputeMSBase.State m_state;
 		private int m_numTasksQueued;
 		private ArrayList<Short> m_connectedSlaves;
 
@@ -540,12 +542,15 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		 * Constructor
 		 * @param p_masterNodeId
 		 *            Node id of the master
+		 * @param p_state
+		 *            The current state of the instance
 		 * @param p_connectedSlaves
 		 *            List of connected slave ids to this master.
 		 * @param p_numTasksQueued
 		 *            Number of tasks queued currently on this master.
 		 */
-		public StatusMaster(final short p_masterNodeId, final ArrayList<Short> p_connectedSlaves,
+		public StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state,
+				final ArrayList<Short> p_connectedSlaves,
 				final int p_numTasksQueued) {
 			m_masterNodeId = p_masterNodeId;
 			m_connectedSlaves = p_connectedSlaves;
@@ -558,6 +563,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		 */
 		public short getMasterNodeId() {
 			return m_masterNodeId;
+		}
+
+		/**
+		 * Get the current state of the instance.
+		 * @return Current state
+		 */
+		public AbstractComputeMSBase.State getState() {
+			return m_state;
 		}
 
 		/**
@@ -579,6 +592,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		@Override
 		public int exportObject(final Exporter p_exporter, final int p_size) {
 			p_exporter.writeShort(m_masterNodeId);
+			p_exporter.writeInt(m_state.ordinal());
 			p_exporter.writeInt(m_connectedSlaves.size());
 			for (short slave : m_connectedSlaves) {
 				p_exporter.writeShort(slave);
@@ -591,6 +605,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		@Override
 		public int importObject(final Importer p_importer, final int p_size) {
 			m_masterNodeId = p_importer.readShort();
+			m_state = AbstractComputeMSBase.State.values()[p_importer.readInt()];
 			int size = p_importer.readInt();
 			m_connectedSlaves = new ArrayList<Short>(size);
 			for (int i = 0; i < size; i++) {
@@ -603,7 +618,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		@Override
 		public int sizeofObject() {
-			return Short.BYTES + Integer.BYTES + m_connectedSlaves.size() * Short.BYTES + Integer.BYTES;
+			return Short.BYTES + Integer.BYTES + Integer.BYTES + m_connectedSlaves.size() * Short.BYTES + Integer.BYTES;
 		}
 
 		@Override
@@ -615,6 +630,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		public String toString() {
 			String str = new String();
 			str += "Master: " + NodeID.toHexString(m_masterNodeId) + "\n";
+			str += "State: " + m_state + "\n";
 			str += "Tasks queued: " + m_numTasksQueued + "\n";
 			str += "Connected slaves(" + m_connectedSlaves.size() + "):\n";
 			for (short slave : m_connectedSlaves) {

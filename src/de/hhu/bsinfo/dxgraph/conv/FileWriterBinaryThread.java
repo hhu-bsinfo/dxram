@@ -103,7 +103,7 @@ public class FileWriterBinaryThread extends AbstractFileWriterThread {
 		}
 
 		try {
-			p_infoFile.write("," + Long.toString(edgeCount));
+			p_infoFile.write(m_id + "," + Long.toString(vertexCount) + "," + Long.toString(edgeCount));
 			p_file.flush();
 			p_infoFile.flush();
 		} catch (final IOException e) {}

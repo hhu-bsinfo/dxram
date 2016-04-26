@@ -25,7 +25,7 @@ public abstract class AbstractComputeMSBase extends Thread {
 	 * States of the master/slave instances
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
 	 */
-	protected enum State {
+	public enum State {
 		STATE_SETUP,
 		STATE_IDLE,
 		STATE_EXECUTE,
@@ -100,6 +100,14 @@ public abstract class AbstractComputeMSBase extends Thread {
 	 */
 	public ComputeRole getRole() {
 		return m_role;
+	}
+
+	/**
+	 * Get the current state.
+	 * @return State of the instance.
+	 */
+	public State getComputeState() {
+		return m_state;
 	}
 
 	/**
