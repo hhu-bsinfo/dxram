@@ -43,6 +43,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	private int m_executeBarrierIdentifier;
 	private BarrierMasterInternal m_executionBarrier;
 
+	private volatile int m_tasksProcessed;
 	private AtomicInteger m_payloadIdCounter = new AtomicInteger(0);
 
 	/**
@@ -117,6 +118,14 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	 */
 	public int getNumberOfTasksInQueue() {
 		return m_taskCount.get();
+	}
+
+	/**
+	 * Get the total amount of tasks processed so far.
+	 * @return Number of tasks processed.
+	 */
+	public int getTotalTasksProcessed() {
+		return m_tasksProcessed;
 	}
 
 	@Override
@@ -326,6 +335,8 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 
 			returnCodes[slaveId] = (int) item.second().longValue();
 		}
+
+		m_tasksProcessed++;
 
 		task.getPayload().setExecutionReturnCodes(returnCodes);
 		task.notifyListenersExecutionCompleted();

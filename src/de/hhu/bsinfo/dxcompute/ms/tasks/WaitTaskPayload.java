@@ -4,6 +4,8 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -40,6 +42,11 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 		}
 
 		return 0;
+	}
+
+	public void bla(final ArgumentList p_arguments) {
+		Argument arg;
+
 	}
 
 	@Override

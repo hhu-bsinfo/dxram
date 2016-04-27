@@ -26,6 +26,7 @@ public abstract class AbstractComputeMSBase extends Thread {
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
 	 */
 	public enum State {
+		STATE_INVALID,
 		STATE_SETUP,
 		STATE_IDLE,
 		STATE_EXECUTE,
