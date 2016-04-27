@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -171,14 +171,24 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	public abstract int execute(final DXRAMServiceAccessor p_dxram);
 
 	/**
-	 * Override this to allow terminal commands calling this to prompt for additional
-	 * data to be entered as parameters for the payload.
-	 * @param p_delegate
-	 *            Delegate of the terminal.
-	 * @return True on successful input, false on error.
+	 * Override this to allow terminal commands calling this to get arguments
+	 * required to run the task.
+	 * @param p_argumentList
+	 *            List to add the arguments required to run.
 	 */
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		return true;
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+
+	}
+
+	/**
+	 * Override this to allow terminal commands to provide additional arguments inserted
+	 * by the user.
+	 * @param p_argumentList
+	 *            List of arguments from the terminal to lookup values for arguments
+	 *            required to run the task
+	 */
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+
 	}
 
 	@Override

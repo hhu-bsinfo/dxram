@@ -10,13 +10,17 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Print the statistics to a file.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
+
+	private static final Argument MS_ARG_OUTPUT_PATH =
+			new Argument("outputPath", null, false, "Filepath to write the statistics to.");
 
 	private String m_path;
 
@@ -72,9 +76,12 @@ public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_path = p_delegate.promptForUserInput("outputPath");
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_OUTPUT_PATH);
+	}
 
-		return true;
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_path = p_argumentList.getArgumentValue(MS_ARG_OUTPUT_PATH, String.class);
 	}
 }

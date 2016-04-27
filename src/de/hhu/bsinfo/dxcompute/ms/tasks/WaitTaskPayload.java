@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -14,6 +13,9 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class WaitTaskPayload extends AbstractTaskPayload {
+
+	private static final Argument MS_ARG_TIME =
+			new Argument("timeMs", null, false, "Amount of time to wait in ms.");
 
 	private int m_waitMs;
 
@@ -44,26 +46,14 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 		return 0;
 	}
 
-	public void bla(final ArgumentList p_arguments) {
-		Argument arg;
-
+	@Override
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_TIME);
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		String time = p_delegate.promptForUserInput("timeMs");
-
-		try {
-			m_waitMs = Integer.parseInt(time);
-		} catch (final NumberFormatException e) {
-			return false;
-		}
-
-		if (m_waitMs < 0) {
-			m_waitMs = 0;
-		}
-
-		return true;
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_waitMs = p_argumentList.getArgumentValue(MS_ARG_TIME, Integer.class);
 	}
 
 	@Override

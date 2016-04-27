@@ -16,7 +16,8 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -25,6 +26,11 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
+
+	private static final Argument MS_ARG_PATH =
+			new Argument("graphPath", null, false, "Path containing the graph data to load.");
+	private static final Argument MS_ARG_VERTEX_BATCH_SIZE =
+			new Argument("vertexBatchSize", null, false, "Size of a vertex batch for the loading process.");
 
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
@@ -101,10 +107,15 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_path = p_delegate.promptForUserInput("graphPath");
-		m_vertexBatchSize = Integer.parseInt(p_delegate.promptForUserInput("vertexBatchSize"));
-		return true;
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_PATH);
+		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
+	}
+
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
+		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
 	}
 
 	@Override

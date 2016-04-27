@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSComputeGroupStatus;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSGroupList;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskList;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskListSubmit;
 import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskSubmit;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -322,6 +323,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_terminal.registerCommand(new TcmdMSComputeGroupStatus());
 		m_terminal.registerCommand(new TcmdMSTaskSubmit());
 		m_terminal.registerCommand(new TcmdMSTaskList());
+		m_terminal.registerCommand(new TcmdMSTaskListSubmit());
 
 		switch (role) {
 			case MASTER:

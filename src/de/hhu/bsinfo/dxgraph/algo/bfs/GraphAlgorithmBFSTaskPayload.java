@@ -29,13 +29,25 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
+
+	private static final Argument MS_ARG_BFS_ROOT =
+			new Argument("bfsRootNameserviceEntryName", null, false,
+					"Name of the nameservice entry for the roots to use for BFS.");
+	private static final Argument MS_ARG_VERTEX_BATCH_SIZE =
+			new Argument("vertexBatchSize", null, false, "Number of vertices to cache as a batch for processing.");
+	private static final Argument MS_ARG_VERTEX_MSG_BATCH_SIZE =
+			new Argument("vertexMessageBatchSize", null, false,
+					"Name of vertices to send as a single batch over the network.");
+	private static final Argument MS_ARG_NUM_THREADS =
+			new Argument("numThreadsPerNode", null, false, "Number of threads to use for BFS on a single node.");
 
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
@@ -145,19 +157,19 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_bfsRootNameserviceEntry = p_delegate.promptForUserInput("bfsRootNameserviceEntryName");
-		try {
-			m_vertexBatchSize = Integer.parseInt(p_delegate.promptForUserInput("vertexBatchSize"));
-		} catch (final NumberFormatException e) {}
-		try {
-			m_vertexMessageBatchSize = Integer.parseInt(p_delegate.promptForUserInput("vertexMessageBatchSize"));
-		} catch (final NumberFormatException e) {}
-		try {
-			m_numberOfThreadsPerNode = Integer.parseInt(p_delegate.promptForUserInput("numThreadsPerNode"));
-		} catch (final NumberFormatException e) {}
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_BFS_ROOT);
+		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
+		p_argumentList.setArgument(MS_ARG_VERTEX_MSG_BATCH_SIZE);
+		p_argumentList.setArgument(MS_ARG_NUM_THREADS);
+	}
 
-		return true;
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_bfsRootNameserviceEntry = p_argumentList.getArgumentValue(MS_ARG_BFS_ROOT, String.class);
+		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
+		m_vertexMessageBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_MSG_BATCH_SIZE, Integer.class);
+		m_numberOfThreadsPerNode = p_argumentList.getArgumentValue(MS_ARG_NUM_THREADS, Integer.class);
 	}
 
 	private abstract class AbstractBFSMS implements MessageReceiver {
@@ -261,11 +273,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			if (p_message != null) {
 				if (p_message.getType() == ChunkMessages.TYPE) {
 					switch (p_message.getSubtype()) {
-					case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE:
-						onIncomingVerticesForNextFrontierMessage((VerticesForNextFrontierMessage) p_message);
-						break;
-					default:
-						break;
+						case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE:
+							onIncomingVerticesForNextFrontierMessage((VerticesForNextFrontierMessage) p_message);
+							break;
+						default:
+							break;
 					}
 				}
 			}

@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * A task that can be submitted to a master-slave compute group.
@@ -96,7 +97,7 @@ public class Task {
 
 	@Override
 	public String toString() {
-		return "Task[" + m_name + "][" + m_nodeIdSubmitted + "]: " + m_payload;
+		return "Task[" + m_name + "][" + NodeID.toHexString(m_nodeIdSubmitted) + "]: " + m_payload;
 	}
 
 	/**

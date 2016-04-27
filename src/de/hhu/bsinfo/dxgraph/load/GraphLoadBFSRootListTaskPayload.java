@@ -16,7 +16,8 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -26,6 +27,9 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 	public static final String MS_BFS_ROOTS = "BFS";
+
+	private static final Argument MS_ARG_PATH =
+			new Argument("graphPath", null, false, "Path containing a root list to load.");
 
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
@@ -118,9 +122,13 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_path = p_delegate.promptForUserInput("graphPath");
-		return true;
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_PATH);
+	}
+
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
 	}
 
 	@Override

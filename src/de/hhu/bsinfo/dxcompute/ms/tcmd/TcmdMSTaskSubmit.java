@@ -63,11 +63,31 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 			return true;
 		}
 
-		// prompt for additional parameters for the payload
-		if (!payload.terminalCommandCallbackForParameters(getTerminalDelegate())) {
-			return false;
+		// get parameters for payload
+		ArgumentList payloadRegisteredArguments = new ArgumentList();
+		ArgumentList payloadCallbackArguments = new ArgumentList();
+		payload.terminalCommandRegisterArguments(payloadRegisteredArguments);
+
+		// check if parameters were already added via terminal command args
+		for (Argument argument : payloadRegisteredArguments.getArgumentMap().values()) {
+			Argument terminalCommandArg = p_arguments.getArgument(argument.getKey());
+			if (terminalCommandArg == null) {
+				// prompt user to type in argument
+				terminalCommandArg =
+						new Argument(argument.getKey(), getTerminalDelegate().promptForUserInput(argument.getKey()));
+			}
+
+			payloadCallbackArguments.setArgument(terminalCommandArg);
 		}
 
+		// provide arguments to task payload
+		try {
+			payload.terminalCommandCallbackForArguments(payloadCallbackArguments);
+		} catch (final NullPointerException e) {
+			// happens if an argument was not provided (probably typo)
+			System.out.println("Parsing arguments of task with type id " + tid + " subtype id " + stid
+					+ " failed, missing argument?");
+		}
 		Task task = new Task(payload, name + ms_taskCounter++);
 		task.registerTaskListener(this);
 
