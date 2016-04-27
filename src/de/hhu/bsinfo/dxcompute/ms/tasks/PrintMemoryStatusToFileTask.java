@@ -11,14 +11,26 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.term.TerminalDelegate;
 
-public class PrintMemoryStatusToFileTask extends PrintMemoryStatusTaskPayload {
+/**
+ * Print the current memory status to a file.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPayload {
 
-	private String m_path = null;
+	private String m_path;
 
+	/**
+	 * Constructor
+	 */
 	public PrintMemoryStatusToFileTask() {
 		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_FILE_TASK);
 	}
 
+	/**
+	 * Set the filepath to the output file to print to.
+	 * @param p_path
+	 *            Filepath of the file to print to.
+	 */
 	public void setOutputFilePath(final String p_path) {
 		m_path = p_path;
 	}

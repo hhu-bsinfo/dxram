@@ -5,10 +5,17 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 
-public class PrintStatisticsToConsoleTask extends PrintStatisticsTask {
+/**
+ * Print statistics to the console.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class PrintStatisticsToConsoleTask extends AbstractPrintStatisticsTask {
 
-	public PrintStatisticsToConsoleTask(short p_typeId, short p_subtypeId) {
-		super(p_typeId, p_subtypeId);
+	/**
+	 * Constructor
+	 */
+	public PrintStatisticsToConsoleTask() {
+		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_CONSOLE_TASK);
 	}
 
 	@Override

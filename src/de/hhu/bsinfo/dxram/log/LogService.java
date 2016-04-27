@@ -545,6 +545,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	 */
 	public String getCurrentUtilization() {
 		String ret;
+		long allBytes = 0;
 		long counter;
 		SecondaryLog[] secondaryLogs;
 		SecondaryLogBuffer[] secLogBuffers;
@@ -572,7 +573,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: "
 								+ secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
-						counter += secondaryLogs[j].getOccupiedSpace();
+						counter += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
 					}
 				}
 				secondaryLogs = cat.getAllMigrationLogs();
@@ -586,12 +587,14 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 						ret += secondaryLogs[j].getOccupiedSpace() + " bytes (in buffer: "
 								+ secLogBuffers[j].getOccupiedSpace() + " bytes)\n";
 						ret += secondaryLogs[j].getSegmentDistribution() + "\n";
-						counter += secondaryLogs[j].getOccupiedSpace();
+						counter += secondaryLogs[j].getLogFileSize() + secondaryLogs[j].getVersionsFileSize();
 					}
 				}
 				ret += "++Bytes per node: " + counter + "\n";
+				allBytes += counter;
 			}
 		}
+		ret += "Complete size: " + allBytes + "\n";
 		ret += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
 
 		return ret;

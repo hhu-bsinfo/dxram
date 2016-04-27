@@ -97,12 +97,14 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 		if (m_backup.isActive()) {
 			short[] backupPeers = m_backup.getBackupPeersForLocalChunks(p_dataStructure.getID());
-			for (short peer : backupPeers) {
-				if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
-					m_logger.trace(getClass(),
-							"Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
+			if (backupPeers != null) {
+				for (short peer : backupPeers) {
+					if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
+						m_logger.trace(getClass(),
+								"Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
 
-					m_network.sendMessage(new LogMessage(peer, p_dataStructure));
+						m_network.sendMessage(new LogMessage(peer, p_dataStructure));
+					}
 				}
 			}
 		}

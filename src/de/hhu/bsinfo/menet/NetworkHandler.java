@@ -53,7 +53,7 @@ public final class NetworkHandler implements DataReceiver {
 
 		m_numMessageHandlerThreads = p_numMessageHandlerThreads;
 
-		NetworkHandler.getLogger().info(getClass().getSimpleName(),
+		m_loggerInterface.info(getClass().getSimpleName(),
 				"Network: NetworkMessageCreator: Initialising " + p_numMessageCreatorThreads + " threads");
 		m_messageCreatorExecutor = new TaskExecutor("NetworkMessageCreator", p_numMessageCreatorThreads);
 		m_receivers = new HashMap<>();
@@ -378,7 +378,7 @@ public final class NetworkHandler implements DataReceiver {
 			m_defaultMessages = new ArrayDeque<>();
 			m_defaultMessagesLock = new ReentrantLock(false);
 
-			NetworkHandler.getLogger().info(getClass().getSimpleName(),
+			m_loggerInterface.info(getClass().getSimpleName(),
 					"Network: DefaultMessageHandler: Initialising " + p_numMessageHandlerThreads + " threads");
 			m_executor = new TaskExecutor("Network: DefaultMessageHandler", p_numMessageHandlerThreads);
 		}

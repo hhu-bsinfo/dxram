@@ -41,6 +41,8 @@ public final class SmallObjectHeapSegment {
 	long m_fullSize = -1;
 	int m_freeBlocksListCount = -1;
 	int m_freeBlocksListSizePerSegment = -1;
+	long m_sizePayloadAllocated = -1;
+	long m_numActiveMemoryBlocks = -1;
 
 	// Constructors
 	/**
@@ -60,6 +62,7 @@ public final class SmallObjectHeapSegment {
 		m_assignedThread = 0;
 		m_base = p_base;
 		m_fullSize = p_size;
+		m_sizePayloadAllocated = 0;
 
 		// m_lock = new JNIReadWriteSpinLock();
 
@@ -103,6 +106,22 @@ public final class SmallObjectHeapSegment {
 	 */
 	public Status getStatus() {
 		return m_status;
+	}
+
+	/**
+	 * Get the amount of space allocated for actual data/payload.
+	 * @return Amount of space in bytes allocated for actual payload.
+	 */
+	public long getSizeAllocatedPayload() {
+		return m_sizePayloadAllocated;
+	}
+
+	/**
+	 * Get the number of active memory blocks (allocated blocks).
+	 * @return Number of active memory blocks.
+	 */
+	public long getNumActiveMemoryBlocks() {
+		return m_numActiveMemoryBlocks;
 	}
 
 	/**
@@ -251,6 +270,11 @@ public final class SmallObjectHeapSegment {
 			}
 		}
 
+		if (ret != -1) {
+			m_sizePayloadAllocated += p_size;
+			m_numActiveMemoryBlocks++;
+		}
+
 		return ret;
 	}
 
@@ -313,6 +337,10 @@ public final class SmallObjectHeapSegment {
 				address += 1;
 
 				ret[i] = address;
+				if (address != -1) {
+					m_sizePayloadAllocated += p_sizes[i];
+					m_numActiveMemoryBlocks++;
+				}
 
 				write(address, p_sizes[i], lengthfieldSize);
 				address += lengthfieldSize;
@@ -468,6 +496,9 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		}
+
+		m_sizePayloadAllocated -= blockSize;
+		m_numActiveMemoryBlocks--;
 	}
 
 	/**

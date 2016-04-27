@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
 import java.util.TreeSet;
@@ -5,19 +6,18 @@ import java.util.TreeSet;
 /**
  * Frontier implementation using Java's TreeSet.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
- *
  */
 public class TreeSetFifo implements FrontierList {
 
 	private TreeSet<Long> m_tree = new TreeSet<Long>();
-	
+
 	@Override
-	public void pushBack(long p_val) {
+	public void pushBack(final long p_val) {
 		m_tree.add(p_val);
 	}
-	
+
 	@Override
-	public boolean contains(long p_val) {
+	public boolean contains(final long p_val) {
 		return m_tree.contains(p_val);
 	}
 
@@ -39,8 +39,9 @@ public class TreeSetFifo implements FrontierList {
 	@Override
 	public long popFront() {
 		Long tmp = m_tree.pollFirst();
-		if (tmp == null)
+		if (tmp == null) {
 			return -1;
+		}
 		return tmp;
 	}
 

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.utils.reflect.dt;
 
 /**
@@ -5,24 +6,24 @@ package de.hhu.bsinfo.utils.reflect.dt;
  * based on a specific data format.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public interface DataTypeParser
-{
+public interface DataTypeParser {
 	/**
 	 * Get the string identifier for the type we are targeting.
 	 * @return String identifier of targeting data type.
 	 */
-	public String getTypeIdentifer();
-	
+	String getTypeIdentifer();
+
 	/**
 	 * Get the class identifier for the type we are targeting.
 	 * @return Class identifier for the targeting data type.
 	 */
-	public Class<?> getClassToConvertTo();
-	
+	Class<?> getClassToConvertTo();
+
 	/**
 	 * Parse the string and create an object instance of it.
-	 * @param p_str String to parse.
+	 * @param p_str
+	 *            String to parse.
 	 * @return Object to be created or null if parsing failed.
 	 */
-	public Object parse(final String p_str);
+	Object parse(final String p_str);
 }

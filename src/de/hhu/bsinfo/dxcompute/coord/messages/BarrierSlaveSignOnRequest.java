@@ -5,6 +5,10 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.menet.AbstractRequest;
 
+/**
+ * Request sent when a slave hits a barrier and wants to sign on (i.e. notify the master).
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
+ */
 public class BarrierSlaveSignOnRequest extends AbstractRequest {
 	private int m_syncToken = -1;
 	private long m_data = -1;
@@ -42,6 +46,10 @@ public class BarrierSlaveSignOnRequest extends AbstractRequest {
 		return m_syncToken;
 	}
 
+	/**
+	 * Get the custom data passed along with the request.
+	 * @return Data.
+	 */
 	public long getData() {
 		return m_data;
 	}

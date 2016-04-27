@@ -122,7 +122,10 @@ public abstract class AbstractConnection {
 	 * @return true if the connection is connected, false otherwise
 	 */
 	public final boolean isCongested() {
-		return m_unconfirmedBytes > m_flowControlWindowSize;
+		if (m_unconfirmedBytes > m_flowControlWindowSize) {
+			return true;
+		}
+		return isIncomingQueueFull();
 	}
 
 	/**
@@ -244,6 +247,12 @@ public abstract class AbstractConnection {
 	 * @return whether the output queue is empty (false) or not (true)
 	 */
 	protected abstract boolean dataLeftToWrite();
+
+	/**
+	 * Returns whether the incoming buffer queue is full or not
+	 * @return whether the incoming buffer queue is full or not
+	 */
+	protected abstract boolean isIncomingQueueFull();
 
 	/**
 	 * Returns the size of input and output queues

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,7 +28,12 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 
-public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
+/**
+ * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them
+ * to the conencted slaves for execution.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	private static final int MAX_TASK_COUNT = 100;
 
 	private Vector<Short> m_signedOnSlaves = new Vector<Short>();
@@ -39,9 +43,26 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 	private int m_executeBarrierIdentifier;
 	private BarrierMasterInternal m_executionBarrier;
 
-	private AtomicLong m_payloadIdCounter = new AtomicLong(0);
+	private AtomicInteger m_payloadIdCounter = new AtomicInteger(0);
 
-	public ComputeMaster(final int p_computeGroupId, final long p_pingIntervalMs,
+	/**
+	 * Constructor
+	 * @param p_computeGroupId
+	 *            Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs
+	 *            Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor
+	 *            Service accessor for tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 */
+	public ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
@@ -56,6 +77,10 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		start();
 	}
 
+	/**
+	 * Get a list of currently connected salves.
+	 * @return List of currently connected slaves (node ids).
+	 */
 	public ArrayList<Short> getConnectedSlaves() {
 		@SuppressWarnings("unchecked")
 		Vector<Short> tmp = (Vector<Short>) m_signedOnSlaves.clone();
@@ -67,18 +92,29 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		return ret;
 	}
 
+	/**
+	 * Submit a task to this master.
+	 * @param p_task
+	 *            Task to submit.
+	 * @return True if submission was successful, false if the max number of tasks queued is reached.
+	 */
 	public boolean submitTask(final Task p_task) {
 		if (m_taskCount.get() < MAX_TASK_COUNT) {
 			m_tasks.add(p_task);
 			m_taskCount.incrementAndGet();
 			// set unique payload id
 			p_task.getPayload().setPayloadId(m_payloadIdCounter.getAndIncrement());
+			p_task.getPayload().setComputeGroupId(m_computeGroupId);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
+	/**
+	 * Get the number of tasks currently in the queue.
+	 * @return Number of tasks in the queue.
+	 */
 	public int getNumberOfTasksInQueue() {
 		return m_taskCount.get();
 	}
@@ -138,6 +174,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Setup state. Register node id in the nameservice to allow slaves to discover this master.
+	 */
 	private void stateSetup() {
 		m_logger.info(getClass(), "Setting up master of compute group " + m_computeGroupId);
 
@@ -160,6 +199,10 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.debug(getClass(), "Entering idle state");
 	}
 
+	/**
+	 * Idle state. Wait for slaves to sign on and for tasks to be submitted. Also ping and check if slaves
+	 * are still available and remove them from the group if not.
+	 */
 	private void stateIdle() {
 		if (m_taskCount.get() > 0) {
 			if (m_signedOnSlaves.size() < 1) {
@@ -197,6 +240,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Execute state. Execute a task from the queue. Send it to the slaves, wait for completion of all slaves.
+	 */
 	private void stateExecute() {
 		// lock joining of further slaves
 		m_joinLock.lock();
@@ -215,30 +261,37 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.info(getClass(),
 				"Starting execution of task " + task + " with " + m_signedOnSlaves.size() + " slaves.");
 
+		short[] slaves = new short[m_signedOnSlaves.size()];
+		for (int i = 0; i < slaves.length; i++) {
+			slaves[i] = m_signedOnSlaves.get(i);
+		}
+		taskPayload.setSalves(slaves);
+
 		task.notifyListenersExecutionStarts();
 
 		// send task to slaves
-		int numberOfSlavesOnExecution = 0;
-		m_executeBarrierIdentifier++;
-		for (Short slaveId : m_signedOnSlaves) {
+		short numberOfSlavesOnExecution = 0;
+		// avoid clashes with other compute groups, but still alter the flag on every next sync
+		m_executeBarrierIdentifier = (m_executeBarrierIdentifier + 1) % 2 + m_computeGroupId * 2;
+		for (int i = 0; i < slaves.length; i++) {
 			// set incremental slave id, 0 based
 			taskPayload.setSlaveId(numberOfSlavesOnExecution);
 			// pass barrier identifier for syncing after task along
-			ExecuteTaskRequest request = new ExecuteTaskRequest(slaveId, m_executeBarrierIdentifier % 2, taskPayload);
+			ExecuteTaskRequest request = new ExecuteTaskRequest(slaves[i], m_executeBarrierIdentifier, taskPayload);
 
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
 				m_logger.error(getClass(),
-						"Sending task to slave " + NodeID.toHexString(slaveId) + " failed: " + err);
+						"Sending task to slave " + NodeID.toHexString(slaves[i]) + " failed: " + err);
 				// remove slave from list
-				m_signedOnSlaves.remove(slaveId);
+				m_signedOnSlaves.remove(slaves[i]);
 				continue;
 			}
 
 			ExecuteTaskResponse response = (ExecuteTaskResponse) request.getResponse();
 			if (response.getStatusCode() != 0) {
 				// exclude slave from execution
-				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slaveId) + " response "
+				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slaves[i]) + " response "
 						+ response.getStatusCode() + " on execution of task " + task
 						+ " excluding from current execution");
 			} else {
@@ -246,24 +299,35 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 			}
 		}
 
-		taskPayload.setSlaveId(-1);
+		taskPayload.setSlaveId((short) -1);
 
 		m_logger.info(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
 
-		m_executionBarrier.execute(numberOfSlavesOnExecution, m_executeBarrierIdentifier % 2, -1);
+		m_executionBarrier.execute(numberOfSlavesOnExecution, m_executeBarrierIdentifier, -1);
 
 		m_logger.debug(getClass(),
 				"Syncing done.");
 
 		// grab return codes from barrier
 		ArrayList<Pair<Short, Long>> barrierData = m_executionBarrier.getBarrierData();
-		ArrayList<Pair<Short, Integer>> returnCodes = new ArrayList<Pair<Short, Integer>>(barrierData.size());
+		int[] returnCodes = new int[barrierData.size()];
+		short[] slaveIds = task.getPayload().getSlaveNodeIds();
+
+		// sort them to match the indices of the slave list
 		for (Pair<Short, Long> item : barrierData) {
-			returnCodes.add(new Pair<Short, Integer>(item.first(), (int) item.second().longValue()));
+			int slaveId = 0;
+			for (int i = 0; i < slaveIds.length; i++) {
+				if (item.first() == slaveIds[i]) {
+					slaveId = i;
+					break;
+				}
+			}
+
+			returnCodes[slaveId] = (int) item.second().longValue();
 		}
 
-		task.setTaskExecutionResults(returnCodes);
+		task.getPayload().setExecutionReturnCodes(returnCodes);
 		task.notifyListenersExecutionCompleted();
 
 		m_state = State.STATE_IDLE;
@@ -273,6 +337,9 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		m_logger.debug(getClass(), "Entering idle state");
 	}
 
+	/**
+	 * Error state. Entered if an error happened and we can't recover.
+	 */
 	private void stateErrorDie() {
 		m_logger.error(getClass(), "Master error state");
 		try {
@@ -280,6 +347,11 @@ public class ComputeMaster extends ComputeMSBase implements MessageReceiver {
 		} catch (final InterruptedException e) {}
 	}
 
+	/**
+	 * Handle a SlaveJoinRequest
+	 * @param p_message
+	 *            SlaveJoinRequest
+	 */
 	private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {
 		if (m_joinLock.tryLock()) {
 			if (m_signedOnSlaves.contains(p_message.getSource())) {

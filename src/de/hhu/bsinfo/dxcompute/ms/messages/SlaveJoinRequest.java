@@ -3,9 +3,13 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import de.hhu.bsinfo.menet.AbstractRequest;
 
+/**
+ * Request of the slave to a master to join a compute group.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
 public class SlaveJoinRequest extends AbstractRequest {
 	/**
-	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
+	 * Creates an instance of SlaveJoinRequest.
 	 * This constructor is used when receiving this message.
 	 */
 	public SlaveJoinRequest() {
@@ -13,7 +17,7 @@ public class SlaveJoinRequest extends AbstractRequest {
 	}
 
 	/**
-	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
+	 * Creates an instance of SlaveJoinRequest.
 	 * This constructor is used when sending this message.
 	 * @param p_destination
 	 *            the destination node id.

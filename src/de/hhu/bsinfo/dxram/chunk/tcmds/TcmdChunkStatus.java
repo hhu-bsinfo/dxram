@@ -69,14 +69,31 @@ public class TcmdChunkStatus extends AbstractTerminalCommand {
 
 		System.out.println("Chunk service/memory status of " + NodeID.toHexString(nid) + ":");
 		if (divisor == 1) {
-			System.out.println("Free memory (" + sizeType + "): " + status.getFreeMemory() / divisor);
-			System.out.println("Total memory (" + sizeType + "): " + status.getTotalMemory() / divisor);
+			System.out.println("Free memory (" + sizeType + "): " + status.getFreeMemory());
+			System.out.println("Total memory (" + sizeType + "): " + status.getTotalMemory());
+			System.out.println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory());
+
+			System.out.println(
+					"Total chunk payload memory (" + sizeType + "): " + status.getTotalChunkPayloadMemory());
+
+			System.out.println(
+					"Total CID tables memory (NID table with 327687) (" + sizeType + "): "
+							+ status.getTotalMemoryCIDTables());
 		} else {
 			System.out.println("Free memory (" + sizeType + "): " + status.getFreeMemory() / (double) divisor);
 			System.out.println("Total memory (" + sizeType + "): " + status.getTotalMemory() / (double) divisor);
+			System.out.println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory() / divisor);
+			System.out.println(
+					"Total chunk payload memory (" + sizeType + "): "
+							+ status.getTotalChunkPayloadMemory() / (double) divisor);
+			System.out.println(
+					"Total CID tables memory (NID table with 327687) (" + sizeType + "): "
+							+ status.getTotalMemoryCIDTables() / (double) divisor);
 		}
 
-		System.out.println("Number of active chunks: " + status.getNumberOfActiveChunks());
+		System.out.println("Num active memory blocks: " + status.getNumberOfActiveMemoryBlocks());
+		System.out.println("Num active chunks: " + status.getNumberOfActiveChunks());
+		System.out.println("Num CID tables (one is NID table): " + status.getCIDTableCount());
 
 		return true;
 	}

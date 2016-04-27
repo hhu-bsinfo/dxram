@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxgraph.load.oel;
 
 import java.io.BufferedReader;
@@ -5,53 +6,54 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex2;
+import de.hhu.bsinfo.dxgraph.data.Vertex;
 
-public class OrderedEdgeListTextFileThreadBuffering extends OrderedEdgeListThreadBuffering {
-	
+/**
+ * Implementation reading vertex data from a buffer filled by a separate file reading thread.
+ * The vertex data is stored in text format.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ */
+public class OrderedEdgeListTextFileThreadBuffering extends AbstractOrderedEdgeListThreadBuffering {
+
 	private BufferedReader m_file;
-	
-	public OrderedEdgeListTextFileThreadBuffering(final String p_path, final int p_bufferLimit)
-	{
+
+	/**
+	 * Constructor
+	 * @param p_path
+	 *            Filepath of the file to read.
+	 * @param p_bufferLimit
+	 *            Max vertices to keep buffered.
+	 */
+	public OrderedEdgeListTextFileThreadBuffering(final String p_path, final int p_bufferLimit) {
 		super(p_path, p_bufferLimit);
 	}
 
 	@Override
-	protected void setupFile(String p_path) {
+	protected void setupFile(final String p_path) {
 		try {
 			m_file = new BufferedReader(new FileReader(p_path));
-		} catch (FileNotFoundException e) {
+		} catch (final FileNotFoundException e) {
 			throw new RuntimeException("Cannot load graph from file '" + p_path + "', does not exist.");
 		}
 	}
 
 	@Override
-	protected long readTotalVertexCount(String p_path) {
-		// first line is the total vertex/line count of the file
-		try {
-			return Long.parseLong(m_file.readLine());
-		} catch (NumberFormatException | IOException e) {
-			throw new RuntimeException("Cannot read vertex count (first line) from file '" + p_path + ".");
-		}
-	}
+	protected Vertex readFileVertex() {
+		Vertex vertex = new Vertex();
 
-	@Override
-	protected Vertex2 readFileVertex() {
-		Vertex2 vertex = new Vertex2();
-		
 		String line;
 		try {
 			line = m_file.readLine();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			return null;
 		}
 		// eof
-		if (line == null)
+		if (line == null) {
 			return null;
-		
+		}
+
 		// empty line = vertex with no neighbours
-		if (!line.isEmpty())
-		{
+		if (!line.isEmpty()) {
 			String[] neighboursStr = line.split(",");
 			vertex.setNeighbourCount(neighboursStr.length);
 			long[] neighbours = vertex.getNeighbours();
@@ -59,7 +61,7 @@ public class OrderedEdgeListTextFileThreadBuffering extends OrderedEdgeListThrea
 				neighbours[i] = Long.parseLong(neighboursStr[i]);
 			}
 		}
-		
+
 		return vertex;
 	}
 }

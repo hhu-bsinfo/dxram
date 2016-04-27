@@ -25,7 +25,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	private int m_outgoingBufferSize;
 	private int m_numberOfBuffers;
 	private int m_flowControlWindowSize;
-	private int m_connectionTimeout = 200;
+	private int m_connectionTimeout;
 
 	private NIOInterface m_nioInterface;
 	private NIOSelector m_nioSelector;
@@ -125,7 +125,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		while (!ret.isConnected()) {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > m_connectionTimeout) {
-				NetworkHandler.getLogger().debug(getClass().getSimpleName(), "connection time-out");
+				NetworkHandler.getLogger().debug(getClass().getSimpleName(), "connection creation time-out. Interval "
+						+ m_connectionTimeout + "ms might be to small");
 
 				condLock.unlock();
 				throw new IOException("Timeout occurred");

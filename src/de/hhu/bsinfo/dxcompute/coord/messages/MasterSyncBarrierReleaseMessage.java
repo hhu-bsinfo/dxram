@@ -47,6 +47,10 @@ public class MasterSyncBarrierReleaseMessage extends AbstractMessage {
 		return m_syncToken;
 	}
 
+	/**
+	 * Custom data passed along with the message.
+	 * @return Data.
+	 */
 	public long getData() {
 		return m_data;
 	}

@@ -291,6 +291,8 @@ public class OverlayPeer implements MessageReceiver {
 				if (ret == 0) {
 					ret = ChunkID.INVALID_ID;
 				}
+
+				break;
 			}
 		} while (p_timeoutMs == -1 || System.currentTimeMillis() - start < p_timeoutMs);
 
@@ -709,14 +711,14 @@ public class OverlayPeer implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
-						incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
-						break;
-					case LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE:
-						incomingNameserviceUpdatePeerCachesMessage((NameserviceUpdatePeerCachesMessage) p_message);
-						break;
-					default:
-						break;
+				case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
+					incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
+					break;
+				case LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE:
+					incomingNameserviceUpdatePeerCachesMessage((NameserviceUpdatePeerCachesMessage) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}

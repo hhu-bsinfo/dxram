@@ -92,8 +92,21 @@ public class VersionsBuffer {
 	 * Returns the number of keys in VersionsHashTable
 	 * @return the number of keys in VersionsHashTable
 	 */
-	protected final int size() {
+	protected final int getEntryCount() {
 		return m_count;
+	}
+
+	/**
+	 * Returns the number of keys in VersionsHashTable
+	 * @return the number of keys in VersionsHashTable
+	 */
+	protected final long getFileSize() {
+		try {
+			return m_versionsFile.length();
+		} catch (final IOException e) {
+			m_logger.error(VersionsBuffer.class, "Could not read versions file's size: " + e);
+			return -1;
+		}
 	}
 
 	/**
