@@ -49,6 +49,7 @@ public class TerminalCommandListExec extends AbstractTerminalCommand {
 							"Error executing command from line " + lineCounter + " of file " + file + ", aborting.");
 					return true;
 				}
+				lineCounter++;
 			}
 		} catch (final IOException e) {
 			System.out.println("Error executing commands from file " + file + ": " + e.getMessage());
