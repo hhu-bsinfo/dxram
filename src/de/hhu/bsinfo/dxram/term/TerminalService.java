@@ -47,11 +47,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	 * Only returns if terminal was exited.
 	 */
 	public void loop() {
-		String command;
-		String[] arguments;
 		byte[] arr;
-		ArgumentListParser argsParser = new DefaultArgumentListParser();
-		ArgumentList argsList = new ArgumentList();
 
 		if (!m_boot.getNodeRole().equals(NodeRole.TERMINAL)) {
 			System.out.println("A Terminal node must have the NodeRole \"terminal\". Aborting");
@@ -78,79 +74,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			arr = JNIconsole
 					.readline("$" + NodeID.toHexString(m_boot.getNodeID()) + "> ");
 			if (arr != null) {
-				command = new String(arr, 0, arr.length);
-				arguments = command.split(" ");
-
-				if (arguments[0].equals("?")) {
-					if (arguments.length > 1) {
-						final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[1]);
-						if (c == null) {
-							System.out.println("error: unknown command");
-						} else {
-							printUsage(c);
-						}
-					} else {
-						System.out.println("Available commands:");
-						System.out.println(getAvailableCommands());
-					}
-				} else if (arguments[0].equals("!") || arguments[0].equals("!")) {
-					String cmdStr = null;
-					if (arguments.length < 2) {
-						System.out.println("Specify command for interactive mode:");
-						cmdStr = promptForUserInput("command");
-					} else {
-						cmdStr = arguments[1];
-					}
-					final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(cmdStr);
-					if (c == null) {
-						System.out.println("error: unknown command");
-					} else {
-						argsList.clear();
-						c.registerArguments(argsList);
-
-						// trigger interactive mode
-						System.out.println("Interactive argument input for '" + c.getName() + "':");
-						if (!interactiveArgumentMode(argsList)) {
-							System.out.println("error entering arguments");
-						}
-
-						if (!argsList.checkArguments()) {
-							printUsage(c);
-						} else {
-							c.setTerminalDelegate(this);
-							if (!c.execute(argsList)) {
-								printUsage(c);
-							}
-						}
-					}
-				} else {
-					if (arguments[0].isEmpty()) {
-						continue;
-					}
-
-					final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[0]);
-					if (c == null) {
-						System.out.println("error: unknown command");
-					} else {
-						argsList.clear();
-						c.registerArguments(argsList);
-						try {
-							argsParser.parseArguments(arguments, argsList);
-						} catch (final Exception e) {
-							System.out.println("error: parsing arguments. most likely invalid syntax");
-							continue;
-						}
-
-						if (!argsList.checkArguments()) {
-							printUsage(c);
-						} else {
-							c.setTerminalDelegate(this);
-							if (!c.execute(argsList)) {
-								printUsage(c);
-							}
-						}
-					}
-				}
+				String command = new String(arr, 0, arr.length);
+				executeTerminalCommand(command);
 			}
 		}
 
@@ -234,6 +159,95 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	@Override
 	public <T extends AbstractDXRAMService> T getDXRAMService(final Class<T> p_class) {
 		return getServiceAccessor().getService(p_class);
+	}
+
+	@Override
+	public boolean executeTerminalCommand(final String p_cmdString) {
+		String[] arguments;
+		ArgumentListParser argsParser = new DefaultArgumentListParser();
+		ArgumentList argsList = new ArgumentList();
+
+		arguments = p_cmdString.split(" ");
+
+		if (arguments[0].equals("?")) {
+			if (arguments.length > 1) {
+				final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[1]);
+				if (c == null) {
+					System.out.println("error: unknown command");
+					return false;
+				} else {
+					printUsage(c);
+				}
+			} else {
+				System.out.println("Available commands:");
+				System.out.println(getAvailableCommands());
+			}
+		} else if (arguments[0].equals("!") || arguments[0].equals("!")) {
+			String cmdStr = null;
+			if (arguments.length < 2) {
+				System.out.println("Specify command for interactive mode:");
+				cmdStr = promptForUserInput("command");
+			} else {
+				cmdStr = arguments[1];
+			}
+			final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(cmdStr);
+			if (c == null) {
+				System.out.println("error: unknown command");
+				return false;
+			} else {
+				argsList.clear();
+				c.registerArguments(argsList);
+
+				// trigger interactive mode
+				System.out.println("Interactive argument input for '" + c.getName() + "':");
+				if (!interactiveArgumentMode(argsList)) {
+					System.out.println("error entering arguments");
+				}
+
+				if (!argsList.checkArguments()) {
+					printUsage(c);
+					return false;
+				} else {
+					c.setTerminalDelegate(this);
+					if (!c.execute(argsList)) {
+						printUsage(c);
+						return false;
+					}
+				}
+			}
+		} else {
+			if (arguments[0].isEmpty()) {
+				return true;
+			}
+
+			final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[0]);
+			if (c == null) {
+				System.out.println("error: unknown command");
+				return false;
+			} else {
+				argsList.clear();
+				c.registerArguments(argsList);
+				try {
+					argsParser.parseArguments(arguments, argsList);
+				} catch (final Exception e) {
+					System.out.println("error: parsing arguments. most likely invalid syntax");
+					return false;
+				}
+
+				if (!argsList.checkArguments()) {
+					printUsage(c);
+					return false;
+				} else {
+					c.setTerminalDelegate(this);
+					if (!c.execute(argsList)) {
+						printUsage(c);
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
 	}
 
 	/**
