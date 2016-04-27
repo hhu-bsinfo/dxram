@@ -231,6 +231,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	public NodeRole getNodeRole(final short p_nodeID) {
 		NodeEntry entry = m_nodesConfiguration.getNode(p_nodeID);
 		if (entry == null) {
+			m_logger.warn(getClass(), "Could not find node role for " + NodeID.toHexString(p_nodeID));
 			return null;
 		}
 
@@ -243,6 +244,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		InetSocketAddress address;
 		// return "proper" invalid address if entry does not exist
 		if (entry == null) {
+			m_logger.warn(getClass(), "Could not find ip and port for node id " + NodeID.toHexString(p_nodeID));
 			address = new InetSocketAddress("255.255.255.255", 0xFFFF);
 		} else {
 			address = new InetSocketAddress(entry.getIP(), entry.getPort());
