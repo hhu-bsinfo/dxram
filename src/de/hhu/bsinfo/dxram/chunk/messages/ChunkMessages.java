@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 /**
@@ -19,6 +20,8 @@ public final class ChunkMessages {
 	public static final byte SUBTYPE_PUT_MESSAGE = 11;
 	public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST = 12;
 	public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE = 13;
+	public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST = 14;
+	public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE = 15;
 
 	/**
 	 * Static class
