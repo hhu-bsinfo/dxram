@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lock.AbstractLockService;
 import de.hhu.bsinfo.dxram.lock.AbstractLockService.ErrorCode;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -57,23 +58,24 @@ public class TcmdUnlock extends AbstractTerminalCommand {
 		} else {
 			if (lid != null) {
 				if (nid == null) {
-					System.out.println("error: missing nid for lid");
+					getTerminalDelegate().println("error: missing nid for lid", TerminalColor.RED);
 					return false;
 				}
 
 				// create cid
 				chunkId = ChunkID.getChunkID(nid, lid);
 			} else {
-				System.out.println("No cid or nid/lid specified.");
+				getTerminalDelegate().println("No cid or nid/lid specified.", TerminalColor.RED);
 				return false;
 			}
 		}
 
 		ErrorCode err = lockService.unlock(true, chunkId);
 		if (err != ErrorCode.SUCCESS) {
-			System.out.println("Error unlocking chunk " + ChunkID.toHexString(chunkId) + ": " + err);
+			getTerminalDelegate().println("Error unlocking chunk " + ChunkID.toHexString(chunkId) + ": " + err,
+					TerminalColor.RED);
 		} else {
-			System.out.println("Unlocked chunk " + ChunkID.toHexString(chunkId));
+			getTerminalDelegate().println("Unlocked chunk " + ChunkID.toHexString(chunkId));
 		}
 
 		return true;

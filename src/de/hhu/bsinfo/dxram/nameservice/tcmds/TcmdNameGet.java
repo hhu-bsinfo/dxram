@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.nameservice.tcmds;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -40,9 +41,10 @@ public class TcmdNameGet extends AbstractTerminalCommand {
 		long chunkId = nameservice.getChunkID(name, 2000);
 
 		if (chunkId == -1) {
-			System.out.println("Could not get name entry for " + name + ", does not exist");
+			getTerminalDelegate().println("Could not get name entry for " + name + ", does not exist",
+					TerminalColor.RED);
 		} else {
-			System.out.println(name + ": " + ChunkID.toHexString(chunkId));
+			getTerminalDelegate().println(name + ": " + ChunkID.toHexString(chunkId));
 		}
 
 		return true;

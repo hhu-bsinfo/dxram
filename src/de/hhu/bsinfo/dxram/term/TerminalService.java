@@ -157,6 +157,68 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	}
 
 	@Override
+	public void print(final String p_str) {
+		System.out.print(p_str);
+	}
+
+	@Override
+	public void print(final Object p_object) {
+		System.out.print(p_object);
+	}
+
+	@Override
+	public void print(final String p_str, final TerminalColor p_color) {
+		changeConsoleColor(p_color, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.print(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	@Override
+	public void print(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style) {
+		changeConsoleColor(p_color, p_backgroundColor, p_style);
+		System.out.print(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	@Override
+	public void println() {
+		System.out.println();
+	}
+
+	@Override
+	public void println(final String p_str) {
+		System.out.println(p_str);
+	}
+
+	@Override
+	public void println(final Object p_object) {
+		System.out.println(p_object);
+	}
+
+	@Override
+	public void println(final String p_str, final TerminalColor p_color) {
+		changeConsoleColor(p_color, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.println(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	@Override
+	public void println(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style) {
+		changeConsoleColor(p_color, p_backgroundColor, p_style);
+		System.out.println(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	@Override
+	public void clear() {
+		// ANSI escape codes (clear screen, move cursor to first row and first column)
+		System.out.print("\033[H\033[2J");
+		System.out.flush();
+	}
+
+	@Override
 	public <T extends AbstractDXRAMService> T getDXRAMService(final Class<T> p_class) {
 		return getServiceAccessor().getService(p_class);
 	}
@@ -318,5 +380,26 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		}
 
 		return true;
+	}
+
+	/**
+	 * Change the color of stdout.
+	 * @param p_color
+	 *            Text color.
+	 * @param p_backgroundColor
+	 *            Shell background color
+	 * @param p_style
+	 *            Text style.
+	 */
+	private void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style) {
+		if (p_backgroundColor != TerminalColor.DEFAULT) {
+			System.out.printf("\033[%d;%d;%dm", p_style.ordinal(), p_color.ordinal() + 30,
+					p_backgroundColor.ordinal() + 40);
+		} else if (p_backgroundColor == TerminalColor.DEFAULT && p_color != TerminalColor.DEFAULT) {
+			System.out.printf("\033[%d;%dm", p_style.ordinal(), p_color.ordinal() + 30);
+		} else {
+			System.out.printf("\033[%dm", p_style.ordinal());
+		}
 	}
 }

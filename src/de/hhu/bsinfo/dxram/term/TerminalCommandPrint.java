@@ -30,7 +30,7 @@ public class TerminalCommandPrint extends AbstractTerminalCommand {
 	@Override
 	public boolean execute(final ArgumentList p_arguments) {
 		String msg = p_arguments.getArgumentValue(MS_ARG_MSG, String.class);
-		System.out.println(msg);
+		getTerminalDelegate().println(msg);
 		return true;
 	}
 

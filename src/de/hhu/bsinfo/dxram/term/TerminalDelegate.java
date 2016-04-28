@@ -29,6 +29,90 @@ public interface TerminalDelegate {
 	String promptForUserInput(final String p_header);
 
 	/**
+	 * Print text to the terminal.
+	 * @param p_str
+	 *            String to print.
+	 */
+	void print(final String p_str);
+
+	/**
+	 * Print an object to the terminal.
+	 * @param p_object
+	 *            Object to print.
+	 */
+	void print(final Object p_object);
+
+	/**
+	 * Print colored text.
+	 * @param p_str
+	 *            Text to print.
+	 * @param p_color
+	 *            Color for the text.
+	 */
+	void print(final String p_str, final TerminalColor p_color);
+
+	/**
+	 * Print colored text with different style and colored background.
+	 * @param p_str
+	 *            Text to print
+	 * @param p_color
+	 *            Color of the text
+	 * @param p_backgroundColor
+	 *            Background color of the terminal
+	 * @param p_style
+	 *            Style of the text.
+	 */
+	void print(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style);
+
+	/**
+	 * Print a new line to the terminal
+	 */
+	void println();
+
+	/**
+	 * Print a line to the terminal.
+	 * @param p_str
+	 *            String to print.
+	 */
+	void println(final String p_str);
+
+	/**
+	 * Print an object to the terminal.
+	 * @param p_object
+	 *            Object to print.
+	 */
+	void println(final Object p_object);
+
+	/**
+	 * Print colored text.
+	 * @param p_str
+	 *            Text to print.
+	 * @param p_color
+	 *            Color for the text.
+	 */
+	void println(final String p_str, final TerminalColor p_color);
+
+	/**
+	 * Print colored text with different style and colored background.
+	 * @param p_str
+	 *            Text to print
+	 * @param p_color
+	 *            Color of the text
+	 * @param p_backgroundColor
+	 *            Background color of the terminal
+	 * @param p_style
+	 *            Style of the text.
+	 */
+	void println(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style);
+
+	/**
+	 * Clear the terminal screen.
+	 */
+	void clear();
+
+	/**
 	 * Get a service from the DXRAM engine.
 	 * @param <T>
 	 *            Class extending DXRAM service

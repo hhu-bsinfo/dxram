@@ -35,7 +35,7 @@ public class TcmdMSTaskList extends AbstractTerminalCommand {
 	@Override
 	public boolean execute(final ArgumentList p_arguments) {
 		Map<Integer, Class<? extends AbstractTaskPayload>> map = AbstractTaskPayload.getRegisteredTaskPayloadClasses();
-		System.out.println("Registered task payload classes (" + map.size() + "): ");
+		getTerminalDelegate().println("Registered task payload classes (" + map.size() + "): ");
 
 		// sort the list by tid and stid
 		List<Map.Entry<Integer, Class<? extends AbstractTaskPayload>>> list =
@@ -55,8 +55,9 @@ public class TcmdMSTaskList extends AbstractTerminalCommand {
 		});
 
 		for (Entry<Integer, Class<? extends AbstractTaskPayload>> entry : list) {
-			System.out.println(entry.getValue().getSimpleName() + ": " + (entry.getKey() >> 16 & 0xFFFF) + ", "
-					+ (entry.getKey() & 0xFFFF));
+			getTerminalDelegate()
+					.println(entry.getValue().getSimpleName() + ": " + (entry.getKey() >> 16 & 0xFFFF) + ", "
+							+ (entry.getKey() & 0xFFFF));
 		}
 
 		return true;

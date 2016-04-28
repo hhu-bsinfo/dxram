@@ -13,6 +13,8 @@ import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskListener;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
+import de.hhu.bsinfo.dxram.term.TerminalStyle;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -23,6 +25,11 @@ import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoader;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLLoaderFile;
 import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
 
+/**
+ * Terminal command to read a list of tasks from file, create task payloads and pass them to a compute group for
+ * execution.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 27.04.16
+ */
 public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements TaskListener {
 
 	private static final Argument MS_ARG_CGID =
@@ -72,32 +79,44 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 			long taskId = computeService.submitTask(task, cgid);
 			if (taskId == -1) {
-				System.out.println("ERR: Submitting task " + task + " to compute group " + cgid + " failed.");
+				getTerminalDelegate().println("ERR: Submitting task " + task + " to compute group " + cgid + " failed.",
+						TerminalColor.RED);
 				return true;
 			}
 		}
 
-		System.out.println("Submitted " + taskPayloads.size() + " to cgid " + cgid);
+		getTerminalDelegate().println("Submitted " + taskPayloads.size() + " to cgid " + cgid);
 
 		return true;
 	}
 
 	@Override
 	public void taskBeforeExecution(final Task p_task) {
-		System.out.println("ComputeTask: Starting execution " + p_task);
+		getTerminalDelegate().println("ComputeTask: Starting execution " + p_task);
 	}
 
 	@Override
 	public void taskCompleted(final Task p_task) {
-		System.out.println("ComputeTask: Finished execution " + p_task);
-		System.out.println("Return codes of slave nodes: ");
+		getTerminalDelegate().println("ComputeTask: Finished execution " + p_task);
+		getTerminalDelegate().println("Return codes of slave nodes: ");
 		int[] results = p_task.getExecutionReturnCodes();
 		short[] slaves = p_task.getSlaveNodeIdsExecutingTask();
 		for (int i = 0; i < results.length; i++) {
-			System.out.println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
+			if (results[i] != 0) {
+				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i],
+						TerminalColor.YELLOW, TerminalColor.RED, TerminalStyle.NORMAL);
+			} else {
+				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
+			}
 		}
 	}
 
+	/**
+	 * Load a list of tasks from a file (.ctask).
+	 * @param p_file
+	 *            Task list file
+	 * @return Configuration object if successful, null otherwise.
+	 */
 	private Configuration loadTaskList(final String p_file) {
 		Configuration taskList = new Configuration("TaskList");
 		ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_file);
@@ -108,10 +127,11 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 		} catch (final ConfigurationException e) {
 			// check if file exists -> save default config later
 			if (new File(p_file).exists()) {
-				System.out.println("Parsing task list " + p_file + " failed.");
+				getTerminalDelegate().println("Parsing task list " + p_file + " failed.", TerminalColor.RED);
 				return null;
 			} else {
-				System.out.println("Could not parse task list " + p_file + " file not found.");
+				getTerminalDelegate().println("Could not parse task list " + p_file + " file not found.",
+						TerminalColor.RED);
 				return null;
 			}
 		}
@@ -119,6 +139,12 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 		return taskList;
 	}
 
+	/**
+	 * Parse the configuration file containing the task list.
+	 * @param p_taskList
+	 *            Task list to parse.
+	 * @return List of task payload objects created from the provided list.
+	 */
 	private ArrayList<AbstractTaskPayload> parseTaskList(final Configuration p_taskList) {
 		ArrayList<AbstractTaskPayload> taskList = new ArrayList<AbstractTaskPayload>();
 
@@ -162,8 +188,9 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			try {
 				taskPayload = AbstractTaskPayload.createInstance(tid, stid);
 			} catch (final RuntimeException e) {
-				System.out
-						.println("Cannot create task payload with tid " + tid + ", stid " + stid + ", not registered.");
+				getTerminalDelegate().println(
+						"Cannot create task payload with tid " + tid + ", stid " + stid + ", not registered.",
+						TerminalColor.RED);
 				continue;
 			}
 
@@ -177,8 +204,9 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 				String value =
 						p_taskList.getValue("/ComputeTask/" + argument.getKey(), tidEntry.getKey(), String.class);
 				if (value == null) {
-					System.out.println("Missing value for task id " + tidEntry.getValue() + " tid " + tid + ", stid "
-							+ stid + " for key " + argument.getKey());
+					getTerminalDelegate()
+							.println("Missing value for task id " + tidEntry.getValue() + " tid " + tid + ", stid "
+									+ stid + " for key " + argument.getKey(), TerminalColor.RED);
 					continue;
 				}
 
@@ -190,8 +218,9 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 				taskPayload.terminalCommandCallbackForArguments(taskPayloadArgumentsConfig);
 			} catch (final NullPointerException e) {
 				// happens if an argument was not provided (probably typo)
-				System.out.println("Parsing arguments of task with type id " + tid + " subtype id " + stid + " for key "
-						+ tidEntry.getKey() + " failed, missing or mistyped argument?");
+				getTerminalDelegate()
+						.println("Parsing arguments of task with type id " + tid + " subtype id " + stid + " for key "
+								+ tidEntry.getKey() + " failed, missing or mistyped argument?", TerminalColor.RED);
 			}
 			taskList.add(taskPayload);
 		}

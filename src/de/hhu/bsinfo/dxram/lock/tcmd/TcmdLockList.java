@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.lock.AbstractLockService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -51,13 +52,13 @@ public class TcmdLockList extends AbstractTerminalCommand {
 		ArrayList<Pair<Long, Short>> list = lockService.getLockedList(nid);
 
 		if (list == null) {
-			System.out.println("Getting list of locked chunks failed.");
+			getTerminalDelegate().println("Getting list of locked chunks failed.", TerminalColor.RED);
 			return true;
 		}
 
-		System.out.println("Locked chunks of " + NodeID.toHexString(nid) + "(" + list.size() + ":");
+		getTerminalDelegate().println("Locked chunks of " + NodeID.toHexString(nid) + "(" + list.size() + ":");
 		for (Pair<Long, Short> entry : list) {
-			System.out.println(entry.first() + ": " + entry.second());
+			getTerminalDelegate().println(entry.first() + ": " + entry.second());
 		}
 
 		return true;

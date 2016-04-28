@@ -64,7 +64,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		registerCommand(new TerminalCommandClear());
 		registerCommand(new TerminalCommandQuit());
 		registerCommand(new TerminalCommandPrint());
-		registerCommand(new TerminalCommandListExec());
+		registerCommand(new TerminalCommandTerminalScriptExec());
 
 		return true;
 	}

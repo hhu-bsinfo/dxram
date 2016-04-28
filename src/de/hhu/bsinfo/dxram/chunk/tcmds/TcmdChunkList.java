@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -47,18 +48,18 @@ public class TcmdChunkList extends AbstractTerminalCommand {
 		ArrayList<Long> chunkRanges = chunkService.getAllLocalChunkIDRanges(nid);
 
 		if (chunkRanges == null) {
-			System.out.println("Getting chunk ranges failed.");
+			getTerminalDelegate().println("Getting chunk ranges failed.", TerminalColor.RED);
 			return true;
 		}
 
-		System.out.println(
+		getTerminalDelegate().println(
 				"Locally created chunk id ranges of " + NodeID.toHexString(nid) + "(" + chunkRanges.size() / 2 + "):");
 		for (int i = 0; i < chunkRanges.size(); i++) {
 			long currRange = chunkRanges.get(i);
 			if (i % 2 == 0) {
-				System.out.print("[" + ChunkID.toHexString(currRange));
+				getTerminalDelegate().print("[" + ChunkID.toHexString(currRange));
 			} else {
-				System.out.println(", " + ChunkID.toHexString(currRange) + "]");
+				getTerminalDelegate().println(", " + ChunkID.toHexString(currRange) + "]");
 			}
 		}
 
@@ -66,19 +67,19 @@ public class TcmdChunkList extends AbstractTerminalCommand {
 			chunkRanges = chunkService.getAllMigratedChunkIDRanges(nid);
 
 			if (chunkRanges == null) {
-				System.out.println("Getting migrated chunk ranges failed.");
+				getTerminalDelegate().println("Getting migrated chunk ranges failed.", TerminalColor.RED);
 				return true;
 			}
 
-			System.out.println(
+			getTerminalDelegate().println(
 					"Migrated chunk id ranges of " + NodeID.toHexString(nid) + "(" + chunkRanges.size() / 2 + "):");
 
 			for (int i = 0; i < chunkRanges.size(); i++) {
 				long currRange = chunkRanges.get(i);
 				if (i % 2 == 0) {
-					System.out.print("[" + ChunkID.toHexString(currRange));
+					getTerminalDelegate().print("[" + ChunkID.toHexString(currRange));
 				} else {
-					System.out.println(", " + ChunkID.toHexString(currRange) + "]");
+					getTerminalDelegate().println(", " + ChunkID.toHexString(currRange) + "]");
 				}
 			}
 		}

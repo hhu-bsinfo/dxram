@@ -9,6 +9,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -77,21 +78,22 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 		} else {
 			if (lid != null) {
 				if (nid == null) {
-					System.out.println("error: missing nid for lid");
+					getTerminalDelegate().println("error: missing nid for lid", TerminalColor.RED);
 					return false;
 				}
 
 				// create cid
 				chunkId = ChunkID.getChunkID(nid, lid);
 			} else {
-				System.out.println("No cid or nid/lid specified.");
+				getTerminalDelegate().println("No cid or nid/lid specified.", TerminalColor.RED);
 				return false;
 			}
 		}
 
 		Pair<Integer, Chunk[]> chunks = chunkService.get(new long[] {chunkId});
 		if (chunks.first() == 0) {
-			System.out.println("Getting chunk " + ChunkID.toHexString(chunkId) + " failed.");
+			getTerminalDelegate().println("Getting chunk " + ChunkID.toHexString(chunkId) + " failed.",
+					TerminalColor.RED);
 			return true;
 		}
 		Chunk chunk = chunks.second()[0];
@@ -170,12 +172,12 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 				// that's fine, trunc data
 			}
 		} else {
-			System.out.println("error: Unsupported data type " + dataType);
+			getTerminalDelegate().println("error: Unsupported data type " + dataType, TerminalColor.RED);
 			return true;
 		}
 
-		System.out.println("Chunk data of " + ChunkID.toHexString(chunkId) + ":");
-		System.out.println(str);
+		getTerminalDelegate().println("Chunk data of " + ChunkID.toHexString(chunkId) + ":");
+		getTerminalDelegate().println(str);
 
 		return true;
 	}
