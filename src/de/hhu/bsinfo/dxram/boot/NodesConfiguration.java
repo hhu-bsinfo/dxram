@@ -26,7 +26,7 @@ public final class NodesConfiguration {
 	 * Creates an instance of NodesConfiguration
 	 */
 	public NodesConfiguration() {
-		m_nodes = new NodeEntry[MAX_NODE_ID];
+		m_nodes = new NodeEntry[MAX_NODE_ID + 1];
 		m_ownID = INVALID_NODE_ID;
 	}
 

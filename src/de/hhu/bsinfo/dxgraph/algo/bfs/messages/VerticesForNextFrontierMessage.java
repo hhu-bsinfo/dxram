@@ -51,8 +51,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_numOfVertices);
-
+		p_buffer.putInt(m_numOfVertices);
 		for (int i = 0; i < m_numOfVertices; i++) {
 			p_buffer.putLong(m_vertexIDs[i]);
 		}
@@ -60,9 +59,9 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		int numOfVertices = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
-
-		for (int i = 0; i < numOfVertices; i++) {
+		m_numOfVertices = p_buffer.getInt();
+		m_vertexIDs = new long[m_numOfVertices];
+		for (int i = 0; i < m_numOfVertices; i++) {
 			m_vertexIDs[i] = p_buffer.getLong();
 		}
 	}
@@ -71,6 +70,6 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 	protected final int getPayloadLength() {
 		int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
 
-		return size + m_numOfVertices * Long.BYTES;
+		return size + Integer.BYTES + m_numOfVertices * Long.BYTES;
 	}
 }

@@ -202,7 +202,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			// grab the values from the config
 			for (Argument argument : taskPayloadArguments.getArgumentMap().values()) {
 				String value =
-						p_taskList.getValue("/ComputeTask/" + argument.getKey(), tidEntry.getKey(), String.class);
+						p_taskList.getValue("/ComputeTask/" + argument.getKey(), tidEntry.getKey());
 				if (value == null) {
 					getTerminalDelegate()
 							.println("Missing value for task id " + tidEntry.getValue() + " tid " + tid + ", stid "
@@ -221,6 +221,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 				getTerminalDelegate()
 						.println("Parsing arguments of task with type id " + tid + " subtype id " + stid + " for key "
 								+ tidEntry.getKey() + " failed, missing or mistyped argument?", TerminalColor.RED);
+				continue;
 			}
 			taskList.add(taskPayload);
 		}

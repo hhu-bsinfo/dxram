@@ -67,7 +67,7 @@ public class BarrierSlave implements MessageReceiver {
 
 		m_logger.debug(getClass(),
 				"Sign on request to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
-						+ m_barrierIdentifer + "...");
+						+ Integer.toHexString(m_barrierIdentifer) + "...");
 
 		// request for sign on and retry until we succeed
 		do {
@@ -80,11 +80,11 @@ public class BarrierSlave implements MessageReceiver {
 					if (response.getStatusCode() == 1) {
 						m_logger.error(getClass(),
 								"Signed on to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
-										+ m_barrierIdentifer + " failed, invalid sync token");
+										+ Integer.toHexString(m_barrierIdentifer) + " failed, invalid sync token");
 					} else {
 						m_logger.debug(getClass(),
 								"Signed on to master " + NodeID.toHexString(p_masterNodeId) + " with identifier "
-										+ m_barrierIdentifer);
+										+ Integer.toHexString(m_barrierIdentifer));
 						break;
 					}
 				}
@@ -102,7 +102,8 @@ public class BarrierSlave implements MessageReceiver {
 		}
 
 		m_logger.debug(getClass(),
-				"Master barrier " + m_barrierIdentifer + " released, data received: " + m_barrierDataFromMaster);
+				"Master barrier " + Integer.toHexString(m_barrierIdentifer) + " released, data received: "
+						+ m_barrierDataFromMaster);
 
 		return true;
 	}

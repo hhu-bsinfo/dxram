@@ -655,8 +655,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			str += "Tasks queued: " + m_numTasksQueued + "\n";
 			str += "Tasks processed: " + m_tasksProcessed + "\n";
 			str += "Connected slaves(" + m_connectedSlaves.size() + "):\n";
-			for (short slave : m_connectedSlaves) {
-				str += NodeID.toHexString(slave) + "\n";
+			for (int i = 0; i < m_connectedSlaves.size(); i++) {
+				str += i + ": " + NodeID.toHexString(m_connectedSlaves.get(i));
+				if (m_connectedSlaves.size() > 0 && i < m_connectedSlaves.size() - 1) {
+					str += "\n";
+				}
 			}
 			return str;
 		}

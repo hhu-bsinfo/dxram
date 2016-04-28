@@ -77,7 +77,8 @@ public class BFSResult implements DataStructure {
 
 	@Override
 	public String toString() {
-		return ChunkID.toHexString(m_id) + "[m_rootVertexId " + m_rootVertexId + ", m_totalVisitedVertices "
-				+ m_totalVisitedVertices + ", " + m_totalBFSDepth + "]";
+		return ChunkID.toHexString(m_id) + "[m_rootVertexId " + ChunkID.toHexString(m_rootVertexId)
+				+ ", m_totalVisitedVertices "
+				+ m_totalVisitedVertices + ", total iteration depth " + m_totalBFSDepth + "]";
 	}
 }

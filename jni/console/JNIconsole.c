@@ -126,7 +126,10 @@ JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv
     
     temp = readline (prompt);
     
-    add_history (temp);
+	// don't add empty lines to history
+	if (temp[0] != '\0') {
+    	add_history (temp);
+	}
    
     
     int idx,len;

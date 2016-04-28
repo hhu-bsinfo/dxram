@@ -381,7 +381,8 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 				// remove slave
 				m_signedOnSlaves.remove(p_message.getSource());
 			} else {
-				m_logger.info(getClass(), "Slave " + NodeID.toHexString(p_message.getSource()) + " has joined");
+				m_logger.info(getClass(), "Slave (" + (m_signedOnSlaves.size() - 1) + ") "
+						+ NodeID.toHexString(p_message.getSource()) + " has joined");
 			}
 
 			m_joinLock.unlock();

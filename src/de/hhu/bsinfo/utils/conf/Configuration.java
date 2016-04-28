@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 public class Configuration {
 	public static final String KEY_SEQ_SEPARATOR = "/";
 
-	private String m_name = null;
+	private String m_name;
 	Map<String, Map<Integer, Object>> m_parameters = new HashMap<String, Map<Integer, Object>>();
 
 	public Configuration(final String p_name) {
@@ -40,16 +40,22 @@ public class Configuration {
 		return getValue(p_key, 0, p_type);
 	}
 
+	public String getValue(final String p_key) {
+		return getValue(p_key, 0);
+	}
+
 	public <T> T getValue(final String p_key, final int p_index, final Class<T> p_type) {
 		String key = genAndNormalizeKey(p_key);
 
 		Map<Integer, Object> map = m_parameters.get(key);
-		if (map == null)
+		if (map == null) {
 			return null;
+		}
 
 		Object val = map.get(p_index);
-		if (val == null)
+		if (val == null) {
 			return null;
+		}
 
 		// check datatype
 		if (!p_type.isInstance(val)) {
@@ -60,12 +66,29 @@ public class Configuration {
 		return p_type.cast(val);
 	}
 
+	public String getValue(final String p_key, final int p_index) {
+		String key = genAndNormalizeKey(p_key);
+
+		Map<Integer, Object> map = m_parameters.get(key);
+		if (map == null) {
+			return null;
+		}
+
+		Object val = map.get(p_index);
+		if (val == null) {
+			return null;
+		}
+
+		return val.toString();
+	}
+
 	public <T> Map<Integer, T> getValues(final String p_key, final Class<T> p_type) {
 		String key = genAndNormalizeKey(p_key);
 
 		Map<Integer, Object> map = m_parameters.get(key);
-		if (map == null)
+		if (map == null) {
 			return null;
+		}
 
 		Map<Integer, T> retMap = new HashMap<Integer, T>();
 		for (Entry<Integer, Object> entry : map.entrySet()) {
@@ -129,10 +152,12 @@ public class Configuration {
 	private String genAndNormalizeKey(final String p_key) {
 		String ret = p_key;
 
-		if (!p_key.startsWith(KEY_SEQ_SEPARATOR))
+		if (!p_key.startsWith(KEY_SEQ_SEPARATOR)) {
 			ret = KEY_SEQ_SEPARATOR + ret;
-		if (p_key.endsWith(KEY_SEQ_SEPARATOR))
+		}
+		if (p_key.endsWith(KEY_SEQ_SEPARATOR)) {
 			ret = ret.substring(0, ret.length() - 1);
+		}
 
 		return ret;
 	}

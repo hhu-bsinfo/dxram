@@ -68,14 +68,16 @@ public class BarrierMasterInternal implements MessageReceiver {
 
 		m_network.register(BarrierSlaveSignOnRequest.class, this);
 
-		m_logger.debug(getClass(), "Waiting for " + p_barrierCount + " slaves to signed on...");
+		m_logger.debug(getClass(), "Waiting for " + p_barrierCount + " slaves to signed on with identifier "
+				+ Integer.toHexString(m_barrierIdentifer) + "...");
 
 		// wait until all slaves have signed on
 		while (m_slavesSynced.size() < p_barrierCount) {
 			Thread.yield();
 		}
 
-		m_logger.debug(getClass(), p_barrierCount + " slaves have signed on.");
+		m_logger.debug(getClass(),
+				p_barrierCount + " slaves have signed on to " + Integer.toHexString(m_barrierIdentifer));
 
 		// release barrier
 		for (Pair<Short, Long> slaves : m_slavesSynced) {
@@ -90,7 +92,7 @@ public class BarrierMasterInternal implements MessageReceiver {
 			}
 		}
 
-		m_logger.debug(getClass(), "Barrier released.");
+		m_logger.debug(getClass(), "Barrier " + Integer.toHexString(m_barrierIdentifer) + " released.");
 
 		m_network.unregister(BarrierSlaveSignOnRequest.class, this);
 
