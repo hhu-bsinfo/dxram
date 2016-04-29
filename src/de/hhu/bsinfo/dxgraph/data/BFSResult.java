@@ -53,31 +53,35 @@ public class BFSResult implements DataStructure {
 
 	@Override
 	public int importObject(final Importer p_importer, final int p_size) {
-		// TODO Auto-generated method stub
-		return 0;
+		m_rootVertexId = p_importer.readLong();
+		m_totalVisitedVertices = p_importer.readLong();
+		m_totalBFSDepth = p_importer.readInt();
+
+		return sizeofObject();
 	}
 
 	@Override
 	public int sizeofObject() {
-		// TODO Auto-generated method stub
-		return 0;
+		return Long.BYTES * 2 + Integer.BYTES;
 	}
 
 	@Override
 	public boolean hasDynamicObjectSize() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public int exportObject(final Exporter p_exporter, final int p_size) {
-		// TODO Auto-generated method stub
-		return 0;
+		p_exporter.writeLong(m_rootVertexId);
+		p_exporter.writeLong(m_totalVisitedVertices);
+		p_exporter.writeInt(m_totalBFSDepth);
+
+		return sizeofObject();
 	}
 
 	@Override
 	public String toString() {
-		return ChunkID.toHexString(m_id) + "[m_rootVertexId " + ChunkID.toHexString(m_rootVertexId)
+		return "BFSResult " + ChunkID.toHexString(m_id) + " [m_rootVertexId " + ChunkID.toHexString(m_rootVertexId)
 				+ ", m_totalVisitedVertices "
 				+ m_totalVisitedVertices + ", total iteration depth " + m_totalBFSDepth + "]";
 	}

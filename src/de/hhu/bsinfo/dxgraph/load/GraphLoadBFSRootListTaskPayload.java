@@ -1,11 +1,6 @@
 
 package de.hhu.bsinfo.dxgraph.load;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
@@ -21,8 +16,14 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+
 /**
  * Task to load a list of root vertex ids for BFS entry points.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
@@ -45,8 +46,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the path where one or multiple partition index files are stored.
-	 * @param p_path
-	 *            Path where the files are located
+	 *
+	 * @param p_path Path where the files are located
 	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
@@ -160,8 +161,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Setup a root node list instance.
-	 * @param p_path
-	 *            Path with the root list.
+	 *
+	 * @param p_path Path with the root list.
 	 * @return OrderedEdgeListRoots instance giving access to the list found for this slave or null on error.
 	 */
 	private OrderedEdgeListRoots setupOrderedEdgeListRoots(final String p_path) {
@@ -217,10 +218,9 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Load the root list.
-	 * @param p_orderedEdgeRootList
-	 *            Root list to load.
-	 * @param p_graphPartitionIndex
-	 *            Index of all partitions to rebase vertex ids of all roots.
+	 *
+	 * @param p_orderedEdgeRootList Root list to load.
+	 * @param p_graphPartitionIndex Index of all partitions to rebase vertex ids of all roots.
 	 * @return Root list instance on success, null on error.
 	 */
 	private GraphRootList loadRootList(final OrderedEdgeListRoots p_orderedEdgeRootList,

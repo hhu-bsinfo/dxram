@@ -1,11 +1,6 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
-
 import de.hhu.bsinfo.dxcompute.coord.BarrierMaster;
 import de.hhu.bsinfo.dxcompute.coord.BarrierSlave;
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
@@ -38,7 +33,14 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
+
+	private static final String MS_BFS_RESULT_NAMESRV_IDENT = "BFR";
 
 	private static final Argument MS_ARG_BFS_ROOT =
 			new Argument("bfsRootNameserviceEntryName", null, false,
@@ -131,6 +133,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			return -4;
 		}
 
+		int bfsIteration = 0;
 		for (long root : rootList.getRoots()) {
 			m_loggerService.info(getClass(), "Executing BFS with root " + ChunkID.toHexString(root));
 
@@ -143,8 +146,22 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				master.shutdown();
 
 				BFSResult result = master.getBFSResult();
-				System.out.println("BFSResults: " + result);
-				// TODO write bfs results to chunk + nameservice entry
+
+				m_loggerService.info(getClass(), "Result of BFS iteration: " + result);
+
+				if (m_chunkService.create(result) != 1) {
+					m_loggerService.error(getClass(), "Creating chunk for bfs result failed.");
+					continue;
+				}
+
+				if (m_chunkService.put(result) != 1) {
+					m_loggerService.error(getClass(), "Putting data of bfs result failed.");
+					continue;
+				}
+
+				String resultName = MS_BFS_RESULT_NAMESRV_IDENT + bfsIteration;
+				m_nameserviceService.register(result, resultName);
+				m_loggerService.info(getClass(), "BFS results stored and registered: " + resultName);
 			} else {
 				// run as bfs slave, mater is the owner of the root node
 				BFSSlave slave = new BFSSlave(ChunkID.getCreatorID(root));
@@ -153,7 +170,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				slave.shutdown();
 			}
 
-			// TODO run for multiple roots and have option to run also for a single root
+			bfsIteration++;
+			// TODO limit this to one iteration for now. fix later to allow multiple iterations
 			break;
 		}
 
@@ -277,7 +295,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					visitedVertsIteration += m_threads[t].getVisitedCountLastRun();
 				}
 
-				m_loggerService.debug(getClass(),
+				m_loggerService.info(getClass(),
 						"BFS Level " + curBfsLevel + " finished with " + visitedVertsIteration + " visited vertices");
 
 				totalVisistedVertices += visitedVertsIteration;
@@ -323,7 +341,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			for (int i = 0; i < m_threads.length; i++) {
 				try {
 					m_threads[i].join();
-				} catch (final InterruptedException e) {}
+				} catch (final InterruptedException e) {
+				}
 			}
 
 			m_loggerService.debug(getClass(), "BFS shutdown");

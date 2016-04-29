@@ -10,6 +10,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the chunkcreate command which creates a chunk via the terminal
+ *
  * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 
@@ -48,7 +49,7 @@ public class TcmdChunkCreate extends AbstractTerminalCommand {
 		chunkIDs = chunkService.createRemote(nodeID, size);
 
 		if (chunkIDs != null) {
-			getTerminalDelegate().println("Created chunk of size " + size + ": 0x" + ChunkID.toHexString(chunkIDs[0]));
+			getTerminalDelegate().println("Created chunk of size " + size + ": " + ChunkID.toHexString(chunkIDs[0]));
 		} else {
 			getTerminalDelegate().println("Creating chunk failed.", TerminalColor.RED);
 		}

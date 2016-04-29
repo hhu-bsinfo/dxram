@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 
 /**
  * Main service for dxgraph.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphService extends AbstractDXRAMService {
