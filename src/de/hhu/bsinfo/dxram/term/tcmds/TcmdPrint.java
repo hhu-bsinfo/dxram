@@ -1,6 +1,7 @@
 
-package de.hhu.bsinfo.dxram.term;
+package de.hhu.bsinfo.dxram.term.tcmds;
 
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -8,7 +9,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
  * Terminal command to print a string to the console
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
-public class TerminalCommandPrint extends AbstractTerminalCommand {
+public class TcmdPrint extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_MSG = new Argument("msg", null, false, "Message to print");
 

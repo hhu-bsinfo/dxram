@@ -1,8 +1,6 @@
 
 package de.hhu.bsinfo.dxram.boot.tcmds;
 
-import java.util.List;
-
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -10,8 +8,11 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
+import java.util.List;
+
 /**
  * List all available nodes
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.04.16
  */
 public class TcmdNodeList extends AbstractTerminalCommand {

@@ -1,25 +1,29 @@
 
-package de.hhu.bsinfo.dxram.term;
+package de.hhu.bsinfo.dxram.term.tcmds;
+
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-
 /**
  * Execute terminal commands by reading them from a file (for automated testing).
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 27.04.16
  */
-public class TerminalCommandTerminalScriptExec extends AbstractTerminalCommand {
+public class TcmdScriptExec extends AbstractTerminalCommand {
 	private static final Argument MS_ARG_FILE =
 			new Argument("file", null, false, ".dsh script file to read and execute");
 
 	/**
 	 * Constructor
 	 */
-	public TerminalCommandTerminalScriptExec() {}
+	public TcmdScriptExec() {
+	}
 
 	@Override
 	public String getName() {

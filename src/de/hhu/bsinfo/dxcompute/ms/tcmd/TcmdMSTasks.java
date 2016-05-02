@@ -1,25 +1,22 @@
 
 package de.hhu.bsinfo.dxcompute.ms.tcmd;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
+import java.util.*;
+import java.util.Map.Entry;
+
 /**
  * Terminal command to get a list of registered tasks allowed for submission.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class TcmdMSTaskList extends AbstractTerminalCommand {
+public class TcmdMSTasks extends AbstractTerminalCommand {
 	@Override
 	public String getName() {
-		return "comptasklist";
+		return "comptasks";
 	}
 
 	@Override

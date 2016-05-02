@@ -14,6 +14,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Terminal command to submit a task to a compute group.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskListener {

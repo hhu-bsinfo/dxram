@@ -1,27 +1,28 @@
 
-package de.hhu.bsinfo.dxram.term;
+package de.hhu.bsinfo.dxram.term.tcmds;
 
+import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
- * Terminal command to quit/shutdown the terminal.
+ * Terminal command to clear the console.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
-public class TerminalCommandQuit extends AbstractTerminalCommand {
+public class TcmdClear extends AbstractTerminalCommand {
 
 	/**
 	 * Constructor
 	 */
-	public TerminalCommandQuit() {}
+	public TcmdClear() {}
 
 	@Override
 	public String getName() {
-		return "quit";
+		return "clear";
 	}
 
 	@Override
 	public String getDescription() {
-		return "Quit console and shutdown node.";
+		return "Clears the console.";
 	}
 
 	@Override
@@ -29,11 +30,7 @@ public class TerminalCommandQuit extends AbstractTerminalCommand {
 
 	@Override
 	public boolean execute(final ArgumentList p_arguments) {
-		if (getTerminalDelegate().areYouSure()) {
-			getTerminalDelegate().exitTerminal();
-		}
-
+		getTerminalDelegate().clear();
 		return true;
 	}
-
 }
