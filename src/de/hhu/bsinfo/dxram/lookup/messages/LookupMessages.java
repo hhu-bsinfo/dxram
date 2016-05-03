@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 /**
  * Type and list of subtypes for all lookup messages
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public final class LookupMessages {
@@ -46,8 +47,16 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 34;
 	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 35;
 
+	public static final byte SUBTYPE_BARRIER_ALLOC_REQUEST = 36;
+	public static final byte SUBTYPE_BARRIER_ALLOC_RESPONSE = 37;
+	public static final byte SUBTYPE_BARRIER_FREE_MESSAGE = 38;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_REQUEST = 39;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_RESPONSE = 40;
+	public static final byte SUBTYPE_BARRIER_RELEASE_MESSAGE = 41;
+
 	/**
 	 * Hidden constructor
 	 */
-	private LookupMessages() {}
+	private LookupMessages() {
+	}
 }
