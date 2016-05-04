@@ -8,12 +8,12 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.eval.EvaluationTable;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.main.AbstractMain;
-
 import sun.misc.Unsafe;
 
 /**
  * Benchmark the JNINativeMemory implementation compiled with various
  * compilers and optimization levels and compare it against Java's Unsafe class.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class NativeMemoryBenchmark extends AbstractMain {
@@ -33,8 +33,8 @@ public class NativeMemoryBenchmark extends AbstractMain {
 
 	/**
 	 * Java main entry point.
-	 * @param p_args
-	 *            Main arguments.
+	 *
+	 * @param p_args Main arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new NativeMemoryBenchmark();
@@ -58,10 +58,9 @@ public class NativeMemoryBenchmark extends AbstractMain {
 
 	/**
 	 * Execute evaluation.
-	 * @param p_numRuns
-	 *            Number of runs to execute for each implementation.
-	 * @param p_pathJniNativeMemory
-	 *            Path to folder with all compiled JNINativeLibraries
+	 *
+	 * @param p_numRuns             Number of runs to execute for each implementation.
+	 * @param p_pathJniNativeMemory Path to folder with all compiled JNINativeLibraries
 	 */
 	private void mainEval(final int p_numRuns, final String p_pathJniNativeMemory) {
 		if (p_pathJniNativeMemory.endsWith(".so") || p_pathJniNativeMemory.endsWith(".dylib")) {
@@ -111,8 +110,8 @@ public class NativeMemoryBenchmark extends AbstractMain {
 
 	/**
 	 * Create the table for measured data
-	 * @param p_singleLibrary
-	 *            Name of library for the table entry
+	 *
+	 * @param p_singleLibrary Name of library for the table entry
 	 */
 	private void prepareTableEval(final String p_singleLibrary) {
 		if (p_singleLibrary == null) {
@@ -149,10 +148,9 @@ public class NativeMemoryBenchmark extends AbstractMain {
 
 	/**
 	 * Execute the benchmark with Java's Unsafe
-	 * @param p_numRuns
-	 *            Number of runs to execute.
-	 * @param p_rowName
-	 *            Name of the row in the table to put the data into.
+	 *
+	 * @param p_numRuns Number of runs to execute.
+	 * @param p_rowName Name of the row in the table to put the data into.
 	 */
 	private void runUnsafe(final int p_numRuns, final String p_rowName) {
 		Unsafe unsafe = UnsafeHandler.getInstance().getUnsafe();
@@ -214,10 +212,9 @@ public class NativeMemoryBenchmark extends AbstractMain {
 
 	/**
 	 * Execute the benchmark with a JNINativeMemory implementation.
-	 * @param p_numRuns
-	 *            Number of runs to execute.
-	 * @param p_rowName
-	 *            Name of the row in the table to put the data into.
+	 *
+	 * @param p_numRuns Number of runs to execute.
+	 * @param p_rowName Name of the row in the table to put the data into.
 	 */
 	private void runJNINativeMemory(final int p_numRuns, final String p_rowName) {
 		Stopwatch[] stopwatches = new Stopwatch[6];

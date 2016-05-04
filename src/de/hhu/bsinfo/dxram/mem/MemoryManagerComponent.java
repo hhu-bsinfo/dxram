@@ -1,9 +1,6 @@
 
 package de.hhu.bsinfo.dxram.mem;
 
-import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -15,6 +12,9 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 
+import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
  * Interface to access the local heap. Features for migration
  * and other tasks are provided as well.
@@ -22,6 +22,7 @@ import de.hhu.bsinfo.soh.StorageUnsafeMemory;
  * This depends on the type (access or manage). Check the documentation
  * of each call to figure how to handle them. Make use of this by combining
  * multiple calls within a single critical section to avoid locking overhead.
+ *
  * @author Florian Klein
  *         13.02.2014
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
@@ -55,12 +56,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public MemoryManagerComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -151,6 +151,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Get some status information about the memory manager (free, total amount of memory).
+	 *
 	 * @return Status information.
 	 */
 	public Status getStatus() {
@@ -180,8 +181,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * The chunk ID 0 is reserved for a fixed index structure.
 	 * If the index structure is already created this will delete the old
 	 * one and allocate a new block of memory with the same id (0).
-	 * @param p_size
-	 *            Size for the index chunk.
+	 *
+	 * @param p_size Size for the index chunk.
 	 * @return On success the chunk id 0, -1 on failure.
 	 */
 	public long createIndex(final int p_size) {
@@ -226,12 +227,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Create a chunk with a specific chunk id (used for migration/recovery).
-	 * @param p_chunkId
-	 *            Chunk id to assign to the chunk.
-	 * @param p_size
-	 *            Size of the chunk.
+	 *
+	 * @param p_chunkId Chunk id to assign to the chunk.
+	 * @param p_size    Size of the chunk.
 	 * @return The chunk id if successful, -1 if another chunk with the same id already exists
-	 *         or allocation memory failed.
+	 * or allocation memory failed.
 	 */
 	public long create(final long p_chunkId, final int p_size) {
 		assert p_size > 0;
@@ -272,8 +272,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	/**
 	 * Create a new chunk.
 	 * This is a management call and has to be locked using lockManage().
-	 * @param p_size
-	 *            Size in bytes of the payload the chunk contains.
+	 *
+	 * @param p_size Size in bytes of the payload the chunk contains.
 	 * @return Address of the allocated chunk or -1 if creating the chunk failed.
 	 */
 	public long create(final int p_size) {
@@ -331,8 +331,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	/**
 	 * Get the size of a chunk (payload only, i.e. minus size for version).
 	 * This is an access call and has to be locked using lockAccess().
-	 * @param p_chunkID
-	 *            ChunkID of the chunk, the local id gets extracted, the node ID ignored.
+	 *
+	 * @param p_chunkID ChunkID of the chunk, the local id gets extracted, the node ID ignored.
 	 * @return Size of the chunk or -1 if the chunkID was invalid.
 	 */
 	public int getSize(final long p_chunkID) {
@@ -356,10 +356,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	/**
 	 * Get the payload of a chunk.
 	 * This is an access call and has to be locked using lockAccess().
-	 * @param p_dataStructure
-	 *            Data structure to write the data of its specified ID to.
+	 *
+	 * @param p_dataStructure Data structure to write the data of its specified ID to.
 	 * @return True if getting the chunk payload was successful, false if no chunk with the ID specified by the data
-	 *         structure exists.
+	 * structure exists.
 	 */
 	public MemoryErrorCodes get(final DataStructure p_dataStructure) {
 		long address;
@@ -393,10 +393,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	/**
 	 * Get a chunk when size is unknown.
 	 * This is an access call and has to be locked using lockAccess().
-	 * @param p_chunkID
-	 *            Data structure to write the data of its specified ID to.
+	 *
+	 * @param p_chunkID Data structure to write the data of its specified ID to.
 	 * @return A byte array with payload if getting the chunk payload was successful, null if no chunk with the ID
-	 *         exists.
+	 * exists.
 	 */
 	public byte[] get(final long p_chunkID) {
 		byte[] ret = null;
@@ -433,8 +433,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * This is an access call and has to be locked using lockAccess().
 	 * Note: lockAccess() does NOT take care of data races of the data to write.
 	 * The caller has to take care of proper locking to avoid consistency issue with his data.
-	 * @param p_dataStructure
-	 *            Data structure to put
+	 *
+	 * @param p_dataStructure Data structure to put
 	 * @return MemoryErrorCodes indicating success or failure
 	 */
 	public MemoryErrorCodes put(final DataStructure p_dataStructure) {
@@ -469,8 +469,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	/**
 	 * Removes a Chunk from the memory
 	 * This is a management call and has to be locked using lockManage().
-	 * @param p_chunkID
-	 *            the ChunkID of the Chunk
+	 *
+	 * @param p_chunkID the ChunkID of the Chunk
 	 * @return MemoryErrorCodes indicating success or failure
 	 */
 	public MemoryErrorCodes remove(final long p_chunkID) {
@@ -517,8 +517,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * Returns whether this Chunk is stored locally or not.
 	 * Only the LID is evaluated and checked. The NID is masked out.
 	 * This is an access call and has to be locked using lockAccess().
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return whether this Chunk is stored locally or not
 	 */
 	public boolean exists(final long p_chunkID) {
@@ -538,8 +538,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns whether this Chunk was migrated here or not
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return whether this Chunk was migrated here or not
 	 */
 	public boolean dataWasMigrated(final long p_chunkID) {
@@ -548,8 +548,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Removes the ChunkID of a deleted Chunk that was migrated
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 */
 	public void prepareChunkIDForReuse(final long p_chunkID) {
 		NodeRole role = m_boot.getNodeRole();
@@ -563,6 +563,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns the ChunkIDs of all migrated Chunks
+	 *
 	 * @return the ChunkIDs of all migrated Chunks
 	 */
 	public ArrayList<Long> getCIDOfAllMigratedChunks() {
@@ -577,6 +578,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
+	 *
 	 * @return the ChunkID ranges in an ArrayList
 	 */
 	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
@@ -622,6 +624,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Object containing status information about the memory.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
 	public static class Status {
@@ -643,6 +646,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the total amount of memory in bytes.
+		 *
 		 * @return Total amount of memory in bytes.
 		 */
 		public long getTotalMemory() {
@@ -651,6 +655,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the total amount of free memory in bytes.
+		 *
 		 * @return Amount of free memory in bytes.
 		 */
 		public long getFreeMemory() {
@@ -659,6 +664,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the total amount of allocated memory used for payload/chunk data.
+		 *
 		 * @return Amount of memory allocated for payload in bytes.
 		 */
 		public long getTotalPayloadMemory() {
@@ -667,6 +673,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the number of active/allocated memory blocks.
+		 *
 		 * @return Number of active blocks.
 		 */
 		public long getNumberOfActiveMemoryBlocks() {
@@ -675,6 +682,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the number of currently allocated chunks.
+		 *
 		 * @return Number of currently allocated chunks.
 		 */
 		public long getNumberOfActiveChunks() {
@@ -683,6 +691,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the total amount of memory used for chunk payload.
+		 *
 		 * @return Total amount of memory in bytes usable for chunk payload.
 		 */
 		public long getTotalChunkMemory() {
@@ -691,6 +700,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the number of cid tables.
+		 *
 		 * @return Number of cid tables.
 		 */
 		public long getCIDTableCount() {
@@ -699,6 +709,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		/**
 		 * Get the amount of memory used by the cid tables.
+		 *
 		 * @return Memory used by cid tables (in bytes).
 		 */
 		public long getTotalMemoryCIDTables() {
