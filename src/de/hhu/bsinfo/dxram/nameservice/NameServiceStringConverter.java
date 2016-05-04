@@ -7,6 +7,7 @@ import java.util.Map;
 /**
  * Methods for converting Strings into integers
  * The character set is very limited. Make sure to use valid characters only to avoid undefined behaviour.
+ *
  * @author Kevin Beineke
  *         14.02.2014
  */
@@ -18,8 +19,8 @@ public final class NameServiceStringConverter {
 
 	/**
 	 * Creates an instance of StringConverter
-	 * @param p_nameserviceType
-	 *            Type of the string converter to use
+	 *
+	 * @param p_nameserviceType Type of the string converter to use
 	 */
 	public NameServiceStringConverter(final String p_nameserviceType) {
 		m_nameserviceType = p_nameserviceType;
@@ -166,11 +167,10 @@ public final class NameServiceStringConverter {
 	/**
 	 * Converts a String into an integer. String length is limited to 5 chars.
 	 * If the string is longer, all other characters are ignored.
-	 * @param p_name
-	 *            the String
+	 *
+	 * @param p_name the String
 	 * @return the integer
-	 * @throws IllegalArgumentException
-	 *             if name is too long (longer than 5 characters)
+	 * @throws IllegalArgumentException if name is too long (longer than 5 characters)
 	 */
 	public int convert(final String p_name) throws IllegalArgumentException {
 		int ret = 0;
@@ -180,7 +180,8 @@ public final class NameServiceStringConverter {
 		if (m_nameserviceType.equals("NAME")) {
 			if (p_name.length() > 5) {
 				throw new IllegalArgumentException(
-						"String is too long! Only five characters are allowed. For greater numbers set configuration to ID");
+						"String " + p_name +
+								" is too long! Only five characters are allowed. For greater numbers set configuration to ID");
 			}
 
 			chars = p_name.toCharArray();
@@ -197,8 +198,8 @@ public final class NameServiceStringConverter {
 
 	/**
 	 * Converts an integer index to a string. String length is is 5 chars.
-	 * @param p_index
-	 *            Index to convert
+	 *
+	 * @param p_index Index to convert
 	 * @return String representation
 	 */
 	public String convert(final int p_index) {
