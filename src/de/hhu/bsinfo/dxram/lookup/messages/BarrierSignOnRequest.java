@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
  */
 public class BarrierSignOnRequest extends AbstractRequest {
 	private int m_barrierId = -1;
+	private long m_customData = -1;
 
 	/**
 	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
@@ -26,11 +27,13 @@ public class BarrierSignOnRequest extends AbstractRequest {
 	 *
 	 * @param p_destination the destination node id.
 	 * @param p_barrierId   Id of the barrier to sign on
+	 * @param p_customData  Custom data to pass along with the sign on
 	 */
-	public BarrierSignOnRequest(final short p_destination, final int p_barrierId) {
+	public BarrierSignOnRequest(final short p_destination, final int p_barrierId, final long p_customData) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST);
 
 		m_barrierId = p_barrierId;
+		m_customData = p_customData;
 	}
 
 	/**
@@ -42,18 +45,29 @@ public class BarrierSignOnRequest extends AbstractRequest {
 		return m_barrierId;
 	}
 
+	/**
+	 * Get the custom data to be passed along with the sign on.
+	 *
+	 * @return Custom data for sign on
+	 */
+	public long getCustomData() {
+		return m_customData;
+	}
+
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_barrierId);
+		p_buffer.putLong(m_customData);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
 		m_barrierId = p_buffer.getInt();
+		m_customData = p_buffer.getLong();
 	}
 
 	@Override
 	protected final int getPayloadLength() {
-		return Integer.BYTES;
+		return Integer.BYTES + Long.BYTES;
 	}
 }

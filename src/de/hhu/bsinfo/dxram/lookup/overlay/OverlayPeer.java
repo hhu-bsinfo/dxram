@@ -577,33 +577,60 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
-	 * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
+	 * Alter the size of an existing barrier (i.e. you want to keep the barrier id but with a different size).
 	 *
-	 * @param p_barrierId Id of the barrier to sign on to.
-	 * @return True if sign on and releasing was successful, false on error.
+	 * @param p_barrierId Id of an allocated barrier to change the size of.
+	 * @param p_size      New size for the barrier.
+	 * @return True if changing size was successful, false otherwise.
 	 */
-	public boolean barrierSignOn(final int p_barrierId) {
+	public boolean barrierChangeSize(final int p_barrierId, final int p_size) {
 		if (p_barrierId == BarrierID.INVALID_ID) {
 			return false;
 		}
 
+		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
+		BarrierChangeSizeRequest request = new BarrierChangeSizeRequest(responsibleSuperpeer, p_barrierId, p_size);
+		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Sending barrier change size request to superpeer " + NodeID.toHexString(responsibleSuperpeer)
+							+ " failed: " + err);
+			return false;
+		}
+
+		BarrierChangeSizeResponse response = (BarrierChangeSizeResponse) request.getResponse();
+
+		return response.getStatusCode() == 0;
+	}
+
+	/**
+	 * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
+	 *
+	 * @param p_barrierId  Id of the barrier to sign on to.
+	 * @param p_customData Custom data to pass along with the sign on
+	 * @return A pair consisting of the list of signed on peers and their custom data passed along
+	 * with the sign ons, null on error
+	 */
+	public Pair<short[], long[]> barrierSignOn(final int p_barrierId, final long p_customData) {
+		if (p_barrierId == BarrierID.INVALID_ID) {
+			return null;
+		}
+
 		Semaphore waitForRelease = new Semaphore(0);
-		MessageReceiver msg = new MessageReceiver() {
-			@Override
-			public void onIncomingMessage(final AbstractMessage p_message) {
-				if (p_message != null) {
-					if (p_message.getType() == LookupMessages.TYPE) {
-						switch (p_message.getSubtype()) {
-							case LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE: {
-								BarrierReleaseMessage message = (BarrierReleaseMessage) p_message;
-								if (message.getBarrierId() == p_barrierId) {
-									waitForRelease.release();
-								}
-								break;
+		final BarrierReleaseMessage[] releaseMessage = {null};
+		MessageReceiver msg = p_message -> {
+			if (p_message != null) {
+				if (p_message.getType() == LookupMessages.TYPE) {
+					switch (p_message.getSubtype()) {
+						case LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE: {
+							releaseMessage[0] = (BarrierReleaseMessage) p_message;
+							if (releaseMessage[0].getBarrierId() == p_barrierId) {
+								waitForRelease.release();
 							}
-							default:
-								break;
+							break;
 						}
+						default:
+							break;
 					}
 				}
 			}
@@ -613,20 +640,20 @@ public class OverlayPeer implements MessageReceiver {
 		m_network.register(BarrierReleaseMessage.class, msg);
 
 		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
-		BarrierSignOnRequest request = new BarrierSignOnRequest(responsibleSuperpeer, p_barrierId);
+		BarrierSignOnRequest request = new BarrierSignOnRequest(responsibleSuperpeer, p_barrierId, p_customData);
 		NetworkErrorCodes err = m_network.sendSync(request);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(),
 					"Sign on barrier " + BarrierID.toHexString(p_barrierId) + " failed: " + err);
 			m_network.unregister(BarrierReleaseMessage.class, msg);
-			return false;
+			return null;
 		}
 
 		BarrierSignOnResponse response = (BarrierSignOnResponse) request.getResponse();
 		if (response.getBarrierId() != p_barrierId || response.getStatusCode() != 0) {
 			m_logger.error(getClass(), "Sign on barrier " + BarrierID.toHexString(p_barrierId) + " failed.");
 			m_network.unregister(BarrierReleaseMessage.class, msg);
-			return false;
+			return null;
 		}
 
 		try {
@@ -636,7 +663,7 @@ public class OverlayPeer implements MessageReceiver {
 
 		m_network.unregister(BarrierReleaseMessage.class, msg);
 
-		return true;
+		return new Pair<short[], long[]>(releaseMessage[0].getSignedOnPeers(), releaseMessage[0].getCustomData());
 	}
 
 	/**
@@ -907,6 +934,10 @@ public class OverlayPeer implements MessageReceiver {
 				BarrierGetStatusRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE,
 				BarrierGetStatusResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST,
+				BarrierChangeSizeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE,
+				BarrierChangeSizeResponse.class);
 	}
 
 	/**

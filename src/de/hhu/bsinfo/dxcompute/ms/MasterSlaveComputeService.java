@@ -8,6 +8,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -37,6 +38,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
 	private TerminalComponent m_terminal;
+	private LookupComponent m_lookup;
 
 	private AbstractComputeMSBase m_computeMSInstance;
 
@@ -283,6 +285,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_logger = getComponent(LoggerComponent.class);
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_terminal = getComponent(TerminalComponent.class);
+		m_lookup = getComponent(LookupComponent.class);
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
 				SubmitTaskRequest.class);
@@ -314,16 +317,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			case MASTER:
 				m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
 						m_network, m_logger,
-						m_nameservice, m_boot);
+						m_nameservice, m_boot, m_lookup);
 				break;
 			case SLAVE:
 				m_computeMSInstance =
 						new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
-								m_nameservice, m_boot);
+								m_nameservice, m_boot, m_lookup);
 				break;
 			case NONE:
 				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
-						m_nameservice, m_boot);
+						m_nameservice, m_boot, m_lookup);
 				break;
 			default:
 				assert 1 == 2;

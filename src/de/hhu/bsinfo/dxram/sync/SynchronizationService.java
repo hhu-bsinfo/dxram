@@ -3,11 +3,9 @@ package de.hhu.bsinfo.dxram.sync;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.sync.tcmds.TcmdBarrierAlloc;
-import de.hhu.bsinfo.dxram.sync.tcmds.TcmdBarrierFree;
-import de.hhu.bsinfo.dxram.sync.tcmds.TcmdBarrierSignOn;
-import de.hhu.bsinfo.dxram.sync.tcmds.TcmdBarrierStatus;
+import de.hhu.bsinfo.dxram.sync.tcmds.*;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
+import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Service providing mechanisms for synchronizing.
@@ -40,13 +38,26 @@ public class SynchronizationService extends AbstractDXRAMService {
 	}
 
 	/**
-	 * Sign on to a barrier, wait for other peers to sign on as well and for the barrier to get released.
+	 * Alter the size of an existing barrier (i.e. you want to keep the barrier id but with a different size).
 	 *
-	 * @param p_barrierId Id of the barrier to sign on to.
-	 * @return True if sign on and barrier release was successful, false on error.
+	 * @param p_barrierId Id of an allocated barrier to change the size of.
+	 * @param p_newSize   New size for the barrier.
+	 * @return True if changing size was successful, false otherwise.
 	 */
-	public boolean barrierSignOn(final int p_barrierId) {
-		return m_lookup.barrierSignOn(p_barrierId);
+	public boolean barrierChangeSize(final int p_barrierId, final int p_newSize) {
+		return m_lookup.barrierChangeSize(p_barrierId, p_newSize);
+	}
+
+	/**
+	 * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
+	 *
+	 * @param p_barrierId  Id of the barrier to sign on to.
+	 * @param p_customData Custom data to pass along with the sign on
+	 * @return A pair consisting of the list of signed on peers and their custom data passed along
+	 * with the sign ons, null on error
+	 */
+	public Pair<short[], long[]> barrierSignOn(final int p_barrierId, final long p_customData) {
+		return m_lookup.barrierSignOn(p_barrierId, p_customData);
 	}
 
 	/**
@@ -74,6 +85,7 @@ public class SynchronizationService extends AbstractDXRAMService {
 		m_terminal.registerCommand(new TcmdBarrierFree());
 		m_terminal.registerCommand(new TcmdBarrierSignOn());
 		m_terminal.registerCommand(new TcmdBarrierStatus());
+		m_terminal.registerCommand(new TcmdBarrierSize());
 
 		return true;
 	}

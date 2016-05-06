@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
  */
 public class BarrierGetStatusResponse extends AbstractResponse {
 	private int m_barrierId;
-	private short[] m_barrierStatus;
+	private short[] m_barrierStatus = new short[0];
 
 	/**
 	 * Creates an instance of BarrierGetStatusResponse.

@@ -1,8 +1,6 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
-import de.hhu.bsinfo.dxcompute.coord.BarrierMaster;
-import de.hhu.bsinfo.dxcompute.coord.BarrierSlave;
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
@@ -21,9 +19,11 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
+import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
+import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
@@ -34,7 +34,6 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -58,6 +57,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private NameserviceService m_nameserviceService;
 	private NetworkService m_networkService;
 	private BootService m_bootService;
+	private SynchronizationService m_synchronizationService;
 
 	private short m_nodeId = NodeID.INVALID_ID;
 	private GraphPartitionIndex m_graphPartitionIndex;
@@ -94,6 +94,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_nameserviceService = p_dxram.getService(NameserviceService.class);
 		m_networkService = p_dxram.getService(NetworkService.class);
 		m_bootService = p_dxram.getService(BootService.class);
+		m_synchronizationService = p_dxram.getService(SynchronizationService.class);
 
 		m_networkService.registerMessageType(BFSMessages.TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE,
 				VerticesForNextFrontierMessage.class);
@@ -228,9 +229,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	}
 
 	private abstract class AbstractBFSMS implements MessageReceiver {
-		protected static final int MS_BARRIER_IDENT_0 = 0xBF50;
-		protected static final int MS_BARRIER_IDENT_1 = 0xBF51;
-		protected static final int MS_BARRIER_IDENT_2 = 0xBF52;
+		protected static final String MS_BARRIER_IDENT_0 = "BF0";
+		protected static final String MS_BARRIER_IDENT_1 = "BF1";
+		protected static final String MS_BARRIER_IDENT_2 = "BF2";
+
+		protected int m_barrierId0 = BarrierID.INVALID_ID;
+		protected int m_barrierId1 = BarrierID.INVALID_ID;
+		protected int m_barrierId2 = BarrierID.INVALID_ID;
 
 		private FrontierList m_curFrontier;
 		private FrontierList m_nextFrontier;
@@ -380,18 +385,24 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	}
 
 	private class BFSMaster extends AbstractBFSMS {
-		private BarrierMaster m_barrier;
 		private BFSResult m_bfsResult;
 		private int m_slaveBarrierCount;
 		private boolean m_signalTermination;
 
 		public BFSMaster(final long p_bfsEntryNode) {
-			m_barrier = new BarrierMaster(m_networkService, m_loggerService);
-			m_bfsResult = new BFSResult();
-			m_bfsResult.setRootVertexID(p_bfsEntryNode);
-
 			// don't count ourselves
 			m_slaveBarrierCount = getSlaveNodeIds().length - 1;
+
+			m_barrierId0 = m_synchronizationService.barrierAllocate(m_slaveBarrierCount + 1);
+			m_barrierId1 = m_synchronizationService.barrierAllocate(m_slaveBarrierCount + 1);
+			m_barrierId2 = m_synchronizationService.barrierAllocate(m_slaveBarrierCount + 1);
+
+			m_nameserviceService.register(m_barrierId1, MS_BARRIER_IDENT_0 + getComputeGroupId());
+			m_nameserviceService.register(m_barrierId2, MS_BARRIER_IDENT_1 + getComputeGroupId());
+			m_nameserviceService.register(m_barrierId0, MS_BARRIER_IDENT_2 + getComputeGroupId());
+
+			m_bfsResult = new BFSResult();
+			m_bfsResult.setRootVertexID(p_bfsEntryNode);
 		}
 
 		public BFSResult getBFSResult() {
@@ -401,13 +412,14 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		@Override
 		protected void barrierSignalIterationComplete(final long p_verticesVisited) {
 
-			m_barrier.execute(m_slaveBarrierCount, MS_BARRIER_IDENT_0, -1);
-			ArrayList<Pair<Short, Long>> barrierData = m_barrier.getBarrierData();
+			Pair<short[], long[]> result = m_synchronizationService.barrierSignOn(m_barrierId0, -1);
 
 			long iterationVertsVisited = p_verticesVisited;
 			// results of other slaves of last iteration
-			for (Pair<Short, Long> data : barrierData) {
-				iterationVertsVisited += data.second();
+			for (long data : result.second()) {
+				if (data >= 0) {
+					iterationVertsVisited += data;
+				}
 			}
 
 			m_bfsResult.setTotalVisitedVertices(m_bfsResult.getTotalVisitedVertices() + iterationVertsVisited);
@@ -416,13 +428,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		@Override
 		protected void barrierSignalFrontierSwap(final long p_nextFrontierSize) {
-			m_barrier.execute(m_slaveBarrierCount, MS_BARRIER_IDENT_1, -1);
-			ArrayList<Pair<Short, Long>> barrierData = m_barrier.getBarrierData();
+			Pair<short[], long[]> result = m_synchronizationService.barrierSignOn(m_barrierId1, -1);
 
 			// check if all frontier sizes are 0 -> terminate bfs
 			boolean allFrontiersEmpty = true;
-			for (Pair<Short, Long> data : barrierData) {
-				if (data.second() > 0) {
+			for (long data : result.second()) {
+				if (data > 0) {
 					allFrontiersEmpty = false;
 					break;
 				}
@@ -436,35 +447,41 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		@Override
 		protected boolean barrierSignalTerminate() {
-			m_barrier.execute(m_slaveBarrierCount, MS_BARRIER_IDENT_2, m_signalTermination ? 1 : 0);
+			m_synchronizationService.barrierSignOn(m_barrierId1, m_signalTermination ? 1 : 0);
 
 			return m_signalTermination;
 		}
 	}
 
 	private class BFSSlave extends AbstractBFSMS {
-		private BarrierSlave m_barrier;
-		private short m_barrierMasterNodeID;
 
 		public BFSSlave(final short p_bfsMasterNodeID) {
-			m_barrier = new BarrierSlave(m_networkService, m_loggerService);
-			m_barrierMasterNodeID = p_bfsMasterNodeID;
+			m_barrierId0 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_0, -1) & 0xFFFFFFFF);
+			m_barrierId1 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_1, -1) & 0xFFFFFFFF);
+			m_barrierId2 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_2, -1) & 0xFFFFFFFF);
 		}
 
 		@Override
 		protected void barrierSignalIterationComplete(final long p_verticesVisited) {
-			m_barrier.execute(m_barrierMasterNodeID, MS_BARRIER_IDENT_0, p_verticesVisited);
+			m_synchronizationService.barrierSignOn(m_barrierId0, p_verticesVisited);
 		}
 
 		@Override
 		protected void barrierSignalFrontierSwap(final long p_nextFrontierSize) {
-			m_barrier.execute(m_barrierMasterNodeID, MS_BARRIER_IDENT_1, p_nextFrontierSize);
+			m_synchronizationService.barrierSignOn(m_barrierId1, p_nextFrontierSize);
 		}
 
 		@Override
 		protected boolean barrierSignalTerminate() {
-			m_barrier.execute(m_barrierMasterNodeID, MS_BARRIER_IDENT_2, -1);
-			return m_barrier.getBarrierData() > 0;
+			Pair<short[], long[]> result = m_synchronizationService.barrierSignOn(m_barrierId2, -1);
+			// look for signal terminate flag (0 or 1)
+			for (int i = 0; i < result.first().length; i++) {
+				if (result.second()[i] == 1) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 	}
 

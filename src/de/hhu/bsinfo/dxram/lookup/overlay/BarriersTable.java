@@ -12,6 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 class BarriersTable {
 	private short m_nodeId;
 
+	private long[][] m_barrierData;
 	private short[][] m_barrierState;
 	private ReentrantLock[] m_barrierLocks;
 	private int m_allocatedBarriersCount;
@@ -25,6 +26,7 @@ class BarriersTable {
 	 * @param p_nodeId         Node id of the superpeer this class is running on.
 	 */
 	BarriersTable(final int p_maxNumBarriers, final short p_nodeId) {
+		m_barrierData = new long[p_maxNumBarriers][];
 		m_barrierState = new short[p_maxNumBarriers][];
 		m_barrierLocks = new ReentrantLock[p_maxNumBarriers];
 		m_allocatedBarriersCount = 0;
@@ -50,6 +52,7 @@ class BarriersTable {
 		// find next available barrier
 		for (int i = 0; i < m_barrierState.length; i++) {
 			if (m_barrierState[i] == null) {
+				m_barrierData[i] = new long[p_size];
 				m_barrierState[i] = new short[p_size + 1];
 				m_barrierLocks[i] = new ReentrantLock(false);
 				m_barrierState[i][0] = 0;
@@ -100,6 +103,7 @@ class BarriersTable {
 		}
 
 		m_barrierLocks[id].lock();
+		m_barrierData[id] = null;
 		m_barrierState[id] = null;
 		m_barrierLocks[id].unlock();
 
@@ -112,13 +116,55 @@ class BarriersTable {
 	}
 
 	/**
+	 * Change the size of a barrier after being created (i.e. you want to keep the barrier id)
+	 *
+	 * @param p_barrierId Id of the barrier to change the size of.
+	 * @param p_newSize   The new size for the barrier.
+	 * @return True if chaning size was sucessful, false otherwise.
+	 */
+	boolean changeBarrierSize(final int p_barrierId, final int p_newSize) {
+		if (p_barrierId == BarrierID.INVALID_ID) {
+			return false;
+		}
+
+		if (p_newSize < 1) {
+			return false;
+		}
+
+		short nodeId = BarrierID.getOwnerID(p_barrierId);
+		int id = BarrierID.getBarrierID(p_barrierId);
+
+		if (nodeId != m_nodeId) {
+			return false;
+		}
+
+		m_barrierLocks[id].lock();
+		// cannot change size if barrier is currently in use
+		if (m_barrierState[id][0] != 0) {
+			m_barrierLocks[id].unlock();
+			return false;
+		}
+
+		m_barrierData[id] = new long[p_newSize];
+		m_barrierState[id] = new short[p_newSize + 1];
+		m_barrierState[id][0] = 0;
+		for (int i = 1; i < m_barrierState[id].length; i++) {
+			m_barrierState[id][i] = NodeID.INVALID_ID;
+		}
+
+		m_barrierLocks[id].unlock();
+		return false;
+	}
+
+	/**
 	 * Sign on to a barrier using a barrier id.
 	 *
-	 * @param p_barrierId Barrier id to sign on to.
-	 * @param p_nodeId    Id of the peer node signing on
+	 * @param p_barrierId   Barrier id to sign on to.
+	 * @param p_nodeId      Id of the peer node signing on
+	 * @param p_barrierData Additional custom data to pass along to the barrier
 	 * @return On success returns the number of peers left to sign on, -1 on failure
 	 */
-	int signOn(final int p_barrierId, final short p_nodeId) {
+	int signOn(final int p_barrierId, final short p_nodeId, final long p_barrierData) {
 		if (p_barrierId == BarrierID.INVALID_ID) {
 			return -1;
 		}
@@ -141,6 +187,7 @@ class BarriersTable {
 			return -1;
 		}
 
+		m_barrierData[id][(int) (m_barrierState[id][0] & 0xFFFF)] = p_barrierData;
 		m_barrierState[id][0]++;
 		m_barrierState[id][(int) (m_barrierState[id][0] & 0xFFFF)] = p_nodeId;
 
@@ -175,6 +222,7 @@ class BarriersTable {
 
 		m_barrierState[id][0] = 0;
 		for (int i = 1; i < m_barrierState[id].length; i++) {
+			m_barrierData[id][i - 1] = 0;
 			m_barrierState[id][i] = NodeID.INVALID_ID;
 		}
 
@@ -206,5 +254,30 @@ class BarriersTable {
 		}
 
 		return m_barrierState[id];
+	}
+
+	/**
+	 * Get the custom data of a barrier that is passed along on barrier sign ons.
+	 *
+	 * @param p_barrierId Id of the barrier to get the custom data of.
+	 * @return On success returns an array with the currently available custom data (sorted by order the peers logged in)
+	 */
+	long[] getBarrierCustomData(final int p_barrierId) {
+		if (p_barrierId == BarrierID.INVALID_ID) {
+			return null;
+		}
+
+		short nodeId = BarrierID.getOwnerID(p_barrierId);
+		int id = BarrierID.getBarrierID(p_barrierId);
+
+		if (nodeId != m_nodeId) {
+			return null;
+		}
+
+		if (id >= m_barrierState.length || m_barrierState[id] == null) {
+			return null;
+		}
+
+		return m_barrierData[id];
 	}
 }

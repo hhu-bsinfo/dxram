@@ -1642,7 +1642,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 */
 	private void incomingBarrierSignOnRequest(final BarrierSignOnRequest p_request) {
 		int barrierId = p_request.getBarrierId();
-		int res = m_barriersTable.signOn(barrierId, p_request.getSource());
+		int res = m_barriersTable.signOn(barrierId, p_request.getSource(), p_request.getCustomData());
 		BarrierSignOnResponse response = new BarrierSignOnResponse(p_request, (byte) (res >= 0 ? 0 : -1));
 		NetworkErrorCodes err = m_network.sendMessage(response);
 		if (err != NetworkErrorCodes.SUCCESS) {
@@ -1652,8 +1652,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 		// release all if this was the last sign on
 		if (res == 0) {
 			short[] signedOnPeers = m_barriersTable.getSignedOnPeers(barrierId);
+			long[] customData = m_barriersTable.getBarrierCustomData(barrierId);
 			for (int i = 1; i < signedOnPeers.length; i++) {
-				BarrierReleaseMessage message = new BarrierReleaseMessage(signedOnPeers[i], barrierId);
+				BarrierReleaseMessage message =
+						new BarrierReleaseMessage(signedOnPeers[i], barrierId, signedOnPeers, customData);
 				err = m_network.sendMessage(message);
 				if (err != NetworkErrorCodes.SUCCESS) {
 					m_logger.error(getClass(),
@@ -1677,6 +1679,26 @@ public class OverlaySuperpeer implements MessageReceiver {
 		NetworkErrorCodes err = m_network.sendMessage(response);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(), "Sending response to status request " + p_request + " failed: " + err);
+		}
+	}
+
+	/**
+	 * Handles an incoming BarrierChangeSizeRequest
+	 *
+	 * @param p_request the BarrierChangeSizeRequest
+	 */
+	private void incomingBarrierChangeSizeRequest(final BarrierChangeSizeRequest p_request) {
+		BarrierChangeSizeResponse response = new BarrierChangeSizeResponse(p_request);
+		if (!m_barriersTable.changeBarrierSize(p_request.getBarrierId(), p_request.getBarrierSize())) {
+			response.setStatusCode((byte) -1);
+		} else {
+			response.setStatusCode((byte) 0);
+		}
+
+		NetworkErrorCodes err = m_network.sendMessage(response);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Sending response for barrier change size request " + p_request + " failed: " + err);
 		}
 	}
 
@@ -1737,6 +1759,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 						break;
 					case LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST:
 						incomingBarrierGetStatusRequest((BarrierGetStatusRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST:
+						incomingBarrierChangeSizeRequest((BarrierChangeSizeRequest) p_message);
 						break;
 					default:
 						break;
@@ -1842,6 +1867,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 				BarrierGetStatusRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE,
 				BarrierGetStatusResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST,
+				BarrierChangeSizeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE,
+				BarrierChangeSizeResponse.class);
 	}
 
 	/**
@@ -1867,5 +1896,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.register(BarrierFreeMessage.class, this);
 		m_network.register(BarrierSignOnRequest.class, this);
 		m_network.register(BarrierGetStatusRequest.class, this);
+		m_network.register(BarrierChangeSizeRequest.class, this);
 	}
 }
