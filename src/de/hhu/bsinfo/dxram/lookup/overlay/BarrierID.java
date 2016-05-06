@@ -8,6 +8,10 @@ public class BarrierID {
 
 	public static final int MAX_ID = 65535;
 
+	public static int createBarrierId(final short p_nodeId, final int p_id) {
+		return (((int) (p_nodeId & 0xFFFF)) << 16) | (p_id & 0xFFFF);
+	}
+
 	public static short getOwnerID(final int p_barrierId) {
 		assert p_barrierId != INVALID_ID;
 		return (short) (p_barrierId >> 16);

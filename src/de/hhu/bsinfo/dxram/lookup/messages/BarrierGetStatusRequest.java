@@ -5,36 +5,36 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 import java.nio.ByteBuffer;
 
 /**
- * Request to sign on at a barrier
+ * Request the status of a barrier
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
-public class BarrierSignOnRequest extends AbstractRequest {
+public class BarrierGetStatusRequest extends AbstractRequest {
 	private int m_barrierId = -1;
 
 	/**
-	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
+	 * Creates an instance of BarrierGetStatusRequest.
 	 * This constructor is used when receiving this message.
 	 */
-	public BarrierSignOnRequest() {
+	public BarrierGetStatusRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
+	 * Creates an instance of BarrierGetStatusRequest.
 	 * This constructor is used when sending this message.
 	 *
 	 * @param p_destination the destination node id.
-	 * @param p_barrierId   Id of the barrier to sign on
+	 * @param p_barrierId   Id of the barrier to get the status of
 	 */
-	public BarrierSignOnRequest(final short p_destination, final int p_barrierId) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST);
+	public BarrierGetStatusRequest(final short p_destination, final int p_barrierId) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST);
 
 		m_barrierId = p_barrierId;
 	}
 
 	/**
-	 * Get the id of the barrier to sign on.
+	 * Get the id of the barrier to get the status of
 	 *
 	 * @return Barrier id
 	 */
