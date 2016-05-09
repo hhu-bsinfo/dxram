@@ -263,9 +263,10 @@ public class OverlayPeer implements MessageReceiver {
 				// 0 is considered invalid, but outside of this scope, we always consider -1 as invalid
 				if (ret == 0) {
 					ret = ChunkID.INVALID_ID;
+				} else {
+					// valid, we are done
+					break;
 				}
-
-				break;
 			}
 		} while (p_timeoutMs == -1 || System.currentTimeMillis() - start < p_timeoutMs);
 
@@ -669,12 +670,12 @@ public class OverlayPeer implements MessageReceiver {
 
 		try {
 			waitForRelease.acquire();
-		} catch (final InterruptedException e) {
+		} catch (final InterruptedException ignored) {
 		}
 
 		m_network.unregister(BarrierReleaseMessage.class, msg);
 
-		return new Pair<short[], long[]>(releaseMessage[0].getSignedOnPeers(), releaseMessage[0].getCustomData());
+		return new Pair<>(releaseMessage[0].getSignedOnPeers(), releaseMessage[0].getCustomData());
 	}
 
 	/**

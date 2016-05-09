@@ -317,20 +317,17 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 				"Syncing done.");
 
 		// grab return codes from barrier
-		int[] returnCodes = new int[result.first().length];
 		short[] slaveIds = task.getPayload().getSlaveNodeIds();
+		int[] returnCodes = new int[slaveIds.length];
 
 		// sort them to match the indices of the slave list
-		for (int i = 0; i < result.first().length; i++) {
-			int slaveId = 0;
-			for (int j = 0; j < slaveIds.length; j++) {
-				if (result.first()[i] == slaveIds[i]) {
-					slaveId = i;
+		for (int j = 0; j < slaveIds.length; j++) {
+			for (int i = 0; i < result.first().length; i++) {
+				if (result.first()[i] == slaveIds[j]) {
+					returnCodes[j] = (int) result.second()[i];
 					break;
 				}
 			}
-
-			returnCodes[slaveId] = (int) result.second()[i];
 		}
 
 		m_tasksProcessed++;

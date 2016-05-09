@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
 /**
  * Thread safe, lock free implementation of a frontier listed based on
  * a bit vector.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class ConcurrentBitVector implements FrontierList {
@@ -17,8 +18,8 @@ public class ConcurrentBitVector implements FrontierList {
 
 	/**
 	 * Constructor
-	 * @param p_maxElementCount
-	 *            Specify the maximum number of elements.
+	 *
+	 * @param p_maxElementCount Specify the maximum number of elements.
 	 */
 	public ConcurrentBitVector(final long p_maxElementCount) {
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
@@ -78,15 +79,19 @@ public class ConcurrentBitVector implements FrontierList {
 				if (!m_count.compareAndSet(count, count - 1)) {
 					continue;
 				}
+
+				break;
 			} else {
 				return -1;
 			}
+		}
 
-			while (true) {
-				long itPos = m_itPos.get();
-
-				if ((m_vector.get((int) (itPos / 64L)) & (1L << itPos % 64L)) != 0) {
+		long itPos = m_itPos.get();
+		while (true) {
+			try {
+				if ((m_vector.get((int) (itPos / 64L)) & (1L << (itPos % 64L))) != 0) {
 					if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
+						itPos = m_itPos.get();
 						continue;
 					}
 
@@ -94,8 +99,11 @@ public class ConcurrentBitVector implements FrontierList {
 				}
 
 				if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
-					continue;
+					itPos = m_itPos.get();
 				}
+			} catch (IndexOutOfBoundsException e) {
+				System.out.println("Exception: " + itPos + " / " + m_count.get());
+				throw e;
 			}
 		}
 	}
