@@ -49,14 +49,15 @@ public final class LookupMessages {
 
 	public static final byte SUBTYPE_BARRIER_ALLOC_REQUEST = 36;
 	public static final byte SUBTYPE_BARRIER_ALLOC_RESPONSE = 37;
-	public static final byte SUBTYPE_BARRIER_FREE_MESSAGE = 38;
-	public static final byte SUBTYPE_BARRIER_SIGN_ON_REQUEST = 39;
-	public static final byte SUBTYPE_BARRIER_SIGN_ON_RESPONSE = 40;
-	public static final byte SUBTYPE_BARRIER_RELEASE_MESSAGE = 41;
-	public static final byte SUBTYPE_BARRIER_STATUS_REQUEST = 42;
-	public static final byte SUBTYPE_BARRIER_STATUS_RESPONSE = 43;
-	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST = 44;
-	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE = 45;
+	public static final byte SUBTYPE_BARRIER_FREE_REQUEST = 38;
+	public static final byte SUBTYPE_BARRIER_FREE_RESPONSE = 39;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_REQUEST = 40;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_RESPONSE = 41;
+	public static final byte SUBTYPE_BARRIER_RELEASE_MESSAGE = 42;
+	public static final byte SUBTYPE_BARRIER_STATUS_REQUEST = 43;
+	public static final byte SUBTYPE_BARRIER_STATUS_RESPONSE = 44;
+	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST = 45;
+	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE = 46;
 
 	/**
 	 * Hidden constructor

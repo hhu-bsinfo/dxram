@@ -432,7 +432,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	 * Get the status of a specific barrier.
 	 *
 	 * @param p_barrierId Id of the barrier.
-	 * @return Array of currently signed on peers with the first index being the number of signed on peers.
+	 * @return Array of currently signed on peers with the first index being the number of signed on peers or null on error.
 	 */
 	public short[] barrierGetStatus(final int p_barrierId) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {

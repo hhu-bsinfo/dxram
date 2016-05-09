@@ -1,6 +1,6 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.AbstractRequest;
 
 import java.nio.ByteBuffer;
 
@@ -9,24 +9,24 @@ import java.nio.ByteBuffer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
-public class BarrierFreeMessage extends AbstractMessage {
+public class BarrierFreeRequest extends AbstractRequest {
 	private int m_barrierId;
 
 	/**
-	 * Creates an instance of BarrierFreeMessage
+	 * Creates an instance of BarrierFreeRequest
 	 */
-	public BarrierFreeMessage() {
+	public BarrierFreeRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of BarrierFreeMessage
+	 * Creates an instance of BarrierFreeRequest
 	 *
 	 * @param p_destination the destination
 	 * @param p_barrierId   Id of the barrier to free
 	 */
-	public BarrierFreeMessage(final short p_destination, final int p_barrierId) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_MESSAGE);
+	public BarrierFreeRequest(final short p_destination, final int p_barrierId) {
+		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST);
 
 		m_barrierId = p_barrierId;
 	}

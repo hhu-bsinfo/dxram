@@ -64,7 +64,7 @@ public class SynchronizationService extends AbstractDXRAMService {
 	 * Get the status of a specific barrier.
 	 *
 	 * @param p_barrierId Id of the barrier.
-	 * @return Array of currently signed on peers with the first index being the number of signed on peers.
+	 * @return Array of currently signed on peers with the first index being the number of signed on peers or null on error.
 	 */
 	public short[] barrierGetStatus(final int p_barrierId) {
 		return m_lookup.barrierGetStatus(p_barrierId);

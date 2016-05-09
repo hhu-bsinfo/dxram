@@ -564,12 +564,20 @@ public class OverlayPeer implements MessageReceiver {
 		}
 
 		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
-		BarrierFreeMessage message = new BarrierFreeMessage(responsibleSuperpeer, p_barrierId);
-		NetworkErrorCodes err = m_network.sendMessage(message);
+		BarrierFreeRequest message = new BarrierFreeRequest(responsibleSuperpeer, p_barrierId);
+		NetworkErrorCodes err = m_network.sendSync(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(),
 					"Freeing barrier " + BarrierID.toHexString(p_barrierId) + " on superpeer " + NodeID
 							.toHexString(responsibleSuperpeer) + " failed: " + err);
+			return false;
+		}
+
+		BarrierFreeResponse response = (BarrierFreeResponse) message.getResponse();
+		if (response.getStatusCode() == -1) {
+			m_logger.error(getClass(),
+					"Freeing barrier " + BarrierID.toHexString(p_barrierId) + " on superpeer " + NodeID
+							.toHexString(responsibleSuperpeer) + " failed: barrier does not exist.");
 			return false;
 		}
 
@@ -599,6 +607,9 @@ public class OverlayPeer implements MessageReceiver {
 		}
 
 		BarrierChangeSizeResponse response = (BarrierChangeSizeResponse) request.getResponse();
+		if (response.getStatusCode() != 0) {
+			m_logger.error(getClass(), "Changing size of barrier " + BarrierID.toHexString(p_barrierId) + " failed.");
+		}
 
 		return response.getStatusCode() == 0;
 	}
@@ -679,8 +690,19 @@ public class OverlayPeer implements MessageReceiver {
 
 		BarrierGetStatusRequest request = new BarrierGetStatusRequest(m_mySuperpeer, p_barrierId);
 		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Getting status request of barrier " + BarrierID.toHexString(p_barrierId) + " failed: " + err);
+			return null;
+		}
 
 		BarrierGetStatusResponse response = (BarrierGetStatusResponse) request.getResponse();
+		if (response.getStatusCode() == -1) {
+			m_logger.error(getClass(), "Getting status request of barrier " + BarrierID.toHexString(p_barrierId)
+					+ " failed: barrier does not exist");
+			return null;
+		}
+
 		return response.getBarrierStatus();
 	}
 
@@ -922,8 +944,10 @@ public class OverlayPeer implements MessageReceiver {
 				BarrierAllocRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_RESPONSE,
 				BarrierAllocResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_MESSAGE,
-				BarrierFreeMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST,
+				BarrierFreeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_RESPONSE,
+				BarrierFreeResponse.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST,
 				BarrierSignOnRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_RESPONSE,

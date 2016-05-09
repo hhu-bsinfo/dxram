@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
  */
 public class BarrierGetStatusResponse extends AbstractResponse {
 	private int m_barrierId;
-	private short[] m_barrierStatus = new short[0];
+	private short[] m_barrierStatus;
 
 	/**
 	 * Creates an instance of BarrierGetStatusResponse.
@@ -28,7 +28,7 @@ public class BarrierGetStatusResponse extends AbstractResponse {
 	 * @param p_request       The request for the response
 	 * @param p_barrierStatus Status of the barrier
 	 */
-	public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, short[] p_barrierStatus) {
+	public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final short[] p_barrierStatus) {
 		super(p_request, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE);
 
 		m_barrierId = p_request.getBarrierId();
@@ -58,8 +58,8 @@ public class BarrierGetStatusResponse extends AbstractResponse {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_barrierId);
 		p_buffer.putInt(m_barrierStatus.length);
-		for (int i = 0; i < m_barrierStatus.length; i++) {
-			p_buffer.putShort(m_barrierStatus[i]);
+		for (short barrierStatus : m_barrierStatus) {
+			p_buffer.putShort(barrierStatus);
 		}
 	}
 

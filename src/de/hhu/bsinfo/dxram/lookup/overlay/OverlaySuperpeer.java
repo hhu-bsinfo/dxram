@@ -678,7 +678,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 */
 	private boolean createOrJoinSuperpeerOverlay(final short p_contactSuperpeer, final int p_sleepInterval) {
 		short contactSuperpeer;
-		JoinRequest joinRequest = null;
+		JoinRequest joinRequest;
 		JoinResponse joinResponse = null;
 		ArrayList<LookupTree> trees;
 		LookupTree tree;
@@ -722,9 +722,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_peers = joinResponse.getPeers();
 
 			trees = joinResponse.getCIDTrees();
-			for (int i = 0; i < trees.size(); i++) {
-				tree = trees.get(i);
-				addCIDTree(tree.getCreator(), trees.get(i));
+			for (LookupTree tree1 : trees) {
+				tree = tree1;
+				addCIDTree(tree.getCreator(), tree1);
 			}
 			m_idTable.putAll(joinResponse.getMappings());
 
@@ -1625,15 +1625,28 @@ public class OverlaySuperpeer implements MessageReceiver {
 	}
 
 	/**
-	 * Handles an incoming BarrierFreeMessage
+	 * Handles an incoming BarrierFreeRequest
 	 *
-	 * @param p_message the BarrierFreeMessage
+	 * @param p_message the BarrierFreeRequest
 	 */
-	private void incomingBarrierFreeMessage(final BarrierFreeMessage p_message) {
+	private void incomingBarrierFreeRequest(final BarrierFreeRequest p_message) {
+		BarrierFreeResponse response = new BarrierFreeResponse(p_message);
 		if (!m_barriersTable.freeBarrier(p_message.getBarrierId())) {
-			m_logger.error(getClass(), "Free'ing barrier " + p_message.getBarrierId() + " failed.");
+			m_logger.error(getClass(),
+					"Free'ing barrier " + BarrierID.toHexString(p_message.getBarrierId()) + " failed.");
+			response.setStatusCode((byte) -1);
+		} else {
+			response.setStatusCode((byte) 0);
+		}
+
+		NetworkErrorCodes err = m_network.sendMessage(response);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Sending back response for barrier free message " + p_message + " failed: " + err);
 		}
 	}
+
+	;
 
 	/**
 	 * Handles an incoming BarrierSignOnRequest
@@ -1675,7 +1688,15 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 */
 	private void incomingBarrierGetStatusRequest(final BarrierGetStatusRequest p_request) {
 		short[] signedOnPeers = m_barriersTable.getSignedOnPeers(p_request.getBarrierId());
-		BarrierGetStatusResponse response = new BarrierGetStatusResponse(p_request, signedOnPeers);
+		BarrierGetStatusResponse response;
+		if (signedOnPeers == null) {
+			// barrier does not exist
+			response = new BarrierGetStatusResponse(p_request, new short[0]);
+			response.setStatusCode((byte) -1);
+		} else {
+			response = new BarrierGetStatusResponse(p_request, signedOnPeers);
+		}
+
 		NetworkErrorCodes err = m_network.sendMessage(response);
 		if (err != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(), "Sending response to status request " + p_request + " failed: " + err);
@@ -1751,8 +1772,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 					case LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST:
 						incomingBarrierAllocRequest((BarrierAllocRequest) p_message);
 						break;
-					case LookupMessages.SUBTYPE_BARRIER_FREE_MESSAGE:
-						incomingBarrierFreeMessage((BarrierFreeMessage) p_message);
+					case LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST:
+						incomingBarrierFreeRequest((BarrierFreeRequest) p_message);
 						break;
 					case LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST:
 						incomingBarrierSignOnRequest((BarrierSignOnRequest) p_message);
@@ -1855,8 +1876,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 				BarrierAllocRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_RESPONSE,
 				BarrierAllocResponse.class);
-		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_MESSAGE,
-				BarrierFreeMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST,
+				BarrierFreeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_RESPONSE,
+				BarrierFreeResponse.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST,
 				BarrierSignOnRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_RESPONSE,
@@ -1893,7 +1916,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.register(PingSuperpeerMessage.class, this);
 
 		m_network.register(BarrierAllocRequest.class, this);
-		m_network.register(BarrierFreeMessage.class, this);
+		m_network.register(BarrierFreeRequest.class, this);
 		m_network.register(BarrierSignOnRequest.class, this);
 		m_network.register(BarrierGetStatusRequest.class, this);
 		m_network.register(BarrierChangeSizeRequest.class, this);

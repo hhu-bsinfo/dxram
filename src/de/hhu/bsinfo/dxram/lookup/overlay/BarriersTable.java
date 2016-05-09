@@ -138,6 +138,10 @@ class BarriersTable {
 			return false;
 		}
 
+		if (m_barrierState[id] == null) {
+			return false;
+		}
+
 		m_barrierLocks[id].lock();
 		// cannot change size if barrier is currently in use
 		if (m_barrierState[id][0] != 0) {
@@ -153,7 +157,7 @@ class BarriersTable {
 		}
 
 		m_barrierLocks[id].unlock();
-		return false;
+		return true;
 	}
 
 	/**
