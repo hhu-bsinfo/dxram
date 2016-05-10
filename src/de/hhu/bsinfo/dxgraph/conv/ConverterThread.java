@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxgraph.conv;
 
 /**
  * Base class for all threads doing conversion tasks.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public class ConverterThread extends Thread {
@@ -11,8 +12,8 @@ public class ConverterThread extends Thread {
 
 	/**
 	 * Constructor
-	 * @param p_name
-	 *            Thread name.
+	 *
+	 * @param p_name Thread name.
 	 */
 	public ConverterThread(final String p_name) {
 		super(p_name);
@@ -20,6 +21,7 @@ public class ConverterThread extends Thread {
 
 	/**
 	 * Get the error code of the thread.
+	 *
 	 * @return Error code.
 	 */
 	public int getErrorCode() {
@@ -28,12 +30,10 @@ public class ConverterThread extends Thread {
 
 	/**
 	 * Update and print (in intervals) the current progress of the conversion tasks.
-	 * @param p_msg
-	 *            Message to print for the progress.
-	 * @param p_curCount
-	 *            Current count of the task.
-	 * @param p_totalCount
-	 *            Total target count to reach of the task.
+	 *
+	 * @param p_msg        Message to print for the progress.
+	 * @param p_curCount   Current count of the task.
+	 * @param p_totalCount Total target count to reach of the task.
 	 */
 	protected void updateProgress(final String p_msg, final long p_curCount, final long p_totalCount) {
 		float curProgress = ((float) p_curCount) / p_totalCount;
@@ -44,7 +44,7 @@ public class ConverterThread extends Thread {
 				curProgress = 1.0f;
 			}
 
-			System.out.println("Progress(" + p_msg + "): " + curProgress * 100 + "%\r");
+			System.out.println("Progress(" + p_msg + "): " + curProgress * 100 + "% (" + p_curCount + ")\r");
 		}
 	}
 }

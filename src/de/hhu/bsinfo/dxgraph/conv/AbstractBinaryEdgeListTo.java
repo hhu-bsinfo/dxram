@@ -1,27 +1,24 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import de.hhu.bsinfo.utils.Pair;
+
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Queue;
 
-import de.hhu.bsinfo.utils.Pair;
-
 /**
  * Single threaded converter, expecting edge list in binary form:
  * 8 bytes source nodeId and 8 bytes destination node id.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 	/**
 	 * Constructor
-	 * @param p_description
-	 *            Description for the converter.
+	 *
+	 * @param p_description Description for the converter.
 	 */
 	protected AbstractBinaryEdgeListTo(final String p_description) {
 		super(p_description);
@@ -58,7 +55,8 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 			System.out.println("Opening input file " + p_inputRootFile + " failed: " + e.getMessage());
 			try {
 				writer.close();
-			} catch (final IOException e1) {}
+			} catch (final IOException e1) {
+			}
 			return;
 		}
 
@@ -97,17 +95,16 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 
 	/**
 	 * File reader for the binary edge list graph data.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	protected static class FileReaderBinaryThread extends AbstractFileReaderThread {
 		/**
 		 * Constructor
-		 * @param p_inputPath
-		 *            Path of the file to read.
-		 * @param p_bufferQueue
-		 *            Shared buffer queue to read the data to.
-		 * @param p_maxQueueSize
-		 *            Max amount of items to add to the queue before blocking.
+		 *
+		 * @param p_inputPath    Path of the file to read.
+		 * @param p_bufferQueue  Shared buffer queue to read the data to.
+		 * @param p_maxQueueSize Max amount of items to add to the queue before blocking.
 		 */
 		FileReaderBinaryThread(final String p_inputPath, final Queue<Pair<Long, Long>> p_bufferQueue,
 				final int p_maxQueueSize) {
@@ -124,7 +121,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 				return -1;
 			}
 
-			ByteBuffer buffer = ByteBuffer.allocate(1024 * 8 * 2);
+			ByteBuffer buffer = ByteBuffer.allocate(32 * 1024);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 
 			try {
@@ -132,6 +129,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 				long bytesRead = 0;
 				do {
 					int read = file.read(buffer.array());
+
 					if (read == -1) {
 						break;
 					}

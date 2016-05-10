@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Very simple/naive implementation for a storage using a hash map.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public class VertexStorageBinarySimple implements VertexStorage {
@@ -18,6 +19,7 @@ public class VertexStorageBinarySimple implements VertexStorage {
 	private Map<Long, Long> m_idMapping = new HashMap<Long, Long>();
 	private ArrayList<NeighbourListVertex> m_neighbourListsVertices = new ArrayList<NeighbourListVertex>();
 
+	private AtomicLong m_totalVertexCount = new AtomicLong(0);
 	private AtomicLong m_totalEdgeCount = new AtomicLong(0L);
 
 	private Lock m_mutex = new ReentrantLock(false);
@@ -31,8 +33,8 @@ public class VertexStorageBinarySimple implements VertexStorage {
 
 	/**
 	 * Get the full neighbor list of one vertex.
-	 * @param p_vertexId
-	 *            Id of the vertex.
+	 *
+	 * @param p_vertexId Id of the vertex.
 	 * @return Neighbor list.
 	 */
 	public ConcurrentLinkedQueue<Long> getVertexNeighbourList(final long p_vertexId) {
@@ -49,7 +51,7 @@ public class VertexStorageBinarySimple implements VertexStorage {
 				vertexId = (long) (m_neighbourListsVertices.size() + 1);
 				m_neighbourListsVertices.add(new NeighbourListVertex());
 				m_idMapping.put(p_hashValue, vertexId);
-
+				m_totalVertexCount.incrementAndGet();
 			}
 			m_mutex.unlock();
 		}
@@ -68,7 +70,7 @@ public class VertexStorageBinarySimple implements VertexStorage {
 
 	@Override
 	public long getTotalVertexCount() {
-		return m_neighbourListsVertices.size();
+		return m_totalVertexCount.get();
 	}
 
 	@Override
@@ -78,6 +80,7 @@ public class VertexStorageBinarySimple implements VertexStorage {
 
 	/**
 	 * Helper/Container class for a neighbor list.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class NeighbourListVertex {
