@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Created by nothaas on 5/10/16.
  */
-public class VertexStorageBinaryLockFree implements VertexStorage {
+public class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	private static final int MS_BLOCK_TABLE_SIZE = 0x100;
 	private static final int MS_BLOCK_SIZE = 0x1000000;
@@ -25,7 +25,7 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 	private ReentrantLock m_blockTableAllocLock = new ReentrantLock(false);
 	private long[] m_blockTable;
 
-	public VertexStorageBinaryLockFree() {
+	public VertexStorageBinaryUnsafe() {
 		m_unsafe = UnsafeHandler.getInstance().getUnsafe();
 
 		m_blockTable = new long[MS_BLOCK_TABLE_SIZE];
@@ -35,12 +35,13 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 
 		m_totalMemory.addAndGet(MS_BLOCK_TABLE_SIZE * m_blockTable.length + 12);
 
-		VertexStorageBinaryLockFree storage = this;
+		VertexStorageBinaryUnsafe storage = this;
 		Thread t = new Thread() {
 			@Override
 			public void run() {
 				while (true) {
-					System.out.println("Memory: " + storage.getTotalMemoryDataStructures() / 1024 / 1024);
+					System.out.println(
+							"MemoryConsumptionStorage (MB): " + storage.getTotalMemoryDataStructures() / 1024 / 1024);
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
@@ -52,12 +53,13 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 		t.start();
 	}
 
+	@Override
 	public long getTotalMemoryDataStructures() {
 		return m_totalMemory.get();
 	}
 
 	//	public static void main(String[] args) {
-	//		VertexStorageBinaryLockFree storage = new VertexStorageBinaryLockFree();
+	//		VertexStorageBinaryUnsafe storage = new VertexStorageBinaryUnsafe();
 	//
 	//		Thread[] threads = new Thread[12];
 	//
@@ -68,7 +70,7 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 	//
 	//					long vertex = storage.getVertexId(1);
 	//
-	//					for (int i = 0; i < 100000; i++) {
+	//					for (int i = 0; i < 10000; i++) {
 	//						storage.putNeighbour(vertex, i);
 	//					}
 	//
@@ -85,6 +87,8 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 	//				e.printStackTrace();
 	//			}
 	//		}
+	//
+	//		System.out.println(storage.getNeighbours(1, new long[0]));
 	//
 	//		System.out.println(storage.getTotalEdgeCount());
 	//	}
@@ -120,7 +124,16 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 			// create header with size 0 and unlocked entry
 			// allocation will be execution on neighbor put
 			if (m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, -1, 0)) {
-				m_vertexCount.incrementAndGet();
+				while (true) {
+					long count = m_vertexCount.get();
+					if (count < p_hashValue) {
+						if (m_vertexCount.compareAndSet(count, p_hashValue)) {
+							break;
+						}
+					} else {
+						break;
+					}
+				}
 			}
 		}
 
@@ -168,6 +181,9 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 			// free old data
 			m_unsafe.freeMemory(ptrOldArray);
 			m_totalMemory.addAndGet(-sizeOld * Long.BYTES);
+		} else {
+			// swap invalid poiner for first allocation
+			m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
 		}
 
 		m_unsafe.putLong(ptrNewArray + sizeOld * Long.BYTES, p_neighbourVertexId);
@@ -178,6 +194,38 @@ public class VertexStorageBinaryLockFree implements VertexStorage {
 		}
 
 		m_edgeCount.incrementAndGet();
+	}
+
+	@Override
+	public long getNeighbours(final long p_vertexId, final long[] p_buffer) {
+		int tableIndex = (int) (p_vertexId / MS_BLOCK_SIZE);
+		int tableEntryIndex = (int) (p_vertexId % MS_BLOCK_SIZE);
+
+		long ptrBlock = m_blockTable[tableIndex];
+		if (ptrBlock == -1) {
+			throw new RuntimeException("Access to block that was not allocated before, should not happen");
+		}
+
+		// we don't have to lock here, because this is executed separately from the putting
+		int entryHeader = m_unsafe.getInt(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES);
+		if (entryHeader == -1) {
+			// invalid entry for vertex id
+			return Long.MAX_VALUE;
+		}
+		int arraySize = entryHeader & 0x7FFFFFFF;
+
+		// is buffer big enough?
+		if (p_buffer.length < arraySize) {
+			return -arraySize;
+		}
+
+		long ptrArray = m_unsafe.getLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4);
+
+		for (int i = 0; i < arraySize; i++) {
+			p_buffer[i] = m_unsafe.getLong(ptrArray + Long.BYTES * i);
+		}
+
+		return arraySize;
 	}
 
 	@Override

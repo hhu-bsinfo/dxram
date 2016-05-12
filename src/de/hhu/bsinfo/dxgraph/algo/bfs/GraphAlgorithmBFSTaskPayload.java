@@ -36,6 +36,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Random;
 
 public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
@@ -135,48 +136,51 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		int bfsIteration = 0;
-		for (long root : rootList.getRoots()) {
-			m_loggerService.info(getClass(), "Executing BFS with root " + ChunkID.toHexString(root));
+		Random rand = new Random();
+		long root = rootList.getRoots()[rand.nextInt(rootList.getRoots().length)];
 
-			// run the bfs root on the node it is local to
-			if (ChunkID.getCreatorID(root) == m_nodeId) {
-				// run as bfs master
-				m_loggerService.info(getClass(), "I (" + getSlaveId() + ") am running as master");
-				BFSMaster master = new BFSMaster(m_nodeId, root);
-				master.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount());
-				master.execute(root);
-				master.shutdown();
+		//		for (long root : rootList.getRoots()) {
+		m_loggerService.info(getClass(), "Executing BFS with root " + ChunkID.toHexString(root));
 
-				BFSResult result = master.getBFSResult();
+		// run the bfs root on the node it is local to
+		if (ChunkID.getCreatorID(root) == m_nodeId) {
+			// run as bfs master
+			m_loggerService.info(getClass(), "I (" + getSlaveId() + ") am running as master");
+			BFSMaster master = new BFSMaster(m_nodeId, root);
+			master.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount());
+			master.execute(root);
+			master.shutdown();
 
-				m_loggerService.info(getClass(), "Result of BFS iteration: " + result);
+			BFSResult result = master.getBFSResult();
 
-				if (m_chunkService.create(result) != 1) {
-					m_loggerService.error(getClass(), "Creating chunk for bfs result failed.");
-					continue;
-				}
+			m_loggerService.info(getClass(), "Result of BFS iteration: " + result);
 
-				if (m_chunkService.put(result) != 1) {
-					m_loggerService.error(getClass(), "Putting data of bfs result failed.");
-					continue;
-				}
-
-				String resultName = MS_BFS_RESULT_NAMESRV_IDENT + bfsIteration;
-				m_nameserviceService.register(result, resultName);
-				m_loggerService.info(getClass(), "BFS results stored and registered: " + resultName);
-			} else {
-				// run as bfs slave, mater is the owner of the root node
-				m_loggerService.info(getClass(), "I (" + getSlaveId() + ") am running as slave");
-				BFSSlave slave = new BFSSlave(ChunkID.getCreatorID(root));
-				slave.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount());
-				slave.execute(ChunkID.INVALID_ID);
-				slave.shutdown();
+			if (m_chunkService.create(result) != 1) {
+				m_loggerService.error(getClass(), "Creating chunk for bfs result failed.");
+				return -5;
 			}
 
-			bfsIteration++;
-			// TODO limit this to one iteration for now. fix later to allow multiple iterations
-			break;
+			if (m_chunkService.put(result) != 1) {
+				m_loggerService.error(getClass(), "Putting data of bfs result failed.");
+				return -6;
+			}
+
+			String resultName = MS_BFS_RESULT_NAMESRV_IDENT + bfsIteration;
+			m_nameserviceService.register(result, resultName);
+			m_loggerService.info(getClass(), "BFS results stored and registered: " + resultName);
+		} else {
+			// run as bfs slave, mater is the owner of the root node
+			m_loggerService.info(getClass(), "I (" + getSlaveId() + ") am running as slave");
+			BFSSlave slave = new BFSSlave(ChunkID.getCreatorID(root));
+			slave.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount());
+			slave.execute(ChunkID.INVALID_ID);
+			slave.shutdown();
 		}
+
+		bfsIteration++;
+		//			// TODO limit this to one iteration for now. fix later to allow multiple iterations
+		//			break;
+		//		}
 
 		return 0;
 	}

@@ -29,7 +29,7 @@ public class ConverterBinaryEdgeListToBoel extends AbstractBinaryEdgeListTo {
 
 	@Override
 	protected VertexStorage createVertexStorageInstance() {
-		return new VertexStorageBinaryLockFree();
+		return new VertexStorageBinaryUnsafe();
 	}
 
 	@Override

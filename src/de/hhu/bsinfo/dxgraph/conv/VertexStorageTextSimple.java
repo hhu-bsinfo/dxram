@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
+import de.hhu.bsinfo.utils.Pair;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,10 +10,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.Pair;
-
 /**
  * Very simple/naive implementation of a text based vertex storage.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public class VertexStorageTextSimple implements VertexStorageText {
@@ -66,6 +67,11 @@ public class VertexStorageTextSimple implements VertexStorageText {
 	}
 
 	@Override
+	public long getNeighbours(long p_vertexId, long[] p_buffer) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	@Override
 	public long getTotalVertexCount() {
 		return m_neighbourListsVertices.size();
 	}
@@ -76,12 +82,18 @@ public class VertexStorageTextSimple implements VertexStorageText {
 	}
 
 	@Override
+	public long getTotalMemoryDataStructures() {
+		throw new RuntimeException("Not implemented");
+	}
+
+	@Override
 	public Pair<Long, String> getVertexNeighbourList(final long p_vertexId) {
 		return m_neighbourListsVertices.get((int) p_vertexId).m_neighbourList;
 	}
 
 	/**
 	 * Private container/helper class for a neighbour list.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class NeighbourListVertex {

@@ -69,6 +69,11 @@ public class VertexStorageBinarySimple implements VertexStorage {
 	}
 
 	@Override
+	public long getNeighbours(long p_vertexId, long[] p_buffer) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	@Override
 	public long getTotalVertexCount() {
 		return m_totalVertexCount.get();
 	}
@@ -76,6 +81,11 @@ public class VertexStorageBinarySimple implements VertexStorage {
 	@Override
 	public long getTotalEdgeCount() {
 		return m_totalEdgeCount.get();
+	}
+
+	@Override
+	public long getTotalMemoryDataStructures() {
+		throw new RuntimeException("Not implemented");
 	}
 
 	/**
