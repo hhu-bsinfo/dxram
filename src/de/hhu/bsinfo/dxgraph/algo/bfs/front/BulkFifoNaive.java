@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 /**
  * Implementation of a frontier list based on bulk allocated arrays.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class BulkFifoNaive implements FrontierList {
@@ -28,8 +29,8 @@ public class BulkFifoNaive implements FrontierList {
 
 	/**
 	 * Constructor
-	 * @param p_bulkSize
-	 *            Specify the bulk size for block allocation.
+	 *
+	 * @param p_bulkSize Specify the bulk size for block allocation.
 	 */
 	public BulkFifoNaive(final int p_bulkSize) {
 		m_bulkSize = p_bulkSize;

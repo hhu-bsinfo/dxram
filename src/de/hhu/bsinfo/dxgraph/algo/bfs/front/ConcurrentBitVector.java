@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 
@@ -23,6 +24,66 @@ public class ConcurrentBitVector implements FrontierList {
 	 */
 	public ConcurrentBitVector(final long p_maxElementCount) {
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
+	}
+
+	public static void main(String[] args) throws Exception {
+		final int vecSize = 10000000;
+		ConcurrentBitVector vec = new ConcurrentBitVector(vecSize);
+
+		Thread[] threads = new Thread[24];
+		while (true) {
+			System.out.println("--------------------------");
+			System.out.println("Fill....");
+			for (int i = 0; i < threads.length; i++) {
+				threads[i] = new Thread() {
+					@Override
+					public void run() {
+						Random rand = new Random();
+
+						for (int i = 0; i < 100000; i++) {
+							vec.pushBack(rand.nextInt(vecSize));
+						}
+					}
+				};
+				threads[i].start();
+			}
+
+			for (int i = 0; i < threads.length; i++) {
+				threads[i].join();
+			}
+
+			System.out.println("Total elements: " + vec.size());
+			System.out.println("Empty...");
+
+			AtomicLong sum = new AtomicLong(0);
+			for (int i = 0; i < threads.length; i++) {
+				threads[i] = new Thread() {
+					private long m_count;
+
+					@Override
+					public void run() {
+						while (true) {
+							long elem = vec.popFront();
+							if (elem == -1) {
+								sum.addAndGet(m_count);
+								break;
+							}
+
+							m_count++;
+						}
+					}
+				};
+				threads[i].start();
+			}
+
+			for (int i = 0; i < threads.length; i++) {
+				threads[i].join();
+			}
+
+			System.out.println("Empty elements " + vec.size() + ", total elements got " + sum.get());
+
+			vec.reset();
+		}
 	}
 
 	@Override

@@ -1,6 +1,10 @@
 
 package de.hhu.bsinfo.menet;
 
+import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
+import de.hhu.bsinfo.utils.log.LoggerInterface;
+import de.hhu.bsinfo.utils.log.LoggerNull;
+
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -9,12 +13,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
-import de.hhu.bsinfo.utils.log.LoggerInterface;
-import de.hhu.bsinfo.utils.log.LoggerNull;
-
 /**
  * Access the network through Java NIO
+ *
  * @author Florian Klein 18.03.2012
  * @author Marc Ewert 14.08.2014
  */
@@ -39,12 +40,12 @@ public final class NetworkHandler implements DataReceiver {
 	private int m_numMessageHandlerThreads;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of NetworkHandler
-	 * @param p_numMessageCreatorThreads
-	 *            the number of message creatorn threads
-	 * @param p_numMessageHandlerThreads
-	 *            the number of default message handler (+ one exclusive message handler)
+	 *
+	 * @param p_numMessageCreatorThreads the number of message creatorn threads
+	 * @param p_numMessageHandlerThreads the number of default message handler (+ one exclusive message handler)
 	 */
 	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads) {
 		final byte networkType;
@@ -76,6 +77,7 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Returns the LoggerInterface
+	 *
 	 * @return the LoggerInterface
 	 */
 	public static LoggerInterface getLogger() {
@@ -84,8 +86,8 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Sets the LoggerInterface
-	 * @param p_logger
-	 *            the LoggerInterface
+	 *
+	 * @param p_logger the LoggerInterface
 	 */
 	public void setLogger(final LoggerInterface p_logger) {
 		m_loggerInterface = p_logger;
@@ -94,6 +96,7 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Returns the status of the network module
+	 *
 	 * @return the status
 	 */
 	public String getStatus() {
@@ -107,12 +110,10 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Registers a message type
-	 * @param p_type
-	 *            the unique type
-	 * @param p_subtype
-	 *            the unique subtype
-	 * @param p_class
-	 *            the calling class
+	 *
+	 * @param p_type    the unique type
+	 * @param p_subtype the unique subtype
+	 * @param p_class   the calling class
 	 */
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		boolean ret = false;
@@ -126,22 +127,17 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	// Methods
+
 	/**
 	 * Initializes the network handler
-	 * @param p_ownNodeID
-	 *            the own NodeID
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_incomingBufferSize
-	 *            the size of incoming buffer
-	 * @param p_outgoingBufferSize
-	 *            the size of outgoing buffer
-	 * @param p_numberOfBuffers
-	 *            the number of bytes until a flow control message must be received to continue sending
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
-	 * @param p_connectionTimeout
-	 *            the connection timeout
+	 *
+	 * @param p_ownNodeID             the own NodeID
+	 * @param p_nodeMap               the node map
+	 * @param p_incomingBufferSize    the size of incoming buffer
+	 * @param p_outgoingBufferSize    the size of outgoing buffer
+	 * @param p_numberOfBuffers       the number of bytes until a flow control message must be received to continue sending
+	 * @param p_flowControlWindowSize the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @param p_connectionTimeout     the connection timeout
 	 */
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize,
 			final int p_outgoingBufferSize, final int p_numberOfBuffers, final int p_flowControlWindowSize,
@@ -215,10 +211,9 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Registers a message receiver
-	 * @param p_message
-	 *            the message
-	 * @param p_receiver
-	 *            the receiver
+	 *
+	 * @param p_message  the message
+	 * @param p_receiver the receiver
 	 */
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
@@ -240,10 +235,9 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Unregisters a message receiver
-	 * @param p_message
-	 *            the message
-	 * @param p_receiver
-	 *            the receiver
+	 *
+	 * @param p_message  the message
+	 * @param p_receiver the receiver
 	 */
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
@@ -263,8 +257,8 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Sends a message
-	 * @param p_message
-	 *            the message to send
+	 *
+	 * @param p_message the message to send
 	 * @return the status
 	 */
 	public int sendMessage(final AbstractMessage p_message) {
@@ -318,8 +312,8 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Handles an incoming Message
-	 * @param p_message
-	 *            the incoming Message
+	 *
+	 * @param p_message the incoming Message
 	 */
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
@@ -357,8 +351,10 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	// Classes
+
 	/**
 	 * Distributes incoming messages
+	 *
 	 * @author Marc Ewert 17.09.2014
 	 */
 	private class DefaultMessageHandler implements Runnable {
@@ -369,10 +365,11 @@ public final class NetworkHandler implements DataReceiver {
 		private final TaskExecutor m_executor;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of MessageHandler
-		 * @param p_numMessageHandlerThreads
-		 *            the number of default message handler
+		 *
+		 * @param p_numMessageHandlerThreads the number of default message handler
 		 */
 		DefaultMessageHandler(final int p_numMessageHandlerThreads) {
 			m_defaultMessages = new ArrayDeque<>();
@@ -384,12 +381,12 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		// Methods
+
 		/**
 		 * Enqueue a new message for delivering
-		 * @param p_message
-		 *            the message
-		 * @param p_maxMessages
-		 *            the maximal number of pending messages
+		 *
+		 * @param p_message     the message
+		 * @param p_maxMessages the maximal number of pending messages
 		 * @return whether the message was appended or not
 		 */
 		public boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
@@ -420,16 +417,19 @@ public final class NetworkHandler implements DataReceiver {
 
 			entry = m_receivers.get(message.getClass());
 
+			// missing receivers
 			if (entry != null) {
 				entry.newMessage(message);
 			} else {
-				m_loggerInterface.error(getClass().getSimpleName(), "Default message queue is empty!");
+				m_loggerInterface.error(getClass().getSimpleName(),
+						"Missing receivers for message class " + message.getClass().getSimpleName());
 			}
 		}
 	}
 
 	/**
 	 * Distributes incoming messages
+	 *
 	 * @author Marc Ewert 17.09.2014
 	 */
 	private class ExclusiveMessageHandler extends Thread {
@@ -441,6 +441,7 @@ public final class NetworkHandler implements DataReceiver {
 		private boolean m_shutdown;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of MessageHandler
 		 */
@@ -451,6 +452,7 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		// Methods
+
 		/**
 		 * Closes the handler
 		 */
@@ -460,10 +462,9 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Enqueue a new message for delivering
-		 * @param p_message
-		 *            the message
-		 * @param p_maxMessages
-		 *            the maximal number of pending messages
+		 *
+		 * @param p_message     the message
+		 * @param p_maxMessages the maximal number of pending messages
 		 * @return whether the message was appended or not
 		 */
 		public boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
@@ -521,16 +522,18 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Methods for reacting on incoming Messages
+	 *
 	 * @author Florian Klein
 	 *         09.03.2012
 	 */
 	public interface MessageReceiver {
 
 		// Methods
+
 		/**
 		 * Handles an incoming Message
-		 * @param p_message
-		 *            the Message
+		 *
+		 * @param p_message the Message
 		 */
 		void onIncomingMessage(AbstractMessage p_message);
 
@@ -538,6 +541,7 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Wrapper class for message type - MessageReceiver pairs
+	 *
 	 * @author Florian Klein 23.07.2013
 	 * @author Marc Ewert 14.08.2014
 	 */
@@ -547,6 +551,7 @@ public final class NetworkHandler implements DataReceiver {
 		private final Collection<MessageReceiver> m_receivers;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of Entry
 		 */
@@ -555,10 +560,11 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		// Methods
+
 		/**
 		 * Adds a MessageReceiver
-		 * @param p_receiver
-		 *            the MessageReceiver
+		 *
+		 * @param p_receiver the MessageReceiver
 		 */
 		public void add(final MessageReceiver p_receiver) {
 			m_receivers.add(p_receiver);
@@ -566,8 +572,8 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Removes a MessageReceiver
-		 * @param p_receiver
-		 *            the MessageReceiver
+		 *
+		 * @param p_receiver the MessageReceiver
 		 */
 		public void remove(final MessageReceiver p_receiver) {
 			m_receivers.remove(p_receiver);
@@ -575,8 +581,8 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Informs all MessageReceivers about a new message
-		 * @param p_message
-		 *            the message
+		 *
+		 * @param p_message the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
 			for (MessageReceiver receiver : m_receivers) {

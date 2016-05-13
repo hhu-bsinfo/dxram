@@ -3,13 +3,10 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.menet.AbstractMessage;
+public class VerticesForNextFrontierMessage extends AbstractVerticesForNextFrontierMessage {
 
-public class VerticesForNextFrontierMessage extends AbstractMessage {
-
-	private int m_numOfVertices;
 	private long[] m_vertexIDs;
+	private int m_vertexPos;
 
 	/**
 	 * Creates an instance of VerticesForNextFrontierMessage.
@@ -21,34 +18,42 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
 	/**
 	 * Creates an instance of VerticesForNextFrontierMessage
-	 * @param p_destination
-	 *            the destination
-	 * @param p_batchSize
-	 *            size of the buffer to store the vertex ids to send.
+	 *
+	 * @param p_destination the destination
+	 * @param p_batchSize   size of the buffer to store the vertex ids to send.
 	 */
 	public VerticesForNextFrontierMessage(final short p_destination, final int p_batchSize) {
-		super(p_destination, BFSMessages.TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE);
+		super(p_destination, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE, p_batchSize);
 
 		m_vertexIDs = new long[p_batchSize];
 	}
 
-	public int getBatchSize() {
-		return m_vertexIDs.length;
+	@Override
+	public boolean addVertex(long p_vertex) {
+		if (m_vertexIDs.length == m_numOfVertices) {
+			return false;
+		}
+
+		m_vertexIDs[m_vertexPos++] = p_vertex & 0xFFFFFFFFFFFFL;
+		m_numOfVertices++;
+		return true;
 	}
 
-	public int getNumVerticesInBatch() {
-		return m_numOfVertices;
+	@Override
+	public long getVertex() {
+		if (m_vertexIDs.length == m_vertexPos) {
+			return -1;
+		}
+
+		return m_vertexIDs[m_vertexPos++];
 	}
 
-	public void setNumVerticesInBatch(final int p_numVertsInBatch) {
-		m_numOfVertices = p_numVertsInBatch;
+	@Override
+	public void clear() {
+		m_vertexPos = 0;
+		m_numOfVertices = 0;
 	}
 
-	public long[] getVertexIDBuffer() {
-		return m_vertexIDs;
-	}
-
-	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_numOfVertices);
@@ -68,8 +73,6 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
 	@Override
 	protected final int getPayloadLength() {
-		int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-
-		return size + Integer.BYTES + m_numOfVertices * Long.BYTES;
+		return Integer.BYTES + m_numOfVertices * Long.BYTES;
 	}
 }

@@ -1,21 +1,25 @@
 
 package de.hhu.bsinfo.dxgraph.data;
 
-import java.util.Arrays;
-
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+import java.util.Arrays;
+
 /**
  * Object representation of a vertex with a static list of neighbours.
  * The number of neighbours is limited to roughly 2 million entries
  * due to max chunk size being 16MB in DXRAM.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class Vertex implements DataStructure {
+
 	private long m_id = ChunkID.INVALID_ID;
+	private boolean m_flagWriteUserdataOnly;
+
 	private int m_userData = -1;
 	private long[] m_neighbours = new long[0];
 
@@ -28,8 +32,8 @@ public class Vertex implements DataStructure {
 
 	/**
 	 * Constructor
-	 * @param p_id
-	 *            Chunk id to assign.
+	 *
+	 * @param p_id Chunk id to assign.
 	 */
 	public Vertex(final long p_id) {
 		m_id = p_id;
@@ -37,6 +41,7 @@ public class Vertex implements DataStructure {
 
 	/**
 	 * Get user data from the vertex.
+	 *
 	 * @return User data.
 	 */
 	public int getUserData() {
@@ -45,19 +50,29 @@ public class Vertex implements DataStructure {
 
 	/**
 	 * Set user data for the vertex.
-	 * @param p_userData
-	 *            User data to set.
+	 *
+	 * @param p_userData User data to set.
 	 */
 	public void setUserData(final int p_userData) {
 		m_userData = p_userData;
 	}
 
 	/**
+	 * Flag this vertex to write the userdata item only on
+	 * the next serilization call (performance hack).
+	 *
+	 * @param p_flag True to write the userdata only, false for whole vertex on next serialization call.
+	 */
+	public void setWriteUserDataOnly(final boolean p_flag) {
+		m_flagWriteUserdataOnly = p_flag;
+	}
+
+	/**
 	 * Add a new neighbour to the currently existing list.
 	 * This will expand the static array by one entry and
 	 * add the new neighbour at the end.
-	 * @param p_neighbour
-	 *            Neighbour vertex Id to add.
+	 *
+	 * @param p_neighbour Neighbour vertex Id to add.
 	 */
 	public void addNeighbour(final long p_neighbour) {
 		setNeighbourCount(m_neighbours.length + 1);
@@ -66,6 +81,7 @@ public class Vertex implements DataStructure {
 
 	/**
 	 * Get the neighbour array.
+	 *
 	 * @return Neighbour array with vertex ids.
 	 */
 	public long[] getNeighbours() {
@@ -74,8 +90,8 @@ public class Vertex implements DataStructure {
 
 	/**
 	 * Resize the neighbour array.
-	 * @param p_count
-	 *            Number of neighbours to resize to.
+	 *
+	 * @param p_count Number of neighbours to resize to.
 	 */
 	public void setNeighbourCount(final int p_count) {
 		if (p_count != m_neighbours.length) {
@@ -124,8 +140,12 @@ public class Vertex implements DataStructure {
 	public int exportObject(final Exporter p_exporter, final int p_size) {
 
 		p_exporter.writeInt(m_userData);
-		p_exporter.writeInt(m_neighbours.length);
-		p_exporter.writeLongs(m_neighbours);
+
+		// performance hack for BFS
+		if (!m_flagWriteUserdataOnly) {
+			p_exporter.writeInt(m_neighbours.length);
+			p_exporter.writeLongs(m_neighbours);
+		}
 
 		return sizeofObject();
 	}
