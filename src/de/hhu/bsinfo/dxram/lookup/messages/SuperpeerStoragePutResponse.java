@@ -1,38 +1,35 @@
-
-package de.hhu.bsinfo.dxram.chunk.messages;
-
-import java.nio.ByteBuffer;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
-/**
- * Response to a PutRequest
- * @author Florian Klein 09.03.2012
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
- */
-public class PutResponse extends AbstractResponse {
+import java.nio.ByteBuffer;
 
+/**
+ * Response to the put request.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.05.15
+ */
+public class SuperpeerStoragePutResponse extends AbstractResponse {
 	private byte[] m_chunkStatusCodes;
 
 	/**
-	 * Creates an instance of PutResponse.
+	 * Creates an instance of SuperpeerStoragePutResponse.
 	 * This constructor is used when receiving this message.
 	 */
-	public PutResponse() {
+	public SuperpeerStoragePutResponse() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of PutResponse.
+	 * Creates an instance of SuperpeerStoragePutResponse.
 	 * This constructor is used when sending this message.
-	 * @param p_request
-	 *            the request
-	 * @param p_statusCodes
-	 *            Status code for every single chunk put.
+	 *
+	 * @param p_request     the request
+	 * @param p_statusCodes Status code for every single chunk put.
 	 */
-	public PutResponse(final PutRequest p_request, final byte... p_statusCodes) {
-		super(p_request, ChunkMessages.SUBTYPE_PUT_RESPONSE);
+	public SuperpeerStoragePutResponse(final SuperpeerStoragePutRequest p_request, final byte... p_statusCodes) {
+		super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE);
 
 		m_chunkStatusCodes = p_statusCodes;
 
@@ -41,6 +38,7 @@ public class PutResponse extends AbstractResponse {
 
 	/**
 	 * Get the status
+	 *
 	 * @return true if put was successful
 	 */
 	public final byte[] getStatusCodes() {
@@ -69,5 +67,4 @@ public class PutResponse extends AbstractResponse {
 		return ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode())
 				+ m_chunkStatusCodes.length * Byte.BYTES;
 	}
-
 }

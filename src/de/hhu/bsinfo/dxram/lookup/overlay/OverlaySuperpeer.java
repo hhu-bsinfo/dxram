@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -22,7 +23,9 @@ import de.hhu.bsinfo.utils.CRC16;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Superpper functionality for overlay
@@ -69,6 +72,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 	private ReentrantLock m_mappingLock;
 	private ReentrantLock m_failureLock;
 
+	private SuperpeerStorage[] m_storage;
+	private ReadWriteLock m_storageLock = new ReentrantReadWriteLock(false);
+
 	/**
 	 * Creates an instance of OverlaySuperpeer
 	 *
@@ -77,13 +83,16 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 * @param p_initialNumberOfSuperpeers the number of expeced superpeers
 	 * @param p_sleepInterval             the ping interval
 	 * @param p_maxNumOfBarriers          Max number of barriers
+	 * @param p_storageMaxNumEntries      Max number of entries for the superpeer storage (-1 to disable)
+	 * @param p_storageMaxSizeBytes       Max size for the superpeer storage in bytes
 	 * @param p_boot                      the BootComponent
 	 * @param p_logger                    the LoggerComponent
 	 * @param p_network                   the NetworkComponent
 	 * @param p_event                     the EventComponent
 	 */
 	public OverlaySuperpeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers,
-			final int p_sleepInterval, final int p_maxNumOfBarriers,
+			final int p_sleepInterval, final int p_maxNumOfBarriers, final int p_storageMaxNumEntries,
+			final int p_storageMaxSizeBytes,
 			final AbstractBootComponent p_boot, final LoggerComponent p_logger, final NetworkComponent p_network,
 			final EventComponent p_event) {
 		m_boot = p_boot;
@@ -112,6 +121,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_failureLock = new ReentrantLock(false);
 
 		m_initialNumberOfSuperpeers--;
+
+		m_storage = new SuperpeerStorage[NodeID.MAX_ID];
+		m_storage[p_nodeID] = new SuperpeerStorage(p_storageMaxNumEntries, p_storageMaxSizeBytes);
 
 		createOrJoinSuperpeerOverlay(p_contactSuperpeer, p_sleepInterval);
 	}
@@ -1724,6 +1736,86 @@ public class OverlaySuperpeer implements MessageReceiver {
 	}
 
 	/**
+	 * Handles an incoming SuperpeerStorageCreateRequest
+	 *
+	 * @param p_request the SuperpeerStorageCreateRequest
+	 */
+	private void incomingSuperpeerStorageCreateRequest(final SuperpeerStorageCreateRequest p_request) {
+		m_storageLock.writeLock().lock();
+		int localId = m_storage[p_request.getSuperpeerNodeId()].create(p_request.getSize());
+		m_storageLock.writeLock().unlock();
+
+		SuperpeerStorageCreateResponse response = new SuperpeerStorageCreateResponse(p_request, localId);
+		NetworkErrorCodes err = m_network.sendMessage(response);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Sending response to storage create with size " + p_request.getSize() + " failed: " + err);
+			return;
+		}
+
+		// TODO replicate to next 3 superpeers
+	}
+
+	/**
+	 * Handles an incoming SuperpeerStorageGetRequest
+	 *
+	 * @param p_request the SuperpeerStorageGetRequest
+	 */
+	private void incomingSuperpeerStorageGetRequest(final SuperpeerStorageGetRequest p_request) {
+		Chunk[] chunks = new Chunk[p_request.getStorageIDs().length];
+
+		m_storageLock.readLock().lock();
+		long[] storageIds = p_request.getStorageIDs();
+		int chunkGotCount = 0;
+		for (int i = 0; i < storageIds.length; i++) {
+			// sanity check
+			if (SuperpeerStorageID.getSuperpeerID(storageIds[i]) != m_nodeID) {
+				m_logger.error(getClass(), "Cannot get chunk " + SuperpeerStorageID.toHexString(storageIds[i])
+						+ " from superpeer storage " + NodeID.toHexString(m_nodeID)
+						+ ", node is not owning the chunk.");
+				// create invalid entry
+				chunks[i] = new Chunk();
+				continue;
+			}
+
+			int localId = SuperpeerStorageID.getLocalID(storageIds[i]);
+			chunks[i] = m_storage[m_nodeID].get(localId);
+			if (chunks[i] == null) {
+				// create invalid entry
+				chunks[i] = new Chunk();
+			} else {
+				chunks[i].setID(storageIds[i]);
+				chunkGotCount++;
+			}
+		}
+		m_storageLock.readLock().unlock();
+
+		SuperpeerStorageGetResponse response = new SuperpeerStorageGetResponse(p_request, chunkGotCount, chunks);
+		NetworkErrorCodes err = m_network.sendMessage(response);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(), "Sending response to storage get failed: " + err);
+		}
+	}
+
+	/**
+	 * Handles an incoming SuperpeerStoragePutRequest
+	 *
+	 * @param p_request the SuperpeerStoragePutRequest
+	 */
+	private void incomingSuperpeerStoragePutRequest(final SuperpeerStoragePutRequest p_request) {
+
+	}
+
+	/**
+	 * Handles an incoming SuperpeerStorageRemoveMessage
+	 *
+	 * @param p_request the SuperpeerStorageRemoveMessage
+	 */
+	private void incomingSuperpeerStorageRemoveMessage(final SuperpeerStorageRemoveMessage p_request) {
+
+	}
+
+	/**
 	 * Handles an incoming Message
 	 *
 	 * @param p_message the Message
@@ -1783,6 +1875,18 @@ public class OverlaySuperpeer implements MessageReceiver {
 						break;
 					case LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST:
 						incomingBarrierChangeSizeRequest((BarrierChangeSizeRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST:
+						incomingSuperpeerStorageCreateRequest((SuperpeerStorageCreateRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST:
+						incomingSuperpeerStorageGetRequest((SuperpeerStorageGetRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST:
+						incomingSuperpeerStoragePutRequest((SuperpeerStoragePutRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE:
+						incomingSuperpeerStorageRemoveMessage((SuperpeerStorageRemoveMessage) p_message);
 						break;
 					default:
 						break;
@@ -1894,6 +1998,21 @@ public class OverlaySuperpeer implements MessageReceiver {
 				BarrierChangeSizeRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE,
 				BarrierChangeSizeResponse.class);
+
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST,
+				SuperpeerStorageCreateRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE,
+				SuperpeerStorageCreateResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST,
+				SuperpeerStorageGetRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE,
+				SuperpeerStorageGetResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST,
+				SuperpeerStoragePutRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE,
+				SuperpeerStoragePutResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE,
+				SuperpeerStorageRemoveMessage.class);
 	}
 
 	/**
@@ -1920,5 +2039,10 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_network.register(BarrierSignOnRequest.class, this);
 		m_network.register(BarrierGetStatusRequest.class, this);
 		m_network.register(BarrierChangeSizeRequest.class, this);
+
+		m_network.register(SuperpeerStorageCreateRequest.class, this);
+		m_network.register(SuperpeerStorageGetRequest.class, this);
+		m_network.register(SuperpeerStoragePutRequest.class, this);
+		m_network.register(SuperpeerStorageRemoveMessage.class, this);
 	}
 }
