@@ -5,10 +5,7 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.AbstractVerticesForNextFrontierMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierCompressedMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.*;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
@@ -98,11 +95,14 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_bootService = p_dxram.getService(BootService.class);
 		m_synchronizationService = p_dxram.getService(SynchronizationService.class);
 
-		m_networkService.registerMessageType(BFSMessages.TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE,
-				VerticesForNextFrontierMessage.class);
+		m_networkService.registerMessageType(BFSMessages.TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_REQUEST,
+				VerticesForNextFrontierRequest.class);
 		m_networkService.registerMessageType(BFSMessages.TYPE,
-				BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_MESSAGE,
-				VerticesForNextFrontierCompressedMessage.class);
+				BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_REQUEST,
+				VerticesForNextFrontierCompressedRequest.class);
+		m_networkService.registerMessageType(BFSMessages.TYPE,
+				BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_RESPONSE,
+				VerticesForNextFrontierResponse.class);
 
 		// cache node id
 		m_nodeId = m_bootService.getNodeID();
@@ -306,12 +306,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				final boolean p_compressedVertexMessages) {
 			m_curFrontier = new ConcurrentBitVector(p_totalVertexCount);
 			m_nextFrontier = new ConcurrentBitVector(p_totalVertexCount);
-			if (p_verticesMarkVisited) {
+			if (!p_verticesMarkVisited) {
 				m_visitedFrontier = new ConcurrentBitVector(p_totalVertexCount);
 			}
 
-			m_networkService.registerReceiver(VerticesForNextFrontierMessage.class, this);
-			m_networkService.registerReceiver(VerticesForNextFrontierCompressedMessage.class, this);
+			m_networkService.registerReceiver(VerticesForNextFrontierRequest.class, this);
+			m_networkService.registerReceiver(VerticesForNextFrontierCompressedRequest.class, this);
 
 			m_loggerService.info(getClass(), "Running BFS with " + m_numberOfThreadsPerNode + " threads on "
 					+ p_totalVertexCount + " local vertices");
@@ -420,10 +420,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			if (p_message != null) {
 				if (p_message.getType() == BFSMessages.TYPE) {
 					switch (p_message.getSubtype()) {
-						case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE:
-						case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_MESSAGE:
+						case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_REQUEST:
+						case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_REQUEST:
 							onIncomingVerticesForNextFrontierMessage(
-									(AbstractVerticesForNextFrontierMessage) p_message);
+									(AbstractVerticesForNextFrontierRequest) p_message);
 							break;
 						default:
 							break;
@@ -433,12 +433,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		private void onIncomingVerticesForNextFrontierMessage(
-				final AbstractVerticesForNextFrontierMessage p_message) {
+				final AbstractVerticesForNextFrontierRequest p_message) {
 			long vertexId = p_message.getVertex();
 			while (vertexId != -1) {
 				m_nextFrontier.pushBack(vertexId);
 				vertexId = p_message.getVertex();
 			}
+
+			VerticesForNextFrontierResponse response = new VerticesForNextFrontierResponse(p_message);
+			m_networkService.sendMessage(response);
 		}
 
 		protected abstract void barrierSignalIterationComplete(final long p_verticesVisited);
@@ -569,7 +572,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private short m_nodeId;
 		private Vertex[] m_vertexBatch;
 		private int m_currentIterationLevel;
-		private HashMap<Short, AbstractVerticesForNextFrontierMessage> m_remoteMessages =
+		private HashMap<Short, AbstractVerticesForNextFrontierRequest> m_remoteMessages =
 				new HashMap<>();
 
 		private volatile boolean m_runIteration;
@@ -661,16 +664,24 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				if (validVertsInBatch == 0) {
 					// make sure to send out remaining messages which have not reached the
 					// batch size, yet (because they will never reach it in this round)
-					for (Entry<Short, AbstractVerticesForNextFrontierMessage> entry : m_remoteMessages.entrySet()) {
-						AbstractVerticesForNextFrontierMessage msg = entry.getValue();
+					for (Entry<Short, AbstractVerticesForNextFrontierRequest> entry : m_remoteMessages.entrySet()) {
+						AbstractVerticesForNextFrontierRequest msg = entry.getValue();
 						if (msg.getBatchSize() > 0) {
-							if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+							if (m_networkService.sendSync(msg) != NetworkErrorCodes.SUCCESS) {
 								m_loggerService.error(getClass(), "Sending vertex message to node "
 										+ NodeID.toHexString(msg.getDestination()) + " failed");
 								return;
 							}
 
-							msg.clear();
+							// don't reuse requests, does not work with previous responses counting as fulfilled
+							if (m_compressedVertexMessages) {
+								msg = new VerticesForNextFrontierCompressedRequest(msg.getDestination(),
+										m_vertexMessageBatchSize);
+							} else {
+								msg = new VerticesForNextFrontierRequest(msg.getDestination(),
+										m_vertexMessageBatchSize);
+							}
+							m_remoteMessages.put(entry.getKey(), msg);
 						}
 					}
 
@@ -729,13 +740,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							short creatorId = ChunkID.getCreatorID(neighbour);
 							if (creatorId != m_nodeId) {
 								// go remote, fill message buffers until they are full -> send
-								AbstractVerticesForNextFrontierMessage msg = m_remoteMessages.get(creatorId);
+								AbstractVerticesForNextFrontierRequest msg = m_remoteMessages.get(creatorId);
 								if (msg == null) {
 									if (m_compressedVertexMessages) {
-										msg = new VerticesForNextFrontierCompressedMessage(creatorId,
+										msg = new VerticesForNextFrontierCompressedRequest(creatorId,
 												m_vertexMessageBatchSize);
 									} else {
-										msg = new VerticesForNextFrontierMessage(creatorId,
+										msg = new VerticesForNextFrontierRequest(creatorId,
 												m_vertexMessageBatchSize);
 									}
 
@@ -745,13 +756,21 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								// add vertex to message batch
 								if (!msg.addVertex(neighbour)) {
 									// neighbor does not fit anymore, full
-									if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+									if (m_networkService.sendSync(msg) != NetworkErrorCodes.SUCCESS) {
 										m_loggerService.error(getClass(), "Sending vertex message to node "
 												+ NodeID.toHexString(creatorId) + " failed");
 										return;
 									}
 
-									msg.clear();
+									// don't reuse requests, does not work with previous responses counting as fulfilled
+									if (m_compressedVertexMessages) {
+										msg = new VerticesForNextFrontierCompressedRequest(creatorId,
+												m_vertexMessageBatchSize);
+									} else {
+										msg = new VerticesForNextFrontierRequest(creatorId,
+												m_vertexMessageBatchSize);
+									}
+									m_remoteMessages.put(msg.getDestination(), msg);
 									msg.addVertex(neighbour);
 								}
 							} else {

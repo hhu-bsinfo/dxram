@@ -9,28 +9,28 @@ import java.nio.ByteBuffer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
  */
-public class VerticesForNextFrontierCompressedMessage extends AbstractVerticesForNextFrontierMessage {
+public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesForNextFrontierRequest {
 
 	private long[] m_compressedVertexIds;
 	private int m_vertexIdsPos;
 	private int m_vertexPos;
 
 	/**
-	 * Creates an instance of VerticesForNextFrontierCompressedMessage.
+	 * Creates an instance of VerticesForNextFrontierCompressedRequest.
 	 * This constructor is used when receiving this message.
 	 */
-	public VerticesForNextFrontierCompressedMessage() {
+	public VerticesForNextFrontierCompressedRequest() {
 		super();
 	}
 
 	/**
-	 * Creates an instance of VerticesForNextFrontierCompressedMessage
+	 * Creates an instance of VerticesForNextFrontierCompressedRequest
 	 *
 	 * @param p_destination the destination
 	 * @param p_batchSize   size of the buffer to store the vertex ids to send.
 	 */
-	public VerticesForNextFrontierCompressedMessage(final short p_destination, final int p_batchSize) {
-		super(p_destination, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_MESSAGE, p_batchSize);
+	public VerticesForNextFrontierCompressedRequest(final short p_destination, final int p_batchSize) {
+		super(p_destination, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_REQUEST, p_batchSize);
 
 		m_compressedVertexIds =
 				new long[p_batchSize * 6 / Long.BYTES + (((p_batchSize * 6) % Long.BYTES) != 0 ? 1 : 0)];
@@ -92,13 +92,6 @@ public class VerticesForNextFrontierCompressedMessage extends AbstractVerticesFo
 		m_vertexPos++;
 
 		return vertex;
-	}
-
-	@Override
-	public void clear() {
-		m_vertexPos = 0;
-		m_numOfVertices = 0;
-		m_vertexIdsPos = 0;
 	}
 
 	// Methods
