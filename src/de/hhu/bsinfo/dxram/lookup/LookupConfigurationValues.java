@@ -21,5 +21,7 @@ class LookupConfigurationValues {
 		static final Pair<String, Long> CACHE_TTL = new Pair<>("CacheTTL", 1000L);
 		static final Pair<String, Integer> PING_INTERVAL = new Pair<>("PingInterval", 1);
 		static final Pair<String, Integer> MAX_BARRIERS_PER_SUPERPEER = new Pair<>("MaxBarriersPerSuperpeer", 1000);
+		static final Pair<String, Integer> STORAGE_MAX_NUM_ENTRIES = new Pair<>("StorageMaxNumEntries", 1000);
+		static final Pair<String, Integer> STORAGE_MAX_SIZE_BYTES = new Pair<>("StorageMaxSizeBytes", 32 * 1024 * 1024);
 	}
 }

@@ -66,6 +66,8 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST = 51;
 	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE = 52;
 	public static final byte SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE = 53;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST = 54;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE = 55;
 
 	/**
 	 * Hidden constructor

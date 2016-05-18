@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractResponse;
@@ -11,17 +9,14 @@ import java.nio.ByteOrder;
 
 /**
  * Response to the get request.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.05.15
  */
 public class SuperpeerStorageGetResponse extends AbstractResponse {
 	// The chunk objects here are used when sending the response only
 	// when the response is received, the data structures from the request are
 	// used to directly write the data to them and avoiding further copying
-	private DataStructure[] m_dataStructures;
-
-	// when receiving the repsonse, tells us how many chunks were successfully
-	// grabbed from the remote machine
-	private int m_numChunksGot;
+	private DataStructure m_dataStructure;
 
 	/**
 	 * Creates an instance of SuperpeerStorageGetResponse.
@@ -37,72 +32,45 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
 	 * Make sure to include all the chunks with IDs from the request in the correct order. If a chunk does
 	 * not exist, no data and a length of 0 indicates this situation.
 	 *
-	 * @param p_request        the corresponding GetRequest
-	 * @param p_numChunksGot   Number of chunks successfully read from memory.
-	 * @param p_dataStructures Data structures filled with the read data from memory
+	 * @param p_request       the corresponding GetRequest
+	 * @param p_dataStructure Data structure filled with the read data from memory
 	 */
-	public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final int p_numChunksGot,
-			final DataStructure... p_dataStructures) {
+	public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request,
+			final DataStructure p_dataStructure) {
 		super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE);
 
-		m_dataStructures = p_dataStructures;
-		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(getStatusCode(), p_numChunksGot));
-	}
-
-	/**
-	 * Tells how many chunks have successfully been retrieved from the remote machine.
-	 *
-	 * @return Number of chunks retrieved from remote machine.
-	 */
-	public int getNumberOfChunksGot() {
-		return m_numChunksGot;
+		m_dataStructure = p_dataStructure;
 	}
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		ChunkMessagesMetadataUtils.setNumberOfItemsInMessageBuffer(getStatusCode(), p_buffer, m_dataStructures.length);
-
 		// read the data to be sent to the remote from the chunk set for this message
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
-		for (DataStructure dataStructure : m_dataStructures) {
-			int size = dataStructure.sizeofObject();
-			// we keep the order of the chunks, so we don't have to send the ID again
-			// p_buffer.putLong(dataStructure.getID());
-			exporter.setPayloadSize(size);
-			p_buffer.putInt(size);
-			p_buffer.order(ByteOrder.nativeOrder());
-			exporter.exportObject(dataStructure);
-			p_buffer.order(ByteOrder.BIG_ENDIAN);
-		}
+		int size = m_dataStructure.sizeofObject();
+		exporter.setPayloadSize(size);
+		p_buffer.putInt(size);
+		p_buffer.order(ByteOrder.nativeOrder());
+		exporter.exportObject(m_dataStructure);
+		p_buffer.order(ByteOrder.BIG_ENDIAN);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_numChunksGot = ChunkMessagesMetadataUtils.getNumberOfItemsFromMessageBuffer(getStatusCode(), p_buffer);
-
 		// read the payload from the buffer and write it directly into
 		// the data structure provided by the request to avoid further copying of data
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
-		GetRequest request = (GetRequest) getCorrespondingRequest();
-		for (DataStructure dataStructure : request.getDataStructures()) {
-			importer.setPayloadSize(p_buffer.getInt());
-			p_buffer.order(ByteOrder.nativeOrder());
-			importer.importObject(dataStructure);
-			p_buffer.order(ByteOrder.BIG_ENDIAN);
-		}
-		m_dataStructures = request.getDataStructures();
+		SuperpeerStorageGetRequest request = (SuperpeerStorageGetRequest) getCorrespondingRequest();
+
+		m_dataStructure = request.getDataStructure();
+
+		importer.setPayloadSize(p_buffer.getInt());
+		p_buffer.order(ByteOrder.nativeOrder());
+		importer.importObject(m_dataStructure);
+		p_buffer.order(ByteOrder.BIG_ENDIAN);
 	}
 
 	@Override
 	protected final int getPayloadLength() {
-		int size = ChunkMessagesMetadataUtils.getSizeOfAdditionalLengthField(getStatusCode());
-
-		size += m_dataStructures.length * Integer.BYTES;
-
-		for (DataStructure dataStructure : m_dataStructures) {
-			size += dataStructure.sizeofObject();
-		}
-
-		return size;
+		return Integer.BYTES + m_dataStructure.sizeofObject();
 	}
 }

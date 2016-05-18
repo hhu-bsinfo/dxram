@@ -13,7 +13,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
  *
  * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
-
 public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_SIZE = new Argument("size", null, false, "Size of the chunk to create");

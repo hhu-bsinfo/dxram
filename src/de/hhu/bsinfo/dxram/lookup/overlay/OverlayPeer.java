@@ -3,7 +3,9 @@ package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -707,6 +709,209 @@ public class OverlayPeer implements MessageReceiver {
 		return response.getBarrierStatus();
 	}
 
+	public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
+		assert p_storageId < Math.pow(2, 31) && p_storageId >= 0;
+
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+		while (true) {
+			short responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_storageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStorageCreateRequest request =
+						new SuperpeerStorageCreateRequest(responsibleSuperpeer, p_storageId, p_size, false);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException e1) {
+					}
+					continue;
+				}
+
+				SuperpeerStorageCreateResponse response = request.getResponse(SuperpeerStorageCreateResponse.class);
+				return response.getStatusCode() == 0;
+			}
+		}
+	}
+
+	public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
+		if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
+			m_logger.error(getClass(), "Cannot put data structure into superpeer storage, invalid id " + ChunkID
+					.toHexString(p_dataStructure.getID()));
+			return false;
+		}
+
+		int storageId = (int) (p_dataStructure.getID() & 0x7FFFFFFF);
+
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStoragePutRequest request =
+						new SuperpeerStoragePutRequest(responsibleSuperpeer, p_dataStructure, false);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException e1) {
+					}
+					continue;
+				}
+
+				SuperpeerStoragePutResponse response = request.getResponse(SuperpeerStoragePutResponse.class);
+				return response.getStatusCode() == 0;
+			}
+		}
+	}
+
+	public Chunk superpeerStorageGet(final int p_id) {
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+
+			if (-1 != responsibleSuperpeer) {
+				Chunk chunk = new Chunk((long) p_id);
+				SuperpeerStorageGetRequest request =
+						new SuperpeerStorageGetRequest(responsibleSuperpeer, chunk);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {
+					}
+					continue;
+				}
+
+				SuperpeerStorageGetResponse response = request.getResponse(SuperpeerStorageGetResponse.class);
+				if (response.getStatusCode() == 0) {
+					return chunk;
+				} else {
+					return null;
+				}
+			}
+		}
+	}
+
+	public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
+		if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
+			m_logger.error(getClass(), "Cannot get data structure from superpeer storage, invalid id " + ChunkID
+					.toHexString(p_dataStructure.getID()));
+			return false;
+		}
+
+		int storageId = (int) (p_dataStructure.getID() & 0x7FFFFFFF);
+
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStorageGetRequest request =
+						new SuperpeerStorageGetRequest(responsibleSuperpeer, p_dataStructure);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException e1) {
+					}
+					continue;
+				}
+
+				SuperpeerStorageGetResponse response = request.getResponse(SuperpeerStorageGetResponse.class);
+				return response.getStatusCode() == 0;
+			}
+		}
+	}
+
+	public void superpeerStorageRemove(final int p_superpeerStorageId) {
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(p_superpeerStorageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStorageRemoveMessage message =
+						new SuperpeerStorageRemoveMessage(responsibleSuperpeer, p_superpeerStorageId, false);
+				if (m_network.sendMessage(message) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {
+					}
+					continue;
+				}
+
+				return;
+			}
+		}
+	}
+
+	public SuperpeerStorage.Status superpeerStorageGetStatus() {
+		SuperpeerStorage.Status[] statusArray = new SuperpeerStorage.Status[m_superpeers.size()];
+		for (int i = 0; i < m_superpeers.size(); i++) {
+			short superpeer = m_superpeers.get(i);
+			SuperpeerStorageStatusRequest request = new SuperpeerStorageStatusRequest(superpeer);
+			NetworkErrorCodes err = m_network.sendSync(request);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(getClass(),
+						"Getting superpeer " + NodeID.toHexString(superpeer) + " storage status failed.");
+				statusArray[i] = null;
+			} else {
+				statusArray[i] = request.getResponse(SuperpeerStorageStatusResponse.class).getStatus();
+			}
+		}
+
+		// aggregate status...bad performance =(
+		ArrayList<Long> aggregatedStatus = new ArrayList<>();
+		for (SuperpeerStorage.Status aStatusArray : statusArray) {
+			ArrayList<Long> toMergeArray = aStatusArray.getStatusArray();
+			for (long val : toMergeArray) {
+				if (!aggregatedStatus.contains(val)) {
+					aggregatedStatus.add(val);
+				}
+			}
+		}
+
+		// and finally...sort
+		Collections.sort(aggregatedStatus, (p_o1, p_o2) -> {
+			Integer i1 = (int) (p_o1 >> 32);
+			Integer i2 = (int) (p_o2 >> 32);
+
+			return i1.compareTo(i2);
+		});
+
+		return new SuperpeerStorage.Status(statusArray[0].getMaxNumItems(), statusArray[0].getMaxStorageSizeBytes(),
+				aggregatedStatus);
+	}
+
 	/**
 	 * Joins the superpeer overlay through contactSuperpeer
 	 *
@@ -963,6 +1168,25 @@ public class OverlayPeer implements MessageReceiver {
 				BarrierChangeSizeRequest.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE,
 				BarrierChangeSizeResponse.class);
+
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST,
+				SuperpeerStorageCreateRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE,
+				SuperpeerStorageCreateResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST,
+				SuperpeerStorageGetRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE,
+				SuperpeerStorageGetResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST,
+				SuperpeerStoragePutRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE,
+				SuperpeerStoragePutResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE,
+				SuperpeerStorageRemoveMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST,
+				SuperpeerStorageStatusRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE,
+				SuperpeerStorageStatusResponse.class);
 	}
 
 	/**

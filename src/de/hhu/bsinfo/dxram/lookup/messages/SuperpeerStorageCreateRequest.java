@@ -5,13 +5,14 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 import java.nio.ByteBuffer;
 
 /**
- * Request to allocate memory in the superpeer storage.
+ * Message to allocate memory in the superpeer storage.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.05.15
  */
 public class SuperpeerStorageCreateRequest extends AbstractRequest {
-	private short m_superpeerNodeId;
+	private int m_storageId;
 	private int m_size;
+	private boolean m_replicate;
 
 	/**
 	 * Creates an instance of SuperpeerStorageCreateRequest
@@ -23,24 +24,26 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of SuperpeerStorageCreateRequest
 	 *
-	 * @param p_destination     the destination
-	 * @param p_superpeerNodeId Node id of the superpeer storage.
-	 * @param p_size            Size in bytes of the data to store
+	 * @param p_destination the destination
+	 * @param p_storageId   Identifier for the chunk.
+	 * @param p_size        Size in bytes of the data to store
 	 */
-	public SuperpeerStorageCreateRequest(final short p_destination, final short p_superpeerNodeId, final int p_size) {
+	public SuperpeerStorageCreateRequest(final short p_destination, final int p_storageId, final int p_size,
+			final boolean p_replicate) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST);
 
-		m_superpeerNodeId = p_superpeerNodeId;
+		m_storageId = p_storageId;
 		m_size = p_size;
+		m_replicate = p_replicate;
 	}
 
 	/**
-	 * Get the node id of the superpeer.
+	 * Get the storage id to use for this memory block
 	 *
-	 * @return Superpeer node id.
+	 * @return Storage id.
 	 */
-	public short getSuperpeerNodeId() {
-		return m_superpeerNodeId;
+	public int getStorageId() {
+		return m_storageId;
 	}
 
 	/**
@@ -52,20 +55,31 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 		return m_size;
 	}
 
+	/**
+	 * Check if this message is a replicate message.
+	 *
+	 * @return True if replicate message, false otherwise.
+	 */
+	public boolean isReplicate() {
+		return m_replicate;
+	}
+
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putShort(m_superpeerNodeId);
+		p_buffer.putInt(m_storageId);
 		p_buffer.putInt(m_size);
+		p_buffer.put((byte) (m_replicate ? 1 : 0));
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		m_superpeerNodeId = p_buffer.getShort();
+		m_storageId = p_buffer.getInt();
 		m_size = p_buffer.getInt();
+		m_replicate = p_buffer.get() != 0;
 	}
 
 	@Override
 	protected final int getPayloadLength() {
-		return Short.BYTES + Integer.BYTES;
+		return Integer.BYTES + Integer.BYTES + Byte.BYTES;
 	}
 }
