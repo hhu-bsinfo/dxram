@@ -17,13 +17,29 @@ import java.util.TreeMap;
  */
 public class GraphPartitionIndex implements DataStructure {
 	private long m_id = ChunkID.INVALID_ID;
-	private Map<Integer, Entry> m_index = new TreeMap<Integer, Entry>();
+	private Map<Integer, Entry> m_index = new TreeMap<>();
 
 	/**
 	 * Constructor
 	 */
 	public GraphPartitionIndex() {
 
+	}
+
+	public long calcTotalVertexCount() {
+		long total = 0;
+		for (Map.Entry<Integer, Entry> entry : m_index.entrySet()) {
+			total += entry.getValue().getVertexCount();
+		}
+		return total;
+	}
+
+	public long calcTotalEdgeCount() {
+		long total = 0;
+		for (Map.Entry<Integer, Entry> entry : m_index.entrySet()) {
+			total += entry.getValue().getEdgeCount();
+		}
+		return total;
 	}
 
 	/**

@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.*;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
+import de.hhu.bsinfo.dxgraph.data.BFSResults;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
@@ -34,8 +35,11 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
@@ -61,6 +65,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private static final String MS_BARRIER_IDENT_0 = "BF0";
 	private static final String MS_BARRIER_IDENT_1 = "BF1";
 	private static final String MS_BARRIER_IDENT_2 = "BF2";
+	private static final String MS_BARRIER_IDENT_3 = "BF3";
 
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
@@ -73,7 +78,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private short m_nodeId = NodeID.INVALID_ID;
 	private GraphPartitionIndex m_graphPartitionIndex;
 
-	private String m_bfsRootNameserviceEntry = new String(GraphLoadBFSRootListTaskPayload.MS_BFS_ROOTS + "0");
+	private String m_bfsRootNameserviceEntry = GraphLoadBFSRootListTaskPayload.MS_BFS_ROOTS + "0";
 	private int m_vertexBatchSize = 100;
 	private int m_vertexMessageBatchSize = 100;
 	private int m_numberOfThreadsPerNode = 4;
@@ -83,6 +88,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private int m_barrierId0 = BarrierID.INVALID_ID;
 	private int m_barrierId1 = BarrierID.INVALID_ID;
 	private int m_barrierId2 = BarrierID.INVALID_ID;
+	private int m_barrierId3 = BarrierID.INVALID_ID;
 
 	public GraphAlgorithmBFSTaskPayload() {
 		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS);
@@ -106,6 +112,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_networkService.registerMessageType(BFSMessages.TYPE,
 				BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_RESPONSE,
 				VerticesForNextFrontierResponse.class);
+		m_networkService.registerMessageType(BFSMessages.TYPE,
+				BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE,
+				BFSResultMessage.class);
 
 		// cache node id
 		m_nodeId = m_bootService.getNodeID();
@@ -148,6 +157,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_barrierId0 = m_synchronizationService.barrierAllocate(getSlaveNodeIds().length);
 			m_barrierId1 = m_synchronizationService.barrierAllocate(getSlaveNodeIds().length);
 			m_barrierId2 = m_synchronizationService.barrierAllocate(getSlaveNodeIds().length);
+			m_barrierId3 = m_synchronizationService.barrierAllocate(getSlaveNodeIds().length);
 
 			m_nameserviceService.register(ChunkID.getChunkID(m_nodeId, m_barrierId0),
 					MS_BARRIER_IDENT_0 + getComputeGroupId());
@@ -155,10 +165,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					MS_BARRIER_IDENT_1 + getComputeGroupId());
 			m_nameserviceService.register(ChunkID.getChunkID(m_nodeId, m_barrierId2),
 					MS_BARRIER_IDENT_2 + getComputeGroupId());
+			m_nameserviceService.register(ChunkID.getChunkID(m_nodeId, m_barrierId3),
+					MS_BARRIER_IDENT_3 + getComputeGroupId());
 		} else {
 			m_barrierId0 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_0 + getComputeGroupId(), -1));
 			m_barrierId1 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_1 + getComputeGroupId(), -1));
 			m_barrierId2 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_2 + getComputeGroupId(), -1));
+			m_barrierId3 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_3 + getComputeGroupId(), -1));
 		}
 
 		if (m_markVertices) {
@@ -181,33 +194,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			if (ChunkID.getCreatorID(root) == m_nodeId) {
 				// run as bfs master
 				m_loggerService.info(getClass(), "I (" + getSlaveId() + ") am running as master");
-				BFSMaster master = new BFSMaster(root);
+				BFSMaster master = new BFSMaster(root, bfsIteration);
 				master.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount(), m_markVertices,
 						m_compressedVertexMessages);
 				master.execute(root);
 				master.shutdown();
-
-				BFSResult result = master.getBFSResult();
-
-				m_loggerService.info(getClass(), "Result of BFS iteration: " + result);
-
-				if (m_chunkService.create(result) != 1) {
-					m_loggerService.error(getClass(), "Creating chunk for bfs result failed.");
-					return -5;
-				}
-
-				if (m_chunkService.put(result) != 1) {
-					m_loggerService.error(getClass(), "Putting data of bfs result failed.");
-					return -6;
-				}
-
-				String resultName = MS_BFS_RESULT_NAMESRV_IDENT + bfsIteration;
-				m_nameserviceService.register(result, resultName);
-				m_loggerService.info(getClass(), "BFS results stored and registered: " + resultName);
 			} else {
-				// run as bfs slave, mater is the owner of the root node
+				// run as bfs slave, master is the owner of the root node
 				m_loggerService.info(getClass(), "I (" + getSlaveId() + ") am running as slave");
-				BFSSlave slave = new BFSSlave(ChunkID.getCreatorID(root));
+				BFSSlave slave = new BFSSlave(root, bfsIteration);
 				slave.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount(), m_markVertices,
 						m_compressedVertexMessages);
 				slave.execute(ChunkID.INVALID_ID);
@@ -227,10 +222,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_synchronizationService.barrierFree(m_barrierId0);
 			m_synchronizationService.barrierFree(m_barrierId1);
 			m_synchronizationService.barrierFree(m_barrierId2);
+			m_synchronizationService.barrierFree(m_barrierId3);
 		} else {
 			m_barrierId0 = BarrierID.INVALID_ID;
 			m_barrierId1 = BarrierID.INVALID_ID;
 			m_barrierId2 = BarrierID.INVALID_ID;
+			m_barrierId3 = BarrierID.INVALID_ID;
 		}
 
 		return 0;
@@ -295,14 +292,27 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	}
 
 	private abstract class AbstractBFSMS implements MessageReceiver {
+		private BFSResult m_bfsLocalResult;
+
 		private FrontierList m_curFrontier;
 		private FrontierList m_nextFrontier;
 		private FrontierList m_visitedFrontier;
 
 		private BFSThread[] m_threads;
+		private StatisticsThread m_statisticsThread;
+		private int m_bfsIteration;
 
-		public AbstractBFSMS() {
+		public AbstractBFSMS(final long p_bfsEntryNode, final int p_bfsIteration) {
+			m_bfsLocalResult = new BFSResult();
+			m_bfsLocalResult.m_rootVertexId = p_bfsEntryNode;
+			GraphPartitionIndex.Entry entry = m_graphPartitionIndex.getPartitionIndex(getSlaveId());
+			m_bfsLocalResult.m_graphSizeVertices = entry.getVertexCount();
+			m_bfsLocalResult.m_graphSizeEdges = entry.getEdgeCount();
+			m_bfsIteration = p_bfsIteration;
+		}
 
+		BFSResult getBFSResult() {
+			return m_bfsLocalResult;
 		}
 
 		public void init(final long p_totalVertexCount, final boolean p_verticesMarkVisited,
@@ -315,6 +325,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			m_networkService.registerReceiver(VerticesForNextFrontierRequest.class, this);
 			m_networkService.registerReceiver(VerticesForNextFrontierCompressedRequest.class, this);
+			m_networkService.registerReceiver(BFSResultMessage.class, this);
+
+			m_statisticsThread = new StatisticsThread();
 
 			m_loggerService.info(getClass(), "Running BFS with " + m_numberOfThreadsPerNode + " threads on "
 					+ p_totalVertexCount + " local vertices");
@@ -323,7 +336,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			for (int i = 0; i < m_threads.length; i++) {
 				m_threads[i] =
 						new BFSThread(i, m_vertexBatchSize, m_vertexMessageBatchSize, m_curFrontier, m_nextFrontier,
-								m_visitedFrontier, p_compressedVertexMessages);
+								m_visitedFrontier, p_compressedVertexMessages, m_statisticsThread.m_sharedVertexCounter,
+								m_statisticsThread.m_sharedEdgeCounter);
 				m_threads[i].start();
 			}
 		}
@@ -335,16 +349,17 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_curFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
 			}
 
-			int curBfsLevel = 0;
-			long totalVisistedVertices = 0;
+			m_statisticsThread.start();
+
 			while (true) {
 				m_loggerService.debug(getClass(),
-						"Processing next BFS level " + curBfsLevel + ", total vertices visited so far "
-								+ totalVisistedVertices + "...");
+						"Processing next BFS level " + m_bfsLocalResult.m_totalBFSDepth
+								+ ", total vertices visited so far "
+								+ m_bfsLocalResult.m_totalVisitedVertices + "...");
 
 				// kick off threads with current frontier
-				for (int t = 0; t < m_threads.length; t++) {
-					m_threads[t].runIteration();
+				for (BFSThread thread : m_threads) {
+					thread.runIteration();
 				}
 
 				// wait actively until threads are done with their current iteration
@@ -361,14 +376,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 				// all threads finished their iteration, sum up visited vertices
 				long visitedVertsIteration = 0;
-				for (int t = 0; t < m_threads.length; t++) {
-					visitedVertsIteration += m_threads[t].getVisitedCountLastRun();
+				for (BFSThread thread : m_threads) {
+					visitedVertsIteration += thread.getVisitedVerticesCountLastRun();
 				}
 
 				m_loggerService.info(getClass(),
-						"BFS Level " + curBfsLevel + " finished with " + visitedVertsIteration + " visited vertices");
+						"BFS Level " + m_bfsLocalResult.m_totalBFSDepth + " finished with " + visitedVertsIteration
+								+ " visited vertices");
 
-				totalVisistedVertices += visitedVertsIteration;
+				m_bfsLocalResult.m_totalVisitedVertices += visitedVertsIteration;
 
 				// signal we are done with our iteration
 				barrierSignalIterationComplete(visitedVertsIteration);
@@ -382,24 +398,45 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_loggerService.debug(getClass(), "Frontier swap, new cur frontier size: " + m_curFrontier.size());
 
 				// also swap the references of all threads!
-				for (int t = 0; t < m_threads.length; t++) {
-					m_threads[t].triggerFrontierSwap();
+				for (BFSThread thread : m_threads) {
+					thread.triggerFrontierSwap();
 				}
 
 				// signal frontier swap and ready for next iteration
 				barrierSignalFrontierSwap(m_curFrontier.size());
 
 				if (barrierSignalTerminate()) {
-					m_loggerService.info(getClass(), "BFS terminated signal, last iteration level " + curBfsLevel
-							+ ", total visited " + totalVisistedVertices);
+					m_loggerService.info(getClass(),
+							"BFS terminated signal, last iteration level " + m_bfsLocalResult.m_totalBFSDepth
+									+ ", total visited " + m_bfsLocalResult.m_totalVisitedVertices);
 					break;
 				}
 
 				m_loggerService.debug(getClass(), "Continue next BFS level");
 
 				// go for next run
-				curBfsLevel++;
+				m_bfsLocalResult.m_totalBFSDepth++;
 			}
+
+			m_statisticsThread.shutdown();
+			try {
+				m_statisticsThread.join();
+			} catch (final InterruptedException ignored) {
+			}
+
+			// collect further results
+			m_bfsLocalResult.m_totalVisitedVertices = m_statisticsThread.getTotalVertexCount();
+			m_bfsLocalResult.m_totalEdgesTraversed = m_statisticsThread.getTotalEdgeCount();
+			m_bfsLocalResult.m_maxVertsPerSecond = m_statisticsThread.getMaxVerticesVisitedPerSec();
+			m_bfsLocalResult.m_maxEdgesPerSecond = m_statisticsThread.getMaxEdgesTraversedPerSec();
+			m_bfsLocalResult.m_avgVertsPerSecond = m_statisticsThread.getAvgVerticesPerSec();
+			m_bfsLocalResult.m_avgEdgesPerSecond = m_statisticsThread.getAvgEdgesPerSec();
+			m_bfsLocalResult.m_totalTimeMs = m_statisticsThread.getTotalTimeMs();
+
+			System.out.println("Local: " + m_bfsLocalResult);
+
+			m_synchronizationService.barrierSignOn(m_barrierId3, -1);
+			handleBFSResult(m_bfsLocalResult, m_bfsIteration);
 		}
 
 		public void shutdown() {
@@ -415,6 +452,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				}
 			}
 
+			m_networkService.unregisterReceiver(VerticesForNextFrontierRequest.class, this);
+			m_networkService.unregisterReceiver(VerticesForNextFrontierCompressedRequest.class, this);
+			m_networkService.unregisterReceiver(BFSResultMessage.class, this);
+
 			m_loggerService.debug(getClass(), "BFS shutdown");
 		}
 
@@ -428,6 +469,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							onIncomingVerticesForNextFrontierMessage(
 									(AbstractVerticesForNextFrontierRequest) p_message);
 							break;
+						case BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE:
+							onIncomingBFSResultMessage((BFSResultMessage) p_message);
+							break;
 						default:
 							break;
 					}
@@ -435,8 +479,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 		}
 
-		private void onIncomingVerticesForNextFrontierMessage(
-				final AbstractVerticesForNextFrontierRequest p_message) {
+		private void onIncomingVerticesForNextFrontierMessage(final AbstractVerticesForNextFrontierRequest p_message) {
 			long vertexId = p_message.getVertex();
 			while (vertexId != -1) {
 				m_nextFrontier.pushBack(vertexId);
@@ -452,19 +495,129 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		protected abstract void barrierSignalFrontierSwap(final long p_nextFrontierSize);
 
 		protected abstract boolean barrierSignalTerminate();
+
+		protected abstract void handleBFSResult(final BFSResult p_bfsResult, final int p_bfsIteration);
+
+		protected abstract void onIncomingBFSResultMessage(final BFSResultMessage p_message);
+
+		public class StatisticsThread extends Thread {
+
+			private volatile boolean m_run = true;
+			private AtomicLong m_sharedVertexCounter;
+			private AtomicLong m_sharedEdgeCounter;
+			private long m_maxVerticesPerSec;
+			private long m_maxEdgesPerSec;
+			private long m_avgVerticesPerSec;
+			private long m_avgEdgesPerSec;
+			private long m_totalTimeMs;
+
+			StatisticsThread() {
+				m_sharedVertexCounter = new AtomicLong(0);
+				m_sharedEdgeCounter = new AtomicLong(0);
+				m_maxVerticesPerSec = 0;
+				m_maxEdgesPerSec = 0;
+			}
+
+			long getTotalVertexCount() {
+				return m_sharedVertexCounter.get();
+			}
+
+			long getTotalEdgeCount() {
+				return m_sharedEdgeCounter.get();
+			}
+
+			long getMaxVerticesVisitedPerSec() {
+				return m_maxVerticesPerSec;
+			}
+
+			long getMaxEdgesTraversedPerSec() {
+				return m_maxEdgesPerSec;
+			}
+
+			long getAvgVerticesPerSec() {
+				return m_avgVerticesPerSec;
+			}
+
+			long getAvgEdgesPerSec() {
+				return m_avgEdgesPerSec;
+			}
+
+			long getTotalTimeMs() {
+				return m_totalTimeMs;
+			}
+
+			public void shutdown() {
+				m_run = false;
+				this.interrupt();
+			}
+
+			@Override
+			public void run() {
+				long lastValueVertexCounter = m_sharedVertexCounter.get();
+				long lastValueEdgeCounter = m_sharedEdgeCounter.get();
+				long avgCounter = 1;
+				long avgVertsSum = 0;
+				long avgEdgesSum = 0;
+				long startTime = System.currentTimeMillis();
+				while (m_run) {
+					long valueVertexCounter = m_sharedVertexCounter.get();
+					long valueEdgeCounter = m_sharedEdgeCounter.get();
+
+					long verticesPerSec = (valueVertexCounter - lastValueVertexCounter);
+					long edgesPerSec = (valueEdgeCounter - lastValueEdgeCounter);
+
+					if (verticesPerSec > m_maxVerticesPerSec) {
+						m_maxVerticesPerSec = verticesPerSec;
+					}
+
+					if (edgesPerSec > m_maxEdgesPerSec) {
+						m_maxEdgesPerSec = edgesPerSec;
+					}
+
+					avgVertsSum += verticesPerSec;
+					avgEdgesSum += edgesPerSec;
+					m_avgVerticesPerSec = avgVertsSum / avgCounter;
+					m_avgEdgesPerSec = avgEdgesSum / avgCounter;
+
+					m_totalTimeMs = System.currentTimeMillis() - startTime;
+
+					String str = "";
+					str += "[Running time (ms): " + m_totalTimeMs + "]";
+					str += "[Vertices/sec: " + verticesPerSec + "]";
+					str += "[Edges/sec: " + edgesPerSec + "]";
+					str += "[MaxVerts/sec: " + m_maxVerticesPerSec + "]";
+					str += "[MaxEdges/sec: " + m_maxEdgesPerSec + "]";
+					str += "[AvgVerts/sec: " + m_avgVerticesPerSec + "]";
+					str += "[AvgEdges/sec: " + m_avgEdgesPerSec + "]";
+
+					System.out.println(str);
+
+					lastValueVertexCounter = valueVertexCounter;
+					lastValueEdgeCounter = valueEdgeCounter;
+					avgCounter++;
+
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {
+						m_totalTimeMs = System.currentTimeMillis() - startTime;
+					}
+				}
+			}
+		}
 	}
 
 	private class BFSMaster extends AbstractBFSMS {
-		private BFSResult m_bfsResult;
 		private boolean m_signalTermination;
 
-		BFSMaster(final long p_bfsEntryNode) {
-			m_bfsResult = new BFSResult();
-			m_bfsResult.setRootVertexID(p_bfsEntryNode);
-		}
+		private ReentrantLock m_aggregateResultLock = new ReentrantLock(false);
+		private ArrayList<Pair<Short, BFSResult>> m_resultsSlaves = new ArrayList<>();
+		private volatile int m_slaveCount = 0;
 
-		BFSResult getBFSResult() {
-			return m_bfsResult;
+		BFSMaster(final long p_bfsEntryNode, final int p_bfsIteration) {
+			super(p_bfsEntryNode, p_bfsIteration);
+
+			// don't count ourselves
+			m_slaveCount = getSlaveNodeIds().length - 1;
 		}
 
 		@Override
@@ -475,17 +628,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_loggerService.error(getClass(),
 						"Iteration complete, sign on to barrier " + BarrierID.toHexString(m_barrierId0) + " failed.");
 			}
-
-			long iterationVertsVisited = p_verticesVisited;
-			// results of other slaves of last iteration
-			for (long data : result.second()) {
-				if (data >= 0) {
-					iterationVertsVisited += data;
-				}
-			}
-
-			m_bfsResult.setTotalVisitedVertices(m_bfsResult.getTotalVisitedVertices() + iterationVertsVisited);
-			m_bfsResult.setTotalBFSDepth(m_bfsResult.getTotalBFSDepth() + 1);
 		}
 
 		@Override
@@ -520,12 +662,93 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			return m_signalTermination;
 		}
+
+		@Override
+		protected void handleBFSResult(final BFSResult p_bfsResult, final int p_bfsIteration) {
+			m_loggerService.info(getClass(), "Aggregating BFS results of iteration " + p_bfsIteration);
+
+			while (m_slaveCount > 0) {
+				try {
+					Thread.sleep(1);
+				} catch (final InterruptedException ignored) {
+				}
+			}
+
+			m_loggerService.debug(getClass(), "All slaves have submitted their results");
+
+			BFSResults results = new BFSResults();
+			results.addResult(getSlaveId(), m_nodeId, p_bfsResult);
+			results.getAggregatedResult().m_totalTimeMs = p_bfsResult.m_totalTimeMs;
+			results.getAggregatedResult().m_totalBFSDepth = p_bfsResult.m_totalBFSDepth;
+
+			results.getAggregatedResult().m_graphSizeVertices += p_bfsResult.m_graphSizeVertices;
+			results.getAggregatedResult().m_graphSizeEdges += p_bfsResult.m_graphSizeEdges;
+			results.getAggregatedResult().m_totalVisitedVertices += p_bfsResult.m_totalVisitedVertices;
+			results.getAggregatedResult().m_totalEdgesTraversed += p_bfsResult.m_totalEdgesTraversed;
+			results.getAggregatedResult().m_maxVertsPerSecond += p_bfsResult.m_maxVertsPerSecond;
+			results.getAggregatedResult().m_maxEdgesPerSecond += p_bfsResult.m_maxEdgesPerSecond;
+			results.getAggregatedResult().m_avgVertsPerSecond += p_bfsResult.m_avgVertsPerSecond;
+			results.getAggregatedResult().m_avgEdgesPerSecond += p_bfsResult.m_avgEdgesPerSecond;
+
+			// aggregate results
+			for (Pair<Short, BFSResult> otherResult : m_resultsSlaves) {
+				// get compute group id
+				short slaveId = -1;
+				short[] slaveNodeIds = getSlaveNodeIds();
+				for (int i = 0; i < slaveNodeIds.length; i++) {
+					if (slaveNodeIds[i] == otherResult.first()) {
+						slaveId = (short) i;
+						break;
+					}
+				}
+
+				results.addResult(slaveId, otherResult.m_first, otherResult.m_second);
+
+				results.getAggregatedResult().m_graphSizeVertices += otherResult.m_second.m_graphSizeVertices;
+				results.getAggregatedResult().m_graphSizeEdges += otherResult.m_second.m_graphSizeEdges;
+				results.getAggregatedResult().m_totalVisitedVertices += otherResult.m_second.m_totalVisitedVertices;
+				results.getAggregatedResult().m_totalEdgesTraversed += otherResult.m_second.m_totalEdgesTraversed;
+				results.getAggregatedResult().m_maxVertsPerSecond += otherResult.m_second.m_maxVertsPerSecond;
+				results.getAggregatedResult().m_maxEdgesPerSecond += otherResult.m_second.m_maxEdgesPerSecond;
+				results.getAggregatedResult().m_avgVertsPerSecond += otherResult.m_second.m_avgVertsPerSecond;
+				results.getAggregatedResult().m_avgEdgesPerSecond += otherResult.m_second.m_avgEdgesPerSecond;
+
+			}
+
+			// upload
+			System.out.println("Result of BFS iteration: \n" + results);
+
+			if (m_chunkService.create(results) != 1) {
+				m_loggerService.error(getClass(), "Creating chunk for bfs result failed.");
+				return;
+			}
+
+			if (m_chunkService.put(results) != 1) {
+				m_loggerService.error(getClass(), "Putting data of bfs result failed.");
+				return;
+			}
+
+			String resultName = MS_BFS_RESULT_NAMESRV_IDENT + p_bfsIteration;
+			m_nameserviceService.register(results, resultName);
+			m_loggerService.info(getClass(), "BFS results stored and registered: " + resultName);
+		}
+
+		@Override
+		protected void onIncomingBFSResultMessage(final BFSResultMessage p_message) {
+			m_aggregateResultLock.lock();
+
+			BFSResult bfsResult = p_message.getBFSResult();
+			m_resultsSlaves.add(new Pair<Short, BFSResult>(p_message.getSource(), p_message.getBFSResult()));
+			m_slaveCount--;
+
+			m_aggregateResultLock.unlock();
+		}
 	}
 
 	private class BFSSlave extends AbstractBFSMS {
 
-		BFSSlave(final short p_bfsMasterNodeID) {
-
+		BFSSlave(final long p_bfsEntryNode, final int p_bfsIteration) {
+			super(p_bfsEntryNode, p_bfsIteration);
 		}
 
 		@Override
@@ -561,6 +784,27 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			return false;
 		}
+
+		@Override
+		protected void handleBFSResult(final BFSResult p_bfsResult, final int p_bfsIteration) {
+			m_loggerService.info(getClass(), "Sending local results for aggregation to master");
+			// send result to master
+			// master is the node owning the root for the bfs iteration
+			BFSResultMessage message =
+					new BFSResultMessage(ChunkID.getCreatorID(p_bfsResult.m_rootVertexId), p_bfsResult);
+			NetworkErrorCodes err = m_networkService.sendMessage(message);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_loggerService.error(getClass(), "Sending bfs results to master " + NodeID
+						.toHexString(getSlaveNodeIds()[0]) + " failed: " + err);
+			}
+		}
+
+		@Override
+		protected void onIncomingBFSResultMessage(final BFSResultMessage p_message) {
+			m_loggerService.error(getClass(),
+					"Received BFS results message but I am not master, wrong node id destination specified on sender "
+							+ NodeID.toHexString(p_message.getSource()));
+		}
 	}
 
 	private class BFSThread extends Thread {
@@ -579,12 +823,16 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				new HashMap<>();
 
 		private volatile boolean m_runIteration;
-		private volatile int m_visitedCounterRun;
+		private volatile long m_visitedVerticesRun;
 		private volatile boolean m_exitThread;
+
+		private AtomicLong m_sharedVertexCounter;
+		private AtomicLong m_sharedEdgeCounter;
 
 		BFSThread(final int p_id, final int p_vertexBatchSize, final int p_vertexMessageBatchSize,
 				final FrontierList p_curFrontierShared, final FrontierList p_nextFrontierShared,
-				final FrontierList p_visitedFrontierShared, final boolean p_compressedVertexMessages) {
+				final FrontierList p_visitedFrontierShared, final boolean p_compressedVertexMessages,
+				final AtomicLong p_sharedVertexCounter, final AtomicLong p_sharedEdgeCounter) {
 			super("BFSThread-" + p_id);
 
 			m_id = p_id;
@@ -601,6 +849,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				// performance hack: if writing back, we only write back what we changed
 				m_vertexBatch[i].setWriteUserDataOnly(true);
 			}
+
+			m_sharedVertexCounter = p_sharedVertexCounter;
+			m_sharedEdgeCounter = p_sharedEdgeCounter;
 		}
 
 		void setCurrentBFSIterationLevel(final int p_iterationLevel) {
@@ -608,7 +859,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		void runIteration() {
-			m_visitedCounterRun = 0;
+			m_visitedVerticesRun = 0;
 			m_runIteration = true;
 		}
 
@@ -616,8 +867,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			return !m_runIteration;
 		}
 
-		int getVisitedCountLastRun() {
-			return m_visitedCounterRun;
+		long getVisitedVerticesCountLastRun() {
+			return m_visitedVerticesRun;
 		}
 
 		void triggerFrontierSwap() {
@@ -709,6 +960,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						continue;
 					}
 
+					m_sharedVertexCounter.incrementAndGet();
+
 					// two "modes": mark the actual vertex visited with the current bfs level
 					// or just remember that we have visited it and don't alter vertex data
 					boolean isVisited;
@@ -735,7 +988,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					if (!isVisited) {
 						writeBackCount++;
 						// set depth level
-						m_visitedCounterRun++;
+						m_visitedVerticesRun++;
 						long[] neighbours = vertex.getNeighbours();
 
 						for (long neighbour : neighbours) {
@@ -751,6 +1004,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										.toHexString(neighbour) + ", vertex " + vertex);
 								continue;
 							}
+
+							m_sharedEdgeCounter.incrementAndGet();
 
 							// sort by remote and local vertices
 							short creatorId = ChunkID.getCreatorID(neighbour);
