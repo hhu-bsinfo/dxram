@@ -23,6 +23,7 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
@@ -67,6 +68,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private NetworkService m_networkService;
 	private BootService m_bootService;
 	private SynchronizationService m_synchronizationService;
+	private TemporaryStorageService m_temporaryStorageService;
 
 	private short m_nodeId = NodeID.INVALID_ID;
 	private GraphPartitionIndex m_graphPartitionIndex;
@@ -94,6 +96,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_networkService = p_dxram.getService(NetworkService.class);
 		m_bootService = p_dxram.getService(BootService.class);
 		m_synchronizationService = p_dxram.getService(SynchronizationService.class);
+		m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 
 		m_networkService.registerMessageType(BFSMessages.TYPE, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_REQUEST,
 				VerticesForNextFrontierRequest.class);
@@ -118,8 +121,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		m_graphPartitionIndex = new GraphPartitionIndex();
 		m_graphPartitionIndex.setID(graphPartitionIndexChunkId);
-		if (m_chunkService.get(m_graphPartitionIndex) != 1) {
-			m_loggerService.error(getClass(), "Getting graph partition index from chunk "
+		if (!m_temporaryStorageService.get(m_graphPartitionIndex)) {
+			m_loggerService.error(getClass(), "Getting graph partition index from temporary memory chunk "
 					+ ChunkID.toHexString(graphPartitionIndexChunkId) + " failed.");
 			return -2;
 		}
@@ -736,6 +739,19 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						long[] neighbours = vertex.getNeighbours();
 
 						for (long neighbour : neighbours) {
+							// check if neighbors are valid, otherwise something's not ok with the data
+							if (neighbour == ChunkID.INVALID_ID) {
+								m_loggerService.warn(getClass(), "Invalid neighbor found on vertex " + vertex);
+								continue;
+							}
+
+							// don't allow access to the index chunk
+							if (ChunkID.getLocalID(neighbour) == 0) {
+								m_loggerService.warn(getClass(), "Neighbor id refers to index chunk " + ChunkID
+										.toHexString(neighbour) + ", vertex " + vertex);
+								continue;
+							}
+
 							// sort by remote and local vertices
 							short creatorId = ChunkID.getCreatorID(neighbour);
 							if (creatorId != m_nodeId) {

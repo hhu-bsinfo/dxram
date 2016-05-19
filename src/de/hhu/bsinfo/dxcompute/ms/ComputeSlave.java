@@ -195,8 +195,10 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 				m_logger.trace(getClass(), "Pinging master " + NodeID.toHexString(m_masterNodeId) + ": online.");
 			}
 
-			// do nothing
-			Thread.yield();
+			try {
+				Thread.sleep(10);
+			} catch (final InterruptedException ignored) {
+			}
 		}
 	}
 

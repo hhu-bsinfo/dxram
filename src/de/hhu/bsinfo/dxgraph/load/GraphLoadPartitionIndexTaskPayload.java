@@ -3,10 +3,10 @@ package de.hhu.bsinfo.dxgraph.load;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -63,7 +63,7 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 		// index from chunk memory
 		if (getSlaveId() == 0) {
 			m_loggerService = p_dxram.getService(LoggerService.class);
-			ChunkService chunkService = p_dxram.getService(ChunkService.class);
+			TemporaryStorageService tmpStorage = p_dxram.getService(TemporaryStorageService.class);
 			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
 
 			GraphPartitionIndex graphPartIndex = loadGraphPartitionIndexFromIndexFiles(m_path);
@@ -71,13 +71,15 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 				return -1;
 			}
 
+			// TODO id hashing like nameservice
+			graphPartIndex.setID(573);
 			// store the index for our current compute group
-			if (chunkService.create(graphPartIndex) != 1) {
+			if (!tmpStorage.create(graphPartIndex)) {
 				m_loggerService.error(getClass(), "Creating chunk for partition index failed.");
 				return -2;
 			}
 
-			if (chunkService.put(graphPartIndex) != 1) {
+			if (!tmpStorage.put(graphPartIndex)) {
 				m_loggerService.error(getClass(), "Putting partition index failed.");
 				return -3;
 			}

@@ -243,7 +243,10 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 			}
 
 			// do nothing
-			Thread.yield();
+			try {
+				Thread.sleep(10);
+			} catch (final InterruptedException ignored) {
+			}
 		}
 	}
 

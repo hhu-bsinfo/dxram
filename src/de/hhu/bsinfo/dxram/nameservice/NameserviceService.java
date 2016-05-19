@@ -2,7 +2,6 @@
 package de.hhu.bsinfo.dxram.nameservice;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -12,11 +11,9 @@ import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameGet;
 import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameList;
 import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameRegister;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 
 import java.util.ArrayList;
@@ -43,25 +40,26 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	 * @param p_name    Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final long p_chunkId, final String p_name) {
-		// let each node manage its own index (the chunk part)
-		short nodeId = ChunkID.getCreatorID(p_chunkId);
-		if (nodeId == NodeID.INVALID_ID) {
-			m_logger.error(getClass(),
-					"Invalid creator id specified for registering " + ChunkID.toHexString(p_chunkId) + " for name "
-							+ p_name);
-			return;
-		}
-
-		if (m_boot.getNodeID() == nodeId) {
-			m_nameservice.register(p_chunkId, p_name);
-		} else {
-			ForwardRegisterMessage message = new ForwardRegisterMessage(nodeId, p_chunkId, p_name);
-			NetworkErrorCodes err = m_network.sendMessage(message);
-			if (err != NetworkErrorCodes.SUCCESS) {
-				m_logger.error(getClass(),
-						"Sending register message to " + NodeID.toHexString(nodeId) + " failed: " + err);
-			}
-		}
+		m_nameservice.register(p_chunkId, p_name);
+		//		// let each node manage its own index (the chunk part)
+		//		short nodeId = ChunkID.getCreatorID(p_chunkId);
+		//		if (nodeId == NodeID.INVALID_ID) {
+		//			m_logger.error(getClass(),
+		//					"Invalid creator id specified for registering " + ChunkID.toHexString(p_chunkId) + " for name "
+		//							+ p_name);
+		//			return;
+		//		}
+		//
+		//		if (m_boot.getNodeID() == nodeId) {
+		//			m_nameservice.register(p_chunkId, p_name);
+		//		} else {
+		//			ForwardRegisterMessage message = new ForwardRegisterMessage(nodeId, p_chunkId, p_name);
+		//			NetworkErrorCodes err = m_network.sendMessage(message);
+		//			if (err != NetworkErrorCodes.SUCCESS) {
+		//				m_logger.error(getClass(),
+		//						"Sending register message to " + NodeID.toHexString(nodeId) + " failed: " + err);
+		//			}
+		//		}
 	}
 
 	/**

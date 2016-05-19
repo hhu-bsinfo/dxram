@@ -12,6 +12,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -36,7 +37,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
-	private String m_path = new String("./");
+	private String m_path = "./";
 	private int m_vertexBatchSize = 100;
 
 	/**
@@ -73,6 +74,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	public int execute(final DXRAMServiceAccessor p_dxram) {
 		m_loggerService = p_dxram.getService(LoggerService.class);
 		m_chunkService = p_dxram.getService(ChunkService.class);
+		TemporaryStorageService temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 		NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
 
 		// look for the graph partitioned index of the current compute group
@@ -88,8 +90,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		graphPartitionIndex.setID(chunkIdPartitionIndex);
 
 		// get the index
-		if (m_chunkService.get(graphPartitionIndex) != 1) {
-			m_loggerService.error(getClass(), "Getting partition index from chunk memory failed.");
+		if (!temporaryStorageService.get(graphPartitionIndex)) {
+			m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
 			return -2;
 		}
 
