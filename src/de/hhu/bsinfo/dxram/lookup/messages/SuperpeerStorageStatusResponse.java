@@ -1,10 +1,10 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import java.nio.ByteBuffer;
+
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.lookup.overlay.SuperpeerStorage;
 import de.hhu.bsinfo.menet.AbstractResponse;
-
-import java.nio.ByteBuffer;
 
 /**
  * Response to the status request.

@@ -1,9 +1,9 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import java.nio.ByteBuffer;
+
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.menet.AbstractRequest;
-
-import java.nio.ByteBuffer;
 
 /**
  * Request to get data from the superpeer storage.

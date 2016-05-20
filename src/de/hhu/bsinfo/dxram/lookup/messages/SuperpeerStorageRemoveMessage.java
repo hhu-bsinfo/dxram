@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractMessage;
-
 import java.nio.ByteBuffer;
+
+import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
  * Message to free an allocation item on the superpeer storage.

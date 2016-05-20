@@ -1,5 +1,10 @@
 package de.hhu.bsinfo.dxram.tmp.tcmds;
 
+import java.lang.reflect.InvocationTargetException;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -7,11 +12,6 @@ import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
-
-import java.lang.reflect.InvocationTargetException;
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Get a chunk from the temporary (superpeer) storage.
@@ -118,75 +118,82 @@ public class TcmdTmpGet extends AbstractTerminalCommand {
 
 			ByteBuffer buffer = chunk.getData();
 			try {
+				assert buffer != null;
 				buffer.position(off);
 			} catch (final IllegalArgumentException e) {
 				// set to end
 				buffer.position(buffer.capacity());
 			}
 
-			String str = new String();
+			String str = "";
 			dataType = dataType.toLowerCase();
-			if (dataType.equals("str")) {
-				byte[] bytes = new byte[buffer.capacity() - buffer.position()];
+			switch (dataType) {
+				case "str":
+					byte[] bytes = new byte[buffer.capacity() - buffer.position()];
 
-				try {
-					buffer.get(bytes, 0, len);
-				} catch (final BufferOverflowException e) {
-					// that's fine, trunc data
-				}
+					try {
+						buffer.get(bytes, 0, len);
+					} catch (final BufferOverflowException e) {
+						// that's fine, trunc data
+					}
 
-				str = new String(bytes, StandardCharsets.US_ASCII);
-			} else if (dataType.equals("byte")) {
-				try {
-					for (int i = 0; i < len; i += Byte.BYTES) {
-						if (hex) {
-							str += Integer.toHexString(buffer.get() & 0xFF) + " ";
-						} else {
-							str += buffer.get() + " ";
+					str = new String(bytes, StandardCharsets.US_ASCII);
+					break;
+				case "byte":
+					try {
+						for (int i = 0; i < len; i += Byte.BYTES) {
+							if (hex) {
+								str += Integer.toHexString(buffer.get() & 0xFF) + " ";
+							} else {
+								str += buffer.get() + " ";
+							}
 						}
+					} catch (final BufferOverflowException e) {
+						// that's fine, trunc data
 					}
-				} catch (final BufferOverflowException e) {
-					// that's fine, trunc data
-				}
-			} else if (dataType.equals("short")) {
-				try {
-					for (int i = 0; i < len; i += Short.BYTES) {
-						if (hex) {
-							str += Integer.toHexString(buffer.getShort() & 0xFFFF) + " ";
-						} else {
-							str += buffer.getShort() + " ";
+					break;
+				case "short":
+					try {
+						for (int i = 0; i < len; i += Short.BYTES) {
+							if (hex) {
+								str += Integer.toHexString(buffer.getShort() & 0xFFFF) + " ";
+							} else {
+								str += buffer.getShort() + " ";
+							}
 						}
+					} catch (final BufferOverflowException e) {
+						// that's fine, trunc data
 					}
-				} catch (final BufferOverflowException e) {
-					// that's fine, trunc data
-				}
-			} else if (dataType.equals("int")) {
-				try {
-					for (int i = 0; i < len; i += Integer.BYTES) {
-						if (hex) {
-							str += Integer.toHexString(buffer.getInt() & 0xFFFFFFFF) + " ";
-						} else {
-							str += buffer.getInt() + " ";
+					break;
+				case "int":
+					try {
+						for (int i = 0; i < len; i += Integer.BYTES) {
+							if (hex) {
+								str += Integer.toHexString(buffer.getInt()) + " ";
+							} else {
+								str += buffer.getInt() + " ";
+							}
 						}
+					} catch (final BufferOverflowException e) {
+						// that's fine, trunc data
 					}
-				} catch (final BufferOverflowException e) {
-					// that's fine, trunc data
-				}
-			} else if (dataType.equals("long")) {
-				try {
-					for (int i = 0; i < len; i += Long.BYTES) {
-						if (hex) {
-							str += Long.toHexString(buffer.getLong() & 0xFFFFFFFFFFFFFFFFL) + " ";
-						} else {
-							str += buffer.getLong() + " ";
+					break;
+				case "long":
+					try {
+						for (int i = 0; i < len; i += Long.BYTES) {
+							if (hex) {
+								str += Long.toHexString(buffer.getLong()) + " ";
+							} else {
+								str += buffer.getLong() + " ";
+							}
 						}
+					} catch (final BufferOverflowException e) {
+						// that's fine, trunc data
 					}
-				} catch (final BufferOverflowException e) {
-					// that's fine, trunc data
-				}
-			} else {
-				getTerminalDelegate().println("error: Unsupported data type " + dataType, TerminalColor.RED);
-				return true;
+					break;
+				default:
+					getTerminalDelegate().println("error: Unsupported data type " + dataType, TerminalColor.RED);
+					return true;
 			}
 
 			getTerminalDelegate().println("Chunk data of " + ChunkID.toHexString(id) + ":");

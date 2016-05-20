@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -12,14 +14,16 @@ import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.event.NameserviceCacheEntryUpdateEvent;
-import de.hhu.bsinfo.dxram.lookup.overlay.*;
+import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.CacheTree;
+import de.hhu.bsinfo.dxram.lookup.overlay.OverlayPeer;
+import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
+import de.hhu.bsinfo.dxram.lookup.overlay.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
-
-import java.util.ArrayList;
 
 /**
  * Component for finding chunks in superpeer overlay.
@@ -97,7 +101,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	 */
 	public void removeChunkIDs(final long[] p_chunkIDs) {
 
-		m_logger.trace(getClass(), "Entering remove with: p_chunkIDs=" + p_chunkIDs);
+		m_logger.trace(getClass(), "Entering remove with " + p_chunkIDs.length + " chunkIDs");
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "Superpeer must not call this method!");
@@ -166,7 +170,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 					// Cache response
 					m_applicationIDCache.put(p_id, ret);
 				} else {
-					ret = chunkID.longValue();
+					ret = chunkID;
 				}
 			} else {
 				ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
@@ -328,7 +332,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	 * @return if all superpeers are offline
 	 */
 	public boolean isResponsibleForBootstrapCleanup() {
-		boolean ret = false;
+		boolean ret;
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			ret = m_superpeer.isLastSuperpeer();
@@ -442,6 +446,13 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return m_peer.barrierGetStatus(p_barrierId);
 	}
 
+	/**
+	 * Create a block of memory in the superpeer storage.
+	 *
+	 * @param p_storageId Storage id to use to identify the block.
+	 * @param p_size      Size of the block to allocate
+	 * @return True if successful, false on failure (no space, element count exceeded or id used).
+	 */
 	public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to his storage");
@@ -451,6 +462,12 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return m_peer.superpeerStorageCreate(p_storageId, p_size);
 	}
 
+	/**
+	 * Create a block of memory in the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with the storage id assigned to allocate memory for.
+	 * @return True if successful, false on failure (no space, element count exceeded or id used).
+	 */
 	public boolean superpeerStorageCreate(final DataStructure p_dataStructure) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to a superpeer storage");
@@ -466,6 +483,12 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return superpeerStorageCreate((int) p_dataStructure.getID(), p_dataStructure.sizeofObject());
 	}
 
+	/**
+	 * Put data into an allocated block of memory in the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure to put with the storage id assigned.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to a superpeer storage");
@@ -481,6 +504,12 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return m_peer.superpeerStoragePut(p_dataStructure);
 	}
 
+	/**
+	 * Get data from the superpeer storage.
+	 *
+	 * @param p_id Id of an allocated block to get the data from.
+	 * @return Chunk with the data other null on error.
+	 */
 	public Chunk superpeerStorageGet(final int p_id) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to a superpeer storage");
@@ -490,6 +519,12 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return m_peer.superpeerStorageGet(p_id);
 	}
 
+	/**
+	 * Get data from the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with the storage id assigned to read the data into.
+	 * @return True on success, false on failure.
+	 */
 	public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to a superpeer storage");
@@ -505,6 +540,12 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return m_peer.superpeerStorageGet(p_dataStructure);
 	}
 
+	/**
+	 * Remove an allocated block from the superpeer storage.
+	 *
+	 * @param p_id Storage id identifying the block to remove.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean superpeerStorageRemove(final int p_id) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to a superpeer storage");
@@ -515,6 +556,12 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return true;
 	}
 
+	/**
+	 * Remove an allocated block from the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with the storage id assigned to remove.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean superpeerStorageRemove(final DataStructure p_dataStructure) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to a superpeer storage");
@@ -531,6 +578,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return true;
 	}
 
+	/**
+	 * Get the status of the superpeer storage.
+	 *
+	 * @return Status of the superpeer storage.
+	 */
 	public SuperpeerStorage.Status superpeerStorageGetStatus() {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "A superpeer is not allowed store data to a superpeer storage");
@@ -574,7 +626,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 			m_chunkIDCacheTree = new CacheTree(m_maxCacheSize, ORDER);
 
-			m_applicationIDCache = new Cache<Integer, Long>(
+			m_applicationIDCache = new Cache<>(
 					p_settings.getValue(LookupConfigurationValues.Component.NAMESERVICE_CACHE_ENTRIES));
 			// m_aidCache.enableTTL();
 		}

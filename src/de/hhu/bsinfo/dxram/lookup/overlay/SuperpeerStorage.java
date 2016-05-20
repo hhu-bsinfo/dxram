@@ -1,14 +1,14 @@
 package de.hhu.bsinfo.dxram.lookup.overlay;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * An object/chunk storage on the superpeer for temporary data which is not wanted in the normal
@@ -80,7 +80,7 @@ public class SuperpeerStorage {
 			return -1;
 		}
 
-		int written = -1;
+		int written;
 		if (p_data.length > data.length) {
 			written = data.length;
 		} else {
@@ -153,6 +153,13 @@ public class SuperpeerStorage {
 			m_storageStatus = new ArrayList<Long>();
 		}
 
+		/**
+		 * Constructor
+		 *
+		 * @param p_maxNumItems         Max number of items allowed in the storage.
+		 * @param p_maxStorageSizeBytes Max storage size in bytes.
+		 * @param p_storageStatus       Storage status i.e. List of Ids + size of the blocks allocated.
+		 */
 		public Status(final int p_maxNumItems, final int p_maxStorageSizeBytes, final ArrayList<Long> p_storageStatus) {
 			m_maxNumItems = p_maxNumItems;
 			m_maxStorageSizeBytes = p_maxStorageSizeBytes;
@@ -232,7 +239,7 @@ public class SuperpeerStorage {
 			m_maxNumItems = p_importer.readInt();
 			m_maxStorageSizeBytes = p_importer.readInt();
 			int size = p_importer.readInt();
-			m_storageStatus = new ArrayList<Long>(size);
+			m_storageStatus = new ArrayList<>(size);
 			for (int i = 0; i < size; i++) {
 				m_storageStatus.add((((long) p_importer.readInt()) << 32L) | p_importer.readInt());
 			}

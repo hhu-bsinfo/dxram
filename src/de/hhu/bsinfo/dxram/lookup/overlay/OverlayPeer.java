@@ -1,6 +1,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.overlay;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
+
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -11,7 +16,55 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
 import de.hhu.bsinfo.dxram.lookup.event.NameserviceCacheEntryUpdateEvent;
-import de.hhu.bsinfo.dxram.lookup.messages.*;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierAllocRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierAllocResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierChangeSizeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierChangeSizeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierFreeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierFreeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierGetStatusRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierGetStatusResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierReleaseMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.InitRangeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.InitRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.InsertNameserviceEntriesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.InsertNameserviceEntriesResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.JoinRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.JoinResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageRemoveMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
@@ -19,12 +72,6 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.Pair;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Peer functionality for overlay
@@ -53,9 +100,6 @@ public class OverlayPeer implements MessageReceiver {
 
 	private CRC16 m_hashGenerator = new CRC16();
 
-	private AtomicInteger m_barrierSignOnCounter = new AtomicInteger(0);
-	private int[] m_barrierSignOns = new int[100];
-
 	/**
 	 * Creates an instance of OverlayPeer
 	 *
@@ -75,7 +119,9 @@ public class OverlayPeer implements MessageReceiver {
 		m_network = p_network;
 		m_event = p_event;
 
-		m_nodeID = m_boot.getNodeID();
+		m_initialNumberOfSuperpeers = p_initialNumberOfSuperpeers;
+
+		m_nodeID = p_nodeID;
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();
@@ -146,7 +192,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {
+				} catch (final InterruptedException ignored) {
 				}
 				continue;
 			}
@@ -157,11 +203,10 @@ public class OverlayPeer implements MessageReceiver {
 			if (null != backupSuperpeers) {
 				if (-1 != backupSuperpeers[0]) {
 					// Send backups
-					for (int i = 0; i < backupSuperpeers.length; i++) {
-						request = new RemoveChunkIDsRequest(backupSuperpeers[i], p_chunkIDs, BACKUP);
+					for (short backupSuperpeer : backupSuperpeers) {
+						request = new RemoveChunkIDsRequest(backupSuperpeer, p_chunkIDs, BACKUP);
 						if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 							// Ignore superpeer failure, own superpeer will fix this
-							continue;
 						}
 					}
 				}
@@ -201,7 +246,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {
+					} catch (final InterruptedException ignored) {
 					}
 					continue;
 				}
@@ -212,11 +257,10 @@ public class OverlayPeer implements MessageReceiver {
 				if (null != backupSuperpeers) {
 					if (-1 != backupSuperpeers[0]) {
 						// Send backups
-						for (int i = 0; i < backupSuperpeers.length; i++) {
-							request = new InsertNameserviceEntriesRequest(backupSuperpeers[i], p_id, p_chunkID, BACKUP);
+						for (short backupSuperpeer : backupSuperpeers) {
+							request = new InsertNameserviceEntriesRequest(backupSuperpeer, p_id, p_chunkID, BACKUP);
 							if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 								// Ignore superpeer failure, own superpeer will fix this
-								continue;
 							}
 						}
 					}
@@ -256,7 +300,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {
+					} catch (final InterruptedException ignored) {
 					}
 					continue;
 				}
@@ -311,7 +355,7 @@ public class OverlayPeer implements MessageReceiver {
 	 * @return List of nameservice entries or null on error;
 	 */
 	public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
-		ArrayList<Pair<Integer, Long>> entries = new ArrayList<Pair<Integer, Long>>();
+		ArrayList<Pair<Integer, Long>> entries = new ArrayList<>();
 		Short[] superpeers;
 		GetNameserviceEntriesRequest request;
 		GetNameserviceEntriesResponse response;
@@ -359,7 +403,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {
+				} catch (final InterruptedException ignored) {
 				}
 				continue;
 			}
@@ -394,7 +438,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {
+					} catch (final InterruptedException ignored) {
 					}
 					continue;
 				}
@@ -429,7 +473,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {
+				} catch (final InterruptedException ignored) {
 				}
 				continue;
 			}
@@ -496,7 +540,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {
+				} catch (final InterruptedException ignored) {
 				}
 				continue;
 			}
@@ -709,6 +753,13 @@ public class OverlayPeer implements MessageReceiver {
 		return response.getBarrierStatus();
 	}
 
+	/**
+	 * Create a block of memory in the superpeer storage.
+	 *
+	 * @param p_storageId Local storage id to assign to the newly created block.
+	 * @param p_size      Size of the block to create
+	 * @return True if creating successful, false if failed.
+	 */
 	public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
 		assert p_storageId < Math.pow(2, 31) && p_storageId >= 0;
 
@@ -727,7 +778,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {
+					} catch (final InterruptedException ignored) {
 					}
 					continue;
 				}
@@ -738,6 +789,12 @@ public class OverlayPeer implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Put data into an allocated block in the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with data to put.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
 		if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
 			m_logger.error(getClass(), "Cannot put data structure into superpeer storage, invalid id " + ChunkID
@@ -764,7 +821,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {
+					} catch (final InterruptedException ignored) {
 					}
 					continue;
 				}
@@ -775,6 +832,12 @@ public class OverlayPeer implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Get data from an allocated block in the superpeer storage.
+	 *
+	 * @param p_id Id of the allocated block.
+	 * @return Chunk with data from the block or null on error.
+	 */
 	public Chunk superpeerStorageGet(final int p_id) {
 		boolean check = false;
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
@@ -809,6 +872,12 @@ public class OverlayPeer implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Get data from an allocated block in the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with set storage id to read the data from the storage into.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
 		if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
 			m_logger.error(getClass(), "Cannot get data structure from superpeer storage, invalid id " + ChunkID
@@ -835,7 +904,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {
+					} catch (final InterruptedException ignored) {
 					}
 					continue;
 				}
@@ -846,6 +915,11 @@ public class OverlayPeer implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Remove an allocated block in the superpeer storage.
+	 *
+	 * @param p_superpeerStorageId Id of the allocated block to remove.
+	 */
 	public void superpeerStorageRemove(final int p_superpeerStorageId) {
 		boolean check = false;
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
@@ -874,6 +948,11 @@ public class OverlayPeer implements MessageReceiver {
 		}
 	}
 
+	/**
+	 * Get the status of the superpeer storage.
+	 *
+	 * @return Status of the superpeer storage.
+	 */
 	public SuperpeerStorage.Status superpeerStorageGetStatus() {
 		SuperpeerStorage.Status[] statusArray = new SuperpeerStorage.Status[m_superpeers.size()];
 		for (int i = 0; i < m_superpeers.size(); i++) {
@@ -893,11 +972,7 @@ public class OverlayPeer implements MessageReceiver {
 		ArrayList<Long> aggregatedStatus = new ArrayList<>();
 		for (SuperpeerStorage.Status aStatusArray : statusArray) {
 			ArrayList<Long> toMergeArray = aStatusArray.getStatusArray();
-			for (long val : toMergeArray) {
-				if (!aggregatedStatus.contains(val)) {
-					aggregatedStatus.add(val);
-				}
-			}
+			toMergeArray.stream().filter(val -> !aggregatedStatus.contains(val)).forEach(aggregatedStatus::add);
 		}
 
 		// and finally...sort
@@ -920,7 +995,7 @@ public class OverlayPeer implements MessageReceiver {
 	 */
 	private boolean joinSuperpeerOverlay(final short p_contactSuperpeer) {
 		short contactSuperpeer;
-		JoinRequest joinRequest = null;
+		JoinRequest joinRequest;
 		JoinResponse joinResponse = null;
 
 		m_logger.trace(getClass(), "Entering joinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
@@ -947,6 +1022,7 @@ public class OverlayPeer implements MessageReceiver {
 			joinResponse = joinRequest.getResponse(JoinResponse.class);
 			contactSuperpeer = joinResponse.getNewContactSuperpeer();
 		}
+		assert joinResponse != null;
 		m_superpeers = joinResponse.getSuperpeers();
 		m_mySuperpeer = joinResponse.getSource();
 		OverlayHelper.insertSuperpeer(m_mySuperpeer, m_superpeers);
@@ -968,8 +1044,8 @@ public class OverlayPeer implements MessageReceiver {
 		short predecessor;
 		short hisSuccessor;
 		int index;
-		AskAboutSuccessorRequest request = null;
-		AskAboutSuccessorResponse response = null;
+		AskAboutSuccessorRequest request;
+		AskAboutSuccessorResponse response;
 
 		m_logger.trace(OverlayHelper.class,
 				"Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
