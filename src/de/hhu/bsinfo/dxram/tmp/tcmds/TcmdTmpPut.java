@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.tmp.tcmds;
 
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
@@ -10,10 +14,6 @@ import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserByte;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserInt;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserLong;
 import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserShort;
-
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Put data into temporary storage.
@@ -80,6 +80,7 @@ public class TcmdTmpPut extends AbstractTerminalCommand {
 
 		ByteBuffer buffer = chunk.getData();
 		try {
+			assert buffer != null;
 			buffer.position(offset);
 		} catch (final IllegalArgumentException e) {
 			// set to end
@@ -87,66 +88,76 @@ public class TcmdTmpPut extends AbstractTerminalCommand {
 		}
 
 		dataType = dataType.toLowerCase();
-		if (dataType.equals("str")) {
-			byte[] bytes = data.getBytes(StandardCharsets.US_ASCII);
+		switch (dataType) {
+			case "str":
+				byte[] bytes = data.getBytes(StandardCharsets.US_ASCII);
 
-			try {
-				int size = buffer.capacity() - buffer.position();
-				if (bytes.length < size) {
-					size = bytes.length;
+				try {
+					int size = buffer.capacity() - buffer.position();
+					if (bytes.length < size) {
+						size = bytes.length;
+					}
+					buffer.put(bytes, 0, size);
+				} catch (final BufferOverflowException e) {
+					// that's fine, trunc data
 				}
-				buffer.put(bytes, 0, size);
-			} catch (final BufferOverflowException e) {
-				// that's fine, trunc data
-			}
-		} else if (dataType.equals("byte")) {
-			byte b = (byte) (new DataTypeParserByte()).parse(data);
+				break;
+			case "byte":
+				byte b = (byte) (new DataTypeParserByte()).parse(data);
 
-			try {
-				buffer.put(b);
-			} catch (final BufferOverflowException e) {
-				// that's fine, trunc data
-			}
-		} else if (dataType.equals("short")) {
-			short v = (short) (new DataTypeParserShort()).parse(data);
-
-			try {
-				buffer.putShort(v);
-			} catch (final BufferOverflowException e) {
-				// that's fine, trunc data
-			}
-		} else if (dataType.equals("int")) {
-			int v = (int) (new DataTypeParserInt()).parse(data);
-
-			try {
-				buffer.putInt(v);
-			} catch (final BufferOverflowException e) {
-				// that's fine, trunc data
-			}
-		} else if (dataType.equals("long")) {
-			long v = (long) (new DataTypeParserLong()).parse(data);
-
-			try {
-				buffer.putLong(v);
-			} catch (final BufferOverflowException e) {
-				// that's fine, trunc data
-			}
-		} else if (dataType.equals("hex")) {
-			DataTypeParserByte parser = new DataTypeParserByte();
-			String[] tokens = data.split(" ");
-
-			for (String token : tokens) {
-				byte b = (byte) parser.parse(token);
 				try {
 					buffer.put(b);
 				} catch (final BufferOverflowException e) {
 					// that's fine, trunc data
-					break;
 				}
+				break;
+			case "short": {
+				short v = (short) (new DataTypeParserShort()).parse(data);
+
+				try {
+					buffer.putShort(v);
+				} catch (final BufferOverflowException e) {
+					// that's fine, trunc data
+				}
+				break;
 			}
-		} else {
-			getTerminalDelegate().println("error: Unsupported data type " + dataType, TerminalColor.RED);
-			return true;
+			case "int": {
+				int v = (int) (new DataTypeParserInt()).parse(data);
+
+				try {
+					buffer.putInt(v);
+				} catch (final BufferOverflowException e) {
+					// that's fine, trunc data
+				}
+				break;
+			}
+			case "long": {
+				long v = (long) (new DataTypeParserLong()).parse(data);
+
+				try {
+					buffer.putLong(v);
+				} catch (final BufferOverflowException e) {
+					// that's fine, trunc data
+				}
+				break;
+			}
+			case "hex":
+				DataTypeParserByte parser = new DataTypeParserByte();
+				String[] tokens = data.split(" ");
+
+				for (String token : tokens) {
+					b = (byte) parser.parse(token);
+					try {
+						buffer.put(b);
+					} catch (final BufferOverflowException e) {
+						// that's fine, trunc data
+						break;
+					}
+				}
+				break;
+			default:
+				getTerminalDelegate().println("error: Unsupported data type " + dataType, TerminalColor.RED);
+				return true;
 		}
 
 		// put chunk back

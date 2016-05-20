@@ -7,7 +7,11 @@ import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
-import de.hhu.bsinfo.dxram.tmp.tcmds.*;
+import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpCreate;
+import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpGet;
+import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpPut;
+import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpRemove;
+import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpStatus;
 
 /**
  * This service provides access to a temporary "chunk" storage residing on the
@@ -24,34 +28,82 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 	private LookupComponent m_lookup;
 	private TerminalComponent m_terminal;
 
+	/**
+	 * Create a block of memory in the superpeer storage.
+	 *
+	 * @param p_id   Storage id to use to identify the block.
+	 * @param p_size Size of the block to allocate
+	 * @return True if successful, false on failure (no space, element count exceeded or id used).
+	 */
 	public boolean create(final int p_id, final int p_size) {
 		return m_lookup.superpeerStorageCreate(p_id, p_size);
 	}
 
+	/**
+	 * Create a block of memory in the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with the storage id assigned to allocate memory for.
+	 * @return True if successful, false on failure (no space, element count exceeded or id used).
+	 */
 	public boolean create(final DataStructure p_dataStructure) {
 		return m_lookup.superpeerStorageCreate(p_dataStructure);
 	}
 
+	/**
+	 * Put data into an allocated block of memory in the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure to put with the storage id assigned.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean put(final DataStructure p_dataStructure) {
 		return m_lookup.superpeerStoragePut(p_dataStructure);
 	}
 
+	/**
+	 * Get data from the superpeer storage.
+	 *
+	 * @param p_id Id of an allocated block to get the data from.
+	 * @return Chunk with the data other null on error.
+	 */
 	public Chunk get(final int p_id) {
 		return m_lookup.superpeerStorageGet(p_id);
 	}
 
+	/**
+	 * Get data from the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with the storage id assigned to read the data into.
+	 * @return True on success, false on failure.
+	 */
 	public boolean get(final DataStructure p_dataStructure) {
 		return m_lookup.superpeerStorageGet(p_dataStructure);
 	}
 
+	/**
+	 * Remove an allocated block from the superpeer storage.
+	 *
+	 * @param p_id Storage id identifying the block to remove.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean remove(final int p_id) {
 		return m_lookup.superpeerStorageRemove(p_id);
 	}
 
+	/**
+	 * Remove an allocated block from the superpeer storage.
+	 *
+	 * @param p_dataStructure Data structure with the storage id assigned to remove.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean remove(final DataStructure p_dataStructure) {
 		return m_lookup.superpeerStorageRemove(p_dataStructure);
 	}
 
+	/**
+	 * Get the status of the superpeer storage.
+	 *
+	 * @return Status of the superpeer storage.
+	 */
 	public SuperpeerStorage.Status getStatus() {
 		return m_lookup.superpeerStorageGetStatus();
 	}

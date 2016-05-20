@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractRequest;
-
 import java.nio.ByteBuffer;
+
+import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
  * Message to allocate memory in the superpeer storage.
@@ -27,6 +27,7 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 	 * @param p_destination the destination
 	 * @param p_storageId   Identifier for the chunk.
 	 * @param p_size        Size in bytes of the data to store
+	 * @param p_replicate   True if this message is a replication to other superpeer message, false if normal message
 	 */
 	public SuperpeerStorageCreateRequest(final short p_destination, final int p_storageId, final int p_size,
 			final boolean p_replicate) {

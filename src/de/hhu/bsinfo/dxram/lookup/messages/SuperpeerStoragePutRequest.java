@@ -1,13 +1,13 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractRequest;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 /**
  * Request to put data into the superpeer storage.
@@ -37,7 +37,7 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 	 *
 	 * @param p_destination   the destination
 	 * @param p_dataStructure Data structure with the data to put.
-	 * @param p_replicate     True if replicate message, false if not
+	 * @param p_replicate     True if this message is a replication to other superpeer message, false if normal message
 	 */
 	public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure,
 			boolean p_replicate) {
