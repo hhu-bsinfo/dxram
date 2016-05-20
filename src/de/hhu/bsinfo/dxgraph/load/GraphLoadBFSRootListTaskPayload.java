@@ -10,7 +10,6 @@ import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRoots;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRootsTextFile;
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -33,7 +32,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			new Argument("graphPath", null, false, "Path containing a root list to load.");
 
 	private LoggerService m_loggerService;
-	private ChunkService m_chunkService;
+	private TemporaryStorageService m_temporaryStorageService;
 
 	private String m_path = "./";
 
@@ -67,8 +66,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		// root list from chunk memory
 		if (getSlaveId() == 0) {
 			m_loggerService = p_dxram.getService(LoggerService.class);
-			m_chunkService = p_dxram.getService(ChunkService.class);
-			TemporaryStorageService temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
+			m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
 
 			// look for the graph partitioned index of the current compute group
@@ -84,7 +82,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			graphPartitionIndex.setID(chunkIdPartitionIndex);
 
 			// get the index
-			if (!temporaryStorageService.get(graphPartitionIndex)) {
+			if (!m_temporaryStorageService.get(graphPartitionIndex)) {
 				m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
 				return -2;
 			}
@@ -101,13 +99,15 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 				return -4;
 			}
 
+			// TODO use id of generate name from nameservice for temp storage
+
 			// store the root list for our current compute group
-			if (m_chunkService.create(rootList) != 1) {
+			if (!m_temporaryStorageService.create(rootList)) {
 				m_loggerService.error(getClass(), "Creating chunk for root list failed.");
 				return -5;
 			}
 
-			if (m_chunkService.put(rootList) != 1) {
+			if (m_temporaryStorageService.put(rootList)) {
 				m_loggerService.error(getClass(), "Putting root list failed.");
 				return -6;
 			}
