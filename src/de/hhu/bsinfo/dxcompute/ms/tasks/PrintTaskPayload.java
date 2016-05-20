@@ -12,6 +12,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Print a message to the console.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintTaskPayload extends AbstractTaskPayload {
@@ -19,7 +20,7 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 	private static final Argument MS_ARG_MSG =
 			new Argument("msg", null, false, "Message to print.");
 
-	private String m_msg = new String();
+	private String m_msg = "";
 
 	/**
 	 * Constructor
@@ -30,8 +31,8 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Message to print.
-	 * @param p_msg
-	 *            Message.
+	 *
+	 * @param p_msg Message.
 	 */
 	public void setMessage(final String p_msg) {
 		m_msg = p_msg;

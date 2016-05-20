@@ -6,6 +6,11 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Data structure holding results of a single BFS run.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.05.16
+ */
 public class BFSResult implements DataStructure {
 
 	private long m_id = ChunkID.INVALID_ID;

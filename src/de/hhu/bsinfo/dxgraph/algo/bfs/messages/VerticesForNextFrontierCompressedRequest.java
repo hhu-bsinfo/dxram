@@ -58,6 +58,9 @@ public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesFo
 			case 3:
 				m_compressedVertexIds[m_vertexIdsPos++] |= vertex;
 				break;
+			default:
+				assert false;
+				break;
 		}
 
 		m_numOfVertices++;
@@ -87,6 +90,9 @@ public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesFo
 			case 3:
 				vertex = m_compressedVertexIds[m_vertexIdsPos++] & 0xFFFFFFFFFFFFL;
 				break;
+			default:
+				assert false;
+				break;
 		}
 
 		m_vertexPos++;
@@ -99,8 +105,8 @@ public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesFo
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_numOfVertices);
 		p_buffer.putInt(m_compressedVertexIds.length);
-		for (int i = 0; i < m_compressedVertexIds.length; i++) {
-			p_buffer.putLong(m_compressedVertexIds[i]);
+		for (long compressedVertexId : m_compressedVertexIds) {
+			p_buffer.putLong(compressedVertexId);
 		}
 	}
 

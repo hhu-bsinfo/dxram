@@ -1,15 +1,22 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
-import sun.misc.Unsafe;
-
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.utils.UnsafeHandler;
+import sun.misc.Unsafe;
+
 /**
- * Created by nothaas on 5/10/16.
+ * Space efficient and multi threaded optimized storage for vertex data.
+ * This does not re-map/re-hash the input data. Instead it expects the input
+ * data to have sequential IDs already and not being sparse with ID gaps.
+ * Data is stored using Java's Unsafe class to allow manual memory management
+ * and space efficient data structures as well as CAS operations for low overhead
+ * synchronisation.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.05.16
  */
-public class VertexStorageBinaryUnsafe implements VertexStorage {
+class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	private static final int MS_BLOCK_TABLE_SIZE = 0x100;
 	private static final int MS_BLOCK_SIZE = 0x1000000;
@@ -25,7 +32,7 @@ public class VertexStorageBinaryUnsafe implements VertexStorage {
 	private ReentrantLock m_blockTableAllocLock = new ReentrantLock(false);
 	private long[] m_blockTable;
 
-	public VertexStorageBinaryUnsafe() {
+	VertexStorageBinaryUnsafe() {
 		m_unsafe = UnsafeHandler.getInstance().getUnsafe();
 
 		m_blockTable = new long[MS_BLOCK_TABLE_SIZE];
@@ -44,7 +51,7 @@ public class VertexStorageBinaryUnsafe implements VertexStorage {
 							"MemoryConsumptionStorage (MB): " + storage.getTotalMemoryDataStructures() / 1024 / 1024);
 					try {
 						Thread.sleep(1000);
-					} catch (InterruptedException e) {
+					} catch (final InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
@@ -94,7 +101,7 @@ public class VertexStorageBinaryUnsafe implements VertexStorage {
 	//	}
 
 	@Override
-	public long getVertexId(long p_hashValue) {
+	public long getVertexId(final long p_hashValue) {
 		int tableIndex = (int) (p_hashValue / MS_BLOCK_SIZE);
 
 		if (tableIndex >= MS_BLOCK_TABLE_SIZE) {
@@ -141,7 +148,12 @@ public class VertexStorageBinaryUnsafe implements VertexStorage {
 	}
 
 	@Override
-	public void putNeighbour(long p_vertexId, long p_neighbourVertexId) {
+	public void putNeighbour(final long p_vertexId, final long p_neighbourVertexId) {
+		// don't add self loops
+		if (p_vertexId == p_neighbourVertexId) {
+			return;
+		}
+
 		int tableIndex = (int) (p_vertexId / MS_BLOCK_SIZE);
 		int tableEntryIndex = (int) (p_vertexId % MS_BLOCK_SIZE);
 
@@ -150,12 +162,13 @@ public class VertexStorageBinaryUnsafe implements VertexStorage {
 			throw new RuntimeException("Access to block that was not allocated before, should not happen");
 		}
 
-		int entryHeader = -1;
+		int entryHeader;
 		// acquire lock for entry
 		while (true) {
 			// lock set, wait for free
 			entryHeader = m_unsafe.getInt(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES);
-			entryHeader &= ~0x80000000; // we need this unlocked
+			// we need this unlocked
+			entryHeader &= ~0x80000000;
 			if (m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, entryHeader,
 					entryHeader | 0x80000000)) {
 				entryHeader |= 0x80000000;
@@ -165,10 +178,24 @@ public class VertexStorageBinaryUnsafe implements VertexStorage {
 			Thread.yield();
 		}
 
-		// reallocate to expand array
+		// first, verify the edge does not exist, yet
 		int sizeOld = entryHeader & 0x7FFFFFFF;
-		int sizeNew = sizeOld + 1;
 		long ptrOldArray = m_unsafe.getLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4);
+		//		for (int i = 0; i < sizeOld; i++) {
+		//			long neighbor = m_unsafe.getLong(ptrOldArray + i * Long.BYTES);
+		//			if (neighbor == p_neighbourVertexId) {
+		//				// drop out, neighbor already exists
+		//				// expecting old size and lock -> swap with old size and unlocked
+		//				if (!m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, entryHeader,
+		//						sizeOld)) {
+		//					throw new RuntimeException("Invalid synchronsation state.");
+		//				}
+		//				return;
+		//			}
+		//		}
+
+		// reallocate to expand array
+		int sizeNew = sizeOld + 1;
 		long ptrNewArray = m_unsafe.allocateMemory(sizeNew * Long.BYTES);
 		m_totalMemory.addAndGet(sizeNew * Long.BYTES);
 		if (ptrOldArray != -1) {

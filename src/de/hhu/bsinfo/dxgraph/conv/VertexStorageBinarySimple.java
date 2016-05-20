@@ -16,8 +16,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class VertexStorageBinarySimple implements VertexStorage {
 
-	private Map<Long, Long> m_idMapping = new HashMap<Long, Long>();
-	private ArrayList<NeighbourListVertex> m_neighbourListsVertices = new ArrayList<NeighbourListVertex>();
+	private Map<Long, Long> m_idMapping = new HashMap<>();
+	private ArrayList<NeighbourListVertex> m_neighbourListsVertices = new ArrayList<>();
 
 	private AtomicLong m_totalVertexCount = new AtomicLong(0);
 	private AtomicLong m_totalEdgeCount = new AtomicLong(0L);
@@ -69,7 +69,7 @@ public class VertexStorageBinarySimple implements VertexStorage {
 	}
 
 	@Override
-	public long getNeighbours(long p_vertexId, long[] p_buffer) {
+	public long getNeighbours(final long p_vertexId, final long[] p_buffer) {
 		throw new RuntimeException("Not implemented");
 	}
 
@@ -94,6 +94,6 @@ public class VertexStorageBinarySimple implements VertexStorage {
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class NeighbourListVertex {
-		public ConcurrentLinkedQueue<Long> m_neighbourList = new ConcurrentLinkedQueue<Long>();
+		ConcurrentLinkedQueue<Long> m_neighbourList = new ConcurrentLinkedQueue<>();
 	}
 }

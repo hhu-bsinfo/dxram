@@ -1,14 +1,14 @@
 
 package de.hhu.bsinfo.dxgraph.load;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Graph partition index for partitioned graph.
@@ -26,6 +26,11 @@ public class GraphPartitionIndex implements DataStructure {
 
 	}
 
+	/**
+	 * Calculate the total vertex count based on the partition index (i.e. summing up vertex counts of all partitions).
+	 *
+	 * @return Total vertex count of the full graph.
+	 */
 	public long calcTotalVertexCount() {
 		long total = 0;
 		for (Map.Entry<Integer, Entry> entry : m_index.entrySet()) {
@@ -34,6 +39,11 @@ public class GraphPartitionIndex implements DataStructure {
 		return total;
 	}
 
+	/**
+	 * Calculate the total edge count based on the partition index (i.e. summing up edge counts of all partitions).
+	 *
+	 * @return Total edge count of the full graph.
+	 */
 	public long calcTotalEdgeCount() {
 		long total = 0;
 		for (Map.Entry<Integer, Entry> entry : m_index.entrySet()) {
@@ -158,7 +168,7 @@ public class GraphPartitionIndex implements DataStructure {
 
 	@Override
 	public String toString() {
-		String str = new String();
+		String str = "";
 		for (Entry entry : m_index.values()) {
 			str += entry + "\n";
 		}

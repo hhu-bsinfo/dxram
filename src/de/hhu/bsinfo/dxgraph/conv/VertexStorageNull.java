@@ -1,22 +1,24 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
 /**
- * Created by nothaas on 5/11/16.
+ * Dummy storage implementation for testing other parts of the converter.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.05.16
  */
 public class VertexStorageNull implements VertexStorage {
 
 	@Override
-	public long getVertexId(long p_hashValue) {
+	public long getVertexId(final long p_hashValue) {
 		return p_hashValue;
 	}
 
 	@Override
-	public void putNeighbour(long p_vertexId, long p_neighbourVertexId) {
+	public void putNeighbour(final long p_vertexId, final long p_neighbourVertexId) {
 
 	}
 
 	@Override
-	public long getNeighbours(long p_vertexId, long[] p_buffer) {
+	public long getNeighbours(final long p_vertexId, final long[] p_buffer) {
 		return 0;
 	}
 

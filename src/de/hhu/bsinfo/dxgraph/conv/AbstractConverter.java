@@ -1,18 +1,18 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.AbstractMain;
-
-import java.util.ArrayList;
 
 /**
  * Base class for all graph converters.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public abstract class AbstractConverter extends AbstractMain {
+abstract class AbstractConverter extends AbstractMain {
 	private static final Argument ARG_INPUT = new Argument("in", null, false, "Input file of specific format");
 	private static final Argument ARG_INPUT_ROOTS =
 			new Argument("inRoots", null, true, "Input file of specific format with BFS roots");
@@ -32,16 +32,16 @@ public abstract class AbstractConverter extends AbstractMain {
 	private int m_numConverterThreads = -1;
 	private int m_maxBufferQueueSize = -1;
 	private BinaryEdgeBuffer m_sharedBuffer;
-	private ArrayList<AbstractFileReaderThread> m_fileReaderThreads = new ArrayList<AbstractFileReaderThread>();
-	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<BufferToStorageThread>();
-	private ArrayList<AbstractFileWriterThread> m_fileWriterThreads = new ArrayList<AbstractFileWriterThread>();
+	private ArrayList<AbstractFileReaderThread> m_fileReaderThreads = new ArrayList<>();
+	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<>();
+	private ArrayList<AbstractFileWriterThread> m_fileWriterThreads = new ArrayList<>();
 
 	/**
 	 * Constructor
 	 *
 	 * @param p_description Description for the converter.
 	 */
-	protected AbstractConverter(final String p_description) {
+	AbstractConverter(final String p_description) {
 		super(p_description);
 	}
 
@@ -208,8 +208,8 @@ public abstract class AbstractConverter extends AbstractMain {
 
 		// also equals vertex count
 		long vertexCount = m_storage.getTotalVertexCount();
-		long rangeStart = 0;
-		long rangeEnd = 0;
+		long rangeStart;
+		long rangeEnd;
 		long processed = 0;
 
 		System.out.println("Dumping " + vertexCount + " vertices to " + p_fileCount + " files...");

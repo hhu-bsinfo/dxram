@@ -3,6 +3,11 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 import de.hhu.bsinfo.menet.AbstractRequest;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
+/**
+ * Response to the request.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
+ */
 public class VerticesForNextFrontierResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of VerticesForNextFrontierRequest.

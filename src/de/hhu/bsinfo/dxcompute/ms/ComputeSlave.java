@@ -1,7 +1,14 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
-import de.hhu.bsinfo.dxcompute.ms.messages.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
+import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -15,19 +22,15 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 /**
  * Implementation of a slave. The slave waits for tasks for execution from the master
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
+class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
 
 	private short m_masterNodeId = NodeID.INVALID_ID;
 
-	private volatile int m_taskFinishedBarrierIdentifier = -1;
 	private volatile AbstractTaskPayload m_task;
 	private Lock m_executeTaskLock = new ReentrantLock(false);
 
@@ -45,7 +48,7 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 	 * @param p_boot            BootComponent
 	 * @param p_lookup          LookupComponent
 	 */
-	public ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs,
+	ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
@@ -74,7 +77,8 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 	@Override
 	public void run() {
 
-		while (true) {
+		boolean loop = true;
+		while (loop) {
 			switch (m_state) {
 				case STATE_SETUP:
 					stateSetup();
@@ -85,8 +89,11 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 				case STATE_EXECUTE:
 					stateExecute();
 					break;
+				case STATE_TERMINATE:
+					loop = false;
+					break;
 				default:
-					assert 1 == 2;
+					assert false;
 					break;
 			}
 		}
@@ -94,11 +101,12 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 
 	@Override
 	public void shutdown() {
-		// TODO
 		if (isAlive()) {
-			// TODO dedicated thread shutdown
-		} else {
-
+			m_state = State.STATE_TERMINATE;
+			try {
+				join();
+			} catch (final InterruptedException ignored) {
+			}
 		}
 	}
 
@@ -132,7 +140,7 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 								+ m_nameserviceMasterNodeIdKey + " of compute group " + m_computeGroupId);
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e) {
+				} catch (final InterruptedException ignored) {
 				}
 
 				return;
@@ -149,7 +157,7 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 					"Sending join request to master " + NodeID.toHexString(m_masterNodeId) + " failed: " + err);
 			try {
 				Thread.sleep(1000);
-			} catch (final InterruptedException e) {
+			} catch (final InterruptedException ignored) {
 			}
 
 			// trigger a full retry. might happen that the master node has changed
@@ -160,7 +168,7 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 				// master is busy, retry
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e) {
+				} catch (final InterruptedException ignored) {
 				}
 			} else {
 				m_logger.info(getClass(),
@@ -241,7 +249,6 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 		AbstractTaskPayload task = null;
 
 		if (m_executeTaskLock.tryLock() && m_state == State.STATE_IDLE) {
-			m_taskFinishedBarrierIdentifier = p_message.getBarrierIdentifier();
 			task = p_message.getTaskPayload();
 			if (task == null) {
 				// could not create proper task object from message
@@ -263,9 +270,11 @@ public class ComputeSlave extends AbstractComputeMSBase implements MessageReceiv
 			m_logger.error(getClass(), "Sending response for executing task to "
 					+ NodeID.toHexString(p_message.getSource()) + " failed: " + err);
 		} else {
-			// assign and start execution if non null
-			task.setComputeGroupId(m_computeGroupId);
-			m_task = task;
+			if (task != null) {
+				// assign and start execution if non null
+				task.setComputeGroupId(m_computeGroupId);
+				m_task = task;
+			}
 		}
 	}
 }

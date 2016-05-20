@@ -4,7 +4,6 @@ package de.hhu.bsinfo.dxcompute.ms.tcmd;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -28,6 +27,7 @@ import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
 /**
  * Terminal command to read a list of tasks from file, create task payloads and pass them to a compute group for
  * execution.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 27.04.16
  */
 public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements TaskListener {
@@ -39,7 +39,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 	private static final Argument MS_ARG_NAME =
 			new Argument("name", "TcmdTask", true, "Name for the tasks for easier identification");
 
-	private static int ms_taskCounter;
+	private static int m_taskCounter;
 
 	@Override
 	public String getName() {
@@ -74,7 +74,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 		ArrayList<AbstractTaskPayload> taskPayloads = parseTaskList(taskList);
 		for (AbstractTaskPayload taskPayload : taskPayloads) {
-			Task task = new Task(taskPayload, name + ms_taskCounter++);
+			Task task = new Task(taskPayload, name + m_taskCounter++);
 			task.registerTaskListener(this);
 
 			long taskId = computeService.submitTask(task, cgid);
@@ -113,8 +113,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 	/**
 	 * Load a list of tasks from a file (.ctask).
-	 * @param p_file
-	 *            Task list file
+	 *
+	 * @param p_file Task list file
 	 * @return Configuration object if successful, null otherwise.
 	 */
 	private Configuration loadTaskList(final String p_file) {
@@ -141,37 +141,32 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 	/**
 	 * Parse the configuration file containing the task list.
-	 * @param p_taskList
-	 *            Task list to parse.
+	 *
+	 * @param p_taskList Task list to parse.
 	 * @return List of task payload objects created from the provided list.
 	 */
 	private ArrayList<AbstractTaskPayload> parseTaskList(final Configuration p_taskList) {
-		ArrayList<AbstractTaskPayload> taskList = new ArrayList<AbstractTaskPayload>();
+		ArrayList<AbstractTaskPayload> taskList = new ArrayList<>();
 
 		Map<Integer, Short> tids = p_taskList.getValues("/ComputeTask/tid", Short.class);
 		Map<Integer, Short> stids = p_taskList.getValues("/ComputeTask/stid", Short.class);
 
 		// make sure the entries are sorted by the index
-		ArrayList<Entry<Integer, Short>> entryList = new ArrayList<Entry<Integer, Short>>(tids.size());
+		ArrayList<Entry<Integer, Short>> entryList = new ArrayList<>(tids.size());
 		// i haven't found a better way...
-		for (Entry<Integer, Short> tidEntry : tids.entrySet()) {
-			entryList.add(tidEntry);
-		}
+		entryList.addAll(tids.entrySet());
 
 		// sort
-		Collections.sort(entryList, new Comparator<Entry<Integer, Short>>() {
-			@Override
-			public int compare(final Entry<Integer, Short> p_entry1, final Entry<Integer, Short> p_entry2) {
-				int e1 = p_entry1.getKey().intValue();
-				int e2 = p_entry2.getKey().intValue();
+		Collections.sort(entryList, (p_entry1, p_entry2) -> {
+			int e1 = p_entry1.getKey();
+			int e2 = p_entry2.getKey();
 
-				if (e1 < e2) {
-					return -1;
-				} else if (e1 > e2) {
-					return 1;
-				} else {
-					return 0;
-				}
+			if (e1 < e2) {
+				return -1;
+			} else if (e1 > e2) {
+				return 1;
+			} else {
+				return 0;
 			}
 		});
 

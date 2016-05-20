@@ -1,7 +1,20 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
-import de.hhu.bsinfo.dxcompute.ms.messages.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
+import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -16,27 +29,18 @@ import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 /**
  * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them
  * to the conencted slaves for execution.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
+class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	private static final int MAX_TASK_COUNT = 100;
 
-	private Vector<Short> m_signedOnSlaves = new Vector<Short>();
+	private Vector<Short> m_signedOnSlaves = new Vector<>();
 	private Lock m_joinLock = new ReentrantLock(false);
-	private ConcurrentLinkedQueue<Task> m_tasks = new ConcurrentLinkedQueue<Task>();
+	private ConcurrentLinkedQueue<Task> m_tasks = new ConcurrentLinkedQueue<>();
 	private AtomicInteger m_taskCount = new AtomicInteger(0);
 	private int m_executeBarrierIdentifier;
 	private int m_executionBarrierId;
@@ -47,15 +51,16 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	/**
 	 * Constructor
 	 *
-	 * @param p_computeGroupId Compute group id the instance is assigned to.
-	 * @param p_pingIntervalMs Ping interval in ms to check back with the compute group if still alive.
-	 * @param p_network        NetworkComponent
-	 * @param p_logger         LoggerComponent
-	 * @param p_nameservice    NameserviceComponent
-	 * @param p_boot           BootComponent
-	 * @param p_lookup         LookupComponent
+	 * @param p_computeGroupId  Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs  Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor Accessor to services for compute tasks.
+	 * @param p_network         NetworkComponent
+	 * @param p_logger          LoggerComponent
+	 * @param p_nameservice     NameserviceComponent
+	 * @param p_boot            BootComponent
+	 * @param p_lookup          LookupComponent
 	 */
-	public ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
+	ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
@@ -76,13 +81,11 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	 *
 	 * @return List of currently connected slaves (node ids).
 	 */
-	public ArrayList<Short> getConnectedSlaves() {
+	ArrayList<Short> getConnectedSlaves() {
 		@SuppressWarnings("unchecked")
 		Vector<Short> tmp = (Vector<Short>) m_signedOnSlaves.clone();
-		ArrayList<Short> ret = new ArrayList<Short>(tmp.size());
-		for (Short s : tmp) {
-			ret.add(s);
-		}
+		ArrayList<Short> ret = new ArrayList<>(tmp.size());
+		ret.addAll(tmp);
 
 		return ret;
 	}
@@ -93,7 +96,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	 * @param p_task Task to submit.
 	 * @return True if submission was successful, false if the max number of tasks queued is reached.
 	 */
-	public boolean submitTask(final Task p_task) {
+	boolean submitTask(final Task p_task) {
 		if (m_taskCount.get() < MAX_TASK_COUNT) {
 			m_tasks.add(p_task);
 			m_taskCount.incrementAndGet();
@@ -111,7 +114,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	 *
 	 * @return Number of tasks in the queue.
 	 */
-	public int getNumberOfTasksInQueue() {
+	int getNumberOfTasksInQueue() {
 		return m_taskCount.get();
 	}
 
@@ -120,7 +123,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 	 *
 	 * @return Number of tasks processed.
 	 */
-	public int getTotalTasksProcessed() {
+	int getTotalTasksProcessed() {
 		return m_tasksProcessed;
 	}
 
@@ -146,7 +149,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 					loop = false;
 					break;
 				default:
-					assert 1 == 2;
+					assert false;
 					break;
 			}
 		}
@@ -158,7 +161,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 		m_state = State.STATE_TERMINATE;
 		try {
 			join();
-		} catch (final InterruptedException e) {
+		} catch (final InterruptedException ignored) {
 		}
 
 		// invalidate entry in nameservice
@@ -215,7 +218,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 				m_logger.warn(getClass(), "Got " + m_taskCount.get() + " tasks queued but no slaves");
 				try {
 					Thread.sleep(2000);
-				} catch (final InterruptedException e) {
+				} catch (final InterruptedException ignored) {
 				}
 			} else {
 				m_state = State.STATE_EXECUTE;
@@ -283,25 +286,25 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 		short numberOfSlavesOnExecution = 0;
 		// avoid clashes with other compute groups, but still alter the flag on every next sync
 		m_executeBarrierIdentifier = (m_executeBarrierIdentifier + 1) % 2 + m_computeGroupId * 2;
-		for (int i = 0; i < slaves.length; i++) {
+		for (short slave : slaves) {
 			// set incremental slave id, 0 based
 			taskPayload.setSlaveId(numberOfSlavesOnExecution);
 			// pass barrier identifier for syncing after task along
-			ExecuteTaskRequest request = new ExecuteTaskRequest(slaves[i], m_executeBarrierIdentifier, taskPayload);
+			ExecuteTaskRequest request = new ExecuteTaskRequest(slave, m_executeBarrierIdentifier, taskPayload);
 
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
 				m_logger.error(getClass(),
-						"Sending task to slave " + NodeID.toHexString(slaves[i]) + " failed: " + err);
+						"Sending task to slave " + NodeID.toHexString(slave) + " failed: " + err);
 				// remove slave from list
-				m_signedOnSlaves.remove(slaves[i]);
+				m_signedOnSlaves.remove(slave);
 				continue;
 			}
 
 			ExecuteTaskResponse response = (ExecuteTaskResponse) request.getResponse();
 			if (response.getStatusCode() != 0) {
 				// exclude slave from execution
-				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slaves[i]) + " response "
+				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slave) + " response "
 						+ response.getStatusCode() + " on execution of task " + task
 						+ " excluding from current execution");
 			} else {
@@ -352,7 +355,7 @@ public class ComputeMaster extends AbstractComputeMSBase implements MessageRecei
 		m_logger.error(getClass(), "Master error state");
 		try {
 			Thread.sleep(1000);
-		} catch (final InterruptedException e) {
+		} catch (final InterruptedException ignored) {
 		}
 	}
 

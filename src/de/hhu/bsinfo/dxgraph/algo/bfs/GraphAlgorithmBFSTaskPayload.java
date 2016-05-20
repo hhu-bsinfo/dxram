@@ -1,11 +1,23 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.*;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.AbstractVerticesForNextFrontierRequest;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSResultMessage;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierCompressedRequest;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierRequest;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierResponse;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxgraph.data.BFSResults;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
@@ -34,13 +46,11 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
-
+/**
+ * Compute task to run BFS on a loaded graph.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
+ */
 public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 	private static final String MS_BFS_RESULT_NAMESRV_IDENT = "BFR";
@@ -291,6 +301,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				+ 2 * Byte.BYTES;
 	}
 
+	/**
+	 * Base class for the master/slave BFS roles. Every BFS instance can be used for a single
+	 * BFS run, only.
+	 *
+	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
+	 */
 	private abstract class AbstractBFSMS implements MessageReceiver {
 		private BFSResult m_bfsLocalResult;
 
@@ -302,7 +318,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private StatisticsThread m_statisticsThread;
 		private int m_bfsIteration;
 
-		public AbstractBFSMS(final long p_bfsEntryNode, final int p_bfsIteration) {
+		/**
+		 * Constructor
+		 *
+		 * @param p_bfsEntryNode Root entry node to start the BFS at.
+		 * @param p_bfsIteration BFS iteration count (not BFS depth).
+		 */
+		AbstractBFSMS(final long p_bfsEntryNode, final int p_bfsIteration) {
 			m_bfsLocalResult = new BFSResult();
 			m_bfsLocalResult.m_rootVertexId = p_bfsEntryNode;
 			GraphPartitionIndex.Entry entry = m_graphPartitionIndex.getPartitionIndex(getSlaveId());
@@ -311,11 +333,26 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_bfsIteration = p_bfsIteration;
 		}
 
+		/**
+		 * Get the local results of the BFS iteration (when done).
+		 *
+		 * @return BFS result.
+		 */
 		BFSResult getBFSResult() {
 			return m_bfsLocalResult;
 		}
 
-		public void init(final long p_totalVertexCount, final boolean p_verticesMarkVisited,
+		/**
+		 * Initialize the BFS instance.
+		 *
+		 * @param p_totalVertexCount         Total vertex count of the graph.
+		 * @param p_verticesMarkVisited      False to not alter the graph data stored and use a local list to
+		 *                                   remember visited vertices, true to alter graph data and store visited
+		 *                                   information with the graph.
+		 * @param p_compressedVertexMessages True to use compressed vertex messages when sending vertex data to other
+		 *                                   nodes, false to use uncompressed messages.
+		 */
+		void init(final long p_totalVertexCount, final boolean p_verticesMarkVisited,
 				final boolean p_compressedVertexMessages) {
 			m_curFrontier = new ConcurrentBitVector(p_totalVertexCount);
 			m_nextFrontier = new ConcurrentBitVector(p_totalVertexCount);
@@ -342,7 +379,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 		}
 
-		public void execute(final long p_entryVertex) {
+		/**
+		 * Execute one full BFS run.
+		 *
+		 * @param p_entryVertex Root vertex id to start BFS at.
+		 */
+		void execute(final long p_entryVertex) {
 			if (p_entryVertex != ChunkID.INVALID_ID) {
 				m_loggerService.info(getClass(),
 						"I am starting BFS with entry vertex " + ChunkID.toHexString(p_entryVertex));
@@ -439,7 +481,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			handleBFSResult(m_bfsLocalResult, m_bfsIteration);
 		}
 
-		public void shutdown() {
+		/**
+		 * Shutdown the instance and cleanup resources used for the BFS run.
+		 */
+		void shutdown() {
 			for (BFSThread thread : m_threads) {
 				thread.exitThread();
 			}
@@ -479,6 +524,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 		}
 
+		/**
+		 * Handle incoming AbstractVerticesForNextFrontierRequest messages.
+		 *
+		 * @param p_message AbstractVerticesForNextFrontierRequest to handle
+		 */
 		private void onIncomingVerticesForNextFrontierMessage(final AbstractVerticesForNextFrontierRequest p_message) {
 			long vertexId = p_message.getVertex();
 			while (vertexId != -1) {
@@ -490,17 +540,46 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_networkService.sendMessage(response);
 		}
 
+		/**
+		 * Called when a single BFS level iteration completed.
+		 *
+		 * @param p_verticesVisited Vertices visited during that level iteration.
+		 */
 		protected abstract void barrierSignalIterationComplete(final long p_verticesVisited);
 
+		/**
+		 * Called after the frontier swap completed.
+		 *
+		 * @param p_nextFrontierSize Size of the next frontier.
+		 */
 		protected abstract void barrierSignalFrontierSwap(final long p_nextFrontierSize);
 
+		/**
+		 * Called to check if BFS has to terminate.
+		 *
+		 * @return True to terminate, false to continue with next level.
+		 */
 		protected abstract boolean barrierSignalTerminate();
 
+		/**
+		 * Called when BFS terminated and results need to be aggregated and stored.
+		 *
+		 * @param p_bfsResult    Single local BFS result.
+		 * @param p_bfsIteration BFS iteration id (not BFS level depth).
+		 */
 		protected abstract void handleBFSResult(final BFSResult p_bfsResult, final int p_bfsIteration);
 
+		/**
+		 * Called to receive BFSResultMessages from other nodes for aggregation.
+		 *
+		 * @param p_message BFSResultMessage to aggregate.
+		 */
 		protected abstract void onIncomingBFSResultMessage(final BFSResultMessage p_message);
 
-		public class StatisticsThread extends Thread {
+		/**
+		 * Separate thread printing local statistics of the current BFS run periodically
+		 */
+		class StatisticsThread extends Thread {
 
 			private volatile boolean m_run = true;
 			private AtomicLong m_sharedVertexCounter;
@@ -511,6 +590,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			private long m_avgEdgesPerSec;
 			private long m_totalTimeMs;
 
+			/**
+			 * Constructor
+			 */
 			StatisticsThread() {
 				m_sharedVertexCounter = new AtomicLong(0);
 				m_sharedEdgeCounter = new AtomicLong(0);
@@ -518,34 +600,72 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_maxEdgesPerSec = 0;
 			}
 
+			/**
+			 * Get the currently total vertex visited count.
+			 *
+			 * @return Current total vertex visited count.
+			 */
 			long getTotalVertexCount() {
 				return m_sharedVertexCounter.get();
 			}
 
+			/**
+			 * Get the currently total edge traversed count.
+			 *
+			 * @return Current total edge traversed count.
+			 */
 			long getTotalEdgeCount() {
 				return m_sharedEdgeCounter.get();
 			}
 
+			/**
+			 * Get the currently max visited vertices per second.
+			 *
+			 * @return Max visited vertices per second.
+			 */
 			long getMaxVerticesVisitedPerSec() {
 				return m_maxVerticesPerSec;
 			}
 
+			/**
+			 * Get the currently max traversed edges per second.
+			 *
+			 * @return Max traversed edges per second.
+			 */
 			long getMaxEdgesTraversedPerSec() {
 				return m_maxEdgesPerSec;
 			}
 
+			/**
+			 * Get the average vertices visited per second.
+			 *
+			 * @return Average vertices per second visited.
+			 */
 			long getAvgVerticesPerSec() {
 				return m_avgVerticesPerSec;
 			}
 
+			/**
+			 * Get the average edges traversed per second.
+			 *
+			 * @return Average edges per second traversed.
+			 */
 			long getAvgEdgesPerSec() {
 				return m_avgEdgesPerSec;
 			}
 
+			/**
+			 * Get the total running time in ms.
+			 *
+			 * @return Total running time.
+			 */
 			long getTotalTimeMs() {
 				return m_totalTimeMs;
 			}
 
+			/**
+			 * Shutdown the statistics thread.
+			 */
 			public void shutdown() {
 				m_run = false;
 				this.interrupt();
@@ -563,8 +683,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					long valueVertexCounter = m_sharedVertexCounter.get();
 					long valueEdgeCounter = m_sharedEdgeCounter.get();
 
-					long verticesPerSec = (valueVertexCounter - lastValueVertexCounter);
-					long edgesPerSec = (valueEdgeCounter - lastValueEdgeCounter);
+					long verticesPerSec = valueVertexCounter - lastValueVertexCounter;
+					long edgesPerSec = valueEdgeCounter - lastValueEdgeCounter;
 
 					if (verticesPerSec > m_maxVerticesPerSec) {
 						m_maxVerticesPerSec = verticesPerSec;
@@ -606,13 +726,22 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 	}
 
+	/**
+	 * Master instance for BFS
+	 */
 	private class BFSMaster extends AbstractBFSMS {
 		private boolean m_signalTermination;
 
 		private ReentrantLock m_aggregateResultLock = new ReentrantLock(false);
 		private ArrayList<Pair<Short, BFSResult>> m_resultsSlaves = new ArrayList<>();
-		private volatile int m_slaveCount = 0;
+		private volatile int m_slaveCount;
 
+		/**
+		 * Constructor
+		 *
+		 * @param p_bfsEntryNode Root entry node to start the BFS at.
+		 * @param p_bfsIteration BFS iteration count (not BFS depth).
+		 */
 		BFSMaster(final long p_bfsEntryNode, final int p_bfsIteration) {
 			super(p_bfsEntryNode, p_bfsIteration);
 
@@ -640,6 +769,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			// check if all frontier sizes are 0 -> terminate bfs
 			boolean allFrontiersEmpty = true;
+			assert result != null;
 			for (long data : result.second()) {
 				if (data > 0) {
 					allFrontiersEmpty = false;
@@ -737,16 +867,24 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		protected void onIncomingBFSResultMessage(final BFSResultMessage p_message) {
 			m_aggregateResultLock.lock();
 
-			BFSResult bfsResult = p_message.getBFSResult();
-			m_resultsSlaves.add(new Pair<Short, BFSResult>(p_message.getSource(), p_message.getBFSResult()));
+			m_resultsSlaves.add(new Pair<>(p_message.getSource(), p_message.getBFSResult()));
 			m_slaveCount--;
 
 			m_aggregateResultLock.unlock();
 		}
 	}
 
+	/**
+	 * Slave BFS instance
+	 */
 	private class BFSSlave extends AbstractBFSMS {
 
+		/**
+		 * Constructor
+		 *
+		 * @param p_bfsEntryNode Root entry node to start the BFS at.
+		 * @param p_bfsIteration BFS iteration count (not BFS depth).
+		 */
 		BFSSlave(final long p_bfsEntryNode, final int p_bfsIteration) {
 			super(p_bfsEntryNode, p_bfsIteration);
 		}
@@ -776,6 +914,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 
 			// look for signal terminate flag (0 or 1)
+			assert result != null;
 			for (int i = 0; i < result.first().length; i++) {
 				if (result.second()[i] == 1) {
 					return true;
@@ -807,6 +946,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 	}
 
+	/**
+	 * Single BFS thread running BFS algorithm locally.
+	 */
 	private class BFSThread extends Thread {
 
 		private int m_id = -1;
@@ -829,6 +971,20 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private AtomicLong m_sharedVertexCounter;
 		private AtomicLong m_sharedEdgeCounter;
 
+		/**
+		 * Constructor
+		 *
+		 * @param p_id                       Id of the thread.
+		 * @param p_vertexBatchSize          Number of vertices to process in a single batch.
+		 * @param p_vertexMessageBatchSize   Number of vertices to back as a batch into a single message to
+		 *                                   send to other nodes.
+		 * @param p_curFrontierShared        Shared instance with other threads of the current frontier.
+		 * @param p_nextFrontierShared       Shared instance with other threads of the next frontier
+		 * @param p_visitedFrontierShared    Shared instance with other threads of the visited frontier.
+		 * @param p_compressedVertexMessages True to use compressed messages, false for uncompressed
+		 * @param p_sharedVertexCounter      Shared instance with other threads to count visited vertices
+		 * @param p_sharedEdgeCounter        Shared instance with other threads to count traversed edges
+		 */
 		BFSThread(final int p_id, final int p_vertexBatchSize, final int p_vertexMessageBatchSize,
 				final FrontierList p_curFrontierShared, final FrontierList p_nextFrontierShared,
 				final FrontierList p_visitedFrontierShared, final boolean p_compressedVertexMessages,
@@ -854,29 +1010,53 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_sharedEdgeCounter = p_sharedEdgeCounter;
 		}
 
+		/**
+		 * Set the current BFS iteration level (BFS depth)
+		 *
+		 * @param p_iterationLevel Current BFS depth.
+		 */
 		void setCurrentBFSIterationLevel(final int p_iterationLevel) {
 			m_currentIterationLevel = p_iterationLevel;
 		}
 
+		/**
+		 * Trigger running a single iteration until all vertices of the current frontier are processed.
+		 */
 		void runIteration() {
 			m_visitedVerticesRun = 0;
 			m_runIteration = true;
 		}
 
+		/**
+		 * Check if the currently running iteration has finished.
+		 *
+		 * @return True if finished, false if still running.
+		 */
 		boolean hasIterationFinished() {
 			return !m_runIteration;
 		}
 
+		/**
+		 * Get the number of vertices visited by this thread within the last run.
+		 *
+		 * @return Number of vertices visited by this thread within the last run.
+		 */
 		long getVisitedVerticesCountLastRun() {
 			return m_visitedVerticesRun;
 		}
 
+		/**
+		 * Trigger a frontier swap. Swap cur and next to prepare for next iteration.
+		 */
 		void triggerFrontierSwap() {
 			FrontierList tmp = m_curFrontier;
 			m_curFrontier = m_nextFrontier;
 			m_nextFrontier = tmp;
 		}
 
+		/**
+		 * Trigger thread exit.
+		 */
 		void exitThread() {
 			m_exitThread = true;
 		}

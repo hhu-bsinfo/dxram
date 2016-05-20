@@ -6,7 +6,7 @@ package de.hhu.bsinfo.dxgraph.conv;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public class BufferToStorageThread extends ConverterThread {
+class BufferToStorageThread extends ConverterThread {
 	private VertexStorage m_storage;
 	private boolean m_isDirected;
 	private BinaryEdgeBuffer m_buffer;
@@ -20,7 +20,7 @@ public class BufferToStorageThread extends ConverterThread {
 	 * @param p_isDirected Directed or undirected edges.
 	 * @param p_buffer     Buffer filled with input data from the file readers (shared).
 	 */
-	public BufferToStorageThread(final int p_id, final VertexStorage p_storage, final boolean p_isDirected,
+	BufferToStorageThread(final int p_id, final VertexStorage p_storage, final boolean p_isDirected,
 			final BinaryEdgeBuffer p_buffer) {
 		super("BufferToStorage " + p_id);
 

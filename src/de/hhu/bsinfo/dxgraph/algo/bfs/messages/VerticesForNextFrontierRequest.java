@@ -3,6 +3,11 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Message to send non local vertices for BFS to the node owning them for processing.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
+ */
 public class VerticesForNextFrontierRequest extends AbstractVerticesForNextFrontierRequest {
 
 	private long[] m_vertexIDs;
@@ -29,7 +34,7 @@ public class VerticesForNextFrontierRequest extends AbstractVerticesForNextFront
 	}
 
 	@Override
-	public boolean addVertex(long p_vertex) {
+	public boolean addVertex(final long p_vertex) {
 		if (m_vertexIDs.length == m_numOfVertices) {
 			return false;
 		}

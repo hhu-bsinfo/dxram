@@ -26,7 +26,8 @@ public class SlaveJoinResponse extends AbstractResponse {
 	 * Creates an instance of SlaveJoinResponse.
 	 * This constructor is used when sending this message.
 	 *
-	 * @param p_request request to respond to.
+	 * @param p_request            request to respond to.
+	 * @param p_executionBarrierId The id of the barrier to sync for execution of a task
 	 */
 	public SlaveJoinResponse(final SlaveJoinRequest p_request, final int p_executionBarrierId) {
 		super(p_request, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE);

@@ -14,7 +14,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class ComputeNone extends AbstractComputeMSBase {
+class ComputeNone extends AbstractComputeMSBase {
 
 	/**
 	 * Constructor
@@ -26,7 +26,7 @@ public class ComputeNone extends AbstractComputeMSBase {
 	 * @param p_boot            BootComponent
 	 * @param p_lookup          LookupComponent
 	 */
-	public ComputeNone(final DXRAMServiceAccessor p_serviceAccessor,
+	ComputeNone(final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
 			final AbstractBootComponent p_boot,

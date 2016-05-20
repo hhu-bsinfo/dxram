@@ -6,7 +6,7 @@ package de.hhu.bsinfo.dxgraph.conv;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public abstract class AbstractFileReaderThread extends ConverterThread {
+abstract class AbstractFileReaderThread extends ConverterThread {
 	protected String m_inputPath;
 	protected BinaryEdgeBuffer m_buffer;
 
@@ -16,7 +16,7 @@ public abstract class AbstractFileReaderThread extends ConverterThread {
 	 * @param p_inputPath Path of the file to read.
 	 * @param p_buffer    Shared buffer to read the data to.
 	 */
-	public AbstractFileReaderThread(final String p_inputPath, final BinaryEdgeBuffer p_buffer) {
+	AbstractFileReaderThread(final String p_inputPath, final BinaryEdgeBuffer p_buffer) {
 		super("FileReader " + p_inputPath);
 
 		m_inputPath = p_inputPath;

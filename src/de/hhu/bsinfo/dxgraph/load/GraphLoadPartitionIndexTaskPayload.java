@@ -1,6 +1,14 @@
 
 package de.hhu.bsinfo.dxgraph.load;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -11,10 +19,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 /**
  * Load a partition index of a partitioned graph for one compute group. The index is
@@ -31,7 +35,7 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 	private LoggerService m_loggerService;
 
-	private String m_path = new String("./");
+	private String m_path = "./";
 
 	/**
 	 * Constructor
@@ -160,7 +164,7 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 	 * @return List of partition index entries read from the partition index files or null on error.
 	 */
 	private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFiles(final String p_path) {
-		ArrayList<GraphPartitionIndex.Entry> entries = new ArrayList<GraphPartitionIndex.Entry>();
+		ArrayList<GraphPartitionIndex.Entry> entries = new ArrayList<>();
 
 		File dir = new File(p_path);
 		if (!dir.exists()) {
@@ -168,11 +172,8 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 			return null;
 		}
 
-		File[] files = dir.listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(final File p_dir, final String p_filename) {
-				return p_filename.contains(".ioel.");
-			}
+		File[] files = dir.listFiles((p_dir, p_filename) -> {
+			return p_filename.contains(".ioel.");
 		});
 
 		m_loggerService.info(getClass(), "Found " + files.length + " graph partition index files in " + p_path);
@@ -194,7 +195,7 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 	 * @return List of entries read from the file or null on error.
 	 */
 	private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFile(final String p_pathFile) {
-		ArrayList<GraphPartitionIndex.Entry> entries = new ArrayList<GraphPartitionIndex.Entry>();
+		ArrayList<GraphPartitionIndex.Entry> entries = new ArrayList<>();
 		short[] slaves = getSlaveNodeIds();
 
 		BufferedReader reader;
@@ -208,7 +209,7 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 		// read all index entries of format <partition id>,<vertex count>,<edge count>
 		while (true) {
-			String line = null;
+			String line;
 			try {
 				line = reader.readLine();
 			} catch (final IOException e) {
@@ -235,7 +236,7 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 		try {
 			reader.close();
-		} catch (final IOException e) {
+		} catch (final IOException ignored) {
 		}
 
 		return entries;

@@ -1,8 +1,6 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
-import de.hhu.bsinfo.utils.Pair;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,15 +8,17 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.utils.Pair;
+
 /**
  * Very simple/naive implementation of a text based vertex storage.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public class VertexStorageTextSimple implements VertexStorageText {
+class VertexStorageTextSimple implements VertexStorageText {
 
-	private Map<Long, Long> m_idMapping = new HashMap<Long, Long>();
-	private ArrayList<NeighbourListVertex> m_neighbourListsVertices = new ArrayList<NeighbourListVertex>();
+	private Map<Long, Long> m_idMapping = new HashMap<>();
+	private ArrayList<NeighbourListVertex> m_neighbourListsVertices = new ArrayList<>();
 
 	private AtomicLong m_totalEdgeCount = new AtomicLong(0L);
 
@@ -27,7 +27,7 @@ public class VertexStorageTextSimple implements VertexStorageText {
 	/**
 	 * Constructor
 	 */
-	public VertexStorageTextSimple() {
+	VertexStorageTextSimple() {
 
 	}
 
@@ -67,7 +67,7 @@ public class VertexStorageTextSimple implements VertexStorageText {
 	}
 
 	@Override
-	public long getNeighbours(long p_vertexId, long[] p_buffer) {
+	public long getNeighbours(final long p_vertexId, final long[] p_buffer) {
 		throw new RuntimeException("Not implemented");
 	}
 
@@ -97,7 +97,7 @@ public class VertexStorageTextSimple implements VertexStorageText {
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class NeighbourListVertex {
-		public Pair<Long, String> m_neighbourList = new Pair<Long, String>(0L, new String());
+		public Pair<Long, String> m_neighbourList = new Pair<>(0L, "");
 		public Lock m_mutex = new ReentrantLock(false);
 	}
 }

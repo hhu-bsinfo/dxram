@@ -10,7 +10,7 @@ import java.util.TreeSet;
  */
 public class TreeSetFifo implements FrontierList {
 
-	private TreeSet<Long> m_tree = new TreeSet<Long>();
+	private TreeSet<Long> m_tree = new TreeSet<>();
 
 	@Override
 	public void pushBack(final long p_val) {

@@ -1,6 +1,10 @@
 
 package de.hhu.bsinfo.dxgraph.load;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
@@ -17,11 +21,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-
 /**
  * Task to load a list of root vertex ids for BFS entry points.
  *
@@ -36,7 +35,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
-	private String m_path = new String("./");
+	private String m_path = "./";
 
 	/**
 	 * Constructor
@@ -184,20 +183,17 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		}
 
 		// iterate files in dir, filter by pattern
-		File[] files = tmpFile.listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(final File p_dir, final String p_name) {
-				String[] tokens = p_name.split("\\.");
+		File[] files = tmpFile.listFiles((p_dir, p_name) -> {
+			String[] tokens = p_name.split("\\.");
 
-				// looking for format xxx.roel
-				if (tokens.length > 1) {
-					if (tokens[1].equals("roel")) {
-						return true;
-					}
+			// looking for format xxx.roel
+			if (tokens.length > 1) {
+				if (tokens[1].equals("roel")) {
+					return true;
 				}
-
-				return false;
 			}
+
+			return false;
 		});
 
 		// add filtered files
@@ -228,7 +224,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 	private GraphRootList loadRootList(final OrderedEdgeListRoots p_orderedEdgeRootList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
 
-		ArrayList<Long> roots = new ArrayList<Long>();
+		ArrayList<Long> roots = new ArrayList<>();
 		while (true) {
 			long root = p_orderedEdgeRootList.getRoot();
 			if (root == ChunkID.INVALID_ID) {

@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxgraph.data;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.menet.NodeID;
@@ -7,10 +9,10 @@ import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
-import java.util.ArrayList;
-
 /**
- * Created by nothaas on 5/19/16.
+ * Data structure holding BFS results of multiple nodes.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.05.16
  */
 public class BFSResults implements DataStructure {
 	private long m_id = ChunkID.INVALID_ID;
@@ -21,15 +23,32 @@ public class BFSResults implements DataStructure {
 
 	}
 
+	/**
+	 * Get aggregated results of all nodes.
+	 *
+	 * @return Aggregated results.
+	 */
 	public BFSResult getAggregatedResult() {
 		return m_aggregatedResult;
 	}
 
+	/**
+	 * Add a result of a node running BFS.
+	 *
+	 * @param p_computeSlaveId Compute slave id of the node.
+	 * @param p_nodeId         Node id of the node.
+	 * @param p_bfsResult      BFS result of the node.
+	 */
 	public void addResult(final short p_computeSlaveId, final short p_nodeId, final BFSResult p_bfsResult) {
 		int id = (p_nodeId << 16) | p_computeSlaveId;
 		m_bfsResults.add(new Pair<>(id, p_bfsResult));
 	}
 
+	/**
+	 * Get all single results of every BFS node.
+	 *
+	 * @return List of single results identified by compute slave id and node id.
+	 */
 	public ArrayList<Pair<Integer, BFSResult>> getResults() {
 		return m_bfsResults;
 	}

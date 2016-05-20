@@ -1,9 +1,31 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
-import de.hhu.bsinfo.dxcompute.ms.messages.*;
-import de.hhu.bsinfo.dxcompute.ms.tasks.*;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.*;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
+import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskRequest;
+import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskResponse;
+import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionFinishedMessage;
+import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionStartedMessage;
+import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
+import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToFileTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
+import de.hhu.bsinfo.dxcompute.ms.tasks.PrintTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tasks.SlavePrintInfoTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSComputeGroupStatus;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSGroupList;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskListSubmit;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskSubmit;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTasks;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -22,10 +44,6 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * DXRAM service providing a master slave based distributed task execution framework for computation on DXRAM.
  *
@@ -42,7 +60,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	private AbstractComputeMSBase m_computeMSInstance;
 
-	private ConcurrentMap<Integer, Task> m_remoteTasks = new ConcurrentHashMap<Integer, Task>();
+	private ConcurrentMap<Integer, Task> m_remoteTasks = new ConcurrentHashMap<>();
 
 	/**
 	 * Get the compute of the current node.
@@ -59,13 +77,13 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	 * @return List of available master nodes with their compute group id
 	 */
 	public ArrayList<Pair<Short, Byte>> getMasters() {
-		ArrayList<Pair<Short, Byte>> masters = new ArrayList<Pair<Short, Byte>>();
+		ArrayList<Pair<Short, Byte>> masters = new ArrayList<>();
 
 		// check the name service entries
 		for (int i = 0; i <= AbstractComputeMSBase.MAX_COMPUTE_GROUP_ID; i++) {
 			long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + i, 0);
 			if (tmp != -1) {
-				masters.add(new Pair<Short, Byte>(ChunkID.getCreatorID(tmp), (byte) i));
+				masters.add(new Pair<>(ChunkID.getCreatorID(tmp), (byte) i));
 			}
 		}
 
@@ -85,7 +103,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		ArrayList<Short> slaves = ((ComputeMaster) m_computeMSInstance).getConnectedSlaves();
 		int numTasksInQueue = ((ComputeMaster) m_computeMSInstance).getNumberOfTasksInQueue();
-		AbstractComputeMSBase.State state = ((ComputeMaster) m_computeMSInstance).getComputeState();
+		AbstractComputeMSBase.State state = m_computeMSInstance.getComputeState();
 		int tasksProcessed = ((ComputeMaster) m_computeMSInstance).getTotalTasksProcessed();
 
 		return new StatusMaster(m_boot.getNodeID(), state, slaves, numTasksInQueue, tasksProcessed);
@@ -173,7 +191,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		p_task.setNodeIdSubmitted(m_boot.getNodeID());
 
 		// get the node id of the master node of the group
-		short masterNodeId = NodeID.INVALID_ID;
+		short masterNodeId;
 		{
 			long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
 			if (tmp == -1) {
@@ -600,9 +618,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			p_exporter.writeShort(m_masterNodeId);
 			p_exporter.writeInt(m_state.ordinal());
 			p_exporter.writeInt(m_connectedSlaves.size());
-			for (short slave : m_connectedSlaves) {
-				p_exporter.writeShort(slave);
-			}
+			m_connectedSlaves.forEach(p_exporter::writeShort);
 			p_exporter.writeInt(m_numTasksQueued);
 			p_exporter.writeInt(m_tasksProcessed);
 
@@ -614,7 +630,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			m_masterNodeId = p_importer.readShort();
 			m_state = AbstractComputeMSBase.State.values()[p_importer.readInt()];
 			int size = p_importer.readInt();
-			m_connectedSlaves = new ArrayList<Short>(size);
+			m_connectedSlaves = new ArrayList<>(size);
 			for (int i = 0; i < size; i++) {
 				m_connectedSlaves.add(p_importer.readShort());
 			}
@@ -637,7 +653,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		@Override
 		public String toString() {
-			String str = new String();
+			String str = "";
 			str += "Master: " + NodeID.toHexString(m_masterNodeId) + "\n";
 			str += "State: " + m_state + "\n";
 			str += "Tasks queued: " + m_numTasksQueued + "\n";

@@ -1,9 +1,13 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
-import de.hhu.bsinfo.utils.main.AbstractMain;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
-import java.io.*;
+import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Multi threaded converter, expecting edge list in text form separated by spaces
@@ -11,11 +15,11 @@ import java.io.*;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public class ConverterTextEdgeListToOel extends AbstractConverter {
+public final class ConverterTextEdgeListToOel extends AbstractConverter {
 	/**
 	 * Constructor
 	 */
-	protected ConverterTextEdgeListToOel() {
+	private ConverterTextEdgeListToOel() {
 		super("Convert a text edge list to an ordered edge list (text file)");
 	}
 
@@ -71,7 +75,7 @@ public class ConverterTextEdgeListToOel extends AbstractConverter {
 
 		@Override
 		public int parse() {
-			BufferedReader reader = null;
+			BufferedReader reader;
 			try {
 				reader = new BufferedReader(new FileReader(m_inputPath));
 			} catch (final FileNotFoundException e1) {
@@ -83,7 +87,7 @@ public class ConverterTextEdgeListToOel extends AbstractConverter {
 				RandomAccessFile raf = new RandomAccessFile(m_inputPath, "r");
 				fileSize = raf.length();
 				raf.close();
-			} catch (final IOException e2) {
+			} catch (final IOException ignored) {
 			}
 
 			System.out.println("Caching input of edge list " + m_inputPath);
@@ -91,13 +95,13 @@ public class ConverterTextEdgeListToOel extends AbstractConverter {
 			long lineCount = 0;
 			long readByteCount = 0;
 			while (true) {
-				String line = null;
+				String line;
 				try {
 					line = reader.readLine();
 				} catch (final IOException e) {
 					try {
 						reader.close();
-					} catch (final IOException e1) {
+					} catch (final IOException ignored) {
 					}
 					System.out.println("Reading line failed: " + e.getMessage());
 					return -2;
@@ -126,7 +130,7 @@ public class ConverterTextEdgeListToOel extends AbstractConverter {
 
 			try {
 				reader.close();
-			} catch (final IOException e) {
+			} catch (final IOException ignored) {
 			}
 
 			return 0;

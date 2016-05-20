@@ -26,7 +26,7 @@ public class ConcurrentBitVector implements FrontierList {
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(final String[] p_args) throws Exception {
 		final int vecSize = 10000000;
 		ConcurrentBitVector vec = new ConcurrentBitVector(vecSize);
 
@@ -48,8 +48,8 @@ public class ConcurrentBitVector implements FrontierList {
 				threads[i].start();
 			}
 
-			for (int i = 0; i < threads.length; i++) {
-				threads[i].join();
+			for (Thread thread : threads) {
+				thread.join();
 			}
 
 			System.out.println("Total elements: " + vec.size());
@@ -76,8 +76,8 @@ public class ConcurrentBitVector implements FrontierList {
 				threads[i].start();
 			}
 
-			for (int i = 0; i < threads.length; i++) {
-				threads[i].join();
+			for (Thread thread : threads) {
+				thread.join();
 			}
 
 			System.out.println("Empty elements " + vec.size() + ", total elements got " + sum.get());
@@ -162,7 +162,7 @@ public class ConcurrentBitVector implements FrontierList {
 				if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
 					itPos = m_itPos.get();
 				}
-			} catch (IndexOutOfBoundsException e) {
+			} catch (final IndexOutOfBoundsException e) {
 				System.out.println("Exception: " + itPos + " / " + m_count.get());
 				throw e;
 			}

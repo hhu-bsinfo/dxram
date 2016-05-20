@@ -1,17 +1,17 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Base class for all tasks to be implemented. This holds optional data the task
@@ -22,8 +22,8 @@ import java.util.Map;
  */
 public abstract class AbstractTaskPayload implements Importable, Exportable {
 
-	protected static Map<Integer, Class<? extends AbstractTaskPayload>> ms_registeredTaskClasses =
-			new HashMap<Integer, Class<? extends AbstractTaskPayload>>();
+	protected static Map<Integer, Class<? extends AbstractTaskPayload>> m_registeredTaskClasses =
+			new HashMap<>();
 
 	private short m_typeId = -1;
 	private short m_subtypeId = -1;
@@ -50,15 +50,15 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Create an instance of a registered task payload.
+	 * Throws RuntimeException If no task payload specifeid by the ids could be created.
 	 *
 	 * @param p_typeId    Type id of the task payload.
 	 * @param p_subtypeId Subtype id of the task payload.
 	 * @return New instance of the specified task payload.
-	 * @throw RuntimeException If no task payload specifeid by the ids could be created.
 	 */
 	public static AbstractTaskPayload createInstance(final short p_typeId, final short p_subtypeId) {
 		Class<? extends AbstractTaskPayload> clazz =
-				ms_registeredTaskClasses.get(((p_typeId & 0xFFFF) << 16) | p_subtypeId);
+				m_registeredTaskClasses.get(((p_typeId & 0xFFFF) << 16) | p_subtypeId);
 		if (clazz == null) {
 			throw new RuntimeException(
 					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId
@@ -82,7 +82,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * @return List of registered task payload classes.
 	 */
 	public static Map<Integer, Class<? extends AbstractTaskPayload>> getRegisteredTaskPayloadClasses() {
-		return ms_registeredTaskClasses;
+		return m_registeredTaskClasses;
 	}
 
 	/**
@@ -96,12 +96,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	public static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
 			final Class<? extends AbstractTaskPayload> p_class) {
 		Class<? extends AbstractTaskPayload> clazz =
-				ms_registeredTaskClasses.put(((p_typeId & 0xFFFF) << 16) | p_subtypeId, p_class);
-		if (clazz != null) {
-			return false;
-		}
-
-		return true;
+				m_registeredTaskClasses.put(((p_typeId & 0xFFFF) << 16) | p_subtypeId, p_class);
+		return clazz == null;
 	}
 
 	/**

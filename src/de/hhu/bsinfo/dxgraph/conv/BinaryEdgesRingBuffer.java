@@ -3,10 +3,12 @@ package de.hhu.bsinfo.dxgraph.conv;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by nothaas on 5/11/16.
+ * Binary edge buffer implementation based on a lock free ring buffer.
+ * One writer/adder and many consumers/readers supported.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.05.16
  */
-// one writer/adder, many consumers/readers
-public class BinaryEdgesRingBuffer implements BinaryEdgeBuffer {
+class BinaryEdgesRingBuffer implements BinaryEdgeBuffer {
 	private long[] m_buffer;
 	private int m_size;
 
@@ -14,7 +16,7 @@ public class BinaryEdgesRingBuffer implements BinaryEdgeBuffer {
 	private AtomicInteger m_posBack;
 
 	// size = num edges in buffer
-	public BinaryEdgesRingBuffer(final int p_size) {
+	BinaryEdgesRingBuffer(final int p_size) {
 		m_size = p_size;
 		m_buffer = new long[p_size * 2];
 
@@ -107,7 +109,8 @@ public class BinaryEdgesRingBuffer implements BinaryEdgeBuffer {
 		return 2;
 	}
 
-	@Override public boolean isEmpty() {
+	@Override
+	public boolean isEmpty() {
 		return m_posFront.get() == m_posBack.get();
 	}
 }

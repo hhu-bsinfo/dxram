@@ -1,6 +1,9 @@
 
 package de.hhu.bsinfo.dxgraph.load;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
@@ -9,6 +12,7 @@ import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListTextFileThreadBuffering;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
@@ -17,10 +21,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Task to load a graph from a partitioned ordered edge list.
@@ -172,20 +172,17 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		}
 
 		// iterate files in dir, filter by pattern
-		File[] files = tmpFile.listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(final File p_dir, final String p_name) {
-				String[] tokens = p_name.split("\\.");
+		File[] files = tmpFile.listFiles((p_dir, p_name) -> {
+			String[] tokens = p_name.split("\\.");
 
-				// looking for format xxx.oel.<slave id>
-				if (tokens.length > 1) {
-					if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
-						return true;
-					}
+			// looking for format xxx.oel.<slave id>
+			if (tokens.length > 1) {
+				if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
+					return true;
 				}
-
-				return false;
 			}
+
+			return false;
 		});
 
 		// add filtered files
@@ -224,7 +221,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
 		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
-		int readCount = 0;
+		int readCount;
 
 		GraphPartitionIndex.Entry currentPartitionIndexEntry = p_graphPartitionIndex.getPartitionIndex(getSlaveId());
 		if (currentPartitionIndexEntry == null) {
@@ -270,13 +267,13 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				vertexBuffer[i] = null;
 			}
 
-			int count = m_chunkService.create(vertexBuffer);
+			int count = m_chunkService.create((DataStructure[]) vertexBuffer);
 			if (count != readCount) {
 				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + readCount);
 				return false;
 			}
 
-			count = m_chunkService.put(vertexBuffer);
+			count = m_chunkService.put((DataStructure[]) vertexBuffer);
 			if (count != readCount) {
 				m_loggerService.error(getClass(),
 						"Putting vertex data for chunks failed: " + count + " != " + readCount);

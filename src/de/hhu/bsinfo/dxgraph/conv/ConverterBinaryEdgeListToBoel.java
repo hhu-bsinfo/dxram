@@ -9,11 +9,11 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public class ConverterBinaryEdgeListToBoel extends AbstractBinaryEdgeListTo {
+public final class ConverterBinaryEdgeListToBoel extends AbstractBinaryEdgeListTo {
 	/**
 	 * Constructor
 	 */
-	protected ConverterBinaryEdgeListToBoel() {
+	private ConverterBinaryEdgeListToBoel() {
 		super("Convert a binary edge list to an ordered edge list (binary file)");
 	}
 

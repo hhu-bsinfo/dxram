@@ -1,14 +1,20 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * Implementation of a writer to write vertex data to a binary file.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public class FileWriterBinaryThread extends AbstractFileWriterThread {
+class FileWriterBinaryThread extends AbstractFileWriterThread {
 	/**
 	 * Constructor
 	 *
@@ -18,7 +24,7 @@ public class FileWriterBinaryThread extends AbstractFileWriterThread {
 	 * @param p_idRangeEndExcl   Range of the vertex ids to write the file, end.
 	 * @param p_storage          Storage to access for vertex data to write to the file.
 	 */
-	public FileWriterBinaryThread(final String p_outputPath, final int p_id, final long p_idRangeStartIncl,
+	FileWriterBinaryThread(final String p_outputPath, final int p_id, final long p_idRangeStartIncl,
 			final long p_idRangeEndExcl, final VertexStorage p_storage) {
 		super(p_outputPath, p_id, p_idRangeStartIncl, p_idRangeEndExcl, p_storage);
 	}
@@ -28,12 +34,18 @@ public class FileWriterBinaryThread extends AbstractFileWriterThread {
 		try {
 			File file = new File(m_outputPath + "out.boel." + m_id);
 			if (file.exists()) {
-				file.delete();
+				if (!file.delete()) {
+					System.out.println("Deleting file " + file + " failed.");
+					m_errorCode = -1;
+				}
 			}
 
 			File fileInfo = new File(m_outputPath + "out.ioel." + m_id);
 			if (fileInfo.exists()) {
-				fileInfo.delete();
+				if (!fileInfo.delete()) {
+					System.out.println("Deleting file " + file + " failed.");
+					m_errorCode = -2;
+				}
 			}
 
 			DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
@@ -49,7 +61,7 @@ public class FileWriterBinaryThread extends AbstractFileWriterThread {
 			out2.close();
 		} catch (final IOException e) {
 			System.out.println("Dumping to out file failed: " + e.getMessage());
-			m_errorCode = -2;
+			m_errorCode = -3;
 			return;
 		}
 
@@ -108,7 +120,7 @@ public class FileWriterBinaryThread extends AbstractFileWriterThread {
 			p_infoFile.write(m_id + "," + Long.toString(vertexCount) + "," + Long.toString(edgeCount));
 			p_file.flush();
 			p_infoFile.flush();
-		} catch (final IOException e) {
+		} catch (final IOException ignored) {
 		}
 
 		return true;

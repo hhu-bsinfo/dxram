@@ -1,12 +1,12 @@
 
 package de.hhu.bsinfo.dxgraph.data;
 
+import java.util.Arrays;
+
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
-
-import java.util.Arrays;
 
 /**
  * Object representation of a vertex with a static list of neighbours.

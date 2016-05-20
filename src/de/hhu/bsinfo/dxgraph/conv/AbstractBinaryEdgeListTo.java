@@ -1,7 +1,11 @@
 
 package de.hhu.bsinfo.dxgraph.conv;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -11,13 +15,13 @@ import java.nio.ByteOrder;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
+abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 	/**
 	 * Constructor
 	 *
 	 * @param p_description Description for the converter.
 	 */
-	protected AbstractBinaryEdgeListTo(final String p_description) {
+	AbstractBinaryEdgeListTo(final String p_description) {
 		super(p_description);
 	}
 
@@ -37,7 +41,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 			outputPath += "/";
 		}
 
-		BufferedWriter writer = null;
+		BufferedWriter writer;
 		try {
 			writer = new BufferedWriter(new FileWriter(outputPath + "out.roel"));
 		} catch (final IOException e1) {
@@ -45,14 +49,14 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 			return;
 		}
 
-		RandomAccessFile file = null;
+		RandomAccessFile file;
 		try {
 			file = new RandomAccessFile(p_inputRootFile, "r");
 		} catch (final FileNotFoundException e) {
 			System.out.println("Opening input file " + p_inputRootFile + " failed: " + e.getMessage());
 			try {
 				writer.close();
-			} catch (final IOException e1) {
+			} catch (final IOException ignored) {
 			}
 			return;
 		}
@@ -95,7 +99,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
-	protected static class FileReaderBinaryThread extends AbstractFileReaderThread {
+	private static class FileReaderBinaryThread extends AbstractFileReaderThread {
 		/**
 		 * Constructor
 		 *
@@ -108,7 +112,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 
 		@Override
 		public int parse() {
-			RandomAccessFile file = null;
+			RandomAccessFile file;
 			try {
 				file = new RandomAccessFile(m_inputPath, "r");
 			} catch (final FileNotFoundException e) {

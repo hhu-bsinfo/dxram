@@ -27,7 +27,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 	private static final Argument MS_ARG_NAME =
 			new Argument("name", "TcmdTask", true, "Name for the task for easier identification");
 
-	private static int ms_taskCounter;
+	private static int m_taskCounter;
 
 	@Override
 	public String getName() {
@@ -92,7 +92,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 			getTerminalDelegate().println("Parsing arguments of task with type id " + tid + " subtype id " + stid
 					+ " failed, missing argument?");
 		}
-		Task task = new Task(payload, name + ms_taskCounter++);
+		Task task = new Task(payload, name + m_taskCounter++);
 		task.registerTaskListener(this);
 
 		long taskId = computeService.submitTask(task, cgid);
