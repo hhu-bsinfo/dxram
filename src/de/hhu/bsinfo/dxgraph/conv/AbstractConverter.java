@@ -26,11 +26,14 @@ abstract class AbstractConverter extends AbstractMain {
 			new Argument("numConvThreads", "4", true, "Number of threads converting the data");
 	private static final Argument ARG_MAX_BUFFER_QUEUE_SIZE =
 			new Argument("maxBufferQueueSize", "100000", true, "Max size of the buffer queue for the file reader");
+	private static final Argument ARG_VERTEX_ID_OFFSET =
+			new Argument("vertexIdOffset", "0", true, "Offset to be added to all vertex IDs");
 
 	private VertexStorage m_storage;
 	private boolean m_isDirected;
 	private int m_numConverterThreads = -1;
 	private int m_maxBufferQueueSize = -1;
+	private int m_vertexIdOffset;
 	private BinaryEdgeBuffer m_sharedBuffer;
 	private ArrayList<AbstractFileReaderThread> m_fileReaderThreads = new ArrayList<>();
 	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<>();
@@ -54,6 +57,7 @@ abstract class AbstractConverter extends AbstractMain {
 		p_arguments.setArgument(ARG_INPUT_DIRECTED_EDGES);
 		p_arguments.setArgument(ARG_NUM_CONV_THREADS);
 		p_arguments.setArgument(ARG_MAX_BUFFER_QUEUE_SIZE);
+		p_arguments.setArgument(ARG_VERTEX_ID_OFFSET);
 	}
 
 	@Override
@@ -65,10 +69,11 @@ abstract class AbstractConverter extends AbstractMain {
 		m_isDirected = p_arguments.getArgumentValue(ARG_INPUT_DIRECTED_EDGES, Boolean.class);
 		m_numConverterThreads = p_arguments.getArgumentValue(ARG_NUM_CONV_THREADS, Integer.class);
 		m_maxBufferQueueSize = p_arguments.getArgumentValue(ARG_MAX_BUFFER_QUEUE_SIZE, Integer.class);
+		m_vertexIdOffset = p_arguments.getArgumentValue(ARG_VERTEX_ID_OFFSET, Integer.class);
 
 		m_sharedBuffer = new BinaryEdgesRingBuffer(m_maxBufferQueueSize);
 
-		m_storage = createVertexStorageInstance();
+		m_storage = createVertexStorageInstance(m_vertexIdOffset);
 
 		System.out.println("Parsing input " + inputPath + "...");
 
@@ -97,9 +102,10 @@ abstract class AbstractConverter extends AbstractMain {
 	/**
 	 * Provide the vertex storage instance you want to use for the conversion process.
 	 *
+	 * @param p_vertexIdOffset Vertex offset to add to every id to rebase vertex ids by a constant value.
 	 * @return VertexStorage instance to use.
 	 */
-	protected abstract VertexStorage createVertexStorageInstance();
+	protected abstract VertexStorage createVertexStorageInstance(final int p_vertexIdOffset);
 
 	/**
 	 * Create the file reader thread implementation to use.

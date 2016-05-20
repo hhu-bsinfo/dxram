@@ -75,8 +75,8 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 				return -1;
 			}
 
-			// TODO id hashing like nameservice
-			graphPartIndex.setID(573);
+			graphPartIndex.setID(tmpStorage.generateStorageId(MS_PART_INDEX_IDENT + getComputeGroupId()));
+
 			// store the index for our current compute group
 			if (!tmpStorage.create(graphPartIndex)) {
 				m_loggerService.error(getClass(), "Creating chunk for partition index failed.");

@@ -6,6 +6,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
 /**
  * Multi threaded converter, expecting edge list in binary form:
  * 8 bytes source nodeId and 8 bytes destination node id and outputting an ordered edge list (text form).
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public class ConverterBinaryEdgeListToOel extends AbstractBinaryEdgeListTo {
@@ -18,8 +19,8 @@ public class ConverterBinaryEdgeListToOel extends AbstractBinaryEdgeListTo {
 
 	/**
 	 * Main entry point.
-	 * @param p_args
-	 *            Console arguments.
+	 *
+	 * @param p_args Console arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new ConverterBinaryEdgeListToOel();
@@ -34,7 +35,7 @@ public class ConverterBinaryEdgeListToOel extends AbstractBinaryEdgeListTo {
 	}
 
 	@Override
-	protected VertexStorage createVertexStorageInstance() {
+	protected VertexStorage createVertexStorageInstance(final int p_vertexIdOffset) {
 		return new VertexStorageTextSimple();
 	}
 }

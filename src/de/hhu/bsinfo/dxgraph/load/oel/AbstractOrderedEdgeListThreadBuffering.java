@@ -32,7 +32,7 @@ abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements 
 			file = file.substring(lastIndexPath + 1);
 		}
 
-		setupFile(file);
+		setupFile(p_path);
 
 		start();
 	}

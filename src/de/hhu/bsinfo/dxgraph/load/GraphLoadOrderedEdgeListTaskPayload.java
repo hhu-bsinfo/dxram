@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxgraph.load;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
@@ -251,7 +252,11 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				// offset tells us how much to add
 				// also add current node ID
 				long[] neighbours = vertex.getNeighbours();
-				p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(neighbours);
+				if (!p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(neighbours)) {
+					m_loggerService.error(getClass(),
+							"Rebasing of neighbors of " + vertex + " failed, out of vertex id range of graph: " + Arrays
+									.toString(neighbours));
+				}
 
 				vertexBuffer[readCount] = vertex;
 				readCount++;

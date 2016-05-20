@@ -6,6 +6,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.SuperpeerStorage;
+import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpCreate;
 import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpGet;
@@ -27,6 +28,19 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	private LookupComponent m_lookup;
 	private TerminalComponent m_terminal;
+
+	private NameServiceStringConverter m_idConverter = new NameServiceStringConverter("NAME");
+
+	/**
+	 * Create a unique storage id using the nameservice string converter. This limits the string
+	 * length to 5 digits.
+	 *
+	 * @param p_name Name to convert to a storage id.
+	 * @return Storage id.
+	 */
+	public int generateStorageId(final String p_name) {
+		return m_idConverter.convert(p_name);
+	}
 
 	/**
 	 * Create a block of memory in the superpeer storage.

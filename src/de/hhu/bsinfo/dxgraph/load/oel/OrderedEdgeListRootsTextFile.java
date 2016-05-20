@@ -30,7 +30,7 @@ public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
 		}
 
 		try {
-			m_file = new BufferedReader(new FileReader(file));
+			m_file = new BufferedReader(new FileReader(p_path));
 		} catch (final FileNotFoundException e) {
 			throw new RuntimeException("Cannot load graph roots from file '" + p_path + "', does not exist.");
 		}

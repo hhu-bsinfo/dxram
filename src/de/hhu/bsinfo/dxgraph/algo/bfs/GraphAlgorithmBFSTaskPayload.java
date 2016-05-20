@@ -147,17 +147,18 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		// get entry vertices for bfs
-		long chunkIdRootVertices = m_nameserviceService.getChunkID(m_bfsRootNameserviceEntry, 5000);
-		if (chunkIdRootVertices == ChunkID.INVALID_ID) {
+		long tmpStorageIdRootVertices = m_nameserviceService.getChunkID(m_bfsRootNameserviceEntry, 5000);
+		if (tmpStorageIdRootVertices == ChunkID.INVALID_ID) {
 			m_loggerService.error(getClass(),
 					"Getting BFS entry vertex " + m_bfsRootNameserviceEntry + " failed, not valid.");
 			return -3;
 		}
 
-		GraphRootList rootList = new GraphRootList(chunkIdRootVertices);
-		if (m_chunkService.get(rootList) != 1) {
+		GraphRootList rootList = new GraphRootList(tmpStorageIdRootVertices);
+		if (!m_temporaryStorageService.get(rootList)) {
 			m_loggerService.error(getClass(),
-					"Getting root list " + ChunkID.toHexString(chunkIdRootVertices) + " of vertices for bfs failed.");
+					"Getting root list " + ChunkID.toHexString(tmpStorageIdRootVertices)
+							+ " of vertices for bfs from temporary storage failed.");
 			return -4;
 		}
 
@@ -535,6 +536,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_nextFrontier.pushBack(vertexId);
 				vertexId = p_message.getVertex();
 			}
+
+			// TODO we have to use requests here to make sure all messages arrive sync with sending them
+			// otherwise, using normal messages, we can't tell when the message gets processed and reaches this function
+			// this can lead to messages sent out very late arriving too late when the current bfs iteration level
+			// is already considered complete. this results in missing out on vertex data and putting into the
+			// wrong frontier leading to frontier corruption
 
 			VerticesForNextFrontierResponse response = new VerticesForNextFrontierResponse(p_message);
 			m_networkService.sendMessage(response);

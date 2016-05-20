@@ -28,8 +28,8 @@ public final class ConverterBinaryEdgeListToBoel extends AbstractBinaryEdgeListT
 	}
 
 	@Override
-	protected VertexStorage createVertexStorageInstance() {
-		return new VertexStorageBinaryUnsafe();
+	protected VertexStorage createVertexStorageInstance(final int p_vertexIdOffset) {
+		return new VertexStorageBinaryUnsafe(p_vertexIdOffset);
 	}
 
 	@Override

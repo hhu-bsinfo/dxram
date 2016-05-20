@@ -23,6 +23,8 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 	private static final int MS_ENTRY_SIZE_BYTES = Integer.BYTES + Long.BYTES;
 	private static final int MS_BLOCK_SIZE_BYTES = MS_BLOCK_SIZE * MS_ENTRY_SIZE_BYTES;
 
+	//private int m_vertexIdOffset;
+
 	private Unsafe m_unsafe;
 
 	private AtomicLong m_vertexCount = new AtomicLong(0);
@@ -32,7 +34,14 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 	private ReentrantLock m_blockTableAllocLock = new ReentrantLock(false);
 	private long[] m_blockTable;
 
-	VertexStorageBinaryUnsafe() {
+	/**
+	 * Constructor
+	 *
+	 * @param p_vertexIdOffset Offset to add to every vertex id.
+	 */
+	VertexStorageBinaryUnsafe(final int p_vertexIdOffset) {
+		//m_vertexIdOffset = p_vertexIdOffset;
+
 		m_unsafe = UnsafeHandler.getInstance().getUnsafe();
 
 		m_blockTable = new long[MS_BLOCK_TABLE_SIZE];
@@ -149,6 +158,12 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	@Override
 	public void putNeighbour(final long p_vertexId, final long p_neighbourVertexId) {
+		//long vertexId = p_vertexId;
+		// TODO conflict with graph partition index not knowing there was an offset applied
+		// -> have information in ioel file about offset?
+		//long neighbourVertexId = p_neighbourVertexId + m_vertexIdOffset;
+		//long neighbourVertexId = p_neighbourVertexId;
+
 		// don't add self loops
 		if (p_vertexId == p_neighbourVertexId) {
 			return;
@@ -183,7 +198,7 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 		long ptrOldArray = m_unsafe.getLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4);
 		//		for (int i = 0; i < sizeOld; i++) {
 		//			long neighbor = m_unsafe.getLong(ptrOldArray + i * Long.BYTES);
-		//			if (neighbor == p_neighbourVertexId) {
+		//			if (neighbor == neighbourVertexId) {
 		//				// drop out, neighbor already exists
 		//				// expecting old size and lock -> swap with old size and unlocked
 		//				if (!m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, entryHeader,
@@ -213,6 +228,10 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 			m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
 		}
 
+		if (p_neighbourVertexId == -1) {
+			System.out.println("Invalid neighbour: " + p_neighbourVertexId);
+		}
+
 		m_unsafe.putLong(ptrNewArray + sizeOld * Long.BYTES, p_neighbourVertexId);
 
 		// expecting old size and lock -> swap with new size (old size + 1) and unlocked
@@ -225,6 +244,8 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	@Override
 	public long getNeighbours(final long p_vertexId, final long[] p_buffer) {
+		//long vertexId = p_vertexId;
+
 		int tableIndex = (int) (p_vertexId / MS_BLOCK_SIZE);
 		int tableEntryIndex = (int) (p_vertexId % MS_BLOCK_SIZE);
 

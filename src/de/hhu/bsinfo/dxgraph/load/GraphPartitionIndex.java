@@ -96,8 +96,11 @@ public class GraphPartitionIndex implements DataStructure {
 	 * Rebase multiple graph global vertexIds in plance to partition local vertex ids using the index.
 	 *
 	 * @param p_vertexIds Graph global vertexIds to rebase.
+	 * @return True if rebasing all IDs was successful, false if one or multiple could not be rebased, out of range
 	 */
-	public void rebaseGlobalVertexIdToLocalPartitionVertexId(final long[] p_vertexIds) {
+	public boolean rebaseGlobalVertexIdToLocalPartitionVertexId(final long[] p_vertexIds) {
+		boolean res = true;
+
 		// utilize locality instead of calling function
 		for (int i = 0; i < p_vertexIds.length; i++) {
 			// out of range ID, default assign if not found in loop
@@ -115,8 +118,14 @@ public class GraphPartitionIndex implements DataStructure {
 				globalVertexIDOffset += entry.m_vertexCount;
 			}
 
+			if (tmp == ChunkID.INVALID_ID) {
+				res = false;
+			}
+
 			p_vertexIds[i] = tmp;
 		}
+
+		return res;
 	}
 
 	@Override

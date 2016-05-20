@@ -32,7 +32,6 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			new Argument("graphPath", null, false, "Path containing a root list to load.");
 
 	private LoggerService m_loggerService;
-	private TemporaryStorageService m_temporaryStorageService;
 
 	private String m_path = "./";
 
@@ -66,7 +65,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		// root list from chunk memory
 		if (getSlaveId() == 0) {
 			m_loggerService = p_dxram.getService(LoggerService.class);
-			m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
+			TemporaryStorageService m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
 
 			// look for the graph partitioned index of the current compute group
@@ -99,7 +98,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 				return -4;
 			}
 
-			// TODO use id of generate name from nameservice for temp storage
+			rootList.setID(m_temporaryStorageService.generateStorageId(MS_BFS_ROOTS + getComputeGroupId()));
 
 			// store the root list for our current compute group
 			if (!m_temporaryStorageService.create(rootList)) {
@@ -107,7 +106,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 				return -5;
 			}
 
-			if (m_temporaryStorageService.put(rootList)) {
+			if (!m_temporaryStorageService.put(rootList)) {
 				m_loggerService.error(getClass(), "Putting root list failed.");
 				return -6;
 			}
@@ -231,7 +230,12 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 				break;
 			}
 
-			roots.add(p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(root));
+			long vertexId = p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(root);
+			if (vertexId == ChunkID.INVALID_ID) {
+				m_loggerService.error(getClass(),
+						"Rebasing of " + ChunkID.toHexString(root) + " failed out of vertex id range of graph");
+			}
+			roots.add(vertexId);
 		}
 
 		GraphRootList rootList = new GraphRootList(ChunkID.INVALID_ID, roots.size());
