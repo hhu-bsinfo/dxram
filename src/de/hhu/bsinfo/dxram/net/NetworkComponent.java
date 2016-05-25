@@ -116,8 +116,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		if (err == NetworkErrorCodes.SUCCESS) {
 			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
 			if (!p_request.waitForResponses(m_requestTimeoutMs)) {
-				m_logger.error(this.getClass(),
-						"Sending sync, waiting for responses " + p_request + " failed, timeout.");
+				m_logger.error(this.getClass(), "Sending sync, waiting for responses " + p_request + " failed, timeout.");
+				m_logger.debug(this.getClass(), m_networkHandler.getStatus());
 				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
 			} else {
 				m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
@@ -155,6 +155,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_MAP_ENTRY_COUNT);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.INCOMING_BUFFER_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
@@ -170,7 +171,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 		m_networkHandler = new NetworkHandler(
 				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_CREATOR),
-				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER));
+				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER),
+				p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_MAP_ENTRY_COUNT));
 
 		m_networkHandler.setLogger(m_logger);
 

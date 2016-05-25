@@ -276,12 +276,6 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		peers = m_boot.getIDsOfOnlinePeers();
 		numberOfPeers = (short) peers.size();
 
-		/*-peers = new ArrayList<Short>();
-		peers.add((short) -15999);
-		peers.add((short) 320);
-		peers.add((short) -15615);
-		numberOfPeers = 3;*/
-
 		if (3 > numberOfPeers) {
 			m_logger.warn(BackupComponent.class,
 					"Less than three peers for backup available. Replication will be incomplete!");

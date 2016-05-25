@@ -14,10 +14,10 @@ public abstract class AbstractRequest extends AbstractMessage {
 	public static final long WAITING_TIMEOUT = 20;
 
 	// Attributes
-	private volatile boolean m_fulfilled;
+	private boolean m_fulfilled;
 	private AbstractAction<AbstractRequest> m_fulfillAction;
 
-	private volatile boolean m_aborted;
+	private boolean m_aborted;
 	private AbstractAction<AbstractRequest> m_abortAction;
 
 	private boolean m_ignoreTimeout;
@@ -33,10 +33,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	protected AbstractRequest() {
 		super();
 
-		m_fulfilled = false;
 		m_fulfillAction = null;
-
-		m_aborted = false;
 		m_abortAction = null;
 
 		m_wait = new Semaphore(0, false);
@@ -71,10 +68,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
 		super(p_destination, p_type, p_subtype, p_exclusivity);
 
-		m_fulfilled = false;
 		m_fulfillAction = null;
-
-		m_aborted = false;
 		m_abortAction = null;
 
 		m_wait = new Semaphore(0, false);
@@ -172,7 +166,9 @@ public abstract class AbstractRequest extends AbstractMessage {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > p_timeoutMs && !m_ignoreTimeout) {
 				// RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
+				RequestMap.remove(getRequestID());
 				success = false;
+
 				break;
 			}
 			try {

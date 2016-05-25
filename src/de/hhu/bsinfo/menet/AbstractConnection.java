@@ -56,29 +56,7 @@ public abstract class AbstractConnection {
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
 	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
-			final MessageDirectory p_messageDirectory,
-			final int p_flowControlWindowSize) {
-		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null, p_flowControlWindowSize);
-	}
-
-	/**
-	 * Creates an instance of AbstractConnection
-	 * @param p_destination
-	 *            the destination
-	 * @param p_listener
-	 *            the ConnectionListener
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_taskExecutor
-	 *            the task executer
-	 * @param p_messageDirectory
-	 *            the message directory
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
-	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
-			final MessageDirectory p_messageDirectory,
-			final DataReceiver p_listener, final int p_flowControlWindowSize) {
+			final MessageDirectory p_messageDirectory, final int p_flowControlWindowSize) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_dataHandler = new DataHandler();
@@ -90,8 +68,6 @@ public abstract class AbstractConnection {
 		m_messageDirectory = p_messageDirectory;
 
 		m_connected = false;
-
-		m_listener = p_listener;
 
 		m_timestamp = 0;
 
@@ -357,10 +333,10 @@ public abstract class AbstractConnection {
 		String ret;
 
 		m_flowControlCondLock.lock();
-		ret = this.getClass().getSimpleName() + "[" + m_destination + ", " + (m_connected ? "connected" : "not connected")
+		ret = this.getClass().getSimpleName() + "[" + NodeID.toHexString(m_destination) + ", " + (m_connected ? "connected" : "not connected")
 				+ ", sent(messages): " + m_sentMessages + ", received(messages): " + m_receivedMessages
 				+ ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " + m_receivedBytes
-				+ ", buffer queues: " + getInputOutputQueueLength() + "]\n";
+				+ ", buffer queues: " + getInputOutputQueueLength();
 		m_flowControlCondLock.unlock();
 
 		return ret;

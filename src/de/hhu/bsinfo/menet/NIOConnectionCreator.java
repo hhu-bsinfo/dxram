@@ -101,8 +101,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Creates a new connection to the given destination
 	 * @param p_destination
 	 *            the destination
-	 * @param p_listener
-	 *            the ConnectionListener
 	 * @return a new connection
 	 * @throws IOException
 	 *             if the connection could not be created
@@ -117,7 +115,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		condLock = new ReentrantLock(false);
 		cond = condLock.newCondition();
-		ret = new NIOConnection(p_destination, m_nodeMap, m_taskExecutor, m_messageDirectory, p_listener, condLock, cond, m_nioSelector, m_numberOfBuffers,
+		ret = new NIOConnection(p_destination, m_nodeMap, m_taskExecutor, m_messageDirectory, condLock, cond, m_nioSelector, m_numberOfBuffers,
 				m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 
 		timeStart = System.currentTimeMillis();

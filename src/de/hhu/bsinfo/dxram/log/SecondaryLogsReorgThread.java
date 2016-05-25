@@ -112,7 +112,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 
 	@Override
 	public void run() {
-		final int iterationsPerLog = 60;
+		final int iterationsPerLog = 20;
 		int counter = 0;
 		// long start;
 		// long mid;
@@ -123,7 +123,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 			m_reorganizationLock.lock();
 			// Check if there is an urgent reorganization request -> reorganize complete secondary log and signal
 			if (m_secLog != null) {
-				m_logger.warn(SecondaryLogsReorgThread.class, "Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
+				m_logger.debug(SecondaryLogsReorgThread.class, "Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
 				// Leave current secondary log
 				if (counter > 0) {
 					secondaryLog.resetReorgSegment();
@@ -176,7 +176,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 					iter = m_reorganizationRequests.iterator();
 					secondaryLog = iter.next();
 					iter.remove();
-					m_logger.info(SecondaryLogsReorgThread.class, "Got reorganization request for " + secondaryLog.getRangeIDOrFirstLocalID()
+					m_logger.trace(SecondaryLogsReorgThread.class, "Got reorganization request for " + secondaryLog.getRangeIDOrFirstLocalID()
 							+ ". Queue length: " + m_reorganizationRequests.size());
 					m_requestLock.unlock();
 

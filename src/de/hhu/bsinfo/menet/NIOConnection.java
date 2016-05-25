@@ -45,8 +45,6 @@ public class NIOConnection extends AbstractConnection {
 	 *            the task executer
 	 * @param p_messageDirectory
 	 *            the message directory
-	 * @param p_listener
-	 *            the ConnectionListener
 	 * @param p_lock
 	 *            the ReentrantLock
 	 * @param p_cond
@@ -65,9 +63,9 @@ public class NIOConnection extends AbstractConnection {
 	 *             if the connection could not be created
 	 */
 	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
-			final DataReceiver p_listener, final ReentrantLock p_lock, final Condition p_cond, final NIOSelector p_nioSelector,
-			final int p_numberOfBuffers, final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
-		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_listener, p_flowControlWindowSize);
+			final ReentrantLock p_lock, final Condition p_cond, final NIOSelector p_nioSelector, final int p_numberOfBuffers, final int p_incomingBufferSize,
+			final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;
 		m_outgoingBufferSize = p_outgoingBufferSize;
@@ -79,10 +77,10 @@ public class NIOConnection extends AbstractConnection {
 		m_channel.socket().setReceiveBufferSize(m_incomingBufferSize);
 		m_channel.socket().setSendBufferSize(m_outgoingBufferSize);
 
+		m_channel.connect(super.getNodeMap().getAddress(p_destination));
+
 		m_nioSelector = p_nioSelector;
 		m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
-
-		m_channel.connect(super.getNodeMap().getAddress(p_destination));
 
 		m_incoming = new ArrayDeque<>();
 		m_outgoing = new ArrayDeque<>();
@@ -399,6 +397,20 @@ public class NIOConnection extends AbstractConnection {
 
 		m_connectionCond.signalAll();
 		m_connectionCondLock.unlock();
+	}
+
+	@Override
+	public String toString() {
+		String ret;
+
+		ret = super.toString();
+		try {
+			ret += ", address: " + m_channel.getRemoteAddress() + "]\n";
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+
+		return ret;
 	}
 
 }

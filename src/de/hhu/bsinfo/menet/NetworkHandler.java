@@ -45,11 +45,16 @@ public final class NetworkHandler implements DataReceiver {
 	 *            the number of message creatorn threads
 	 * @param p_numMessageHandlerThreads
 	 *            the number of default message handler (+ one exclusive message handler)
+	 * @param p_requestMapSize
+	 *            the number of entries in the request map
 	 */
-	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads) {
+	public NetworkHandler(final int p_numMessageCreatorThreads, final int p_numMessageHandlerThreads,
+			final int p_requestMapSize) {
 		final byte networkType;
 
 		m_loggerInterface = new LoggerNull();
+
+		RequestMap.initialize(p_requestMapSize);
 
 		m_numMessageHandlerThreads = p_numMessageHandlerThreads;
 
@@ -150,12 +155,10 @@ public final class NetworkHandler implements DataReceiver {
 
 		m_nodeMap = p_nodeMap;
 
-		m_connectionCreator =
-				new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize,
-						p_outgoingBufferSize,
-						p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
+		m_connectionCreator = new NIOConnectionCreator(m_messageCreatorExecutor, m_messageDirectory, m_nodeMap, p_incomingBufferSize,
+				p_outgoingBufferSize, p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
 		m_connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
-		m_manager = new ConnectionManager(m_connectionCreator, this);
+		m_manager = new ConnectionManager(m_connectionCreator, this, p_ownNodeID);
 
 		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
@@ -295,6 +298,7 @@ public final class NetworkHandler implements DataReceiver {
 				try {
 					connection = m_manager.getConnection(p_message.getDestination());
 				} catch (final IOException e) {
+					m_loggerInterface.error(getClass().getSimpleName(), "IOException during connection lookup");
 					return -1;
 				}
 				try {
