@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.event.NameserviceCacheEntryUpdateEvent;
 import de.hhu.bsinfo.dxram.lookup.overlay.CacheTree;
+import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -211,6 +212,29 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 		return ret;
 	}
+
+	//
+	/**
+	 * Get Lookup Tree from Superpeer
+	 * @param p_nodeID
+	 *            the NodeID
+	 * @return LookupTree from SuperPeerOverlay
+	 */
+	public LookupTree getSuperPeerLookUpTree(final short p_nodeID) {
+		LookupTree ret = null;
+
+		m_logger.trace(getClass(), "Entering getLookupTree with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			ret = m_superpeer.getCIDTree(p_nodeID);
+		} else {
+			m_logger.error(getClass(), "Superpeer must not call this method!");
+		}
+
+		m_logger.trace(getClass(), "Exiting getAllBackupRanges");
+		return ret;
+	}
+	//
 
 	/**
 	 * Store migration of given ChunkID to a new location

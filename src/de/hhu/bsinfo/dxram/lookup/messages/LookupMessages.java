@@ -46,6 +46,9 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 34;
 	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 35;
 
+	public static final byte SUBTYPE_REQUEST_SEND_LOOK_UP_TREE = 36;
+	public static final byte SUBTYPE_SEND_LOOK_UP_TREE = 37;
+
 	/**
 	 * Hidden constructor
 	 */

@@ -1025,6 +1025,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 					chunks[i++] = ret.second()[index];
 				}
 				GetRequest request = new GetRequest(peer, chunks);
+				// mike foo requests chunk
 				NetworkErrorCodes error = m_network.sendSync(request);
 				if (error != NetworkErrorCodes.SUCCESS) {
 					m_logger.error(getClass(), "Sending chunk get request to peer " + peer + " failed: " + error);
@@ -1039,6 +1040,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		ret.m_first = totalNumberOfChunksGot;
+		// mike foo chunk not found
 
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 

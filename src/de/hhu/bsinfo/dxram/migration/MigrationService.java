@@ -118,7 +118,6 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 				}
 			} else {
 
-				
 				m_logger.error(getClass(),
 						"Chunk with ChunkID " + ChunkID.toHexString(p_chunkID) + " could not be migrated");
 				ret = false;
