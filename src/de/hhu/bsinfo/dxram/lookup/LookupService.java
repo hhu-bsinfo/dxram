@@ -1,9 +1,6 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -96,7 +93,9 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 		short dest = p_message.getSource();
 		// To Do getlookup tree from tree component only if super peer!!
-		ArrayList<LookupTree> tree = new ArrayList<>(Arrays.asList(m_lookup.getSuperPeerLookUpTree(m_nodeID)));
+		// ArrayList<LookupTree> tree = new ArrayList<>(Arrays.asList(m_lookup.getSuperPeerLookUpTree(m_nodeID)));
+
+		LookupTree tree = m_lookup.getSuperPeerLookUpTree(m_nodeID);
 
 		final NetworkErrorCodes err = m_network.sendMessage(new SendLookupTreeMessage(dest, tree));
 		if (err != NetworkErrorCodes.SUCCESS) {
@@ -106,8 +105,11 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	private void incomingSendLookupTreeMessage(SendLookupTreeMessage p_message) {
 
-		System.out.println("incoming Send LookupTree Message:\n\n");
-		System.out.println(p_message.getCIDTrees().toString());
+		System.out.println("incoming Send LookupTree Message:");
+		if (p_message.getCIDTree() != null)
+			System.out.println(p_message.getCIDTree().toString());
+		else
+			System.out.println("Migration Tree is null");
 	}
 
 	@Override
