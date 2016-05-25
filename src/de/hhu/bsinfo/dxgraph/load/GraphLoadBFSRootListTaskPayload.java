@@ -2,7 +2,6 @@
 package de.hhu.bsinfo.dxgraph.load;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -16,21 +15,27 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Task to load a list of root vertex ids for BFS entry points.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 	public static final String MS_BFS_ROOTS = "BFS";
 
+	private static final Argument MS_ARG_PATH =
+			new Argument("graphPath", null, false, "Path containing a root list to load.");
+
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
-	private String m_path = new String("./");
+	private String m_path = "./";
 
 	/**
 	 * Constructor
@@ -41,8 +46,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the path where one or multiple partition index files are stored.
-	 * @param p_path
-	 *            Path where the files are located
+	 *
+	 * @param p_path Path where the files are located
 	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
@@ -63,6 +68,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		if (getSlaveId() == 0) {
 			m_loggerService = p_dxram.getService(LoggerService.class);
 			m_chunkService = p_dxram.getService(ChunkService.class);
+			TemporaryStorageService temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
 
 			// look for the graph partitioned index of the current compute group
@@ -78,8 +84,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			graphPartitionIndex.setID(chunkIdPartitionIndex);
 
 			// get the index
-			if (m_chunkService.get(graphPartitionIndex) != 1) {
-				m_loggerService.error(getClass(), "Getting partition index from chunk memory failed.");
+			if (!temporaryStorageService.get(graphPartitionIndex)) {
+				m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
 				return -2;
 			}
 
@@ -118,9 +124,13 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_path = p_delegate.promptForUserInput("graphPath");
-		return true;
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_PATH);
+	}
+
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
 	}
 
 	@Override
@@ -152,8 +162,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Setup a root node list instance.
-	 * @param p_path
-	 *            Path with the root list.
+	 *
+	 * @param p_path Path with the root list.
 	 * @return OrderedEdgeListRoots instance giving access to the list found for this slave or null on error.
 	 */
 	private OrderedEdgeListRoots setupOrderedEdgeListRoots(final String p_path) {
@@ -173,20 +183,17 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		}
 
 		// iterate files in dir, filter by pattern
-		File[] files = tmpFile.listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(final File p_dir, final String p_name) {
-				String[] tokens = p_name.split("\\.");
+		File[] files = tmpFile.listFiles((p_dir, p_name) -> {
+			String[] tokens = p_name.split("\\.");
 
-				// looking for format xxx.roel
-				if (tokens.length > 1) {
-					if (tokens[1].equals("roel")) {
-						return true;
-					}
+			// looking for format xxx.roel
+			if (tokens.length > 1) {
+				if (tokens[1].equals("roel")) {
+					return true;
 				}
-
-				return false;
 			}
+
+			return false;
 		});
 
 		// add filtered files
@@ -209,16 +216,15 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Load the root list.
-	 * @param p_orderedEdgeRootList
-	 *            Root list to load.
-	 * @param p_graphPartitionIndex
-	 *            Index of all partitions to rebase vertex ids of all roots.
+	 *
+	 * @param p_orderedEdgeRootList Root list to load.
+	 * @param p_graphPartitionIndex Index of all partitions to rebase vertex ids of all roots.
 	 * @return Root list instance on success, null on error.
 	 */
 	private GraphRootList loadRootList(final OrderedEdgeListRoots p_orderedEdgeRootList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
 
-		ArrayList<Long> roots = new ArrayList<Long>();
+		ArrayList<Long> roots = new ArrayList<>();
 		while (true) {
 			long root = p_orderedEdgeRootList.getRoot();
 			if (root == ChunkID.INVALID_ID) {

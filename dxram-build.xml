@@ -88,6 +88,8 @@
 		</manifestclasspath>
 		
 		<javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false" debug="${debugOn}" optimize="${optimizeOn}" encoding="UTF-8">
+			<include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
+			<include name="de/hhu/bsinfo/dxcompute/**/*.java"/>
 			<include name="de/hhu/bsinfo/dxram/**/*.java"/>
 			<include name="de/hhu/bsinfo/menet/**/*.java"/>
 			<include name="de/hhu/bsinfo/soh/**/*.java"/>

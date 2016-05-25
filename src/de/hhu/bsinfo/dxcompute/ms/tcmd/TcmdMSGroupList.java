@@ -36,9 +36,9 @@ public class TcmdMSGroupList extends AbstractTerminalCommand {
 
 		ArrayList<Pair<Short, Byte>> masters = masterSlaveComputeService.getMasters();
 
-		System.out.println("List of available compute groups with master nodes (" + masters.size() + "):");
+		getTerminalDelegate().println("List of available compute groups with master nodes (" + masters.size() + "):");
 		for (Pair<Short, Byte> entry : masters) {
-			System.out.println(entry.second() + ": " + NodeID.toHexString(entry.first()));
+			getTerminalDelegate().println(entry.second() + ": " + NodeID.toHexString(entry.first()));
 		}
 
 		return true;

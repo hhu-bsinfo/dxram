@@ -4,14 +4,15 @@ package de.hhu.bsinfo.dxram.chunk.tcmds;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * This class handles the chunkcreate command which creates a chunk via the terminal
+ *
  * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
-
 public class TcmdChunkCreate extends AbstractTerminalCommand {
 
 	private static final Argument MS_ARG_SIZE = new Argument("size", null, false, "Size of the chunk to create");
@@ -47,9 +48,9 @@ public class TcmdChunkCreate extends AbstractTerminalCommand {
 		chunkIDs = chunkService.createRemote(nodeID, size);
 
 		if (chunkIDs != null) {
-			System.out.println("Created chunk of size " + size + ": 0x" + ChunkID.toHexString(chunkIDs[0]));
+			getTerminalDelegate().println("Created chunk of size " + size + ": " + ChunkID.toHexString(chunkIDs[0]));
 		} else {
-			System.out.println("Creating chunk failed.");
+			getTerminalDelegate().println("Creating chunk failed.", TerminalColor.RED);
 		}
 
 		return true;

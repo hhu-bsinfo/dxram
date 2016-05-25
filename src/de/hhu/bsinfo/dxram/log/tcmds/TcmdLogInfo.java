@@ -37,7 +37,7 @@ public class TcmdLogInfo extends AbstractTerminalCommand {
 
 		LogService logService = getTerminalDelegate().getDXRAMService(LogService.class);
 
-		System.out.println(logService.getCurrentUtilization(nid));
+		getTerminalDelegate().println(logService.getCurrentUtilization(nid));
 
 		return true;
 	}

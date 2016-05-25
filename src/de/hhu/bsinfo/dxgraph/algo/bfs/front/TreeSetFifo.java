@@ -5,11 +5,12 @@ import java.util.TreeSet;
 
 /**
  * Frontier implementation using Java's TreeSet.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class TreeSetFifo implements FrontierList {
 
-	private TreeSet<Long> m_tree = new TreeSet<Long>();
+	private TreeSet<Long> m_tree = new TreeSet<>();
 
 	@Override
 	public void pushBack(final long p_val) {

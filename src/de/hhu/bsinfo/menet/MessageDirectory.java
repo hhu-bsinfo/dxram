@@ -42,13 +42,16 @@ public final class MessageDirectory {
 
 		m_lock.lock();
 		if (contains(p_type, p_subtype)) {
+			m_lock.unlock();
 			return false;
 		}
 
 		try {
 			constructor = p_class.getDeclaredConstructor();
 		} catch (final NoSuchMethodException e) {
-			throw new IllegalArgumentException("Class " + p_class.getCanonicalName() + " has no default constructor", e);
+			m_lock.unlock();
+			throw new IllegalArgumentException("Class " + p_class.getCanonicalName() + " has no default constructor",
+					e);
 		}
 
 		// enlarge array
@@ -132,7 +135,8 @@ public final class MessageDirectory {
 		constructor = getConstructor(p_type, p_subtype);
 
 		if (constructor == null) {
-			throw new NetworkRuntimeException("Could not create message instance: Message type (" + p_type + ":" + p_subtype + ") not registered");
+			throw new NetworkRuntimeException("Could not create message instance: Message type (" + p_type + ":"
+					+ p_subtype + ") not registered");
 		}
 
 		try {

@@ -20,7 +20,7 @@ import de.hhu.bsinfo.utils.reflect.unit.UnitConverterKBToByte;
 import de.hhu.bsinfo.utils.reflect.unit.UnitConverterMBToByte;
 
 /**
- * Easier to handle argument list/map within an application.
+ * Easy way to handle argument lists/maps within an application.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class ArgumentList {

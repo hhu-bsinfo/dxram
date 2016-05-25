@@ -2,7 +2,6 @@
 package de.hhu.bsinfo.dxgraph.load;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.nio.charset.StandardCharsets;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
@@ -13,23 +12,32 @@ import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListTextFileThreadBuffering;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Task to load a graph from a partitioned ordered edge list.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
+	private static final Argument MS_ARG_PATH =
+			new Argument("graphPath", null, false, "Path containing the graph data to load.");
+	private static final Argument MS_ARG_VERTEX_BATCH_SIZE =
+			new Argument("vertexBatchSize", null, false, "Size of a vertex batch for the loading process.");
+
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
-	private String m_path = new String("./");
+	private String m_path = "./";
 	private int m_vertexBatchSize = 100;
 
 	/**
@@ -41,8 +49,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the number of vertices to buffer with one load call.
-	 * @param p_batchSize
-	 *            Number of vertices to buffer.
+	 *
+	 * @param p_batchSize Number of vertices to buffer.
 	 */
 	public void setLoadVertexBatchSize(final int p_batchSize) {
 		m_vertexBatchSize = p_batchSize;
@@ -50,8 +58,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the path that contains the graph data.
-	 * @param p_path
-	 *            Path with graph data files.
+	 *
+	 * @param p_path Path with graph data files.
 	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
@@ -66,6 +74,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	public int execute(final DXRAMServiceAccessor p_dxram) {
 		m_loggerService = p_dxram.getService(LoggerService.class);
 		m_chunkService = p_dxram.getService(ChunkService.class);
+		TemporaryStorageService temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 		NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
 
 		// look for the graph partitioned index of the current compute group
@@ -81,8 +90,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		graphPartitionIndex.setID(chunkIdPartitionIndex);
 
 		// get the index
-		if (m_chunkService.get(graphPartitionIndex) != 1) {
-			m_loggerService.error(getClass(), "Getting partition index from chunk memory failed.");
+		if (!temporaryStorageService.get(graphPartitionIndex)) {
+			m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
 			return -2;
 		}
 
@@ -101,10 +110,15 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_path = p_delegate.promptForUserInput("graphPath");
-		m_vertexBatchSize = Integer.parseInt(p_delegate.promptForUserInput("vertexBatchSize"));
-		return true;
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_PATH);
+		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
+	}
+
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
+		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
 	}
 
 	@Override
@@ -138,8 +152,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Setup an edge list instance for the current slave node.
-	 * @param p_path
-	 *            Path with indexed graph data partitions.
+	 *
+	 * @param p_path Path with indexed graph data partitions.
 	 * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
 	 */
 	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path) {
@@ -158,20 +172,17 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		}
 
 		// iterate files in dir, filter by pattern
-		File[] files = tmpFile.listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(final File p_dir, final String p_name) {
-				String[] tokens = p_name.split("\\.");
+		File[] files = tmpFile.listFiles((p_dir, p_name) -> {
+			String[] tokens = p_name.split("\\.");
 
-				// looking for format xxx.oel.<slave id>
-				if (tokens.length > 1) {
-					if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
-						return true;
-					}
+			// looking for format xxx.oel.<slave id>
+			if (tokens.length > 1) {
+				if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
+					return true;
 				}
-
-				return false;
 			}
+
+			return false;
 		});
 
 		// add filtered files
@@ -202,16 +213,15 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Load a graph partition (single threaded).
-	 * @param p_orderedEdgeList
-	 *            Graph partition to load.
-	 * @param p_graphPartitionIndex
-	 *            Index for all partitions to rebase vertex ids to current node.
+	 *
+	 * @param p_orderedEdgeList     Graph partition to load.
+	 * @param p_graphPartitionIndex Index for all partitions to rebase vertex ids to current node.
 	 * @return True if loading successful, false on error.
 	 */
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
 		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
-		int readCount = 0;
+		int readCount;
 
 		GraphPartitionIndex.Entry currentPartitionIndexEntry = p_graphPartitionIndex.getPartitionIndex(getSlaveId());
 		if (currentPartitionIndexEntry == null) {
@@ -257,13 +267,13 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				vertexBuffer[i] = null;
 			}
 
-			int count = m_chunkService.create(vertexBuffer);
+			int count = m_chunkService.create((DataStructure[]) vertexBuffer);
 			if (count != readCount) {
 				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + readCount);
 				return false;
 			}
 
-			count = m_chunkService.put(vertexBuffer);
+			count = m_chunkService.put((DataStructure[]) vertexBuffer);
 			if (count != readCount) {
 				m_loggerService.error(getClass(),
 						"Putting vertex data for chunks failed: " + count + " != " + readCount);
@@ -285,7 +295,9 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded
 				|| currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
 			m_loggerService.error(getClass(),
-					"Loading failed, vertex/edge count does not match data in graph partition index");
+					"Loading failed, vertex/edge count (" + totalVerticesLoaded + "/" + totalEdgesLoaded
+							+ ") does not match data in graph partition index (" + currentPartitionIndexEntry
+							.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
 			return false;
 		}
 

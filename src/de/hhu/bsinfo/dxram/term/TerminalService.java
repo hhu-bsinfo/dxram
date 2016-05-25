@@ -1,13 +1,6 @@
 
 package de.hhu.bsinfo.dxram.term;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -19,10 +12,14 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.args.ArgumentListParser;
 import de.hhu.bsinfo.utils.args.DefaultArgumentListParser;
 
+import java.util.*;
+import java.util.Map.Entry;
+
 /**
  * Service providing an interactive terminal running on a DXRAM instance.
  * Allows access to implemented services, triggering commands, getting information
  * about current or remote DXRAM instances.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
 public class TerminalService extends AbstractDXRAMService implements TerminalDelegate {
@@ -34,8 +31,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Register a new terminal command for the terminal.
-	 * @param p_command
-	 *            Command to register.
+	 *
+	 * @param p_command Command to register.
 	 * @return True if registering was successful, false if a command with the same name already exists.
 	 */
 	public boolean registerCommand(final AbstractTerminalCommand p_command) {
@@ -47,11 +44,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	 * Only returns if terminal was exited.
 	 */
 	public void loop() {
-		String command;
-		String[] arguments;
 		byte[] arr;
-		ArgumentListParser argsParser = new DefaultArgumentListParser();
-		ArgumentList argsList = new ArgumentList();
 
 		if (!m_boot.getNodeRole().equals(NodeRole.TERMINAL)) {
 			System.out.println("A Terminal node must have the NodeRole \"terminal\". Aborting");
@@ -78,79 +71,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			arr = JNIconsole
 					.readline("$" + NodeID.toHexString(m_boot.getNodeID()) + "> ");
 			if (arr != null) {
-				command = new String(arr, 0, arr.length);
-				arguments = command.split(" ");
-
-				if (arguments[0].equals("?")) {
-					if (arguments.length > 1) {
-						final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[1]);
-						if (c == null) {
-							System.out.println("error: unknown command");
-						} else {
-							printUsage(c);
-						}
-					} else {
-						System.out.println("Available commands:");
-						System.out.println(getAvailableCommands());
-					}
-				} else if (arguments[0].equals("!") || arguments[0].equals("!")) {
-					String cmdStr = null;
-					if (arguments.length < 2) {
-						System.out.println("Specify command for interactive mode:");
-						cmdStr = promptForUserInput("command");
-					} else {
-						cmdStr = arguments[1];
-					}
-					final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(cmdStr);
-					if (c == null) {
-						System.out.println("error: unknown command");
-					} else {
-						argsList.clear();
-						c.registerArguments(argsList);
-
-						// trigger interactive mode
-						System.out.println("Interactive argument input for '" + c.getName() + "':");
-						if (!interactiveArgumentMode(argsList)) {
-							System.out.println("error entering arguments");
-						}
-
-						if (!argsList.checkArguments()) {
-							printUsage(c);
-						} else {
-							c.setTerminalDelegate(this);
-							if (!c.execute(argsList)) {
-								printUsage(c);
-							}
-						}
-					}
-				} else {
-					if (arguments[0].isEmpty()) {
-						continue;
-					}
-
-					final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[0]);
-					if (c == null) {
-						System.out.println("error: unknown command");
-					} else {
-						argsList.clear();
-						c.registerArguments(argsList);
-						try {
-							argsParser.parseArguments(arguments, argsList);
-						} catch (final Exception e) {
-							System.out.println("error: parsing arguments. most likely invalid syntax");
-							continue;
-						}
-
-						if (!argsList.checkArguments()) {
-							printUsage(c);
-						} else {
-							c.setTerminalDelegate(this);
-							if (!c.execute(argsList)) {
-								printUsage(c);
-							}
-						}
-					}
-				}
+				String command = new String(arr, 0, arr.length);
+				executeTerminalCommand(command);
 			}
 		}
 
@@ -232,12 +154,166 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	}
 
 	@Override
+	public void print(final String p_str) {
+		System.out.print(p_str);
+	}
+
+	@Override
+	public void print(final Object p_object) {
+		System.out.print(p_object);
+	}
+
+	@Override
+	public void print(final String p_str, final TerminalColor p_color) {
+		changeConsoleColor(p_color, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.print(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	@Override
+	public void print(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style) {
+		changeConsoleColor(p_color, p_backgroundColor, p_style);
+		System.out.print(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	@Override
+	public void println() {
+		System.out.println();
+	}
+
+	@Override
+	public void println(final String p_str) {
+		System.out.println(p_str);
+	}
+
+	@Override
+	public void println(final Object p_object) {
+		System.out.println(p_object);
+	}
+
+	@Override
+	public void println(final String p_str, final TerminalColor p_color) {
+		changeConsoleColor(p_color, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.print(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.println();
+	}
+
+	@Override
+	public void println(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style) {
+		changeConsoleColor(p_color, p_backgroundColor, p_style);
+		System.out.print(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.println();
+	}
+
+	@Override
+	public void clear() {
+		// ANSI escape codes (clear screen, move cursor to first row and first column)
+		System.out.print("\033[H\033[2J");
+		System.out.flush();
+	}
+
+	@Override
 	public <T extends AbstractDXRAMService> T getDXRAMService(final Class<T> p_class) {
 		return getServiceAccessor().getService(p_class);
 	}
 
+	@Override
+	public boolean executeTerminalCommand(final String p_cmdString) {
+		String[] arguments;
+		ArgumentListParser argsParser = new DefaultArgumentListParser();
+		ArgumentList argsList = new ArgumentList();
+
+		arguments = p_cmdString.split(" ");
+
+		if (arguments[0].equals("?")) {
+			if (arguments.length > 1) {
+				final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[1]);
+				if (c == null) {
+					System.out.println("error: unknown command");
+					return false;
+				} else {
+					printUsage(c);
+				}
+			} else {
+				System.out.println("Available commands:");
+				System.out.println(getAvailableCommands());
+			}
+		} else if (arguments[0].equals("!") || arguments[0].equals("!")) {
+			String cmdStr = null;
+			if (arguments.length < 2) {
+				System.out.println("Specify command for interactive mode:");
+				cmdStr = promptForUserInput("command");
+			} else {
+				cmdStr = arguments[1];
+			}
+			final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(cmdStr);
+			if (c == null) {
+				System.out.println("error: unknown command");
+				return false;
+			} else {
+				argsList.clear();
+				c.registerArguments(argsList);
+
+				// trigger interactive mode
+				System.out.println("Interactive argument input for '" + c.getName() + "':");
+				if (!interactiveArgumentMode(argsList)) {
+					System.out.println("error entering arguments");
+				}
+
+				if (!argsList.checkArguments()) {
+					printUsage(c);
+					return false;
+				} else {
+					c.setTerminalDelegate(this);
+					if (!c.execute(argsList)) {
+						printUsage(c);
+						return false;
+					}
+				}
+			}
+		} else {
+			if (arguments[0].isEmpty()) {
+				return true;
+			}
+
+			final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[0]);
+			if (c == null) {
+				System.out.println("error: unknown command");
+				return false;
+			} else {
+				argsList.clear();
+				c.registerArguments(argsList);
+				try {
+					argsParser.parseArguments(arguments, argsList);
+				} catch (final Exception e) {
+					System.out.println("error: parsing arguments. most likely invalid syntax");
+					return false;
+				}
+
+				if (!argsList.checkArguments()) {
+					printUsage(c);
+					return false;
+				} else {
+					c.setTerminalDelegate(this);
+					if (!c.execute(argsList)) {
+						printUsage(c);
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
 	/**
 	 * Get a list of available/registered commands.
+	 *
 	 * @return List of registered commands.
 	 */
 	private String getAvailableCommands() {
@@ -260,8 +336,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Print a usage message for the specified terminal command.
-	 * @param p_command
-	 *            Terminal command to print usage message of.
+	 *
+	 * @param p_command Terminal command to print usage message of.
 	 */
 	private void printUsage(final AbstractTerminalCommand p_command) {
 		ArgumentList argList = new ArgumentList();
@@ -275,8 +351,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Execute interactive argument mode to allow the user entering arguments for a command one by one.
-	 * @param p_arguments
-	 *            List of arguments with arguments that need values to be entered.
+	 *
+	 * @param p_arguments List of arguments with arguments that need values to be entered.
 	 * @return If user entered arguments properly, false otherwise.
 	 */
 	private boolean interactiveArgumentMode(final ArgumentList p_arguments) {
@@ -304,5 +380,24 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		}
 
 		return true;
+	}
+
+	/**
+	 * Change the color of stdout.
+	 *
+	 * @param p_color           Text color.
+	 * @param p_backgroundColor Shell background color
+	 * @param p_style           Text style.
+	 */
+	private void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style) {
+		if (p_backgroundColor != TerminalColor.DEFAULT) {
+			System.out.printf("\033[%d;%d;%dm", p_style.ordinal(), p_color.ordinal() + 30,
+					p_backgroundColor.ordinal() + 40);
+		} else if (p_backgroundColor == TerminalColor.DEFAULT && p_color != TerminalColor.DEFAULT) {
+			System.out.printf("\033[%d;%dm", p_style.ordinal(), p_color.ordinal() + 30);
+		} else {
+			System.out.printf("\033[%dm", p_style.ordinal());
+		}
 	}
 }

@@ -2,10 +2,11 @@
 package de.hhu.bsinfo.dxram.run;
 
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.term.TerminalService;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
@@ -15,9 +16,6 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.02.16
  */
 public class DXRAMMain extends AbstractMain {
-
-	private static final Argument ARG_DXRAM_TERMINAL =
-			new Argument("dxramTerminal", "false", true, "Run the built in terminal of dxram after system launch");
 
 	private DXRAM m_dxram;
 
@@ -50,9 +48,7 @@ public class DXRAMMain extends AbstractMain {
 	}
 
 	@Override
-	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
-		p_arguments.setArgument(ARG_DXRAM_TERMINAL);
-	}
+	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {}
 
 	@Override
 	protected int main(final ArgumentList p_arguments) {
@@ -71,9 +67,9 @@ public class DXRAMMain extends AbstractMain {
 	 * @return Exit code of the application.
 	 */
 	protected int mainApplication(final ArgumentList p_arguments) {
-		boolean runTerminal = p_arguments.getArgument(ARG_DXRAM_TERMINAL).getValue(Boolean.class);
+		NodeRole role = getService(BootService.class).getNodeRole();
 
-		if (runTerminal) {
+		if (role == NodeRole.TERMINAL) {
 			System.out.println(">>> DXRAM Terminal started <<<");
 			if (!runTerminal()) {
 				return -1;

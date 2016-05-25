@@ -369,7 +369,7 @@ public class StorageUnsafeMemory implements Storage {
 	@Override
 	public int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
-			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Integer.BYTES);
+			p_array[i + p_arrayOffset] = readInt(p_ptr + i * Integer.BYTES);
 		}
 
 		return p_length;
@@ -378,7 +378,7 @@ public class StorageUnsafeMemory implements Storage {
 	@Override
 	public int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
-			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Long.BYTES);
+			p_array[i + p_arrayOffset] = readLong(p_ptr + i * Long.BYTES);
 		}
 
 		return p_length;

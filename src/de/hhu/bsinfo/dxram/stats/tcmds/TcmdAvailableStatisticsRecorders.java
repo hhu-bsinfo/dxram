@@ -36,10 +36,10 @@ public class TcmdAvailableStatisticsRecorders extends AbstractTerminalCommand {
 
 		StatisticsService statService = getTerminalDelegate().getDXRAMService(StatisticsService.class);
 
-		System.out.println();
+		getTerminalDelegate().println();
 
 		for (StatisticsRecorder rec : statService.getRecorders()) {
-			System.out.println("\t" + rec.getName());
+			getTerminalDelegate().println("\t" + rec.getName());
 		}
 
 		return true;

@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.data;
 
 /**
  * Helper class for ChunkID related issues.
+ *
  * @author Florian Klein
  *         23.07.2013
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
@@ -10,20 +11,21 @@ package de.hhu.bsinfo.dxram.data;
 public final class ChunkID {
 
 	public static final long INVALID_ID = -1;
-	public static final long CREATORID_BITMASK = 0xFFFF000000000000L;
-	public static final long LOCALID_BITMASK = 0x0000FFFFFFFFFFFFL;
+	private static final long CREATORID_BITMASK = 0xFFFF000000000000L;
+	private static final long LOCALID_BITMASK = 0x0000FFFFFFFFFFFFL;
 
 	public static final long MAX_LOCALID = Long.MAX_VALUE & LOCALID_BITMASK;
 
 	/**
 	 * Static class.
 	 */
-	private ChunkID() {}
+	private ChunkID() {
+	}
 
 	/**
 	 * Get the CreatorID/NodeID part of the ChunkID.
-	 * @param p_chunkID
-	 *            ChunkID.
+	 *
+	 * @param p_chunkID ChunkID.
 	 * @return The NodeID/CreatorID part.
 	 */
 	public static short getCreatorID(final long p_chunkID) {
@@ -34,8 +36,8 @@ public final class ChunkID {
 
 	/**
 	 * Get the LocalID part of the ChunkID
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the LocalID part
 	 */
 	public static long getLocalID(final long p_chunkID) {
@@ -46,10 +48,9 @@ public final class ChunkID {
 
 	/**
 	 * Create a full chunkID from a local and node ID.
-	 * @param p_nid
-	 *            Node ID part.
-	 * @param p_lid
-	 *            Local ID part.
+	 *
+	 * @param p_nid Node ID part.
+	 * @param p_lid Local ID part.
 	 * @return Full Chunk ID.
 	 */
 	public static long getChunkID(final short p_nid, final long p_lid) {
@@ -58,8 +59,8 @@ public final class ChunkID {
 
 	/**
 	 * Convert a chunk id to a hex string
-	 * @param p_chunkId
-	 *            Chunk id to convert to a hex string.
+	 *
+	 * @param p_chunkId Chunk id to convert to a hex string.
 	 * @return Converted chunk id, example: 0x1111000000000001
 	 */
 	public static String toHexString(final long p_chunkId) {

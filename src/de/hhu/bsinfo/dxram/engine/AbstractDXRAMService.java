@@ -11,6 +11,7 @@ import de.hhu.bsinfo.utils.log.Logger;
  * for different applications, create a clearer structure and higher flexibility. Services
  * use components to implement their functionality. A service is not allowed to depend on
  * another service and services can not interact with each other.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
  */
 public abstract class AbstractDXRAMService {
@@ -27,6 +28,7 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Get the name of this service.
+	 *
 	 * @return Name of this service.
 	 */
 	public String getServiceName() {
@@ -35,8 +37,8 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Start this service.
-	 * @param p_engine
-	 *            Engine this service is part of (parent).
+	 *
+	 * @param p_engine Engine this service is part of (parent).
 	 * @return True if initializing was successful, false otherwise.
 	 */
 	public boolean start(final DXRAMEngine p_engine) {
@@ -60,6 +62,7 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Shut down this service.
+	 *
 	 * @return True if shutting down was successful, false otherwise.
 	 */
 	public boolean shutdown() {
@@ -78,11 +81,10 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Get a component from the engine.
-	 * @param <T>
-	 *            Class implementing DXRAMComponent
-	 * @param p_class
-	 *            Class of the component to get. If a component has multiple implementations, always use the base
-	 *            class/interface here.
+	 *
+	 * @param <T>     Class implementing DXRAMComponent
+	 * @param p_class Class of the component to get. If a component has multiple implementations, always use the base
+	 *                class/interface here.
 	 * @return Reference to the component requested or null if not available/enabled.
 	 */
 	protected <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
@@ -91,23 +93,23 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Register default value for any settings this service can get from the configuration.
-	 * @param p_settings
-	 *            Settings instance to register default values at.
+	 *
+	 * @param p_settings Settings instance to register default values at.
 	 */
 	protected abstract void registerDefaultSettingsService(final Settings p_settings);
 
 	/**
 	 * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
-	 * @param p_engineSettings
-	 *            Settings instance provided by the engine.
-	 * @param p_settings
-	 *            Settings instance with service related settings.
+	 *
+	 * @param p_engineSettings Settings instance provided by the engine.
+	 * @param p_settings       Settings instance with service related settings.
 	 * @return True if initialing was successful, false otherwise.
 	 */
 	protected abstract boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings);
 
 	/**
 	 * Called when the service gets shut down. Cleanup your service in here.
+	 *
 	 * @return True if shutdown was successful, false otherwise.
 	 */
 	protected abstract boolean shutdownService();
@@ -115,6 +117,7 @@ public abstract class AbstractDXRAMService {
 	/**
 	 * Check if this class is a service accessor i.e. breaking the rules of
 	 * not knowing other services. Override this if this feature is used.
+	 *
 	 * @return True if accessor, false otherwise.
 	 */
 	protected boolean isServiceAccessor() {
@@ -122,7 +125,18 @@ public abstract class AbstractDXRAMService {
 	}
 
 	/**
+	 * Check if this class is an engine accessor i.e. breaking the rules of
+	 * not knowing the engine. Override this if this feature is used.
+	 *
+	 * @return True if accessor, false otherwise.
+	 */
+	protected boolean isEngineAccessor() {
+		return false;
+	}
+
+	/**
 	 * Get the proxy class to access other services.
+	 *
 	 * @return This returns a valid accessor only if the class is declared a service accessor.
 	 */
 	protected DXRAMServiceAccessor getServiceAccessor() {
@@ -134,7 +148,23 @@ public abstract class AbstractDXRAMService {
 	}
 
 	/**
+	 * Get the engine within the service.
+	 * This is not wanted in most cases to hide as much as possible from the services.
+	 * But for some exceptions (like triggering a shutdown or reboot) there is no other way.
+	 *
+	 * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
+	 */
+	protected DXRAMEngine getParentEngine() {
+		if (isEngineAccessor()) {
+			return m_parentEngine;
+		} else {
+			return null;
+		}
+	}
+
+	/**
 	 * Convenience wrapper to get service related settings from a configuration.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
 	 */
 	public static class Settings {
@@ -144,12 +174,10 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Constructor
-		 * @param p_configuration
-		 *            Configuration to wrap which contains service settings.
-		 * @param p_logger
-		 *            Logger to use for logging messages.
-		 * @param p_serviceIdentifier
-		 *            Identifier of the service used for the configuration path.
+		 *
+		 * @param p_configuration     Configuration to wrap which contains service settings.
+		 * @param p_logger            Logger to use for logging messages.
+		 * @param p_serviceIdentifier Identifier of the service used for the configuration path.
 		 */
 		Settings(final Configuration p_configuration, final Logger p_logger, final String p_serviceIdentifier) {
 			m_configuration = p_configuration;
@@ -159,10 +187,9 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_default
-		 *            Pair of configuration key and default value to set for the specified key.
+		 *
+		 * @param <T>       Type of the value.
+		 * @param p_default Pair of configuration key and default value to set for the specified key.
 		 */
 		public <T> void setDefaultValue(final Pair<String, T> p_default) {
 			setDefaultValue(p_default.first(), p_default.second());
@@ -170,12 +197,10 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_key
-		 *            Key for the value.
-		 * @param p_value
-		 *            Value to set.
+		 *
+		 * @param <T>     Type of the value.
+		 * @param p_key   Key for the value.
+		 * @param p_value Value to set.
 		 */
 		public <T> void setDefaultValue(final String p_key, final T p_value) {
 			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
@@ -188,10 +213,9 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Get a value from the configuration for the service.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_default
-		 *            Pair of key and default value to get value for.
+		 *
+		 * @param <T>       Type of the value.
+		 * @param p_default Pair of key and default value to get value for.
 		 * @return Value associated with the provided key.
 		 */
 		@SuppressWarnings("unchecked")
@@ -201,12 +225,10 @@ public abstract class AbstractDXRAMService {
 
 		/**
 		 * Get a value from the configuration for the service.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_key
-		 *            Key to get the value for.
-		 * @param p_type
-		 *            Type of the value to get.
+		 *
+		 * @param <T>    Type of the value.
+		 * @param p_key  Key to get the value for.
+		 * @param p_type Type of the value to get.
 		 * @return Value assicated with the provided key.
 		 */
 		public <T> T getValue(final String p_key, final Class<T> p_type) {

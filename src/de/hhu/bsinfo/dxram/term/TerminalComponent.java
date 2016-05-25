@@ -6,6 +6,10 @@ import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdClear;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdPrint;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdQuit;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdScriptExec;
 
 /**
  * Component providing data/commands for an interactive terminal to be run on a node.
@@ -61,9 +65,10 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		m_logger = getDependentComponent(LoggerComponent.class);
 
 		// register built in commands
-		registerCommand(new TerminalCommandClear());
-		registerCommand(new TerminalCommandQuit());
-		registerCommand(new TerminalCommandPrint());
+		registerCommand(new TcmdClear());
+		registerCommand(new TcmdQuit());
+		registerCommand(new TcmdPrint());
+		registerCommand(new TcmdScriptExec());
 
 		return true;
 	}

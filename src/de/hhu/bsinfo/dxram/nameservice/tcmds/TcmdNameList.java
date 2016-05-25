@@ -35,9 +35,9 @@ public class TcmdNameList extends AbstractTerminalCommand {
 		NameserviceService nameservice = getTerminalDelegate().getDXRAMService(NameserviceService.class);
 
 		ArrayList<Pair<String, Long>> entries = nameservice.getAllEntries();
-		System.out.println("Nameservice entries(" + entries.size() + "):");
+		getTerminalDelegate().println("Nameservice entries(" + entries.size() + "):");
 		for (Pair<String, Long> entry : entries) {
-			System.out.println(entry.first() + ": " + ChunkID.toHexString(entry.second()));
+			getTerminalDelegate().println(entry.first() + ": " + ChunkID.toHexString(entry.second()));
 		}
 
 		return true;

@@ -8,6 +8,7 @@ import java.io.IOException;
 
 /**
  * Implementation reading roots buffered from a text file.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
@@ -16,8 +17,8 @@ public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
 
 	/**
 	 * Constructor
-	 * @param p_path
-	 *            Filepath to read the roots from.
+	 *
+	 * @param p_path Filepath to read the roots from.
 	 */
 	public OrderedEdgeListRootsTextFile(final String p_path) {
 
@@ -29,7 +30,7 @@ public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
 		}
 
 		try {
-			m_file = new BufferedReader(new FileReader(p_path));
+			m_file = new BufferedReader(new FileReader(file));
 		} catch (final FileNotFoundException e) {
 			throw new RuntimeException("Cannot load graph roots from file '" + p_path + "', does not exist.");
 		}
@@ -37,7 +38,7 @@ public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
 
 	@Override
 	public long getRoot() {
-		String line = null;
+		String line;
 		try {
 			line = m_file.readLine();
 		} catch (final IOException e) {

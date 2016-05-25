@@ -39,10 +39,11 @@ public final class NetworkHandler implements DataReceiver {
 	private int m_numMessageHandlerThreads;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of NetworkHandler
 	 * @param p_numMessageCreatorThreads
-	 *            the number of message creatorn threads
+	 *            the number of message creator threads
 	 * @param p_numMessageHandlerThreads
 	 *            the number of default message handler (+ one exclusive message handler)
 	 * @param p_requestMapSize
@@ -131,6 +132,7 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	// Methods
+
 	/**
 	 * Initializes the network handler
 	 * @param p_ownNodeID
@@ -361,6 +363,7 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	// Classes
+
 	/**
 	 * Distributes incoming messages
 	 * @author Marc Ewert 17.09.2014
@@ -373,6 +376,7 @@ public final class NetworkHandler implements DataReceiver {
 		private final TaskExecutor m_executor;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of MessageHandler
 		 * @param p_numMessageHandlerThreads
@@ -388,6 +392,7 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		// Methods
+
 		/**
 		 * Enqueue a new message for delivering
 		 * @param p_message
@@ -424,10 +429,12 @@ public final class NetworkHandler implements DataReceiver {
 
 			entry = m_receivers.get(message.getClass());
 
+			// missing receivers
 			if (entry != null) {
 				entry.newMessage(message);
 			} else {
-				m_loggerInterface.error(getClass().getSimpleName(), "Default message queue is empty!");
+				m_loggerInterface.error(getClass().getSimpleName(),
+						"Missing receivers for message class " + message.getClass().getSimpleName());
 			}
 		}
 	}
@@ -445,6 +452,7 @@ public final class NetworkHandler implements DataReceiver {
 		private boolean m_shutdown;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of MessageHandler
 		 */
@@ -455,6 +463,7 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		// Methods
+
 		/**
 		 * Closes the handler
 		 */
@@ -531,6 +540,7 @@ public final class NetworkHandler implements DataReceiver {
 	public interface MessageReceiver {
 
 		// Methods
+
 		/**
 		 * Handles an incoming Message
 		 * @param p_message
@@ -551,6 +561,7 @@ public final class NetworkHandler implements DataReceiver {
 		private final Collection<MessageReceiver> m_receivers;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of Entry
 		 */
@@ -559,6 +570,7 @@ public final class NetworkHandler implements DataReceiver {
 		}
 
 		// Methods
+
 		/**
 		 * Adds a MessageReceiver
 		 * @param p_receiver

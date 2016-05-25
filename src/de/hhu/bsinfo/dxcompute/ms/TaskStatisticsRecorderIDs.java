@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 
 /**
  * Metadata needed for registering and recording statistics in GraphTask.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TaskStatisticsRecorderIDs {
@@ -13,6 +14,7 @@ public class TaskStatisticsRecorderIDs {
 
 	/**
 	 * List of operations.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
 	 */
 	public static class Operations {

@@ -9,13 +9,18 @@ import java.io.PrintStream;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Print the current memory status to a file.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPayload {
+
+	private static final Argument MS_ARG_OUTPUT_PATH =
+			new Argument("outputPath", null, false, "Filepath to write the memory statys to.");
 
 	private String m_path;
 
@@ -28,8 +33,8 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 
 	/**
 	 * Set the filepath to the output file to print to.
-	 * @param p_path
-	 *            Filepath of the file to print to.
+	 *
+	 * @param p_path Filepath of the file to print to.
 	 */
 	public void setOutputFilePath(final String p_path) {
 		m_path = p_path;
@@ -46,12 +51,18 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 
 		File file = new File(m_path);
 		if (file.exists()) {
-			file.delete();
+			if (!file.delete()) {
+				loggerService.error(getClass(), "Deleting file " + file + " failed.");
+				return -2;
+			}
 			try {
-				file.createNewFile();
+				if (!file.createNewFile()) {
+					loggerService.error(getClass(), "Creating output file " + m_path + " for memory status failed");
+					return -3;
+				}
 			} catch (final IOException e) {
 				loggerService.error(getClass(), "Creating output file " + m_path + " for memory status failed", e);
-				return -2;
+				return -4;
 			}
 		}
 
@@ -60,7 +71,7 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 			out = new PrintStream(file);
 		} catch (final FileNotFoundException e) {
 			loggerService.error(getClass(), "Creating print stream for memory status failed", e);
-			return -3;
+			return -5;
 		}
 		printMemoryStatusToOutput(out, chunkService.getStatus());
 
@@ -70,9 +81,12 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_path = p_delegate.promptForUserInput("outputPath");
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_OUTPUT_PATH);
+	}
 
-		return true;
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_path = p_argumentList.getArgumentValue(MS_ARG_OUTPUT_PATH, String.class);
 	}
 }

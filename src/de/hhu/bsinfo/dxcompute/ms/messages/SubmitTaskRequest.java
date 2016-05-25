@@ -1,14 +1,15 @@
 
 package de.hhu.bsinfo.dxcompute.ms.messages;
 
-import java.nio.ByteBuffer;
-
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
+import java.nio.ByteBuffer;
+
 /**
  * Submit a task request to a remote master compute node.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class SubmitTaskRequest extends AbstractRequest {
@@ -25,10 +26,9 @@ public class SubmitTaskRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of RemoteExecuteTaskRequest.
 	 * This constructor is used when sending this message.
-	 * @param p_destination
-	 *            the destination node id.
-	 * @param p_task
-	 *            Task to submit to the remote master node.
+	 *
+	 * @param p_destination the destination node id.
+	 * @param p_task        Task to submit to the remote master node.
 	 */
 	public SubmitTaskRequest(final short p_destination, final AbstractTaskPayload p_task) {
 		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST);
@@ -37,6 +37,7 @@ public class SubmitTaskRequest extends AbstractRequest {
 
 	/**
 	 * Get the task (payload) submitted to the remote master.
+	 *
 	 * @return Task payload for the master
 	 */
 	public AbstractTaskPayload getTaskPayload() {
@@ -59,9 +60,7 @@ public class SubmitTaskRequest extends AbstractRequest {
 		short type = p_buffer.getShort();
 		short subtype = p_buffer.getShort();
 		m_task = AbstractTaskPayload.createInstance(type, subtype);
-		if (m_task != null) {
-			importer.importObject(m_task);
-		}
+		importer.importObject(m_task);
 	}
 
 	@Override

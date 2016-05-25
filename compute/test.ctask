@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conf>
+	<ComputeTask>
+		<tid __id="0" __type="short">0</tid>
+		<stid __id="0" __type="short">0</stid>
+	</ComputeTask>
+	<ComputeTask>
+		<tid __id="1" __type="short">0</tid>
+		<stid __id="1" __type="short">2</stid>
+		<timeMs __id="1" __type="int">4000</timeMs>
+	</ComputeTask>
+</conf>

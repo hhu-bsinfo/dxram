@@ -1,10 +1,8 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
-import java.util.HashMap;
-import java.util.Map.Entry;
-
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Represents a nodes configuration for DXRAM. This also holds any information
@@ -19,7 +17,7 @@ public final class NodesConfiguration {
 	public static final short INVALID_NODE_ID = -1;
 
 	// Attributes
-	private HashMap<Short, NodeEntry> m_nodes;
+	private NodeEntry[] m_nodes;
 
 	private short m_ownID;
 
@@ -28,7 +26,7 @@ public final class NodesConfiguration {
 	 * Creates an instance of NodesConfiguration
 	 */
 	public NodesConfiguration() {
-		m_nodes = new HashMap<Short, NodeEntry>();
+		m_nodes = new NodeEntry[MAX_NODE_ID + 1];
 		m_ownID = INVALID_NODE_ID;
 	}
 
@@ -37,7 +35,7 @@ public final class NodesConfiguration {
 	 * Gets the configured node
 	 * @return the configured nodes
 	 */
-	public HashMap<Short, NodeEntry> getNodes() {
+	public NodeEntry[] getNodes() {
 		return m_nodes;
 	}
 
@@ -48,7 +46,7 @@ public final class NodesConfiguration {
 	 * @return NodeEntry containing information about the node or null if it does not exist.
 	 */
 	public NodeEntry getNode(final short p_nodeID) {
-		return m_nodes.get(p_nodeID);
+		return m_nodes[p_nodeID & 0xFFFF];
 	}
 
 	/**
@@ -64,7 +62,7 @@ public final class NodesConfiguration {
 	 * @return NodeEntry or null if invalid.
 	 */
 	public NodeEntry getOwnNodeEntry() {
-		return m_nodes.get(m_ownID);
+		return m_nodes[m_ownID & 0xFFFF];
 	}
 
 	// ---------------------------------------------------------------------------
@@ -77,7 +75,7 @@ public final class NodesConfiguration {
 	 *            the configured node
 	 */
 	synchronized void addNode(final short p_nodeID, final NodeEntry p_entry) {
-		m_nodes.put(p_nodeID, p_entry);
+		m_nodes[p_nodeID & 0xFFFF] = p_entry;
 	}
 
 	/**
@@ -86,7 +84,7 @@ public final class NodesConfiguration {
 	 *            Node ID of the entry to remove.
 	 */
 	synchronized void removeNode(final short p_nodeID) {
-		m_nodes.remove(p_nodeID);
+		m_nodes[p_nodeID & 0xFFFF] = null;
 	}
 
 	/**
@@ -103,8 +101,10 @@ public final class NodesConfiguration {
 		String str = new String();
 
 		str += "NodesConfiguration[ownID: " + m_ownID + "]:";
-		for (Entry<Short, NodeEntry> entry : m_nodes.entrySet()) {
-			str += "\n" + entry.getKey() + ": " + entry.getValue();
+		for (int i = 0; i < m_nodes.length; i++) {
+			if (m_nodes[i] != null) {
+				str += "\n" + NodeID.toHexString((short) i) + ": " + m_nodes[i];
+			}
 		}
 
 		return str;

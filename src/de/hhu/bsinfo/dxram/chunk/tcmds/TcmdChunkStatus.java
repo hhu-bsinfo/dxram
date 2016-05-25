@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.chunk.tcmds;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -44,7 +45,7 @@ public class TcmdChunkStatus extends AbstractTerminalCommand {
 		ChunkService.Status status = chunkService.getStatus(nid);
 
 		if (status == null) {
-			System.out.println("Getting status failed.");
+			getTerminalDelegate().println("Getting status failed.", TerminalColor.RED);
 			return true;
 		}
 
@@ -67,33 +68,36 @@ public class TcmdChunkStatus extends AbstractTerminalCommand {
 			sizeType = "b";
 		}
 
-		System.out.println("Chunk service/memory status of " + NodeID.toHexString(nid) + ":");
+		getTerminalDelegate().println("Chunk service/memory status of " + NodeID.toHexString(nid) + ":");
 		if (divisor == 1) {
-			System.out.println("Free memory (" + sizeType + "): " + status.getFreeMemory());
-			System.out.println("Total memory (" + sizeType + "): " + status.getTotalMemory());
-			System.out.println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory());
+			getTerminalDelegate().println("Free memory (" + sizeType + "): " + status.getFreeMemory());
+			getTerminalDelegate().println("Total memory (" + sizeType + "): " + status.getTotalMemory());
+			getTerminalDelegate().println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory());
 
-			System.out.println(
+			getTerminalDelegate().println(
 					"Total chunk payload memory (" + sizeType + "): " + status.getTotalChunkPayloadMemory());
 
-			System.out.println(
+			getTerminalDelegate().println(
 					"Total CID tables memory (NID table with 327687) (" + sizeType + "): "
 							+ status.getTotalMemoryCIDTables());
 		} else {
-			System.out.println("Free memory (" + sizeType + "): " + status.getFreeMemory() / (double) divisor);
-			System.out.println("Total memory (" + sizeType + "): " + status.getTotalMemory() / (double) divisor);
-			System.out.println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory() / divisor);
-			System.out.println(
+			getTerminalDelegate()
+					.println("Free memory (" + sizeType + "): " + status.getFreeMemory() / (double) divisor);
+			getTerminalDelegate()
+					.println("Total memory (" + sizeType + "): " + status.getTotalMemory() / (double) divisor);
+			getTerminalDelegate()
+					.println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory() / divisor);
+			getTerminalDelegate().println(
 					"Total chunk payload memory (" + sizeType + "): "
 							+ status.getTotalChunkPayloadMemory() / (double) divisor);
-			System.out.println(
+			getTerminalDelegate().println(
 					"Total CID tables memory (NID table with 327687) (" + sizeType + "): "
 							+ status.getTotalMemoryCIDTables() / (double) divisor);
 		}
 
-		System.out.println("Num active memory blocks: " + status.getNumberOfActiveMemoryBlocks());
-		System.out.println("Num active chunks: " + status.getNumberOfActiveChunks());
-		System.out.println("Num CID tables (one is NID table): " + status.getCIDTableCount());
+		getTerminalDelegate().println("Num active memory blocks: " + status.getNumberOfActiveMemoryBlocks());
+		getTerminalDelegate().println("Num active chunks: " + status.getNumberOfActiveChunks());
+		getTerminalDelegate().println("Num CID tables (one is NID table): " + status.getCIDTableCount());
 
 		return true;
 	}

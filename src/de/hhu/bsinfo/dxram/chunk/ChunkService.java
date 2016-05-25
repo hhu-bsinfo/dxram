@@ -14,6 +14,8 @@ import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
@@ -1065,6 +1067,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get all chunk ID ranges of all stored chunks from a specific node.
+	 * This does not include migrated chunks.
 	 * @param p_nodeID
 	 *            NodeID of the node to get the ranges from.
 	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
@@ -1105,6 +1108,63 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		return list;
 	}
 
+	/**
+	 * Get all chunk ID ranges of all migrated chunks stored on this node.
+	 * @return List of migrated chunk ID ranges with blocks of start ID and end ID.
+	 */
+	public ArrayList<Long> getAllMigratedChunkIDRanges() {
+		ArrayList<Long> list = null;
+
+		m_memoryManager.lockAccess();
+		list = m_memoryManager.getCIDOfAllMigratedChunks();
+		m_memoryManager.unlockAccess();
+
+		return list;
+	}
+
+	/**
+	 * Get all chunk ID ranges of all stored chunks from a specific node.
+	 * This does not include migrated chunks.
+	 * @param p_nodeID
+	 *            NodeID of the node to get the ranges from.
+	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
+	 */
+	public ArrayList<Long> getAllMigratedChunkIDRanges(final short p_nodeID) {
+		ArrayList<Long> list = null;
+
+		// check if remote node is a peer
+		NodeRole role = m_boot.getNodeRole(p_nodeID);
+		if (role == null) {
+			m_logger.error(getClass(),
+					"Remote node " + NodeID.toHexString(p_nodeID) + " does not exist for get migrated chunk id ranges");
+			return list;
+		}
+
+		if (!role.equals(NodeRole.PEER)) {
+			m_logger.error(getClass(),
+					role + " " + NodeID.toHexString(p_nodeID)
+							+ " is not allowed to get migrated chunk id ranges (not allowed to have any)");
+			return list;
+		}
+
+		if (p_nodeID == m_boot.getNodeID()) {
+			list = getAllLocalChunkIDRanges();
+		} else {
+			GetMigratedChunkIDRangesRequest request = new GetMigratedChunkIDRangesRequest(p_nodeID);
+			NetworkErrorCodes err = m_network.sendSync(request);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				m_logger.error(getClass(), "Sending request to get chunk id ranges of node "
+						+ NodeID.toHexString(p_nodeID) + " failed: " + err);
+				return list;
+			}
+
+			GetMigratedChunkIDRangesResponse response = (GetMigratedChunkIDRangesResponse) request.getResponse();
+			list = response.getChunkIDRanges();
+		}
+
+		return list;
+	}
+
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (!m_performanceFlag) {
@@ -1131,6 +1191,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						break;
 					case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
 						incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
+						break;
+					case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
+						incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
 						break;
 					default:
 						break;
@@ -1163,6 +1226,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				GetLocalChunkIDRangesRequest.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE,
 				GetLocalChunkIDRangesResponse.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST,
+				GetMigratedChunkIDRangesRequest.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE,
+				GetMigratedChunkIDRangesResponse.class);
 	}
 
 	/**
@@ -1175,6 +1242,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_network.register(CreateRequest.class, this);
 		m_network.register(StatusRequest.class, this);
 		m_network.register(GetLocalChunkIDRangesRequest.class, this);
+		m_network.register(GetMigratedChunkIDRangesRequest.class, this);
 	}
 
 	/**
@@ -1520,6 +1588,32 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(),
 					"Responding to local chunk id ranges request " + p_request + " failed: " + error);
+		}
+	}
+
+	/**
+	 * Handle incoming get migrated local chunk id ranges requests.
+	 * @param p_request
+	 *            Request to handle
+	 */
+	private void incomingGetMigratedChunkIDRangesRequest(final GetMigratedChunkIDRangesRequest p_request) {
+		ArrayList<Long> cidRangesMigratedChunks = null;
+
+		m_memoryManager.lockAccess();
+		cidRangesMigratedChunks = m_memoryManager.getCIDOfAllMigratedChunks();
+		m_memoryManager.unlockAccess();
+
+		if (cidRangesMigratedChunks == null) {
+			cidRangesMigratedChunks = new ArrayList<Long>(0);
+			m_logger.error(getClass(), "Getting migrated chunk id ranges failed, sending back empty range.");
+		}
+
+		GetMigratedChunkIDRangesResponse response =
+				new GetMigratedChunkIDRangesResponse(p_request, cidRangesMigratedChunks);
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		if (error != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Responding to migrated chunk id ranges request " + p_request + " failed: " + error);
 		}
 	}
 

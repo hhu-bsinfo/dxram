@@ -1,7 +1,9 @@
+
 package de.hhu.bsinfo.dxram.chunk.messages;
 
 /**
  * Type and list of subtypes for all chunk messages
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public final class ChunkMessages {
@@ -19,9 +21,12 @@ public final class ChunkMessages {
 	public static final byte SUBTYPE_PUT_MESSAGE = 11;
 	public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST = 12;
 	public static final byte SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE = 13;
+	public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST = 14;
+	public static final byte SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE = 15;
 
 	/**
 	 * Static class
 	 */
-	private ChunkMessages() {};
+	private ChunkMessages() {
+	}
 }

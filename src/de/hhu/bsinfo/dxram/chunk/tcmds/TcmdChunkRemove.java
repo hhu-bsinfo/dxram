@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.chunk.tcmds;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -49,41 +50,43 @@ public class TcmdChunkRemove extends AbstractTerminalCommand {
 		if (cid != null) {
 			// don't allow removal of index chunk
 			if (ChunkID.getLocalID(cid) == 0) {
-				System.out.println("Removal of index chunk is not allowed.");
+				getTerminalDelegate().println("Removal of index chunk is not allowed.", TerminalColor.RED);
 				return true;
 			}
 
 			if (chunkService.remove(cid) != 1) {
-				System.out.println("Removing chunk with ID " + ChunkID.toHexString(cid) + " failed.");
+				getTerminalDelegate().println("Removing chunk with ID " + ChunkID.toHexString(cid) + " failed.",
+						TerminalColor.RED);
 				return true;
 			}
 		} else {
 			if (lid != null) {
 				// don't allow removal of index chunk
 				if (lid == 0) {
-					System.out.println("Removal of index chunk is not allowed.");
+					getTerminalDelegate().println("Removal of index chunk is not allowed.", TerminalColor.RED);
 					return true;
 				}
 
 				// check for remote id, otherwise we assume local
 				if (nid == null) {
-					System.out.println("error: missing nid for lid");
+					getTerminalDelegate().println("error: missing nid for lid", TerminalColor.RED);
 					return false;
 				}
 
 				// create cid
 				cid = ChunkID.getChunkID(nid, lid);
 				if (chunkService.remove(cid) != 1) {
-					System.out.println("Removing chunk with ID " + ChunkID.toHexString(cid) + " failed.");
+					getTerminalDelegate().println("Removing chunk with ID " + ChunkID.toHexString(cid) + " failed.",
+							TerminalColor.RED);
 					return true;
 				}
 			} else {
-				System.out.println("No cid or nid/lid specified.");
+				getTerminalDelegate().println("No cid or nid/lid specified.", TerminalColor.RED);
 				return false;
 			}
 		}
 
-		System.out.println("Chunk " + ChunkID.toHexString(cid) + " removed.");
+		getTerminalDelegate().println("Chunk " + ChunkID.toHexString(cid) + " removed.");
 		return true;
 	}
 }

@@ -5,17 +5,22 @@ import java.nio.charset.StandardCharsets;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Print a message to the console.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintTaskPayload extends AbstractTaskPayload {
 
-	private String m_msg = new String();
+	private static final Argument MS_ARG_MSG =
+			new Argument("msg", null, false, "Message to print.");
+
+	private String m_msg = "";
 
 	/**
 	 * Constructor
@@ -26,8 +31,8 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Message to print.
-	 * @param p_msg
-	 *            Message.
+	 *
+	 * @param p_msg Message.
 	 */
 	public void setMessage(final String p_msg) {
 		m_msg = p_msg;
@@ -40,10 +45,13 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_msg = p_delegate.promptForUserInput("msg");
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_MSG);
+	}
 
-		return true;
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_msg = p_argumentList.getArgumentValue(MS_ARG_MSG, String.class);
 	}
 
 	@Override
