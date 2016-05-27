@@ -13,8 +13,9 @@ public interface FrontierList {
 	 * Push back a value/Add a value to the list.
 	 *
 	 * @param p_val Value to add.
+	 * @return True if new value was pushed back, false if value already set
 	 */
-	void pushBack(final long p_val);
+	boolean pushBack(final long p_val);
 
 	/**
 	 * Check if a certain value is available/set in the frontier list.

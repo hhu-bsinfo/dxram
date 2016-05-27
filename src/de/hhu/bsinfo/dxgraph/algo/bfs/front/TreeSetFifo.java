@@ -13,8 +13,8 @@ public class TreeSetFifo implements FrontierList {
 	private TreeSet<Long> m_tree = new TreeSet<>();
 
 	@Override
-	public void pushBack(final long p_val) {
-		m_tree.add(p_val);
+	public boolean pushBack(final long p_val) {
+		return m_tree.add(p_val);
 	}
 
 	@Override

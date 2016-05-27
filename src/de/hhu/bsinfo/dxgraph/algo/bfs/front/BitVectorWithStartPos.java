@@ -25,7 +25,7 @@ public class BitVectorWithStartPos implements FrontierList {
 	}
 
 	@Override
-	public void pushBack(final long p_index) {
+	public boolean pushBack(final long p_index) {
 		long tmp = 1L << (p_index % 64L);
 		int idx = (int) (p_index / 64L);
 		if ((m_vector[idx] & tmp) == 0) {
@@ -34,7 +34,11 @@ public class BitVectorWithStartPos implements FrontierList {
 			if (m_firstValuePos > p_index) {
 				m_firstValuePos = p_index;
 			}
+
+			return true;
 		}
+
+		return false;
 	}
 
 	@Override

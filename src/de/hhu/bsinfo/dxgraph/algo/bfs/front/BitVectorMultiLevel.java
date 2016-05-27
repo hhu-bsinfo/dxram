@@ -27,14 +27,17 @@ public class BitVectorMultiLevel implements FrontierList {
 	}
 
 	@Override
-	public void pushBack(final long p_index) {
+	public boolean pushBack(final long p_index) {
 		long tmp = 1L << (p_index % 64L);
 		int idx = (int) (p_index / 64L);
 		if ((m_vectorL0[idx] & tmp) == 0) {
 			m_count++;
 			m_vectorL0[idx] |= tmp;
 			m_vectorL1[idx / 64] |= 1L << (idx % 64L);
+			return true;
 		}
+
+		return false;
 	}
 
 	@Override

@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
@@ -11,6 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Represents a network connection
+ *
  * @author Florian Klein 18.03.2012
  */
 public class NIOConnection extends AbstractConnection {
@@ -35,38 +35,30 @@ public class NIOConnection extends AbstractConnection {
 	private ChangeOperationsRequest m_writeOperation;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of NIOConnection (this node creates a new connection with another node)
-	 * @param p_destination
-	 *            the destination
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_taskExecutor
-	 *            the task executer
-	 * @param p_messageDirectory
-	 *            the message directory
-	 * @param p_listener
-	 *            the ConnectionListener
-	 * @param p_lock
-	 *            the ReentrantLock
-	 * @param p_cond
-	 *            the Condition
-	 * @param p_nioSelector
-	 *            the NIOSelector
-	 * @param p_numberOfBuffers
-	 *            the number of buffers to schedule
-	 * @param p_incomingBufferSize
-	 *            the size of incoming buffer
-	 * @param p_outgoingBufferSize
-	 *            the size of outgoing buffer
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
-	 * @throws IOException
-	 *             if the connection could not be created
+	 *
+	 * @param p_destination           the destination
+	 * @param p_nodeMap               the node map
+	 * @param p_taskExecutor          the task executer
+	 * @param p_messageDirectory      the message directory
+	 * @param p_listener              the ConnectionListener
+	 * @param p_lock                  the ReentrantLock
+	 * @param p_cond                  the Condition
+	 * @param p_nioSelector           the NIOSelector
+	 * @param p_numberOfBuffers       the number of buffers to schedule
+	 * @param p_incomingBufferSize    the size of incoming buffer
+	 * @param p_outgoingBufferSize    the size of outgoing buffer
+	 * @param p_flowControlWindowSize the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @throws IOException if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
-			final DataReceiver p_listener, final ReentrantLock p_lock, final Condition p_cond, final NIOSelector p_nioSelector,
-			final int p_numberOfBuffers, final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+			final MessageDirectory p_messageDirectory,
+			final DataReceiver p_listener, final ReentrantLock p_lock, final Condition p_cond,
+			final NIOSelector p_nioSelector,
+			final int p_numberOfBuffers, final int p_incomingBufferSize, final int p_outgoingBufferSize,
+			final int p_flowControlWindowSize) throws IOException {
 		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_listener, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;
@@ -101,32 +93,24 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Creates an instance of NIOConnection (this node creates a new connection with another node)
-	 * @param p_destination
-	 *            the destination
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_taskExecutor
-	 *            the task executer
-	 * @param p_messageDirectory
-	 *            the message directory
-	 * @param p_channel
-	 *            the socket channel
-	 * @param p_nioSelector
-	 *            the NIOSelector
-	 * @param p_numberOfBuffers
-	 *            the number of buffers to schedule
-	 * @param p_incomingBufferSize
-	 *            the size of incoming buffer
-	 * @param p_outgoingBufferSize
-	 *            the size of outgoing buffer
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
-	 * @throws IOException
-	 *             if the connection could not be created
+	 *
+	 * @param p_destination           the destination
+	 * @param p_nodeMap               the node map
+	 * @param p_taskExecutor          the task executer
+	 * @param p_messageDirectory      the message directory
+	 * @param p_channel               the socket channel
+	 * @param p_nioSelector           the NIOSelector
+	 * @param p_numberOfBuffers       the number of buffers to schedule
+	 * @param p_incomingBufferSize    the size of incoming buffer
+	 * @param p_outgoingBufferSize    the size of outgoing buffer
+	 * @param p_flowControlWindowSize the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @throws IOException if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
+			final MessageDirectory p_messageDirectory,
 			final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers,
-			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize)
+			throws IOException {
 		super(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;
@@ -157,8 +141,10 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	// Getter
+
 	/**
 	 * Returns the SocketChannel
+	 *
 	 * @return the SocketChannel
 	 */
 	public SocketChannel getChannel() {
@@ -166,8 +152,10 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	// Methods
+
 	/**
 	 * Reads messages from the connection
+	 *
 	 * @return a AbstractMessage which was received
 	 */
 	@Override
@@ -183,8 +171,8 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Append an incoming ByteBuffer to the Queue
-	 * @param p_buffer
-	 *            the ByteBuffer
+	 *
+	 * @param p_buffer the ByteBuffer
 	 */
 	protected void addIncoming(final ByteBuffer p_buffer) {
 		m_incomingLock.lock();
@@ -205,8 +193,8 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Writes data to the connection
-	 * @param p_message
-	 *            the AbstractMessage to send
+	 *
+	 * @param p_message the AbstractMessage to send
 	 */
 	@Override
 	protected void doWrite(final AbstractMessage p_message) throws NetworkException {
@@ -256,8 +244,8 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Enqueue buffer to be written into the channel
-	 * @param p_buffer
-	 *            Buffer
+	 *
+	 * @param p_buffer Buffer
 	 */
 	private void writeToChannel(final ByteBuffer p_buffer) {
 		m_outgoingAllLock.lock();
@@ -283,8 +271,8 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Enqueue buffer to be written into the channel
-	 * @param p_buffer
-	 *            Buffer
+	 *
+	 * @param p_buffer Buffer
 	 */
 	private void writeToChannelForced(final ByteBuffer p_buffer) {
 		m_outgoingAllLock.lock();
@@ -299,8 +287,8 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Prepend buffer to be written into the channel. Called if buffer could not be written completely.
-	 * @param p_buffer
-	 *            Buffer
+	 *
+	 * @param p_buffer Buffer
 	 */
 	void addBuffer(final ByteBuffer p_buffer) {
 		m_outgoingLock.lock();
@@ -310,10 +298,9 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Get the next buffers to be sent
-	 * @param p_buffer
-	 *            buffer to gather in data
-	 * @param p_bytes
-	 *            number of bytes to be sent
+	 *
+	 * @param p_buffer buffer to gather in data
+	 * @param p_bytes  number of bytes to be sent
 	 * @return Buffer array
 	 */
 	protected ByteBuffer getOutgoingBytes(final ByteBuffer p_buffer, final int p_bytes) {
@@ -374,8 +361,8 @@ public class NIOConnection extends AbstractConnection {
 
 	/**
 	 * Executes after the connection is established
-	 * @throws IOException
-	 *             if the connection could not be accessed
+	 *
+	 * @throws IOException if the connection could not be accessed
 	 */
 	protected void connected() throws IOException {
 		ByteBuffer temp;

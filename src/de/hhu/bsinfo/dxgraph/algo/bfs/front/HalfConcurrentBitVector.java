@@ -28,7 +28,7 @@ public class HalfConcurrentBitVector implements FrontierList {
 	}
 
 	@Override
-	public void pushBack(final long p_index) {
+	public boolean pushBack(final long p_index) {
 		long tmp = 1L << (p_index % 64L);
 		int index = (int) (p_index / 64L);
 
@@ -39,9 +39,10 @@ public class HalfConcurrentBitVector implements FrontierList {
 					continue;
 				}
 				m_count.incrementAndGet();
+				return true;
 			}
 
-			break;
+			return false;
 		}
 	}
 
