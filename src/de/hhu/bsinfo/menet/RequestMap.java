@@ -60,7 +60,7 @@ public final class RequestMap {
 	 *            the requestID
 	 * @return the removed Request
 	 */
-	protected static AbstractRequest remove(final int p_requestID) {
+	public static AbstractRequest remove(final int p_requestID) {
 		int index;
 
 		AbstractRequest ret = null;

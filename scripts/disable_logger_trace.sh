@@ -1,12 +1,11 @@
 #!/bin/bash
 
 
-############################################################################################
-# This script removes all logger calls within DXRAM if executed from DXRAM main directory. #
-# Recommended for benchmarking as performance increases.                                   #
-# Caution: Errors might remain undetected.                                                 #
-# To re-enable logger execute enable_logger.sh                                             #
-############################################################################################
+##################################################################################################
+# This script removes all logger trace calls within DXRAM if executed from DXRAM main directory. #
+# For best performance, use disable_logger.sh, instead.
+# To re-enable logger execute enable_logger.sh                                                   #
+##################################################################################################
 
 
 find ../src/ -name "*.java" -print | while read file
@@ -60,7 +59,7 @@ do
         continue
       fi
  
-      if [[ {$line} == *"$var_name."* ]]
+      if [[ {$line} == *"$var_name.trace"* ]]
       then
         if [[ {$line} != *";"* ]];
         then

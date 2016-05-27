@@ -156,7 +156,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 * @return False if message timed out, true if response received.
 	 */
 	public final boolean waitForResponses(final int p_timeoutMs) {
-		boolean success = true;
 		long timeStart;
 		long timeNow;
 
@@ -166,9 +165,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > p_timeoutMs && !m_ignoreTimeout) {
 				// RequestStatistic.getInstance().requestTimeout(getRequestID(), getClass());
-				RequestMap.remove(getRequestID());
-				success = false;
-
 				break;
 			}
 			try {
@@ -176,7 +172,7 @@ public abstract class AbstractRequest extends AbstractMessage {
 			} catch (final InterruptedException e) {}
 		}
 
-		return success;
+		return m_fulfilled;
 	}
 
 	/**

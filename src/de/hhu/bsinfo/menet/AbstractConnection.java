@@ -36,6 +36,8 @@ public abstract class AbstractConnection {
 	private int m_sentMessages;
 	private int m_receivedMessages;
 
+	private int m_lastExclusiveMessageID;
+
 	private int m_flowControlWindowSize;
 
 	private ReentrantLock m_flowControlCondLock;
@@ -70,6 +72,7 @@ public abstract class AbstractConnection {
 		m_connected = false;
 
 		m_timestamp = 0;
+		m_lastExclusiveMessageID = -1;
 
 		m_flowControlWindowSize = p_flowControlWindowSize;
 		m_flowControlCondLock = new ReentrantLock(false);
@@ -269,6 +272,13 @@ public abstract class AbstractConnection {
 			handleFlowControlMessage((FlowControlMessage) p_message);
 		} else {
 			if (m_listener != null) {
+				if (p_message.isExclusive()) {
+					if (p_message.getMessageID() < m_lastExclusiveMessageID && m_lastExclusiveMessageID - p_message.getMessageID() < Math.pow(2, 23)) {
+						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Exclusive message is out of order! Last message: "
+								+ m_lastExclusiveMessageID + ", current message: " + p_message.getMessageID());
+					}
+					m_lastExclusiveMessageID = p_message.getMessageID();
+				}
 				m_listener.newMessage(p_message);
 			}
 		}
@@ -420,6 +430,8 @@ public abstract class AbstractConnection {
 		 */
 		private AbstractMessage createMessage(final ByteBuffer p_buffer) {
 			AbstractMessage message = null;
+			AbstractRequest request;
+			AbstractResponse response;
 
 			p_buffer.flip();
 			try {
@@ -434,8 +446,13 @@ public abstract class AbstractConnection {
 				// access to requests/responses. So we exploit the request map to get our corresponding request
 				// before de-serializing the network buffer for every request.
 				if (message instanceof AbstractResponse) {
-					final AbstractResponse resp = (AbstractResponse) message;
-					resp.setCorrespondingRequest(RequestMap.getRequest(resp));
+					response = (AbstractResponse) message;
+					request = RequestMap.getRequest(response);
+					if (request == null) {
+						// Request is not available, probably because of a time-out
+						return null;
+					}
+					response.setCorrespondingRequest(request);
 				}
 
 				try {

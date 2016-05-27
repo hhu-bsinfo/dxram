@@ -153,7 +153,7 @@ public final class NetworkHandler implements DataReceiver {
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize,
 			final int p_outgoingBufferSize, final int p_numberOfBuffers, final int p_flowControlWindowSize,
 			final int p_connectionTimeout) {
-		m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
+		 m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
 
 		m_nodeMap = p_nodeMap;
 
@@ -162,7 +162,7 @@ public final class NetworkHandler implements DataReceiver {
 		m_connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(m_connectionCreator, this, p_ownNodeID);
 
-		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
+		 m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 	}
 
 	/**
@@ -277,7 +277,7 @@ public final class NetworkHandler implements DataReceiver {
 
 		p_message.beforeSend();
 
-		m_loggerInterface.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
+		 m_loggerInterface.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
 
 		if (p_message != null) {
 			/*
@@ -317,7 +317,7 @@ public final class NetworkHandler implements DataReceiver {
 
 		p_message.afterSend();
 
-		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting sendMessage");
+		 m_loggerInterface.trace(getClass().getSimpleName(), "Exiting sendMessage");
 
 		return 0;
 	}
@@ -329,7 +329,7 @@ public final class NetworkHandler implements DataReceiver {
 	 */
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
-		m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
+		 m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
 
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);

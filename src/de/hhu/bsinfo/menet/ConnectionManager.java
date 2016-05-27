@@ -136,7 +136,8 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 			m_applicationThreadLock.lock();
 			m_incomingOutgoingLock.lock();
 
-			if (m_connections[p_destination & 0xFFFF] == null && !m_deactivated) {
+			ret = m_connections[p_destination & 0xFFFF];
+			if (ret == null && !m_deactivated) {
 				if (m_connectionList.size() == MAX_CONNECTIONS) {
 					dismissRandomConnection();
 				}

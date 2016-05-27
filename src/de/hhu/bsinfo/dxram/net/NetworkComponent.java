@@ -14,6 +14,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.AbstractRequest;
 import de.hhu.bsinfo.menet.NetworkHandler;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.RequestMap;
 
 /**
  * Access to the network interface to send messages or requests
@@ -78,7 +79,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 * @return NetworkErrorCode, refer to enum
 	 */
 	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
-		m_logger.trace(getClass(), "Sending message " + p_message);
+		 m_logger.trace(getClass(), "Sending message " + p_message);
 		int res = m_networkHandler.sendMessage(p_message);
 		NetworkErrorCodes errCode = NetworkErrorCodes.UNKNOWN;
 
@@ -111,17 +112,21 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 * @return 0 if successful, -1 if sending the request failed, 1 waiting for the response timed out.
 	 */
 	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
-		m_logger.trace(getClass(), "Sending request (sync): " + p_request);
+		 m_logger.trace(getClass(), "Sending request (sync): " + p_request);
 		NetworkErrorCodes err = sendMessage(p_request);
 		if (err == NetworkErrorCodes.SUCCESS) {
-			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
+			 m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
 			if (!p_request.waitForResponses(m_requestTimeoutMs)) {
 				m_logger.error(this.getClass(), "Sending sync, waiting for responses " + p_request + " failed, timeout.");
 				m_logger.debug(this.getClass(), m_networkHandler.getStatus());
 				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
 			} else {
-				m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
+				 m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
 			}
+		}
+
+		if (err != NetworkErrorCodes.SUCCESS) {
+			RequestMap.remove(p_request.getRequestID());
 		}
 
 		return err;

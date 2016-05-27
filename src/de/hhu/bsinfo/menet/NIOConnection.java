@@ -404,10 +404,12 @@ public class NIOConnection extends AbstractConnection {
 		String ret;
 
 		ret = super.toString();
-		try {
-			ret += ", address: " + m_channel.getRemoteAddress() + "]\n";
-		} catch (final IOException e) {
-			e.printStackTrace();
+		if (m_channel.isOpen()) {
+			try {
+				ret += ", address: " + m_channel.getRemoteAddress() + "]\n";
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return ret;
