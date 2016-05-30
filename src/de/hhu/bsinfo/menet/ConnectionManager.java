@@ -2,10 +2,8 @@
 package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -22,14 +20,17 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	private static final int MAX_CONNECTIONS = 100;
 
 	// Attributes
-	private Map<Short, AbstractConnection> m_connections;
+	private AbstractConnection[] m_connections;
+	private ArrayList<AbstractConnection> m_connectionList;
 
 	private AbstractConnectionCreator m_creator;
 	private DataReceiver m_connectionListener;
 
+	private short m_ownNodeID;
 	private boolean m_deactivated;
 
-	private ReentrantLock m_lock;
+	private ReentrantLock m_incomingOutgoingLock;
+	private ReentrantLock m_applicationThreadLock;
 
 	// Constructors
 	/**
@@ -38,16 +39,22 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	 *            the ConnectionCreator
 	 * @param p_listener
 	 *            the ConnectionListener
+	 * @param p_ownNodeID
+	 *            the own NodeID needed for connection duplicate consensus
 	 */
-	ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener) {
-		m_connections = new HashMap<>();
+	ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener, final short p_ownNodeID) {
+		m_connections = new AbstractConnection[65536];
+		m_connectionList = new ArrayList<AbstractConnection>(65536);
 
 		m_creator = p_creator;
 		m_creator.setListener(this);
 		m_connectionListener = p_listener;
+
+		m_ownNodeID = p_ownNodeID;
 		m_deactivated = false;
 
-		m_lock = new ReentrantLock(false);
+		m_incomingOutgoingLock = new ReentrantLock(false);
+		m_applicationThreadLock = new ReentrantLock(false);
 	}
 
 	/**
@@ -64,10 +71,12 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	public String getConnectionStatuses() {
 		String ret = "";
 
-		Iterator<AbstractConnection> iter = m_connections.values().iterator();
+		m_incomingOutgoingLock.lock();
+		Iterator<AbstractConnection> iter = m_connectionList.iterator();
 		while (iter.hasNext()) {
 			ret += iter.next().toString();
 		}
+		m_incomingOutgoingLock.unlock();
 
 		return ret;
 	}
@@ -78,17 +87,16 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	 */
 	public boolean atLeastOneConnectionIsCongested() {
 		boolean ret = false;
-		Iterator<AbstractConnection> iter;
 
-		m_lock.lock();
-		iter = m_connections.values().iterator();
+		m_incomingOutgoingLock.lock();
+		Iterator<AbstractConnection> iter = m_connectionList.iterator();
 		while (iter.hasNext()) {
 			if (iter.next().isCongested()) {
 				ret = true;
 				break;
 			}
 		}
-		m_lock.unlock();
+		m_incomingOutgoingLock.unlock();
 
 		return ret;
 	}
@@ -97,9 +105,9 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	 * Activates the connection manager
 	 */
 	public void activate() {
-		m_lock.lock();
+		m_incomingOutgoingLock.lock();
 		m_deactivated = false;
-		m_lock.unlock();
+		m_incomingOutgoingLock.unlock();
 	}
 
 	/**
@@ -123,45 +131,116 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 		assert p_destination != NodeID.INVALID_ID;
 
-		m_lock.lock();
-		try {
-			ret = m_connections.get(p_destination);
+		ret = m_connections[p_destination & 0xFFFF];
+		if (ret == null && !m_deactivated) {
+			m_applicationThreadLock.lock();
+			m_incomingOutgoingLock.lock();
+
+			ret = m_connections[p_destination & 0xFFFF];
 			if (ret == null && !m_deactivated) {
-				if (m_connections.size() == MAX_CONNECTIONS) {
+				if (m_connectionList.size() == MAX_CONNECTIONS) {
 					dismissRandomConnection();
 				}
+				m_incomingOutgoingLock.unlock();
 
-				ret = m_creator.createConnection(p_destination, m_connectionListener);
+				try {
+					ret = m_creator.createConnection(p_destination, m_connectionListener);
+				} catch (final IOException e) {
+					throw e;
+				}
+
+				m_incomingOutgoingLock.lock();
 				if (null != ret) {
-					m_connections.put(ret.getDestination(), ret);
+					addConnection(ret, false);
 				}
 			}
-		} catch (final IOException e) {
-			m_lock.unlock();
-			throw e;
+
+			m_incomingOutgoingLock.unlock();
+			m_applicationThreadLock.unlock();
 		}
-		m_lock.unlock();
 
 		return ret;
 	}
 
 	/**
+	 * Add a new connection. Use duplicate consensus if there is already a connection for the specific NodeID.
+	 * @param p_connection
+	 *            the new connection
+	 * @param p_isIncoming
+	 *            whether the new connection's creation was initialized by remote node or not
+	 */
+	private void addConnection(final AbstractConnection p_connection, final boolean p_isIncoming) {
+		short remoteNodeID;
+		AbstractConnection connection;
+
+		remoteNodeID = p_connection.getDestination();
+		connection = m_connections[remoteNodeID & 0xFFFF];
+		if (connection == null) {
+			// No entry for this NodeID -> insert connection
+			m_connections[remoteNodeID & 0xFFFF] = p_connection;
+			m_connectionList.add(p_connection);
+			p_connection.setListener(m_connectionListener);
+		} else {
+			// There is already a connection for this destination -> connection duplicate consensus
+			if (remoteNodeID > m_ownNodeID) {
+				// Use the remote node's connection as its NodeID is greater
+				if (p_isIncoming) {
+					// Overwrite the connection as p_connection was initiated by the remote node
+					m_connections[remoteNodeID & 0xFFFF] = p_connection;
+					m_connectionList.add(p_connection);
+					p_connection.setListener(m_connectionListener);
+
+					// Close old connection
+					connection.close();
+					connection.cleanup();
+				} else {
+					// Keep the connection as its creation was initiated by the remote node
+
+					// Close new connection
+					p_connection.close();
+					p_connection.cleanup();
+				}
+			} else {
+				// Use this node's connection as this node has a greater NodeID
+				if (!p_isIncoming) {
+					// Overwrite the connection as p_connection was initiated by this node
+					m_connections[remoteNodeID & 0xFFFF] = p_connection;
+					m_connectionList.add(p_connection);
+					p_connection.setListener(m_connectionListener);
+
+					// Close old connection
+					connection.close();
+					connection.cleanup();
+				} else {
+					// Keep the connection as its creation was initiated by this node
+
+					// Close new connection
+					p_connection.close();
+					p_connection.cleanup();
+				}
+			}
+		}
+	}
+
+	/**
 	 * Dismiss the connection randomly
 	 */
-	@SuppressWarnings("unchecked")
 	private void dismissRandomConnection() {
+		int random = -1;
 		AbstractConnection dismiss = null;
 		Random rand;
 
 		rand = new Random();
-		m_lock.lock();
-		dismiss = ((Entry<Short, AbstractConnection>[]) m_connections.entrySet().toArray())[rand
-		                                                                                    .nextInt(m_connections.size())].getValue();
-
-		if (dismiss != null) {
-			dismiss.close();
+		m_incomingOutgoingLock.lock();
+		while (dismiss == null) {
+			random = rand.nextInt(m_connections.length);
+			dismiss = m_connections[random];
 		}
-		m_lock.unlock();
+
+		m_connections[random] = null;
+		m_connectionList.remove(dismiss);
+		dismiss.close();
+		m_incomingOutgoingLock.unlock();
 	}
 
 	/**
@@ -174,12 +253,14 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 		assert p_destination != NodeID.INVALID_ID;
 
-		m_lock.lock();
-		connection = m_connections.get(p_destination);
+		m_incomingOutgoingLock.lock();
+		connection = m_connections[p_destination & 0xFFFF];
+		m_connections[p_destination & 0xFFFF] = null;
+		m_connectionList.remove(connection);
 		if (connection != null) {
 			connection.close();
 		}
-		m_lock.unlock();
+		m_incomingOutgoingLock.unlock();
 	}
 
 	/**
@@ -189,12 +270,9 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	 */
 	@Override
 	public void connectionCreated(final AbstractConnection p_connection) {
-		m_lock.lock();
-		if (!m_connections.containsKey(p_connection.getDestination())) {
-			m_connections.put(p_connection.getDestination(), p_connection);
-			p_connection.setListener(m_connectionListener);
-		}
-		m_lock.unlock();
+		m_incomingOutgoingLock.lock();
+		addConnection(p_connection, true);
+		m_incomingOutgoingLock.unlock();
 	}
 
 	/**
@@ -204,13 +282,17 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	 */
 	@Override
 	public void connectionClosed(final AbstractConnection p_connection) {
-		m_lock.lock();
-		if (m_connections.containsKey(p_connection.getDestination())) {
-			m_connections.remove(p_connection.getDestination());
+		AbstractConnection connection;
+
+		m_incomingOutgoingLock.lock();
+		connection = m_connections[p_connection.getDestination() & 0xFFFF];
+		if (connection != null) {
+			m_connections[p_connection.getDestination() & 0xFFFF] = null;
+			m_connectionList.remove(connection);
 			p_connection.cleanup();
 			// TODO: Inform and update system
 		}
-		m_lock.unlock();
+		m_incomingOutgoingLock.unlock();
 	}
 
 }

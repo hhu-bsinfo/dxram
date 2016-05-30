@@ -36,6 +36,8 @@ public abstract class AbstractConnection {
 	private int m_sentMessages;
 	private int m_receivedMessages;
 
+	private int m_lastExclusiveMessageID;
+
 	private int m_flowControlWindowSize;
 
 	private ReentrantLock m_flowControlCondLock;
@@ -56,29 +58,7 @@ public abstract class AbstractConnection {
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
 	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
-			final MessageDirectory p_messageDirectory,
-			final int p_flowControlWindowSize) {
-		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null, p_flowControlWindowSize);
-	}
-
-	/**
-	 * Creates an instance of AbstractConnection
-	 * @param p_destination
-	 *            the destination
-	 * @param p_listener
-	 *            the ConnectionListener
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_taskExecutor
-	 *            the task executer
-	 * @param p_messageDirectory
-	 *            the message directory
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
-	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
-			final MessageDirectory p_messageDirectory,
-			final DataReceiver p_listener, final int p_flowControlWindowSize) {
+			final MessageDirectory p_messageDirectory, final int p_flowControlWindowSize) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_dataHandler = new DataHandler();
@@ -91,9 +71,8 @@ public abstract class AbstractConnection {
 
 		m_connected = false;
 
-		m_listener = p_listener;
-
 		m_timestamp = 0;
+		m_lastExclusiveMessageID = -1;
 
 		m_flowControlWindowSize = p_flowControlWindowSize;
 		m_flowControlCondLock = new ReentrantLock(false);
@@ -293,6 +272,13 @@ public abstract class AbstractConnection {
 			handleFlowControlMessage((FlowControlMessage) p_message);
 		} else {
 			if (m_listener != null) {
+				if (p_message.isExclusive()) {
+					if (p_message.getMessageID() < m_lastExclusiveMessageID && m_lastExclusiveMessageID - p_message.getMessageID() < Math.pow(2, 23)) {
+						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Exclusive message is out of order! Last message: "
+								+ m_lastExclusiveMessageID + ", current message: " + p_message.getMessageID());
+					}
+					m_lastExclusiveMessageID = p_message.getMessageID();
+				}
 				m_listener.newMessage(p_message);
 			}
 		}
@@ -357,10 +343,10 @@ public abstract class AbstractConnection {
 		String ret;
 
 		m_flowControlCondLock.lock();
-		ret = this.getClass().getSimpleName() + "[" + m_destination + ", " + (m_connected ? "connected" : "not connected")
+		ret = this.getClass().getSimpleName() + "[" + NodeID.toHexString(m_destination) + ", " + (m_connected ? "connected" : "not connected")
 				+ ", sent(messages): " + m_sentMessages + ", received(messages): " + m_receivedMessages
 				+ ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " + m_receivedBytes
-				+ ", buffer queues: " + getInputOutputQueueLength() + "]\n";
+				+ ", buffer queues: " + getInputOutputQueueLength();
 		m_flowControlCondLock.unlock();
 
 		return ret;
@@ -444,6 +430,8 @@ public abstract class AbstractConnection {
 		 */
 		private AbstractMessage createMessage(final ByteBuffer p_buffer) {
 			AbstractMessage message = null;
+			AbstractRequest request;
+			AbstractResponse response;
 
 			p_buffer.flip();
 			try {
@@ -458,8 +446,13 @@ public abstract class AbstractConnection {
 				// access to requests/responses. So we exploit the request map to get our corresponding request
 				// before de-serializing the network buffer for every request.
 				if (message instanceof AbstractResponse) {
-					final AbstractResponse resp = (AbstractResponse) message;
-					resp.setCorrespondingRequest(RequestMap.getRequest(resp));
+					response = (AbstractResponse) message;
+					request = RequestMap.getRequest(response);
+					if (request == null) {
+						// Request is not available, probably because of a time-out
+						return null;
+					}
+					response.setCorrespondingRequest(request);
 				}
 
 				try {

@@ -17,6 +17,8 @@ public class NetworkConfigurationValues {
 				new Pair<String, Integer>("ThreadCountMessageCreator", 1);
 		public static final Pair<String, Integer> THREAD_COUNT_MSG_HANDLER =
 				new Pair<String, Integer>("ThreadCountDefaultMessageHandler", 1);
+		public static final Pair<String, Integer> REQUEST_MAP_ENTRY_COUNT =
+				new Pair<String, Integer>("RequestMapEntryCount", (int) Math.pow(2, 20));
 		public static final Pair<String, Integer> INCOMING_BUFFER_SIZE =
 				new Pair<String, Integer>("IncomingBufferSize", 1024 * 1024);
 		public static final Pair<String, Integer> OUTGOING_BUFFER_SIZE =

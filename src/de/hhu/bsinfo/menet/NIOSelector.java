@@ -19,6 +19,10 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 class NIOSelector extends Thread {
 
+	// Constants
+	private static final int READWRITE_MASK = 5;
+	private static final int CLOSE = 32;
+
 	// Attributes
 	private ServerSocketChannel m_serverChannel;
 	private Selector m_selector;
@@ -102,7 +106,7 @@ class NIOSelector extends Thread {
 		while (iterator.hasNext()) {
 			SelectionKey key = iterator.next();
 			if (key.attachment() != null) {
-				ret += "[" + ((NIOConnection) key.attachment()).getDestination() + ", " + key.interestOps() + "] ";
+				ret += "[" + NodeID.toHexString(((NIOConnection) key.attachment()).getDestination()) + ", " + key.interestOps() + "] ";
 			}
 		}
 
@@ -128,14 +132,19 @@ class NIOSelector extends Thread {
 
 				connection = changeRequest.getConnection();
 				interest = changeRequest.getOperations();
-				if (interest != -1) {
+				if ((interest & READWRITE_MASK) != 0) {
+					// Either READ, WRITE or READ | WRITE -> change interest only
+					connection.getChannel().keyFor(m_selector).interestOps(interest);
+				} else if (interest == CLOSE) {
+					// CLOSE -> close connection
+					m_connectionCreator.closeConnection(connection);
+				} else {
+					// CONNECT -> register with connection as attachment (ACCEPT is registered directly)
 					try {
-						key = connection.getChannel().register(m_selector, interest, connection);
+						connection.getChannel().register(m_selector, interest, connection);
 					} catch (final ClosedChannelException e) {
 						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not change operations!");
 					}
-				} else {
-					m_connectionCreator.closeConnection(connection);
 				}
 			}
 			m_changeLock.unlock();
@@ -194,6 +203,7 @@ class NIOSelector extends Thread {
 			try {
 				if (p_key.isReadable()) {
 					if (connection == null) {
+						// Channel was accepted but not used already -> Read NodeID, create NIOConnection and attach to key
 						m_connectionCreator.createConnection((SocketChannel) p_key.channel());
 					} else {
 						try {
@@ -208,6 +218,10 @@ class NIOSelector extends Thread {
 						}
 					}
 				} else if (p_key.isWritable()) {
+					if (connection == null) {
+						NetworkHandler.getLogger().error(getClass().getSimpleName(),
+								"If connection is null key has to be either readable or connectable!");
+					}
 					try {
 						complete = m_nioInterface.write(connection);
 					} catch (final IOException e) {
@@ -239,11 +253,15 @@ class NIOSelector extends Thread {
 	 *            the ChangeOperationsRequest
 	 */
 	protected void changeOperationInterestAsync(final ChangeOperationsRequest p_request) {
+		boolean res;
+
 		m_changeLock.lock();
-		m_changeRequests.add(p_request);
+		res = m_changeRequests.add(p_request);
 		m_changeLock.unlock();
 
-		m_selector.wakeup();
+		if (res) {
+			m_selector.wakeup();
+		}
 	}
 
 	/**
@@ -253,7 +271,7 @@ class NIOSelector extends Thread {
 	 */
 	protected void closeConnectionAsync(final NIOConnection p_connection) {
 		m_changeLock.lock();
-		m_changeRequests.add(new ChangeOperationsRequest(p_connection, -1));
+		m_changeRequests.add(new ChangeOperationsRequest(p_connection, CLOSE));
 		m_changeLock.unlock();
 
 		m_selector.wakeup();

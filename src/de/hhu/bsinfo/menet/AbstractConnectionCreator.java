@@ -74,6 +74,7 @@ abstract class AbstractConnectionCreator {
 	protected final void fireConnectionCreated(final AbstractConnection p_connection) {
 		if (m_listener != null) {
 			m_listener.connectionCreated(p_connection);
+			p_connection.setConnected(true);
 		}
 	}
 
