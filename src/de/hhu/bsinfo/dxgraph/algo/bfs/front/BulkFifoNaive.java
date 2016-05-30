@@ -84,6 +84,11 @@ public class BulkFifoNaive implements FrontierList {
 	}
 
 	@Override
+	public long capacity() {
+		return m_bulkSize;
+	}
+
+	@Override
 	public long size() {
 		if (m_blockFront == m_blockBack) {
 			return m_posBack - m_posFront;

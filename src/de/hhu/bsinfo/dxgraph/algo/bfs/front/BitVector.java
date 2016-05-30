@@ -8,6 +8,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class BitVector implements FrontierList {
+	private long m_maxElementCount;
 	private long[] m_vector;
 
 	private long m_itPos;
@@ -19,6 +20,7 @@ public class BitVector implements FrontierList {
 	 * @param p_maxElementCount Specify the maximum number of elements.
 	 */
 	public BitVector(final long p_maxElementCount) {
+		m_maxElementCount = p_maxElementCount;
 		m_vector = new long[(int) ((p_maxElementCount / 64L) + 1L)];
 	}
 
@@ -40,6 +42,11 @@ public class BitVector implements FrontierList {
 		long tmp = 1L << (p_val % 64L);
 		int idx = (int) (p_val / 64L);
 		return (m_vector[idx] & tmp) != 0;
+	}
+
+	@Override
+	public long capacity() {
+		return m_maxElementCount;
 	}
 
 	@Override

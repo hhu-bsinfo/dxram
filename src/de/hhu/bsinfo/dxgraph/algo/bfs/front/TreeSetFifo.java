@@ -10,7 +10,12 @@ import java.util.TreeSet;
  */
 public class TreeSetFifo implements FrontierList {
 
+	private long m_maxElementCount;
 	private TreeSet<Long> m_tree = new TreeSet<>();
+
+	public TreeSetFifo(final long p_maxElementCount) {
+		m_maxElementCount = p_maxElementCount;
+	}
 
 	@Override
 	public boolean pushBack(final long p_val) {
@@ -20,6 +25,11 @@ public class TreeSetFifo implements FrontierList {
 	@Override
 	public boolean contains(final long p_val) {
 		return m_tree.contains(p_val);
+	}
+
+	@Override
+	public long capacity() {
+		return m_maxElementCount;
 	}
 
 	@Override

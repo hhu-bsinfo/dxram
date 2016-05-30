@@ -12,10 +12,12 @@ import java.util.concurrent.atomic.AtomicLongArray;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class ConcurrentBitVector implements FrontierList {
+	private long m_maxElementCount;
 	private AtomicLongArray m_vector;
 
 	private AtomicLong m_itPos = new AtomicLong(0);
 	private AtomicLong m_count = new AtomicLong(0);
+	private AtomicLong m_inverseCount = new AtomicLong(0);
 
 	/**
 	 * Constructor
@@ -23,7 +25,9 @@ public class ConcurrentBitVector implements FrontierList {
 	 * @param p_maxElementCount Specify the maximum number of elements.
 	 */
 	public ConcurrentBitVector(final long p_maxElementCount) {
+		m_maxElementCount = p_maxElementCount;
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
+		m_inverseCount.set(m_maxElementCount);
 	}
 
 	public static void main(final String[] p_args) throws Exception {
@@ -98,6 +102,7 @@ public class ConcurrentBitVector implements FrontierList {
 					continue;
 				}
 				m_count.incrementAndGet();
+				m_inverseCount.decrementAndGet();
 				return true;
 			}
 
@@ -110,6 +115,11 @@ public class ConcurrentBitVector implements FrontierList {
 		long tmp = 1L << (p_val % 64L);
 		int index = (int) (p_val / 64L);
 		return (m_vector.get(index) & tmp) != 0;
+	}
+
+	@Override
+	public long capacity() {
+		return m_maxElementCount;
 	}
 
 	@Override
@@ -126,6 +136,7 @@ public class ConcurrentBitVector implements FrontierList {
 	public void reset() {
 		m_itPos.set(0);
 		m_count.set(0);
+		m_inverseCount.set(m_maxElementCount);
 		for (int i = 0; i < m_vector.length(); i++) {
 			m_vector.set(i, 0);
 		}
@@ -152,6 +163,49 @@ public class ConcurrentBitVector implements FrontierList {
 		while (true) {
 			try {
 				if ((m_vector.get((int) (itPos / 64L)) & (1L << (itPos % 64L))) != 0) {
+					if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
+						itPos = m_itPos.get();
+						continue;
+					}
+
+					return itPos;
+				}
+
+				if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
+					itPos = m_itPos.get();
+				}
+			} catch (final IndexOutOfBoundsException e) {
+				System.out.println("Exception: " + itPos + " / " + m_count.get());
+				throw e;
+			}
+		}
+	}
+
+	public void resetInverse() {
+		m_itPos.set(0);
+		m_inverseCount.set(m_maxElementCount);
+	}
+
+	public long popFrontInverse() {
+		while (true) {
+			// this section keeps threads out
+			// if the vector is already empty
+			long count = m_inverseCount.get();
+			if (count > 0) {
+				if (!m_inverseCount.compareAndSet(count, count - 1)) {
+					continue;
+				}
+
+				break;
+			} else {
+				return -1;
+			}
+		}
+
+		long itPos = m_itPos.get();
+		while (true) {
+			try {
+				if ((m_vector.get((int) (itPos / 64L)) & (1L << (itPos % 64L))) == 0) {
 					if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
 						itPos = m_itPos.get();
 						continue;

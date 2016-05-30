@@ -11,7 +11,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVector;
-import de.hhu.bsinfo.dxgraph.algo.bfs.front.FrontierList;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.AbstractVerticesForNextFrontierRequest;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSResultMessage;
@@ -311,9 +310,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private abstract class AbstractBFSMS implements MessageReceiver {
 		private BFSResult m_bfsLocalResult;
 
-		private FrontierList m_curFrontier;
-		private FrontierList m_nextFrontier;
-		private FrontierList m_visitedFrontier;
+		private ConcurrentBitVector m_curFrontier;
+		private ConcurrentBitVector m_nextFrontier;
+		private ConcurrentBitVector m_visitedFrontier;
 
 		private BFSThread[] m_threads;
 		private StatisticsThread m_statisticsThread;
@@ -426,7 +425,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				barrierSignalIterationComplete();
 
 				// all nodes are finished, frontier swap
-				FrontierList tmp = m_curFrontier;
+				ConcurrentBitVector tmp = m_curFrontier;
 				m_curFrontier = m_nextFrontier;
 				m_nextFrontier = tmp;
 				m_nextFrontier.reset();
@@ -951,9 +950,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		private int m_id = -1;
 		private int m_vertexMessageBatchSize;
-		private FrontierList m_curFrontier;
-		private FrontierList m_nextFrontier;
-		private FrontierList m_visitedFrontier;
+		private ConcurrentBitVector m_curFrontier;
+		private ConcurrentBitVector m_nextFrontier;
+		private ConcurrentBitVector m_visitedFrontier;
 		private boolean m_compressedVertexMessages;
 
 		private short m_nodeId;
@@ -964,6 +963,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		private volatile boolean m_runIteration;
 		private volatile boolean m_exitThread;
+		private volatile boolean m_bottomUp;
 
 		private AtomicLong m_sharedVertexCounter;
 		private AtomicLong m_sharedEdgeCounter;
@@ -983,8 +983,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * @param p_sharedEdgeCounter        Shared instance with other threads to count traversed edges
 		 */
 		BFSThread(final int p_id, final int p_vertexBatchSize, final int p_vertexMessageBatchSize,
-				final FrontierList p_curFrontierShared, final FrontierList p_nextFrontierShared,
-				final FrontierList p_visitedFrontierShared, final boolean p_compressedVertexMessages,
+				final ConcurrentBitVector p_curFrontierShared, final ConcurrentBitVector p_nextFrontierShared,
+				final ConcurrentBitVector p_visitedFrontierShared, final boolean p_compressedVertexMessages,
 				final AtomicLong p_sharedVertexCounter, final AtomicLong p_sharedEdgeCounter) {
 			super("BFSThread-" + p_id);
 
@@ -1020,6 +1020,16 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * Trigger running a single iteration until all vertices of the current frontier are processed.
 		 */
 		void runIteration() {
+			// determine to use top down or bottom up approach
+			// for next iteration
+			if (m_curFrontier.size() > m_curFrontier.capacity() / 2) {
+				m_bottomUp = true;
+				m_loggerService.debug(getClass(), "Going bottom up for this iteration");
+			} else {
+				m_bottomUp = false;
+				m_loggerService.debug(getClass(), "Going top down for this iteration");
+			}
+
 			m_runIteration = true;
 		}
 
@@ -1036,7 +1046,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * Trigger a frontier swap. Swap cur and next to prepare for next iteration.
 		 */
 		void triggerFrontierSwap() {
-			FrontierList tmp = m_curFrontier;
+			ConcurrentBitVector tmp = m_curFrontier;
 			m_curFrontier = m_nextFrontier;
 			m_nextFrontier = tmp;
 		}

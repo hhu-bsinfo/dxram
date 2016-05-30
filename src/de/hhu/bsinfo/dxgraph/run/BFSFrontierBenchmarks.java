@@ -182,7 +182,7 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 		list.add(new BulkFifoNaive());
 		list.add(new BulkFifo());
-		list.add(new TreeSetFifo());
+		list.add(new TreeSetFifo(p_itemCount));
 		list.add(new BitVector(p_itemCount));
 		list.add(new BitVectorWithStartPos(p_itemCount));
 		list.add(new BitVectorMultiLevel(p_itemCount));

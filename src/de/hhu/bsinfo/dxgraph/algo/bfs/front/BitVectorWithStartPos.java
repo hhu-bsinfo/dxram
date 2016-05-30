@@ -9,6 +9,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class BitVectorWithStartPos implements FrontierList {
+	private long m_maxElementCount;
 	private long[] m_vector;
 
 	private long m_itPos;
@@ -21,6 +22,7 @@ public class BitVectorWithStartPos implements FrontierList {
 	 * @param p_vertexCount Total number of vertices.
 	 */
 	public BitVectorWithStartPos(final long p_vertexCount) {
+		m_maxElementCount = p_vertexCount;
 		m_vector = new long[(int) ((p_vertexCount / 64L) + 1L)];
 	}
 
@@ -46,6 +48,11 @@ public class BitVectorWithStartPos implements FrontierList {
 		long tmp = 1L << (p_val % 64L);
 		int idx = (int) (p_val / 64L);
 		return (m_vector[idx] & tmp) != 0;
+	}
+
+	@Override
+	public long capacity() {
+		return m_maxElementCount;
 	}
 
 	@Override

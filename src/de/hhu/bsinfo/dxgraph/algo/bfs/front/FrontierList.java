@@ -26,6 +26,13 @@ public interface FrontierList {
 	boolean contains(final long p_val);
 
 	/**
+	 * Get the total capacity (max size) of the list.
+	 *
+	 * @return Capacity of the list.
+	 */
+	long capacity();
+
+	/**
 	 * Get the number of elements in the list.
 	 *
 	 * @return Number of elements in list.
