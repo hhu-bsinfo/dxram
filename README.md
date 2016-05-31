@@ -56,8 +56,33 @@ as the „From Directory:“ and check the eclipse folder on the left half
 of the split pane and click finish.
 
 ### Configuration IntelliJ
+Open IntelliJ and create a new project from existing sources. Choose the dxram folder from your workspace and click next until the creation process has finished.
+IntelliJ should detect the used libraries automatically. In order you want to use the Run Configurations for Eclipse you
+have to download the _eclipser_ plugin for IntelliJ. After you have downloaded the plugin just Right-Click the Configuration File
+and hit _Convert with Eclipser_.
 
-TODO
+If you don't want to use eclipser proceed as follows:
+Create two new Run Configurations in IntelliJ by creating them in the context menu under _Run > Edit Configuration ..._.
+The first one should be named DXRAMMainPeer(22222) and should have following VM Options:
+```
+    -Ddxram.config=config/dxram.student.conf
+    -Ddxram.config.0=config/dxram.nodes.student.conf
+    -Ddxram.network.ip=127.0.0.1
+    -Ddxram.network.port=22222
+    -Ddxram.role=Peer
+    -Xmx1024M
+```
+The second one should be named DXRAMSuperpeer(22221) and should have following VM Options:
+```
+    -Ddxram.config=config/dxram.student.conf
+    -Ddxram.config.0=config/dxram.nodes.student.conf
+    -Ddxram.network.ip=127.0.0.1
+    -Ddxram.network.port=22221
+    -Ddxram.role=Superpeer
+    -Xmx1024M
+```
+Don't forget choosing the DXRAMMain class as the main class.
+
 
 ## DXRAM Configuration
 DXRAM is configured using one or multiple configuration files. 
