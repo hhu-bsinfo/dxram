@@ -5,7 +5,6 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
  * Base class for messages to send non local vertex data to another node for the next BFS depth level iteration.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
  */
 public abstract class AbstractVerticesForNextFrontierRequest extends AbstractRequest {
@@ -23,10 +22,12 @@ public abstract class AbstractVerticesForNextFrontierRequest extends AbstractReq
 
 	/**
 	 * Creates an instance of VerticesForNextFrontierRequest
-	 *
-	 * @param p_destination the destination
-	 * @param p_subtype     Subtype of the implemented message
-	 * @param p_batchSize   size of the buffer to store the vertex ids to send.
+	 * @param p_destination
+	 *            the destination
+	 * @param p_subtype
+	 *            Subtype of the implemented message
+	 * @param p_batchSize
+	 *            size of the buffer to store the vertex ids to send.
 	 */
 	public AbstractVerticesForNextFrontierRequest(final short p_destination, final byte p_subtype,
 			final int p_batchSize) {
@@ -37,7 +38,6 @@ public abstract class AbstractVerticesForNextFrontierRequest extends AbstractReq
 
 	/**
 	 * Get max size of this vertex batch.
-	 *
 	 * @return Max number of vertices possible for this batch.
 	 */
 	public int getBatchSize() {
@@ -46,7 +46,6 @@ public abstract class AbstractVerticesForNextFrontierRequest extends AbstractReq
 
 	/**
 	 * Get the actual number of vertices in this batch.
-	 *
 	 * @return Number of vertices in this batch.
 	 */
 	public int getNumVerticesInBatch() {
@@ -55,7 +54,6 @@ public abstract class AbstractVerticesForNextFrontierRequest extends AbstractReq
 
 	/**
 	 * Check if this batch is full.
-	 *
 	 * @return True if full, false if batch size not reached, yet.
 	 */
 	public boolean isBatchFull() {
@@ -64,8 +62,8 @@ public abstract class AbstractVerticesForNextFrontierRequest extends AbstractReq
 
 	/**
 	 * Add a vertex to this batch.
-	 *
-	 * @param p_vertex Vertex Id to add.
+	 * @param p_vertex
+	 *            Vertex Id to add.
 	 * @return True if adding successful, false otherwise (batch full).
 	 */
 	public abstract boolean addVertex(final long p_vertex);
@@ -74,7 +72,6 @@ public abstract class AbstractVerticesForNextFrontierRequest extends AbstractReq
 	 * Get the next vertex of this batch. An internal iterator/counter keeps
 	 * track of the last gotten vertex of the batch. There is no possibility to
 	 * reset the iterator, thus this is usable once.
-	 *
 	 * @return Vertex id of the next vertex or -1 if batch empty.
 	 */
 	public abstract long getVertex();

@@ -12,7 +12,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Graph partition index for partitioned graph.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 21.04.16
  */
 public class GraphPartitionIndex implements DataStructure {
@@ -28,7 +27,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 	/**
 	 * Calculate the total vertex count based on the partition index (i.e. summing up vertex counts of all partitions).
-	 *
 	 * @return Total vertex count of the full graph.
 	 */
 	public long calcTotalVertexCount() {
@@ -41,7 +39,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 	/**
 	 * Calculate the total edge count based on the partition index (i.e. summing up edge counts of all partitions).
-	 *
 	 * @return Total edge count of the full graph.
 	 */
 	public long calcTotalEdgeCount() {
@@ -54,8 +51,8 @@ public class GraphPartitionIndex implements DataStructure {
 
 	/**
 	 * Set a partition entry for the index.
-	 *
-	 * @param p_entry Entry to set/add.
+	 * @param p_entry
+	 *            Entry to set/add.
 	 */
 	public void setPartitionEntry(final Entry p_entry) {
 		m_index.put(p_entry.m_partitionIndex, p_entry);
@@ -63,8 +60,8 @@ public class GraphPartitionIndex implements DataStructure {
 
 	/**
 	 * Get a partition index entry from the index.
-	 *
-	 * @param p_partitionId Id of the partition index entry to get.
+	 * @param p_partitionId
+	 *            Id of the partition index entry to get.
 	 * @return Partition index entry or null if there is no entry for the specified id.
 	 */
 	public Entry getPartitionIndex(final int p_partitionId) {
@@ -73,8 +70,8 @@ public class GraphPartitionIndex implements DataStructure {
 
 	/**
 	 * Rebase a graph global vertexId to a partition local vertex id using the index.
-	 *
-	 * @param p_vertexId Graph global vertexId to rebase.
+	 * @param p_vertexId
+	 *            Graph global vertexId to rebase.
 	 * @return Rebased vertex id to the partition the vertex is in.
 	 */
 	public long rebaseGlobalVertexIdToLocalPartitionVertexId(final long p_vertexId) {
@@ -94,8 +91,8 @@ public class GraphPartitionIndex implements DataStructure {
 
 	/**
 	 * Rebase multiple graph global vertexIds in plance to partition local vertex ids using the index.
-	 *
-	 * @param p_vertexIds Graph global vertexIds to rebase.
+	 * @param p_vertexIds
+	 *            Graph global vertexIds to rebase.
 	 */
 	public void rebaseGlobalVertexIdToLocalPartitionVertexId(final long[] p_vertexIds) {
 		// utilize locality instead of calling function
@@ -178,7 +175,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 	/**
 	 * Single partition index entry.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 21.04.16
 	 */
 	public static class Entry implements DataStructure {
@@ -198,11 +194,14 @@ public class GraphPartitionIndex implements DataStructure {
 
 		/**
 		 * Constructor
-		 *
-		 * @param p_nodeId         Node id the partition gets assigned to.
-		 * @param p_partitionIndex Partition index.
-		 * @param p_vertexCount    Number of vertices in this partition.
-		 * @param p_edgeCount      Number of edges in this partition.
+		 * @param p_nodeId
+		 *            Node id the partition gets assigned to.
+		 * @param p_partitionIndex
+		 *            Partition index.
+		 * @param p_vertexCount
+		 *            Number of vertices in this partition.
+		 * @param p_edgeCount
+		 *            Number of edges in this partition.
 		 */
 		public Entry(final short p_nodeId, final int p_partitionIndex, final long p_vertexCount,
 				final long p_edgeCount) {
@@ -214,7 +213,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 		/**
 		 * Get the node id this partition is assigned to.
-		 *
 		 * @return Node Id.
 		 */
 		public short getNodeId() {
@@ -223,7 +221,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 		/**
 		 * Get the partition id.
-		 *
 		 * @return Partition id.
 		 */
 		public int getPartitionId() {
@@ -232,7 +229,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 		/**
 		 * Get the vertex count of the partition.
-		 *
 		 * @return Vertex count.
 		 */
 		public long getVertexCount() {
@@ -241,7 +237,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 		/**
 		 * Get the edge count of the partition.
-		 *
 		 * @return Edge count.
 		 */
 		public long getEdgeCount() {

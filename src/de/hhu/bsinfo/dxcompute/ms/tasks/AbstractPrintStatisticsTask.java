@@ -15,7 +15,6 @@ import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Base class to print the statistics.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
@@ -25,9 +24,10 @@ abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
 	 * Expecting a default constructor for the sub classes extending this
 	 * base class, otherwise the createInstance call won't work.
 	 * Make sure to register each task payload implementation prior usage.
-	 *
-	 * @param p_typeId    Type id
-	 * @param p_subtypeId Subtype id
+	 * @param p_typeId
+	 *            Type id
+	 * @param p_subtypeId
+	 *            Subtype id
 	 */
 	AbstractPrintStatisticsTask(final short p_typeId, final short p_subtypeId) {
 		super(p_typeId, p_subtypeId);
@@ -35,10 +35,12 @@ abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
 
 	/**
 	 * Print the statistics to a stream.
-	 *
-	 * @param p_outputStream      Output stream to print to.
-	 * @param p_bootService       BootService
-	 * @param p_statisticsService StatisticsService
+	 * @param p_outputStream
+	 *            Output stream to print to.
+	 * @param p_bootService
+	 *            BootService
+	 * @param p_statisticsService
+	 *            StatisticsService
 	 */
 	void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService,
 			final StatisticsService p_statisticsService) {

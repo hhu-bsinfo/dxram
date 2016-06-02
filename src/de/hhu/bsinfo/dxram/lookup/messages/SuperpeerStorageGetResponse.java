@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -9,7 +10,6 @@ import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
  * Response to the get request.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.05.15
  */
 public class SuperpeerStorageGetResponse extends AbstractResponse {
@@ -31,9 +31,10 @@ public class SuperpeerStorageGetResponse extends AbstractResponse {
 	 * This constructor is used when sending this message.
 	 * Make sure to include all the chunks with IDs from the request in the correct order. If a chunk does
 	 * not exist, no data and a length of 0 indicates this situation.
-	 *
-	 * @param p_request       the corresponding GetRequest
-	 * @param p_dataStructure Data structure filled with the read data from memory
+	 * @param p_request
+	 *            the corresponding GetRequest
+	 * @param p_dataStructure
+	 *            Data structure filled with the read data from memory
 	 */
 	public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request,
 			final DataStructure p_dataStructure) {

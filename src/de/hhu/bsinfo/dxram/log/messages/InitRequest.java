@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -6,7 +7,6 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
  * Message to allocate memory in the superpeer storage.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.05.15
  */
 public class SuperpeerStorageCreateRequest extends AbstractRequest {
@@ -23,11 +23,14 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 
 	/**
 	 * Creates an instance of SuperpeerStorageCreateRequest
-	 *
-	 * @param p_destination the destination
-	 * @param p_storageId   Identifier for the chunk.
-	 * @param p_size        Size in bytes of the data to store
-	 * @param p_replicate   True if this message is a replication to other superpeer message, false if normal message
+	 * @param p_destination
+	 *            the destination
+	 * @param p_storageId
+	 *            Identifier for the chunk.
+	 * @param p_size
+	 *            Size in bytes of the data to store
+	 * @param p_replicate
+	 *            True if this message is a replication to other superpeer message, false if normal message
 	 */
 	public SuperpeerStorageCreateRequest(final short p_destination, final int p_storageId, final int p_size,
 			final boolean p_replicate) {
@@ -40,7 +43,6 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 
 	/**
 	 * Get the storage id to use for this memory block
-	 *
 	 * @return Storage id.
 	 */
 	public int getStorageId() {
@@ -49,7 +51,6 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 
 	/**
 	 * Get the size for the allocation
-	 *
 	 * @return Size in bytes
 	 */
 	public int getSize() {
@@ -58,7 +59,6 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 
 	/**
 	 * Check if this message is a replicate message.
-	 *
 	 * @return True if replicate message, false otherwise.
 	 */
 	public boolean isReplicate() {

@@ -1,7 +1,6 @@
 
 package de.hhu.bsinfo.menet;
 
-
 /**
  * Represents a request to change the connection options
  * @author Florian Klein 18.03.2012

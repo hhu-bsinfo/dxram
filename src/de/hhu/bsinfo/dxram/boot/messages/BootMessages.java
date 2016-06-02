@@ -1,8 +1,8 @@
+
 package de.hhu.bsinfo.dxram.boot.messages;
 
 /**
  * Type and list of subtypes for all boot messages
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 02.05.16
  */
 public final class BootMessages {
@@ -13,6 +13,5 @@ public final class BootMessages {
 	/**
 	 * Static class
 	 */
-	private BootMessages() {
-	}
+	private BootMessages() {}
 }

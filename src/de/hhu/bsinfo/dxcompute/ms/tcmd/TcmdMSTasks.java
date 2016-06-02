@@ -13,7 +13,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Terminal command to get a list of registered tasks allowed for submission.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TcmdMSTasks extends AbstractTerminalCommand {
@@ -52,8 +51,8 @@ public class TcmdMSTasks extends AbstractTerminalCommand {
 
 		for (Entry<Integer, Class<? extends AbstractTaskPayload>> entry : list) {
 			getTerminalDelegate()
-					.println(entry.getValue().getSimpleName() + ": " + (entry.getKey() >> 16 & 0xFFFF) + ", "
-							+ (entry.getKey() & 0xFFFF));
+			.println(entry.getValue().getSimpleName() + ": " + (entry.getKey() >> 16 & 0xFFFF) + ", "
+					+ (entry.getKey() & 0xFFFF));
 		}
 
 		return true;

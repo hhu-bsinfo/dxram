@@ -32,7 +32,6 @@ import de.hhu.bsinfo.utils.Pair;
 /**
  * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them
  * to the conencted slaves for execution.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
@@ -50,15 +49,22 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_computeGroupId  Compute group id the instance is assigned to.
-	 * @param p_pingIntervalMs  Ping interval in ms to check back with the compute group if still alive.
-	 * @param p_serviceAccessor Accessor to services for compute tasks.
-	 * @param p_network         NetworkComponent
-	 * @param p_logger          LoggerComponent
-	 * @param p_nameservice     NameserviceComponent
-	 * @param p_boot            BootComponent
-	 * @param p_lookup          LookupComponent
+	 * @param p_computeGroupId
+	 *            Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs
+	 *            Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor
+	 *            Accessor to services for compute tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 * @param p_lookup
+	 *            LookupComponent
 	 */
 	ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
@@ -78,7 +84,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Get a list of currently connected salves.
-	 *
 	 * @return List of currently connected slaves (node ids).
 	 */
 	ArrayList<Short> getConnectedSlaves() {
@@ -92,8 +97,8 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Submit a task to this master.
-	 *
-	 * @param p_task Task to submit.
+	 * @param p_task
+	 *            Task to submit.
 	 * @return True if submission was successful, false if the max number of tasks queued is reached.
 	 */
 	boolean submitTask(final Task p_task) {
@@ -111,7 +116,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Get the number of tasks currently in the queue.
-	 *
 	 * @return Number of tasks in the queue.
 	 */
 	int getNumberOfTasksInQueue() {
@@ -120,7 +124,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Get the total amount of tasks processed so far.
-	 *
 	 * @return Number of tasks processed.
 	 */
 	int getTotalTasksProcessed() {
@@ -133,24 +136,24 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		boolean loop = true;
 		while (loop) {
 			switch (m_state) {
-				case STATE_SETUP:
-					stateSetup();
-					break;
-				case STATE_IDLE:
-					stateIdle();
-					break;
-				case STATE_EXECUTE:
-					stateExecute();
-					break;
-				case STATE_ERROR_DIE:
-					stateErrorDie();
-					break;
-				case STATE_TERMINATE:
-					loop = false;
-					break;
-				default:
-					assert false;
-					break;
+			case STATE_SETUP:
+				stateSetup();
+				break;
+			case STATE_IDLE:
+				stateIdle();
+				break;
+			case STATE_EXECUTE:
+				stateExecute();
+				break;
+			case STATE_ERROR_DIE:
+				stateErrorDie();
+				break;
+			case STATE_TERMINATE:
+				loop = false;
+				break;
+			default:
+				assert false;
+				break;
 			}
 		}
 	}
@@ -161,8 +164,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		m_state = State.STATE_TERMINATE;
 		try {
 			join();
-		} catch (final InterruptedException ignored) {
-		}
+		} catch (final InterruptedException ignored) {}
 
 		// invalidate entry in nameservice
 		m_nameservice.register(-1, m_nameserviceMasterNodeIdKey);
@@ -173,11 +175,11 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == MasterSlaveMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
-						incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
-						break;
-					default:
-						break;
+				case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
+					incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -187,13 +189,17 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	 * Setup state. Register node id in the nameservice to allow slaves to discover this master.
 	 */
 	private void stateSetup() {
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Setting up master of compute group " + m_computeGroupId);
+		// #endif /* LOGGER >= INFO */
 
 		// check first, if there is already a master registered for this compute group
 		long id = m_nameservice.getChunkID(m_nameserviceMasterNodeIdKey, 0);
 		if (id != -1) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot setup master for compute group id " + m_computeGroupId + ", node "
 					+ NodeID.toHexString(ChunkID.getCreatorID(id)) + " is already master of group");
+			// #endif /* LOGGER >= ERROR */
 			m_state = State.STATE_ERROR_DIE;
 			return;
 		}
@@ -205,7 +211,9 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 		m_state = State.STATE_IDLE;
 
+		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(), "Entering idle state");
+		// #endif /* LOGGER >= DEBUG */
 	}
 
 	/**
@@ -215,11 +223,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	private void stateIdle() {
 		if (m_taskCount.get() > 0) {
 			if (m_signedOnSlaves.size() < 1) {
+				// #if LOGGER >= WARN
 				m_logger.warn(getClass(), "Got " + m_taskCount.get() + " tasks queued but no slaves");
+				// #endif /* LOGGER >= WARN */
 				try {
 					Thread.sleep(2000);
-				} catch (final InterruptedException ignored) {
-				}
+				} catch (final InterruptedException ignored) {}
 			} else {
 				m_state = State.STATE_EXECUTE;
 			}
@@ -234,22 +243,26 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 				while (it.hasNext()) {
 					short slave = it.next();
 					if (!onlineNodesList.contains(slave)) {
+						// #if LOGGER >= INFO
 						m_logger.info(getClass(),
 								"Slave " + NodeID.toHexString(slave) + " is not available anymore, removing.");
+						// #endif /* LOGGER >= INFO */
+
 						it.remove();
 					}
 				}
 				m_joinLock.unlock();
 
 				m_lastPingMs = System.currentTimeMillis();
+				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "Pinging slaves, " + m_signedOnSlaves.size() + " online.");
+				// #endif /* LOGGER == TRACE */
 			}
 
 			// do nothing
 			try {
 				Thread.sleep(10);
-			} catch (final InterruptedException ignored) {
-			}
+			} catch (final InterruptedException ignored) {}
 		}
 	}
 
@@ -265,14 +278,18 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		Task task = m_tasks.poll();
 		AbstractTaskPayload taskPayload = task.getPayload();
 		if (taskPayload == null) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot proceed with task " + task + ", missing payload.");
+			// #endif /* LOGGER >= ERROR */
 			m_state = State.STATE_IDLE;
 			m_joinLock.unlock();
 			return;
 		}
 
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(),
 				"Starting execution of task " + task + " with " + m_signedOnSlaves.size() + " slaves.");
+		// #endif /* LOGGER >= INFO */
 
 		short[] slaves = new short[m_signedOnSlaves.size()];
 		for (int i = 0; i < slaves.length; i++) {
@@ -294,8 +311,10 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(),
 						"Sending task to slave " + NodeID.toHexString(slave) + " failed: " + err);
+				// #endif /* LOGGER >= ERROR */
 				// remove slave from list
 				m_signedOnSlaves.remove(slave);
 				continue;
@@ -304,9 +323,11 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			ExecuteTaskResponse response = (ExecuteTaskResponse) request.getResponse();
 			if (response.getStatusCode() != 0) {
 				// exclude slave from execution
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Slave " + NodeID.toHexString(slave) + " response "
 						+ response.getStatusCode() + " on execution of task " + task
 						+ " excluding from current execution");
+				// #endif /* LOGGER >= ERROR */
 			} else {
 				numberOfSlavesOnExecution++;
 			}
@@ -314,13 +335,16 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 		taskPayload.setSlaveId((short) -1);
 
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
+		// #endif /* LOGGER >= INFO */
 
 		Pair<short[], long[]> result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
 
-		m_logger.debug(getClass(),
-				"Syncing done.");
+		// #if LOGGER >= DEBUG
+		m_logger.debug(getClass(), "Syncing done.");
+		// #endif /* LOGGER >= DEBUG */
 
 		// grab return codes from barrier
 		short[] slaveIds = task.getPayload().getSlaveNodeIds();
@@ -345,30 +369,35 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		// allow further slaves to join
 		m_joinLock.unlock();
 
+		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(), "Entering idle state");
+		// #endif /* LOGGER >= DEBUG */
 	}
 
 	/**
 	 * Error state. Entered if an error happened and we can't recover.
 	 */
 	private void stateErrorDie() {
+		// #if LOGGER >= ERROR
 		m_logger.error(getClass(), "Master error state");
+		// #endif /* LOGGER >= ERROR */
 		try {
 			Thread.sleep(1000);
-		} catch (final InterruptedException ignored) {
-		}
+		} catch (final InterruptedException ignored) {}
 	}
 
 	/**
 	 * Handle a SlaveJoinRequest
-	 *
-	 * @param p_message SlaveJoinRequest
+	 * @param p_message
+	 *            SlaveJoinRequest
 	 */
 	private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {
 		if (m_joinLock.tryLock()) {
 			if (m_signedOnSlaves.contains(p_message.getSource())) {
+				// #if LOGGER >= WARN
 				m_logger.warn(getClass(), "Joining slave, already joined: "
 						+ NodeID.toHexString(p_message.getSource()));
+				// #endif /* LOGGER >= WARN */
 			} else {
 				m_signedOnSlaves.add(p_message.getSource());
 
@@ -380,26 +409,34 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			response.setStatusCode((byte) 0);
 			NetworkErrorCodes err = m_network.sendMessage(response);
 			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Sending response to join request of slave "
 						+ NodeID.toHexString(p_message.getSource()) + "failed: " + err);
+				// #endif /* LOGGER >= ERROR */
 				// remove slave
 				m_signedOnSlaves.remove(p_message.getSource());
 			} else {
+				// #if LOGGER >= INFO
 				m_logger.info(getClass(), "Slave (" + (m_signedOnSlaves.size() - 1) + ") "
 						+ NodeID.toHexString(p_message.getSource()) + " has joined");
+				// #endif /* LOGGER >= INFO */
 			}
 
 			m_joinLock.unlock();
 		} else {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "Cannot join slave, master not in idle state.");
+			// #endif /* LOGGER == TRACE */
 
 			// send response that joining is not possible currently
 			SlaveJoinResponse response = new SlaveJoinResponse(p_message, BarrierID.INVALID_ID);
 			response.setStatusCode((byte) 1);
 			NetworkErrorCodes err = m_network.sendMessage(response);
 			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Sending response to join request of slave "
 						+ NodeID.toHexString(p_message.getSource()) + "failed: " + err);
+				// #endif /* LOGGER >= ERROR */
 			}
 		}
 	}

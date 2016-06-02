@@ -6,7 +6,6 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
 /**
  * Multi threaded converter, expecting edge list in binary form:
  * 8 bytes source nodeId and 8 bytes destination node id and outputting a binary ordered edge list.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public final class ConverterBinaryEdgeListToBoel extends AbstractBinaryEdgeListTo {
@@ -19,8 +18,8 @@ public final class ConverterBinaryEdgeListToBoel extends AbstractBinaryEdgeListT
 
 	/**
 	 * Main entry point.
-	 *
-	 * @param p_args Console arguments.
+	 * @param p_args
+	 *            Console arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new ConverterBinaryEdgeListToBoel();

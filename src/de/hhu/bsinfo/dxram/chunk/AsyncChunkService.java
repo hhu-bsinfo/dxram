@@ -62,12 +62,16 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		m_network = getComponent(NetworkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
 		m_lock = getComponent(AbstractLockComponent.class);
+		// #ifdef STATISTICS
 		m_statistics = getComponent(StatisticsComponent.class);
+		// #endif /* STATISTICS */
 		getComponent(TerminalComponent.class);
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();
+		// #ifdef STATISTICS
 		registerStatisticsOperations();
+		// #endif /* STATISTICS */
 
 		// if (getSystemData().getNodeRole().equals(NodeRole.PEER)) {
 		// m_backup.registerPeer();
@@ -107,19 +111,26 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		}
 
 		if (p_dataStructures[0] == null) {
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") ...]");
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+			// #endif /* LOGGER == TRACE */
 		} else {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
 					+ p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
+		// #if LOGGER >= ERROR
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			m_logger.error(getClass(), "a superpeer must not put chunks");
 		}
+		// #endif /* LOGGER >= ERROR */
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync,
 				p_dataStructures.length);
+		// #endif /* STATISTICS */
 
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
 
@@ -163,8 +174,10 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				break;
 			}
 			default: {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(),
 						"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
+				// #endif /* LOGGER >= ERROR */
 				break;
 			}
 			}
@@ -181,8 +194,10 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 				m_memoryManager.lockAccess();
 				for (final DataStructure dataStructure : entry.getValue()) {
 					if (m_memoryManager.put(dataStructure) != MemoryErrorCodes.SUCCESS) {
+						// #if LOGGER >= ERROR
 						m_logger.error(getClass(),
 								"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
+						// #endif /* LOGGER >= ERROR */
 					}
 				}
 				m_memoryManager.unlockAccess();
@@ -193,8 +208,10 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 						chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
 				NetworkErrorCodes error = m_network.sendMessage(message);
 				if (error != NetworkErrorCodes.SUCCESS) {
+					// #if LOGGER >= ERROR
 					m_logger.error(getClass(), "Sending chunk put message to peer " + NodeID.toHexString(peer)
 							+ " failed: " + error);
+					// #endif /* LOGGER >= ERROR */
 
 					// TODO
 					// m_lookup.invalidate(dataStructure.getID());
@@ -204,21 +221,29 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_putAsync);
+		// #endif /* STATISTICS */
 
 		if (p_dataStructures[0] == null) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
 					+ p_dataStructures.length + ") ...]");
+			// #endif /* LOGGER == TRACE */
 		} else {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
 					+ p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 		return;
 	}
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
@@ -232,7 +257,9 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			}
 		}
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Exiting incomingMessage");
+		// #endif /* LOGGER == TRACE */
 	}
 
 	// -----------------------------------------------------------------------------------
@@ -274,16 +301,19 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	private void incomingPutMessage(final PutMessage p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync,
 				chunks.length);
+		// #endif /* STATISTICS */
 
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < chunks.length; i++) {
 			MemoryErrorCodes err = m_memoryManager.put(chunks[i]);
+			// #if LOGGER >= WARN
 			if (err != MemoryErrorCodes.SUCCESS) {
-				// does not exist (anymore)
 				m_logger.warn(getClass(), "Putting chunk " + ChunkID.toHexString(chunks[i].getID()) + " failed: " + err);
 			}
+			// #endif /* LOGGER >= WARN */
 		}
 		m_memoryManager.unlockAccess();
 
@@ -299,6 +329,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPutAsync);
+		// #endif /* STATISTICS */
 	}
 }

@@ -15,7 +15,6 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 /**
  * Base class for the master slave compute framework.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 abstract class AbstractComputeMSBase extends Thread {
@@ -25,7 +24,6 @@ abstract class AbstractComputeMSBase extends Thread {
 
 	/**
 	 * States of the master/slave instances
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
 	 */
 	enum State {
@@ -55,16 +53,24 @@ abstract class AbstractComputeMSBase extends Thread {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_role            Compute role of the instance.
-	 * @param p_computeGroupId  Compute group id the instance is assigned to.
-	 * @param p_pingIntervalMs  Ping interval in ms to check back with the compute group if still alive.
-	 * @param p_serviceAccessor Service accessor for tasks.
-	 * @param p_network         NetworkComponent
-	 * @param p_logger          LoggerComponent
-	 * @param p_nameservice     NameserviceComponent
-	 * @param p_boot            BootComponent
-	 * @param p_lookup          LookupComponent
+	 * @param p_role
+	 *            Compute role of the instance.
+	 * @param p_computeGroupId
+	 *            Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs
+	 *            Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor
+	 *            Service accessor for tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 * @param p_lookup
+	 *            LookupComponent
 	 */
 	AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
@@ -98,7 +104,6 @@ abstract class AbstractComputeMSBase extends Thread {
 
 	/**
 	 * Get the compute role assigned to this instance.
-	 *
 	 * @return Compute role assigned.
 	 */
 	public ComputeRole getRole() {
@@ -107,7 +112,6 @@ abstract class AbstractComputeMSBase extends Thread {
 
 	/**
 	 * Get the current state.
-	 *
 	 * @return State of the instance.
 	 */
 	public State getComputeState() {
@@ -116,7 +120,6 @@ abstract class AbstractComputeMSBase extends Thread {
 
 	/**
 	 * Get the compute group id this node is assigend to.
-	 *
 	 * @return Compute group id assigned to.
 	 */
 	public short getComputeGroupId() {
@@ -133,7 +136,6 @@ abstract class AbstractComputeMSBase extends Thread {
 
 	/**
 	 * Get the service accessor of DXRAM to be passed to the tasks being executed
-	 *
 	 * @return DXRAMService accessor
 	 */
 	protected DXRAMServiceAccessor getServiceAccessor() {

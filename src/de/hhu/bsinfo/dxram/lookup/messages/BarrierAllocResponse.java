@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractResponse;
+
 /**
  * Response to the barrier alloc request
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
 public class BarrierAllocResponse extends AbstractResponse {
@@ -22,9 +22,10 @@ public class BarrierAllocResponse extends AbstractResponse {
 
 	/**
 	 * Creates an instance of BarrierAllocResponse
-	 *
-	 * @param p_request   the corresponding BarrierAllocRequest
-	 * @param p_barrierId Id of the created barrier
+	 * @param p_request
+	 *            the corresponding BarrierAllocRequest
+	 * @param p_barrierId
+	 *            Id of the created barrier
 	 */
 	public BarrierAllocResponse(final BarrierAllocRequest p_request, final int p_barrierId) {
 		super(p_request, LookupMessages.SUBTYPE_BARRIER_ALLOC_RESPONSE);
@@ -34,7 +35,6 @@ public class BarrierAllocResponse extends AbstractResponse {
 
 	/**
 	 * Get the id of the created barrier.
-	 *
 	 * @return Barrier id.
 	 */
 	public int getBarrierId() {

@@ -27,7 +27,6 @@ import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
 /**
  * Terminal command to read a list of tasks from file, create task payloads and pass them to a compute group for
  * execution.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 27.04.16
  */
 public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements TaskListener {
@@ -113,8 +112,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 	/**
 	 * Load a list of tasks from a file (.ctask).
-	 *
-	 * @param p_file Task list file
+	 * @param p_file
+	 *            Task list file
 	 * @return Configuration object if successful, null otherwise.
 	 */
 	private Configuration loadTaskList(final String p_file) {
@@ -141,8 +140,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 	/**
 	 * Parse the configuration file containing the task list.
-	 *
-	 * @param p_taskList Task list to parse.
+	 * @param p_taskList
+	 *            Task list to parse.
 	 * @return List of task payload objects created from the provided list.
 	 */
 	private ArrayList<AbstractTaskPayload> parseTaskList(final Configuration p_taskList) {
@@ -200,8 +199,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 						p_taskList.getValue("/ComputeTask/" + argument.getKey(), tidEntry.getKey());
 				if (value == null) {
 					getTerminalDelegate()
-							.println("Missing value for task id " + tidEntry.getValue() + " tid " + tid + ", stid "
-									+ stid + " for key " + argument.getKey(), TerminalColor.RED);
+					.println("Missing value for task id " + tidEntry.getValue() + " tid " + tid + ", stid "
+							+ stid + " for key " + argument.getKey(), TerminalColor.RED);
 					continue;
 				}
 
@@ -214,8 +213,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			} catch (final NullPointerException e) {
 				// happens if an argument was not provided (probably typo)
 				getTerminalDelegate()
-						.println("Parsing arguments of task with type id " + tid + " subtype id " + stid + " for key "
-								+ tidEntry.getKey() + " failed, missing or mistyped argument?", TerminalColor.RED);
+				.println("Parsing arguments of task with type id " + tid + " subtype id " + stid + " for key "
+						+ tidEntry.getKey() + " failed, missing or mistyped argument?", TerminalColor.RED);
 				continue;
 			}
 			taskList.add(taskPayload);

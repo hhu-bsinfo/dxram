@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.sync.tcmds;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Command to free an allocated barrier
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class TcmdBarrierFree extends AbstractTerminalCommand {
@@ -42,7 +42,7 @@ public class TcmdBarrierFree extends AbstractTerminalCommand {
 			getTerminalDelegate().println("Freeing barrier failed.", TerminalColor.RED);
 		} else {
 			getTerminalDelegate()
-					.println("Barrier " + BarrierID.toHexString(barrierId) + " free'd");
+			.println("Barrier " + BarrierID.toHexString(barrierId) + " free'd");
 		}
 
 		return true;

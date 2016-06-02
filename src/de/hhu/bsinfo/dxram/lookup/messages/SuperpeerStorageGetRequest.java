@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -7,7 +8,6 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
  * Request to get data from the superpeer storage.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.05.15
  */
 public class SuperpeerStorageGetRequest extends AbstractRequest {
@@ -29,9 +29,10 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of SuperpeerStorageGetRequest.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_destination   the destination node id.
-	 * @param p_dataStructure Data structure with the ID of the chunk to get.
+	 * @param p_destination
+	 *            the destination node id.
+	 * @param p_dataStructure
+	 *            Data structure with the ID of the chunk to get.
 	 */
 	public SuperpeerStorageGetRequest(final short p_destination, final DataStructure p_dataStructure) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST);
@@ -41,7 +42,6 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
 
 	/**
 	 * Get the storage id.
-	 *
 	 * @return Storage id.
 	 */
 	public int getStorageID() {
@@ -52,7 +52,6 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
 	 * Get the data structures stored with this request.
 	 * This is used to write the received data to the provided object to avoid
 	 * using multiple buffers.
-	 *
 	 * @return Data structures to store data to when the response arrived.
 	 */
 	public DataStructure getDataStructure() {

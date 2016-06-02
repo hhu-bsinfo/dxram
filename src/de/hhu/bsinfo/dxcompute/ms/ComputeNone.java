@@ -11,20 +11,24 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 /**
  * None/Null implementation of the compute base. This node does not participate in any
  * master slave computing groups.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 class ComputeNone extends AbstractComputeMSBase {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_serviceAccessor Service accessor for tasks.
-	 * @param p_network         NetworkComponent
-	 * @param p_logger          LoggerComponent
-	 * @param p_nameservice     NameserviceComponent
-	 * @param p_boot            BootComponent
-	 * @param p_lookup          LookupComponent
+	 * @param p_serviceAccessor
+	 *            Service accessor for tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 * @param p_lookup
+	 *            LookupComponent
 	 */
 	ComputeNone(final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,

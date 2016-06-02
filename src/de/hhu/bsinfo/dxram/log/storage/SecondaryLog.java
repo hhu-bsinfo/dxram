@@ -125,7 +125,9 @@ public class SecondaryLog extends AbstractLog {
 
 		createLogAndWriteHeader(SECLOG_HEADER);
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Initialized secondary log (" + m_secondaryLogSize + ")");
+		// #endif /* LOGGER == TRACE */
 	}
 
 	// Getter
@@ -297,7 +299,9 @@ public class SecondaryLog extends AbstractLog {
 			throw new IllegalArgumentException("Error: Invalid data size (" + length + ")");
 		} else {
 			while (m_secondaryLogSize - determineLogSize() < length) {
+				// #if LOGGER >= WARN
 				m_logger.warn(SecondaryLog.class, "Secondary log for " + getNodeID() + " is full. Initializing reorganization and awaiting execution.");
+				// #endif /* LOGGER >= WARN */
 				signalReorganizationAndWait();
 			}
 
@@ -364,9 +368,11 @@ public class SecondaryLog extends AbstractLog {
 						// There is no free segment -> fill partly used segments
 						length = fillPartlyUsedSegments(p_data, p_offset + rangeSize, length, true);
 
+						// #if LOGGER >= ERROR
 						if (length > 0) {
 							m_logger.error(SecondaryLog.class, "Secondary log is full!");
 						}
+						// #endif /* LOGGER >= ERROR */
 					}
 				}
 			} else {
@@ -382,16 +388,20 @@ public class SecondaryLog extends AbstractLog {
 					// Fill partly used segments if log iteration (remove task) is not in progress
 					length = fillPartlyUsedSegments(p_data, p_offset, length, false);
 
+					// #if LOGGER >= ERROR
 					if (length > 0) {
 						m_logger.error(SecondaryLog.class, "Secondary log is full!");
 					}
+					// #endif /* LOGGER >= ERROR */
 				}
 			}
 		}
 
 		if (determineLogSize() >= m_secondaryLogReorgThreshold && !isSignaled) {
 			signalReorganization();
+			// #if LOGGER >= INFO
 			m_logger.info(SecondaryLog.class, "Threshold breached for secondary log of " + getNodeID() + ". Initializing reorganization.");
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return p_length - length;
@@ -1021,15 +1031,19 @@ public class SecondaryLog extends AbstractLog {
 						}
 					}
 				} catch (final IOException | InterruptedException e) {
+					// #if LOGGER >= ERROR
 					m_logger.error(SecondaryLog.class, "Reorganization failed(" + m_rangeIDOrFirstLocalID + "): " + e);
+					// #endif /* LOGGER >= ERROR */
 				}
 			} else {
 				m_segmentAssignmentlock.unlock();
 			}
 
 			if (readBytes - writtenBytes > 0) {
+				// #if LOGGER >= INFO
 				m_logger.info(getClass(), "Freed " + (readBytes - writtenBytes) + " bytes during reorganization of:"
 						+ p_segmentIndex + "  " + m_nodeID + "," + m_rangeIDOrFirstLocalID + "\t " + determineLogSize() / 1024 / 1024);
+				// #endif /* LOGGER >= INFO */
 			}
 		}
 	}

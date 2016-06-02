@@ -5,10 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.Endianness;
 import de.hhu.bsinfo.utils.UnsafeHandler;
-
-import sun.misc.Unsafe;
 
 /**
  * Implementation of a storage based on an unsafe allocated
@@ -109,7 +108,7 @@ public class StorageUnsafeMemory implements Storage {
 
 		int bytesRead = 0;
 
-		/// XXX quite inefficient way to write, but no other possibility (?)
+		// / XXX quite inefficient way to write, but no other possibility (?)
 		for (int i = 0; i < p_length; i++) {
 			p_array[p_arrayOffset + i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
 			bytesRead++;
@@ -219,7 +218,7 @@ public class StorageUnsafeMemory implements Storage {
 
 		int bytesWritten = 0;
 
-		/// XXX quite inefficient way to write, but no other possibility (?)
+		// / XXX quite inefficient way to write, but no other possibility (?)
 		for (int i = 0; i < p_length; i++) {
 			UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
 			bytesWritten++;

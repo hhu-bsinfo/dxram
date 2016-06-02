@@ -87,12 +87,19 @@ public abstract class AbstractDXRAMComponent {
 
 		registerDefaultSettingsComponent(m_settings);
 
+		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Initializing component...");
+		// #endif /* LOGGER >= INFO */
+
 		ret = initComponent(m_parentEngine.getSettings(), m_settings);
 		if (!ret) {
+			// #if LOGGER >= ERROR
 			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Initializing component failed.");
+			// #endif /* LOGGER >= ERROR */
 		} else {
+			// #if LOGGER >= INFO
 			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Initializing component successful.");
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return ret;
@@ -105,12 +112,18 @@ public abstract class AbstractDXRAMComponent {
 	public boolean shutdown() {
 		boolean ret = false;
 
+		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down component...");
+		// #endif /* LOGGER >= INFO */
 		ret = shutdownComponent();
 		if (!ret) {
+			// #if LOGGER >= WARN
 			m_parentEngine.getLogger().warn(this.getClass().getSimpleName(), "Shutting down component failed.");
+			// #endif /* LOGGER >= WARN */
 		} else {
+			// #if LOGGER >= INFO
 			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down component successful.");
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return ret;
@@ -233,9 +246,11 @@ public abstract class AbstractDXRAMComponent {
 		public <T> void setDefaultValue(final String p_key, final T p_value) {
 			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
 				// we added a default value => value was missing from configuration
+				// #if LOGGER >= WARN
 				m_logger.warn(this.getClass().getSimpleName(),
 						"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value '"
 								+ p_value + "'.");
+				// #endif /* LOGGER >= WARN */
 			}
 		}
 

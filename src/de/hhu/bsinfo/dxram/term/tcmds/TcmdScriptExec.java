@@ -1,18 +1,17 @@
 
 package de.hhu.bsinfo.dxram.term.tcmds;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-
 /**
  * Execute terminal commands by reading them from a file (for automated testing).
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 27.04.16
  */
 public class TcmdScriptExec extends AbstractTerminalCommand {
@@ -22,8 +21,7 @@ public class TcmdScriptExec extends AbstractTerminalCommand {
 	/**
 	 * Constructor
 	 */
-	public TcmdScriptExec() {
-	}
+	public TcmdScriptExec() {}
 
 	@Override
 	public String getName() {

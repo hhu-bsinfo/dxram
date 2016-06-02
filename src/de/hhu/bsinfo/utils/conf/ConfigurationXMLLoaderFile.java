@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.utils.conf;
 
 import java.io.File;
@@ -20,12 +21,12 @@ import org.xml.sax.SAXException;
 public class ConfigurationXMLLoaderFile implements ConfigurationXMLLoader
 {
 	private String m_path = null;
-	
+
 	public ConfigurationXMLLoaderFile(final String p_path)
 	{
 		m_path = p_path;
 	}
-	
+
 	@Override
 	public Document load() {
 		Document document = null;
@@ -36,21 +37,21 @@ public class ConfigurationXMLLoaderFile implements ConfigurationXMLLoader
 		} catch (ParserConfigurationException e) {
 			return null;
 		}
-		
+
 		try {
 			document = builder.parse(new File(m_path));
 		} catch (SAXException | IOException e) {
 			return null;
 		}
-		
+
 		return document;
 	}
 
 	@Override
-	public boolean save(Document p_document) 
+	public boolean save(Document p_document)
 	{
-		 TransformerFactory transformerFactory = TransformerFactory.newInstance();
-         Transformer transformer;
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer;
 		try {
 			transformer = transformerFactory.newTransformer();
 		} catch (TransformerConfigurationException e) {
@@ -59,20 +60,20 @@ public class ConfigurationXMLLoaderFile implements ConfigurationXMLLoader
 		// adds proper formating
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-        DOMSource source = new DOMSource(p_document);
-        StreamResult result = new StreamResult(new File(m_path));
-        try {
+		DOMSource source = new DOMSource(p_document);
+		StreamResult result = new StreamResult(new File(m_path));
+		try {
 			transformer.transform(source, result);
 		} catch (TransformerException e) {
 			return false;
 		}
 
-         return true;
+		return true;
 	}
 
 	@Override
 	public String toString()
 	{
-		return "ConfigurationXMLLoaderFile "+ m_path;
+		return "ConfigurationXMLLoaderFile " + m_path;
 	}
 }

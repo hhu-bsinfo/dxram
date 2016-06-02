@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxgraph.data;
 
 import java.util.ArrayList;
@@ -11,7 +12,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Data structure holding BFS results of multiple nodes.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.05.16
  */
 public class BFSResults implements DataStructure {
@@ -25,7 +25,6 @@ public class BFSResults implements DataStructure {
 
 	/**
 	 * Get aggregated results of all nodes.
-	 *
 	 * @return Aggregated results.
 	 */
 	public BFSResult getAggregatedResult() {
@@ -34,10 +33,12 @@ public class BFSResults implements DataStructure {
 
 	/**
 	 * Add a result of a node running BFS.
-	 *
-	 * @param p_computeSlaveId Compute slave id of the node.
-	 * @param p_nodeId         Node id of the node.
-	 * @param p_bfsResult      BFS result of the node.
+	 * @param p_computeSlaveId
+	 *            Compute slave id of the node.
+	 * @param p_nodeId
+	 *            Node id of the node.
+	 * @param p_bfsResult
+	 *            BFS result of the node.
 	 */
 	public void addResult(final short p_computeSlaveId, final short p_nodeId, final BFSResult p_bfsResult) {
 		int id = (p_nodeId << 16) | p_computeSlaveId;
@@ -46,7 +47,6 @@ public class BFSResults implements DataStructure {
 
 	/**
 	 * Get all single results of every BFS node.
-	 *
 	 * @return List of single results identified by compute slave id and node id.
 	 */
 	public ArrayList<Pair<Integer, BFSResult>> getResults() {

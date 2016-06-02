@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 /**
  * Type and list of subtypes for all lookup messages
- *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public final class LookupMessages {
@@ -72,6 +71,5 @@ public final class LookupMessages {
 	/**
 	 * Hidden constructor
 	 */
-	private LookupMessages() {
-	}
+	private LookupMessages() {}
 }

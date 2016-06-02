@@ -42,7 +42,10 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 * @return True if registering was successful, false if a command with the same name already exists.
 	 */
 	public boolean registerCommand(final AbstractTerminalCommand p_command) {
+		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(), "Registering command: " + p_command.getName());
+		// #endif /* LOGGER >= DEBUG */
+
 		return m_commandMap.putIfAbsent(p_command.getName(), p_command) == null;
 	}
 

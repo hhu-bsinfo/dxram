@@ -1,15 +1,18 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
-import de.hhu.bsinfo.dxram.data.*;
-import de.hhu.bsinfo.menet.AbstractMessage;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxram.data.Chunk;
+import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
+import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.menet.AbstractMessage;
+
 /**
  * (Async) Message for updating a Chunk on a remote node
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public class PutMessage extends AbstractMessage {
@@ -30,10 +33,12 @@ public class PutMessage extends AbstractMessage {
 
 	/**
 	 * Creates an instance of PutRequest
-	 *
-	 * @param p_destination     the destination
-	 * @param p_unlockOperation if true a potential lock will be released
-	 * @param p_dataStructures  Data structure with the data to put.
+	 * @param p_destination
+	 *            the destination
+	 * @param p_unlockOperation
+	 *            if true a potential lock will be released
+	 * @param p_dataStructures
+	 *            Data structure with the data to put.
 	 */
 	public PutMessage(final short p_destination, final ChunkLockOperation p_unlockOperation,
 			final DataStructure... p_dataStructures) {
@@ -43,17 +48,17 @@ public class PutMessage extends AbstractMessage {
 
 		byte tmpCode = getStatusCode();
 		switch (p_unlockOperation) {
-			case NO_LOCK_OPERATION:
-				break;
-			case READ_LOCK:
-				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
-				break;
-			case WRITE_LOCK:
-				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
-				break;
-			default:
-				assert 1 == 2;
-				break;
+		case NO_LOCK_OPERATION:
+			break;
+		case READ_LOCK:
+			ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+			break;
+		case WRITE_LOCK:
+			ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+			break;
+		default:
+			assert 1 == 2;
+			break;
 		}
 
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));
@@ -61,7 +66,6 @@ public class PutMessage extends AbstractMessage {
 
 	/**
 	 * Get the DataStructures to put when this message is received.
-	 *
 	 * @return the Chunk to put
 	 */
 	public final DataStructure[] getDataStructures() {
@@ -70,7 +74,6 @@ public class PutMessage extends AbstractMessage {
 
 	/**
 	 * Get the unlock operation to execute after the put.
-	 *
 	 * @return Unlock operation.
 	 */
 	public ChunkLockOperation getUnlockOperation() {

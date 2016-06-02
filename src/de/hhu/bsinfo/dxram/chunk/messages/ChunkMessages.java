@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 
 /**
  * Type and list of subtypes for all chunk messages
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.12.15
  */
 public final class ChunkMessages {
@@ -27,6 +26,5 @@ public final class ChunkMessages {
 	/**
 	 * Static class
 	 */
-	private ChunkMessages() {
-	}
+	private ChunkMessages() {}
 }

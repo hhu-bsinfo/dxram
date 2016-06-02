@@ -1,14 +1,13 @@
 
 package de.hhu.bsinfo.dxcompute.ms.messages;
 
+import java.nio.ByteBuffer;
+
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
-import java.nio.ByteBuffer;
-
 /**
  * Response of the master to a join request by a slave.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class SlaveJoinResponse extends AbstractResponse {
@@ -25,9 +24,10 @@ public class SlaveJoinResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of SlaveJoinResponse.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_request            request to respond to.
-	 * @param p_executionBarrierId The id of the barrier to sync for execution of a task
+	 * @param p_request
+	 *            request to respond to.
+	 * @param p_executionBarrierId
+	 *            The id of the barrier to sync for execution of a task
 	 */
 	public SlaveJoinResponse(final SlaveJoinRequest p_request, final int p_executionBarrierId) {
 		super(p_request, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE);
@@ -37,7 +37,6 @@ public class SlaveJoinResponse extends AbstractResponse {
 
 	/**
 	 * Get the barrier id used for the execution barrier to sync slaves to the master.
-	 *
 	 * @return Execution barrier id.
 	 */
 	public int getExecutionBarrierId() {

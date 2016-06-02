@@ -88,7 +88,9 @@ public class LogComponent extends AbstractDXRAMComponent {
 				}
 			}
 		}
+		// #if LOGGER == TRACE
 		m_logger.trace(LogService.class, "Time to initialize range: " + (System.currentTimeMillis() - time));
+		// #endif /* LOGGER == TRACE */
 	}
 
 	/**
@@ -114,7 +116,9 @@ public class LogComponent extends AbstractDXRAMComponent {
 				chunks = m_logService.getSecondaryLog(p_chunkID, p_owner, p_rangeID).recoverAllLogEntries(true);
 			}
 		} catch (final IOException | InterruptedException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(LogService.class, "Backup range recovery failed: " + e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return chunks;
@@ -134,7 +138,9 @@ public class LogComponent extends AbstractDXRAMComponent {
 		try {
 			ret = SecondaryLog.recoverBackupRangeFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize, m_logSegmentSize);
 		} catch (final IOException | InterruptedException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(LogService.class, "Could not recover from file " + p_path + ": " + e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return ret;

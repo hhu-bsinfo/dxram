@@ -1,8 +1,8 @@
+
 package de.hhu.bsinfo.dxgraph.conv;
 
 /**
  * Dummy storage implementation for testing other parts of the converter.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.05.16
  */
 public class VertexStorageNull implements VertexStorage {

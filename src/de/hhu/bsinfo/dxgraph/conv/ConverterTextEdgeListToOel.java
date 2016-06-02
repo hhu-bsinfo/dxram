@@ -12,7 +12,6 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
 /**
  * Multi threaded converter, expecting edge list in text form separated by spaces
  * and outputting an ordered edge list (text form).
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public final class ConverterTextEdgeListToOel extends AbstractConverter {
@@ -25,8 +24,8 @@ public final class ConverterTextEdgeListToOel extends AbstractConverter {
 
 	/**
 	 * Main entry point.
-	 *
-	 * @param p_args Console arguments.
+	 * @param p_args
+	 *            Console arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new ConverterTextEdgeListToOel();
@@ -59,15 +58,15 @@ public final class ConverterTextEdgeListToOel extends AbstractConverter {
 
 	/**
 	 * File reader for the text edge list graph data.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class FileReaderTextThread extends AbstractFileReaderThread {
 		/**
 		 * Constructor
-		 *
-		 * @param p_inputPath Path of the file to read.
-		 * @param p_buffer    Shared buffer to read the data to.
+		 * @param p_inputPath
+		 *            Path of the file to read.
+		 * @param p_buffer
+		 *            Shared buffer to read the data to.
 		 */
 		FileReaderTextThread(final String p_inputPath, final BinaryEdgeBuffer p_buffer) {
 			super(p_inputPath, p_buffer);
@@ -87,8 +86,7 @@ public final class ConverterTextEdgeListToOel extends AbstractConverter {
 				RandomAccessFile raf = new RandomAccessFile(m_inputPath, "r");
 				fileSize = raf.length();
 				raf.close();
-			} catch (final IOException ignored) {
-			}
+			} catch (final IOException ignored) {}
 
 			System.out.println("Caching input of edge list " + m_inputPath);
 
@@ -101,8 +99,7 @@ public final class ConverterTextEdgeListToOel extends AbstractConverter {
 				} catch (final IOException e) {
 					try {
 						reader.close();
-					} catch (final IOException ignored) {
-					}
+					} catch (final IOException ignored) {}
 					System.out.println("Reading line failed: " + e.getMessage());
 					return -2;
 				}
@@ -130,8 +127,7 @@ public final class ConverterTextEdgeListToOel extends AbstractConverter {
 
 			try {
 				reader.close();
-			} catch (final IOException ignored) {
-			}
+			} catch (final IOException ignored) {}
 
 			return 0;
 		}

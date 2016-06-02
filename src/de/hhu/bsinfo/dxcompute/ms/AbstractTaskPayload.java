@@ -17,7 +17,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Base class for all tasks to be implemented. This holds optional data the task
  * needs for execution as well as the code getting executed for the task.
  * Make sure to register your newly created task payloads as well (refer to static functions in here).
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public abstract class AbstractTaskPayload implements Importable, Exportable {
@@ -39,9 +38,10 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * Expecting a default constructor for the sub classes extending this
 	 * base class, otherwise the createInstance call won't work.
 	 * Make sure to register each task payload implementation prior usage.
-	 *
-	 * @param p_typeId    Type id
-	 * @param p_subtypeId Subtype id
+	 * @param p_typeId
+	 *            Type id
+	 * @param p_subtypeId
+	 *            Subtype id
 	 */
 	public AbstractTaskPayload(final short p_typeId, final short p_subtypeId) {
 		m_typeId = p_typeId;
@@ -51,9 +51,10 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	/**
 	 * Create an instance of a registered task payload.
 	 * Throws RuntimeException If no task payload specifeid by the ids could be created.
-	 *
-	 * @param p_typeId    Type id of the task payload.
-	 * @param p_subtypeId Subtype id of the task payload.
+	 * @param p_typeId
+	 *            Type id of the task payload.
+	 * @param p_subtypeId
+	 *            Subtype id of the task payload.
 	 * @return New instance of the specified task payload.
 	 */
 	public static AbstractTaskPayload createInstance(final short p_typeId, final short p_subtypeId) {
@@ -62,7 +63,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 		if (clazz == null) {
 			throw new RuntimeException(
 					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId
-							+ ", not registered.");
+					+ ", not registered.");
 		}
 
 		try {
@@ -78,7 +79,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the list of registered task payload classes.
-	 *
 	 * @return List of registered task payload classes.
 	 */
 	public static Map<Integer, Class<? extends AbstractTaskPayload>> getRegisteredTaskPayloadClasses() {
@@ -87,10 +87,12 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Register a new task payload class.
-	 *
-	 * @param p_typeId    Type id for the class.
-	 * @param p_subtypeId Subtype id for the class.
-	 * @param p_class     Class to register for the specified ids.
+	 * @param p_typeId
+	 *            Type id for the class.
+	 * @param p_subtypeId
+	 *            Subtype id for the class.
+	 * @param p_class
+	 *            Class to register for the specified ids.
 	 * @return True if registeration was successful, false otherwise.
 	 */
 	public static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
@@ -102,7 +104,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the type id.
-	 *
 	 * @return Type id.
 	 */
 	public short getTypeId() {
@@ -111,7 +112,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the subtype id.
-	 *
 	 * @return Subtype id.
 	 */
 	public short getSubtypeId() {
@@ -120,7 +120,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the payload id assigned by the master node on submission.
-	 *
 	 * @return Payload id.
 	 */
 	public int getPayloadId() {
@@ -129,7 +128,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the compute group id this task is executed in.
-	 *
 	 * @return Compute group id.
 	 */
 	public short getComputeGroupId() {
@@ -138,7 +136,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the id of the slave that executes the task (0 based).
-	 *
 	 * @return Id of the slave executing the task.
 	 */
 	public short getSlaveId() {
@@ -147,7 +144,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the node ids of all slaves executing this task.
-	 *
 	 * @return Node ids of all slaves. Indexable by slave id.
 	 */
 	public short[] getSlaveNodeIds() {
@@ -156,7 +152,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Get the return codes of all slaves after execution finished.
-	 *
 	 * @return Array of return codes of all slaves after execution. Indexable by slave id.
 	 */
 	public int[] getExecutionReturnCodes() {
@@ -165,8 +160,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Execute function to implement with the task/code to execute.
-	 *
-	 * @param p_dxram Service access of dxram to access all available services for your task.
+	 * @param p_dxram
+	 *            Service access of dxram to access all available services for your task.
 	 * @return Return code of your task. 0 on success, everything else indicates an error.
 	 */
 	public abstract int execute(final DXRAMServiceAccessor p_dxram);
@@ -174,8 +169,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	/**
 	 * Override this to allow terminal commands calling this to get arguments
 	 * required to run the task.
-	 *
-	 * @param p_argumentList List to add the arguments required to run.
+	 * @param p_argumentList
+	 *            List to add the arguments required to run.
 	 */
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
 
@@ -184,9 +179,9 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	/**
 	 * Override this to allow terminal commands to provide additional arguments inserted
 	 * by the user.
-	 *
-	 * @param p_argumentList List of arguments from the terminal to lookup values for arguments
-	 *                       required to run the task
+	 * @param p_argumentList
+	 *            List of arguments from the terminal to lookup values for arguments
+	 *            required to run the task
 	 */
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
 
@@ -236,8 +231,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Set the payload id.
-	 *
-	 * @param p_payloadId Payload id to set.
+	 * @param p_payloadId
+	 *            Payload id to set.
 	 */
 	void setPayloadId(final int p_payloadId) {
 		m_payloadId = p_payloadId;
@@ -245,8 +240,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Set the compute group id.
-	 *
-	 * @param p_computeGroupId Id to set.
+	 * @param p_computeGroupId
+	 *            Id to set.
 	 */
 	void setComputeGroupId(final short p_computeGroupId) {
 		m_computeGroupId = p_computeGroupId;
@@ -254,8 +249,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Set the slave id.
-	 *
-	 * @param p_slaveId Id to set.
+	 * @param p_slaveId
+	 *            Id to set.
 	 */
 	void setSlaveId(final short p_slaveId) {
 		m_slaveId = p_slaveId;
@@ -263,8 +258,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Set the slave node ids.
-	 *
-	 * @param p_slaveNodeIds Node ids to set. Indexable by slave id.
+	 * @param p_slaveNodeIds
+	 *            Node ids to set. Indexable by slave id.
 	 */
 	void setSalves(final short[] p_slaveNodeIds) {
 		m_slaveNodeIds = p_slaveNodeIds;
@@ -272,8 +267,8 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 
 	/**
 	 * Set the execution return codes of all slaves.
-	 *
-	 * @param p_returnCodes Return codes of all slaves. Indexable by slave id.
+	 * @param p_returnCodes
+	 *            Return codes of all slaves. Indexable by slave id.
 	 */
 	void setExecutionReturnCodes(final int[] p_returnCodes) {
 		m_executionReturnCodes = p_returnCodes;

@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractResponse;
+
 /**
  * Message to get the current status of an active barrier.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class BarrierGetStatusResponse extends AbstractResponse {
@@ -24,9 +24,10 @@ public class BarrierGetStatusResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of BarrierGetStatusResponse.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_request       The request for the response
-	 * @param p_barrierStatus Status of the barrier
+	 * @param p_request
+	 *            The request for the response
+	 * @param p_barrierStatus
+	 *            Status of the barrier
 	 */
 	public BarrierGetStatusResponse(final BarrierGetStatusRequest p_request, final short[] p_barrierStatus) {
 		super(p_request, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE);
@@ -37,7 +38,6 @@ public class BarrierGetStatusResponse extends AbstractResponse {
 
 	/**
 	 * Get the id of the barrier
-	 *
 	 * @return Barrier id.
 	 */
 	public int getBarrierId() {
@@ -47,7 +47,6 @@ public class BarrierGetStatusResponse extends AbstractResponse {
 	/**
 	 * Get the barrier status.
 	 * First value is the number of signed on peers.
-	 *
 	 * @return Barrier status.
 	 */
 	public short[] getBarrierStatus() {

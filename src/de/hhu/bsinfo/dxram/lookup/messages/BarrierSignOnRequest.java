@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractRequest;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractRequest;
+
 /**
  * Request to sign on at a barrier
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
 public class BarrierSignOnRequest extends AbstractRequest {
@@ -24,10 +24,12 @@ public class BarrierSignOnRequest extends AbstractRequest {
 	/**
 	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_destination the destination node id.
-	 * @param p_barrierId   Id of the barrier to sign on
-	 * @param p_customData  Custom data to pass along with the sign on
+	 * @param p_destination
+	 *            the destination node id.
+	 * @param p_barrierId
+	 *            Id of the barrier to sign on
+	 * @param p_customData
+	 *            Custom data to pass along with the sign on
 	 */
 	public BarrierSignOnRequest(final short p_destination, final int p_barrierId, final long p_customData) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST);
@@ -38,7 +40,6 @@ public class BarrierSignOnRequest extends AbstractRequest {
 
 	/**
 	 * Get the id of the barrier to sign on.
-	 *
 	 * @return Barrier id
 	 */
 	public int getBarrierId() {
@@ -47,7 +48,6 @@ public class BarrierSignOnRequest extends AbstractRequest {
 
 	/**
 	 * Get the custom data to be passed along with the sign on.
-	 *
 	 * @return Custom data for sign on
 	 */
 	public long getCustomData() {

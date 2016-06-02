@@ -5,7 +5,6 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Configuration values for the lookup service.
- *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 15.03.16
  */
 class LookupConfigurationValues {

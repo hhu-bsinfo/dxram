@@ -46,8 +46,10 @@ public final class RequestMap {
 
 		index = p_request.getRequestID() % m_pendingRequests.length;
 		if (m_pendingRequests[index] != null) {
+			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(RequestMap.class.getSimpleName(),
 					"Request for idx=" + index + " still registered! Request Map might be too small.");
+			// #endif /* LOGGER >= ERROR */
 		}
 		m_pendingRequests[index] = p_request;
 

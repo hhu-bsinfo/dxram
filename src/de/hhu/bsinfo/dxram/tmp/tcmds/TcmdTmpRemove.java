@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.tmp.tcmds;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -8,12 +9,10 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Remove a chunk from the temporary storage (superpeer storage) memory.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.05.16
  */
 public class TcmdTmpRemove extends AbstractTerminalCommand {
-	private static final ArgumentList.Argument
-			MS_ARG_ID = new ArgumentList.Argument("id", null, false, "Id of the chunk in temporary storage");
+	private static final ArgumentList.Argument MS_ARG_ID = new ArgumentList.Argument("id", null, false, "Id of the chunk in temporary storage");
 
 	@Override
 	public String getName() {

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.boot.tcmds;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Reboot a dxram node.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 02.05.16
  */
 public class TcmdNodeReboot extends AbstractTerminalCommand {
@@ -18,8 +18,7 @@ public class TcmdNodeReboot extends AbstractTerminalCommand {
 	/**
 	 * Constructor
 	 */
-	public TcmdNodeReboot() {
-	}
+	public TcmdNodeReboot() {}
 
 	@Override
 	public String getName() {
@@ -44,7 +43,7 @@ public class TcmdNodeReboot extends AbstractTerminalCommand {
 
 		if (!bootService.rebootNode(nid)) {
 			getTerminalDelegate()
-					.println("Rebooting node " + NodeID.toHexString(nid) + " failed.", TerminalColor.RED);
+			.println("Rebooting node " + NodeID.toHexString(nid) + " failed.", TerminalColor.RED);
 		} else {
 			getTerminalDelegate().println("Rebooting node " + NodeID.toHexString(nid) + " successful.");
 		}

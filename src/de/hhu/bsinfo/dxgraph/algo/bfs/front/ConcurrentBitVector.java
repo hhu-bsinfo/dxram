@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicLongArray;
 /**
  * Thread safe, lock free implementation of a frontier listed based on
  * a bit vector.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class ConcurrentBitVector implements FrontierList {
@@ -19,8 +18,8 @@ public class ConcurrentBitVector implements FrontierList {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_maxElementCount Specify the maximum number of elements.
+	 * @param p_maxElementCount
+	 *            Specify the maximum number of elements.
 	 */
 	public ConcurrentBitVector(final long p_maxElementCount) {
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));

@@ -1,6 +1,13 @@
 
 package de.hhu.bsinfo.dxram.term;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -12,14 +19,10 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.args.ArgumentListParser;
 import de.hhu.bsinfo.utils.args.DefaultArgumentListParser;
 
-import java.util.*;
-import java.util.Map.Entry;
-
 /**
  * Service providing an interactive terminal running on a DXRAM instance.
  * Allows access to implemented services, triggering commands, getting information
  * about current or remote DXRAM instances.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
 public class TerminalService extends AbstractDXRAMService implements TerminalDelegate {
@@ -31,8 +34,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Register a new terminal command for the terminal.
-	 *
-	 * @param p_command Command to register.
+	 * @param p_command
+	 *            Command to register.
 	 * @return True if registering was successful, false if a command with the same name already exists.
 	 */
 	public boolean registerCommand(final AbstractTerminalCommand p_command) {
@@ -58,7 +61,9 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			JNIconsole.autocompleteCommands(commandNames);
 		}
 
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Running terminal...");
+		// #endif /* LOGGER >= INFO */
 
 		System.out.println("DXRAM terminal v. 0.1");
 		System.out.println(
@@ -76,7 +81,9 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			}
 		}
 
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Exiting terminal...");
+		// #endif /* LOGGER >= INFO */
 	}
 
 	@Override
@@ -313,7 +320,6 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Get a list of available/registered commands.
-	 *
 	 * @return List of registered commands.
 	 */
 	private String getAvailableCommands() {
@@ -336,8 +342,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Print a usage message for the specified terminal command.
-	 *
-	 * @param p_command Terminal command to print usage message of.
+	 * @param p_command
+	 *            Terminal command to print usage message of.
 	 */
 	private void printUsage(final AbstractTerminalCommand p_command) {
 		ArgumentList argList = new ArgumentList();
@@ -351,8 +357,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Execute interactive argument mode to allow the user entering arguments for a command one by one.
-	 *
-	 * @param p_arguments List of arguments with arguments that need values to be entered.
+	 * @param p_arguments
+	 *            List of arguments with arguments that need values to be entered.
 	 * @return If user entered arguments properly, false otherwise.
 	 */
 	private boolean interactiveArgumentMode(final ArgumentList p_arguments) {
@@ -384,10 +390,12 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Change the color of stdout.
-	 *
-	 * @param p_color           Text color.
-	 * @param p_backgroundColor Shell background color
-	 * @param p_style           Text style.
+	 * @param p_color
+	 *            Text color.
+	 * @param p_backgroundColor
+	 *            Shell background color
+	 * @param p_style
+	 *            Text style.
 	 */
 	private void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor,
 			final TerminalStyle p_style) {

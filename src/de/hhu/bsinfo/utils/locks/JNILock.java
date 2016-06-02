@@ -11,7 +11,8 @@ public final class JNILock {
 	// Statics
 	/**
 	 * Provide the path to the native implementation.
-	 * @param p_pathNativeLibrary Path to the library with the native implementation.
+	 * @param p_pathNativeLibrary
+	 *            Path to the library with the native implementation.
 	 */
 	public static void load(final String p_pathNativeLibrary) {
 		System.load(p_pathNativeLibrary);

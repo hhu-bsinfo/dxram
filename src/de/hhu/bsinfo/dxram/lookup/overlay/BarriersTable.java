@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.overlay;
 
-import de.hhu.bsinfo.menet.NodeID;
+package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.menet.NodeID;
+
 /**
  * Table managing synchronization barriers on a superpeer.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 class BarriersTable {
@@ -21,9 +21,10 @@ class BarriersTable {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_maxNumBarriers Max number of barriers allowed to be allocated.
-	 * @param p_nodeId         Node id of the superpeer this class is running on.
+	 * @param p_maxNumBarriers
+	 *            Max number of barriers allowed to be allocated.
+	 * @param p_nodeId
+	 *            Node id of the superpeer this class is running on.
 	 */
 	BarriersTable(final int p_maxNumBarriers, final short p_nodeId) {
 		m_barrierData = new long[p_maxNumBarriers][];
@@ -38,8 +39,8 @@ class BarriersTable {
 
 	/**
 	 * Allocate a new barrier.
-	 *
-	 * @param p_size Size of the barrier, i.e. how many peers have to sign on for release.
+	 * @param p_size
+	 *            Size of the barrier, i.e. how many peers have to sign on for release.
 	 * @return Barrier id on succuess, -1 on failure.
 	 */
 	int allocateBarrier(final int p_size) {
@@ -71,8 +72,8 @@ class BarriersTable {
 
 	/**
 	 * Free a previously allocated barrier.
-	 *
-	 * @param p_barrierId Id of the barrier to free.
+	 * @param p_barrierId
+	 *            Id of the barrier to free.
 	 * @return True if successful, false on failure.
 	 */
 	boolean freeBarrier(final int p_barrierId) {
@@ -117,9 +118,10 @@ class BarriersTable {
 
 	/**
 	 * Change the size of a barrier after being created (i.e. you want to keep the barrier id)
-	 *
-	 * @param p_barrierId Id of the barrier to change the size of.
-	 * @param p_newSize   The new size for the barrier.
+	 * @param p_barrierId
+	 *            Id of the barrier to change the size of.
+	 * @param p_newSize
+	 *            The new size for the barrier.
 	 * @return True if chaning size was sucessful, false otherwise.
 	 */
 	boolean changeBarrierSize(final int p_barrierId, final int p_newSize) {
@@ -162,10 +164,12 @@ class BarriersTable {
 
 	/**
 	 * Sign on to a barrier using a barrier id.
-	 *
-	 * @param p_barrierId   Barrier id to sign on to.
-	 * @param p_nodeId      Id of the peer node signing on
-	 * @param p_barrierData Additional custom data to pass along to the barrier
+	 * @param p_barrierId
+	 *            Barrier id to sign on to.
+	 * @param p_nodeId
+	 *            Id of the peer node signing on
+	 * @param p_barrierData
+	 *            Additional custom data to pass along to the barrier
 	 * @return On success returns the number of peers left to sign on, -1 on failure
 	 */
 	int signOn(final int p_barrierId, final short p_nodeId, final long p_barrierData) {
@@ -202,8 +206,8 @@ class BarriersTable {
 
 	/**
 	 * Reset an existing barrier for reuse.
-	 *
-	 * @param p_barrierId Id of the barrier to reset.
+	 * @param p_barrierId
+	 *            Id of the barrier to reset.
 	 * @return True if successful, false otherwise.
 	 */
 	boolean reset(final int p_barrierId) {
@@ -237,8 +241,8 @@ class BarriersTable {
 	/**
 	 * Get the list of currently signed on peers from a barrier.
 	 * The first item (index 0) is the sign on count.
-	 *
-	 * @param p_barrierId Id of the barrier to get.
+	 * @param p_barrierId
+	 *            Id of the barrier to get.
 	 * @return Array with node ids that already signed on. First index element is the count of signed on peers.
 	 */
 	short[] getSignedOnPeers(final int p_barrierId) {
@@ -262,8 +266,8 @@ class BarriersTable {
 
 	/**
 	 * Get the custom data of a barrier that is passed along on barrier sign ons.
-	 *
-	 * @param p_barrierId Id of the barrier to get the custom data of.
+	 * @param p_barrierId
+	 *            Id of the barrier to get the custom data of.
 	 * @return On success returns an array with the currently available custom data (sorted by order the peers logged in)
 	 */
 	long[] getBarrierCustomData(final int p_barrierId) {

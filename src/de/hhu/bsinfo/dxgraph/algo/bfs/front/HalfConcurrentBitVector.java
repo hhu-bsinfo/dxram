@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicLongArray;
  * Thread safe, lock free implementation of a frontier listed based on
  * the BitVector.
  * Only the pushBack call is thread safe. The popFront call isn't.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class HalfConcurrentBitVector implements FrontierList {
@@ -20,8 +19,8 @@ public class HalfConcurrentBitVector implements FrontierList {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_maxElementCount Specify the maximum number of elements.
+	 * @param p_maxElementCount
+	 *            Specify the maximum number of elements.
 	 */
 	public HalfConcurrentBitVector(final long p_maxElementCount) {
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));

@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.chunk.tcmds;
 
+import java.util.ArrayList;
+
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
@@ -9,11 +11,8 @@ import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
-import java.util.ArrayList;
-
 /**
  * This class handles the chunklist command which lists all chunks from a node
- *
  * @author Michael Birkhoff <michael.birkhoff@hhu.de> 18.04.16
  */
 

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -11,7 +12,6 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
  * Request to put data into the superpeer storage.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.05.15
  */
 public class SuperpeerStoragePutRequest extends AbstractRequest {
@@ -34,10 +34,12 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
 	/**
 	 * Creates an instance of SuperpeerStoragePutRequest
-	 *
-	 * @param p_destination   the destination
-	 * @param p_dataStructure Data structure with the data to put.
-	 * @param p_replicate     True if this message is a replication to other superpeer message, false if normal message
+	 * @param p_destination
+	 *            the destination
+	 * @param p_dataStructure
+	 *            Data structure with the data to put.
+	 * @param p_replicate
+	 *            True if this message is a replication to other superpeer message, false if normal message
 	 */
 	public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure,
 			boolean p_replicate) {
@@ -49,7 +51,6 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
 	/**
 	 * Get the Chunks to put when this message is received.
-	 *
 	 * @return the Chunks to put
 	 */
 	public final Chunk getChunk() {
@@ -58,7 +59,6 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 
 	/**
 	 * Check if this request is a replicate message.
-	 *
 	 * @return True if replicate message.
 	 */
 	public boolean isReplicate() {

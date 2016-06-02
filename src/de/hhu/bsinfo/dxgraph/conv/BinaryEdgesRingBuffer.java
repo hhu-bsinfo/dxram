@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxgraph.conv;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -5,7 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Binary edge buffer implementation based on a lock free ring buffer.
  * One writer/adder and many consumers/readers supported.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.05.16
  */
 class BinaryEdgesRingBuffer implements BinaryEdgeBuffer {
@@ -24,50 +24,50 @@ class BinaryEdgesRingBuffer implements BinaryEdgeBuffer {
 		m_posBack = new AtomicInteger(0);
 	}
 
-	//	public static void main(String[] args) {
-	//		BinaryEdgesRingBuffer buffer = new BinaryEdgesRingBuffer(100);
+	// public static void main(String[] args) {
+	// BinaryEdgesRingBuffer buffer = new BinaryEdgesRingBuffer(100);
 	//
-	//		Thread filler = new Thread() {
-	//			@Override
-	//			public void run() {
-	//				long counter = 0;
-	//				while (true) {
-	//					if (!buffer.pushBack(counter++, counter++)) {
-	//						//System.out.println("Full, waiting...");
-	//						Thread.yield();
-	//					}
-	//				}
-	//			}
-	//		};
-	//		filler.start();
+	// Thread filler = new Thread() {
+	// @Override
+	// public void run() {
+	// long counter = 0;
+	// while (true) {
+	// if (!buffer.pushBack(counter++, counter++)) {
+	// //System.out.println("Full, waiting...");
+	// Thread.yield();
+	// }
+	// }
+	// }
+	// };
+	// filler.start();
 	//
-	//		Thread[] consumer = new Thread[8];
-	//		for (int i = 0; i < consumer.length; i++) {
-	//			consumer[i] = new Thread() {
-	//				@Override
-	//				public void run() {
-	//					long[] vals = new long[2];
-	//					while (true) {
-	//						int res = buffer.popFront(vals);
-	//						if (res == -1) {
-	//							//System.out.println(Thread.currentThread().getId() + " failed pop, retry");
-	//						} else if (res == 0) {
-	//							//System.out.println(Thread.currentThread().getId() + " empty, wait...");
-	//							Thread.yield();
-	//						} else {
+	// Thread[] consumer = new Thread[8];
+	// for (int i = 0; i < consumer.length; i++) {
+	// consumer[i] = new Thread() {
+	// @Override
+	// public void run() {
+	// long[] vals = new long[2];
+	// while (true) {
+	// int res = buffer.popFront(vals);
+	// if (res == -1) {
+	// //System.out.println(Thread.currentThread().getId() + " failed pop, retry");
+	// } else if (res == 0) {
+	// //System.out.println(Thread.currentThread().getId() + " empty, wait...");
+	// Thread.yield();
+	// } else {
 	//
-	//							if (vals[0] + 1 != vals[1]) {
-	//								throw new RuntimeException("Sync error: " + vals[0] + "/" + vals[1]);
-	//							} else {
-	//								//System.out.println("Success " + vals[0] + "/" + vals[1]);
-	//							}
-	//						}
-	//					}
-	//				}
-	//			};
-	//			consumer[i].start();
-	//		}
-	//	}
+	// if (vals[0] + 1 != vals[1]) {
+	// throw new RuntimeException("Sync error: " + vals[0] + "/" + vals[1]);
+	// } else {
+	// //System.out.println("Success " + vals[0] + "/" + vals[1]);
+	// }
+	// }
+	// }
+	// }
+	// };
+	// consumer[i].start();
+	// }
+	// }
 
 	// one thread, only
 	@Override

@@ -14,7 +14,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Print the current memory status to a file.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPayload {
@@ -33,8 +32,8 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 
 	/**
 	 * Set the filepath to the output file to print to.
-	 *
-	 * @param p_path Filepath of the file to print to.
+	 * @param p_path
+	 *            Filepath of the file to print to.
 	 */
 	public void setOutputFilePath(final String p_path) {
 		m_path = p_path;
@@ -52,16 +51,22 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 		File file = new File(m_path);
 		if (file.exists()) {
 			if (!file.delete()) {
+				// #if LOGGER >= ERROR
 				loggerService.error(getClass(), "Deleting file " + file + " failed.");
+				// #endif /* LOGGER >= ERROR */
 				return -2;
 			}
 			try {
 				if (!file.createNewFile()) {
+					// #if LOGGER >= ERROR
 					loggerService.error(getClass(), "Creating output file " + m_path + " for memory status failed");
+					// #endif /* LOGGER >= ERROR */
 					return -3;
 				}
 			} catch (final IOException e) {
+				// #if LOGGER >= ERROR
 				loggerService.error(getClass(), "Creating output file " + m_path + " for memory status failed", e);
+				// #endif /* LOGGER >= ERROR */
 				return -4;
 			}
 		}
@@ -70,7 +75,9 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 		try {
 			out = new PrintStream(file);
 		} catch (final FileNotFoundException e) {
+			// #if LOGGER >= ERROR
 			loggerService.error(getClass(), "Creating print stream for memory status failed", e);
+			// #endif /* LOGGER >= ERROR */
 			return -5;
 		}
 		printMemoryStatusToOutput(out, chunkService.getStatus());

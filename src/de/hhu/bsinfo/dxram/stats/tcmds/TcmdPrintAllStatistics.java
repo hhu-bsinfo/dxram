@@ -60,7 +60,7 @@ public class TcmdPrintAllStatistics extends AbstractTerminalCommand {
 	 * @param p_className
 	 *            class name of the class which will be constructed.
 	 * @return
-	 * 		constructed class by name
+	 *         constructed class by name
 	 */
 
 	Class<?> createClassFromName(final String p_className) {

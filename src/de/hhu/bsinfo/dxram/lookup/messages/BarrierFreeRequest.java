@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractRequest;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractRequest;
+
 /**
  * Message to free an allocated barrier.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
 public class BarrierFreeRequest extends AbstractRequest {
@@ -21,9 +21,10 @@ public class BarrierFreeRequest extends AbstractRequest {
 
 	/**
 	 * Creates an instance of BarrierFreeRequest
-	 *
-	 * @param p_destination the destination
-	 * @param p_barrierId   Id of the barrier to free
+	 * @param p_destination
+	 *            the destination
+	 * @param p_barrierId
+	 *            Id of the barrier to free
 	 */
 	public BarrierFreeRequest(final short p_destination, final int p_barrierId) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST);
@@ -33,7 +34,6 @@ public class BarrierFreeRequest extends AbstractRequest {
 
 	/**
 	 * Get the barrier id to free.
-	 *
 	 * @return Barrier id.
 	 */
 	public int getBarrierId() {

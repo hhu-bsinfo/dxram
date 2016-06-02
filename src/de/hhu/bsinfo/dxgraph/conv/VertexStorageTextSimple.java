@@ -12,7 +12,6 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Very simple/naive implementation of a text based vertex storage.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 class VertexStorageTextSimple implements VertexStorageText {
@@ -93,7 +92,6 @@ class VertexStorageTextSimple implements VertexStorageText {
 
 	/**
 	 * Private container/helper class for a neighbour list.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class NeighbourListVertex {

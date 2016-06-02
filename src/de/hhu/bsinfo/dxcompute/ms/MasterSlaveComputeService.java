@@ -46,7 +46,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * DXRAM service providing a master slave based distributed task execution framework for computation on DXRAM.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class MasterSlaveComputeService extends AbstractDXRAMService implements MessageReceiver, TaskListener {
@@ -64,7 +63,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Get the compute of the current node.
-	 *
 	 * @return Compute role.
 	 */
 	public ComputeRole getComputeRole() {
@@ -73,7 +71,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Get a list of all available master nodes.
-	 *
 	 * @return List of available master nodes with their compute group id
 	 */
 	public ArrayList<Pair<Short, Byte>> getMasters() {
@@ -92,12 +89,13 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Get the status of the current master node.
-	 *
 	 * @return Status of the current master node or null if the current node is not a master.
 	 */
 	public StatusMaster getStatusMaster() {
 		if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot get status on non master node type");
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
@@ -111,8 +109,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Get the status of a remote master node.
-	 *
-	 * @param p_computeGroupId Compute group id to get the master's status of
+	 * @param p_computeGroupId
+	 *            Compute group id to get the master's status of
 	 * @return Status of the remote master or null if remote node is not a master or getting the status failed.
 	 */
 	public StatusMaster getStatusMaster(final short p_computeGroupId) {
@@ -128,7 +126,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		{
 			long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
 			if (tmp == -1) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Cannot find master node of compute gropu id " + p_computeGroupId);
+				// #endif /* LOGGER >= ERROR */
 				return null;
 			}
 			masterNodeId = ChunkID.getCreatorID(tmp);
@@ -137,14 +137,18 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		GetMasterStatusRequest request = new GetMasterStatusRequest(masterNodeId);
 		NetworkErrorCodes err = m_network.sendSync(request);
 		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					"Getting status of master " + NodeID.toHexString(masterNodeId) + " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
 		GetMasterStatusResponse response = (GetMasterStatusResponse) request.getResponse();
 		if (response.getStatusCode() != 0) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot get status on non master node " + NodeID.toHexString(masterNodeId));
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
@@ -153,13 +157,15 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Submit a task to this master.
-	 *
-	 * @param p_task Task to submit to this master.
+	 * @param p_task
+	 *            Task to submit to this master.
 	 * @return The task id assigned or -1 if the current node is not a master or submission failed.
 	 */
 	public long submitTask(final Task p_task) {
 		if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot submit task " + p_task + " on non master node type");
+			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
 
@@ -175,9 +181,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Submit a task to remote master node.
-	 *
-	 * @param p_task           Task to submit to another master node.
-	 * @param p_computeGroupId Compute group to submit the task to.
+	 * @param p_task
+	 *            Task to submit to another master node.
+	 * @param p_computeGroupId
+	 *            Compute group to submit the task to.
 	 * @return Task id assigned by the remote master node or -1 if the remote node is not a master or submission failed.
 	 */
 	public long submitTask(final Task p_task, final short p_computeGroupId) {
@@ -195,7 +202,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		{
 			long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
 			if (tmp == -1) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Cannot find master node of compute gropu id " + p_computeGroupId);
+				// #endif /* LOGGER >= ERROR */
 				return -1;
 			}
 			masterNodeId = ChunkID.getCreatorID(tmp);
@@ -204,14 +213,18 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		SubmitTaskRequest request = new SubmitTaskRequest(masterNodeId, p_task.getPayload());
 		NetworkErrorCodes err = m_network.sendSync(request);
 		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					"Sending submit task request to node " + NodeID.toHexString(masterNodeId) + " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
 
 		SubmitTaskResponse response = (SubmitTaskResponse) request.getResponse();
 		if (response.getStatusCode() != 0) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Error submitting task, code " + response.getStatusCode());
+			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
 
@@ -222,8 +235,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		// remember task for remote callbacks
 		m_remoteTasks.put(p_task.getPayload().getPayloadId(), p_task);
 
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Submitted task to compute group " + p_computeGroupId + " with master node "
 				+ NodeID.toHexString(masterNodeId) + ": " + p_task);
+		// #endif /* LOGGER >= INFO */
 
 		return p_task.getPayload().getPayloadId();
 	}
@@ -237,8 +252,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					"Sending remote callback before execution to node " + p_task.getNodeIdSubmitted() + " failed.");
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
@@ -251,8 +268,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					"Sending remote callback completed to node " + p_task.getNodeIdSubmitted() + " failed.");
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		// we don't have to remember this remote task anymore
@@ -264,20 +283,20 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		if (p_message != null) {
 			if (p_message.getType() == MasterSlaveMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
-						incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
-						break;
-					case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
-						incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
-						break;
-					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
-						incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
-						break;
-					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
-						incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
-						break;
-					default:
-						break;
+				case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
+					incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
+					break;
+				case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
+					incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
+					break;
+				case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
+					incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
+					break;
+				case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
+					incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -332,28 +351,30 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_terminal.registerCommand(new TcmdMSTaskListSubmit());
 
 		switch (role) {
-			case MASTER:
-				m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
-						m_network, m_logger,
-						m_nameservice, m_boot, m_lookup);
-				break;
-			case SLAVE:
-				m_computeMSInstance =
-						new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
-								m_nameservice, m_boot, m_lookup);
-				break;
-			case NONE:
-				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
-						m_nameservice, m_boot, m_lookup);
-				break;
-			default:
-				assert 1 == 2;
-				break;
+		case MASTER:
+			m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
+					m_network, m_logger,
+					m_nameservice, m_boot, m_lookup);
+			break;
+		case SLAVE:
+			m_computeMSInstance =
+			new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
+					m_nameservice, m_boot, m_lookup);
+			break;
+		case NONE:
+			m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
+					m_nameservice, m_boot, m_lookup);
+			break;
+		default:
+			assert 1 == 2;
+			break;
 		}
 
 		registerTaskPayloads();
 
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Started compute node " + role + " with compute group id " + computeGroupId);
+		// #endif /* LOGGER >= INFO */
 
 		return true;
 	}
@@ -378,26 +399,32 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Handle an incoming SubmitTaskRequest
-	 *
-	 * @param p_request SubmitTaskRequest
+	 * @param p_request
+	 *            SubmitTaskRequest
 	 */
 	private void incomingSubmitTaskRequest(final SubmitTaskRequest p_request) {
 		SubmitTaskResponse response;
 
+		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(), "Incoming remote submit task request " + p_request);
+		// #endif /* LOGGER >= DEBUG */
 
 		// check if we were able to create an instance (missing task class registration)
 		if (p_request.getTaskPayload() == null) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Creating instance for task payload of request " + p_request
 					+ " failed, most likely non registered task payload type");
+			// #endif /* LOGGER >= ERROR */
 			response = new SubmitTaskResponse(p_request, (short) -1, -1);
 			response.setStatusCode((byte) 3);
 			return;
 		}
 
 		if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					"Cannot submit remote task " + p_request.getTaskPayload() + " on non master node type");
+			// #endif /* LOGGER >= ERROR */
 
 			response = new SubmitTaskResponse(p_request, (short) -1, -1);
 			response.setStatusCode((byte) 1);
@@ -423,14 +450,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		NetworkErrorCodes err = m_network.sendMessage(response);
 		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Sending response to submit task request to master " + p_request + " failed.");
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
 	/**
 	 * Handle an incoming GetMasterStatusRequest
-	 *
-	 * @param p_request GetMasterStatusRequest
+	 * @param p_request
+	 *            GetMasterStatusRequest
 	 */
 	private void incomingGetMasterStatusRequest(final GetMasterStatusRequest p_request) {
 		GetMasterStatusResponse response;
@@ -447,14 +476,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		NetworkErrorCodes err = m_network.sendMessage(response);
 		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Sending response to master status request " + p_request + " failed.");
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
 	/**
 	 * Handle an incoming TaskExecutionStartedMessage
-	 *
-	 * @param p_message TaskExecutionStartedMessage
+	 * @param p_message
+	 *            TaskExecutionStartedMessage
 	 */
 	private void incomingTaskExecutionStartedMessage(final TaskExecutionStartedMessage p_message) {
 
@@ -476,8 +507,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Handle an incoming TaskExecutionFinishedMessage
-	 *
-	 * @param p_message TaskExecutionFinishedMessage
+	 * @param p_message
+	 *            TaskExecutionFinishedMessage
 	 */
 	private void incomingTaskExecutionFinishedMessage(final TaskExecutionFinishedMessage p_message) {
 		// that's a little risky, but setting the id in the submit call
@@ -528,7 +559,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	/**
 	 * Status object of a master compute node.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
 	 */
 	public static class StatusMaster implements Importable, Exportable {
@@ -550,12 +580,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		/**
 		 * Constructor
-		 *
-		 * @param p_masterNodeId    Node id of the master
-		 * @param p_state           The current state of the instance
-		 * @param p_connectedSlaves List of connected slave ids to this master.
-		 * @param p_numTasksQueued  Number of tasks queued currently on this master.
-		 * @param p_tasksProcessed  Number of tasks processed so far.
+		 * @param p_masterNodeId
+		 *            Node id of the master
+		 * @param p_state
+		 *            The current state of the instance
+		 * @param p_connectedSlaves
+		 *            List of connected slave ids to this master.
+		 * @param p_numTasksQueued
+		 *            Number of tasks queued currently on this master.
+		 * @param p_tasksProcessed
+		 *            Number of tasks processed so far.
 		 */
 		public StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state,
 				final ArrayList<Short> p_connectedSlaves,
@@ -570,7 +604,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		/**
 		 * Get the node if of the master of the group.
-		 *
 		 * @return Node if of the master
 		 */
 		public short getMasterNodeId() {
@@ -579,7 +612,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		/**
 		 * Get the current state of the instance.
-		 *
 		 * @return Current state
 		 */
 		public AbstractComputeMSBase.State getState() {
@@ -588,7 +620,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		/**
 		 * Get the list of slaves that are connected to the master.
-		 *
 		 * @return List of slave ids.
 		 */
 		public ArrayList<Short> getConnectedSlaves() {
@@ -597,7 +628,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		/**
 		 * Get the number of currently queued tasks.
-		 *
 		 * @return Number of queued tasks.
 		 */
 		public int getNumTasksQueued() {
@@ -606,7 +636,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		/**
 		 * Get the number of tasks processed so far.
-		 *
 		 * @return Number of tasks processed.
 		 */
 		public int getNumTasksProcessed() {

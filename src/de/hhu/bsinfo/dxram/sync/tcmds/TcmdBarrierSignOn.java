@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.sync.tcmds;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -11,7 +12,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Command to sign on to a barrier (for testing/debugging)
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class TcmdBarrierSignOn extends AbstractTerminalCommand {
@@ -59,7 +59,7 @@ public class TcmdBarrierSignOn extends AbstractTerminalCommand {
 		}
 
 		getTerminalDelegate()
-				.println("Synchronized to barrier " + BarrierID.toHexString(barrierId) + " custom data: " + str);
+		.println("Synchronized to barrier " + BarrierID.toHexString(barrierId) + " custom data: " + str);
 
 		return true;
 	}

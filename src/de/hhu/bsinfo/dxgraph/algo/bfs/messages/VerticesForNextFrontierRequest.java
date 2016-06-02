@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 
 /**
  * Message to send non local vertices for BFS to the node owning them for processing.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
  */
 public class VerticesForNextFrontierRequest extends AbstractVerticesForNextFrontierRequest {
@@ -23,9 +22,10 @@ public class VerticesForNextFrontierRequest extends AbstractVerticesForNextFront
 
 	/**
 	 * Creates an instance of VerticesForNextFrontierRequest
-	 *
-	 * @param p_destination the destination
-	 * @param p_batchSize   size of the buffer to store the vertex ids to send.
+	 * @param p_destination
+	 *            the destination
+	 * @param p_batchSize
+	 *            size of the buffer to store the vertex ids to send.
 	 */
 	public VerticesForNextFrontierRequest(final short p_destination, final int p_batchSize) {
 		super(p_destination, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_REQUEST, p_batchSize);
