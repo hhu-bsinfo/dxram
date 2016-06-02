@@ -37,7 +37,7 @@ public class BulkFifoNaive implements FrontierList {
 	}
 
 	@Override
-	public void pushBack(final long p_val) {
+	public boolean pushBack(final long p_val) {
 		if (m_posBack == m_bulkSize) {
 			// grow back
 			// check if next bulk block exists
@@ -52,7 +52,10 @@ public class BulkFifoNaive implements FrontierList {
 
 		if (m_posBack < m_bulkSize) {
 			m_chainedFifo[m_blockBack][m_posBack++] = p_val;
+			return true;
 		}
+
+		return false;
 	}
 
 	@Override
@@ -77,6 +80,11 @@ public class BulkFifoNaive implements FrontierList {
 		} while (curBlock < m_blockBack);
 
 		return false;
+	}
+
+	@Override
+	public long capacity() {
+		return m_bulkSize;
 	}
 
 	@Override

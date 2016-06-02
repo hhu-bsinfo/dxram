@@ -33,6 +33,7 @@ public class NIOConnection extends AbstractConnection {
 	private ChangeOperationsRequest m_writeOperation;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of NIOConnection (this node creates a new connection with another node)
 	 * @param p_destination
@@ -146,6 +147,7 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	// Getter
+
 	/**
 	 * Returns the SocketChannel
 	 * @return the SocketChannel
@@ -155,6 +157,7 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	// Methods
+
 	/**
 	 * Append an incoming ByteBuffer to the Queue
 	 * @param p_buffer

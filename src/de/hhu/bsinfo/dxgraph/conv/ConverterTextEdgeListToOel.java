@@ -46,7 +46,7 @@ public final class ConverterTextEdgeListToOel extends AbstractConverter {
 	}
 
 	@Override
-	protected VertexStorage createVertexStorageInstance() {
+	protected VertexStorage createVertexStorageInstance(final int p_vertexIdOffset) {
 		return new VertexStorageTextSimple();
 	}
 

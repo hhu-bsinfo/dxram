@@ -3,20 +3,19 @@
 	<ComputeTask>
 		<tid __id="0" __type="short">1</tid>
 		<stid __id="0" __type="short">0</stid>
-		<graphPath __id="0" __type="str">../../graph_data/oel/rmat_24_16_eq</graphPath>
+		<graphPath __id="0" __type="str">../../graph_data/oel/rmat_20_16_eq_2</graphPath>
 	</ComputeTask>
 	<ComputeTask>
 		<tid __id="1" __type="short">1</tid>
 		<stid __id="1" __type="short">1</stid>
-		<graphPath __id="1" __type="str">../../graph_data/oel/rmat_24_16_eq</graphPath>
+		<graphPath __id="1" __type="str">../../graph_data/oel/rmat_20_16_eq_2</graphPath>
 		<vertexBatchSize __id="1" __type="int">1000</vertexBatchSize>
 	</ComputeTask>
 	<ComputeTask>
 		<tid __id="2" __type="short">1</tid>
 		<stid __id="2" __type="short">2</stid>
-		<graphPath __id="2" __type="str">../../graph_data/oel/rmat_24_16_eq</graphPath>
+		<graphPath __id="2" __type="str">../../graph_data/oel/rmat_20_16_eq_2</graphPath>
 	</ComputeTask>
-	<!--
 	<ComputeTask>
 		<tid __id="3" __type="short">1</tid>
 		<stid __id="3" __type="short">3</stid>
@@ -27,5 +26,4 @@
 		<markVertices __id="3" __type="bool">false</markVertices>
 		<compVertexMsgs __id="3" __type="bool">false</compVertexMsgs>
 	</ComputeTask>
-	-->
 </conf>

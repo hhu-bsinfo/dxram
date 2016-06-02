@@ -12,8 +12,9 @@ public interface FrontierList {
 	 * Push back a value/Add a value to the list.
 	 * @param p_val
 	 *            Value to add.
+	 * @return True if new value was pushed back, false if value already set
 	 */
-	void pushBack(final long p_val);
+	boolean pushBack(final long p_val);
 
 	/**
 	 * Check if a certain value is available/set in the frontier list.
@@ -22,6 +23,12 @@ public interface FrontierList {
 	 * @return True if this value is available in the list.
 	 */
 	boolean contains(final long p_val);
+
+	/**
+	 * Get the total capacity (max size) of the list.
+	 * @return Capacity of the list.
+	 */
+	long capacity();
 
 	/**
 	 * Get the number of elements in the list.

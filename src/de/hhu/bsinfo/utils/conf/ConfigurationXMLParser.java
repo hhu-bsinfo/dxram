@@ -29,8 +29,7 @@ import de.hhu.bsinfo.utils.reflect.unit.UnitConverterGBToByte;
 import de.hhu.bsinfo.utils.reflect.unit.UnitConverterKBToByte;
 import de.hhu.bsinfo.utils.reflect.unit.UnitConverterMBToByte;
 
-public class ConfigurationXMLParser implements ConfigurationParser
-{
+public class ConfigurationXMLParser implements ConfigurationParser {
 	private static final String ROOT_ELEMENT = "conf";
 	private static final String ATTR_KEY_ID = "__id";
 	private static final String ATTR_KEY_TYPE = "__type";
@@ -40,8 +39,7 @@ public class ConfigurationXMLParser implements ConfigurationParser
 	private Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
 	private Map<String, UnitConverter> m_unitConverters = new HashMap<String, UnitConverter>();
 
-	public ConfigurationXMLParser(final ConfigurationXMLLoader p_loader)
-	{
+	public ConfigurationXMLParser(final ConfigurationXMLLoader p_loader) {
 		m_loader = p_loader;
 
 		// add default type parsers
@@ -61,13 +59,11 @@ public class ConfigurationXMLParser implements ConfigurationParser
 		addUnitConverter(new UnitConverterGBToByte());
 	}
 
-	public boolean addDataTypeParser(final DataTypeParser p_parser)
-	{
+	public boolean addDataTypeParser(final DataTypeParser p_parser) {
 		return m_dataTypeParsers.put(p_parser.getTypeIdentifer(), p_parser) == null;
 	}
 
-	public boolean addUnitConverter(final UnitConverter p_converter)
-	{
+	public boolean addUnitConverter(final UnitConverter p_converter) {
 		return m_unitConverters.put(p_converter.getUnitIdentifier(), p_converter) == null;
 	}
 
@@ -97,12 +93,11 @@ public class ConfigurationXMLParser implements ConfigurationParser
 	}
 
 	private void parseXML(final Node p_root, final Configuration p_configuration) throws ConfigurationException {
-		if (p_root.getNodeName().equals(ROOT_ELEMENT))
-		{
+
+		if (p_root.getNodeName().equals(ROOT_ELEMENT)) {
 			// iterate children of root node
 			NodeList childrenOfRoot = p_root.getChildNodes();
-			for (int j = 0; j < childrenOfRoot.getLength(); j++)
-			{
+			for (int j = 0; j < childrenOfRoot.getLength(); j++) {
 				Node confEntry = childrenOfRoot.item(j);
 				if (confEntry.getNodeType() == Element.ELEMENT_NODE) {
 					parseChildren((Element) confEntry, p_configuration, "");
@@ -111,8 +106,8 @@ public class ConfigurationXMLParser implements ConfigurationParser
 		}
 	}
 
-	private void parseChildren(final Element p_parent, final Configuration p_configuration, final String p_key) throws ConfigurationException
-	{
+	private void parseChildren(final Element p_parent, final Configuration p_configuration, final String p_key)
+			throws ConfigurationException {
 		String key = new String(p_key);
 
 		// no leafs, return
@@ -124,8 +119,7 @@ public class ConfigurationXMLParser implements ConfigurationParser
 		key += Configuration.KEY_SEQ_SEPARATOR + p_parent.getTagName();
 
 		// only leafs are allowed to have attributes
-		if (p_parent.hasAttributes())
-		{
+		if (p_parent.hasAttributes()) {
 			// got leaf
 			Object value = null;
 			int index = 0;
@@ -142,16 +136,13 @@ public class ConfigurationXMLParser implements ConfigurationParser
 				index = 0;
 			}
 
-			if (attrType != null)
-			{
+			if (attrType != null) {
 				DataTypeParser parser = m_dataTypeParsers.get(attrType.getNodeValue());
-				if (parser != null)
-				{
+				if (parser != null) {
 					value = parser.parse(p_parent.getTextContent());
 
 					// check for unit conversion, attribute optional
-					if (attrUnit != null)
-					{
+					if (attrUnit != null) {
 						UnitConverter unitConverter = m_unitConverters.get(attrUnit.getNodeValue());
 						if (unitConverter != null) {
 							value = unitConverter.convert(value);
@@ -164,14 +155,12 @@ public class ConfigurationXMLParser implements ConfigurationParser
 				}
 				// no parser to support, ignore
 			}
+
 			// missing type, ignore
-		}
-		else
-		{
+		} else {
 			// got inner node, continue to walk down the hierarchy
 			NodeList children = p_parent.getChildNodes();
-			for (int i = 0; i < children.getLength(); i++)
-			{
+			for (int i = 0; i < children.getLength(); i++) {
 				Node child = children.item(i);
 				if (child.getNodeType() == Element.ELEMENT_NODE) {
 					parseChildren((Element) child, p_configuration, key);

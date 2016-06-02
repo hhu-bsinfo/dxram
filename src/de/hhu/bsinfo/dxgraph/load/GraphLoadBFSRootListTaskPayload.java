@@ -10,7 +10,6 @@ import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRoots;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRootsTextFile;
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -32,7 +31,6 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			new Argument("graphPath", null, false, "Path containing a root list to load.");
 
 	private LoggerService m_loggerService;
-	private ChunkService m_chunkService;
 
 	private String m_path = "./";
 
@@ -66,8 +64,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		// root list from chunk memory
 		if (getSlaveId() == 0) {
 			m_loggerService = p_dxram.getService(LoggerService.class);
-			m_chunkService = p_dxram.getService(ChunkService.class);
-			TemporaryStorageService temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
+			TemporaryStorageService m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
 
 			// look for the graph partitioned index of the current compute group
@@ -85,7 +82,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			graphPartitionIndex.setID(chunkIdPartitionIndex);
 
 			// get the index
-			if (!temporaryStorageService.get(graphPartitionIndex)) {
+			if (!m_temporaryStorageService.get(graphPartitionIndex)) {
 				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
 				// #endif /* LOGGER >= ERROR */
@@ -108,15 +105,17 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 				return -4;
 			}
 
+			rootList.setID(m_temporaryStorageService.generateStorageId(MS_BFS_ROOTS + getComputeGroupId()));
+
 			// store the root list for our current compute group
-			if (m_chunkService.create(rootList) != 1) {
+			if (!m_temporaryStorageService.create(rootList)) {
 				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Creating chunk for root list failed.");
 				// #endif /* LOGGER >= ERROR */
 				return -5;
 			}
 
-			if (m_chunkService.put(rootList) != 1) {
+			if (!m_temporaryStorageService.put(rootList)) {
 				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Putting root list failed.");
 				// #endif /* LOGGER >= ERROR */
@@ -255,7 +254,12 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 				break;
 			}
 
-			roots.add(p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(root));
+			long vertexId = p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(root);
+			if (vertexId == ChunkID.INVALID_ID) {
+				m_loggerService.error(getClass(),
+						"Rebasing of " + ChunkID.toHexString(root) + " failed out of vertex id range of graph");
+			}
+			roots.add(vertexId);
 		}
 
 		GraphRootList rootList = new GraphRootList(ChunkID.INVALID_ID, roots.size());
