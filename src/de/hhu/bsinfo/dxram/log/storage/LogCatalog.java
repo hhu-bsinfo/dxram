@@ -107,9 +107,11 @@ public final class LogCatalog {
 			rangeID = getRangeID(p_chunkID);
 			ret = m_creatorLogs.get(rangeID);
 		}
+		// #if LOGGER >= ERROR
 		if (ret == null) {
 			p_logger.error(LogCatalog.class, "There is no secondary log for CID=" + p_chunkID + " and RID=" + p_rangeID);
 		}
+		// #endif /* LOGGER >= ERROR */
 
 		return ret;
 	}
@@ -134,9 +136,11 @@ public final class LogCatalog {
 			rangeID = getRangeID(p_chunkID);
 			ret = m_creatorBuffers.get(rangeID);
 		}
+		// #if LOGGER >= ERROR
 		if (ret == null) {
 			p_logger.error(LogCatalog.class, "There is no secondary log buffer for CID=" + p_chunkID + " and RID=" + p_rangeID);
 		}
+		// #endif /* LOGGER >= ERROR */
 
 		return ret;
 	}

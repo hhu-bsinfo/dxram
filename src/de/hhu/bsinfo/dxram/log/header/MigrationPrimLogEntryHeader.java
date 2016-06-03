@@ -187,7 +187,9 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
 					+ ((p_buffer[offset + 3] & 0xff) << 24);
 		} else {
+			// #if LOGGER >= ERROR
 			AbstractLogEntryHeader.getLogger().error(MigrationPrimLogEntryHeader.class, "No checksum available!");
+			// #endif /* LOGGER >= ERROR */
 			ret = -1;
 		}
 
@@ -258,7 +260,9 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 			ret += 6;
 			break;
 		default:
+			// #if LOGGER >= ERROR
 			AbstractLogEntryHeader.getLogger().error(MigrationPrimLogEntryHeader.class, "LocalID's length unknown!");
+			// #endif /* LOGGER >= ERROR */
 			break;
 		}
 
@@ -281,7 +285,9 @@ public class MigrationPrimLogEntryHeader extends AbstractLogEntryHeader {
 		if (AbstractLogEntryHeader.useChecksum()) {
 			ret += versionSize;
 		} else {
+			// #if LOGGER >= ERROR
 			AbstractLogEntryHeader.getLogger().error(MigrationPrimLogEntryHeader.class, "No checksum available!");
+			// #endif /* LOGGER >= ERROR */
 			ret = -1;
 		}
 

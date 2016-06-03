@@ -5,7 +5,6 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
  * Implementation of a frontier list. Extended version of
  * the normal BitVector adding another BitVector to
  * speed up element search.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class BitVectorMultiLevel implements FrontierList {
@@ -19,8 +18,8 @@ public class BitVectorMultiLevel implements FrontierList {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_maxElementCount Specify the maximum number of elements.
+	 * @param p_maxElementCount
+	 *            Specify the maximum number of elements.
 	 */
 	public BitVectorMultiLevel(final long p_maxElementCount) {
 		m_maxElementCount = p_maxElementCount;

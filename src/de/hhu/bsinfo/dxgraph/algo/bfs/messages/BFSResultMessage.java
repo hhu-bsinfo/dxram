@@ -1,14 +1,14 @@
+
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
+
+import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
-import java.nio.ByteBuffer;
-
 /**
  * Message to send bfs result to other node(s).
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 19.05.16
  */
 public class BFSResultMessage extends AbstractMessage {
@@ -24,9 +24,10 @@ public class BFSResultMessage extends AbstractMessage {
 
 	/**
 	 * Creates an instance of BFSResultMessage
-	 *
-	 * @param p_destination the destination
-	 * @param p_bfsResult   Results of a bfs iteration
+	 * @param p_destination
+	 *            the destination
+	 * @param p_bfsResult
+	 *            Results of a bfs iteration
 	 */
 	public BFSResultMessage(final short p_destination, final BFSResult p_bfsResult) {
 		super(p_destination, BFSMessages.TYPE, BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE);
@@ -36,7 +37,6 @@ public class BFSResultMessage extends AbstractMessage {
 
 	/**
 	 * Get the bfs result attached to this message.
-	 *
 	 * @return BFS result.
 	 */
 	public BFSResult getBFSResult() {

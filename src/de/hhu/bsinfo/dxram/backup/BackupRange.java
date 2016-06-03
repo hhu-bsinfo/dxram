@@ -77,7 +77,7 @@ public final class BackupRange implements Importable, Exportable {
 			if (m_backupPeers.length == 3) {
 				ret =
 						((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
-						+ (m_backupPeers[0] & 0x000000000000FFFFL);
+								+ (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else if (m_backupPeers.length == 2) {
 				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else {

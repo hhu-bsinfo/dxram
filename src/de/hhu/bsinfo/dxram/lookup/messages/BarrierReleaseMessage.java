@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractMessage;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractMessage;
+
 /**
  * Message to release the signed on instances from the barrier.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
 public class BarrierReleaseMessage extends AbstractMessage {
@@ -25,11 +25,14 @@ public class BarrierReleaseMessage extends AbstractMessage {
 	/**
 	 * Creates an instance of BarrierReleaseMessage.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_destination   the destination node id.
-	 * @param p_barrierId     Id of the barrier that got released
-	 * @param p_signedOnPeers List of peers that signed on for the barrier
-	 * @param p_customData    Custom data (ordered by signed on list) of the peers
+	 * @param p_destination
+	 *            the destination node id.
+	 * @param p_barrierId
+	 *            Id of the barrier that got released
+	 * @param p_signedOnPeers
+	 *            List of peers that signed on for the barrier
+	 * @param p_customData
+	 *            Custom data (ordered by signed on list) of the peers
 	 */
 	public BarrierReleaseMessage(final short p_destination, final int p_barrierId, final short[] p_signedOnPeers,
 			final long[] p_customData) {
@@ -44,7 +47,6 @@ public class BarrierReleaseMessage extends AbstractMessage {
 
 	/**
 	 * Get the id of the barrier that got released
-	 *
 	 * @return Barrier id.
 	 */
 	public int getBarrierId() {
@@ -53,7 +55,6 @@ public class BarrierReleaseMessage extends AbstractMessage {
 
 	/**
 	 * Get the peers that signed on.
-	 *
 	 * @return List of peers.
 	 */
 	public short[] getSignedOnPeers() {
@@ -62,7 +63,6 @@ public class BarrierReleaseMessage extends AbstractMessage {
 
 	/**
 	 * Get custom data the peers provided with the sign on.
-	 *
 	 * @return Custom data of the peers.
 	 */
 	public long[] getCustomData() {

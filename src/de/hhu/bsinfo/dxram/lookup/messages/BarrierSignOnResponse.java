@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractResponse;
+
 /**
  * Response to the sign on request with status code if successful.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
 public class BarrierSignOnResponse extends AbstractResponse {
@@ -23,9 +23,10 @@ public class BarrierSignOnResponse extends AbstractResponse {
 	/**
 	 * Creates an instance of SlaveSyncBarrierSignOnMessage.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_request the request to respond to.
-	 * @param p_status  Status code of the sign on
+	 * @param p_request
+	 *            the request to respond to.
+	 * @param p_status
+	 *            Status code of the sign on
 	 */
 	public BarrierSignOnResponse(final BarrierSignOnRequest p_request, final byte p_status) {
 		super(p_request, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_RESPONSE);
@@ -36,7 +37,6 @@ public class BarrierSignOnResponse extends AbstractResponse {
 
 	/**
 	 * Id of the barrier
-	 *
 	 * @return Sync token.
 	 */
 	public int getBarrierId() {

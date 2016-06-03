@@ -82,11 +82,11 @@ public class TcmdChunkStatus extends AbstractTerminalCommand {
 							+ status.getTotalMemoryCIDTables());
 		} else {
 			getTerminalDelegate()
-					.println("Free memory (" + sizeType + "): " + status.getFreeMemory() / (double) divisor);
+			.println("Free memory (" + sizeType + "): " + status.getFreeMemory() / (double) divisor);
 			getTerminalDelegate()
-					.println("Total memory (" + sizeType + "): " + status.getTotalMemory() / (double) divisor);
+			.println("Total memory (" + sizeType + "): " + status.getTotalMemory() / (double) divisor);
 			getTerminalDelegate()
-					.println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory() / divisor);
+			.println("Total payload memory (" + sizeType + "): " + status.getTotalPayloadMemory() / divisor);
 			getTerminalDelegate().println(
 					"Total chunk payload memory (" + sizeType + "): "
 							+ status.getTotalChunkPayloadMemory() / (double) divisor);

@@ -43,12 +43,12 @@ final class NIOInterface {
 	 * Creates a new connection
 	 * @param p_nodeMap
 	 *            the node map
-	 * @param p_taskExecutor
-	 *            the task executor
 	 * @param p_messageDirectory
 	 *            the message directory
 	 * @param p_channel
 	 *            the channel of the connection
+	 * @param p_messageCreator
+	 *            the message creator
 	 * @param p_nioSelector
 	 *            the NIOSelector
 	 * @param p_numberOfBuffers
@@ -57,9 +57,9 @@ final class NIOInterface {
 	 *             if the connection could not be created
 	 * @return the new NIOConnection
 	 */
-	protected NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
-			final MessageDirectory p_messageDirectory, final SocketChannel p_channel, final NIOSelector p_nioSelector, final int p_numberOfBuffers)
-					throws IOException {
+	protected NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
+			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_numberOfBuffers)
+			throws IOException {
 		NIOConnection connection = null;
 		ByteBuffer buffer;
 
@@ -71,8 +71,8 @@ final class NIOInterface {
 		} else {
 			m_readBuffer.flip();
 
-			connection = new NIOConnection(m_readBuffer.getShort(), p_nodeMap, p_taskExecutor, p_messageDirectory, p_channel, p_nioSelector, p_numberOfBuffers,
-					m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
+			connection = new NIOConnection(m_readBuffer.getShort(), p_nodeMap, p_messageDirectory, p_channel, p_messageCreator,
+					p_nioSelector, p_numberOfBuffers, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 			p_channel.register(p_nioSelector.getSelector(), SelectionKey.OP_READ, connection);
 
 			if (m_readBuffer.hasRemaining()) {

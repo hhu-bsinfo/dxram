@@ -13,7 +13,6 @@ import de.hhu.bsinfo.dxram.stats.StatisticsService;
 
 /**
  * Compatibility wrapper to provide the old DXRAM Core API.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
  */
 public class DXRAMCompat {
@@ -27,8 +26,8 @@ public class DXRAMCompat {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_dxram DXRAM instance to wrap. Wrapper does not take care of init/shutdown.
+	 * @param p_dxram
+	 *            DXRAM instance to wrap. Wrapper does not take care of init/shutdown.
 	 */
 	public DXRAMCompat(final DXRAM p_dxram) {
 		m_dxram = p_dxram;
@@ -42,7 +41,6 @@ public class DXRAMCompat {
 
 	/**
 	 * Get the node ID of the current node on.
-	 *
 	 * @return Local node ID.
 	 */
 	public short getNodeID() {
@@ -51,10 +49,11 @@ public class DXRAMCompat {
 
 	/**
 	 * Creates a new Chunk
-	 *
-	 * @param p_size the size of the Chunk
+	 * @param p_size
+	 *            the size of the Chunk
 	 * @return a new Chunk
-	 * @throws DXRAMException if the chunk could not be created
+	 * @throws DXRAMException
+	 *             if the chunk could not be created
 	 */
 	public Chunk createNewChunk(final int p_size) throws DXRAMException {
 		Chunk ret = null;
@@ -73,10 +72,11 @@ public class DXRAMCompat {
 
 	/**
 	 * Creates new Chunks
-	 *
-	 * @param p_sizes the sizes of the Chunks
+	 * @param p_sizes
+	 *            the sizes of the Chunks
 	 * @return new Chunks
-	 * @throws DXRAMException if the chunks could not be created
+	 * @throws DXRAMException
+	 *             if the chunks could not be created
 	 */
 	public Chunk[] createNewChunks(final int[] p_sizes) throws DXRAMException {
 		Chunk[] ret = null;
@@ -98,11 +98,13 @@ public class DXRAMCompat {
 
 	/**
 	 * Creates a new Chunk with identifier
-	 *
-	 * @param p_size the size of the Chunk
-	 * @param p_name the identifier of the Chunk
+	 * @param p_size
+	 *            the size of the Chunk
+	 * @param p_name
+	 *            the identifier of the Chunk
 	 * @return a new Chunk
-	 * @throws DXRAMException if the chunk could not be created
+	 * @throws DXRAMException
+	 *             if the chunk could not be created
 	 */
 	public Chunk createNewChunk(final int p_size, final String p_name) throws DXRAMException {
 		Chunk ret = null;
@@ -119,11 +121,13 @@ public class DXRAMCompat {
 
 	/**
 	 * Creates new Chunks with identifier
-	 *
-	 * @param p_sizes the sizes of the Chunks
-	 * @param p_name  the identifier of the first Chunk
+	 * @param p_sizes
+	 *            the sizes of the Chunks
+	 * @param p_name
+	 *            the identifier of the first Chunk
 	 * @return new Chunks
-	 * @throws DXRAMException if the chunks could not be created
+	 * @throws DXRAMException
+	 *             if the chunks could not be created
 	 */
 	public Chunk[] createNewChunks(final int[] p_sizes, final String p_name) throws DXRAMException {
 		Chunk[] ret = null;
@@ -140,10 +144,11 @@ public class DXRAMCompat {
 
 	/**
 	 * Gets the corresponding Chunk for the given ID
-	 *
-	 * @param p_chunkID the ID of the corresponding Chunk
+	 * @param p_chunkID
+	 *            the ID of the corresponding Chunk
 	 * @return the Chunk for the given ID
-	 * @throws DXRAMException if the chunk could not be get
+	 * @throws DXRAMException
+	 *             if the chunk could not be get
 	 */
 	public Chunk get(final long p_chunkID) throws DXRAMException {
 		Chunk ret = null;
@@ -161,10 +166,11 @@ public class DXRAMCompat {
 
 	/**
 	 * Gets the corresponding Chunks for the given IDs
-	 *
-	 * @param p_chunkIDs the IDs of the corresponding Chunks
+	 * @param p_chunkIDs
+	 *            the IDs of the corresponding Chunks
 	 * @return the Chunks for the given IDs
-	 * @throws DXRAMException if the chunks could not be get
+	 * @throws DXRAMException
+	 *             if the chunks could not be get
 	 */
 	public Chunk[] get(final long[] p_chunkIDs) throws DXRAMException {
 		Chunk[] ret = null;
@@ -186,10 +192,11 @@ public class DXRAMCompat {
 
 	/**
 	 * Gets the corresponding Chunk for the given identifier
-	 *
-	 * @param p_name the identifier of the corresponding Chunk
+	 * @param p_name
+	 *            the identifier of the corresponding Chunk
 	 * @return the Chunk for the given ID
-	 * @throws DXRAMException if the chunk could not be get
+	 * @throws DXRAMException
+	 *             if the chunk could not be get
 	 */
 	public Chunk get(final String p_name) throws DXRAMException {
 		Chunk ret = null;
@@ -206,7 +213,6 @@ public class DXRAMCompat {
 
 	/**
 	 * Get the number of entries in the nameservice
-	 *
 	 * @return entry count
 	 */
 	public int getNameserviceEntryCount() {
@@ -215,10 +221,11 @@ public class DXRAMCompat {
 
 	/**
 	 * Gets the corresponding ChunkID for the given identifier
-	 *
-	 * @param p_name the identifier of the corresponding Chunk
+	 * @param p_name
+	 *            the identifier of the corresponding Chunk
 	 * @return the ChunkID for the given ID
-	 * @throws DXRAMException if the chunk could not be get
+	 * @throws DXRAMException
+	 *             if the chunk could not be get
 	 */
 	public long getChunkID(final String p_name) throws DXRAMException {
 		long ret = -1;
@@ -232,9 +239,10 @@ public class DXRAMCompat {
 
 	/**
 	 * Updates the given Chunk
-	 *
-	 * @param p_chunk the Chunk to be updated
-	 * @throws DXRAMException if the chunk could not be put
+	 * @param p_chunk
+	 *            the Chunk to be updated
+	 * @throws DXRAMException
+	 *             if the chunk could not be put
 	 */
 	public void put(final Chunk p_chunk) throws DXRAMException {
 		put(p_chunk, false);
@@ -242,10 +250,12 @@ public class DXRAMCompat {
 
 	/**
 	 * Updates the given Chunk
-	 *
-	 * @param p_chunk       the Chunk to be updated
-	 * @param p_releaseLock if true a possible lock is released
-	 * @throws DXRAMException if the chunk could not be put
+	 * @param p_chunk
+	 *            the Chunk to be updated
+	 * @param p_releaseLock
+	 *            if true a possible lock is released
+	 * @throws DXRAMException
+	 *             if the chunk could not be put
 	 */
 	public void put(final Chunk p_chunk, final boolean p_releaseLock) throws DXRAMException {
 
@@ -263,9 +273,10 @@ public class DXRAMCompat {
 
 	/**
 	 * Updates given Chunks
-	 *
-	 * @param p_chunks the Chunks to be updated
-	 * @throws DXRAMException if the chunks could not be put
+	 * @param p_chunks
+	 *            the Chunks to be updated
+	 * @throws DXRAMException
+	 *             if the chunks could not be put
 	 */
 	public void put(final Chunk[] p_chunks) throws DXRAMException {
 		if (m_asyncChunkService != null) {
@@ -275,10 +286,11 @@ public class DXRAMCompat {
 
 	/**
 	 * Requests and locks the corresponding Chunk for the giving ID
-	 *
-	 * @param p_chunkID the ID of the corresponding Chunk
+	 * @param p_chunkID
+	 *            the ID of the corresponding Chunk
 	 * @return the Chunk for the given ID
-	 * @throws DXRAMException if the chunk could not be locked
+	 * @throws DXRAMException
+	 *             if the chunk could not be locked
 	 */
 	public Chunk lock(final long p_chunkID) throws DXRAMException {
 		return lock(p_chunkID, false);
@@ -286,11 +298,13 @@ public class DXRAMCompat {
 
 	/**
 	 * Requests and locks the corresponding Chunk for the giving ID
-	 *
-	 * @param p_chunkID  the ID of the corresponding Chunk
-	 * @param p_readLock true if the lock is a read lock, false otherwise
+	 * @param p_chunkID
+	 *            the ID of the corresponding Chunk
+	 * @param p_readLock
+	 *            true if the lock is a read lock, false otherwise
 	 * @return the Chunk for the given ID
-	 * @throws DXRAMException if the chunk could not be locked
+	 * @throws DXRAMException
+	 *             if the chunk could not be locked
 	 */
 	public Chunk lock(final long p_chunkID, final boolean p_readLock) throws DXRAMException {
 		Chunk ret = null;
@@ -316,9 +330,10 @@ public class DXRAMCompat {
 
 	/**
 	 * Unlocks the corresponding Chunk for the giving ID
-	 *
-	 * @param p_chunkID the ID of the corresponding Chunk
-	 * @throws DXRAMException if the chunk could not be unlocked
+	 * @param p_chunkID
+	 *            the ID of the corresponding Chunk
+	 * @throws DXRAMException
+	 *             if the chunk could not be unlocked
 	 */
 	public void unlock(final long p_chunkID) throws DXRAMException {
 		if (m_lockService != null) {
@@ -328,9 +343,10 @@ public class DXRAMCompat {
 
 	/**
 	 * Removes the corresponding Chunk for the giving ID
-	 *
-	 * @param p_chunkID the ID of the corresponding Chunk
-	 * @throws DXRAMException if the chunk could not be removed
+	 * @param p_chunkID
+	 *            the ID of the corresponding Chunk
+	 * @throws DXRAMException
+	 *             if the chunk could not be removed
 	 */
 	public void remove(final long p_chunkID) throws DXRAMException {
 		if (m_chunkService != null) {
@@ -342,9 +358,10 @@ public class DXRAMCompat {
 
 	/**
 	 * Removes the corresponding Chunk for the giving ID
-	 *
-	 * @param p_chunkIDs the IDs of the corresponding Chunks
-	 * @throws DXRAMException if the chunks could not be removed
+	 * @param p_chunkIDs
+	 *            the IDs of the corresponding Chunks
+	 * @throws DXRAMException
+	 *             if the chunks could not be removed
 	 */
 	public void remove(final long[] p_chunkIDs) throws DXRAMException {
 		if (m_chunkService != null) {
@@ -365,7 +382,6 @@ public class DXRAMCompat {
 
 	/**
 	 * Exception for failed DXRAM accesses
-	 *
 	 * @author Florian Klein
 	 *         09.03.2012
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 25.01.16
@@ -379,8 +395,8 @@ public class DXRAMCompat {
 
 		/**
 		 * Creates an instance of DXRAMException
-		 *
-		 * @param p_message the message
+		 * @param p_message
+		 *            the message
 		 */
 		public DXRAMException(final String p_message) {
 			super(p_message);
@@ -388,9 +404,10 @@ public class DXRAMCompat {
 
 		/**
 		 * Creates an instance of DXRAMException
-		 *
-		 * @param p_message the message
-		 * @param p_cause   the cause
+		 * @param p_message
+		 *            the message
+		 * @param p_cause
+		 *            the cause
 		 */
 		public DXRAMException(final String p_message, final Throwable p_cause) {
 			super(p_message, p_cause);

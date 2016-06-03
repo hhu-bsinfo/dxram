@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 /**
  * Message to send non local vertices for BFS to the node owning them for processing.
  * Vertex IDs are "compressed" (using the local ID, only) due to pre-filtering by target node.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
  */
 public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesForNextFrontierRequest {
@@ -25,9 +24,10 @@ public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesFo
 
 	/**
 	 * Creates an instance of VerticesForNextFrontierCompressedRequest
-	 *
-	 * @param p_destination the destination
-	 * @param p_batchSize   size of the buffer to store the vertex ids to send.
+	 * @param p_destination
+	 *            the destination
+	 * @param p_batchSize
+	 *            size of the buffer to store the vertex ids to send.
 	 */
 	public VerticesForNextFrontierCompressedRequest(final short p_destination, final int p_batchSize) {
 		super(p_destination, BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_REQUEST, p_batchSize);
@@ -44,23 +44,23 @@ public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesFo
 
 		long vertex = p_vertex & 0xFFFFFFFFFFFFL;
 		switch (m_numOfVertices % 4) {
-			case 0:
-				m_compressedVertexIds[m_vertexIdsPos] = vertex << 12L;
-				break;
-			case 1:
-				m_compressedVertexIds[m_vertexIdsPos++] |= (vertex >> 32L) & 0xFFFFL;
-				m_compressedVertexIds[m_vertexIdsPos] = (vertex & 0xFFFFFFFFL) << 32L;
-				break;
-			case 2:
-				m_compressedVertexIds[m_vertexIdsPos++] |= (vertex >> 16L) & 0xFFFFFFFFL;
-				m_compressedVertexIds[m_vertexIdsPos] = (vertex & 0xFFFFL) << 48L;
-				break;
-			case 3:
-				m_compressedVertexIds[m_vertexIdsPos++] |= vertex;
-				break;
-			default:
-				assert false;
-				break;
+		case 0:
+			m_compressedVertexIds[m_vertexIdsPos] = vertex << 12L;
+			break;
+		case 1:
+			m_compressedVertexIds[m_vertexIdsPos++] |= (vertex >> 32L) & 0xFFFFL;
+			m_compressedVertexIds[m_vertexIdsPos] = (vertex & 0xFFFFFFFFL) << 32L;
+			break;
+		case 2:
+			m_compressedVertexIds[m_vertexIdsPos++] |= (vertex >> 16L) & 0xFFFFFFFFL;
+			m_compressedVertexIds[m_vertexIdsPos] = (vertex & 0xFFFFL) << 48L;
+			break;
+		case 3:
+			m_compressedVertexIds[m_vertexIdsPos++] |= vertex;
+			break;
+		default:
+			assert false;
+			break;
 		}
 
 		m_numOfVertices++;
@@ -76,23 +76,23 @@ public class VerticesForNextFrontierCompressedRequest extends AbstractVerticesFo
 		}
 
 		switch (m_vertexPos % 4) {
-			case 0:
-				vertex = m_compressedVertexIds[m_vertexIdsPos] >> 12L;
-				break;
-			case 1:
-				vertex = (m_compressedVertexIds[m_vertexIdsPos++] & 0xFFFFL) << 32L;
-				vertex |= m_compressedVertexIds[m_vertexIdsPos] >> 32L;
-				break;
-			case 2:
-				vertex = m_compressedVertexIds[m_vertexIdsPos++] & 0xFFFFFFFFL;
-				vertex |= m_compressedVertexIds[m_vertexIdsPos] >> 48L;
-				break;
-			case 3:
-				vertex = m_compressedVertexIds[m_vertexIdsPos++] & 0xFFFFFFFFFFFFL;
-				break;
-			default:
-				assert false;
-				break;
+		case 0:
+			vertex = m_compressedVertexIds[m_vertexIdsPos] >> 12L;
+			break;
+		case 1:
+			vertex = (m_compressedVertexIds[m_vertexIdsPos++] & 0xFFFFL) << 32L;
+			vertex |= m_compressedVertexIds[m_vertexIdsPos] >> 32L;
+			break;
+		case 2:
+			vertex = m_compressedVertexIds[m_vertexIdsPos++] & 0xFFFFFFFFL;
+			vertex |= m_compressedVertexIds[m_vertexIdsPos] >> 48L;
+			break;
+		case 3:
+			vertex = m_compressedVertexIds[m_vertexIdsPos++] & 0xFFFFFFFFFFFFL;
+			break;
+		default:
+			assert false;
+			break;
 		}
 
 		m_vertexPos++;

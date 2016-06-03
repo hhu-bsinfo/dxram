@@ -158,7 +158,9 @@ public class PrimaryWriteBuffer {
 		m_writerThread.setName("Logging: Writer Thread");
 		m_writerThread.start();
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Initialized primary write buffer (" + m_writeBufferSize + ")");
+		// #endif /* LOGGER == TRACE */
 	}
 
 	// Methods
@@ -463,7 +465,9 @@ public class PrimaryWriteBuffer {
 				try {
 					writtenBytes = bufferAndStore(m_buffer, readPointer, bytesInWriteBuffer, lengthByBackupRange);
 				} catch (final IOException | InterruptedException e) {
+					// #if LOGGER >= ERROR
 					m_logger.error(PrimaryWriteBuffer.class, "Could not flush data: " + e);
+					// #endif /* LOGGER >= ERROR */
 				}
 			}
 			m_amount += writtenBytes;

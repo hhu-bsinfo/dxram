@@ -22,7 +22,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Task to load a list of root vertex ids for BFS entry points.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
@@ -44,8 +43,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the path where one or multiple partition index files are stored.
-	 *
-	 * @param p_path Path where the files are located
+	 * @param p_path
+	 *            Path where the files are located
 	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
@@ -72,8 +71,10 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			long chunkIdPartitionIndex = nameserviceService
 					.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + getComputeGroupId(), 5000);
 			if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(),
 						"Could not find partition index for current compute group " + getComputeGroupId());
+				// #endif /* LOGGER >= ERROR */
 				return -1;
 			}
 
@@ -82,19 +83,25 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 			// get the index
 			if (!m_temporaryStorageService.get(graphPartitionIndex)) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
+				// #endif /* LOGGER >= ERROR */
 				return -2;
 			}
 
 			OrderedEdgeListRoots orderedEdgeListRoots = setupOrderedEdgeListRoots(m_path);
 			if (orderedEdgeListRoots == null) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Setting up ordered edge list roots failed.");
+				// #endif /* LOGGER >= ERROR */
 				return -3;
 			}
 
 			GraphRootList rootList = loadRootList(orderedEdgeListRoots, graphPartitionIndex);
 			if (rootList == null) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Loading root list failed.");
+				// #endif /* LOGGER >= ERROR */
 				return -4;
 			}
 
@@ -102,21 +109,27 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 			// store the root list for our current compute group
 			if (!m_temporaryStorageService.create(rootList)) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Creating chunk for root list failed.");
+				// #endif /* LOGGER >= ERROR */
 				return -5;
 			}
 
 			if (!m_temporaryStorageService.put(rootList)) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Putting root list failed.");
+				// #endif /* LOGGER >= ERROR */
 				return -6;
 			}
 
 			// register chunk at nameservice that other slaves can find it
 			nameserviceService.register(rootList, MS_BFS_ROOTS + getComputeGroupId());
 
+			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(),
 					"Successfully loaded and stored root list, nameservice entry name "
 							+ MS_BFS_ROOTS + getComputeGroupId() + ":\n" + rootList);
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return 0;
@@ -161,8 +174,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Setup a root node list instance.
-	 *
-	 * @param p_path Path with the root list.
+	 * @param p_path
+	 *            Path with the root list.
 	 * @return OrderedEdgeListRoots instance giving access to the list found for this slave or null on error.
 	 */
 	private OrderedEdgeListRoots setupOrderedEdgeListRoots(final String p_path) {
@@ -171,13 +184,17 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		// check if directory exists
 		File tmpFile = new File(p_path);
 		if (!tmpFile.exists()) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Cannot setup order ededge list roots, path does not exist: " + p_path);
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
 		if (!tmpFile.isDirectory()) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
 					"Cannot setup ordered edge list roots, path is not a directory: " + p_path);
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
@@ -196,14 +213,20 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		});
 
 		// add filtered files
+		// #if LOGGER >= DEBUG
 		m_loggerService.debug(getClass(), "Setting up root oel, iterating files in " + p_path);
+		// #endif /* LOGGER >= DEBUG */
+
 		for (File file : files) {
 			String[] tokens = file.getName().split("\\.");
 
 			// looking for format xxx.roel
 			if (tokens.length > 1) {
 				if (tokens[1].equals("roel")) {
+					// #if LOGGER >= DEBUG
 					m_loggerService.debug(getClass(), "Found root list: " + file);
+					// #endif /* LOGGER >= DEBUG */
+
 					orderedEdgeListRoots = new OrderedEdgeListRootsTextFile(file.getAbsolutePath());
 					break;
 				}
@@ -215,9 +238,10 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Load the root list.
-	 *
-	 * @param p_orderedEdgeRootList Root list to load.
-	 * @param p_graphPartitionIndex Index of all partitions to rebase vertex ids of all roots.
+	 * @param p_orderedEdgeRootList
+	 *            Root list to load.
+	 * @param p_graphPartitionIndex
+	 *            Index of all partitions to rebase vertex ids of all roots.
 	 * @return Root list instance on success, null on error.
 	 */
 	private GraphRootList loadRootList(final OrderedEdgeListRoots p_orderedEdgeRootList,

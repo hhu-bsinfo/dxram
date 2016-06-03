@@ -5,13 +5,11 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Configuration values for the master salve service
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 class MasterSlaveConfigurationValues {
 	/**
 	 * Configuration values for the service.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
 	 */
 	public static class Service {

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.sync.tcmds;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Command to change the size of an existing barrier.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class TcmdBarrierSize extends AbstractTerminalCommand {
@@ -45,8 +45,8 @@ public class TcmdBarrierSize extends AbstractTerminalCommand {
 
 		if (!synchronizationService.barrierChangeSize(bid, size)) {
 			getTerminalDelegate()
-					.println("Changing barrier " + BarrierID.toHexString(bid) + " size to " + size + " failed.",
-							TerminalColor.RED);
+			.println("Changing barrier " + BarrierID.toHexString(bid) + " size to " + size + " failed.",
+					TerminalColor.RED);
 		} else {
 			getTerminalDelegate().println("Barrier " + BarrierID.toHexString(bid) + " size changed to " + size);
 		}

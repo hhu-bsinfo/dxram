@@ -8,7 +8,6 @@ import java.io.IOException;
 
 /**
  * Implementation reading roots buffered from a text file.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
@@ -17,8 +16,8 @@ public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_path Filepath to read the roots from.
+	 * @param p_path
+	 *            Filepath to read the roots from.
 	 */
 	public OrderedEdgeListRootsTextFile(final String p_path) {
 

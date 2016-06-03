@@ -224,7 +224,9 @@ public final class OverlayHelper {
 		short responsibleSuperpeer = -1;
 		int index;
 
+		// #if LOGGER == TRACE
 		p_logger.trace(OverlayHelper.class, "Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		// #endif /* LOGGER == TRACE */
 
 		p_overlayLock.lock();
 		if (!p_superpeers.isEmpty()) {
@@ -238,10 +240,14 @@ public final class OverlayHelper {
 			responsibleSuperpeer = p_superpeers.get(index);
 			p_overlayLock.unlock();
 		} else {
+			// #if LOGGER >= WARN
 			p_logger.warn(OverlayHelper.class, "do not know any other superpeer");
+			// #endif /* LOGGER >= WARN */
 			p_overlayLock.unlock();
 		}
+		// #if LOGGER == TRACE
 		p_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
+		// #endif /* LOGGER == TRACE */
 
 		return responsibleSuperpeer;
 	}
@@ -261,13 +267,9 @@ public final class OverlayHelper {
 		int index;
 
 		if (p_superpeers.isEmpty()) {
-			// m_logger.warn(getClass()"no replication possible. Too less superpeers");
 			superpeers = new short[] {-1};
 		} else {
 			size = Math.min(p_superpeers.size(), 3);
-			if (3 > size) {
-				// m_logger.warn(getClass()"replication incomplete. Too less superpeers");
-			}
 			superpeers = new short[size];
 
 			index = Collections.binarySearch(p_superpeers, p_nodeID);

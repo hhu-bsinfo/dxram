@@ -1,10 +1,11 @@
+
 package de.hhu.bsinfo.dxgraph.conv;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.UnsafeHandler;
 import sun.misc.Unsafe;
+import de.hhu.bsinfo.utils.UnsafeHandler;
 
 /**
  * Space efficient and multi threaded optimized storage for vertex data.
@@ -13,7 +14,6 @@ import sun.misc.Unsafe;
  * Data is stored using Java's Unsafe class to allow manual memory management
  * and space efficient data structures as well as CAS operations for low overhead
  * synchronisation.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.05.16
  */
 class VertexStorageBinaryUnsafe implements VertexStorage {
@@ -23,7 +23,7 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 	private static final int MS_ENTRY_SIZE_BYTES = Integer.BYTES + Long.BYTES;
 	private static final int MS_BLOCK_SIZE_BYTES = MS_BLOCK_SIZE * MS_ENTRY_SIZE_BYTES;
 
-	//private int m_vertexIdOffset;
+	// private int m_vertexIdOffset;
 
 	private Unsafe m_unsafe;
 
@@ -36,11 +36,11 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_vertexIdOffset Offset to add to every vertex id.
+	 * @param p_vertexIdOffset
+	 *            Offset to add to every vertex id.
 	 */
 	VertexStorageBinaryUnsafe(final int p_vertexIdOffset) {
-		//m_vertexIdOffset = p_vertexIdOffset;
+		// m_vertexIdOffset = p_vertexIdOffset;
 
 		m_unsafe = UnsafeHandler.getInstance().getUnsafe();
 
@@ -74,40 +74,40 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 		return m_totalMemory.get();
 	}
 
-	//	public static void main(String[] args) {
-	//		VertexStorageBinaryUnsafe storage = new VertexStorageBinaryUnsafe();
+	// public static void main(String[] args) {
+	// VertexStorageBinaryUnsafe storage = new VertexStorageBinaryUnsafe();
 	//
-	//		Thread[] threads = new Thread[12];
+	// Thread[] threads = new Thread[12];
 	//
-	//		for (int i = 0; i < threads.length; i++) {
-	//			threads[i] = new Thread() {
-	//				@Override
-	//				public void run() {
+	// for (int i = 0; i < threads.length; i++) {
+	// threads[i] = new Thread() {
+	// @Override
+	// public void run() {
 	//
-	//					long vertex = storage.getVertexId(1);
+	// long vertex = storage.getVertexId(1);
 	//
-	//					for (int i = 0; i < 10000; i++) {
-	//						storage.putNeighbour(vertex, i);
-	//					}
+	// for (int i = 0; i < 10000; i++) {
+	// storage.putNeighbour(vertex, i);
+	// }
 	//
-	//					System.out.println("Done " + Thread.currentThread().getId());
-	//				}
-	//			};
-	//			threads[i].start();
-	//		}
+	// System.out.println("Done " + Thread.currentThread().getId());
+	// }
+	// };
+	// threads[i].start();
+	// }
 	//
-	//		for (int i = 0; i < threads.length; i++) {
-	//			try {
-	//				threads[i].join();
-	//			} catch (InterruptedException e) {
-	//				e.printStackTrace();
-	//			}
-	//		}
+	// for (int i = 0; i < threads.length; i++) {
+	// try {
+	// threads[i].join();
+	// } catch (InterruptedException e) {
+	// e.printStackTrace();
+	// }
+	// }
 	//
-	//		System.out.println(storage.getNeighbours(1, new long[0]));
+	// System.out.println(storage.getNeighbours(1, new long[0]));
 	//
-	//		System.out.println(storage.getTotalEdgeCount());
-	//	}
+	// System.out.println(storage.getTotalEdgeCount());
+	// }
 
 	@Override
 	public long getVertexId(final long p_hashValue) {
@@ -158,11 +158,11 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	@Override
 	public void putNeighbour(final long p_vertexId, final long p_neighbourVertexId) {
-		//long vertexId = p_vertexId;
+		// long vertexId = p_vertexId;
 		// TODO conflict with graph partition index not knowing there was an offset applied
 		// -> have information in ioel file about offset?
-		//long neighbourVertexId = p_neighbourVertexId + m_vertexIdOffset;
-		//long neighbourVertexId = p_neighbourVertexId;
+		// long neighbourVertexId = p_neighbourVertexId + m_vertexIdOffset;
+		// long neighbourVertexId = p_neighbourVertexId;
 
 		// don't add self loops
 		if (p_vertexId == p_neighbourVertexId) {
@@ -196,18 +196,18 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 		// first, verify the edge does not exist, yet
 		int sizeOld = entryHeader & 0x7FFFFFFF;
 		long ptrOldArray = m_unsafe.getLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4);
-		//		for (int i = 0; i < sizeOld; i++) {
-		//			long neighbor = m_unsafe.getLong(ptrOldArray + i * Long.BYTES);
-		//			if (neighbor == neighbourVertexId) {
-		//				// drop out, neighbor already exists
-		//				// expecting old size and lock -> swap with old size and unlocked
-		//				if (!m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, entryHeader,
-		//						sizeOld)) {
-		//					throw new RuntimeException("Invalid synchronsation state.");
-		//				}
-		//				return;
-		//			}
-		//		}
+		// for (int i = 0; i < sizeOld; i++) {
+		// long neighbor = m_unsafe.getLong(ptrOldArray + i * Long.BYTES);
+		// if (neighbor == neighbourVertexId) {
+		// // drop out, neighbor already exists
+		// // expecting old size and lock -> swap with old size and unlocked
+		// if (!m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, entryHeader,
+		// sizeOld)) {
+		// throw new RuntimeException("Invalid synchronsation state.");
+		// }
+		// return;
+		// }
+		// }
 
 		// reallocate to expand array
 		int sizeNew = sizeOld + 1;
@@ -244,7 +244,7 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	@Override
 	public long getNeighbours(final long p_vertexId, final long[] p_buffer) {
-		//long vertexId = p_vertexId;
+		// long vertexId = p_vertexId;
 
 		int tableIndex = (int) (p_vertexId / MS_BLOCK_SIZE);
 		int tableEntryIndex = (int) (p_vertexId % MS_BLOCK_SIZE);

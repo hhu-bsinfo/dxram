@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 /**
  * List of messages used for BFS.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 19.05.16
  */
 public final class BFSMessages {
@@ -19,6 +18,5 @@ public final class BFSMessages {
 	/**
 	 * Static class
 	 */
-	private BFSMessages() {
-	}
+	private BFSMessages() {}
 }

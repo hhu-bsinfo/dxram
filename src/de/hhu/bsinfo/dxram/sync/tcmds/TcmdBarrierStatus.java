@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.sync.tcmds;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Get the status of an allocated barrier (currenlty signed on peers).
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class TcmdBarrierStatus extends AbstractTerminalCommand {

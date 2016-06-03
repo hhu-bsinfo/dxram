@@ -42,7 +42,9 @@ public final class SecondaryLogBuffer {
 
 		m_bytesInBuffer = 0;
 		m_buffer = new byte[p_bufferSize];
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Initialized secondary log buffer (" + p_bufferSize + ")");
+		// #endif /* LOGGER == TRACE */
 	}
 
 	// Getter
@@ -71,7 +73,9 @@ public final class SecondaryLogBuffer {
 			flushSecLogBuffer();
 		} catch (final IOException | InterruptedException e) {
 
+			// #if LOGGER >= ERROR
 			m_logger.error(SecondaryLogBuffer.class, "Could not flush secondary log buffer: " + e);
+			// #endif /* LOGGER >= ERROR */
 		}
 		m_bytesInBuffer = 0;
 		m_buffer = null;

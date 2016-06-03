@@ -5,7 +5,6 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.front;
  * Implementation of a frontier list. Extended version
  * of a normal BitVector keeping the first value
  * within the vector cached to speed up element search.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class BitVectorWithStartPos implements FrontierList {
@@ -18,8 +17,8 @@ public class BitVectorWithStartPos implements FrontierList {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_vertexCount Total number of vertices.
+	 * @param p_vertexCount
+	 *            Total number of vertices.
 	 */
 	public BitVectorWithStartPos(final long p_vertexCount) {
 		m_maxElementCount = p_vertexCount;

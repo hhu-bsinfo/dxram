@@ -27,8 +27,10 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 	// Methods
 	@Override
 	public byte[] createLogEntryHeader(final long p_chunkID, final int p_size, final Version p_version, final byte p_rangeID, final short p_source) {
+		// #if LOGGER >= WARN
 		AbstractLogEntryHeader.getLogger().warn(DefaultSecLogEntryHeader.class,
 				"Do not call createLogEntryHeader() for secondary log entries. Convert instead.");
+		// #endif /* LOGGER >= WARN */
 		return null;
 	}
 
@@ -39,19 +41,25 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public byte getRangeID(final byte[] p_buffer, final int p_offset) {
+		// #if LOGGER >= ERROR
 		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No RangeID available!");
+		// #endif /* LOGGER >= ERROR */
 		return -1;
 	}
 
 	@Override
 	public short getSource(final byte[] p_buffer, final int p_offset) {
+		// #if LOGGER >= ERROR
 		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No source available!");
+		// #endif /* LOGGER >= ERROR */
 		return -1;
 	}
 
 	@Override
 	public short getNodeID(final byte[] p_buffer, final int p_offset) {
+		// #if LOGGER >= ERROR
 		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No NodeID available!");
+		// #endif /* LOGGER >= ERROR */
 		return -1;
 	}
 
@@ -137,7 +145,9 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 			ret = (p_buffer[offset] & 0xff) + ((p_buffer[offset + 1] & 0xff) << 8) + ((p_buffer[offset + 2] & 0xff) << 16)
 					+ ((p_buffer[offset + 3] & 0xff) << 24);
 		} else {
+			// #if LOGGER >= ERROR
 			AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No checksum available!");
+			// #endif /* LOGGER >= ERROR */
 			ret = -1;
 		}
 
@@ -171,7 +181,9 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	public short getConversionOffset() {
+		// #if LOGGER >= ERROR
 		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No conversion offset available!");
+		// #endif /* LOGGER >= ERROR */
 		return -1;
 	}
 
@@ -182,7 +194,9 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 
 	@Override
 	protected short getNIDOffset() {
+		// #if LOGGER >= ERROR
 		AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No NodeID available!");
+		// #endif /* LOGGER >= ERROR */
 		return -1;
 	}
 
@@ -210,7 +224,9 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 			ret += 6;
 			break;
 		default:
+			// #if LOGGER >= ERROR
 			AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "LocalID's lenght unknown!");
+			// #endif /* LOGGER >= ERROR */
 			break;
 		}
 
@@ -233,7 +249,9 @@ public class DefaultSecLogEntryHeader extends AbstractLogEntryHeader {
 		if (AbstractLogEntryHeader.useChecksum()) {
 			ret += versionSize;
 		} else {
+			// #if LOGGER >= ERROR
 			AbstractLogEntryHeader.getLogger().error(DefaultSecLogEntryHeader.class, "No checksum available!");
+			// #endif /* LOGGER >= ERROR */
 			ret = -1;
 		}
 

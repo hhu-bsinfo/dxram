@@ -1,17 +1,17 @@
+
 package de.hhu.bsinfo.utils.run;
+
+import java.nio.ByteBuffer;
+import java.util.Random;
 
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.AbstractMain;
 
-import java.nio.ByteBuffer;
-import java.util.Random;
-
 /**
  * Test and verify if the native memory implementation is working correctly
  * (simple tests and endianess test, only).
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
 public class NativeMemoryTest extends AbstractMain {
@@ -21,8 +21,8 @@ public class NativeMemoryTest extends AbstractMain {
 
 	/**
 	 * Java main entry point.
-	 *
-	 * @param args Main arguments.
+	 * @param args
+	 *            Main arguments.
 	 */
 	public static void main(final String[] args) {
 		AbstractMain main = new NativeMemoryTest();

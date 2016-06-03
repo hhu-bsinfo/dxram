@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.boot.tcmds;
 
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Shut down a dxram node.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 02.05.16
  */
 public class TcmdNodeShutdown extends AbstractTerminalCommand {
@@ -21,8 +21,7 @@ public class TcmdNodeShutdown extends AbstractTerminalCommand {
 	/**
 	 * Constructor
 	 */
-	public TcmdNodeShutdown() {
-	}
+	public TcmdNodeShutdown() {}
 
 	@Override
 	public String getName() {
@@ -49,7 +48,7 @@ public class TcmdNodeShutdown extends AbstractTerminalCommand {
 
 		if (!bootService.shutdownNode(nid, hard)) {
 			getTerminalDelegate()
-					.println("Shutting down node " + NodeID.toHexString(nid) + " failed.", TerminalColor.RED);
+			.println("Shutting down node " + NodeID.toHexString(nid) + " failed.", TerminalColor.RED);
 		} else {
 			getTerminalDelegate().println("Shutting down node " + NodeID.toHexString(nid) + " successful.");
 		}

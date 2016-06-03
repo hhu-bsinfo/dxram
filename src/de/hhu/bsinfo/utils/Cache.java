@@ -68,14 +68,14 @@ public class Cache<KeyType, ValueType> {
 		assert p_policyEnum != null;
 
 		switch (p_policyEnum) {
-			case DUMMY:
-				policy = new DummyPolicy<KeyType, ValueType>();
-				break;
-			case LRU:
-				policy = new LRUPolicy<KeyType, ValueType>();
-				break;
-			default:
-				break;
+		case DUMMY:
+			policy = new DummyPolicy<KeyType, ValueType>();
+			break;
+		case LRU:
+			policy = new LRUPolicy<KeyType, ValueType>();
+			break;
+		default:
+			break;
 		}
 
 		m_map = new HashMap<KeyType, CacheEntry<KeyType, ValueType>>();

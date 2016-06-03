@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.tmp.tcmds;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -8,12 +9,10 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Create a new chunk in temporary (superpeer storage) memory.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.05.16
  */
 public class TcmdTmpCreate extends AbstractTerminalCommand {
-	private static final ArgumentList.Argument
-			MS_ARG_SIZE = new ArgumentList.Argument("size", null, false, "Size of the chunk to create");
+	private static final ArgumentList.Argument MS_ARG_SIZE = new ArgumentList.Argument("size", null, false, "Size of the chunk to create");
 	private static final ArgumentList.Argument MS_ARG_ID =
 			new ArgumentList.Argument("id", null, false, "Id to identify the chunk in the storage");
 

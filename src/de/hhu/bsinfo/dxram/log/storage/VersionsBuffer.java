@@ -80,7 +80,9 @@ public class VersionsBuffer {
 			}
 			m_versionsFile = new RandomAccessFile(file, "rw");
 		} catch (final FileNotFoundException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(VersionsBuffer.class, "Could not create versions file: " + e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		m_accessLock = new ReentrantLock(false);
@@ -104,7 +106,9 @@ public class VersionsBuffer {
 		try {
 			return m_versionsFile.length();
 		} catch (final IOException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(VersionsBuffer.class, "Could not read versions file's size: " + e);
+			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
 	}
@@ -174,7 +178,9 @@ public class VersionsBuffer {
 					m_versionsFile.seek((int) m_versionsFile.length());
 					m_versionsFile.write(buffer.array());
 				} catch (final IOException e) {
+					// #if LOGGER >= ERROR
 					m_logger.error(VersionsBuffer.class, "Could write to versions file: " + e);
+					// #endif /* LOGGER >= ERROR */
 				}
 			} else {
 				m_accessLock.unlock();
@@ -276,7 +282,9 @@ public class VersionsBuffer {
 				m_versionsFile.setLength(data.length);
 			}
 		} catch (final IOException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(VersionsBuffer.class, "Could write to versions file: " + e);
+			// #endif /* LOGGER >= ERROR */
 		}
 		m_flushLock.unlock();
 	}
@@ -493,12 +501,12 @@ public class VersionsBuffer {
 
 		h1 ^= 8;
 		h1 ^= h1 >>> 16;
-				h1 *= 0x85ebca6b;
-				h1 ^= h1 >>> 13;
-					h1 *= 0xc2b2ae35;
-					h1 ^= h1 >>> 16;
+		h1 *= 0x85ebca6b;
+		h1 ^= h1 >>> 13;
+		h1 *= 0xc2b2ae35;
+		h1 ^= h1 >>> 16;
 
-					return h1;
+		return h1;
 	}
 
 }

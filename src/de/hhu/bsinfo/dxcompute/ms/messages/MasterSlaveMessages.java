@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 /**
  * Different message types used for the master slave framework
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
 public final class MasterSlaveMessages {
@@ -22,6 +21,5 @@ public final class MasterSlaveMessages {
 	/**
 	 * Static class
 	 */
-	private MasterSlaveMessages() {
-	}
+	private MasterSlaveMessages() {}
 }

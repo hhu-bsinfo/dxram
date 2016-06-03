@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.tmp;
 
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -21,7 +22,6 @@ import de.hhu.bsinfo.dxram.tmp.tcmds.TcmdTmpStatus;
  * data in the ChunkService. However, it is replicated to further superpeers to give
  * a certain degree of fault tolerance.
  * Use this to store results of computations or helper data for computations.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.05.16
  */
 public class TemporaryStorageService extends AbstractDXRAMService {
@@ -44,9 +44,10 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Create a block of memory in the superpeer storage.
-	 *
-	 * @param p_id   Storage id to use to identify the block.
-	 * @param p_size Size of the block to allocate
+	 * @param p_id
+	 *            Storage id to use to identify the block.
+	 * @param p_size
+	 *            Size of the block to allocate
 	 * @return True if successful, false on failure (no space, element count exceeded or id used).
 	 */
 	public boolean create(final int p_id, final int p_size) {
@@ -55,8 +56,8 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Create a block of memory in the superpeer storage.
-	 *
-	 * @param p_dataStructure Data structure with the storage id assigned to allocate memory for.
+	 * @param p_dataStructure
+	 *            Data structure with the storage id assigned to allocate memory for.
 	 * @return True if successful, false on failure (no space, element count exceeded or id used).
 	 */
 	public boolean create(final DataStructure p_dataStructure) {
@@ -65,8 +66,8 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Put data into an allocated block of memory in the superpeer storage.
-	 *
-	 * @param p_dataStructure Data structure to put with the storage id assigned.
+	 * @param p_dataStructure
+	 *            Data structure to put with the storage id assigned.
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean put(final DataStructure p_dataStructure) {
@@ -75,8 +76,8 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Get data from the superpeer storage.
-	 *
-	 * @param p_id Id of an allocated block to get the data from.
+	 * @param p_id
+	 *            Id of an allocated block to get the data from.
 	 * @return Chunk with the data other null on error.
 	 */
 	public Chunk get(final int p_id) {
@@ -85,8 +86,8 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Get data from the superpeer storage.
-	 *
-	 * @param p_dataStructure Data structure with the storage id assigned to read the data into.
+	 * @param p_dataStructure
+	 *            Data structure with the storage id assigned to read the data into.
 	 * @return True on success, false on failure.
 	 */
 	public boolean get(final DataStructure p_dataStructure) {
@@ -95,8 +96,8 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Remove an allocated block from the superpeer storage.
-	 *
-	 * @param p_id Storage id identifying the block to remove.
+	 * @param p_id
+	 *            Storage id identifying the block to remove.
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean remove(final int p_id) {
@@ -105,8 +106,8 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Remove an allocated block from the superpeer storage.
-	 *
-	 * @param p_dataStructure Data structure with the storage id assigned to remove.
+	 * @param p_dataStructure
+	 *            Data structure with the storage id assigned to remove.
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean remove(final DataStructure p_dataStructure) {
@@ -115,7 +116,6 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 
 	/**
 	 * Get the status of the superpeer storage.
-	 *
 	 * @return Status of the superpeer storage.
 	 */
 	public SuperpeerStorage.Status getStatus() {

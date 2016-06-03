@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.tmp.tcmds;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.SuperpeerStorage;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Get the current status of the temporary (superpeer) storage.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.05.16
  */
 public class TcmdTmpStatus extends AbstractTerminalCommand {

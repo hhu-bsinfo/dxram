@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="dxram" basedir="." default="build-all">
+<project name="dxram" basedir="." default="build-release">
 	<property name="name" value="dxram" />
 	<property name="build_dir" value="build" />
 	<property name="conf_dir" value="config" />
@@ -15,7 +15,15 @@
 	<property name="build_proj_jni_dir" value="${build_proj_dir}/${jni_dir}" />	
 	<property name="build_proj_log_dir" value="${build_proj_dir}/${log_dir}" />	
 	
-	<target name="build-all" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release" description="builds all files" />
+	<target name="build-all" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release, compile-performance, move-release" description="builds all files" />
+	<target name="build-debug" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, move-debug" description="builds dxram-debug.jar (contains all logger calls)" />
+	<target name="build-release" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-release, move-release" description="builds dxram-release-jar" />
+	<target name="build-performance" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-performance, move-performance" description="builds dxram-performance.jar (without any logger calls)" />
+	
+
+	<target name="clean-all" description="removes all created files and folders">
+		<delete dir="${build_proj_dir}" failonerror="false" />
+	</target>
 	
 	<target name="create_base_dirs" description="creates necessary folders">
 		<mkdir dir="${build_dir}" />
@@ -57,10 +65,31 @@
 	</target>
 	
 	<target name="compile-release" depends="create_base_dirs" description="builds class files, release build">
+		<exec dir="scripts/" executable="/bin/bash">
+			<arg line="preprocessor.sh INFO ENABLED"/>
+		</exec>
+		
 		<antcall target="compile">
 			<param name="buildtype" value="release"/>
 		</antcall>
-		<copy file="${build_proj_dir}/${name}-debug.jar" tofile="${build_proj_dir}/DXRAM.jar" />
+		
+		<exec dir="scripts/" executable="/bin/bash">
+			<arg line="postprocessor.sh"/>
+		</exec>
+	</target>
+	
+	<target name="compile-performance" depends="create_base_dirs" description="builds class files, performance build">
+		<exec dir="scripts/" executable="/bin/bash">
+			<arg line="preprocessor.sh DISABLED DISABLED"/>
+		</exec>
+		
+		<antcall target="compile">
+			<param name="buildtype" value="performance"/>
+		</antcall>
+		
+		<exec dir="scripts/" executable="/bin/bash">
+			<arg line="postprocessor.sh"/>
+		</exec>
 	</target>
 	
 	<target name="compile" depends="create_base_dirs" description="builds class files">
@@ -74,6 +103,9 @@
 		</condition>
 		<condition property="optimizeOn" value="on" else="off">
 			<equals arg1="${buildtype}" arg2="release" />
+		</condition>
+		<condition property="optimizeOn" value="on" else="off">
+			<equals arg1="${buildtype}" arg2="performance" />
 		</condition>
 		
 		<path id="build.classpath">
@@ -110,7 +142,15 @@
 		</jar>
 	</target>
 	
-	<target name="clean-all" description="removes all created files and folders">
-		<delete dir="${build_proj_dir}" failonerror="false" />
+	<target name="move-debug" depends="compile-debug" description="moves jar file to DXRAM.jar">
+		<move file="${build_proj_dir}/${name}-debug.jar" tofile="${build_proj_dir}/DXRAM.jar" />
+	</target>
+	
+	<target name="move-release" depends="compile-release" description="moves jar file to DXRAM.jar">
+		<move file="${build_proj_dir}/${name}-release.jar" tofile="${build_proj_dir}/DXRAM.jar" />
+	</target>
+	
+	<target name="move-performance" depends="compile-performance" description="moves jar file to DXRAM.jar">
+		<move file="${build_proj_dir}/${name}-performance.jar" tofile="${build_proj_dir}/DXRAM.jar" />
 	</target>
 </project>

@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.sync.tcmds;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Command to create a new barrier.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class TcmdBarrierAlloc extends AbstractTerminalCommand {
@@ -43,7 +43,7 @@ public class TcmdBarrierAlloc extends AbstractTerminalCommand {
 			getTerminalDelegate().println("Allocating barrier failed.", TerminalColor.RED);
 		} else {
 			getTerminalDelegate()
-					.println("Allocating barrier successful, barrier id: " + BarrierID.toHexString(barrierId));
+			.println("Allocating barrier successful, barrier id: " + BarrierID.toHexString(barrierId));
 		}
 
 		return true;

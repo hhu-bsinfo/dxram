@@ -25,7 +25,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Task to load a graph from a partitioned ordered edge list.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
@@ -50,8 +49,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the number of vertices to buffer with one load call.
-	 *
-	 * @param p_batchSize Number of vertices to buffer.
+	 * @param p_batchSize
+	 *            Number of vertices to buffer.
 	 */
 	public void setLoadVertexBatchSize(final int p_batchSize) {
 		m_vertexBatchSize = p_batchSize;
@@ -59,8 +58,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the path that contains the graph data.
-	 *
-	 * @param p_path Path with graph data files.
+	 * @param p_path
+	 *            Path with graph data files.
 	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
@@ -82,8 +81,10 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		long chunkIdPartitionIndex = nameserviceService
 				.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + getComputeGroupId(), 5000);
 		if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
 					"Could not find partition index for current compute group " + getComputeGroupId());
+			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
 
@@ -92,18 +93,24 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 		// get the index
 		if (!temporaryStorageService.get(graphPartitionIndex)) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Getting partition index from temporary memory failed.");
+			// #endif /* LOGGER >= ERROR */
 			return -2;
 		}
 
 		OrderedEdgeList graphPartitionOel = setupOrderedEdgeListForCurrentSlave(m_path);
 		if (graphPartitionOel == null) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Setting up graph partition for current slave failed.");
+			// #endif /* LOGGER >= ERROR */
 			return -3;
 		}
 
 		if (!loadGraphPartition(graphPartitionOel, graphPartitionIndex)) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Loading graph partition failed.");
+			// #endif /* LOGGER >= ERROR */
 			return -4;
 		}
 
@@ -153,8 +160,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Setup an edge list instance for the current slave node.
-	 *
-	 * @param p_path Path with indexed graph data partitions.
+	 * @param p_path
+	 *            Path with indexed graph data partitions.
 	 * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
 	 */
 	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path) {
@@ -163,12 +170,16 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		// check if directory exists
 		File tmpFile = new File(p_path);
 		if (!tmpFile.exists()) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Cannot setup edge lists, path does not exist: " + p_path);
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
 		if (!tmpFile.isDirectory()) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Cannot setup edge lists, path is not a directory: " + p_path);
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
@@ -187,7 +198,10 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		});
 
 		// add filtered files
+		// #if LOGGER >= DEBUG
 		m_loggerService.debug(getClass(), "Setting up oel for current slave, iterating files in " + p_path);
+		// #endif /* LOGGER >= DEBUG */
+
 		for (File file : files) {
 			String[] tokens = file.getName().split("\\.");
 
@@ -195,12 +209,18 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			if (tokens.length > 2) {
 				if (Integer.parseInt(tokens[2]) == getSlaveId()) {
 					if (tokens[1].equals("oel")) {
+						// #if LOGGER >= DEBUG
 						m_loggerService.debug(getClass(), "Found partition for slave: " + file);
+						// #endif /* LOGGER >= DEBUG */
+
 						orderedEdgeList = new OrderedEdgeListTextFileThreadBuffering(file.getAbsolutePath(),
 								m_vertexBatchSize * 1000);
 						break;
 					} else if (tokens[1].equals("boel")) {
+						// #if LOGGER >= DEBUG
 						m_loggerService.debug(getClass(), "Found partition for slave: " + file);
+						// #endif /* LOGGER >= DEBUG */
+
 						orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
 								m_vertexBatchSize * 1000);
 						break;
@@ -214,9 +234,10 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Load a graph partition (single threaded).
-	 *
-	 * @param p_orderedEdgeList     Graph partition to load.
-	 * @param p_graphPartitionIndex Index for all partitions to rebase vertex ids to current node.
+	 * @param p_orderedEdgeList
+	 *            Graph partition to load.
+	 * @param p_graphPartitionIndex
+	 *            Index for all partitions to rebase vertex ids to current node.
 	 * @return True if loading successful, false on error.
 	 */
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
@@ -226,8 +247,10 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 		GraphPartitionIndex.Entry currentPartitionIndexEntry = p_graphPartitionIndex.getPartitionIndex(getSlaveId());
 		if (currentPartitionIndexEntry == null) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
 					"Cannot load graph, missing partition index entry for partition " + getSlaveId());
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
@@ -236,9 +259,11 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		long totalVerticesLoaded = 0;
 		long totalEdgesLoaded = 0;
 
+		// #if LOGGER >= INFO
 		m_loggerService.info(getClass(), "Loading started, target vertex/edge count of partition "
 				+ currentPartitionIndexEntry.getPartitionId() + ": " + currentPartitionIndexEntry.getVertexCount() + "/"
 				+ currentPartitionIndexEntry.getEdgeCount());
+		// #endif /* LOGGER >= INFO */
 
 		while (true) {
 			readCount = 0;
@@ -274,14 +299,18 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 			int count = m_chunkService.create((DataStructure[]) vertexBuffer);
 			if (count != readCount) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + readCount);
+				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 
 			count = m_chunkService.put((DataStructure[]) vertexBuffer);
 			if (count != readCount) {
+				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(),
 						"Putting vertex data for chunks failed: " + count + " != " + readCount);
+				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 
@@ -290,19 +319,25 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			float curProgress = ((float) totalVerticesLoaded) / currentPartitionIndexEntry.getVertexCount();
 			if (curProgress - previousProgress > 0.01) {
 				previousProgress = curProgress;
+				// #if LOGGER >= INFO
 				m_loggerService.info(getClass(), "Loading progress: " + (int) (curProgress * 100) + "%");
+				// #endif /* LOGGER >= INFO */
 			}
 		}
 
+		// #if LOGGER >= INFO
 		m_loggerService.info(getClass(),
 				"Loading done, vertex/edge count: " + totalVerticesLoaded + "/" + totalEdgesLoaded);
+		// #endif /* LOGGER >= INFO */
 
 		if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded
 				|| currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
 					"Loading failed, vertex/edge count (" + totalVerticesLoaded + "/" + totalEdgesLoaded
 							+ ") does not match data in graph partition index (" + currentPartitionIndexEntry
-							.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
+					.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 

@@ -11,18 +11,21 @@ import java.io.IOException;
 
 /**
  * Implementation of a writer to write vertex data to a binary file.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 class FileWriterBinaryThread extends AbstractFileWriterThread {
 	/**
 	 * Constructor
-	 *
-	 * @param p_outputPath       Output file to write to.
-	 * @param p_id               Id of the writer (0 based index).
-	 * @param p_idRangeStartIncl Range of vertex ids to write to the file, start.
-	 * @param p_idRangeEndExcl   Range of the vertex ids to write the file, end.
-	 * @param p_storage          Storage to access for vertex data to write to the file.
+	 * @param p_outputPath
+	 *            Output file to write to.
+	 * @param p_id
+	 *            Id of the writer (0 based index).
+	 * @param p_idRangeStartIncl
+	 *            Range of vertex ids to write to the file, start.
+	 * @param p_idRangeEndExcl
+	 *            Range of the vertex ids to write the file, end.
+	 * @param p_storage
+	 *            Storage to access for vertex data to write to the file.
 	 */
 	FileWriterBinaryThread(final String p_outputPath, final int p_id, final long p_idRangeStartIncl,
 			final long p_idRangeEndExcl, final VertexStorage p_storage) {
@@ -71,11 +74,14 @@ class FileWriterBinaryThread extends AbstractFileWriterThread {
 
 	/**
 	 * Write the vertex data to the file in ascending vertex id order. Also creates info file with metadata.
-	 *
-	 * @param p_file           File to write the vertex data to.
-	 * @param p_infoFile       Info file with metadata.
-	 * @param p_rangeStartIncl Vertex id range start to write.
-	 * @param p_rangeEndExcl   Vertex id range end to write.
+	 * @param p_file
+	 *            File to write the vertex data to.
+	 * @param p_infoFile
+	 *            Info file with metadata.
+	 * @param p_rangeStartIncl
+	 *            Vertex id range start to write.
+	 * @param p_rangeEndExcl
+	 *            Vertex id range end to write.
 	 * @return True if successful, false on error.
 	 */
 	private boolean dumpOrdered(final DataOutputStream p_file, final BufferedWriter p_infoFile,
@@ -91,7 +97,7 @@ class FileWriterBinaryThread extends AbstractFileWriterThread {
 				i--;
 				continue;
 			} else if (res == Long.MAX_VALUE) {
-				//System.out.println("Invalid vertex id entry discovered in storage: " + i);
+				// System.out.println("Invalid vertex id entry discovered in storage: " + i);
 				// write empty vertex
 				try {
 					p_file.writeInt(0);
@@ -120,8 +126,7 @@ class FileWriterBinaryThread extends AbstractFileWriterThread {
 			p_infoFile.write(m_id + "," + Long.toString(vertexCount) + "," + Long.toString(edgeCount));
 			p_file.flush();
 			p_infoFile.flush();
-		} catch (final IOException ignored) {
-		}
+		} catch (final IOException ignored) {}
 
 		return true;
 	}

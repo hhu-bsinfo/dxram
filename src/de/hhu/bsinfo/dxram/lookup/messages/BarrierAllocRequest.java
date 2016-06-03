@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractRequest;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractRequest;
+
 /**
  * Request to allocate/create a new barrier.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.05.16
  */
 public class BarrierAllocRequest extends AbstractRequest {
@@ -21,9 +21,10 @@ public class BarrierAllocRequest extends AbstractRequest {
 
 	/**
 	 * Creates an instance of LookupRequest
-	 *
-	 * @param p_destination the destination
-	 * @param p_size        size of the barrier
+	 * @param p_destination
+	 *            the destination
+	 * @param p_size
+	 *            size of the barrier
 	 */
 	public BarrierAllocRequest(final short p_destination, final int p_size) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST);
@@ -33,7 +34,6 @@ public class BarrierAllocRequest extends AbstractRequest {
 
 	/**
 	 * Get the barrier size;
-	 *
 	 * @return Barrier size
 	 */
 	public int getBarrierSize() {

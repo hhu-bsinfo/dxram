@@ -82,8 +82,10 @@ public final class CIDTable {
 		m_store = new LIDStore();
 		m_nextLocalID = new AtomicLong(1);
 
+		// #if LOGGER >= INFO
 		m_logger.info(getClass(),
 				"CIDTable: init success (page directory at: 0x" + Long.toHexString(m_addressTableDirectory) + ")");
+		// #endif /* LOGGER >= INFO */
 	}
 
 	/**
@@ -260,19 +262,24 @@ public final class CIDTable {
 	private long createNIDTable() {
 		long ret;
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable,
 				NID_TABLE_SIZE);
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, NID_TABLE_SIZE);
+		// #endif /* STATISTICS */
 		ret = m_rawMemory.malloc(NID_TABLE_SIZE);
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
+		// #endif /* STATISTICS */
 		if (ret != -1) {
 			m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
 			m_totalMemoryTables += NID_TABLE_SIZE;
 			m_tableCount++;
 		}
-
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createNIDTable);
+		// #endif /* STATISTICS */
 
 		return ret;
 	}
@@ -284,18 +291,24 @@ public final class CIDTable {
 	private long createLIDTable() {
 		long ret;
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable,
 				LID_TABLE_SIZE);
 
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, LID_TABLE_SIZE);
+		// #endif /* STATISTICS */
 		ret = m_rawMemory.malloc(LID_TABLE_SIZE);
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
+		// #endif /* STATISTICS */
 		if (ret != -1) {
 			m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
 			m_totalMemoryTables += LID_TABLE_SIZE;
 			m_tableCount++;
 		}
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_createLIDTable);
+		// #endif /* STATISTICS */
 
 		return ret;
 	}

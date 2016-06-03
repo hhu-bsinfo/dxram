@@ -8,7 +8,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Data structure holding results of a single BFS run.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.05.16
  */
 public class BFSResult implements DataStructure {

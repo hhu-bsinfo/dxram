@@ -69,7 +69,9 @@ public final class TaskExecutor {
 		try {
 			m_executor.execute(p_runnable);
 		} catch (final RejectedExecutionException e) {
+			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":" + e.getMessage());
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
@@ -173,7 +175,9 @@ public final class TaskExecutor {
 			try {
 				runnable.run();
 			} catch (final Exception e) {
+				// #if LOGGER >= ERROR
 				NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
+				// #endif /* LOGGER >= ERROR */
 			} finally {
 				m_queueLock.lock();
 				// remove executed task

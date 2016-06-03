@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxram.data;
 
 /**
  * Helper class for ChunkID related issues.
- *
  * @author Florian Klein
  *         23.07.2013
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
@@ -19,13 +18,12 @@ public final class ChunkID {
 	/**
 	 * Static class.
 	 */
-	private ChunkID() {
-	}
+	private ChunkID() {}
 
 	/**
 	 * Get the CreatorID/NodeID part of the ChunkID.
-	 *
-	 * @param p_chunkID ChunkID.
+	 * @param p_chunkID
+	 *            ChunkID.
 	 * @return The NodeID/CreatorID part.
 	 */
 	public static short getCreatorID(final long p_chunkID) {
@@ -36,8 +34,8 @@ public final class ChunkID {
 
 	/**
 	 * Get the LocalID part of the ChunkID
-	 *
-	 * @param p_chunkID the ChunkID
+	 * @param p_chunkID
+	 *            the ChunkID
 	 * @return the LocalID part
 	 */
 	public static long getLocalID(final long p_chunkID) {
@@ -48,9 +46,10 @@ public final class ChunkID {
 
 	/**
 	 * Create a full chunkID from a local and node ID.
-	 *
-	 * @param p_nid Node ID part.
-	 * @param p_lid Local ID part.
+	 * @param p_nid
+	 *            Node ID part.
+	 * @param p_lid
+	 *            Local ID part.
 	 * @return Full Chunk ID.
 	 */
 	public static long getChunkID(final short p_nid, final long p_lid) {
@@ -59,8 +58,8 @@ public final class ChunkID {
 
 	/**
 	 * Convert a chunk id to a hex string
-	 *
-	 * @param p_chunkId Chunk id to convert to a hex string.
+	 * @param p_chunkId
+	 *            Chunk id to convert to a hex string.
 	 * @return Converted chunk id, example: 0x1111000000000001
 	 */
 	public static String toHexString(final long p_chunkId) {

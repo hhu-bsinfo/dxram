@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
@@ -8,7 +9,6 @@ import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
  * Response to the status request.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.05.15
  */
 public class SuperpeerStorageStatusResponse extends AbstractResponse {
@@ -23,9 +23,10 @@ public class SuperpeerStorageStatusResponse extends AbstractResponse {
 
 	/**
 	 * Creates an instance of SuperpeerStorageCreateRequest
-	 *
-	 * @param p_request Request to respond to
-	 * @param p_status  Status to send with the response
+	 * @param p_request
+	 *            Request to respond to
+	 * @param p_status
+	 *            Status to send with the response
 	 */
 	public SuperpeerStorageStatusResponse(final SuperpeerStorageStatusRequest p_request,
 			final SuperpeerStorage.Status p_status) {

@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxgraph.conv;
 
 /**
  * Thread writing the buffered data and converting it to the output file format.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 abstract class AbstractFileWriterThread extends ConverterThread {
@@ -15,12 +14,16 @@ abstract class AbstractFileWriterThread extends ConverterThread {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_outputPath       Output file to write to.
-	 * @param p_id               Id of the writer (0 based index).
-	 * @param p_idRangeStartIncl Range of vertex ids to write to the file, start.
-	 * @param p_idRangeEndExcl   Range of the vertex ids to write the file, end.
-	 * @param p_storage          Storage to access for vertex data to write to the file.
+	 * @param p_outputPath
+	 *            Output file to write to.
+	 * @param p_id
+	 *            Id of the writer (0 based index).
+	 * @param p_idRangeStartIncl
+	 *            Range of vertex ids to write to the file, start.
+	 * @param p_idRangeEndExcl
+	 *            Range of the vertex ids to write the file, end.
+	 * @param p_storage
+	 *            Storage to access for vertex data to write to the file.
 	 */
 	AbstractFileWriterThread(final String p_outputPath, final int p_id, final long p_idRangeStartIncl,
 			final long p_idRangeEndExcl, final VertexStorage p_storage) {

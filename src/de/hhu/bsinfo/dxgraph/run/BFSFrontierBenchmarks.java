@@ -22,7 +22,6 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Benchmark and compare execution time of various frontier lists used for BFS in dxgraph.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public final class BFSFrontierBenchmarks extends AbstractMain {
@@ -50,8 +49,8 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Java main entry point.
-	 *
-	 * @param p_args Main arguments.
+	 * @param p_args
+	 *            Main arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new BFSFrontierBenchmarks();
@@ -83,8 +82,8 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Execute a full evaluation with a range of parameters.
-	 *
-	 * @param p_threads Number of threads for multi threaded part.
+	 * @param p_threads
+	 *            Number of threads for multi threaded part.
 	 */
 	@SuppressWarnings("unused")
 	private void mainEval(final int p_threads) {
@@ -106,11 +105,13 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Execute a single evaluation pass.
-	 *
-	 * @param p_itemCount        Number of max items for a frontier.
-	 * @param p_threads          Number of threads to use for multi threaded section.
-	 * @param p_randDistFillRate Distribution/Fill rate of of items in a frontier. 0.8 means that a frontier
-	 *                           will be filled with 80% of p_itemCount elements.
+	 * @param p_itemCount
+	 *            Number of max items for a frontier.
+	 * @param p_threads
+	 *            Number of threads to use for multi threaded section.
+	 * @param p_randDistFillRate
+	 *            Distribution/Fill rate of of items in a frontier. 0.8 means that a frontier
+	 *            will be filled with 80% of p_itemCount elements.
 	 */
 	private void main(final int p_itemCount, final int p_threads, final float p_randDistFillRate) {
 		System.out.println("=======================================================================");
@@ -173,8 +174,8 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Prepare the data structures to be tested on the single test pass.
-	 *
-	 * @param p_itemCount Number of max items for a frontier.
+	 * @param p_itemCount
+	 *            Number of max items for a frontier.
 	 * @return List of frontier lists to be executed on the single thread pass.
 	 */
 	private ArrayList<FrontierList> prepareTestsSingleThreaded(final long p_itemCount) {
@@ -194,8 +195,8 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Prepare the data structures to be tested on the multi thread test pass.
-	 *
-	 * @param p_itemCount Number of max items for a frontier.
+	 * @param p_itemCount
+	 *            Number of max items for a frontier.
 	 * @return List of frontier lists to be executed on the multi thread pass.
 	 */
 	private ArrayList<FrontierList> prepareTestsMultiThreaded(final long p_itemCount) {
@@ -208,11 +209,14 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Execute the test of one data structure single threaded.
-	 *
-	 * @param p_frontierList Frontier list to test/benchmark.
-	 * @param p_testData     Test data to be used.
-	 * @param p_table        Name of the table to put the recorded data into.
-	 * @param p_column       Name of the column in the table to put recorded data into.
+	 * @param p_frontierList
+	 *            Frontier list to test/benchmark.
+	 * @param p_testData
+	 *            Test data to be used.
+	 * @param p_table
+	 *            Name of the table to put the recorded data into.
+	 * @param p_column
+	 *            Name of the column in the table to put recorded data into.
 	 * @return Test vector to verify if test data was successfully written and read back.
 	 */
 	private long executeTestSingleThreaded(final FrontierList p_frontierList, final long[] p_testData,
@@ -251,12 +255,16 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Execute the test of one data structure multi threaded.
-	 *
-	 * @param p_frontierList Frontier list to test/benchmark.
-	 * @param p_threadCount  Number of threads to start
-	 * @param p_testData     Test data to be used.
-	 * @param p_table        Name of the table to put the recorded data into.
-	 * @param p_column       Name of the column in the table to put recorded data into.
+	 * @param p_frontierList
+	 *            Frontier list to test/benchmark.
+	 * @param p_threadCount
+	 *            Number of threads to start
+	 * @param p_testData
+	 *            Test data to be used.
+	 * @param p_table
+	 *            Name of the table to put the recorded data into.
+	 * @param p_column
+	 *            Name of the column in the table to put recorded data into.
 	 * @return Test vector to verify if test data was successfully written and read back.
 	 */
 	private long executeTestMultiThreaded(final FrontierList p_frontierList, final int p_threadCount,
@@ -336,12 +344,16 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Do a full single thread pass with given parameters on all prepared frontiers.
-	 *
-	 * @param p_itemCount  Max number of items for a single frontier.
-	 * @param p_testData   Test data to be used.
-	 * @param p_testVector Test vector of the test data for verification.
-	 * @param p_table      Name of the table to put the recorded data into.
-	 * @param p_column     Name of the column in the table to put recorded data into.
+	 * @param p_itemCount
+	 *            Max number of items for a single frontier.
+	 * @param p_testData
+	 *            Test data to be used.
+	 * @param p_testVector
+	 *            Test vector of the test data for verification.
+	 * @param p_table
+	 *            Name of the table to put the recorded data into.
+	 * @param p_column
+	 *            Name of the column in the table to put recorded data into.
 	 * @return True if execution was successful and validation ok, false otherwise.
 	 */
 	private boolean doSingleThreaded(final int p_itemCount, final long[] p_testData, final long p_testVector,
@@ -368,13 +380,18 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Do a full multi thread pass with given parameters on all prepared frontiers.
-	 *
-	 * @param p_itemCount   Max number of items for a single frontier.
-	 * @param p_threadCount Number of threads to start
-	 * @param p_testData    Test data to be used.
-	 * @param p_testVector  Test vector of the test data for verification.
-	 * @param p_table       Name of the table to put the recorded data into.
-	 * @param p_column      Name of the column in the table to put recorded data into.
+	 * @param p_itemCount
+	 *            Max number of items for a single frontier.
+	 * @param p_threadCount
+	 *            Number of threads to start
+	 * @param p_testData
+	 *            Test data to be used.
+	 * @param p_testVector
+	 *            Test vector of the test data for verification.
+	 * @param p_table
+	 *            Name of the table to put the recorded data into.
+	 * @param p_column
+	 *            Name of the column in the table to put recorded data into.
 	 * @return True if execution was successful and validation ok, false otherwise.
 	 */
 	@SuppressWarnings("unused")
@@ -401,9 +418,10 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Create the test data with given parameters.
-	 *
-	 * @param p_totalItemCount   Max number of items for the test data.
-	 * @param p_randDistFillRate Distribution/Fill rate for the test data.
+	 * @param p_totalItemCount
+	 *            Max number of items for the test data.
+	 * @param p_randDistFillRate
+	 *            Distribution/Fill rate for the test data.
 	 * @return Array with shuffled test data.
 	 */
 	private long[] createTestData(final int p_totalItemCount, final float p_randDistFillRate) {
@@ -440,8 +458,8 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Shuffle the contents of an array.
-	 *
-	 * @param p_array Array with contents to shuffle.
+	 * @param p_array
+	 *            Array with contents to shuffle.
 	 */
 	private static void shuffleArray(final long[] p_array) {
 		Random rnd = new Random();
@@ -456,8 +474,8 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Create the test vector for verification.
-	 *
-	 * @param p_testData Test data to create the test vector of.
+	 * @param p_testData
+	 *            Test data to create the test vector of.
 	 * @return Test vector.
 	 */
 	private long createTestVector(final long[] p_testData) {
@@ -470,7 +488,6 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Thread for multi thread pass to push back the data concurrently.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
 	private static class PushWorkerThread extends Thread {
@@ -493,7 +510,6 @@ public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	/**
 	 * Thread for multi thread pass to pop the data from the front concurrently.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
 	private static class PopWorkerThread extends Thread {

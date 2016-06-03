@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxcompute.ms;
 
 /**
  * Different compute roles of the master slave framework.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public enum ComputeRole {
@@ -17,8 +16,8 @@ public enum ComputeRole {
 
 	/**
 	 * Creates an instance of Role
-	 *
-	 * @param p_acronym the role's acronym
+	 * @param p_acronym
+	 *            the role's acronym
 	 */
 	ComputeRole(final char p_acronym) {
 		m_acronym = p_acronym;
@@ -26,27 +25,26 @@ public enum ComputeRole {
 
 	/**
 	 * Get the node role from a full string.
-	 *
-	 * @param p_str String to parse.
+	 * @param p_str
+	 *            String to parse.
 	 * @return Role node of string.
 	 */
 	public static ComputeRole toComputeRole(final String p_str) {
 		String str = p_str.toLowerCase();
 		switch (str) {
-			case MASTER_STR:
-			case "m":
-				return ComputeRole.MASTER;
-			case SLAVE_STR:
-			case "s":
-				return ComputeRole.SLAVE;
-			default:
-				return ComputeRole.NONE;
+		case MASTER_STR:
+		case "m":
+			return ComputeRole.MASTER;
+		case SLAVE_STR:
+		case "s":
+			return ComputeRole.SLAVE;
+		default:
+			return ComputeRole.NONE;
 		}
 	}
 
 	/**
 	 * Gets the acronym of the role
-	 *
 	 * @return the acronym
 	 */
 	public char getAcronym() {
@@ -66,8 +64,8 @@ public enum ComputeRole {
 
 	/**
 	 * Gets the role for the given acronym
-	 *
-	 * @param p_acronym the acronym
+	 * @param p_acronym
+	 *            the acronym
 	 * @return the corresponding role
 	 */
 	public static ComputeRole getRoleByAcronym(final char p_acronym) {

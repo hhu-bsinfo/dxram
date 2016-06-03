@@ -130,32 +130,40 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		long graphPartitionIndexChunkId = m_nameserviceService
 				.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + getComputeGroupId(), 5000);
 		if (graphPartitionIndexChunkId == ChunkID.INVALID_ID) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
 					"Cannot find graph partition index for compute group " + getComputeGroupId());
+			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
 
 		m_graphPartitionIndex = new GraphPartitionIndex();
 		m_graphPartitionIndex.setID(graphPartitionIndexChunkId);
 		if (!m_temporaryStorageService.get(m_graphPartitionIndex)) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Getting graph partition index from temporary memory chunk "
 					+ ChunkID.toHexString(graphPartitionIndexChunkId) + " failed.");
+			// #endif /* LOGGER >= ERROR */
 			return -2;
 		}
 
 		// get entry vertices for bfs
 		long tmpStorageIdRootVertices = m_nameserviceService.getChunkID(m_bfsRootNameserviceEntry, 5000);
 		if (tmpStorageIdRootVertices == ChunkID.INVALID_ID) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
 					"Getting BFS entry vertex " + m_bfsRootNameserviceEntry + " failed, not valid.");
+			// #endif /* LOGGER >= ERROR */
 			return -3;
 		}
 
 		GraphRootList rootList = new GraphRootList(tmpStorageIdRootVertices);
 		if (!m_temporaryStorageService.get(rootList)) {
+			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
 					"Getting root list " + ChunkID.toHexString(tmpStorageIdRootVertices)
 							+ " of vertices for bfs from temporary storage failed.");
+			// #endif /* LOGGER >= ERROR */
 			return -4;
 		}
 
@@ -182,21 +190,25 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_barrierId3 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_3 + getComputeGroupId(), -1));
 		}
 
+		// #if LOGGER >= INFO
 		if (m_markVertices) {
 			m_loggerService.info(getClass(), "Marking vertices mode (graph data will be altered)");
 		} else {
 			m_loggerService.info(getClass(), "Not marking vertices mode (graph data read only)");
 		}
-
+		//
 		if (m_compressedVertexMessages) {
 			m_loggerService.info(getClass(), "Using compressed vertex messages for forwarding");
 		} else {
 			m_loggerService.info(getClass(), "Using non compressed vertex messages for forwarding");
 		}
+		// #endif /* LOGGER >= INFO */
 
 		int bfsIteration = 0;
 		for (long root : rootList.getRoots()) {
+			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(), "Executing BFS with root " + ChunkID.toHexString(root));
+			// #endif /* LOGGER >= INFO */
 
 			BFS bfs = new BFS(root, bfsIteration);
 			bfs.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount(), m_markVertices,
@@ -360,8 +372,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			m_statisticsThread = new StatisticsThread();
 
+			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(), "Running BFS with " + m_numberOfThreadsPerNode + " threads on "
 					+ p_totalVertexCount + " local vertices");
+			// #endif /* LOGGER >= INFO */
 
 			m_threads = new BFSThread[m_numberOfThreadsPerNode];
 			for (int i = 0; i < m_threads.length; i++) {
@@ -380,8 +394,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 */
 		void execute(final long p_entryVertex) {
 			if (p_entryVertex != ChunkID.INVALID_ID) {
+				// #if LOGGER >= INFO
 				m_loggerService.info(getClass(),
 						"I am starting BFS with entry vertex " + ChunkID.toHexString(p_entryVertex));
+				// #endif /* LOGGER >= INFO */
+
 				m_curFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
 			}
 
@@ -393,10 +410,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			long start = System.currentTimeMillis();
 
 			while (true) {
+				// #if LOGGER >= DEBUG
 				m_loggerService.debug(getClass(),
 						"Processing next BFS level " + m_bfsLocalResult.m_totalBFSDepth
 								+ ", total vertices visited so far "
 								+ m_bfsLocalResult.m_totalVisitedVertices + "...");
+				// #endif /* LOGGER >= DEBUG */
 
 				// kick off threads with current frontier
 				for (BFSThread thread : m_threads) {
@@ -415,10 +434,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					}
 				}
 
+				// #if LOGGER >= INFO
 				m_loggerService.info(getClass(),
 						"BFS Level " + m_bfsLocalResult.m_totalBFSDepth + " finished, verts " + m_statisticsThread
 								.getTotalVertexCount()
 								+ ", edges " + m_statisticsThread.getTotalEdgeCount() + " so far visited/traversed");
+				// #endif /* LOGGER >= INFO */
 
 				// inform all other slaves we are done
 				short ownId = getSlaveId();
@@ -489,14 +510,18 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				// now we are good, allow new delegates from remotes
 				m_remoteDelegatesForNextFrontier = true;
 
+				// #if LOGGER >= DEBUG
 				m_loggerService.debug(getClass(), "Frontier swap, new cur frontier size: " + m_curFrontier.size());
+				// #endif /* LOGGER >= DEBUG */
 
 				// also swap the references of all threads!
 				for (BFSThread thread : m_threads) {
 					thread.triggerFrontierSwap();
 				}
 
+				// #if LOGGER >= DEBUG
 				m_loggerService.debug(getClass(), "Continue next BFS level");
+				// #endif /* LOGGER >= DEBUG */
 
 				// go for next run
 				m_bfsLocalResult.m_totalBFSDepth++;
@@ -535,7 +560,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				thread.exitThread();
 			}
 
+			// #if LOGGER >= DEBUG
 			m_loggerService.debug(getClass(), "Joining BFS threads...");
+			// #endif /* LOGGER >= DEBUG */
+
 			for (BFSThread thread : m_threads) {
 				try {
 					thread.join();
@@ -547,7 +575,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_networkService.unregisterReceiver(VerticesForNextFrontierCompressedRequest.class, this);
 			m_networkService.unregisterReceiver(BFSResultMessage.class, this);
 
+			// #if LOGGER >= DEBUG
 			m_loggerService.debug(getClass(), "BFS shutdown");
+			// #endif /* LOGGER >= DEBUG */
 		}
 
 		@Override
@@ -555,7 +585,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			if (p_message != null) {
 				if (p_message.getType() == BFSMessages.TYPE) {
 					switch (p_message.getSubtype()) {
-
 						case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE:
 							onIncomingVerticesForNextFrontierMessage(
 									(VerticesForNextFrontierMessage) p_message);
@@ -764,6 +793,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 		}
 	}
+
 	//
 	//	/**
 	//	 * Master instance for BFS
@@ -1140,8 +1170,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						VerticesForNextFrontierMessage msg = entry.getValue();
 						if (msg.getBatchSize() > 0) {
 							if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+								// #if LOGGER >= ERROR
 								m_loggerService.error(getClass(), "Sending vertex message to node "
 										+ NodeID.toHexString(msg.getDestination()) + " failed");
+								// #endif /* LOGGER >= ERROR */
 								return;
 							}
 
@@ -1158,8 +1190,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 				int gett = m_chunkService.get(m_vertexBatch, 0, validVertsInBatch);
 				if (gett != validVertsInBatch) {
+					// #if LOGGER >= ERROR
 					m_loggerService.error(getClass(),
 							"Getting vertices in BFS Thread " + m_id + " failed: " + gett + " != " + validVertsInBatch);
+					// #endif /* LOGGER >= ERROR */
 					return;
 				}
 
@@ -1199,14 +1233,18 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						for (long neighbour : neighbours) {
 							// check if neighbors are valid, otherwise something's not ok with the data
 							if (neighbour == ChunkID.INVALID_ID) {
+								// #if LOGGER >= WARN
 								m_loggerService.warn(getClass(), "Invalid neighbor found on vertex " + vertex);
+								// #endif /* LOGGER >= WARN */
 								continue;
 							}
 
 							// don't allow access to the index chunk
 							if (ChunkID.getLocalID(neighbour) == 0) {
+								// #if LOGGER >= WARN
 								m_loggerService.warn(getClass(), "Neighbor id refers to index chunk " + ChunkID
 										.toHexString(neighbour) + ", vertex " + vertex);
+								// #endif /* LOGGER >= WARN */
 								continue;
 							}
 
@@ -1228,8 +1266,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								if (!msg.addVertex(neighbour)) {
 									// neighbor does not fit anymore, full
 									if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+										// #if LOGGER >= ERROR
 										m_loggerService.error(getClass(), "Sending vertex message to node "
 												+ NodeID.toHexString(creatorId) + " failed");
+										// #endif /* LOGGER >= ERROR */
 										return;
 									}
 
@@ -1252,8 +1292,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							m_chunkService
 									.put(ChunkLockOperation.NO_LOCK_OPERATION, m_vertexBatch, 0, validVertsInBatch);
 					if (put != writeBackCount) {
+						// #if LOGGER >= ERROR
 						m_loggerService.error(getClass(),
 								"Putting vertices in BFS Thread " + m_id + " failed: " + put + " != " + writeBackCount);
+						// #endif /* LOGGER >= ERROR */
 						return;
 					}
 				}

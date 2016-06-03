@@ -133,7 +133,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 	 */
 	private void performStabilization() {
 		while (-1 != m_superpeer.getPredecessor() && m_nodeID != m_superpeer.getPredecessor()) {
-			m_logger.trace(getClass(), "Performing stabilization by sending NodeID to predecessor=" + NodeID.toHexString(m_superpeer.getPredecessor()));
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(), "Performing stabilization by sending NodeID to predecessor="
+					+ NodeID.toHexString(m_superpeer.getPredecessor()));
+			// #endif /* LOGGER == TRACE */
 			if (m_network.sendMessage(new NotifyAboutNewSuccessorMessage(m_superpeer.getPredecessor(), m_nodeID))
 					!= NetworkErrorCodes.SUCCESS) {
 				// Predecessor is not available anymore, determine new predecessor and repeat it
@@ -144,7 +147,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		}
 
 		while (-1 != m_superpeer.getSuccessor() && m_nodeID != m_superpeer.getSuccessor()) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "Performing stabilization by sending NodeID to successor=" + NodeID.toHexString(m_superpeer.getSuccessor()));
+			// #endif /* LOGGER == TRACE */
 			if (m_network.sendMessage(new NotifyAboutNewPredecessorMessage(m_superpeer.getSuccessor(), m_nodeID))
 					!= NetworkErrorCodes.SUCCESS) {
 				// Predecessor is not available anymore, determine new predecessor and repeat it
@@ -192,7 +197,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 				m_next++;
 				m_overlayLock.unlock();
 
+				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "Asking " + NodeID.toHexString(contactSuperpeer) + " about his successor to fix overlay");
+				// #endif /* LOGGER == TRACE */
 				request = new AskAboutSuccessorRequest(contactSuperpeer);
 				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 					// Superpeer is not available anymore, remove from superpeer array and try next superpeer
@@ -236,7 +243,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 					m_overlayLock.unlock();
 					break;
 				}
+				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "Pinging " + NodeID.toHexString(peer) + " for heartbeat protocol");
+				// #endif /* LOGGER == TRACE */
 				if (m_network.sendMessage(
 						new SendSuperpeersMessage(peer, m_otherSuperpeers))
 						!= NetworkErrorCodes.SUCCESS) {
@@ -257,8 +266,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		m_overlayLock.lock();
 		responsibleArea = OverlayHelper.getResponsibleArea(m_nodeID, m_superpeer.getPredecessor(), m_otherSuperpeers);
 		m_overlayLock.unlock();
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Responsible backup area: " + NodeID.toHexString(responsibleArea[0])
 				+ ", " + NodeID.toHexString(responsibleArea[1]));
+		// #endif /* LOGGER == TRACE */
 
 		gatherBackups(responsibleArea);
 		m_superpeer.deleteUnnecessaryBackups(responsibleArea);
@@ -290,7 +301,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 			while (-1 != currentSuperpeer) {
 				peers = m_superpeer.getPeersInResponsibleArea(oldSuperpeer, currentSuperpeer);
 
-				m_logger.trace(getClass(), "Gathering backups by requesting all backups in responsible area from " + NodeID.toHexString(currentSuperpeer));
+				// #if LOGGER == TRACE
+				m_logger.trace(getClass(), "Gathering backups by requesting all backups in responsible area from "
+						+ NodeID.toHexString(currentSuperpeer));
+				// #endif /* LOGGER == TRACE */
 				request = new AskAboutBackupsRequest(currentSuperpeer, peers);
 				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 					// CurrentSuperpeer is not available anymore, remove it from superpeer array
@@ -349,10 +363,12 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		m_overlayLock.unlock();
 
 		if (!(superpeersFigure + peersFigure).equals(m_overlayFigure)) {
+			// #if LOGGER >= INFO
 			m_logger.info(getClass(), superpeersFigure);
 			if (!peersFigure.equals("Peers: ")) {
 				m_logger.info(getClass(), peersFigure);
 			}
+			// #endif /* LOGGER >= INFO */
 		}
 		m_overlayFigure = superpeersFigure + peersFigure;
 	}
@@ -364,7 +380,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 	 */
 	private void incomingSendBackupsMessage(final SendBackupsMessage p_sendBackupsMessage) {
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Got Message: SEND_BACKUPS_MESSAGE from " + NodeID.toHexString(p_sendBackupsMessage.getSource()));
+		// #endif /* LOGGER == TRACE */
 
 		m_superpeer.storeIncomingBackups(p_sendBackupsMessage.getCIDTrees(), p_sendBackupsMessage.getMappings());
 	}
@@ -378,7 +396,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 		byte[] allMappings;
 		ArrayList<LookupTree> trees;
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + NodeID.toHexString(p_askAboutBackupsRequest.getSource()));
+		// #endif /* LOGGER == TRACE */
 
 		trees = new ArrayList<LookupTree>();
 		allMappings = m_superpeer.compareAndReturnBackups(p_askAboutBackupsRequest.getPeers(), trees);
@@ -396,7 +416,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 	 *            the AskAboutSuccessorRequest
 	 */
 	private void incomingAskAboutSuccessorRequest(final AskAboutSuccessorRequest p_askAboutSuccessorRequest) {
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Got request: ASK_ABOUT_SUCCESSOR_REQUEST from " + NodeID.toHexString(p_askAboutSuccessorRequest.getSource()));
+		// #endif /* LOGGER == TRACE */
 
 		if (m_network.sendMessage(
 				new AskAboutSuccessorResponse(p_askAboutSuccessorRequest, m_superpeer.getSuccessor()))
@@ -414,8 +436,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 	private void incomingNotifyAboutNewPredecessorMessage(final NotifyAboutNewPredecessorMessage p_notifyAboutNewPredecessorMessage) {
 		short possiblePredecessor;
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_PREDECESSOR_MESSAGE from "
 				+ NodeID.toHexString(p_notifyAboutNewPredecessorMessage.getSource()));
+		// #endif /* LOGGER == TRACE */
 
 		possiblePredecessor = p_notifyAboutNewPredecessorMessage.getNewPredecessor();
 		if (m_superpeer.getPredecessor() != possiblePredecessor) {
@@ -435,7 +459,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 	private void incomingNotifyAboutNewSuccessorMessage(final NotifyAboutNewSuccessorMessage p_notifyAboutNewSuccessorMessage) {
 		short possibleSuccessor;
 
-		m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from " + NodeID.toHexString(p_notifyAboutNewSuccessorMessage.getSource()));
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "Got Message: NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE from "
+				+ NodeID.toHexString(p_notifyAboutNewSuccessorMessage.getSource()));
+		// #endif /* LOGGER == TRACE */
 
 		possibleSuccessor = p_notifyAboutNewSuccessorMessage.getNewSuccessor();
 		if (m_superpeer.getSuccessor() != possibleSuccessor) {
@@ -454,7 +481,10 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 	 */
 	private void incomingNotifyAboutFailedPeerMessage(final NotifyAboutFailedPeerMessage p_notifyAboutFailedPeerMessage) {
 
-		m_logger.trace(getClass(), "Got message: NOTIFY_ABOUT_FAILED_PEER_MESSAGE from " + NodeID.toHexString(p_notifyAboutFailedPeerMessage.getSource()));
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "Got message: NOTIFY_ABOUT_FAILED_PEER_MESSAGE from "
+				+ NodeID.toHexString(p_notifyAboutFailedPeerMessage.getSource()));
+		// #endif /* LOGGER == TRACE */
 
 		m_superpeer.removeFailedPeer(p_notifyAboutFailedPeerMessage.getFailedPeer());
 	}

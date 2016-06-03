@@ -14,7 +14,7 @@ public final class Stopwatch {
 	private long m_endTime = 0;
 	private long m_accu = 0;
 	private long m_counter = 0;
-	
+
 	// Constructors
 	/**
 	 * Creates an instance of Stopwatch
@@ -36,7 +36,7 @@ public final class Stopwatch {
 	public void stop() {
 		m_endTime = System.nanoTime();
 	}
-	
+
 	/**
 	 * Stop the watch and accumulate the resulting time
 	 * for avarage time calculation.
@@ -46,7 +46,7 @@ public final class Stopwatch {
 		m_accu += (m_endTime - m_startTime);
 		m_counter++;
 	}
-	
+
 	/**
 	 * Get the average of accumulated times.
 	 * @return Avarage of accumulated times in ns.
@@ -54,7 +54,7 @@ public final class Stopwatch {
 	public long getAvarageOfAccumulated() {
 		return m_accu / m_counter;
 	}
-	
+
 	/**
 	 * Get the stopped time.
 	 * @return Stopped time in ns.
@@ -62,7 +62,7 @@ public final class Stopwatch {
 	public long getTime() {
 		return m_endTime - m_startTime;
 	}
-	
+
 	/**
 	 * Get the stopped time as a string.
 	 * @return Stopped time in ns as string.
@@ -73,8 +73,10 @@ public final class Stopwatch {
 
 	/**
 	 * Prints the current time
-	 * @param p_header Header to add to the time to print.
-	 * @param p_printReadable True to print a readable version (split into minutes, seconds etc).
+	 * @param p_header
+	 *            Header to add to the time to print.
+	 * @param p_printReadable
+	 *            True to print a readable version (split into minutes, seconds etc).
 	 */
 	public void print(final String p_header, final boolean p_printReadable) {
 		long time;
@@ -88,7 +90,7 @@ public final class Stopwatch {
 		if (m_endTime == -1) {
 			m_endTime = System.nanoTime();
 		}
-		
+
 		time = m_endTime - m_startTime;
 
 		nanoseconds = time % 1000;

@@ -29,6 +29,9 @@ public class JobNull extends AbstractJob {
 	@Override
 	protected void execute(final short p_nodeID, final long[] p_chunkIDs) {
 		LoggerService logger = getService(LoggerService.class);
+
+		// #if LOGGER >= DEBUG
 		logger.debug(getClass(), "I am null job.");
+		// #endif /* LOGGER >= DEBUG */
 	}
 }

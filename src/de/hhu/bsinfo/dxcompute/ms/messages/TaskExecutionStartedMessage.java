@@ -7,7 +7,6 @@ import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
  * Notify all remote listeners about a task that started execution.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TaskExecutionStartedMessage extends AbstractMessage {
@@ -25,10 +24,12 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 	/**
 	 * Creates an instance of TaskRemoteCallbackMessage.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_destination                the destination node id.
-	 * @param p_taskPayloadId              Id of the task that started execution.
-	 * @param p_slavesAssignedForExecution List of slaves that are assigend for execution.
+	 * @param p_destination
+	 *            the destination node id.
+	 * @param p_taskPayloadId
+	 *            Id of the task that started execution.
+	 * @param p_slavesAssignedForExecution
+	 *            List of slaves that are assigend for execution.
 	 */
 	public TaskExecutionStartedMessage(final short p_destination, final int p_taskPayloadId,
 			final short[] p_slavesAssignedForExecution) {
@@ -40,7 +41,6 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 
 	/**
 	 * Id of the task that started execution.
-	 *
 	 * @return Id of the task.
 	 */
 	public int getTaskPayloadId() {
@@ -49,7 +49,6 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 
 	/**
 	 * List of slaves that execute the task.
-	 *
 	 * @return List of slaves
 	 */
 	public short[] getSlavesAssignedForExecution() {

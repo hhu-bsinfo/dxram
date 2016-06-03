@@ -11,7 +11,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Very simple/naive implementation for a storage using a hash map.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 public class VertexStorageBinarySimple implements VertexStorage {
@@ -33,8 +32,8 @@ public class VertexStorageBinarySimple implements VertexStorage {
 
 	/**
 	 * Get the full neighbor list of one vertex.
-	 *
-	 * @param p_vertexId Id of the vertex.
+	 * @param p_vertexId
+	 *            Id of the vertex.
 	 * @return Neighbor list.
 	 */
 	public ConcurrentLinkedQueue<Long> getVertexNeighbourList(final long p_vertexId) {
@@ -90,7 +89,6 @@ public class VertexStorageBinarySimple implements VertexStorage {
 
 	/**
 	 * Helper/Container class for a neighbor list.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class NeighbourListVertex {

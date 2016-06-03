@@ -1,12 +1,12 @@
-package de.hhu.bsinfo.dxram.lookup.messages;
 
-import de.hhu.bsinfo.menet.AbstractRequest;
+package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.menet.AbstractRequest;
+
 /**
  * Change the size of an existing barrier.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 06.05.16
  */
 public class BarrierChangeSizeRequest extends AbstractRequest {
@@ -22,9 +22,10 @@ public class BarrierChangeSizeRequest extends AbstractRequest {
 
 	/**
 	 * Creates an instance of BarrierChangeSizeRequest
-	 *
-	 * @param p_destination the destination
-	 * @param p_size        size of the barrier
+	 * @param p_destination
+	 *            the destination
+	 * @param p_size
+	 *            size of the barrier
 	 */
 	public BarrierChangeSizeRequest(final short p_destination, final int p_barrierId, final int p_size) {
 		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST);
@@ -35,7 +36,6 @@ public class BarrierChangeSizeRequest extends AbstractRequest {
 
 	/**
 	 * Id of the barrier to change the size of.
-	 *
 	 * @return Barrier id
 	 */
 	public int getBarrierId() {
@@ -44,7 +44,6 @@ public class BarrierChangeSizeRequest extends AbstractRequest {
 
 	/**
 	 * Get the barrier size;
-	 *
 	 * @return Barrier size
 	 */
 	public int getBarrierSize() {
