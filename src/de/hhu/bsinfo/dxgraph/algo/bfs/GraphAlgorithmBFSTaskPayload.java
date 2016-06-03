@@ -450,6 +450,20 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					m_terminateBfs = false;
 				}
 
+				// inform all other slaves about our next frontier size to determine termination
+				for (int i = 0; i < slavesNodeIds.length; i++) {
+					if (i != ownId) {
+						BFSTerminateMessage msg =
+								new BFSTerminateMessage(slavesNodeIds[i], m_nextFrontier.isEmpty());
+						NetworkErrorCodes err = m_networkService.sendMessage(msg);
+						if (err != NetworkErrorCodes.SUCCESS) {
+							m_loggerService.error(getClass(),
+									"Sending bfs terminate message to " + NodeID.toHexString(slavesNodeIds[i])
+											+ " failed: " + err);
+						}
+					}
+				}
+
 				// wait until everyone reported the next frontier state/termination
 				while (m_bfsSlavesEmptyNextFrontiers + 1 != getSlaveNodeIds().length) {
 					Thread.yield();
@@ -570,23 +584,31 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * @param p_message AbstractVerticesForNextFrontierRequest to handle
 		 */
 		private void onIncomingVerticesForNextFrontierMessage(final VerticesForNextFrontierMessage p_message) {
+			System.out.println("onIncomingVerticesForNextFrontierMessage");
+
 			// check if we are allowed to add
 			while (!m_remoteDelegatesForNextFrontier) {
 				Thread.yield();
 			}
+
+			System.out.println("2 onIncomingVerticesForNextFrontierMessage");
 
 			long vertexId = p_message.getVertex();
 			while (vertexId != -1) {
 				m_nextFrontier.pushBack(vertexId);
 				vertexId = p_message.getVertex();
 			}
+
+			System.out.println("3 onIncomingVerticesForNextFrontierMessage");
 		}
 
 		private void onIncomingBFSLevelFinishedMessage(final BFSLevelFinishedMessage p_message) {
+			System.out.println("onIncomingBFSLevelFinishedMessage");
 			m_bfsSlavesLevelFinishedCounter++;
 		}
 
 		private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
+			System.out.println("onIncomingBFSTerminateMessage");
 			if (!p_message.isNextFrontierEmpty()) {
 				m_terminateBfs = false;
 			}

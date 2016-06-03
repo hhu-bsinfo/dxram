@@ -20,7 +20,7 @@ public class BFSTerminateMessage extends AbstractMessage {
 	 * @param p_destination the destination
 	 */
 	public BFSTerminateMessage(final short p_destination, final boolean p_nextFrontierEmpty) {
-		super(p_destination, BFSMessages.TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE);
+		super(p_destination, BFSMessages.TYPE, BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE);
 
 		setStatusCode((byte) (p_nextFrontierEmpty ? 1 : 0));
 	}
