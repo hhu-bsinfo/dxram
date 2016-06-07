@@ -24,6 +24,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Load a partition index of a partitioned graph for one compute group. The index is
  * used to identify/convert single vertices or ranges of a partitioned graph on loading
  * the graph data.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
@@ -45,8 +46,8 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the path where one or multiple partition index files are stored.
-	 * @param p_path
-	 *            Path where the files are located
+	 *
+	 * @param p_path Path where the files are located
 	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
@@ -143,8 +144,8 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Load the graph partition index from one or multiple graph partition index files from a specific path.
-	 * @param p_path
-	 *            Path containing the graph partition index file(s).
+	 *
+	 * @param p_path Path containing the graph partition index file(s).
 	 * @return Graph partition index object with partition entries loaded from the files.
 	 */
 	private GraphPartitionIndex loadGraphPartitionIndexFromIndexFiles(final String p_path) {
@@ -164,8 +165,8 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Read graph partition index entries from one or multiple files from a specified folder.
-	 * @param p_path
-	 *            Path to the folder that contain the partition index files.
+	 *
+	 * @param p_path Path to the folder that contain the partition index files.
 	 * @return List of partition index entries read from the partition index files or null on error.
 	 */
 	private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFiles(final String p_path) {
@@ -199,8 +200,8 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 	/**
 	 * Read the graph partition index from a single partition index file. The file can contain multiple entries (one per
 	 * line)
-	 * @param p_pathFile
-	 *            Path + filename of the index file to read.
+	 *
+	 * @param p_pathFile Path + filename of the index file to read.
 	 * @return List of entries read from the file or null on error.
 	 */
 	private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFile(final String p_pathFile) {
@@ -249,7 +250,8 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 		try {
 			reader.close();
-		} catch (final IOException ignored) {}
+		} catch (final IOException ignored) {
+		}
 
 		return entries;
 	}
