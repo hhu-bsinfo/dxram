@@ -4,8 +4,8 @@ package de.hhu.bsinfo.dxgraph.conv;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.UnsafeHandler;
+import sun.misc.Unsafe;
 
 /**
  * Space efficient and multi threaded optimized storage for vertex data.
@@ -14,6 +14,7 @@ import de.hhu.bsinfo.utils.UnsafeHandler;
  * Data is stored using Java's Unsafe class to allow manual memory management
  * and space efficient data structures as well as CAS operations for low overhead
  * synchronisation.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 10.05.16
  */
 class VertexStorageBinaryUnsafe implements VertexStorage {
@@ -36,12 +37,8 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	/**
 	 * Constructor
-	 * @param p_vertexIdOffset
-	 *            Offset to add to every vertex id.
 	 */
-	VertexStorageBinaryUnsafe(final int p_vertexIdOffset) {
-		// m_vertexIdOffset = p_vertexIdOffset;
-
+	VertexStorageBinaryUnsafe() {
 		m_unsafe = UnsafeHandler.getInstance().getUnsafe();
 
 		m_blockTable = new long[MS_BLOCK_TABLE_SIZE];
@@ -142,8 +139,9 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 			if (m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, -1, 0)) {
 				while (true) {
 					long count = m_vertexCount.get();
-					if (count < p_hashValue) {
-						if (m_vertexCount.compareAndSet(count, p_hashValue)) {
+					if (count < p_hashValue + 1) {
+						// +1 because we expect 0 based values
+						if (m_vertexCount.compareAndSet(count, p_hashValue + 1)) {
 							break;
 						}
 					} else {
@@ -158,12 +156,6 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	@Override
 	public void putNeighbour(final long p_vertexId, final long p_neighbourVertexId) {
-		// long vertexId = p_vertexId;
-		// TODO conflict with graph partition index not knowing there was an offset applied
-		// -> have information in ioel file about offset?
-		// long neighbourVertexId = p_neighbourVertexId + m_vertexIdOffset;
-		// long neighbourVertexId = p_neighbourVertexId;
-
 		// don't add self loops
 		if (p_vertexId == p_neighbourVertexId) {
 			return;
@@ -244,8 +236,6 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 
 	@Override
 	public long getNeighbours(final long p_vertexId, final long[] p_buffer) {
-		// long vertexId = p_vertexId;
-
 		int tableIndex = (int) (p_vertexId / MS_BLOCK_SIZE);
 		int tableEntryIndex = (int) (p_vertexId % MS_BLOCK_SIZE);
 

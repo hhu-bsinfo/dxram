@@ -184,6 +184,18 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 			return p_filename.contains(".ioel.");
 		});
 
+		if (files.length > getSlaveNodeIds().length) {
+			// #if LOGGER >= ERROR
+			m_loggerService.error(getClass(),
+					"Found " + files.length + " graph partition index files in " + p_path + " but only "
+							+ getSlaveNodeIds().length + " slaves available.");
+			// #endif /* LOGGER >= ERROR */
+		} else {
+			// #if LOGGER >= INFO
+			m_loggerService.info(getClass(), "Found " + files.length + " graph partition index files in " + p_path);
+			// #endif /* LOGGER >= INFO */
+		}
+
 		// #if LOGGER >= INFO
 		m_loggerService.info(getClass(), "Found " + files.length + " graph partition index files in " + p_path);
 		// #endif /* LOGGER >= INFO */
