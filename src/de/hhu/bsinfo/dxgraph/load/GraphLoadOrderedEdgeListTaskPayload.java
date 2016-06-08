@@ -25,6 +25,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Task to load a graph from a partitioned ordered edge list.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
@@ -49,8 +50,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the number of vertices to buffer with one load call.
-	 * @param p_batchSize
-	 *            Number of vertices to buffer.
+	 *
+	 * @param p_batchSize Number of vertices to buffer.
 	 */
 	public void setLoadVertexBatchSize(final int p_batchSize) {
 		m_vertexBatchSize = p_batchSize;
@@ -58,8 +59,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the path that contains the graph data.
-	 * @param p_path
-	 *            Path with graph data files.
+	 *
+	 * @param p_path Path with graph data files.
 	 */
 	public void setLoadPath(final String p_path) {
 		m_path = p_path;
@@ -107,12 +108,22 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			return -3;
 		}
 
+		// #if LOGGER >= INFO
+		m_loggerService.info(getClass(),
+				"Chunkservice status BEFORE load:\n" + m_chunkService.getStatus());
+		// #endif /* LOGGER >= INFO */
+
 		if (!loadGraphPartition(graphPartitionOel, graphPartitionIndex)) {
 			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Loading graph partition failed.");
 			// #endif /* LOGGER >= ERROR */
 			return -4;
 		}
+
+		// #if LOGGER >= INFO
+		m_loggerService.info(getClass(),
+				"Chunkservice status AFTER load:\n" + m_chunkService.getStatus());
+		// #endif /* LOGGER >= INFO */
 
 		return 0;
 	}
@@ -160,8 +171,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Setup an edge list instance for the current slave node.
-	 * @param p_path
-	 *            Path with indexed graph data partitions.
+	 *
+	 * @param p_path Path with indexed graph data partitions.
 	 * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
 	 */
 	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path) {
@@ -234,10 +245,9 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Load a graph partition (single threaded).
-	 * @param p_orderedEdgeList
-	 *            Graph partition to load.
-	 * @param p_graphPartitionIndex
-	 *            Index for all partitions to rebase vertex ids to current node.
+	 *
+	 * @param p_orderedEdgeList     Graph partition to load.
+	 * @param p_graphPartitionIndex Index for all partitions to rebase vertex ids to current node.
 	 * @return True if loading successful, false on error.
 	 */
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
@@ -336,7 +346,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			m_loggerService.error(getClass(),
 					"Loading failed, vertex/edge count (" + totalVerticesLoaded + "/" + totalEdgesLoaded
 							+ ") does not match data in graph partition index (" + currentPartitionIndexEntry
-					.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
+							.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}

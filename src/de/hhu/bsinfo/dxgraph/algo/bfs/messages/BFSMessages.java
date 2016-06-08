@@ -11,6 +11,9 @@ public final class BFSMessages {
 	public static final byte SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_COMPRESSED_REQUEST = 2;
 	public static final byte SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_RESPONSE = 3;
 	public static final byte SUBTYPE_BFS_RESULT_MESSAGE = 4;
+	public static final byte SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE = 5;
+	public static final byte SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE = 6;
+	public static final byte SUBTYPE_BFS_TERMINATE_MESSAGE = 7;
 
 	/**
 	 * Static class

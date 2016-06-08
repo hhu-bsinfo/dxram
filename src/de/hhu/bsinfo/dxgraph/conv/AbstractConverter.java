@@ -9,6 +9,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Base class for all graph converters.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 abstract class AbstractConverter extends AbstractMain {
@@ -25,14 +26,11 @@ abstract class AbstractConverter extends AbstractMain {
 			new Argument("numConvThreads", "4", true, "Number of threads converting the data");
 	private static final Argument ARG_MAX_BUFFER_QUEUE_SIZE =
 			new Argument("maxBufferQueueSize", "100000", true, "Max size of the buffer queue for the file reader");
-	private static final Argument ARG_VERTEX_ID_OFFSET =
-			new Argument("vertexIdOffset", "0", true, "Offset to be added to all vertex IDs");
 
 	private VertexStorage m_storage;
 	private boolean m_isDirected;
 	private int m_numConverterThreads = -1;
 	private int m_maxBufferQueueSize = -1;
-	private int m_vertexIdOffset;
 	private BinaryEdgeBuffer m_sharedBuffer;
 	private ArrayList<AbstractFileReaderThread> m_fileReaderThreads = new ArrayList<>();
 	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<>();
@@ -40,8 +38,8 @@ abstract class AbstractConverter extends AbstractMain {
 
 	/**
 	 * Constructor
-	 * @param p_description
-	 *            Description for the converter.
+	 *
+	 * @param p_description Description for the converter.
 	 */
 	AbstractConverter(final String p_description) {
 		super(p_description);
@@ -56,7 +54,6 @@ abstract class AbstractConverter extends AbstractMain {
 		p_arguments.setArgument(ARG_INPUT_DIRECTED_EDGES);
 		p_arguments.setArgument(ARG_NUM_CONV_THREADS);
 		p_arguments.setArgument(ARG_MAX_BUFFER_QUEUE_SIZE);
-		p_arguments.setArgument(ARG_VERTEX_ID_OFFSET);
 	}
 
 	@Override
@@ -68,11 +65,10 @@ abstract class AbstractConverter extends AbstractMain {
 		m_isDirected = p_arguments.getArgumentValue(ARG_INPUT_DIRECTED_EDGES, Boolean.class);
 		m_numConverterThreads = p_arguments.getArgumentValue(ARG_NUM_CONV_THREADS, Integer.class);
 		m_maxBufferQueueSize = p_arguments.getArgumentValue(ARG_MAX_BUFFER_QUEUE_SIZE, Integer.class);
-		m_vertexIdOffset = p_arguments.getArgumentValue(ARG_VERTEX_ID_OFFSET, Integer.class);
 
 		m_sharedBuffer = new BinaryEdgesRingBuffer(m_maxBufferQueueSize);
 
-		m_storage = createVertexStorageInstance(m_vertexIdOffset);
+		m_storage = createVertexStorageInstance();
 
 		System.out.println("Parsing input " + inputPath + "...");
 
@@ -100,21 +96,16 @@ abstract class AbstractConverter extends AbstractMain {
 
 	/**
 	 * Provide the vertex storage instance you want to use for the conversion process.
-<<<<<<< HEAD
-=======
 	 *
-	 * @param p_vertexIdOffset Vertex offset to add to every id to rebase vertex ids by a constant value.
->>>>>>> branch 'master' of ssh://git@git.hhu.de/kebei100/dxram.git
 	 * @return VertexStorage instance to use.
 	 */
-	protected abstract VertexStorage createVertexStorageInstance(final int p_vertexIdOffset);
+	protected abstract VertexStorage createVertexStorageInstance();
 
 	/**
 	 * Create the file reader thread implementation to use.
-	 * @param p_inputPath
-	 *            Input graph file.
-	 * @param p_buffer
-	 *            Shared buffer accross all threads to use for buffering input.
+	 *
+	 * @param p_inputPath Input graph file.
+	 * @param p_buffer    Shared buffer accross all threads to use for buffering input.
 	 * @return FileReader instance to use.
 	 */
 	protected abstract AbstractFileReaderThread createReaderInstance(final String p_inputPath,
@@ -122,37 +113,31 @@ abstract class AbstractConverter extends AbstractMain {
 
 	/**
 	 * Create a writer instance for outputting the converted data.
-	 * @param p_outputPath
-	 *            Output file to write to.
-	 * @param p_id
-	 *            Id of the writer (0 based index).
-	 * @param p_idRangeStartIncl
-	 *            Range of vertex ids to write to the file, start.
-	 * @param p_idRangeEndExcl
-	 *            Range of the vertex ids to write the file, end.
-	 * @param p_storage
-	 *            Storage to access for vertex data to write to the file.
+	 *
+	 * @param p_outputPath       Output file to write to.
+	 * @param p_id               Id of the writer (0 based index).
+	 * @param p_idRangeStartIncl Range of vertex ids to write to the file, start.
+	 * @param p_idRangeEndIncl   Range of the vertex ids to write the file, end.
+	 * @param p_storage          Storage to access for vertex data to write to the file.
 	 * @return FileWriter instance to use.
 	 */
 	protected abstract AbstractFileWriterThread createWriterInstance(final String p_outputPath, final int p_id,
-			final long p_idRangeStartIncl, final long p_idRangeEndExcl, final VertexStorage p_storage);
+			final long p_idRangeStartIncl, final long p_idRangeEndIncl, final VertexStorage p_storage);
 
 	/**
 	 * Convert the provided bfs root list to the desired representation.
-	 * @param p_outputPath
-	 *            Output path to write the converter list to.
-	 * @param p_inputRootFile
-	 *            Input bfs root list file.
-	 * @param p_storage
-	 *            VertexStorage to use for re-basing the roots.
+	 *
+	 * @param p_outputPath    Output path to write the converter list to.
+	 * @param p_inputRootFile Input bfs root list file.
+	 * @param p_storage       VertexStorage to use for re-basing the roots.
 	 */
 	protected abstract void convertBFSRootList(final String p_outputPath, final String p_inputRootFile,
 			final VertexStorage p_storage);
 
 	/**
 	 * Parse and read the input graph data.
-	 * @param p_inputPaths
-	 *            List of filepaths with graph input data.
+	 *
+	 * @param p_inputPaths List of filepaths with graph input data.
 	 * @return Error code of the operation.
 	 */
 	private int parse(final String... p_inputPaths) {
@@ -209,10 +194,9 @@ abstract class AbstractConverter extends AbstractMain {
 
 	/**
 	 * Dump the cached graph data to output files.
-	 * @param p_outputPath
-	 *            Path to write the output files to.
-	 * @param p_fileCount
-	 *            Number of files to split the graph into.
+	 *
+	 * @param p_outputPath Path to write the output files to.
+	 * @param p_fileCount  Number of files to split the graph into.
 	 */
 	private void dumpToFiles(final String p_outputPath, final int p_fileCount) {
 		// adjust output path
@@ -224,20 +208,23 @@ abstract class AbstractConverter extends AbstractMain {
 
 		// also equals vertex count
 		long vertexCount = m_storage.getTotalVertexCount();
-		long rangeStart;
-		long rangeEnd;
+		long rangeStart = 0;
+		long rangeEnd = 0;
 		long processed = 0;
 
 		System.out.println("Dumping " + vertexCount + " vertices to " + p_fileCount + " files...");
 
 		for (int i = 0; i < p_fileCount; i++) {
 			rangeStart = processed;
+			// range end is excluding, i.e. +1 to include the last one to add
 			rangeEnd = rangeStart + (vertexCount / p_fileCount);
-			if (rangeEnd >= vertexCount) {
-				rangeEnd = vertexCount;
+
+			// if we can't split them evenly, add the remainder to the last file
+			if (i + 1 == p_fileCount) {
+				rangeEnd += vertexCount % p_fileCount;
 			}
 
-			AbstractFileWriterThread thread = createWriterInstance(outputPath, i, rangeStart, rangeEnd, m_storage);
+			AbstractFileWriterThread thread = createWriterInstance(outputPath, i, rangeStart, rangeEnd - 1, m_storage);
 			thread.start();
 			m_fileWriterThreads.add(thread);
 

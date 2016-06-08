@@ -1,38 +1,34 @@
-
 package de.hhu.bsinfo.dxgraph.algo.bfs.front;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Thread safe, lock free implementation of a frontier listed based on
- * a bit vector.
- *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
+ * Created by nothaas on 6/3/16.
  */
-public class ConcurrentBitVector implements FrontierList {
+public class BitVectorReentrantLock {
 	private long m_maxElementCount;
-	private AtomicLongArray m_vector;
+	private long[] m_vector;
 
-	private AtomicLong m_itPos = new AtomicLong(0);
-	private AtomicLong m_count = new AtomicLong(0);
-	private AtomicLong m_inverseCount = new AtomicLong(0);
+	private long m_itPos;
+	private long m_count;
+
+	private ReentrantLock m_lock = new ReentrantLock(false);
 
 	/**
 	 * Constructor
 	 *
 	 * @param p_maxElementCount Specify the maximum number of elements.
 	 */
-	public ConcurrentBitVector(final long p_maxElementCount) {
+	public BitVectorReentrantLock(final long p_maxElementCount) {
 		m_maxElementCount = p_maxElementCount;
-		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
-		m_inverseCount.set(m_maxElementCount);
+		m_vector = new long[(int) ((p_maxElementCount / 64L) + 1L)];
 	}
 
 	public static void main(final String[] p_args) throws Exception {
 		final int vecSize = 10000000;
-		ConcurrentBitVector vec = new ConcurrentBitVector(vecSize);
+		BitVectorReentrantLock vec = new BitVectorReentrantLock(vecSize);
 
 		Thread[] threads = new Thread[24];
 		while (true) {
@@ -45,7 +41,9 @@ public class ConcurrentBitVector implements FrontierList {
 						Random rand = new Random();
 
 						for (int i = 0; i < 100000; i++) {
+							vec.lock();
 							vec.pushBack(rand.nextInt(vecSize));
+							vec.unlock();
 						}
 					}
 				};
@@ -67,11 +65,14 @@ public class ConcurrentBitVector implements FrontierList {
 					@Override
 					public void run() {
 						while (true) {
+							vec.lock();
 							long elem = vec.popFront();
 							if (elem == -1) {
+								vec.unlock();
 								sum.addAndGet(m_count);
 								break;
 							}
+							vec.unlock();
 
 							m_count++;
 						}
@@ -90,94 +91,66 @@ public class ConcurrentBitVector implements FrontierList {
 		}
 	}
 
-	@Override
+	public void lock() {
+		m_lock.lock();
+	}
+
+	public void unlock() {
+		m_lock.unlock();
+	}
+
 	public boolean pushBack(final long p_index) {
 		long tmp = 1L << (p_index % 64L);
 		int index = (int) (p_index / 64L);
 
-		while (true) {
-			long val = m_vector.get(index);
-			if ((val & tmp) == 0) {
-				if (!m_vector.compareAndSet(index, val, val | tmp)) {
-					continue;
-				}
-				m_count.incrementAndGet();
-				m_inverseCount.decrementAndGet();
-				return true;
-			}
-
-			return false;
+		long val = m_vector[index];
+		if ((val & tmp) == 0) {
+			m_vector[index] = val | tmp;
+			m_count++;
+			return true;
 		}
+
+		return false;
 	}
 
-	@Override
 	public boolean contains(final long p_val) {
 		long tmp = 1L << (p_val % 64L);
 		int index = (int) (p_val / 64L);
-		return (m_vector.get(index) & tmp) != 0;
+		return (m_vector[index] & tmp) != 0;
 	}
 
-	@Override
 	public long capacity() {
 		return m_maxElementCount;
 	}
 
-	@Override
 	public long size() {
-		return m_count.get();
+		return m_count;
 	}
 
-	@Override
 	public boolean isEmpty() {
-		return m_count.get() == 0;
+		return m_count == 0;
 	}
 
-	@Override
 	public void reset() {
-		m_itPos.set(0);
-		m_count.set(0);
-		m_inverseCount.set(m_maxElementCount);
-		for (int i = 0; i < m_vector.length(); i++) {
-			m_vector.set(i, 0);
+		m_itPos = 0;
+		m_count = 0;
+		for (int i = 0; i < m_vector.length; i++) {
+			m_vector[i] = 0;
 		}
 	}
 
-	@Override
 	public long popFront() {
-		while (true) {
-			// this section keeps threads out
-			// if the vector is already empty
-			long count = m_count.get();
-			if (count > 0) {
-				if (!m_count.compareAndSet(count, count - 1)) {
-					continue;
-				}
-
-				break;
-			} else {
-				return -1;
-			}
+		if (m_count == 0) {
+			return -1;
 		}
 
-		long itPos = m_itPos.get();
 		while (true) {
-			try {
-				if ((m_vector.get((int) (itPos / 64L)) & (1L << (itPos % 64L))) != 0) {
-					if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
-						itPos = m_itPos.get();
-						continue;
-					}
-
-					return itPos;
-				}
-
-				if (!m_itPos.compareAndSet(itPos, itPos + 1)) {
-					itPos = m_itPos.get();
-				}
-			} catch (final IndexOutOfBoundsException e) {
-				System.out.println("Exception: " + itPos + " / " + m_count.get());
-				throw e;
+			if ((m_vector[(int) (m_itPos / 64L)] & (1L << (m_itPos % 64L))) != 0) {
+				m_count--;
+				return m_itPos++;
 			}
+
+			m_itPos++;
 		}
 	}
 

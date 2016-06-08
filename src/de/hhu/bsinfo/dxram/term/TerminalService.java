@@ -1,6 +1,12 @@
 
 package de.hhu.bsinfo.dxram.term;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,6 +29,7 @@ import de.hhu.bsinfo.utils.args.DefaultArgumentListParser;
  * Service providing an interactive terminal running on a DXRAM instance.
  * Allows access to implemented services, triggering commands, getting information
  * about current or remote DXRAM instances.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
 public class TerminalService extends AbstractDXRAMService implements TerminalDelegate {
@@ -31,11 +38,12 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	private TerminalComponent m_terminal;
 
 	private boolean m_loop = true;
+	private BufferedWriter m_historyFile;
 
 	/**
 	 * Register a new terminal command for the terminal.
-	 * @param p_command
-	 *            Command to register.
+	 *
+	 * @param p_command Command to register.
 	 * @return True if registering was successful, false if a command with the same name already exists.
 	 */
 	public boolean registerCommand(final AbstractTerminalCommand p_command) {
@@ -77,6 +85,17 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 					.readline("$" + NodeID.toHexString(m_boot.getNodeID()) + "> ");
 			if (arr != null) {
 				String command = new String(arr, 0, arr.length);
+
+				try {
+					if (m_historyFile != null) {
+						m_historyFile.write(command + "\n");
+					}
+				} catch (IOException e) {
+					// #if LOGGER >= ERROR
+					m_logger.error(getClass(), "Writing history file failed", e);
+					// #endif /* LOGGER >= ERROR */
+				}
+
 				executeTerminalCommand(command);
 			}
 		}
@@ -98,6 +117,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_terminal = getComponent(TerminalComponent.class);
 
+		loadHistoryFromFile("dxram_term_history");
+
 		return true;
 	}
 
@@ -106,6 +127,13 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		m_logger = null;
 		m_boot = null;
 		m_terminal = null;
+
+		if (m_historyFile != null) {
+			try {
+				m_historyFile.close();
+			} catch (final IOException ignored) {
+			}
+		}
 
 		return true;
 	}
@@ -320,6 +348,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Get a list of available/registered commands.
+	 *
 	 * @return List of registered commands.
 	 */
 	private String getAvailableCommands() {
@@ -342,8 +371,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Print a usage message for the specified terminal command.
-	 * @param p_command
-	 *            Terminal command to print usage message of.
+	 *
+	 * @param p_command Terminal command to print usage message of.
 	 */
 	private void printUsage(final AbstractTerminalCommand p_command) {
 		ArgumentList argList = new ArgumentList();
@@ -357,8 +386,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Execute interactive argument mode to allow the user entering arguments for a command one by one.
-	 * @param p_arguments
-	 *            List of arguments with arguments that need values to be entered.
+	 *
+	 * @param p_arguments List of arguments with arguments that need values to be entered.
 	 * @return If user entered arguments properly, false otherwise.
 	 */
 	private boolean interactiveArgumentMode(final ArgumentList p_arguments) {
@@ -390,12 +419,10 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	/**
 	 * Change the color of stdout.
-	 * @param p_color
-	 *            Text color.
-	 * @param p_backgroundColor
-	 *            Shell background color
-	 * @param p_style
-	 *            Text style.
+	 *
+	 * @param p_color           Text color.
+	 * @param p_backgroundColor Shell background color
+	 * @param p_style           Text style.
 	 */
 	private void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor,
 			final TerminalStyle p_style) {
@@ -406,6 +433,53 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			System.out.printf("\033[%d;%dm", p_style.ordinal(), p_color.ordinal() + 30);
 		} else {
 			System.out.printf("\033[%dm", p_style.ordinal());
+		}
+	}
+
+	/**
+	 * Load terminal command history from a file.
+	 *
+	 * @param p_file File to load the history from and append new commands to.
+	 */
+	private void loadHistoryFromFile(final String p_file) {
+		BufferedReader reader;
+		try {
+			reader = new BufferedReader(new FileReader(p_file));
+
+			// import history if found
+			String str;
+			while (true) {
+				try {
+					str = reader.readLine();
+				} catch (IOException e) {
+					break;
+				}
+
+				if (str == null) {
+					break;
+				}
+
+				JNIconsole.addToHistory(str);
+			}
+
+			reader.close();
+		} catch (final FileNotFoundException e) {
+			// #if LOGGER >= DEBUG
+			m_logger.debug(getClass(), "No history found: " + p_file);
+			// #endif /* LOGGER >= DEBUG */
+		} catch (final IOException e) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Reading history " + p_file + " failed", e);
+			// #endif /* LOGGER >= ERROR */
+		}
+
+		try {
+			m_historyFile = new BufferedWriter(new FileWriter(p_file, true));
+		} catch (final IOException e) {
+			m_historyFile = null;
+			// #if LOGGER >= WARN
+			m_logger.warn(getClass(), "Opening history " + p_file + " for writing failed", e);
+			// #endif /* LOGGER >= WARN */
 		}
 	}
 }
