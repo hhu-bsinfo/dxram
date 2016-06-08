@@ -102,7 +102,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					// m_lock.unlockAll(p_chunkID);
 
 					// Update local memory management
-					m_memoryManager.remove(p_chunkID);
+					m_memoryManager.remove(p_chunkID, true);
 					if (m_backup.isActive()) {
 						// Update logging
 						backupPeers = m_backup.getBackupPeersForLocalChunks(p_chunkID);
@@ -230,7 +230,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 						// m_lock.unlockAll(iter);
 
 						// Update local memory management
-						m_memoryManager.remove(iter);
+						m_memoryManager.remove(iter, true);
 						iter++;
 					}
 					ret = true;
@@ -314,6 +314,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 *            the MigrationRequest
 	 */
 	private void incomingMigrationRequest(final MigrationRequest p_request) {
+
 		MigrationResponse response = new MigrationResponse(p_request);
 
 		if (!m_chunk.putForeignChunks((Chunk[]) p_request.getDataStructures())) {
@@ -322,6 +323,12 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 		m_network.sendMessage(response);
 	}
 
+	/**
+	 * Handles an incoming Remote Migratrion Request. E.g. a peer receives this message from a
+	 * terminal peer.
+	 * @param p_message
+	 *            the message to trigger the Migration from another peer
+	 */
 	private void incomingMigrationMessage(final MigrationRemoteMessage p_message) {
 
 		boolean success = migrate(p_message.getChunkID(), p_message.getTargetNode());
@@ -343,7 +350,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
 						incomingMigrationRequest((MigrationRequest) p_message);
 						break;
-					case MigrationMessages.SUBTYPE_MIGRATION_MESSAGE:
+					case MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE:
 						incomingMigrationMessage((MigrationRemoteMessage) p_message);
 						break;
 					default:
@@ -363,7 +370,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 				MigrationRequest.class);
 		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE,
 				MigrationResponse.class);
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_MESSAGE,
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE,
 				MigrationRemoteMessage.class);
 	}
 

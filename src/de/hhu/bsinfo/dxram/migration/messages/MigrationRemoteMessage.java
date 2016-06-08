@@ -29,7 +29,7 @@ public class MigrationRemoteMessage extends AbstractMessage {
 	 */
 	public MigrationRemoteMessage(final short p_destination, final long p_cid, final short p_target) {
 
-		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_MESSAGE);
+		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE);
 
 		m_chunkID = p_cid;
 		m_target = p_target;

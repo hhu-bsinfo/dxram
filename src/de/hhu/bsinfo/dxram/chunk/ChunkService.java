@@ -520,7 +520,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		// remove local chunkIDs
 		m_memoryManager.lockManage();
 		for (final Long chunkID : localChunks) {
-			MemoryErrorCodes err = m_memoryManager.remove(chunkID);
+			MemoryErrorCodes err = m_memoryManager.remove(chunkID, false);
 			if (err == MemoryErrorCodes.SUCCESS) {
 				chunksRemoved++;
 			} else {
@@ -538,7 +538,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				// local remove, migrated data to current node
 				m_memoryManager.lockManage();
 				for (final Long chunkID : remoteChunks) {
-					MemoryErrorCodes err = m_memoryManager.remove(chunkID);
+					MemoryErrorCodes err = m_memoryManager.remove(chunkID, false);
 					if (err == MemoryErrorCodes.SUCCESS) {
 						chunksRemoved++;
 					} else {
@@ -1388,7 +1388,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		// remove chunks first (local)
 		m_memoryManager.lockManage();
 		for (int i = 0; i < chunkIDs.length; i++) {
-			MemoryErrorCodes err = m_memoryManager.remove(chunkIDs[i]);
+			MemoryErrorCodes err = m_memoryManager.remove(chunkIDs[i], false);
 			if (err == MemoryErrorCodes.SUCCESS) {
 				// remove successful
 				chunkStatusCodes[i] = 0;

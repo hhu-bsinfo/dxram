@@ -244,7 +244,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk with an id");
 			return chunkID;
 		}
-
+		chunkID = p_chunkId;
 		// verify this id is not used
 		if (m_cidTable.get(p_chunkId) == 0) {
 			address = m_rawMemory.malloc(p_size);
@@ -471,9 +471,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * This is a management call and has to be locked using lockManage().
 	 * @param p_chunkID
 	 *            the ChunkID of the Chunk
+	 * @param p_wasMigrated
+	 *            default value for this parameter should be false!
+	 *            if chunk was deleted during migration this flag should be set to true
 	 * @return MemoryErrorCodes indicating success or failure
 	 */
-	public MemoryErrorCodes remove(final long p_chunkID) {
+	public MemoryErrorCodes remove(final long p_chunkID, final boolean p_wasMigrated) {
 		long addressDeletedChunk;
 		int size;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
@@ -491,13 +494,18 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
 		if (addressDeletedChunk != -1) {
 			// more space for another zombie for reuse in LID store?
-			if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
-				// detach reference to zombie
+			if (p_wasMigrated) {
+
 				m_cidTable.delete(p_chunkID, false);
 			} else {
-				// no space for zombie in LID store, keep him "alive" in table
-			}
 
+				if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
+					// detach reference to zombie
+					m_cidTable.delete(p_chunkID, false);
+				} else {
+					// no space for zombie in LID store, keep him "alive" in table
+				}
+			}
 			size = m_rawMemory.getSizeBlock(addressDeletedChunk);
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);
 			m_rawMemory.free(addressDeletedChunk);
