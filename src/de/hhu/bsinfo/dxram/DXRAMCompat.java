@@ -212,6 +212,14 @@ public class DXRAMCompat {
 	}
 
 	/**
+	 * Get the number of entries in the nameservice
+	 * @return entry count
+	 */
+	public int getNameserviceEntryCount() {
+		return m_nameserviceService.getEntryCount();
+	}
+
+	/**
 	 * Gets the corresponding ChunkID for the given identifier
 	 * @param p_name
 	 *            the identifier of the corresponding Chunk
@@ -384,6 +392,7 @@ public class DXRAMCompat {
 		private static final long serialVersionUID = 8402205300600257791L;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of DXRAMException
 		 * @param p_message

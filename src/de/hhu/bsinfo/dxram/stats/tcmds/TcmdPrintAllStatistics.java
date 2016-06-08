@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.stats.tcmds;
 
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -59,7 +60,7 @@ public class TcmdPrintAllStatistics extends AbstractTerminalCommand {
 	 * @param p_className
 	 *            class name of the class which will be constructed.
 	 * @return
-	 * 		constructed class by name
+	 *         constructed class by name
 	 */
 
 	Class<?> createClassFromName(final String p_className) {
@@ -72,7 +73,8 @@ public class TcmdPrintAllStatistics extends AbstractTerminalCommand {
 			try {
 				clss = Class.forName("de.hhu.bsinfo." + p_className);
 			} catch (final ClassNotFoundException e1) {
-				System.out.println(p_className + "Class not found. Did you forget to enter the package name?");
+				getTerminalDelegate().println(
+						p_className + "Class not found. Did you forget to enter the package name?", TerminalColor.RED);
 			}
 		}
 

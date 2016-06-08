@@ -2,19 +2,17 @@
 package de.hhu.bsinfo.dxgraph.conv;
 
 import java.util.ArrayList;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Base class for all graph converters.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public abstract class AbstractConverter extends AbstractMain {
+abstract class AbstractConverter extends AbstractMain {
 	private static final Argument ARG_INPUT = new Argument("in", null, false, "Input file of specific format");
 	private static final Argument ARG_INPUT_ROOTS =
 			new Argument("inRoots", null, true, "Input file of specific format with BFS roots");
@@ -33,17 +31,17 @@ public abstract class AbstractConverter extends AbstractMain {
 	private boolean m_isDirected;
 	private int m_numConverterThreads = -1;
 	private int m_maxBufferQueueSize = -1;
-	private Queue<Pair<Long, Long>> m_sharedBufferQueue = new ConcurrentLinkedQueue<Pair<Long, Long>>();
-	private ArrayList<AbstractFileReaderThread> m_fileReaderThreads = new ArrayList<AbstractFileReaderThread>();
-	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<BufferToStorageThread>();
-	private ArrayList<AbstractFileWriterThread> m_fileWriterThreads = new ArrayList<AbstractFileWriterThread>();
+	private BinaryEdgeBuffer m_sharedBuffer;
+	private ArrayList<AbstractFileReaderThread> m_fileReaderThreads = new ArrayList<>();
+	private ArrayList<BufferToStorageThread> m_converterThreads = new ArrayList<>();
+	private ArrayList<AbstractFileWriterThread> m_fileWriterThreads = new ArrayList<>();
 
 	/**
 	 * Constructor
-	 * @param p_description
-	 *            Description for the converter.
+	 *
+	 * @param p_description Description for the converter.
 	 */
-	protected AbstractConverter(final String p_description) {
+	AbstractConverter(final String p_description) {
 		super(p_description);
 	}
 
@@ -67,6 +65,8 @@ public abstract class AbstractConverter extends AbstractMain {
 		m_isDirected = p_arguments.getArgumentValue(ARG_INPUT_DIRECTED_EDGES, Boolean.class);
 		m_numConverterThreads = p_arguments.getArgumentValue(ARG_NUM_CONV_THREADS, Integer.class);
 		m_maxBufferQueueSize = p_arguments.getArgumentValue(ARG_MAX_BUFFER_QUEUE_SIZE, Integer.class);
+
+		m_sharedBuffer = new BinaryEdgesRingBuffer(m_maxBufferQueueSize);
 
 		m_storage = createVertexStorageInstance();
 
@@ -96,56 +96,48 @@ public abstract class AbstractConverter extends AbstractMain {
 
 	/**
 	 * Provide the vertex storage instance you want to use for the conversion process.
+	 *
 	 * @return VertexStorage instance to use.
 	 */
 	protected abstract VertexStorage createVertexStorageInstance();
 
 	/**
 	 * Create the file reader thread implementation to use.
-	 * @param p_inputPath
-	 *            Input graph file.
-	 * @param p_bufferQueue
-	 *            Shared queue accross all threads to use for buffering input.
-	 * @param p_maxQueueSize
-	 *            Max buffer queue size for buffering data from the intput.
+	 *
+	 * @param p_inputPath Input graph file.
+	 * @param p_buffer    Shared buffer accross all threads to use for buffering input.
 	 * @return FileReader instance to use.
 	 */
 	protected abstract AbstractFileReaderThread createReaderInstance(final String p_inputPath,
-			final Queue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize);
+			final BinaryEdgeBuffer p_buffer);
 
 	/**
 	 * Create a writer instance for outputting the converted data.
-	 * @param p_outputPath
-	 *            Output file to write to.
-	 * @param p_id
-	 *            Id of the writer (0 based index).
-	 * @param p_idRangeStartIncl
-	 *            Range of vertex ids to write to the file, start.
-	 * @param p_idRangeEndExcl
-	 *            Range of the vertex ids to write the file, end.
-	 * @param p_storage
-	 *            Storage to access for vertex data to write to the file.
+	 *
+	 * @param p_outputPath       Output file to write to.
+	 * @param p_id               Id of the writer (0 based index).
+	 * @param p_idRangeStartIncl Range of vertex ids to write to the file, start.
+	 * @param p_idRangeEndIncl   Range of the vertex ids to write the file, end.
+	 * @param p_storage          Storage to access for vertex data to write to the file.
 	 * @return FileWriter instance to use.
 	 */
 	protected abstract AbstractFileWriterThread createWriterInstance(final String p_outputPath, final int p_id,
-			final long p_idRangeStartIncl, final long p_idRangeEndExcl, final VertexStorage p_storage);
+			final long p_idRangeStartIncl, final long p_idRangeEndIncl, final VertexStorage p_storage);
 
 	/**
 	 * Convert the provided bfs root list to the desired representation.
-	 * @param p_outputPath
-	 *            Output path to write the converter list to.
-	 * @param p_inputRootFile
-	 *            Input bfs root list file.
-	 * @param p_storage
-	 *            VertexStorage to use for re-basing the roots.
+	 *
+	 * @param p_outputPath    Output path to write the converter list to.
+	 * @param p_inputRootFile Input bfs root list file.
+	 * @param p_storage       VertexStorage to use for re-basing the roots.
 	 */
 	protected abstract void convertBFSRootList(final String p_outputPath, final String p_inputRootFile,
 			final VertexStorage p_storage);
 
 	/**
 	 * Parse and read the input graph data.
-	 * @param p_inputPaths
-	 *            List of filepaths with graph input data.
+	 *
+	 * @param p_inputPaths List of filepaths with graph input data.
 	 * @return Error code of the operation.
 	 */
 	private int parse(final String... p_inputPaths) {
@@ -154,7 +146,7 @@ public abstract class AbstractConverter extends AbstractMain {
 
 		for (String inputPath : p_inputPaths) {
 			AbstractFileReaderThread thread =
-					createReaderInstance(inputPath, m_sharedBufferQueue, m_maxBufferQueueSize);
+					createReaderInstance(inputPath, m_sharedBuffer);
 			thread.start();
 			m_fileReaderThreads.add(thread);
 		}
@@ -162,7 +154,7 @@ public abstract class AbstractConverter extends AbstractMain {
 		System.out.println("Starting converter threads...");
 
 		for (int i = 0; i < m_numConverterThreads; i++) {
-			BufferToStorageThread thread = new BufferToStorageThread(i, m_storage, m_isDirected, m_sharedBufferQueue);
+			BufferToStorageThread thread = new BufferToStorageThread(i, m_storage, m_isDirected, m_sharedBuffer);
 			thread.start();
 			m_converterThreads.add(thread);
 		}
@@ -202,10 +194,9 @@ public abstract class AbstractConverter extends AbstractMain {
 
 	/**
 	 * Dump the cached graph data to output files.
-	 * @param p_outputPath
-	 *            Path to write the output files to.
-	 * @param p_fileCount
-	 *            Number of files to split the graph into.
+	 *
+	 * @param p_outputPath Path to write the output files to.
+	 * @param p_fileCount  Number of files to split the graph into.
 	 */
 	private void dumpToFiles(final String p_outputPath, final int p_fileCount) {
 		// adjust output path
@@ -225,12 +216,15 @@ public abstract class AbstractConverter extends AbstractMain {
 
 		for (int i = 0; i < p_fileCount; i++) {
 			rangeStart = processed;
+			// range end is excluding, i.e. +1 to include the last one to add
 			rangeEnd = rangeStart + (vertexCount / p_fileCount);
-			if (rangeEnd >= vertexCount) {
-				rangeEnd = vertexCount;
+
+			// if we can't split them evenly, add the remainder to the last file
+			if (i + 1 == p_fileCount) {
+				rangeEnd += vertexCount % p_fileCount;
 			}
 
-			AbstractFileWriterThread thread = createWriterInstance(outputPath, i, rangeStart, rangeEnd, m_storage);
+			AbstractFileWriterThread thread = createWriterInstance(outputPath, i, rangeStart, rangeEnd - 1, m_storage);
 			thread.start();
 			m_fileWriterThreads.add(thread);
 

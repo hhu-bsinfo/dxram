@@ -1221,16 +1221,16 @@ public final class MigrationBackupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_chunkID) {
-					low = mid + 1;
-				} else if (midVal > p_chunkID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_chunkID) {
+				low = mid + 1;
+			} else if (midVal > p_chunkID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1420,16 +1420,16 @@ public final class MigrationBackupTree implements Serializable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getChunkID(0);
+			midVal = m_children[mid].getChunkID(0);
 
-				if (midVal < chunkID) {
-					low = mid + 1;
-				} else if (midVal > chunkID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < chunkID) {
+				low = mid + 1;
+			} else if (midVal > chunkID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

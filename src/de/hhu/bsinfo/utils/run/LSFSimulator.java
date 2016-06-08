@@ -774,9 +774,9 @@ public final class LSFSimulator {
 				runTime = Math.max(1, (System.currentTimeMillis() - startTime) / 1000);
 				if (runTime > lastPrintTime) {
 					System.out
-							.format("\r Wrote %d new objects (%d / sec), Cleaned %d segments (%d empty)," + "%d survivor objects, LSFwc = %.3f, RCwc = %.3f",
-									m_newObjectsWritten, m_newObjectsWritten / runTime, m_segmentsCleaned, m_emptySegmentsCleaned, m_cleanerObjectsWritten,
-									wcLSF, wcRC);
+					.format("\r Wrote %d new objects (%d / sec), Cleaned %d segments (%d empty)," + "%d survivor objects, LSFwc = %.3f, RCwc = %.3f",
+							m_newObjectsWritten, m_newObjectsWritten / runTime, m_segmentsCleaned, m_emptySegmentsCleaned, m_cleanerObjectsWritten,
+							wcLSF, wcRC);
 					System.out.flush();
 					lastPrintTime = runTime;
 				}

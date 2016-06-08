@@ -44,19 +44,19 @@ public enum LogLevel {
 		String str = p_string.toLowerCase();
 
 		switch (str) {
-			case "error":
-				return LogLevel.ERROR;
-			case "warning":
-			case "warn":
-				return LogLevel.WARN;
-			case "info":
-				return LogLevel.INFO;
-			case "debug":
-				return LogLevel.DEBUG;
-			case "trace":
-				return LogLevel.TRACE;
-			default:
-				return LogLevel.DISABLED;
+		case "error":
+			return LogLevel.ERROR;
+		case "warning":
+		case "warn":
+			return LogLevel.WARN;
+		case "info":
+			return LogLevel.INFO;
+		case "debug":
+			return LogLevel.DEBUG;
+		case "trace":
+			return LogLevel.TRACE;
+		default:
+			return LogLevel.DISABLED;
 		}
 	}
 

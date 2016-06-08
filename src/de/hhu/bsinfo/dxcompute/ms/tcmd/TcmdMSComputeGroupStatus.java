@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms.tcmd;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService.StatusMaster;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -39,12 +40,13 @@ public class TcmdMSComputeGroupStatus extends AbstractTerminalCommand {
 
 		StatusMaster status = masterSlaveComputeService.getStatusMaster(cgid);
 		if (status == null) {
-			System.out.println("Getting compute group status of group " + cgid + " failed");
+			getTerminalDelegate().println("Getting compute group status of group " + cgid + " failed",
+					TerminalColor.RED);
 			return true;
 		}
 
-		System.out.println("Status of group " + cgid + ":");
-		System.out.println(status);
+		getTerminalDelegate().println("Status of group " + cgid + ":");
+		getTerminalDelegate().println(status);
 
 		return true;
 	}

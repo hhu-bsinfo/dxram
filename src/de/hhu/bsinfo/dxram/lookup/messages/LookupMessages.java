@@ -46,8 +46,30 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_MESSAGE = 34;
 	public static final byte SUBTYPE_START_RECOVERY_MESSAGE = 35;
 
-	public static final byte SUBTYPE_REQUEST_SEND_LOOK_UP_TREE = 36;
-	public static final byte SUBTYPE_SEND_LOOK_UP_TREE = 37;
+	public static final byte SUBTYPE_BARRIER_ALLOC_REQUEST = 36;
+	public static final byte SUBTYPE_BARRIER_ALLOC_RESPONSE = 37;
+	public static final byte SUBTYPE_BARRIER_FREE_REQUEST = 38;
+	public static final byte SUBTYPE_BARRIER_FREE_RESPONSE = 39;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_REQUEST = 40;
+	public static final byte SUBTYPE_BARRIER_SIGN_ON_RESPONSE = 41;
+	public static final byte SUBTYPE_BARRIER_RELEASE_MESSAGE = 42;
+	public static final byte SUBTYPE_BARRIER_STATUS_REQUEST = 43;
+	public static final byte SUBTYPE_BARRIER_STATUS_RESPONSE = 44;
+	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST = 45;
+	public static final byte SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE = 46;
+
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST = 47;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE = 48;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST = 49;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE = 50;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST = 51;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE = 52;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE = 53;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST = 54;
+	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE = 55;
+
+	public static final byte SUBTYPE_REQUEST_SEND_LOOK_UP_TREE = 56;
+	public static final byte SUBTYPE_SEND_LOOK_UP_TREE = 57;
 
 	/**
 	 * Hidden constructor

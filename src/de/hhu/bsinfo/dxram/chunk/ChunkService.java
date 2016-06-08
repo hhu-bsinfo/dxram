@@ -14,6 +14,8 @@ import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetLocalChunkIDRangesResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMigratedChunkIDRangesResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
@@ -59,6 +61,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * This service provides access to the backend storage system.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class ChunkService extends AbstractDXRAMService implements MessageReceiver {
@@ -83,7 +86,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {}
+	protected void registerDefaultSettingsService(final Settings p_settings) {
+	}
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
@@ -96,12 +100,16 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_network = getComponent(NetworkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
 		m_lock = getComponent(AbstractLockComponent.class);
+		// #ifdef STATISTICS
 		m_statistics = getComponent(StatisticsComponent.class);
+		// #endif /* STATISTICS */
 		m_terminal = getComponent(TerminalComponent.class);
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();
+		// #ifdef STATISTICS
 		registerStatisticsOperations();
+		// #endif /* STATISTICS */
 
 		m_terminal.registerCommand(new TcmdChunkCreate());
 		m_terminal.registerCommand(new TcmdChunkRemove());
@@ -128,6 +136,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the status of the chunk service.
+	 *
 	 * @return Status object with current status of the service.
 	 */
 	public Status getStatus() {
@@ -149,15 +158,17 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the status of a remote node specified by a node id.
-	 * @param p_nodeID
-	 *            Node id to get the status from.
+	 *
+	 * @param p_nodeID Node id to get the status from.
 	 * @return Status object with status information of the remote node or null if getting status failed.
 	 */
 	public Status getStatus(final short p_nodeID) {
 		Status status = null;
 
 		if (p_nodeID == NodeID.INVALID_ID) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Invalid node id on get status");
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
@@ -169,8 +180,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			StatusRequest request = new StatusRequest(p_nodeID);
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Sending get status request to peer "
 						+ NodeID.toHexString(p_nodeID) + " failed: " + err);
+				// #endif /* LOGGER >= ERROR */
 			} else {
 				StatusResponse response = request.getResponse(StatusResponse.class);
 				status = response.getStatus();
@@ -182,6 +195,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the total amount of memory.
+	 *
 	 * @return Total amount of memory in bytes.
 	 */
 	public long getTotalMemory() {
@@ -190,6 +204,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the amounf of free memory.
+	 *
 	 * @return Amount of free memory in bytes.
 	 */
 	public long getFreeMemory() {
@@ -198,10 +213,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Create a new chunk.
-	 * @param p_size
-	 *            Size of the new chunk.
-	 * @param p_count
-	 *            Number of chunks to create with the specified size.
+	 *
+	 * @param p_size  Size of the new chunk.
+	 * @param p_count Number of chunks to create with the specified size.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
 	public long[] create(final int p_size, final int p_count) {
@@ -210,16 +224,22 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		assert p_size > 0 && p_count > 0;
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (!role.equals(NodeRole.PEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not create chunks");
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create, p_count);
+		// #endif /* STATISTICS */
 
 		chunkIDs = new long[p_count];
 
@@ -234,12 +254,16 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 		m_memoryManager.unlockManage();
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
 					"create[size " + p_size + ", count " + p_count + "] -> " + ChunkID.toHexString(chunkIDs[0])
 							+ ", ...");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return chunkIDs;
@@ -249,8 +273,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 * Create new chunks according to the data structures provided.
 	 * Important: This does NOT put/write the contents of the data structure provided.
 	 * It creates chunks with the sizes of the data structures and sets the IDs.
-	 * @param p_dataStructures
-	 *            Data structures to create chunks for.
+	 *
+	 * @param p_dataStructures Data structures to create chunks for.
 	 * @return Number of successfully created chunks.
 	 */
 	public int create(final DataStructure... p_dataStructures) {
@@ -261,17 +285,23 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (!role.equals(NodeRole.PEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not create chunks");
+			// #endif /* LOGGER >= ERROR */
 			return count;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create,
 				p_dataStructures.length);
+		// #endif /* STATISTICS */
 
 		m_memoryManager.lockManage();
 		// keep loop tight and execute everything
@@ -295,10 +325,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 		m_memoryManager.unlockManage();
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ")] -> " + count);
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return count;
@@ -306,8 +340,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Create chunks with different sizes.
-	 * @param p_sizes
-	 *            List of sizes to create chunks for.
+	 *
+	 * @param p_sizes List of sizes to create chunks for.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
 	public long[] createSizes(final int... p_sizes) {
@@ -318,17 +352,23 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (!role.equals(NodeRole.PEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not create chunks");
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create,
 				p_sizes.length);
+		// #endif /* STATISTICS */
 
 		chunkIDs = new long[p_sizes.length];
 
@@ -343,11 +383,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 		m_memoryManager.unlockManage();
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> "
 					+ ChunkID.toHexString(chunkIDs[0]) + ", ...");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return chunkIDs;
@@ -355,10 +399,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Create chunks on another node.
-	 * @param p_peer
-	 *            NodeID of the peer to create the chunks on.
-	 * @param p_sizes
-	 *            Sizes to create chunks of.
+	 *
+	 * @param p_peer  NodeID of the peer to create the chunks on.
+	 * @param p_sizes Sizes to create chunks of.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
 	public long[] createRemote(final short p_peer, final int... p_sizes) {
@@ -369,53 +412,71 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
 					+ p_sizes.length + ") " + p_sizes[0] + ", ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not create chunks");
+			// #endif /* LOGGER >= ERROR */
 			return chunkIDs;
 		}
 
 		// check if remote node is a peer
 		role = m_boot.getNodeRole(p_peer);
 		if (role == null) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					"Remote node " + NodeID.toHexString(p_peer) + " does not exist for remote create");
+			// #endif /* LOGGER >= ERROR */
 			return chunkIDs;
 		}
 
 		if (!role.equals(NodeRole.PEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), role + " " + NodeID.toHexString(p_peer) + " is not allowed to create chunks");
+			// #endif /* LOGGER >= ERROR */
 			return chunkIDs;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteCreate,
 				p_sizes.length);
+		// #endif /* STATISTICS */
 
 		CreateRequest request = new CreateRequest(p_peer, p_sizes);
 		NetworkErrorCodes error = m_network.sendSync(request);
 		if (error != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Sending chunk create request to peer " + NodeID.toHexString(p_peer)
 					+ " failed: " + error);
+			// #endif /* LOGGER >= ERROR */
 		} else {
 			CreateResponse response = request.getResponse(CreateResponse.class);
 			chunkIDs = response.getChunkIDs();
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteCreate);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
 			if (chunkIDs != null) {
+				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
 						+ p_sizes.length + ") " + p_sizes[0]
 						+ ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
+				// #endif /* LOGGER == TRACE */
 			} else {
+				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
 						+ p_sizes.length + ") " + p_sizes[0]
 						+ ", ...] -> -1");
+				// #endif /* LOGGER == TRACE */
 			}
 		}
 
@@ -424,8 +485,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Remove chunks/data structures from the storage.
-	 * @param p_dataStructures
-	 *            Data structures to remove from the storage.
+	 *
+	 * @param p_dataStructures Data structures to remove from the storage.
 	 * @return Number of successfully removed data structures.
 	 */
 	public int remove(final DataStructure... p_dataStructures) {
@@ -439,8 +500,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Remove chunks/data structures from the storage (by handle/ID).
-	 * @param p_chunkIDs
-	 *            ChunkIDs/Handles of the data structures to remove. Invalid values are ignored.
+	 *
+	 * @param p_chunkIDs ChunkIDs/Handles of the data structures to remove. Invalid values are ignored.
 	 * @return Number of successfully removed data structures.
 	 */
 	public int remove(final long... p_chunkIDs) {
@@ -451,19 +512,25 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
 					"remove[dataStructures(" + p_chunkIDs.length + ") " + ChunkID.toHexString(p_chunkIDs[0])
 							+ ", ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not remove chunks");
+			// #endif /* LOGGER >= ERROR */
 			return chunksRemoved;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove,
 				p_chunkIDs.length);
+		// #endif /* STATISTICS */
 
 		// sort by local and remote data first
 		Map<Short, ArrayList<Long>> remoteChunksByPeers = new TreeMap<>();
@@ -524,7 +591,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			if (err == MemoryErrorCodes.SUCCESS) {
 				chunksRemoved++;
 			} else {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Removing chunk ID " + ChunkID.toHexString(chunkID) + " failed: " + err);
+				// #endif /* LOGGER >= ERROR */
 			}
 		}
 		m_memoryManager.unlockManage();
@@ -542,8 +611,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 					if (err == MemoryErrorCodes.SUCCESS) {
 						chunksRemoved++;
 					} else {
+						// #if LOGGER >= ERROR
 						m_logger.error(getClass(),
 								"Removing chunk ID " + ChunkID.toHexString(chunkID) + " failed: " + err);
+						// #endif /* LOGGER >= ERROR */
 					}
 				}
 				m_memoryManager.unlockManage();
@@ -552,8 +623,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				RemoveRequest request = new RemoveRequest(peer, remoteChunks.toArray(new Long[0]));
 				NetworkErrorCodes error = m_network.sendSync(request);
 				if (error != NetworkErrorCodes.SUCCESS) {
+					// #if LOGGER >= ERROR
 					m_logger.error(getClass(), "Sending chunk remove request to peer "
 							+ NodeID.toHexString(peer) + " failed: " + error);
+					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
 
@@ -566,8 +639,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 					} else {
 						for (int i = 0; i < statusCodes.length; i++) {
 							if (statusCodes[i] < 0) {
+								// #if LOGGER >= ERROR
 								m_logger.error(getClass(), "Remote removing chunk "
 										+ ChunkID.toHexString(remoteChunks.get(i)) + " failed: " + statusCodes[i]);
+								// #endif /* LOGGER >= ERROR */
 							} else {
 								chunksRemoved++;
 							}
@@ -597,11 +672,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") "
 					+ ChunkID.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return chunksRemoved;
@@ -609,8 +688,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_dataStructres
-	 *            Data structures to put/update. Null values are ignored.
+	 *
+	 * @param p_dataStructres Data structures to put/update. Null values are ignored.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final DataStructure... p_dataStructres) {
@@ -619,10 +698,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_chunkUnlockOperation
-	 *            Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures
-	 *            Data structures to put/update. Null values or chunks with invalid IDs are ignored.
+	 *
+	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures       Data structures to put/update. Null values or chunks with invalid IDs are ignored.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
@@ -631,14 +709,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_chunkUnlockOperation
-	 *            Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures
-	 *            Data structures to put/update. Null values or chunks with invalid IDs are ignored.
-	 * @param p_offset
-	 *            Start offset within the array.
-	 * @param p_count
-	 *            Number of items to put.
+	 *
+	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures       Data structures to put/update. Null values or chunks with invalid IDs are ignored.
+	 * @param p_offset               Start offset within the array.
+	 * @param p_count                Number of items to put.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure[] p_dataStructures,
@@ -650,17 +725,23 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
 					+ p_dataStructures.length + ") ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not put chunks");
+			// #endif /* LOGGER >= ERROR */
 			return chunksPut;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put, p_count);
+		// #endif /* STATISTICS */
 
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<Short, ArrayList<DataStructure>>();
 		Map<Long, ArrayList<DataStructure>> remoteChunksByBackupPeers = new TreeMap<Long, ArrayList<DataStructure>>();
@@ -733,9 +814,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 					if (err == MemoryErrorCodes.SUCCESS) {
 						chunksPut++;
 					} else {
-						m_logger.error(getClass(),
-								"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed: "
-										+ err);
+						// #if LOGGER >= ERROR
+						m_logger.error(getClass(), "Putting local chunk " + ChunkID.toHexString(dataStructure.getID())
+								+ " failed: " + err);
+						// #endif /* LOGGER >= ERROR */
 					}
 				}
 				m_memoryManager.unlockAccess();
@@ -746,8 +828,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						chunksToPut.toArray(new DataStructure[chunksToPut.size()]));
 				NetworkErrorCodes error = m_network.sendSync(request);
 				if (error != NetworkErrorCodes.SUCCESS) {
+					// #if LOGGER >= ERROR
 					m_logger.error(getClass(), "Sending chunk put request to peer " + NodeID.toHexString(peer)
 							+ " failed: " + error);
+					// #endif /* LOGGER >= ERROR */
 
 					// TODO
 					// m_lookup.invalidate(dataStructure.getID());
@@ -763,8 +847,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				} else {
 					for (int i = 0; i < statusCodes.length; i++) {
 						if (statusCodes[i] < 0) {
+							// #if LOGGER >= ERROR
 							m_logger.error(getClass(), "Remote put chunk "
 									+ ChunkID.toHexString(chunksToPut.get(i).getID()) + " failed: " + statusCodes[i]);
+							// #endif /* LOGGER >= ERROR */
 						} else {
 							chunksPut++;
 						}
@@ -787,9 +873,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						(short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
+						// #if LOGGER == TRACE
 						m_logger.trace(getClass(),
 								"Logging " + dataStructures.length + " chunks to "
 										+ NodeID.toHexString(backupPeers[i]));
+						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
 					}
@@ -797,11 +885,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
 					+ p_dataStructures.length + ") ...] -> " + chunksPut);
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return chunksPut;
@@ -809,8 +901,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get/Read the data stored in the backend storage into the provided data structures.
-	 * @param p_dataStructures
-	 *            Data structures to read the stored data into. Null values or invalid IDs are ignored.
+	 *
+	 * @param p_dataStructures Data structures to read the stored data into. Null values or invalid IDs are ignored.
 	 * @return Number of successfully read data structures.
 	 */
 	public int get(final DataStructure... p_dataStructures) {
@@ -819,12 +911,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get/Read the data stored in the backend storage into the provided data structures.
-	 * @param p_dataStructures
-	 *            Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
-	 * @param p_offset
-	 *            Start offset within the array.
-	 * @param p_count
-	 *            Number of elements to read.
+	 *
+	 * @param p_dataStructures Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
+	 * @param p_offset         Start offset within the array.
+	 * @param p_count          Number of elements to read.
 	 * @return Number of successfully read data structures.
 	 */
 	public int get(final DataStructure[] p_dataStructures, final int p_offset, final int p_count) {
@@ -837,16 +927,22 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not get chunks");
+			// #endif /* LOGGER >= ERROR */
 			return totalChunksGot;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get, p_count);
+		// #endif /* STATISTICS */
 
 		// sort by local and remote data first
 		Map<Short, ArrayList<DataStructure>> remoteChunksByPeers = new TreeMap<>();
@@ -898,9 +994,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 					if (err == MemoryErrorCodes.SUCCESS) {
 						totalChunksGot++;
 					} else {
-						m_logger.error(getClass(),
-								"Getting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed: "
-										+ err);
+						// #if LOGGER >= ERROR
+						m_logger.error(getClass(), "Getting local chunk " + ChunkID.toHexString(dataStructure.getID())
+								+ " failed: " + err);
+						// #endif /* LOGGER >= ERROR */
 					}
 				}
 				m_memoryManager.unlockAccess();
@@ -909,7 +1006,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				GetRequest request = new GetRequest(peer, remoteChunks.toArray(new DataStructure[remoteChunks.size()]));
 				NetworkErrorCodes error = m_network.sendSync(request);
 				if (error != NetworkErrorCodes.SUCCESS) {
+					// #if LOGGER >= ERROR
 					m_logger.error(getClass(), "Sending chunk get request to peer " + peer + " failed: " + error);
+					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
 
@@ -917,8 +1016,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				if (response != null) {
 					if (response.getNumberOfChunksGot() != remoteChunks.size()) {
 						// TODO not all chunks were found
+						// #if LOGGER >= WARN
 						m_logger.warn(getClass(), "Could not find all chunks on peer "
 								+ NodeID.toHexString(peer) + " for chunk request.");
+						// #endif /* LOGGER >= WARN */
 					}
 
 					totalChunksGot += response.getNumberOfChunksGot();
@@ -926,10 +1027,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return totalChunksGot;
@@ -938,8 +1043,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	/**
 	 * Get/Read the data stored in the backend storage for chunks of unknown size. Use this if the payload size is
 	 * unknown, only!
-	 * @param p_chunkIDs
-	 *            Array with ChunkIDs.
+	 *
+	 * @param p_chunkIDs Array with ChunkIDs.
 	 * @return Int telling how many chunks were successful retrieved and a chunk array with the chunk data
 	 */
 	public Pair<Integer, Chunk[]> get(final long... p_chunkIDs) {
@@ -951,17 +1056,23 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " must not get chunks");
+			// #endif /* LOGGER >= ERROR */
 			return ret;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get,
 				p_chunkIDs.length);
+		// #endif /* STATISTICS */
 
 		// sort by local and remote data first
 		Map<Short, ArrayList<Integer>> remoteChunkIDsByPeers = new TreeMap<>();
@@ -1012,7 +1123,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						totalNumberOfChunksGot++;
 						ret.second()[index] = new Chunk(chunkID, ByteBuffer.wrap(data));
 					} else {
+						// #if LOGGER >= ERROR
 						m_logger.error(getClass(), "Getting local chunk " + ChunkID.toHexString(chunkID) + " failed.");
+						// #endif /* LOGGER >= ERROR */
 					}
 				}
 				m_memoryManager.unlockAccess();
@@ -1028,7 +1141,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				// mike foo requests chunk
 				NetworkErrorCodes error = m_network.sendSync(request);
 				if (error != NetworkErrorCodes.SUCCESS) {
+					// #if LOGGER >= ERROR
 					m_logger.error(getClass(), "Sending chunk get request to peer " + peer + " failed: " + error);
+					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
 
@@ -1042,10 +1157,165 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		ret.m_first = totalNumberOfChunksGot;
 		// mike foo chunk not found
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
+			// #endif /* LOGGER == TRACE */
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Special local only get version. Use this if you already delegate tasks with non local
+	 * chunks/data structures to the remote owning them. This speeds up access to local only chunks a lot.
+	 * Get/Read the data stored in the backend storage into the provided data structures.
+	 *
+	 * @param p_dataStructures Data structures to read the stored data into. Null values or invalid IDs are ignored.
+	 * @return Number of successfully read data structures.
+	 */
+	public int getLocal(final DataStructure... p_dataStructures) {
+		return getLocal(p_dataStructures, 0, p_dataStructures.length);
+	}
+
+	/**
+	 * Special local only get version. Use this if you already delegate tasks with non local
+	 * chunks/data structures to the remote owning them. This speeds up access to local only chunks a lot.
+	 * Get/Read the data stored in the backend storage into the provided data structures.
+	 *
+	 * @param p_dataStructures Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
+	 * @param p_offset         Start offset within the array.
+	 * @param p_count          Number of elements to read.
+	 * @return Number of successfully read data structures.
+	 */
+	public int getLocal(final DataStructure[] p_dataStructures, final int p_offset, final int p_count) {
+		int totalChunksGot = 0;
+
+		assert p_offset >= 0 || p_count >= 0;
+
+		if (p_dataStructures.length == 0) {
+			return totalChunksGot;
+		}
+
+		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(), "getLocal[dataStructures(" + p_count + ") ...]");
+			// #endif /* LOGGER == TRACE */
+		}
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role.equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " must not get chunks");
+			// #endif /* LOGGER >= ERROR */
+			return totalChunksGot;
+		}
+
+		// #ifdef STATISTICS
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get, p_count);
+		// #endif /* STATISTICS */
+
+		m_memoryManager.lockAccess();
+		for (int i = 0; i < p_count; i++) {
+			// filter null values
+			if (p_dataStructures[i + p_offset] == null
+					|| p_dataStructures[i + p_offset].getID() == ChunkID.INVALID_ID) {
+				continue;
+			}
+
+			// try to get locally, will check first if it exists and
+			// returns false if it doesn't exist
+			MemoryErrorCodes err = m_memoryManager.get(p_dataStructures[i + p_offset]);
+			if (err == MemoryErrorCodes.SUCCESS) {
+				totalChunksGot++;
+			} else {
+				m_logger.error(getClass(),
+						"Getting local chunk " + ChunkID.toHexString(p_dataStructures[i + p_offset].getID())
+								+ " failed, not available.");
+			}
+		}
+		m_memoryManager.unlockAccess();
+
+		// #ifdef STATISTICS
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
+
+		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(),
+					"getLocal[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+			// #endif /* LOGGER == TRACE */
+		}
+
+		return totalChunksGot;
+	}
+
+	/**
+	 * Special local only get version. Use this if you already delegate tasks with non local
+	 * chunks/data structures to the remote owning them. This speeds up access to local only chunks a lot.
+	 * Get/Read the data stored in the backend storage for chunks of unknown size. Use this if the payload size is
+	 * unknown, only!
+	 *
+	 * @param p_chunkIDs Array with ChunkIDs.
+	 * @return Int telling how many chunks were successful retrieved and a chunk array with the chunk data
+	 */
+	public Pair<Integer, Chunk[]> getLocal(final long... p_chunkIDs) {
+		Pair<Integer, Chunk[]> ret = null;
+		int totalNumberOfChunksGot = 0;
+
+		if (p_chunkIDs.length == 0) {
+			return ret;
+		}
+
+		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...]");
+			// #endif /* LOGGER == TRACE */
+		}
+
+		NodeRole role = m_boot.getNodeRole();
+		if (role.equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " must not get chunks");
+			// #endif /* LOGGER >= ERROR */
+			return ret;
+		}
+
+		// #ifdef STATISTICS
+		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get,
+				p_chunkIDs.length);
+		// #endif /* STATISTICS */
+
+		m_memoryManager.lockAccess();
+		for (int i = 0; i < p_chunkIDs.length; i++) {
+			// try to get locally, will check first if it exists and
+			// returns false if it doesn't exist
+			byte[] data = m_memoryManager.get(p_chunkIDs[i]);
+			if (data != null) {
+				totalNumberOfChunksGot++;
+				ret.second()[i] = new Chunk(p_chunkIDs[i], ByteBuffer.wrap(data));
+			} else {
+				m_logger.error(getClass(),
+						"Getting local chunk " + ChunkID.toHexString(p_chunkIDs[i])
+								+ " failed, not available.");
+			}
+		}
+		m_memoryManager.unlockAccess();
+
+		ret.m_first = totalNumberOfChunksGot;
+
+		// #ifdef STATISTICS
+		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
+
+		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return ret;
@@ -1053,6 +1323,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get all chunk ID ranges of all locally stored chunks.
+	 *
 	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
 	 */
 	public ArrayList<Long> getAllLocalChunkIDRanges() {
@@ -1067,8 +1338,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get all chunk ID ranges of all stored chunks from a specific node.
-	 * @param p_nodeID
-	 *            NodeID of the node to get the ranges from.
+	 * This does not include migrated chunks.
+	 *
+	 * @param p_nodeID NodeID of the node to get the ranges from.
 	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
 	 */
 	public ArrayList<Long> getAllLocalChunkIDRanges(final short p_nodeID) {
@@ -1077,15 +1349,19 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		// check if remote node is a peer
 		NodeRole role = m_boot.getNodeRole(p_nodeID);
 		if (role == null) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					"Remote node " + NodeID.toHexString(p_nodeID) + " does not exist for get local chunk id ranges");
+			// #endif /* LOGGER >= ERROR */
 			return list;
 		}
 
 		if (!role.equals(NodeRole.PEER)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					role + " " + NodeID.toHexString(p_nodeID)
 							+ " is not allowed to get local chunk id ranges (not allowed to have any)");
+			// #endif /* LOGGER >= ERROR */
 			return list;
 		}
 
@@ -1095,8 +1371,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			GetLocalChunkIDRangesRequest request = new GetLocalChunkIDRangesRequest(p_nodeID);
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Sending request to get chunk id ranges of node "
 						+ NodeID.toHexString(p_nodeID) + " failed: " + err);
+				// #endif /* LOGGER >= ERROR */
 				return list;
 			}
 
@@ -1107,10 +1385,76 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		return list;
 	}
 
+	/**
+	 * Get all chunk ID ranges of all migrated chunks stored on this node.
+	 *
+	 * @return List of migrated chunk ID ranges with blocks of start ID and end ID.
+	 */
+	public ArrayList<Long> getAllMigratedChunkIDRanges() {
+		ArrayList<Long> list = null;
+
+		m_memoryManager.lockAccess();
+		list = m_memoryManager.getCIDOfAllMigratedChunks();
+		m_memoryManager.unlockAccess();
+
+		return list;
+	}
+
+	/**
+	 * Get all chunk ID ranges of all stored chunks from a specific node.
+	 * This does not include migrated chunks.
+	 *
+	 * @param p_nodeID NodeID of the node to get the ranges from.
+	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
+	 */
+	public ArrayList<Long> getAllMigratedChunkIDRanges(final short p_nodeID) {
+		ArrayList<Long> list = null;
+
+		// check if remote node is a peer
+		NodeRole role = m_boot.getNodeRole(p_nodeID);
+		if (role == null) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Remote node " + NodeID.toHexString(p_nodeID) + " does not exist for get migrated chunk id ranges");
+			// #endif /* LOGGER >= ERROR */
+			return list;
+		}
+
+		if (!role.equals(NodeRole.PEER)) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					role + " " + NodeID.toHexString(p_nodeID)
+							+ " is not allowed to get migrated chunk id ranges (not allowed to have any)");
+			// #endif /* LOGGER >= ERROR */
+			return list;
+		}
+
+		if (p_nodeID == m_boot.getNodeID()) {
+			list = getAllLocalChunkIDRanges();
+		} else {
+			GetMigratedChunkIDRangesRequest request = new GetMigratedChunkIDRangesRequest(p_nodeID);
+			NetworkErrorCodes err = m_network.sendSync(request);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
+				m_logger.error(getClass(), "Sending request to get chunk id ranges of node "
+						+ NodeID.toHexString(p_nodeID) + " failed: " + err);
+				// #endif /* LOGGER >= ERROR */
+				return list;
+			}
+
+			GetMigratedChunkIDRangesResponse response = (GetMigratedChunkIDRangesResponse) request.getResponse();
+			list = response.getChunkIDRanges();
+		}
+
+		return list;
+	}
+
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+			// #endif /* LOGGER == TRACE */
 		}
 
 		if (p_message != null) {
@@ -1134,6 +1478,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 					case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
 						incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
 						break;
+					case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
+						incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
+						break;
 					default:
 						break;
 				}
@@ -1141,7 +1488,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		if (!m_performanceFlag) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(), "Exiting incomingMessage");
+			// #endif /* LOGGER == TRACE */
 		}
 	}
 
@@ -1165,6 +1514,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				GetLocalChunkIDRangesRequest.class);
 		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_RESPONSE,
 				GetLocalChunkIDRangesResponse.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST,
+				GetMigratedChunkIDRangesRequest.class);
+		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_RESPONSE,
+				GetMigratedChunkIDRangesResponse.class);
 	}
 
 	/**
@@ -1177,6 +1530,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_network.register(CreateRequest.class, this);
 		m_network.register(StatusRequest.class, this);
 		m_network.register(GetLocalChunkIDRangesRequest.class, this);
+		m_network.register(GetMigratedChunkIDRangesRequest.class, this);
 	}
 
 	/**
@@ -1219,8 +1573,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handles an incoming GetRequest
-	 * @param p_request
-	 *            the GetRequest
+	 *
+	 * @param p_request the GetRequest
 	 */
 	private void incomingGetRequest(final GetRequest p_request) {
 
@@ -1228,16 +1582,20 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		DataStructure[] chunks = new DataStructure[chunkIDs.length];
 		int numChunksGot = 0;
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingGet,
 				p_request.getChunkIDs().length);
+		// #endif /* STATISTICS */
 
 		m_memoryManager.lockAccess();
 		for (int i = 0; i < chunks.length; i++) {
 			// also does exist check
 			int size = m_memoryManager.getSize(chunkIDs[i]);
 			if (size < 0) {
+				// #if LOGGER >= WARN
 				m_logger.warn(getClass(),
 						"Getting size of chunk " + ChunkID.toHexString(chunkIDs[i]) + " failed, does not exist.");
+				// #endif /* LOGGER >= WARN */
 				size = 0;
 			} else {
 				numChunksGot++;
@@ -1252,25 +1610,31 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		GetResponse response = new GetResponse(p_request, numChunksGot, chunks);
 		NetworkErrorCodes error = m_network.sendMessage(response);
+		// #if LOGGER >= ERROR
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(), "Sending GetResponse for " + numChunksGot + " chunks failed: " + error);
 		}
+		// #endif /* LOGGER >= ERROR */
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingGet);
+		// #endif /* STATISTICS */
 	}
 
 	/**
 	 * Handles an incoming PutRequest
-	 * @param p_request
-	 *            the PutRequest
+	 *
+	 * @param p_request the PutRequest
 	 */
 	private void incomingPutRequest(final PutRequest p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();
 		byte[] statusChunks = new byte[chunks.length];
 		boolean allSuccessful = true;
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPut,
 				chunks.length);
+		// #endif /* STATISTICS */
 
 		Map<Long, ArrayList<DataStructure>> remoteChunksByBackupPeers = new TreeMap<Long, ArrayList<DataStructure>>();
 
@@ -1280,8 +1644,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			if (err != MemoryErrorCodes.SUCCESS) {
 				// does not exist (anymore)
 				statusChunks[i] = -1;
+				// #if LOGGER >= WARN
 				m_logger.warn(getClass(),
 						"Putting chunk " + ChunkID.toHexString(chunks[i].getID()) + " failed, does not exist.");
+				// #endif /* LOGGER >= WARN */
 				allSuccessful = false;
 			} else {
 				// put successful
@@ -1323,9 +1689,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		NetworkErrorCodes error = m_network.sendMessage(response);
+		// #if LOGGER >= ERROR
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(), "Sending chunk put respond to request " + p_request + " failed: " + error);
 		}
+		// #endif /* LOGGER >= ERROR */
 
 		// Send backups
 		if (m_backup.isActive() && remoteChunksByBackupPeers != null) {
@@ -1341,9 +1709,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 						(short) ((backupPeersAsLong & 0x0000FFFF00000000L) >> 32)};
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
+						// #if LOGGER == TRACE
 						m_logger.trace(ChunkService.class,
 								"Logging " + dataStructures.length + " chunks to "
 										+ NodeID.toHexString(backupPeers[i]));
+						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
 					}
@@ -1351,17 +1721,21 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingPut);
+		// #endif /* STATISTICS */
 	}
 
 	/**
 	 * Handles an incoming RemoveRequest
-	 * @param p_request
-	 *            the RemoveRequest
+	 *
+	 * @param p_request the RemoveRequest
 	 */
 	private void incomingRemoveRequest(final RemoveRequest p_request) {
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingRemove,
 				p_request.getChunkIDs().length);
+		// #endif /* STATISTICS */
 
 		Long[] chunkIDs = p_request.getChunkIDs();
 		byte[] chunkStatusCodes = new byte[chunkIDs.length];
@@ -1410,9 +1784,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		NetworkErrorCodes error = m_network.sendMessage(response);
+		// #if LOGGER >= ERROR
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(), "Sending chunk remove respond to request " + p_request + " failed: " + error);
 		}
+		// #endif /* LOGGER >= ERROR */
 
 		// TODO for migrated chunks, send remove request to peer currently holding the chunk data
 		// for (int i = 0; i < chunkIDs.length; i++) {
@@ -1452,17 +1828,21 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingRemove);
+		// #endif /* STATISTICS */
 	}
 
 	/**
 	 * Handle incoming create requests.
-	 * @param p_request
-	 *            Request to handle
+	 *
+	 * @param p_request Request to handle
 	 */
 	private void incomingCreateRequest(final CreateRequest p_request) {
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingCreate,
 				p_request.getSizes().length);
+		// #endif /* STATISTICS */
 
 		int[] sizes = p_request.getSizes();
 		long[] chunkIDs = new long[sizes.length];
@@ -1478,32 +1858,38 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		CreateResponse response = new CreateResponse(p_request, chunkIDs);
 		NetworkErrorCodes error = m_network.sendMessage(response);
+		// #if LOGGER >= ERROR
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(), "Sending chunk create respond to request " + p_request + " failed: " + error);
 		}
+		// #endif /* LOGGER >= ERROR */
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingCreate);
+		// #endif /* STATISTICS */
 	}
 
 	/**
 	 * Handle incoming status requests.
-	 * @param p_request
-	 *            Request to handle
+	 *
+	 * @param p_request Request to handle
 	 */
 	private void incomingStatusRequest(final StatusRequest p_request) {
 		Status status = getStatus();
 
 		StatusResponse response = new StatusResponse(p_request, status);
 		NetworkErrorCodes error = m_network.sendMessage(response);
+		// #if LOGGER >= ERROR
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(), "Sending status respond to request " + p_request + " failed: " + error);
 		}
+		// #endif /* LOGGER >= ERROR */
 	}
 
 	/**
 	 * Handle incoming get local chunk id ranges requests.
-	 * @param p_request
-	 *            Request to handle
+	 *
+	 * @param p_request Request to handle
 	 */
 	private void incomingGetLocalChunkIDRangesRequest(final GetLocalChunkIDRangesRequest p_request) {
 		ArrayList<Long> cidRangesLocalChunks = null;
@@ -1514,20 +1900,55 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (cidRangesLocalChunks == null) {
 			cidRangesLocalChunks = new ArrayList<Long>(0);
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Getting local chunk id ranges failed, sending back empty range.");
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		GetLocalChunkIDRangesResponse response = new GetLocalChunkIDRangesResponse(p_request, cidRangesLocalChunks);
 		NetworkErrorCodes error = m_network.sendMessage(response);
+		// #if LOGGER >= ERROR
 		if (error != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(getClass(),
 					"Responding to local chunk id ranges request " + p_request + " failed: " + error);
 		}
+		// #endif /* LOGGER >= ERROR */
+	}
+
+	/**
+	 * Handle incoming get migrated local chunk id ranges requests.
+	 *
+	 * @param p_request Request to handle
+	 */
+	private void incomingGetMigratedChunkIDRangesRequest(final GetMigratedChunkIDRangesRequest p_request) {
+		ArrayList<Long> cidRangesMigratedChunks = null;
+
+		m_memoryManager.lockAccess();
+		cidRangesMigratedChunks = m_memoryManager.getCIDOfAllMigratedChunks();
+		m_memoryManager.unlockAccess();
+
+		if (cidRangesMigratedChunks == null) {
+			cidRangesMigratedChunks = new ArrayList<Long>(0);
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Getting migrated chunk id ranges failed, sending back empty range.");
+			// #endif /* LOGGER >= ERROR */
+		}
+
+		GetMigratedChunkIDRangesResponse response =
+				new GetMigratedChunkIDRangesResponse(p_request, cidRangesMigratedChunks);
+		NetworkErrorCodes error = m_network.sendMessage(response);
+		// #if LOGGER >= ERROR
+		if (error != NetworkErrorCodes.SUCCESS) {
+			m_logger.error(getClass(),
+					"Responding to migrated chunk id ranges request " + p_request + " failed: " + error);
+		}
+		// #endif /* LOGGER >= ERROR */
 	}
 
 	/**
 	 * Status object for the chunk service containing various information
 	 * about it.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
 	 */
 	public static class Status implements Importable, Exportable {
@@ -1549,6 +1970,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the amount of free memory in bytes.
+		 *
 		 * @return Free memory in bytes.
 		 */
 		public long getFreeMemory() {
@@ -1557,6 +1979,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total amount of memory in bytes available.
+		 *
 		 * @return Total amount of memory in bytes.
 		 */
 		public long getTotalMemory() {
@@ -1565,6 +1988,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total amount of memory allocated and usable for actual payload/data.
+		 *
 		 * @return Total amount of memory usable for payload (in bytes).
 		 */
 		public long getTotalPayloadMemory() {
@@ -1573,6 +1997,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total number of active/allocated memory blocks.
+		 *
 		 * @return Number of allocated memory blocks.
 		 */
 		public long getNumberOfActiveMemoryBlocks() {
@@ -1581,6 +2006,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total number of currently active chunks.
+		 *
 		 * @return Number of active/allocated chunks.
 		 */
 		public long getNumberOfActiveChunks() {
@@ -1589,6 +2015,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the amount of memory used by chunk payload/data.
+		 *
 		 * @return Amount of memory used by chunk payload in bytes.
 		 */
 		public long getTotalChunkPayloadMemory() {
@@ -1597,6 +2024,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the number of currently allocated CID tables.
+		 *
 		 * @return Number of CID tables.
 		 */
 		public long getCIDTableCount() {
@@ -1605,6 +2033,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total memory used by CID tables (payload only).
+		 *
 		 * @return Total memory used by CID tables in bytes.
 		 */
 		public long getTotalMemoryCIDTables() {

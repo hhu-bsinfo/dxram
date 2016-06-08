@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.nameservice.tcmds;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
@@ -56,20 +57,20 @@ public class TcmdNameRegister extends AbstractTerminalCommand {
 		} else {
 			if (lid != null) {
 				if (nid == null) {
-					System.out.println("error: missing nid for lid");
+					getTerminalDelegate().println("error: missing nid for lid", TerminalColor.RED);
 					return false;
 				}
 
 				// create cid
 				chunkId = ChunkID.getChunkID(nid, lid);
 			} else {
-				System.out.println("No cid or nid/lid specified.");
+				getTerminalDelegate().println("No cid or nid/lid specified.", TerminalColor.RED);
 				return false;
 			}
 		}
 
 		if (name.length() > 5) {
-			System.out.println("Max name length allowed: 5");
+			getTerminalDelegate().println("Max name length allowed: 5", TerminalColor.RED);
 			return true;
 		}
 

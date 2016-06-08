@@ -1,3 +1,4 @@
+
 package de.hhu.bsinfo.utils.conf;
 
 public class ConfigurationException extends Exception {

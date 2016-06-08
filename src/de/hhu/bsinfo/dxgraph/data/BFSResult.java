@@ -6,39 +6,27 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
+/**
+ * Data structure holding results of a single BFS run.
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.05.16
+ */
 public class BFSResult implements DataStructure {
 
 	private long m_id = ChunkID.INVALID_ID;
-	private long m_rootVertexId = ChunkID.INVALID_ID;
-	private long m_totalVisitedVertices;
-	private int m_totalBFSDepth;
+	public long m_rootVertexId = ChunkID.INVALID_ID;
+	public long m_graphSizeVertices = 0;
+	public long m_graphSizeEdges = 0;
+	public long m_totalVisitedVertices = 0;
+	public long m_totalEdgesTraversed = 0;
+	public long m_maxVertsPerSecond = 0;
+	public long m_maxEdgesPerSecond = 0;
+	public long m_avgVertsPerSecond = 0;
+	public long m_avgEdgesPerSecond = 0;
+	public long m_totalTimeMs = 0;
+	public int m_totalBFSDepth = 0;
 
 	public BFSResult() {
 
-	}
-
-	public long getRootVertexID() {
-		return m_rootVertexId;
-	}
-
-	public void setRootVertexID(final long p_vertexID) {
-		m_rootVertexId = p_vertexID;
-	}
-
-	public long getTotalVisitedVertices() {
-		return m_totalVisitedVertices;
-	}
-
-	public void setTotalVisitedVertices(final long p_totalVisited) {
-		m_totalVisitedVertices = p_totalVisited;
-	}
-
-	public int getTotalBFSDepth() {
-		return m_totalBFSDepth;
-	}
-
-	public void setTotalBFSDepth(final int p_totalBFSDepth) {
-		m_totalBFSDepth = p_totalBFSDepth;
 	}
 
 	@Override
@@ -53,31 +41,61 @@ public class BFSResult implements DataStructure {
 
 	@Override
 	public int importObject(final Importer p_importer, final int p_size) {
-		// TODO Auto-generated method stub
-		return 0;
+		m_rootVertexId = p_importer.readLong();
+		m_graphSizeVertices = p_importer.readLong();
+		m_graphSizeEdges = p_importer.readLong();
+		m_totalVisitedVertices = p_importer.readLong();
+		m_totalEdgesTraversed = p_importer.readLong();
+		m_maxVertsPerSecond = p_importer.readLong();
+		m_maxEdgesPerSecond = p_importer.readLong();
+		m_avgVertsPerSecond = p_importer.readLong();
+		m_avgEdgesPerSecond = p_importer.readLong();
+		m_totalTimeMs = p_importer.readLong();
+		m_totalBFSDepth = p_importer.readInt();
+
+		return sizeofObject();
 	}
 
 	@Override
 	public int sizeofObject() {
-		// TODO Auto-generated method stub
-		return 0;
+		return Long.BYTES * 10 + Integer.BYTES;
 	}
 
 	@Override
 	public boolean hasDynamicObjectSize() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public int exportObject(final Exporter p_exporter, final int p_size) {
-		// TODO Auto-generated method stub
-		return 0;
+		p_exporter.writeLong(m_rootVertexId);
+		p_exporter.writeLong(m_graphSizeVertices);
+		p_exporter.writeLong(m_graphSizeEdges);
+		p_exporter.writeLong(m_totalVisitedVertices);
+		p_exporter.writeLong(m_totalEdgesTraversed);
+		p_exporter.writeLong(m_maxVertsPerSecond);
+		p_exporter.writeLong(m_maxEdgesPerSecond);
+		p_exporter.writeLong(m_avgVertsPerSecond);
+		p_exporter.writeLong(m_avgEdgesPerSecond);
+		p_exporter.writeLong(m_totalTimeMs);
+		p_exporter.writeInt(m_totalBFSDepth);
+
+		return sizeofObject();
 	}
 
 	@Override
 	public String toString() {
-		return ChunkID.toHexString(m_id) + "[m_rootVertexId " + m_rootVertexId + ", m_totalVisitedVertices "
-				+ m_totalVisitedVertices + ", " + m_totalBFSDepth + "]";
+		return "BFSResult " + ChunkID.toHexString(m_id) + ":\n"
+				+ "m_rootVertexId " + ChunkID.toHexString(m_rootVertexId) + "\n"
+				+ "m_graphSizeVertices " + m_graphSizeVertices + "\n"
+				+ "m_graphSizeEdges " + m_graphSizeEdges + "\n"
+				+ "m_totalVisitedVertices " + m_totalVisitedVertices + "\n"
+				+ "m_totalEdgesTraversed " + m_totalEdgesTraversed + "\n"
+				+ "m_maxVertsPerSecond " + m_maxVertsPerSecond + "\n"
+				+ "m_maxEdgesPerSecond " + m_maxEdgesPerSecond + "\n"
+				+ "m_avgVertsPerSecond " + m_avgVertsPerSecond + "\n"
+				+ "m_avgEdgesPerSecond " + m_avgEdgesPerSecond + "\n"
+				+ "m_totalTimeMs " + m_totalTimeMs + "\n"
+				+ "m_totalBFSDepth " + m_totalBFSDepth;
 	}
 }

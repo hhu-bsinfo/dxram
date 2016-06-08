@@ -47,10 +47,13 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 		} else {
 			SetLogLevelMessage message = new SetLogLevelMessage(p_nodeId, p_logLevel);
 			NetworkErrorCodes err = m_network.sendMessage(message);
+
+			// #if LOGGER >= ERROR
 			if (err != NetworkErrorCodes.SUCCESS) {
 				m_logger.error(getClass(),
 						"Setting log level of node " + NodeID.toHexString(p_nodeId) + " failed: " + err);
 			}
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
@@ -199,11 +202,11 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 		if (p_message != null) {
 			if (p_message.getType() == LoggerMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE:
-						incomingSetLogLevelMessage((SetLogLevelMessage) p_message);
-						break;
-					default:
-						break;
+				case LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE:
+					incomingSetLogLevelMessage((SetLogLevelMessage) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}

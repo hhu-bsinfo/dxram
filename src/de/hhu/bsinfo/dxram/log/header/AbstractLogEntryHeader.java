@@ -303,7 +303,9 @@ public abstract class AbstractLogEntryHeader {
 		} else if (type == 1) {
 			ret = MIGRATION_PRIM_LOG_ENTRY_HEADER;
 		} else {
+			// #if LOGGER >= ERROR
 			m_logger.error(AbstractLogEntryHeader.class, "Type of log entry header unknown!");
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return ret;
@@ -733,9 +735,11 @@ public abstract class AbstractLogEntryHeader {
 
 		ret = (byte) Math.ceil(Math.log10(p_length + 1) / Math.log10(2) / 8);
 
+		// #if LOGGER >= ERROR
 		if (ret > 3) {
 			m_logger.error(AbstractLogEntryHeader.class, "Log Entry too large!");
 		}
+		// #endif /* LOGGER >= ERROR */
 
 		return ret;
 	}
@@ -752,9 +756,11 @@ public abstract class AbstractLogEntryHeader {
 		if (p_version != 1) {
 			ret = (byte) Math.ceil(Math.log10(p_version + 1) / Math.log10(2) / 8);
 
+			// #if LOGGER >= ERROR
 			if (ret > 3) {
 				m_logger.error(AbstractLogEntryHeader.class, "Log Entry version too high!");
 			}
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return ret;
@@ -791,7 +797,9 @@ public abstract class AbstractLogEntryHeader {
 			ret |= 3 << LID_LENGTH_SHFT;
 			break;
 		default:
+			// #if LOGGER >= ERROR
 			m_logger.error(AbstractLogEntryHeader.class, "Unknown LocalID!");
+			// #endif /* LOGGER >= ERROR */
 			break;
 		}
 

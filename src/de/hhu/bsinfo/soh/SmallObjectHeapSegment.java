@@ -384,33 +384,33 @@ public final class SmallObjectHeapSegment {
 			leftMarker = readLeftPartOfMarker(address - 1);
 			leftFree = true;
 			switch (leftMarker) {
-				case 0:
-					// Left neighbor block (<= 12 byte) is free -> merge free blocks
-					// -1, length field size is 1
-					leftSize = read(address - SIZE_MARKER_BYTE - 1, 1);
-					// merge marker byte
-					leftSize += SIZE_MARKER_BYTE;
-					break;
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-					// Left neighbor block is free -> merge free blocks
-					leftSize = read(address - SIZE_MARKER_BYTE - leftMarker, leftMarker);
-					// skip leftSize and marker byte from address to get block offset
-					unhookFreeBlock(address - leftSize - SIZE_MARKER_BYTE);
-					// we also merge the marker byte
-					leftSize += SIZE_MARKER_BYTE;
-					break;
-				case SINGLE_BYTE_MARKER:
-					// Left byte is free -> merge free blocks
-					leftSize = 1;
-					break;
-				default:
-					leftSize = 0;
-					leftFree = false;
-					break;
+			case 0:
+				// Left neighbor block (<= 12 byte) is free -> merge free blocks
+				// -1, length field size is 1
+				leftSize = read(address - SIZE_MARKER_BYTE - 1, 1);
+				// merge marker byte
+				leftSize += SIZE_MARKER_BYTE;
+				break;
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 5:
+				// Left neighbor block is free -> merge free blocks
+				leftSize = read(address - SIZE_MARKER_BYTE - leftMarker, leftMarker);
+				// skip leftSize and marker byte from address to get block offset
+				unhookFreeBlock(address - leftSize - SIZE_MARKER_BYTE);
+				// we also merge the marker byte
+				leftSize += SIZE_MARKER_BYTE;
+				break;
+			case SINGLE_BYTE_MARKER:
+				// Left byte is free -> merge free blocks
+				leftSize = 1;
+				break;
+			default:
+				leftSize = 0;
+				leftFree = false;
+				break;
 			}
 		} else {
 			// Do not merge across segments
@@ -428,33 +428,33 @@ public final class SmallObjectHeapSegment {
 			rightMarker = readRightPartOfMarker(p_address + lengthFieldSize + blockSize);
 			rightFree = true;
 			switch (rightMarker) {
-				case 0:
-					// Right neighbor block (<= 12 byte) is free -> merge free blocks
-					// + 1 to skip marker byte
-					rightSize = read(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE, 1);
-					// merge marker byte
-					rightSize += SIZE_MARKER_BYTE;
-					break;
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-					// Right neighbor block is free -> merge free blocks
-					// + 1 to skip marker byte
-					rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
-					unhookFreeBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
-					// we also merge the marker byte
-					rightSize += SIZE_MARKER_BYTE;
-					break;
-				case 15:
-					// Right byte is free -> merge free blocks
-					rightSize = 1;
-					break;
-				default:
-					rightSize = 0;
-					rightFree = false;
-					break;
+			case 0:
+				// Right neighbor block (<= 12 byte) is free -> merge free blocks
+				// + 1 to skip marker byte
+				rightSize = read(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE, 1);
+				// merge marker byte
+				rightSize += SIZE_MARKER_BYTE;
+				break;
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 5:
+				// Right neighbor block is free -> merge free blocks
+				// + 1 to skip marker byte
+				rightSize = getSizeMemoryBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+				unhookFreeBlock(p_address + lengthFieldSize + blockSize + SIZE_MARKER_BYTE);
+				// we also merge the marker byte
+				rightSize += SIZE_MARKER_BYTE;
+				break;
+			case 15:
+				// Right byte is free -> merge free blocks
+				rightSize = 1;
+				break;
+			default:
+				rightSize = 0;
+				rightFree = false;
+				break;
 			}
 		} else {
 			// Do not merge across segments
@@ -1224,33 +1224,33 @@ public final class SmallObjectHeapSegment {
 
 			// Calculate the number of bytes for the length field
 			size = p_size >> 8;
-			while (size > 0) {
-				lengthFieldSize++;
+		while (size > 0) {
+			lengthFieldSize++;
 
-				size = size >> 8;
-			}
+			size = size >> 8;
+		}
 
-			// Get the corresponding list
-			listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
+		// Get the corresponding list
+		listOffset = m_baseFreeBlockList + getList(p_size) * POINTER_SIZE;
 
-			// Hook block in list
-			anchor = readPointer(listOffset);
+		// Hook block in list
+		anchor = readPointer(listOffset);
 
-			// Write pointer to list and successor
-			writePointer(p_address + lengthFieldSize, listOffset);
-			writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
-			if (anchor != 0) {
-				// Write pointer of successor
-				int marker;
-				marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
-				writePointer(anchor + marker, p_address);
-			}
-			// Write pointer of list
-			writePointer(listOffset, p_address);
+		// Write pointer to list and successor
+		writePointer(p_address + lengthFieldSize, listOffset);
+		writePointer(p_address + lengthFieldSize + POINTER_SIZE, anchor);
+		if (anchor != 0) {
+			// Write pointer of successor
+			int marker;
+			marker = readRightPartOfMarker(anchor - SIZE_MARKER_BYTE);
+			writePointer(anchor + marker, p_address);
+		}
+		// Write pointer of list
+		writePointer(listOffset, p_address);
 
-			// Write length
-			write(p_address, p_size, lengthFieldSize);
-			write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
+		// Write length
+		write(p_address, p_size, lengthFieldSize);
+		write(p_address + p_size - lengthFieldSize, p_size, lengthFieldSize);
 		}
 
 		// Write right and left marker

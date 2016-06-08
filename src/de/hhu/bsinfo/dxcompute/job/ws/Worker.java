@@ -101,7 +101,9 @@ public class Worker extends Thread {
 
 	@Override
 	public void run() {
+		// #if LOGGER >= INFO
 		m_workerDelegate.getLoggerComponent().info(getClass(), "Worker " + m_id + ": Running...");
+		// #endif /* LOGGER >= INFO */
 
 		m_running = true;
 
@@ -111,8 +113,12 @@ public class Worker extends Thread {
 			job = m_queue.pop();
 			if (job != null) {
 				m_isIdle = false;
+
+				// #if LOGGER >= DEBUG
 				m_workerDelegate.getLoggerComponent().debug(getClass(),
 						"Worker " + m_id + ": Executing job " + job + " from queue.");
+				// #endif /* LOGGER >= DEBUG */
+
 				m_workerDelegate.executingJob(job);
 				job.execute(m_workerDelegate.getNodeID());
 				m_workerDelegate.finishedJob(job);
@@ -122,8 +128,12 @@ public class Worker extends Thread {
 			job = m_workerDelegate.stealJobLocal(this);
 			if (job != null) {
 				m_isIdle = false;
+
+				// #if LOGGER >= DEBUG
 				m_workerDelegate.getLoggerComponent().debug(getClass(),
 						"Worker " + m_id + ": Executing stolen job " + job);
+				// #endif /* LOGGER >= DEBUG */
+
 				m_workerDelegate.executingJob(job);
 				job.execute(m_workerDelegate.getNodeID());
 				m_workerDelegate.finishedJob(job);
@@ -138,7 +148,10 @@ public class Worker extends Thread {
 			Thread.yield();
 		}
 
+		// #if LOGGER >= INFO
 		m_workerDelegate.getLoggerComponent().info(getClass(), "Worker " + m_id + ": Shut down.");
+		// #endif /* LOGGER >= INFO */
+
 		m_running = false;
 	}
 }

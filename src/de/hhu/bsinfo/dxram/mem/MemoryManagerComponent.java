@@ -76,14 +76,20 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
+		// #ifdef STATISTICS
 		m_statistics = getDependentComponent(StatisticsComponent.class);
+		// #endif /* STATISTICS */
 
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
+			// #ifdef STATISTICS
 			registerStatisticsOperations();
+			// #endif /* STATISTICS */
 
 			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
 					"Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
+			// #endif /* LOGGER == TRACE */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 			m_rawMemory.initialize(ramSize,
 					p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
@@ -160,7 +166,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		if (role != NodeRole.PEER) {
 			status.m_freeMemoryBytes = 0;
 			status.m_totalMemoryBytes = 0;
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " does not have any memory");
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
@@ -192,7 +200,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " is not allowed to create an index chunk");
+			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
 
@@ -241,7 +251,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk with an id");
+			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
 		chunkID = p_chunkId;
@@ -285,11 +297,15 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk");
+			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		// #endif /* STATISTICS */
 
 		// get new LID from CIDTable
 		lid = m_cidTable.getFreeLID();
@@ -297,9 +313,13 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			chunkID = -1;
 		} else {
 			// first, try to allocate. maybe early return
+			// #ifdef STATISTICS
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc, p_size);
+			// #endif /* STATISTICS */
 			address = m_rawMemory.malloc(p_size);
+			// #ifdef STATISTICS
 			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_malloc);
+			// #endif /* STATISTICS */
 			if (address >= 0) {
 				chunkID = ((long) m_boot.getNodeID() << 48) + lid;
 				// register new chunk in cid table
@@ -314,16 +334,20 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 				}
 			} else {
 				// most likely out of memory
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(),
 						"Creating chunk with size " + p_size + " failed, most likely out of memory, free "
 								+ m_rawMemory.getFreeMemory() + ", total " + m_rawMemory.getTotalMemory());
+				// #endif /* LOGGER >= ERROR */
 
 				// put lid back
 				m_cidTable.putChunkIDForReuse(lid);
 			}
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
+		// #endif /* STATISTICS */
 
 		return chunkID;
 	}
@@ -341,7 +365,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
 			return size;
 		}
 
@@ -371,7 +397,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			return ret;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
 
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
@@ -385,7 +413,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
 
 		return ret;
 	}
@@ -407,7 +437,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			return ret;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
 
 		address = m_cidTable.get(p_chunkID);
 		if (address > 0) {
@@ -420,10 +452,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 				ret = null;
 			}
 		} else {
+			// #if LOGGER >= WARN
 			m_logger.warn(getClass(), "Could not find data for ID=" + p_chunkID);
+			// #endif /* LOGGER >= WARN */
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
+		// #endif /* STATISTICS */
 
 		return ret;
 	}
@@ -447,7 +483,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			return ret;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		// #endif /* STATISTICS */
 
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
@@ -461,7 +499,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
+		// #endif /* STATISTICS */
 
 		return ret;
 	}
@@ -483,12 +523,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
 			ret = MemoryErrorCodes.INVALID_NODE_ROLE;
 			return ret;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		// #endif /* STATISTICS */
 
 		// Get and delete the address from the CIDTable, mark as zombie first
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
@@ -507,16 +551,22 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 				}
 			}
 			size = m_rawMemory.getSizeBlock(addressDeletedChunk);
+			// #ifdef STATISTICS
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);
+			// #endif /* STATISTICS */
 			m_rawMemory.free(addressDeletedChunk);
+			// #ifdef STATISTICS
 			m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free);
+			// #endif /* STATISTICS */
 			m_numActiveChunks--;
 			m_totalActiveChunkMemory -= size;
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
 
+		// #ifdef STATISTICS
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
+		// #endif /* STATISTICS */
 
 		return ret;
 	}
@@ -562,7 +612,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	public void prepareChunkIDForReuse(final long p_chunkID) {
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
 			return;
 		}
 
@@ -576,7 +628,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	public ArrayList<Long> getCIDOfAllMigratedChunks() {
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 
@@ -590,7 +644,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
 		NodeRole role = m_boot.getNodeRole();
 		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
 			return null;
 		}
 

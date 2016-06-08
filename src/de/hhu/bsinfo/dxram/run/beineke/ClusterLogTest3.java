@@ -6,6 +6,7 @@ import java.util.Random;
 import java.util.TreeMap;
 
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 
@@ -31,7 +32,8 @@ public final class ClusterLogTest3 {
 	protected static final int CHUNK_SIZE = 100;
 	protected static final int CHUNKS_PER_PUT = 100;
 	protected static final int CHUNKS_PER_UPDATE = 512;
-	protected static final int THREADS = 8;
+	protected static final int MASTER_THREADS = 1;
+	protected static final int BENCHMARK_THREADS = 8;
 
 	// Attributes
 	private static byte m_workload;
@@ -58,7 +60,21 @@ public final class ClusterLogTest3 {
 		if (p_arguments.length == 0) {
 			System.out.println("Missing program argument: Role (master, benchmark)");
 		} else if (p_arguments[0].equals("master")) {
-			new Master().start();
+			// Initialize DXRAM
+			final DXRAM dxram = new DXRAM();
+			dxram.initialize("config/dxram.conf");
+			final ChunkService chunkService = dxram.getService(ChunkService.class);
+			final BootService bootService = dxram.getService(BootService.class);
+
+			short nodeID = bootService.getNodeID();
+			Master currentThread = null;
+			for (int i = 0; i < MASTER_THREADS; i++) {
+				currentThread = new Master(chunkService, nodeID);
+				currentThread.start();
+			}
+			try {
+				currentThread.join();
+			} catch (final InterruptedException e) {}
 		} else if (p_arguments[0].equals("benchmark")) {
 			// Initialize DXRAM
 			final DXRAM dxram = new DXRAM();
@@ -66,7 +82,7 @@ public final class ClusterLogTest3 {
 			final ChunkService chunkService = dxram.getService(ChunkService.class);
 
 			Benchmark currentThread = null;
-			for (int i = 0; i < THREADS; i++) {
+			for (int i = 0; i < BENCHMARK_THREADS; i++) {
 				currentThread = new Benchmark(chunkService);
 				currentThread.start();
 			}
@@ -81,32 +97,117 @@ public final class ClusterLogTest3 {
 	 * @author Kevin Beineke
 	 *         22.01.2016
 	 */
-	private static class Master {
+	private static class Master extends Thread {
+
+		// Attributes
+		private ChunkService m_chunkService;
+		private short m_nodeID;
 
 		// Constructors
 		/**
 		 * Creates an instance of Master
+		 * @param p_chunkService
+		 *            the initialized ChunkService
+		 * @param p_nodeID
+		 *            the NodeID
 		 */
-		Master() {}
+		Master(final ChunkService p_chunkService, final short p_nodeID) {
+			m_chunkService = p_chunkService;
+			m_nodeID = p_nodeID;
+		}
 
 		// Methods
 		/**
 		 * Starts the server
 		 */
-		public void start() {
+		@Override
+		public void run() {
+			int numberOfRequests;
 			long counter = 0;
 			long start;
 			Chunk[] chunks;
-
-			// Initialize DXRAM
-			final DXRAM dxram = new DXRAM();
-			dxram.initialize("config/dxram.conf");
-			final ChunkService chunkService = dxram.getService(ChunkService.class);
+			// Chunk[][] allChunks;
 
 			/**
 			 * Phase 1: Creating chunks
 			 */
-			// Create array of Chunks
+			// Create all chunks
+			chunks = new Chunk[CHUNKS_PER_PUT];
+			for (int i = 0; i < CHUNKS_PER_PUT; i++) {
+				chunks[i] = new Chunk(CHUNK_SIZE);
+				chunks[i].getData().put("Test!".getBytes());
+			}
+
+			numberOfRequests = (int) (BYTES_TO_LOAD / CHUNK_SIZE / CHUNKS_PER_PUT / MASTER_THREADS);
+			for (int i = 0; i < numberOfRequests; i++) {
+				// Create new chunks in MemoryManagement
+				m_chunkService.create(chunks);
+
+				counter += CHUNK_SIZE * CHUNKS_PER_PUT;
+				if (counter % (100 * 1000 * 1000) == 0) {
+					System.out.println("Created 100.000.000 bytes. All: " + counter);
+				}
+			}
+
+			System.out.println("Created all chunks. Start replication now.");
+
+			/**
+			 * Phase 2: Putting/Replicating chunks
+			 */
+			counter = 0;
+			start = System.currentTimeMillis();
+			for (int i = 0; i < numberOfRequests; i++) {
+				for (int j = 0; j < CHUNKS_PER_PUT; j++) {
+					chunks[j].setID(((long) m_nodeID << 48) + (i * CHUNKS_PER_PUT + j));
+				}
+
+				// Store them in-memory and replicate them on backups' SSD
+				m_chunkService.put(chunks);
+
+				counter += CHUNK_SIZE * CHUNKS_PER_PUT;
+				if (counter % (100 * 1000 * 1000) == 0) {
+					System.out.println("Replicated 100.000.000 bytes. All: " + counter);
+				}
+			}
+
+			/*-// Create all chunks
+			numberOfRequests = (int) (BYTES_TO_LOAD / CHUNK_SIZE / CHUNKS_PER_PUT / MASTER_THREADS);
+			allChunks = new Chunk[numberOfRequests][];
+			for (int i = 0; i < numberOfRequests; i++) {
+				// Create array of Chunks
+				allChunks[i] = new Chunk[CHUNKS_PER_PUT];
+				for (int j = 0; j < CHUNKS_PER_PUT; j++) {
+					allChunks[i][j] = new Chunk(CHUNK_SIZE);
+					allChunks[i][j].getData().put("Test!".getBytes());
+				}
+
+				// Create new chunks in MemoryManagement
+				m_chunkService.create(allChunks[i]);
+
+				counter += CHUNK_SIZE * CHUNKS_PER_PUT;
+				if (counter % (100 * 1000 * 1000) == 0) {
+					System.out.println("Created 100.000.000 bytes. All: " + counter);
+				}
+			}
+
+			System.out.println("Created all chunks. Start replication now.");
+
+			/**
+			 * Phase 2: Putting/Replicating chunks
+			 */
+			/*-counter = 0;
+			start = System.currentTimeMillis();
+			for (int i = 0; i < numberOfRequests; i++) {
+				// Store them in-memory and replicate them on backups' SSD
+				m_chunkService.put(allChunks[i]);
+
+				counter += CHUNK_SIZE * CHUNKS_PER_PUT;
+				if (counter % (100 * 1000 * 1000) == 0) {
+					System.out.println("Replicated 100.000.000 bytes. All: " + counter);
+				}
+			}*/
+
+			/*-// Create array of Chunks
 			chunks = new Chunk[CHUNKS_PER_PUT];
 			for (int i = 0; i < CHUNKS_PER_PUT; i++) {
 				chunks[i] = new Chunk(CHUNK_SIZE);
@@ -114,19 +215,19 @@ public final class ClusterLogTest3 {
 			}
 
 			start = System.currentTimeMillis();
-			while (counter < BYTES_TO_LOAD) {
+			while (counter < BYTES_TO_LOAD / MASTER_THREADS) {
 				// Create new chunks in MemoryManagement
-				chunkService.create(chunks);
+				m_chunkService.create(chunks);
 
 				// Store them in-memory and replicate them on backups' SSD
-				chunkService.put(chunks);
+				m_chunkService.put(chunks);
 
 				counter += CHUNK_SIZE * CHUNKS_PER_PUT;
 				if (counter % (100 * 1000 * 1000) == 0) {
 					System.out.println("Created 100.000.000 bytes and replicated them. All: " + counter);
 				}
-			}
-			System.out.println("Time to create " + BYTES_TO_LOAD + " bytes of payload: " + (System.currentTimeMillis() - start));
+			}*/
+			System.out.println("Time to create " + (BYTES_TO_LOAD / MASTER_THREADS) + " bytes of payload: " + (System.currentTimeMillis() - start));
 		}
 	}
 
@@ -142,7 +243,7 @@ public final class ClusterLogTest3 {
 
 		// Constructors
 		/**
-		 * Creates an instance of Client
+		 * Creates an instance of Benchmark
 		 * @param p_chunkService
 		 *            the initialized ChunkService
 		 */
@@ -156,12 +257,12 @@ public final class ClusterLogTest3 {
 		 */
 		@Override
 		public void run() {
-			/*-final short[] nodeIDs = new short[3];
-			nodeIDs[0] = 960;
-			nodeIDs[1] = 640;
-			nodeIDs[2] = -15807;*/
-			final short[] nodeIDs = new short[1];
-			nodeIDs[0] = 320;
+			final short[] nodeIDs = new short[3];
+			nodeIDs[0] = 640;
+			nodeIDs[1] = -15807;
+			nodeIDs[2] = -14847;
+			/*-final short[] nodeIDs = new short[1];
+			nodeIDs[0] = 640;*/
 
 			long start;
 			long counter = 0;
@@ -182,7 +283,7 @@ public final class ClusterLogTest3 {
 			// Send updates to master
 			if (m_workload == 0) {
 
-				while (counter < BYTES_TO_UPDATE / THREADS) {
+				while (counter < BYTES_TO_UPDATE / BENCHMARK_THREADS) {
 					/*-long offset = nextLong(rand, BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT) + 1;
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
 						chunks[i].setChunkID(((long) nodeIDs[rand.nextInt(nodeIDs.length)] << 48) + offset + i);
@@ -197,14 +298,14 @@ public final class ClusterLogTest3 {
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
 					if (counter % (10 * 1024 * 1024) == 0) {
 						System.out.println(Thread.currentThread().getName()
-								+ ": Updated 10.485.760 bytes with random distribution(left: " + (BYTES_TO_UPDATE / THREADS - counter) + ").");
+								+ ": Updated 10.485.760 bytes with random distribution(left: " + (BYTES_TO_UPDATE / BENCHMARK_THREADS - counter) + ").");
 					}
 				}
 			} else {
 				System.out.println("Initializing ZipfGenerator. This might take a little.");
 				zipf = new FastZipfGenerator((int) (BYTES_TO_LOAD / CHUNK_SIZE - CHUNKS_PER_PUT + 1), 0.5);
 
-				while (counter < BYTES_TO_UPDATE / THREADS) {
+				while (counter < BYTES_TO_UPDATE / BENCHMARK_THREADS) {
 					for (int i = 0; i < CHUNKS_PER_UPDATE; i++) {
 						chunks[i].setID(((long) nodeIDs[rand.nextInt(nodeIDs.length)] << 48) + zipf.next());
 					}
@@ -214,7 +315,7 @@ public final class ClusterLogTest3 {
 					counter += CHUNK_SIZE * CHUNKS_PER_UPDATE;
 					if (counter % (10 * 1024 * 1024) == 0) {
 						System.out.println(Thread.currentThread().getName()
-								+ ": Updated 10.485.760 bytes with zipfian distribution(left: " + (BYTES_TO_UPDATE / THREADS - counter) + ").");
+								+ ": Updated 10.485.760 bytes with zipfian distribution(left: " + (BYTES_TO_UPDATE / BENCHMARK_THREADS - counter) + ").");
 					}
 				}
 			}

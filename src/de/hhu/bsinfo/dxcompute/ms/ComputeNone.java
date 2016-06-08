@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
@@ -12,7 +13,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  * master slave computing groups.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class ComputeNone extends AbstractComputeMSBase {
+class ComputeNone extends AbstractComputeMSBase {
 
 	/**
 	 * Constructor
@@ -26,12 +27,15 @@ public class ComputeNone extends AbstractComputeMSBase {
 	 *            NameserviceComponent
 	 * @param p_boot
 	 *            BootComponent
+	 * @param p_lookup
+	 *            LookupComponent
 	 */
-	public ComputeNone(final DXRAMServiceAccessor p_serviceAccessor,
+	ComputeNone(final DXRAMServiceAccessor p_serviceAccessor,
 			final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
-			final AbstractBootComponent p_boot) {
-		super(ComputeRole.NONE, (short) -1, 0, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot);
+			final AbstractBootComponent p_boot,
+			final LookupComponent p_lookup) {
+		super(ComputeRole.NONE, (short) -1, 0, p_serviceAccessor, p_network, p_logger, p_nameservice, p_boot, p_lookup);
 	}
 
 	@Override

@@ -28,6 +28,8 @@ public interface VertexStorage {
 	 */
 	void putNeighbour(final long p_vertexId, final long p_neighbourVertexId);
 
+	long getNeighbours(final long p_vertexId, final long[] p_buffer);
+
 	/**
 	 * Get the total number of vertices stored so far. This equals the highest continuous ID.
 	 * @return Total number of vertices.
@@ -39,4 +41,10 @@ public interface VertexStorage {
 	 * @return Total edge count.
 	 */
 	long getTotalEdgeCount();
+
+	/**
+	 * Get the (currently) total amount of memory the internally used data structures consume.
+	 * @return Total memory in bytes for the internal data structures.
+	 */
+	long getTotalMemoryDataStructures();
 }

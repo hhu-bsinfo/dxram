@@ -21,5 +21,5 @@ public final class MasterSlaveMessages {
 	/**
 	 * Static class
 	 */
-	private MasterSlaveMessages() {};
+	private MasterSlaveMessages() {}
 }

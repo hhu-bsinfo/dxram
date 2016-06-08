@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class HalfConcurrentBitVector implements FrontierList {
+	private long m_maxElementCount;
 	private AtomicLongArray m_vector;
 
 	private long m_itPos;
@@ -23,11 +24,12 @@ public class HalfConcurrentBitVector implements FrontierList {
 	 *            Specify the maximum number of elements.
 	 */
 	public HalfConcurrentBitVector(final long p_maxElementCount) {
+		m_maxElementCount = p_maxElementCount;
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
 	}
 
 	@Override
-	public void pushBack(final long p_index) {
+	public boolean pushBack(final long p_index) {
 		long tmp = 1L << (p_index % 64L);
 		int index = (int) (p_index / 64L);
 
@@ -38,9 +40,10 @@ public class HalfConcurrentBitVector implements FrontierList {
 					continue;
 				}
 				m_count.incrementAndGet();
+				return true;
 			}
 
-			break;
+			return false;
 		}
 	}
 
@@ -49,6 +52,11 @@ public class HalfConcurrentBitVector implements FrontierList {
 		long tmp = 1L << (p_val % 64L);
 		int index = (int) (p_val / 64L);
 		return (m_vector.get(index) & tmp) != 0;
+	}
+
+	@Override
+	public long capacity() {
+		return m_maxElementCount;
 	}
 
 	@Override

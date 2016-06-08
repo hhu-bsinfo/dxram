@@ -29,6 +29,7 @@ import de.hhu.bsinfo.utils.log.Logger;
 
 /**
  * Main class to run DXRAM with components and services.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 
@@ -55,12 +56,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Get a service from the engine.
-	 * @param p_class
-	 *            Class of the service to get. If the service has different implementations, use the common
-	 *            interface
-	 *            or abstract class to get the registered instance.
+	 *
+	 * @param p_class Class of the service to get. If the service has different implementations, use the common
+	 *                interface
+	 *                or abstract class to get the registered instance.
 	 * @return Reference to the service if available and enabled, null otherwise or if the engine is not
-	 *         initialized.
+	 * initialized.
 	 */
 	@Override
 	public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
@@ -86,9 +87,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 				service = p_class.cast(tmpService);
 			}
 
+			// #if LOGGER >= WARN
 			if (service == null) {
 				m_logger.warn(DXRAM_ENGINE_LOG_HEADER, "Service not available " + p_class);
 			}
+			// #endif /* LOGGER >= WARN */
 		}
 
 		return service;
@@ -96,14 +99,13 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Get a component from the engine.
-	 * @param <T>
-	 *            Type of the component class.
-	 * @param p_class
-	 *            Class of the component to get. If the component has different implementations, use the common
-	 *            interface
-	 *            or abstract class to get the registered instance.
+	 *
+	 * @param <T>     Type of the component class.
+	 * @param p_class Class of the component to get. If the component has different implementations, use the common
+	 *                interface
+	 *                or abstract class to get the registered instance.
 	 * @return Reference to the component if available and enabled, null otherwise or if the engine is not
-	 *         initialized.
+	 * initialized.
 	 */
 	<T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
 		T component = null;
@@ -127,16 +129,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 			component = p_class.cast(tmpComponent);
 		}
 
+		// #if LOGGER >= WARN
 		if (component == null) {
 			m_logger.warn(DXRAM_ENGINE_LOG_HEADER,
 					"Getting component '" + p_class.getSimpleName() + "', not available.");
 		}
+		// #endif /* LOGGER >= WARN */
 
 		return component;
 	}
 
 	/**
 	 * Get the configuration of the engine.
+	 *
 	 * @return Configuration or null if engine is not initialized.
 	 */
 	Configuration getConfiguration() {
@@ -145,6 +150,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Get the settings instance of the engine.
+	 *
 	 * @return Settings instance or null if engine is not initialized.
 	 */
 	Settings getSettings() {
@@ -153,6 +159,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Get the logger of the engine.
+	 *
 	 * @return Logger instance or null if engine is not initialized.
 	 */
 	Logger getLogger() {
@@ -164,6 +171,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 * initializes components and services.
 	 * This will expect the most essential parameters to start to be provided
 	 * via vm arguments (dxram.config, dxram.network.ip, dxram.network.port, dxram.role)
+	 *
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean init() {
@@ -173,8 +181,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	/**
 	 * Initialize the engine. Executes various bootstrapping tasks,
 	 * initializes components and services.
-	 * @param p_configurationFiles
-	 *            Absolute or relative path to one or multiple configuration files.
+	 *
+	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean init(final String... p_configurationFiles) {
@@ -184,14 +192,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	/**
 	 * Initialize the engine. Executes various bootstrapping tasks,
 	 * initializes components and services.
-	 * @param p_overrideNetworkIP
-	 *            Overriding the configuration file provided IP address (example: 127.0.0.1).
-	 * @param p_overridePort
-	 *            Overriding the configuration file provided port number (example: 22223).
-	 * @param p_overrideRole
-	 *            Overriding the configuration file provided role (example: Superpeer).
-	 * @param p_configurationFiles
-	 *            Absolute or relative path to one or multiple configuration files.
+	 *
+	 * @param p_overrideNetworkIP  Overriding the configuration file provided IP address (example: 127.0.0.1).
+	 * @param p_overridePort       Overriding the configuration file provided port number (example: 22223).
+	 * @param p_overrideRole       Overriding the configuration file provided role (example: Superpeer).
+	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean init(final String p_overrideNetworkIP, final String p_overridePort,
@@ -204,14 +209,18 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		bootstrap(p_overrideNetworkIP, p_overridePort,
 				p_overrideRole, p_configurationFiles);
 
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine...");
+		// #endif /* LOGGER >= INFO */
 
 		setupJNI();
 
+		// #if LOGGER >= DEBUG
 		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up components...");
 		setupComponents(m_configuration);
 		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up services...");
 		setupServices(m_configuration);
+		// #endif /* LOGGER >= DEBUG */
 
 		// sort list by initialization priority
 		list = new ArrayList<AbstractDXRAMComponent>(m_components.values());
@@ -223,27 +232,38 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		};
 		Collections.sort(list, comp);
 
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing " + list.size() + " components...");
+		// #endif /* LOGGER >= INFO */
 		for (AbstractDXRAMComponent component : list) {
 			if (!component.init(this)) {
+				// #if LOGGER >= ERROR
 				m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 						"Initializing component '" + component.getComponentName() + "' failed, aborting init.");
+				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 		}
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing components done.");
-
+		//
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Starting " + m_services.size() + " services...");
+		// #endif /* LOGGER >= INFO */
+
 		for (AbstractDXRAMService service : m_services.values()) {
 			if (!service.start(this)) {
+				// #if LOGGER >= ERROR
 				m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 						"Starting service '" + service.getServiceName() + "' failed, aborting init.");
+				// #endif /* LOGGER >= ERROR */
 				return false;
 			}
 		}
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Starting services done.");
-
+		//
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine done.");
+		// #endif /* LOGGER >= INFO */
 		m_isInitilized = true;
 
 		return true;
@@ -251,6 +271,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Shut down the engine.
+	 *
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean shutdown() {
@@ -259,16 +280,23 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		final List<AbstractDXRAMComponent> list;
 		final Comparator<AbstractDXRAMComponent> comp;
 
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down engine...");
-
+		//
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + m_services.size() + " services...");
+		// #endif /* LOGGER >= INFO */
+
 		for (AbstractDXRAMService service : m_services.values()) {
+			// #if LOGGER >= ERROR
 			if (!service.shutdown()) {
 				m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 						"Shutting down service '" + service.getServiceName() + "' failed.");
 			}
+			// #endif /* LOGGER >= ERROR */
 		}
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down services done.");
+		// #endif /* LOGGER >= INFO */
 
 		list = new ArrayList<AbstractDXRAMComponent>(m_components.values());
 
@@ -281,15 +309,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		Collections.sort(list, comp);
 
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + list.size() + " components...");
+		// #endif /* LOGGER >= INFO */
 
 		for (AbstractDXRAMComponent component : list) {
 			component.shutdown();
 		}
 
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down components done.");
-
+		//
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down engine done.");
+		// #endif /* LOGGER >= INFO */
 
 		m_logger.close();
 
@@ -300,8 +332,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Setup components from a configuration.
-	 * @param p_configuration
-	 *            Configuration to get the components from.
+	 *
+	 * @param p_configuration Configuration to get the components from.
 	 */
 	private void setupComponents(final Configuration p_configuration) {
 		final Map<Integer, String> componentsClass =
@@ -319,15 +351,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 				if (enabled != null && enabled.booleanValue()) {
 					final Integer priorityInit = componentsPriorityInit.get(component.getKey());
 					if (priorityInit == null) {
+						// #if LOGGER >= ERROR
 						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Cannot setup component " + component.getValue()
 								+ " missing init priority, component ignored.");
+						// #endif /* LOGGER >= ERROR */
 						continue;
 					}
 
 					final Integer priorityShutdown = componentsPriorityShutdown.get(component.getKey());
 					if (priorityShutdown == null) {
+						// #if LOGGER >= ERROR
 						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Cannot setup component " + component.getValue()
 								+ " missing uninit priority, component ignored.");
+						// #endif /* LOGGER >= ERROR */
 						continue;
 					}
 
@@ -335,8 +371,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 					try {
 						clazz = Class.forName(component.getValue());
 					} catch (final ClassNotFoundException e) {
+						// #if LOGGER >= ERROR
 						m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 								"Could not find class " + component.getValue() + " in runtime, component ignored.");
+						// #endif /* LOGGER >= ERROR */
 						continue;
 					}
 
@@ -344,8 +382,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 						// check if there is an "interface"/abstract class between DXRAMComponent and the instance to
 						// create
 						if (!clazz.getSuperclass().getSuperclass().equals(AbstractDXRAMComponent.class)) {
+							// #if LOGGER >= ERROR
 							m_logger.error(DXRAM_ENGINE_LOG_HEADER, "DXRAMComponent is not a superclass of "
 									+ component.getValue() + ", component ignored.");
+							// #endif /* LOGGER >= ERROR */
 							continue;
 						}
 					}
@@ -355,29 +395,37 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 					try {
 						ctor = clazz.getConstructor(Integer.TYPE, Integer.TYPE);
 					} catch (final NoSuchMethodException | SecurityException e1) {
+						// #if LOGGER >= ERROR
 						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not get constructor of component "
 								+ component.getValue() + " invalid constructor, component ignored.");
+						// #endif /* LOGGER >= ERROR */
 						continue;
 					}
 
 					try {
 						m_components.put(clazz.getName(),
 								(AbstractDXRAMComponent) ctor
-										.newInstance(new Object[] {priorityInit, priorityShutdown}));
+								.newInstance(new Object[] {priorityInit, priorityShutdown}));
 					} catch (final InstantiationException | IllegalAccessException | IllegalArgumentException
 							| InvocationTargetException e) {
+						// #if LOGGER >= ERROR
 						if (Modifier.isAbstract(clazz.getModifiers())) {
 							m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 									"Component '" + component.getValue() + "' is an abstract class.");
 						}
 						m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Could not create instance of component "
 								+ component.getValue() + ", component ignored.");
+						// #endif /* LOGGER >= ERROR */
 						continue;
 					}
 
+					// #if LOGGER >= INFO
 					m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Component " + component.getValue() + " enabled.");
+					// #endif /* LOGGER >= INFO */
 				} else {
+					// #if LOGGER >= INFO
 					m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Component " + component.getValue() + " disabled.");
+					// #endif /* LOGGER >= INFO */
 				}
 			}
 		}
@@ -385,14 +433,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Setup services from a configuration.
-	 * @param p_configuration
-	 *            Configuration to get the services from.
+	 *
+	 * @param p_configuration Configuration to get the services from.
 	 */
 	private void setupServices(final Configuration p_configuration) {
 		final Map<Integer, String> servicesClass =
 				p_configuration.getValues("/DXRAMEngine/Services/Service/Class", String.class);
 		final Map<Integer, Boolean> servicesEnabled =
 				p_configuration.getValues("/DXRAMEngine/Services/Service/Enabled", Boolean.class);
+
+		if (servicesClass == null) {
+			m_logger.error(DXRAM_ENGINE_LOG_HEADER,
+					"Setting up services, service class list in configuration " + p_configuration.getName());
+		}
 
 		for (Entry<Integer, String> service : servicesClass.entrySet()) {
 			final Boolean enabled = servicesEnabled.get(service.getKey());
@@ -401,16 +454,20 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 				try {
 					clazz = Class.forName(service.getValue());
 				} catch (final ClassNotFoundException e) {
+					// #if LOGGER >= ERROR
 					m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 							"Could not find class " + service.getValue() + " in runtime, service ignored.");
+					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
 
 				if (!clazz.getSuperclass().equals(AbstractDXRAMService.class)) {
 					// check if there is an "interface"/abstract class between DXRAMService and the instance to create
 					if (!clazz.getSuperclass().getSuperclass().equals(AbstractDXRAMService.class)) {
+						// #if LOGGER >= ERROR
 						m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 								"DXRAMService is not a superclass of " + service.getValue() + ", service ignored.");
+						// #endif /* LOGGER >= ERROR */
 						continue;
 					}
 				}
@@ -418,28 +475,31 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 				try {
 					m_services.put(clazz.getName(), (AbstractDXRAMService) clazz.newInstance());
 				} catch (final InstantiationException | IllegalAccessException e) {
+					// #if LOGGER >= ERROR
 					m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 							"Could not create instance of service " + service.getValue() + ", service ignored.");
+					// #endif /* LOGGER >= ERROR */
 					continue;
 				}
 
+				// #if LOGGER >= INFO
 				m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Service " + service.getValue() + " enabled.");
+				// #endif /* LOGGER >= INFO */
 			} else {
+				// #if LOGGER >= INFO
 				m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Service " + service.getValue() + " disabled.");
+				// #endif /* LOGGER >= INFO */
 			}
 		}
 	}
 
 	/**
 	 * Execute bootstrapping tasks for the engine.
-	 * @param p_overrideNetworkIP
-	 *            Overriding the configuration file provided IP address (example: 127.0.0.1).
-	 * @param p_overridePort
-	 *            Overriding the configuration file provided port number (example: 22223).
-	 * @param p_overrideRole
-	 *            Overriding the configuration file provided role (example: Superpeer).
-	 * @param p_configurationFiles
-	 *            Absolute or relative path to one or multiple configuration files.
+	 *
+	 * @param p_overrideNetworkIP  Overriding the configuration file provided IP address (example: 127.0.0.1).
+	 * @param p_overridePort       Overriding the configuration file provided port number (example: 22223).
+	 * @param p_overrideRole       Overriding the configuration file provided role (example: Superpeer).
+	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 */
 	private void bootstrap(final String p_overrideNetworkIP, final String p_overridePort,
 			final NodeRole p_overrideRole, final String... p_configurationFiles) {
@@ -484,11 +544,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		// overriding order:
 		// config, default values, class parameters, vm arguments
 		for (String configFile : configurationFiles) {
-			System.out.println("[INFO][DXRAMEngine] Loading configuration file " + configFile);
+			System.out.println("[DXRAMEngine] Loading configuration file " + configFile);
 			final int configLoadSuccessful = loadConfiguration(configFile);
 			if (configLoadSuccessful != 0) {
 				System.out.println(
-						"[ERR][DXRAMEngine] Loading from configuration file failed: could not find configuration file.");
+						"[DXRAMEngine] Loading from configuration file failed: could not find configuration file.");
 			}
 		}
 
@@ -504,7 +564,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		// vm arguments
 		overrideConfigurationWithVMArguments();
 
+		// #if LOGGER >= DEBUG
 		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, m_configuration.toString());
+		// #endif /* LOGGER >= DEBUG */
 
 		// setup components and services
 		setupComponents(m_configuration);
@@ -528,10 +590,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Load the configuration from a file.
-	 * @param p_configurationFile
-	 *            Path to the configuration file.
+	 *
+	 * @param p_configurationFile Path to the configuration file.
 	 * @return 0 if successful, -1 if loading from an existing file failed, 1 if configuration file
-	 *         does not exist and default file needs to be created/saved.
+	 * does not exist and default file needs to be created/saved.
 	 */
 	private int loadConfiguration(final String p_configurationFile) {
 		final ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFile);
@@ -553,8 +615,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Save the configuration to a file.
-	 * @param p_configurationFolder
-	 *            File to save the configuration to.
+	 *
+	 * @param p_configurationFolder File to save the configuration to.
 	 * @return True if saving was successful, false otherwise.
 	 */
 	@SuppressWarnings("unused")
@@ -562,11 +624,15 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		final ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFolder);
 		final ConfigurationParser parser = new ConfigurationXMLParser(loader);
 
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Saving configuration: " + loader);
+		// #endif /* LOGGER >= INFO */
 		try {
 			parser.writeConfiguration(m_configuration);
 		} catch (final ConfigurationException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(DXRAM_ENGINE_LOG_HEADER, "Writing configuration file '" + loader + "' failed.", e);
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
@@ -575,12 +641,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Override a few configuration values with the provided paramters.
-	 * @param p_networkIP
-	 *            Network IP of the instance.
-	 * @param p_port
-	 *            Port number of the instance.
-	 * @param p_role
-	 *            Role of the instance.
+	 *
+	 * @param p_networkIP Network IP of the instance.
+	 * @param p_port      Port number of the instance.
+	 * @param p_role      Role of the instance.
 	 */
 	private void overrideConfigurationWithParameters(final String p_networkIP,
 			final String p_port, final NodeRole p_role) {
@@ -605,24 +669,33 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		keyValue[0] = "dxram.network.ip";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
+			// #if LOGGER >= DEBUG
 			m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
 					"Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
+			// #endif /* LOGGER >= DEBUG */
+
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.IP, keyValue[1]);
 		}
 
 		keyValue[0] = "dxram.network.port";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
+			// #if LOGGER >= DEBUG
 			m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
 					"Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
+			// #endif /* LOGGER >= DEBUG */
+
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.PORT, Integer.parseInt(keyValue[1]));
 		}
 
 		keyValue[0] = "dxram.role";
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
+			// #if LOGGER >= DEBUG
 			m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
 					"Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
+			// #endif /* LOGGER >= DEBUG */
+
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.ROLE, keyValue[1]);
 		}
 	}
@@ -659,6 +732,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	/**
 	 * Settings subclass to provide settings for the engine. Wraps a configuration.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
 	 */
 	public static class Settings {
@@ -670,10 +744,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		/**
 		 * Constructor
-		 * @param p_configuration
-		 *            Configuration to wrap, which contains engine settings.
-		 * @param p_logger
-		 *            Logger to use for logging messages.
+		 *
+		 * @param p_configuration Configuration to wrap, which contains engine settings.
+		 * @param p_logger        Logger to use for logging messages.
 		 */
 		Settings(final Configuration p_configuration, final Logger p_logger) {
 			m_configuration = p_configuration;
@@ -683,12 +756,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		/**
 		 * Override existing configuration values.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_default
-		 *            Pair of key of the value to override and default value for the key.
-		 * @param p_overrideValue
-		 *            True to override if the value exists, false to not override if exists.
+		 *
+		 * @param <T>             Type of the value.
+		 * @param p_default       Pair of key of the value to override and default value for the key.
+		 * @param p_overrideValue True to override if the value exists, false to not override if exists.
 		 */
 		public <T> void overrideValue(final Pair<String, T> p_default, final T p_overrideValue) {
 			m_configuration.addValue(m_basePath + p_default.first(), p_overrideValue, true);
@@ -696,10 +767,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_default
-		 *            Pair of configuration key and default value to set for the specified key.
+		 *
+		 * @param <T>       Type of the value.
+		 * @param p_default Pair of configuration key and default value to set for the specified key.
 		 */
 		public <T> void setDefaultValue(final Pair<String, T> p_default) {
 			setDefaultValue(p_default.first(), p_default.second());
@@ -707,30 +777,29 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		/**
 		 * Set a default value for a specific configuration key.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_key
-		 *            Key for the value.
-		 * @param p_value
-		 *            Value to set.
+		 *
+		 * @param <T>     Type of the value.
+		 * @param p_key   Key for the value.
+		 * @param p_value Value to set.
 		 */
 		public <T> void setDefaultValue(final String p_key, final T p_value) {
 			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
 				// we added a default value => value was missing from configuration
+				// #if LOGGER >= WARN
 				if (m_logger != null) {
 					m_logger.warn(DXRAM_ENGINE_LOG_HEADER,
 							"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value "
 									+ p_value);
 				}
+				// #endif /* LOGGER >= WARN */
 			}
 		}
 
 		/**
 		 * Get a value from the configuration for the component.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_default
-		 *            Pair of key and default value to get value for.
+		 *
+		 * @param <T>       Type of the value.
+		 * @param p_default Pair of key and default value to get value for.
 		 * @return Value associated with the provided key.
 		 */
 		@SuppressWarnings("unchecked")
@@ -740,12 +809,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		/**
 		 * Get a value from the configuration for the component.
-		 * @param <T>
-		 *            Type of the value.
-		 * @param p_key
-		 *            Key to get the value for.
-		 * @param p_type
-		 *            Type of the value to get.
+		 *
+		 * @param <T>    Type of the value.
+		 * @param p_key  Key to get the value for.
+		 * @param p_type Type of the value to get.
 		 * @return Value assicated with the provided key.
 		 */
 		public <T> T getValue(final String p_key, final Class<T> p_type) {

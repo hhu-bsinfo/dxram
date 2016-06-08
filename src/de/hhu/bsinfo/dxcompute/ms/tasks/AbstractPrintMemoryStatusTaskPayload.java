@@ -10,7 +10,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService.Status;
  * Base class for printing the current memory status.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public abstract class AbstractPrintMemoryStatusTaskPayload extends AbstractTaskPayload {
+abstract class AbstractPrintMemoryStatusTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Constructor
@@ -22,7 +22,7 @@ public abstract class AbstractPrintMemoryStatusTaskPayload extends AbstractTaskP
 	 * @param p_subtypeId
 	 *            Subtype id
 	 */
-	public AbstractPrintMemoryStatusTaskPayload(final short p_typeId, final short p_subtypeId) {
+	AbstractPrintMemoryStatusTaskPayload(final short p_typeId, final short p_subtypeId) {
 		super(p_typeId, p_subtypeId);
 	}
 
@@ -33,7 +33,7 @@ public abstract class AbstractPrintMemoryStatusTaskPayload extends AbstractTaskP
 	 * @param p_status
 	 *            Status to print.
 	 */
-	protected void printMemoryStatusToOutput(final PrintStream p_outputStream, final Status p_status) {
+	void printMemoryStatusToOutput(final PrintStream p_outputStream, final Status p_status) {
 		p_outputStream.println("---------------------------------------------------------");
 		p_outputStream.println("---------------------------------------------------------");
 		p_outputStream.println("---------------------------------------------------------");

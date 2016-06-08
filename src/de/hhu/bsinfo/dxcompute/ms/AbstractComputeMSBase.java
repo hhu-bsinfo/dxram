@@ -9,6 +9,7 @@ import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
@@ -16,16 +17,17 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  * Base class for the master slave compute framework.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public abstract class AbstractComputeMSBase extends Thread {
-	public static final String NAMESERVICE_ENTRY_IDENT = "MAS";
-	public static final byte MIN_COMPUTE_GROUP_ID = -1;
-	public static final byte MAX_COMPUTE_GROUP_ID = 99;
+abstract class AbstractComputeMSBase extends Thread {
+	static final String NAMESERVICE_ENTRY_IDENT = "MAS";
+	private static final byte MIN_COMPUTE_GROUP_ID = -1;
+	static final byte MAX_COMPUTE_GROUP_ID = 99;
 
 	/**
 	 * States of the master/slave instances
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 12.02.16
 	 */
-	public enum State {
+	enum State {
+		STATE_INVALID,
 		STATE_SETUP,
 		STATE_IDLE,
 		STATE_EXECUTE,
@@ -35,10 +37,12 @@ public abstract class AbstractComputeMSBase extends Thread {
 
 	private DXRAMServiceAccessor m_serviceAccessor;
 
+	@SuppressWarnings("checkstyle")
 	protected NetworkComponent m_network;
 	protected LoggerComponent m_logger;
 	protected NameserviceComponent m_nameservice;
 	protected AbstractBootComponent m_boot;
+	protected LookupComponent m_lookup;
 
 	protected volatile State m_state = State.STATE_SETUP;
 	protected ComputeRole m_role;
@@ -65,17 +69,20 @@ public abstract class AbstractComputeMSBase extends Thread {
 	 *            NameserviceComponent
 	 * @param p_boot
 	 *            BootComponent
+	 * @param p_lookup
+	 *            LookupComponent
 	 */
-	public AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs,
+	AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
 			final LoggerComponent p_logger, final NameserviceComponent p_nameservice,
-			final AbstractBootComponent p_boot) {
+			final AbstractBootComponent p_boot,
+			final LookupComponent p_lookup) {
 		super("ComputeMS-" + p_role + "-" + p_computeGroupId);
 		m_role = p_role;
 		m_computeGroupId = p_computeGroupId;
 		m_pingIntervalMs = p_pingIntervalMs;
 		assert m_computeGroupId >= MIN_COMPUTE_GROUP_ID && m_computeGroupId <= MAX_COMPUTE_GROUP_ID;
-		m_nameserviceMasterNodeIdKey = new String(NAMESERVICE_ENTRY_IDENT + m_computeGroupId);
+		m_nameserviceMasterNodeIdKey = NAMESERVICE_ENTRY_IDENT + m_computeGroupId;
 
 		m_serviceAccessor = p_serviceAccessor;
 
@@ -83,6 +90,7 @@ public abstract class AbstractComputeMSBase extends Thread {
 		m_logger = p_logger;
 		m_nameservice = p_nameservice;
 		m_boot = p_boot;
+		m_lookup = p_lookup;
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);

@@ -69,10 +69,14 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 				recoverLocallyFromFile(p_owner);
 			}
 		} else {
+			// #if LOGGER >= INFO
 			m_logger.info(RecoveryService.class, "Forwarding recovery to " + NodeID.toHexString(p_dest));
+			// #endif /* LOGGER >= INFO */
 			final NetworkErrorCodes err = m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
 			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(RecoveryService.class, "Could not forward command to " + NodeID.toHexString(p_dest) + ". Aborting recovery!");
+				// #endif /* LOGGER >= ERROR */
 				ret = false;
 			}
 		}
@@ -97,9 +101,11 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
+		// #if LOGGER >= WARN
 		if (!m_backup.isActive()) {
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Recovery service will not work!");
 		}
+		// #endif /* LOGGER >= WARN */
 		m_backupDirectory = m_backup.getBackupDirectory();
 
 		getComponent(TerminalComponent.class).registerCommand(new TcmdRecover());
@@ -125,7 +131,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 		RecoverBackupRangeRequest request;
 
 		if (!m_backup.isActive()) {
+			// #if LOGGER >= WARN
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Cannot recover!");
+			// #endif /* LOGGER >= WARN */
 		} else {
 			backupRanges = m_lookup.getAllBackupRanges(p_owner);
 			if (backupRanges != null) {
@@ -134,24 +142,26 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 					firstChunkIDOrRangeID = backupRange.getRangeID();
 
 					// Get Chunks from backup peers (or locally if this is the primary backup peer)
-					/*-for (short backupPeer : backupPeers) {
-						if (backupPeer == m_boot.getNodeID()) {
-							if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
-								chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
-							} else {
-								chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
-							}
-							if (chunks == null) {
-								m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");
-								continue;
-							}
-						} else if (backupPeer != -1) {
-							request = new RecoverBackupRangeRequest(backupPeer, p_owner, firstChunkIDOrRangeID);
-							m_network.sendSync(request);
-							chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
-						}
-						break;
-					}*/
+					// for (short backupPeer : backupPeers) {
+					// if (backupPeer == m_boot.getNodeID()) {
+					// if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
+					// chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
+					// } else {
+					// chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
+					// }
+					// if (chunks == null) {
+					// // #if LOGGER >= ERROR
+					m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next backup peer.");
+					// // #endif /* LOGGER >= ERROR */
+					// continue;
+					// }
+					// } else if (backupPeer != -1) {
+					// request = new RecoverBackupRangeRequest(backupPeer, p_owner, firstChunkIDOrRangeID);
+					// m_network.sendSync(request);
+					// chunks = request.getResponse(RecoverBackupRangeResponse.class).getChunks();
+					// }
+					// break;
+					// }
 
 					if (ChunkID.getCreatorID(firstChunkIDOrRangeID) == p_owner) {
 						chunks = m_log.recoverBackupRange(p_owner, firstChunkIDOrRangeID, (byte) -1);
@@ -159,7 +169,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 						chunks = m_log.recoverBackupRange(p_owner, -1, (byte) firstChunkIDOrRangeID);
 					}
 
+					// #if LOGGER >= INFO
 					m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks.");
+					// #endif /* LOGGER >= INFO */
 
 					// Store recovered Chunks
 					m_chunk.putRecoveredChunks(chunks);
@@ -189,7 +201,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 		Chunk[] chunks = null;
 
 		if (!m_backup.isActive()) {
+			// #if LOGGER >= WARN
 			m_logger.warn(RecoveryService.class, "Backup is not activated. Cannot recover!");
+			// #endif /* LOGGER >= WARN */
 		} else {
 			folderToScan = new File(m_backupDirectory);
 			listOfFiles = folderToScan.listFiles();
@@ -200,10 +214,14 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 						chunks = m_log.recoverBackupRangeFromFile(fileName, m_backupDirectory);
 
 						if (chunks == null) {
+							// #if LOGGER >= ERROR
 							m_logger.error(RecoveryService.class, "Cannot recover Chunks! Trying next file.");
+							// #endif /* LOGGER >= ERROR */
 							continue;
 						}
+						// #if LOGGER >= INFO
 						m_logger.info(RecoveryService.class, "Retrieved " + chunks.length + " Chunks from file.");
+						// #endif /* LOGGER >= INFO */
 
 						// Store recovered Chunks
 						m_chunk.putRecoveredChunks(chunks);
@@ -261,7 +279,9 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 		}
 
 		if (chunks == null) {
+			// #if LOGGER >= ERROR
 			m_logger.error(RecoveryService.class, "Cannot recover Chunks locally.");
+			// #endif /* LOGGER >= ERROR */
 		} else {
 			m_network.sendMessage(new RecoverBackupRangeResponse(p_request, chunks));
 		}

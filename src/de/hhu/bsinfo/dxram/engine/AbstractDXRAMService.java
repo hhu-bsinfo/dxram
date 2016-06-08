@@ -47,12 +47,18 @@ public abstract class AbstractDXRAMService {
 
 		registerDefaultSettingsService(m_settings);
 
+		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service...");
+		// #endif /* LOGGER >= INFO */
 		ret = startService(m_parentEngine.getSettings(), m_settings);
 		if (!ret) {
+			// #if LOGGER >= ERROR
 			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.");
+			// #endif /* LOGGER >= ERROR */
 		} else {
+			// #if LOGGER >= INFO
 			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service successful.");
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return ret;
@@ -65,12 +71,18 @@ public abstract class AbstractDXRAMService {
 	public boolean shutdown() {
 		boolean ret = false;
 
+		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down service...");
+		// #endif /* LOGGER >= INFO */
 		ret = shutdownService();
 		if (!ret) {
+			// #if LOGGER >= WARN
 			m_parentEngine.getLogger().warn(this.getClass().getSimpleName(), "Shutting down service failed.");
+			// #endif /* LOGGER >= WARN */
 		} else {
+			// #if LOGGER >= INFO
 			m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Shutting down service successful.");
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return ret;
@@ -122,11 +134,34 @@ public abstract class AbstractDXRAMService {
 	}
 
 	/**
+	 * Check if this class is an engine accessor i.e. breaking the rules of
+	 * not knowing the engine. Override this if this feature is used.
+	 * @return True if accessor, false otherwise.
+	 */
+	protected boolean isEngineAccessor() {
+		return false;
+	}
+
+	/**
 	 * Get the proxy class to access other services.
 	 * @return This returns a valid accessor only if the class is declared a service accessor.
 	 */
 	protected DXRAMServiceAccessor getServiceAccessor() {
 		if (isServiceAccessor()) {
+			return m_parentEngine;
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Get the engine within the service.
+	 * This is not wanted in most cases to hide as much as possible from the services.
+	 * But for some exceptions (like triggering a shutdown or reboot) there is no other way.
+	 * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
+	 */
+	protected DXRAMEngine getParentEngine() {
+		if (isEngineAccessor()) {
 			return m_parentEngine;
 		} else {
 			return null;
@@ -180,9 +215,11 @@ public abstract class AbstractDXRAMService {
 		public <T> void setDefaultValue(final String p_key, final T p_value) {
 			if (m_configuration.addValue(m_basePath + p_key, p_value, false)) {
 				// we added a default value => value was missing from configuration
+				// #if LOGGER >= WARN
 				m_logger.warn(this.getClass().getSimpleName(),
 						"Settings value for '" + p_key + "' is missing in " + m_basePath + ", using default value "
 								+ p_value);
+				// #endif /* LOGGER >= WARN */
 			}
 		}
 

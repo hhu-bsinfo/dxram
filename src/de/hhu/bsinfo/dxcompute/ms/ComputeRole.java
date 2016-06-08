@@ -31,11 +31,14 @@ public enum ComputeRole {
 	 */
 	public static ComputeRole toComputeRole(final String p_str) {
 		String str = p_str.toLowerCase();
-		if (str.equals(MASTER_STR) || str.equals("m")) {
+		switch (str) {
+		case MASTER_STR:
+		case "m":
 			return ComputeRole.MASTER;
-		} else if (str.equals(SLAVE_STR) || str.equals("s")) {
+		case SLAVE_STR:
+		case "s":
 			return ComputeRole.SLAVE;
-		} else {
+		default:
 			return ComputeRole.NONE;
 		}
 	}

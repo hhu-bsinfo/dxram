@@ -121,6 +121,12 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_autocompleteCommands(
 	rl_bind_key('\t', rl_complete);
 }
 
+JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_addToHistory(JNIEnv *p_env, jclass p_class, jstring p_str) {
+    const char* str = (*p_env)->GetStringUTFChars(p_env, p_str, NULL);
+	add_history (str);
+	printf("%s\n");
+}
+
 JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv *p_env, jclass p_class, jstring p_prompt) {
     char *temp, *ptr;
 	const char* prompt;
@@ -132,7 +138,10 @@ JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv
     
     temp = readline (prompt);
     
-    add_history (temp);
+	// don't add empty lines to history
+	if (temp[0] != '\0') {
+    	add_history (temp);
+	}
    
     
     int idx,len;

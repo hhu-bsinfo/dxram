@@ -75,9 +75,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 		short type = p_buffer.getShort();
 		short subtype = p_buffer.getShort();
 		m_task = AbstractTaskPayload.createInstance(type, subtype);
-		if (m_task != null) {
-			importer.importObject(m_task);
-		}
+		importer.importObject(m_task);
 	}
 
 	@Override

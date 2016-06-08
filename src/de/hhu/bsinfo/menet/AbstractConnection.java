@@ -20,7 +20,6 @@ public abstract class AbstractConnection {
 
 	private short m_destination;
 	private NodeMap m_nodeMap;
-	private final TaskExecutor m_taskExecutor;
 	private MessageDirectory m_messageDirectory;
 
 	private boolean m_connected;
@@ -48,37 +47,13 @@ public abstract class AbstractConnection {
 	 *            the destination
 	 * @param p_nodeMap
 	 *            the node map
-	 * @param p_taskExecutor
-	 *            the task executer
 	 * @param p_messageDirectory
 	 *            the message directory
 	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
-			final MessageDirectory p_messageDirectory,
-			final int p_flowControlWindowSize) {
-		this(p_destination, p_nodeMap, p_taskExecutor, p_messageDirectory, null, p_flowControlWindowSize);
-	}
-
-	/**
-	 * Creates an instance of AbstractConnection
-	 * @param p_destination
-	 *            the destination
-	 * @param p_listener
-	 *            the ConnectionListener
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_taskExecutor
-	 *            the task executer
-	 * @param p_messageDirectory
-	 *            the message directory
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
-	 */
-	AbstractConnection(final short p_destination, final NodeMap p_nodeMap, final TaskExecutor p_taskExecutor,
-			final MessageDirectory p_messageDirectory,
-			final DataReceiver p_listener, final int p_flowControlWindowSize) {
+	AbstractConnection(final short p_destination, final NodeMap p_nodeMap,
+			final MessageDirectory p_messageDirectory, final int p_flowControlWindowSize) {
 		assert p_destination != NodeID.INVALID_ID;
 
 		m_dataHandler = new DataHandler();
@@ -86,12 +61,9 @@ public abstract class AbstractConnection {
 
 		m_destination = p_destination;
 		m_nodeMap = p_nodeMap;
-		m_taskExecutor = p_taskExecutor;
 		m_messageDirectory = p_messageDirectory;
 
 		m_connected = false;
-
-		m_listener = p_listener;
 
 		m_timestamp = 0;
 
@@ -175,35 +147,13 @@ public abstract class AbstractConnection {
 
 	// Methods
 	/**
-	 * Reads messages from the connection
-	 * @return a AbstractMessage which was received
-	 * @throws IOException
-	 *             if the message could not be read
+	 * Forward buffer to DataHandler to fill byte stream and create messages.
+	 * @param p_buffer
+	 *            the new buffer
 	 */
-	protected final ByteBuffer read() throws IOException {
-		ByteBuffer ret;
-
-		ret = doRead();
-
-		m_flowControlCondLock.lock();
-		m_receivedBytes += ret.remaining();
-		if (m_receivedBytes > m_flowControlWindowSize * 0.8) {
-			sendFlowControlMessage();
-		}
-		m_flowControlCondLock.unlock();
-
-		m_timestamp = System.currentTimeMillis();
-
-		return ret;
+	protected final void processBuffer(final ByteBuffer p_buffer) {
+		m_dataHandler.processBuffer(p_buffer);
 	}
-
-	/**
-	 * Reads messages from the connection
-	 * @return a AbstractMessage which was received
-	 * @throws IOException
-	 *             if the message could not be read
-	 */
-	protected abstract ByteBuffer doRead() throws IOException;
 
 	/**
 	 * Writes data to the connection
@@ -226,7 +176,9 @@ public abstract class AbstractConnection {
 		try {
 			doWrite(p_message);
 		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
+			// #endif /* LOGGER >= ERROR */
 			return;
 		}
 
@@ -277,11 +229,7 @@ public abstract class AbstractConnection {
 	/**
 	 * Called when the connection was closed.
 	 */
-	public final void cleanup() {
-		if (!m_connected) {
-			m_taskExecutor.purgeQueue(m_destination);
-		}
-	}
+	public void cleanup() {}
 
 	/**
 	 * Informs the ConnectionListener about a new message
@@ -299,13 +247,6 @@ public abstract class AbstractConnection {
 	}
 
 	/**
-	 * Called when new data has received
-	 */
-	protected final void newData() {
-		m_taskExecutor.execute(m_destination, m_dataHandler);
-	}
-
-	/**
 	 * Confirm received bytes for the other node
 	 */
 	private void sendFlowControlMessage() {
@@ -316,7 +257,9 @@ public abstract class AbstractConnection {
 		try {
 			messageBuffer = message.getBuffer();
 		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			// #endif /* LOGGER >= ERROR */
 			return;
 		}
 
@@ -327,7 +270,9 @@ public abstract class AbstractConnection {
 		try {
 			doWrite(message);
 		} catch (final NetworkException e) {
+			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
+			// #endif /* LOGGER >= ERROR */
 			return;
 		}
 
@@ -357,10 +302,10 @@ public abstract class AbstractConnection {
 		String ret;
 
 		m_flowControlCondLock.lock();
-		ret = this.getClass().getSimpleName() + "[" + m_destination + ", " + (m_connected ? "connected" : "not connected")
+		ret = this.getClass().getSimpleName() + "[" + NodeID.toHexString(m_destination) + ", " + (m_connected ? "connected" : "not connected")
 				+ ", sent(messages): " + m_sentMessages + ", received(messages): " + m_receivedMessages
 				+ ", unconfirmed(b): " + m_unconfirmedBytes + ", received_to_confirm(b): " + m_receivedBytes
-				+ ", buffer queues: " + getInputOutputQueueLength() + "]\n";
+				+ ", buffer queues: " + getInputOutputQueueLength();
 		m_flowControlCondLock.unlock();
 
 		return ret;
@@ -387,7 +332,7 @@ public abstract class AbstractConnection {
 	 * @author Florian Klein 23.07.2013
 	 * @author Marc Ewert 16.09.2014
 	 */
-	private class DataHandler implements Runnable {
+	private class DataHandler {
 
 		/**
 		 * Default constructor
@@ -395,44 +340,46 @@ public abstract class AbstractConnection {
 		DataHandler() {}
 
 		// Methods
-		@Override
-		public void run() {
-			ByteStreamInterpreter streamInterpreter;
-			ByteBuffer buffer;
+		/**
+		 * Adds a buffer to byte stream and creates a message if all data was gathered.
+		 * @param p_buffer
+		 *            the new buffer
+		 */
+		public void processBuffer(final ByteBuffer p_buffer) {
 			ByteBuffer messageBuffer;
 			AbstractMessage message;
 
-			try {
-				streamInterpreter = m_streamInterpreter;
-				buffer = read();
+			// Flow-control
+			m_flowControlCondLock.lock();
+			m_receivedBytes += p_buffer.remaining();
+			if (m_receivedBytes > m_flowControlWindowSize * 0.8) {
+				sendFlowControlMessage();
+			}
+			m_flowControlCondLock.unlock();
 
-				// could be null when an other thread has read the buffer before
-				if (buffer != null) {
-					while (buffer.hasRemaining()) {
-						// Update the MessageCreator
-						streamInterpreter.update(buffer);
+			m_timestamp = System.currentTimeMillis();
 
-						if (streamInterpreter.isMessageComplete()) {
-							if (!streamInterpreter.isExceptionOccurred()) {
-								messageBuffer = streamInterpreter.getMessageBuffer();
+			if (p_buffer != null) {
+				while (p_buffer.hasRemaining()) {
+					m_streamInterpreter.update(p_buffer);
 
-								message = createMessage(messageBuffer);
+					if (m_streamInterpreter.isMessageComplete()) {
+						if (!m_streamInterpreter.isExceptionOccurred()) {
+							messageBuffer = m_streamInterpreter.getMessageBuffer();
 
-								if (message != null) {
-									message.setDestination(m_nodeMap.getOwnNodeID());
-									message.setSource(m_destination);
-									m_receivedMessages++;
-									deliverMessage(message);
-								}
+							message = createMessage(messageBuffer);
+
+							if (message != null) {
+								message.setDestination(m_nodeMap.getOwnNodeID());
+								message.setSource(m_destination);
+								m_receivedMessages++;
+								deliverMessage(message);
 							}
-
-							streamInterpreter.clear();
 						}
+
+						m_streamInterpreter.clear();
 					}
 				}
-			} catch (final IOException e) {
-				NetworkHandler.getLogger().error(getClass().getSimpleName(),
-						"ERROR::Could not access network connection", e);
 			}
 		}
 
@@ -444,6 +391,8 @@ public abstract class AbstractConnection {
 		 */
 		private AbstractMessage createMessage(final ByteBuffer p_buffer) {
 			AbstractMessage message = null;
+			AbstractRequest request;
+			AbstractResponse response;
 
 			p_buffer.flip();
 			try {
@@ -458,8 +407,13 @@ public abstract class AbstractConnection {
 				// access to requests/responses. So we exploit the request map to get our corresponding request
 				// before de-serializing the network buffer for every request.
 				if (message instanceof AbstractResponse) {
-					final AbstractResponse resp = (AbstractResponse) message;
-					resp.setCorrespondingRequest(RequestMap.getRequest(resp));
+					response = (AbstractResponse) message;
+					request = RequestMap.getRequest(response);
+					if (request == null) {
+						// Request is not available, probably because of a time-out
+						return null;
+					}
+					response.setCorrespondingRequest(request);
 				}
 
 				try {
@@ -475,12 +429,13 @@ public abstract class AbstractConnection {
 					throw new IOException("Message buffer is too large: " + readPayloadSize + " > " + bufPos);
 				}
 			} catch (final Exception e) {
+				// #if LOGGER >= ERROR
 				if (message != null) {
-					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message: " + message,
-							e);
+					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message: " + message, e);
 				} else {
 					NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to create message", e);
 				}
+				// #endif /* LOGGER >= ERROR */
 			}
 
 			return message;
@@ -597,7 +552,9 @@ public abstract class AbstractConnection {
 					}
 				}
 			} catch (final Exception e) {
+				// #if LOGGER >= ERROR
 				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to read message header ", e);
+				// #endif /* LOGGER >= ERROR */
 				clear();
 			}
 		}
@@ -619,7 +576,9 @@ public abstract class AbstractConnection {
 					m_step = Step.DONE;
 				}
 			} catch (final Exception e) {
+				// #if LOGGER >= ERROR
 				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Unable to read message payload ", e);
+				// #endif /* LOGGER >= ERROR */
 				clear();
 			}
 		}

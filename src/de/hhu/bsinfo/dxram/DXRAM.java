@@ -34,14 +34,14 @@ public final class DXRAM {
 	public boolean initialize(final boolean p_autoShutdown) {
 		boolean ret = m_engine.init();
 		if (!ret) {
-			return ret;
+			return false;
 		}
 
 		printNodeInfo();
-		if (ret & p_autoShutdown) {
+		if (p_autoShutdown) {
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		}
-		return ret;
+		return true;
 	}
 
 	/**
@@ -139,8 +139,7 @@ public final class DXRAM {
 	 * Print some information after init about our current node.
 	 */
 	private void printNodeInfo() {
-		String str = new String();
-		str += ">>> DXRAM Node <<<\n";
+		String str = ">>> DXRAM Node <<<\n";
 		String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
 		if (buildDate != null) {
 			str += "BuildDate: " + buildDate + "\n";

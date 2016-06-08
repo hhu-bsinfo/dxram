@@ -9,7 +9,7 @@ import de.hhu.bsinfo.dxgraph.data.Vertex;
  * Base class running a buffered reader of vertex data in a separate thread to speed up loading.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements OrderedEdgeList {
+abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements OrderedEdgeList {
 
 	private int m_bufferLimit = 1000;
 	private ConcurrentLinkedQueue<Vertex> m_vertexBuffer = new ConcurrentLinkedQueue<>();
@@ -21,7 +21,7 @@ public abstract class AbstractOrderedEdgeListThreadBuffering extends Thread impl
 	 * @param p_bufferLimit
 	 *            Max number of vertices to keep buffered for reading.
 	 */
-	public AbstractOrderedEdgeListThreadBuffering(final String p_path, final int p_bufferLimit) {
+	AbstractOrderedEdgeListThreadBuffering(final String p_path, final int p_bufferLimit) {
 		super("OrderedEdgeListFileBuffering " + p_path);
 		m_bufferLimit = p_bufferLimit;
 
@@ -45,7 +45,7 @@ public abstract class AbstractOrderedEdgeListThreadBuffering extends Thread impl
 				return vertex;
 			}
 
-			if (vertex == null && this.isAlive()) {
+			if (this.isAlive()) {
 				Thread.yield();
 			} else {
 				return null;

@@ -5,10 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.Endianness;
 import de.hhu.bsinfo.utils.UnsafeHandler;
-
-import sun.misc.Unsafe;
 
 /**
  * Implementation of a storage based on an unsafe allocated
@@ -109,7 +108,7 @@ public class StorageUnsafeMemory implements Storage {
 
 		int bytesRead = 0;
 
-		/// XXX quite inefficient way to write, but no other possibility (?)
+		// / XXX quite inefficient way to write, but no other possibility (?)
 		for (int i = 0; i < p_length; i++) {
 			p_array[p_arrayOffset + i] = UNSAFE.getByte(m_memoryBase + p_ptr + i);
 			bytesRead++;
@@ -219,7 +218,7 @@ public class StorageUnsafeMemory implements Storage {
 
 		int bytesWritten = 0;
 
-		/// XXX quite inefficient way to write, but no other possibility (?)
+		// / XXX quite inefficient way to write, but no other possibility (?)
 		for (int i = 0; i < p_length; i++) {
 			UNSAFE.putByte(m_memoryBase + p_ptr + i, p_array[p_arrayOffset + i]);
 			bytesWritten++;
@@ -369,7 +368,7 @@ public class StorageUnsafeMemory implements Storage {
 	@Override
 	public int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
-			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Integer.BYTES);
+			p_array[i + p_arrayOffset] = readInt(p_ptr + i * Integer.BYTES);
 		}
 
 		return p_length;
@@ -378,7 +377,7 @@ public class StorageUnsafeMemory implements Storage {
 	@Override
 	public int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
 		for (int i = 0; i < p_length; i++) {
-			p_array[i + p_arrayOffset] = readShort(p_ptr + i * Long.BYTES);
+			p_array[i + p_arrayOffset] = readLong(p_ptr + i * Long.BYTES);
 		}
 
 		return p_length;

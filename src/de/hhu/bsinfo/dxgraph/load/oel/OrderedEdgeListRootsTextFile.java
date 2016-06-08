@@ -37,7 +37,7 @@ public class OrderedEdgeListRootsTextFile implements OrderedEdgeListRoots {
 
 	@Override
 	public long getRoot() {
-		String line = null;
+		String line;
 		try {
 			line = m_file.readLine();
 		} catch (final IOException e) {

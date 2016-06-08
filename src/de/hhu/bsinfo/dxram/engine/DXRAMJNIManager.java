@@ -30,7 +30,9 @@ public class DXRAMJNIManager {
 	 *            Settings data for setup.
 	 */
 	public void setup(final DXRAMEngine.Settings p_settings) {
+		// #if LOGGER >= DEBUG
 		m_logger.debug(LOG_HEADER, "Setting up JNI classes...");
+		// #endif /* LOGGER >= DEBUG */
 
 		String path;
 		final String cwd = System.getProperty("user.dir");
@@ -41,7 +43,9 @@ public class DXRAMJNIManager {
 		} else if (OSValidator.isMac()) {
 			extension = "dylib";
 		} else {
+			// #if LOGGER >= ERROR
 			m_logger.error(LOG_HEADER, "Non supported OS.");
+			// #endif /* LOGGER >= ERROR */
 			return;
 		}
 
@@ -49,14 +53,20 @@ public class DXRAMJNIManager {
 		if (path == null) {
 			path = cwd + "/jni/libJNIconsole." + extension;
 		}
+		// #if LOGGER >= DEBUG
 		m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
+		// #endif /* LOGGER >= DEBUG */
+
 		JNIconsole.load(path);
 
 		path = p_settings.getValue("JNI/JNINativeMemory", String.class);
 		if (path == null) {
 			path = cwd + "/jni/libJNINativeMemory." + extension;
 		}
+		// #if LOGGER >= DEBUG
 		m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
+		// #endif /* LOGGER >= DEBUG */
+
 		JNINativeMemory.load(path);
 	}
 

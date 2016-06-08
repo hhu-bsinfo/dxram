@@ -160,7 +160,10 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 			LoggerService logger = getService(LoggerService.class);
 			try {
 				// abusing chunkID for time to wait
+				// #if LOGGER >= DEBUG
 				logger.debug(getClass(), "Sleeping " + p_chunkIDs[0]);
+				// #endif /* LOGGER >= DEBUG */
+
 				Thread.sleep(p_chunkIDs[0]);
 			} catch (final InterruptedException e) {
 				e.printStackTrace();

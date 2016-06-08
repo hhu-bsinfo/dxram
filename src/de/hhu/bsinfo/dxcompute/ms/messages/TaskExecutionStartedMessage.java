@@ -59,8 +59,8 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_taskPayloadId);
 		p_buffer.putInt(m_slavesAssignedForExecution.length);
-		for (int i = 0; i < m_slavesAssignedForExecution.length; i++) {
-			p_buffer.putShort(m_slavesAssignedForExecution[i]);
+		for (short slavesAssignedForExecution : m_slavesAssignedForExecution) {
+			p_buffer.putShort(slavesAssignedForExecution);
 		}
 	}
 

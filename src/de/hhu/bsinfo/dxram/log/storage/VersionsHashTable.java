@@ -127,9 +127,11 @@ public class VersionsHashTable {
 			m_count++;
 		}
 
+		// #if LOGGER >= ERROR
 		if (m_count == m_elementCapacity) {
 			m_logger.error(VersionsHashTable.class, "HashTable is too small. Rehashing prohibited!");
 		}
+		// #endif /* LOGGER >= ERROR */
 	}
 
 	/**

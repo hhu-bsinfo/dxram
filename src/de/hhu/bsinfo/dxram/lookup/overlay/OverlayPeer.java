@@ -3,11 +3,14 @@ package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -15,6 +18,17 @@ import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
 import de.hhu.bsinfo.dxram.lookup.event.NameserviceCacheEntryUpdateEvent;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierAllocRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierAllocResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierChangeSizeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierChangeSizeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierFreeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierFreeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierGetStatusRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierGetStatusResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierReleaseMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryRequest;
@@ -42,6 +56,15 @@ import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageRemoveMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.menet.AbstractMessage;
@@ -101,7 +124,9 @@ public class OverlayPeer implements MessageReceiver {
 		m_network = p_network;
 		m_event = p_event;
 
-		m_nodeID = m_boot.getNodeID();
+		m_initialNumberOfSuperpeers = p_initialNumberOfSuperpeers;
+
+		m_nodeID = p_nodeID;
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();
@@ -172,7 +197,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {}
+				} catch (final InterruptedException ignored) {}
 				continue;
 			}
 
@@ -182,11 +207,10 @@ public class OverlayPeer implements MessageReceiver {
 			if (null != backupSuperpeers) {
 				if (-1 != backupSuperpeers[0]) {
 					// Send backups
-					for (int i = 0; i < backupSuperpeers.length; i++) {
-						request = new RemoveChunkIDsRequest(backupSuperpeers[i], p_chunkIDs, BACKUP);
+					for (short backupSuperpeer : backupSuperpeers) {
+						request = new RemoveChunkIDsRequest(backupSuperpeer, p_chunkIDs, BACKUP);
 						if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 							// Ignore superpeer failure, own superpeer will fix this
-							continue;
 						}
 					}
 				}
@@ -227,7 +251,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {}
+					} catch (final InterruptedException ignored) {}
 					continue;
 				}
 
@@ -237,11 +261,10 @@ public class OverlayPeer implements MessageReceiver {
 				if (null != backupSuperpeers) {
 					if (-1 != backupSuperpeers[0]) {
 						// Send backups
-						for (int i = 0; i < backupSuperpeers.length; i++) {
-							request = new InsertNameserviceEntriesRequest(backupSuperpeers[i], p_id, p_chunkID, BACKUP);
+						for (short backupSuperpeer : backupSuperpeers) {
+							request = new InsertNameserviceEntriesRequest(backupSuperpeer, p_id, p_chunkID, BACKUP);
 							if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
 								// Ignore superpeer failure, own superpeer will fix this
-								continue;
 							}
 						}
 					}
@@ -282,7 +305,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {}
+					} catch (final InterruptedException ignored) {}
 					continue;
 				}
 
@@ -290,9 +313,10 @@ public class OverlayPeer implements MessageReceiver {
 				// 0 is considered invalid, but outside of this scope, we always consider -1 as invalid
 				if (ret == 0) {
 					ret = ChunkID.INVALID_ID;
+				} else {
+					// valid, we are done
+					break;
 				}
-
-				break;
 			}
 		} while (p_timeoutMs == -1 || System.currentTimeMillis() - start < p_timeoutMs);
 
@@ -316,7 +340,9 @@ public class OverlayPeer implements MessageReceiver {
 		for (short superpeer : superpeers) {
 			request = new GetNameserviceEntryCountRequest(superpeer);
 			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Could not determine nameservice entry count");
+				// #endif /* LOGGER >= ERROR */
 				ret = -1;
 				break;
 			} else {
@@ -333,7 +359,7 @@ public class OverlayPeer implements MessageReceiver {
 	 * @return List of nameservice entries or null on error;
 	 */
 	public ArrayList<Pair<Integer, Long>> getNameserviceEntries() {
-		ArrayList<Pair<Integer, Long>> entries = new ArrayList<Pair<Integer, Long>>();
+		ArrayList<Pair<Integer, Long>> entries = new ArrayList<>();
 		Short[] superpeers;
 		GetNameserviceEntriesRequest request;
 		GetNameserviceEntriesResponse response;
@@ -345,7 +371,9 @@ public class OverlayPeer implements MessageReceiver {
 		for (short superpeer : superpeers) {
 			request = new GetNameserviceEntriesRequest(superpeer);
 			if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Could not determine nameservice entries");
+				// #endif /* LOGGER >= ERROR */
 				entries = null;
 				break;
 			} else {
@@ -382,7 +410,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {}
+				} catch (final InterruptedException ignored) {}
 				continue;
 			}
 			finished = request.getResponse(MigrateResponse.class).getStatus();
@@ -407,7 +435,9 @@ public class OverlayPeer implements MessageReceiver {
 
 		creator = ChunkID.getCreatorID(p_startCID);
 		if (creator != ChunkID.getCreatorID(p_endCID)) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Start and end object's creators not equal");
+			// #endif /* LOGGER >= ERROR */
 		} else {
 			while (!finished) {
 				responsibleSuperpeer = m_mySuperpeer;
@@ -418,7 +448,7 @@ public class OverlayPeer implements MessageReceiver {
 					// automatically by network thread)
 					try {
 						Thread.sleep(1000);
-					} catch (final InterruptedException e1) {}
+					} catch (final InterruptedException ignored) {}
 					continue;
 				}
 
@@ -453,7 +483,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {}
+				} catch (final InterruptedException ignored) {}
 				continue;
 			}
 
@@ -519,7 +549,7 @@ public class OverlayPeer implements MessageReceiver {
 				// automatically by network thread)
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {}
+				} catch (final InterruptedException ignored) {}
 				continue;
 			}
 
@@ -556,6 +586,435 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
+	 * Allocate a new barrier.
+	 * @param p_size
+	 *            Size of the barrier (i.e. number of peers that have to sign on).
+	 * @return Id of the barrier allocated or -1 on failure.
+	 */
+	public int barrierAllocate(final int p_size) {
+		// the superpeer responsible for the peer will be the storage for this barrier
+		BarrierAllocRequest request = new BarrierAllocRequest(m_mySuperpeer, p_size);
+		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Allocating barrier with size " + p_size + " on superpeer " + NodeID.toHexString(m_mySuperpeer)
+							+ " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
+			return BarrierID.INVALID_ID;
+		}
+
+		BarrierAllocResponse response = (BarrierAllocResponse) request.getResponse();
+		return response.getBarrierId();
+	}
+
+	/**
+	 * Free an allocate barrier.
+	 * @param p_barrierId
+	 *            Id of the barrier to free.
+	 * @return True if successful, false otherwise.
+	 */
+	public boolean barrierFree(final int p_barrierId) {
+		if (p_barrierId == BarrierID.INVALID_ID) {
+			return false;
+		}
+
+		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
+		BarrierFreeRequest message = new BarrierFreeRequest(responsibleSuperpeer, p_barrierId);
+		NetworkErrorCodes err = m_network.sendSync(message);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Freeing barrier " + BarrierID.toHexString(p_barrierId) + " on superpeer " + NodeID
+							.toHexString(responsibleSuperpeer) + " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		BarrierFreeResponse response = (BarrierFreeResponse) message.getResponse();
+		if (response.getStatusCode() == -1) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Freeing barrier " + BarrierID.toHexString(p_barrierId) + " on superpeer " + NodeID
+							.toHexString(responsibleSuperpeer) + " failed: barrier does not exist.");
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Alter the size of an existing barrier (i.e. you want to keep the barrier id but with a different size).
+	 * @param p_barrierId
+	 *            Id of an allocated barrier to change the size of.
+	 * @param p_size
+	 *            New size for the barrier.
+	 * @return True if changing size was successful, false otherwise.
+	 */
+	public boolean barrierChangeSize(final int p_barrierId, final int p_size) {
+		if (p_barrierId == BarrierID.INVALID_ID) {
+			return false;
+		}
+
+		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
+		BarrierChangeSizeRequest request = new BarrierChangeSizeRequest(responsibleSuperpeer, p_barrierId, p_size);
+		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Sending barrier change size request to superpeer " + NodeID.toHexString(responsibleSuperpeer)
+							+ " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		BarrierChangeSizeResponse response = (BarrierChangeSizeResponse) request.getResponse();
+		// #if LOGGER >= ERROR
+		if (response.getStatusCode() != 0) {
+			m_logger.error(getClass(), "Changing size of barrier " + BarrierID.toHexString(p_barrierId) + " failed.");
+		}
+		// #endif /* LOGGER >= ERROR */
+
+		return response.getStatusCode() == 0;
+	}
+
+	/**
+	 * Sign on to a barrier and wait for it getting released (number of peers, barrier size, have signed on).
+	 * @param p_barrierId
+	 *            Id of the barrier to sign on to.
+	 * @param p_customData
+	 *            Custom data to pass along with the sign on
+	 * @return A pair consisting of the list of signed on peers and their custom data passed along
+	 *         with the sign ons, null on error
+	 */
+	public Pair<short[], long[]> barrierSignOn(final int p_barrierId, final long p_customData) {
+		if (p_barrierId == BarrierID.INVALID_ID) {
+			return null;
+		}
+
+		Semaphore waitForRelease = new Semaphore(0);
+		final BarrierReleaseMessage[] releaseMessage = {null};
+		MessageReceiver msg = p_message -> {
+			if (p_message != null) {
+				if (p_message.getType() == LookupMessages.TYPE) {
+					switch (p_message.getSubtype()) {
+					case LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE: {
+						releaseMessage[0] = (BarrierReleaseMessage) p_message;
+						if (releaseMessage[0].getBarrierId() == p_barrierId) {
+							waitForRelease.release();
+						}
+						break;
+					}
+					default:
+						break;
+					}
+				}
+			}
+		};
+
+		// make sure to register the listener BEFORE sending the sign on to not miss the release message
+		m_network.register(BarrierReleaseMessage.class, msg);
+
+		short responsibleSuperpeer = BarrierID.getOwnerID(p_barrierId);
+		BarrierSignOnRequest request = new BarrierSignOnRequest(responsibleSuperpeer, p_barrierId, p_customData);
+		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Sign on barrier " + BarrierID.toHexString(p_barrierId) + " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
+			m_network.unregister(BarrierReleaseMessage.class, msg);
+			return null;
+		}
+
+		BarrierSignOnResponse response = (BarrierSignOnResponse) request.getResponse();
+		if (response.getBarrierId() != p_barrierId || response.getStatusCode() != 0) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Sign on barrier " + BarrierID.toHexString(p_barrierId) + " failed.");
+			// #endif /* LOGGER >= ERROR */
+			m_network.unregister(BarrierReleaseMessage.class, msg);
+			return null;
+		}
+
+		try {
+			waitForRelease.acquire();
+		} catch (final InterruptedException ignored) {}
+
+		m_network.unregister(BarrierReleaseMessage.class, msg);
+
+		return new Pair<>(releaseMessage[0].getSignedOnPeers(), releaseMessage[0].getCustomData());
+	}
+
+	/**
+	 * Get the status of a barrier.
+	 * @param p_barrierId
+	 *            Id of the barrier.
+	 * @return Short array with currently signed on peers with the first index being the number of signed on peers
+	 */
+	public short[] barrierGetStatus(final int p_barrierId) {
+		if (p_barrierId == BarrierID.INVALID_ID) {
+			return null;
+		}
+
+		BarrierGetStatusRequest request = new BarrierGetStatusRequest(m_mySuperpeer, p_barrierId);
+		NetworkErrorCodes err = m_network.sendSync(request);
+		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Getting status request of barrier " + BarrierID.toHexString(p_barrierId) + " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
+			return null;
+		}
+
+		BarrierGetStatusResponse response = (BarrierGetStatusResponse) request.getResponse();
+		if (response.getStatusCode() == -1) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Getting status request of barrier " + BarrierID.toHexString(p_barrierId)
+					+ " failed: barrier does not exist");
+			// #endif /* LOGGER >= ERROR */
+			return null;
+		}
+
+		return response.getBarrierStatus();
+	}
+
+	/**
+	 * Create a block of memory in the superpeer storage.
+	 * @param p_storageId
+	 *            Local storage id to assign to the newly created block.
+	 * @param p_size
+	 *            Size of the block to create
+	 * @return True if creating successful, false if failed.
+	 */
+	public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
+		assert p_storageId < Math.pow(2, 31) && p_storageId >= 0;
+
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+		while (true) {
+			short responsibleSuperpeer = getResponsibleSuperpeer(m_hashGenerator.hash(p_storageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStorageCreateRequest request =
+						new SuperpeerStorageCreateRequest(responsibleSuperpeer, p_storageId, p_size, false);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {}
+					continue;
+				}
+
+				SuperpeerStorageCreateResponse response = request.getResponse(SuperpeerStorageCreateResponse.class);
+				return response.getStatusCode() == 0;
+			}
+		}
+	}
+
+	/**
+	 * Put data into an allocated block in the superpeer storage.
+	 * @param p_dataStructure
+	 *            Data structure with data to put.
+	 * @return True if successful, false otherwise.
+	 */
+	public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
+		if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Cannot put data structure into superpeer storage, invalid id " + ChunkID
+					.toHexString(p_dataStructure.getID()));
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		int storageId = (int) (p_dataStructure.getID() & 0x7FFFFFFF);
+
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStoragePutRequest request =
+						new SuperpeerStoragePutRequest(responsibleSuperpeer, p_dataStructure, false);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {}
+					continue;
+				}
+
+				SuperpeerStoragePutResponse response = request.getResponse(SuperpeerStoragePutResponse.class);
+				return response.getStatusCode() == 0;
+			}
+		}
+	}
+
+	/**
+	 * Get data from an allocated block in the superpeer storage.
+	 * @param p_id
+	 *            Id of the allocated block.
+	 * @return Chunk with data from the block or null on error.
+	 */
+	public Chunk superpeerStorageGet(final int p_id) {
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(p_id), check);
+
+			if (-1 != responsibleSuperpeer) {
+				Chunk chunk = new Chunk((long) p_id);
+				SuperpeerStorageGetRequest request =
+						new SuperpeerStorageGetRequest(responsibleSuperpeer, chunk);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {}
+					continue;
+				}
+
+				SuperpeerStorageGetResponse response = request.getResponse(SuperpeerStorageGetResponse.class);
+				if (response.getStatusCode() == 0) {
+					return chunk;
+				} else {
+					return null;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get data from an allocated block in the superpeer storage.
+	 * @param p_dataStructure
+	 *            Data structure with set storage id to read the data from the storage into.
+	 * @return True if successful, false otherwise.
+	 */
+	public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
+		if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Cannot get data structure from superpeer storage, invalid id " + ChunkID
+					.toHexString(p_dataStructure.getID()));
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		int storageId = (int) (p_dataStructure.getID() & 0x7FFFFFFF);
+
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(storageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStorageGetRequest request =
+						new SuperpeerStorageGetRequest(responsibleSuperpeer, p_dataStructure);
+				if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {}
+					continue;
+				}
+
+				SuperpeerStorageGetResponse response = request.getResponse(SuperpeerStorageGetResponse.class);
+				return response.getStatusCode() == 0;
+			}
+		}
+	}
+
+	/**
+	 * Remove an allocated block in the superpeer storage.
+	 * @param p_superpeerStorageId
+	 *            Id of the allocated block to remove.
+	 */
+	public void superpeerStorageRemove(final int p_superpeerStorageId) {
+		boolean check = false;
+		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
+			check = true;
+		}
+
+		while (true) {
+			short responsibleSuperpeer =
+					getResponsibleSuperpeer(m_hashGenerator.hash(p_superpeerStorageId), check);
+
+			if (-1 != responsibleSuperpeer) {
+				SuperpeerStorageRemoveMessage message =
+						new SuperpeerStorageRemoveMessage(responsibleSuperpeer, p_superpeerStorageId, false);
+				if (m_network.sendMessage(message) != NetworkErrorCodes.SUCCESS) {
+					// Responsible superpeer is not available, try again (superpeers will be updated
+					// automatically by network thread)
+					try {
+						Thread.sleep(1000);
+					} catch (final InterruptedException ignored) {}
+					continue;
+				}
+
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Get the status of the superpeer storage.
+	 * @return Status of the superpeer storage.
+	 */
+	public SuperpeerStorage.Status superpeerStorageGetStatus() {
+		SuperpeerStorage.Status[] statusArray = new SuperpeerStorage.Status[m_superpeers.size()];
+		for (int i = 0; i < m_superpeers.size(); i++) {
+			short superpeer = m_superpeers.get(i);
+			SuperpeerStorageStatusRequest request = new SuperpeerStorageStatusRequest(superpeer);
+			NetworkErrorCodes err = m_network.sendSync(request);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
+				m_logger.error(getClass(),
+						"Getting superpeer " + NodeID.toHexString(superpeer) + " storage status failed.");
+				// #endif /* LOGGER >= ERROR */
+				statusArray[i] = null;
+			} else {
+				statusArray[i] = request.getResponse(SuperpeerStorageStatusResponse.class).getStatus();
+			}
+		}
+
+		// aggregate status...bad performance =(
+		ArrayList<Long> aggregatedStatus = new ArrayList<>();
+		for (SuperpeerStorage.Status aStatusArray : statusArray) {
+			ArrayList<Long> toMergeArray = aStatusArray.getStatusArray();
+			toMergeArray.stream().filter(val -> !aggregatedStatus.contains(val)).forEach(aggregatedStatus::add);
+		}
+
+		// and finally...sort
+		Collections.sort(aggregatedStatus, (p_o1, p_o2) -> {
+			Integer i1 = (int) (p_o1 >> 32);
+			Integer i2 = (int) (p_o2 >> 32);
+
+			return i1.compareTo(i2);
+		});
+
+		return new SuperpeerStorage.Status(statusArray[0].getMaxNumItems(), statusArray[0].getMaxStorageSizeBytes(),
+				aggregatedStatus);
+	}
+
+	/**
 	 * Joins the superpeer overlay through contactSuperpeer
 	 * @param p_contactSuperpeer
 	 *            NodeID of a known superpeer
@@ -563,22 +1022,28 @@ public class OverlayPeer implements MessageReceiver {
 	 */
 	private boolean joinSuperpeerOverlay(final short p_contactSuperpeer) {
 		short contactSuperpeer;
-		JoinRequest joinRequest = null;
+		JoinRequest joinRequest;
 		JoinResponse joinResponse = null;
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Entering joinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
+		// #endif /* LOGGER == TRACE */
 
 		contactSuperpeer = p_contactSuperpeer;
 
 		if (p_contactSuperpeer == NodeID.INVALID_ID) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot join superpeer overlay, no bootstrap superpeer available to contact.");
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
 		while (-1 != contactSuperpeer) {
+			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
 					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am "
 							+ NodeID.toHexString(m_nodeID));
+			// #endif /* LOGGER == TRACE */
 
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_NOT_SUPERPEER);
 			if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
@@ -590,11 +1055,14 @@ public class OverlayPeer implements MessageReceiver {
 			joinResponse = joinRequest.getResponse(JoinResponse.class);
 			contactSuperpeer = joinResponse.getNewContactSuperpeer();
 		}
+		assert joinResponse != null;
 		m_superpeers = joinResponse.getSuperpeers();
 		m_mySuperpeer = joinResponse.getSource();
 		OverlayHelper.insertSuperpeer(m_mySuperpeer, m_superpeers);
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Exiting joinSuperpeerOverlay");
+		// #endif /* LOGGER == TRACE */
 
 		return true;
 	}
@@ -612,11 +1080,13 @@ public class OverlayPeer implements MessageReceiver {
 		short predecessor;
 		short hisSuccessor;
 		int index;
-		AskAboutSuccessorRequest request = null;
-		AskAboutSuccessorResponse response = null;
+		AskAboutSuccessorRequest request;
+		AskAboutSuccessorResponse response;
 
+		// #if LOGGER == TRACE
 		m_logger.trace(OverlayHelper.class,
 				"Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		// #endif /* LOGGER == TRACE */
 
 		m_overlayLock.lock();
 		if (!m_superpeers.isEmpty()) {
@@ -660,10 +1130,14 @@ public class OverlayPeer implements MessageReceiver {
 				m_overlayLock.unlock();
 			}
 		} else {
+			// #if LOGGER >= WARN
 			m_logger.warn(OverlayHelper.class, "do not know any superpeer");
+			// #endif /* LOGGER >= WARN */
 			m_overlayLock.unlock();
 		}
+		// #if LOGGER == TRACE
 		m_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
+		// #endif /* LOGGER == TRACE */
 
 		return responsibleSuperpeer;
 	}
@@ -677,7 +1151,9 @@ public class OverlayPeer implements MessageReceiver {
 		short source;
 
 		source = p_sendSuperpeersMessage.getSource();
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + NodeID.toHexString(source));
+		// #endif /* LOGGER == TRACE */
 
 		m_overlayLock.lock();
 		m_superpeers = p_sendSuperpeersMessage.getSuperpeers();
@@ -789,6 +1265,48 @@ public class OverlayPeer implements MessageReceiver {
 				AskAboutSuccessorResponse.class);
 		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE,
 				SendSuperpeersMessage.class);
+
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST,
+				BarrierAllocRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_ALLOC_RESPONSE,
+				BarrierAllocResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST,
+				BarrierFreeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_FREE_RESPONSE,
+				BarrierFreeResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST,
+				BarrierSignOnRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_SIGN_ON_RESPONSE,
+				BarrierSignOnResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE,
+				BarrierReleaseMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST,
+				BarrierGetStatusRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_STATUS_RESPONSE,
+				BarrierGetStatusResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST,
+				BarrierChangeSizeRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_RESPONSE,
+				BarrierChangeSizeResponse.class);
+
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST,
+				SuperpeerStorageCreateRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_RESPONSE,
+				SuperpeerStorageCreateResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST,
+				SuperpeerStorageGetRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE,
+				SuperpeerStorageGetResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST,
+				SuperpeerStoragePutRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_RESPONSE,
+				SuperpeerStoragePutResponse.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE,
+				SuperpeerStorageRemoveMessage.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST,
+				SuperpeerStorageStatusRequest.class);
+		m_network.registerMessageType(LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE,
+				SuperpeerStorageStatusResponse.class);
 	}
 
 	/**

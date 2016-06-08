@@ -24,7 +24,7 @@ public class PutResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Creates an instance of DataResponse.
+	 * Creates an instance of PutResponse.
 	 * This constructor is used when sending this message.
 	 * @param p_request
 	 *            the request

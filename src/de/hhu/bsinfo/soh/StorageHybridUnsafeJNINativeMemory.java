@@ -3,11 +3,10 @@ package de.hhu.bsinfo.soh;
 
 import java.io.File;
 
+import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.Endianness;
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
-
-import sun.misc.Unsafe;
 
 /**
  * Hybrid approach using Unsafe and JNINativeMemory.

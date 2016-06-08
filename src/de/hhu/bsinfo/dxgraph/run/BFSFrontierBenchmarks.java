@@ -24,7 +24,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  * Benchmark and compare execution time of various frontier lists used for BFS in dxgraph.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
-public class BFSFrontierBenchmarks extends AbstractMain {
+public final class BFSFrontierBenchmarks extends AbstractMain {
 
 	private static final Argument ARG_ITEM_COUNT =
 			new Argument("itemCount", "100", true, "Number of items to add and get from the list. "
@@ -43,7 +43,7 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 	/**
 	 * Constructor
 	 */
-	protected BFSFrontierBenchmarks() {
+	private BFSFrontierBenchmarks() {
 		super("Test the various BFS frontier implementations and measure execution time.");
 	}
 
@@ -179,11 +179,11 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 	 * @return List of frontier lists to be executed on the single thread pass.
 	 */
 	private ArrayList<FrontierList> prepareTestsSingleThreaded(final long p_itemCount) {
-		ArrayList<FrontierList> list = new ArrayList<FrontierList>();
+		ArrayList<FrontierList> list = new ArrayList<>();
 
 		list.add(new BulkFifoNaive());
 		list.add(new BulkFifo());
-		list.add(new TreeSetFifo());
+		list.add(new TreeSetFifo(p_itemCount));
 		list.add(new BitVector(p_itemCount));
 		list.add(new BitVectorWithStartPos(p_itemCount));
 		list.add(new BitVectorMultiLevel(p_itemCount));
@@ -200,7 +200,7 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 	 * @return List of frontier lists to be executed on the multi thread pass.
 	 */
 	private ArrayList<FrontierList> prepareTestsMultiThreaded(final long p_itemCount) {
-		ArrayList<FrontierList> list = new ArrayList<FrontierList>();
+		ArrayList<FrontierList> list = new ArrayList<>();
 
 		list.add(new ConcurrentBitVector(p_itemCount));
 
@@ -226,8 +226,8 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 		System.out.println("Pushing back data...");
 		{
 			stopWatch.start();
-			for (int i = 0; i < p_testData.length; i++) {
-				p_frontierList.pushBack(p_testData[i]);
+			for (long testData : p_testData) {
+				p_frontierList.pushBack(testData);
 			}
 			stopWatch.stop();
 			m_tables.set(p_table + "/pushBack", p_frontierList.getClass().getSimpleName(), p_column,
@@ -241,7 +241,7 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 		long vals = 0;
 		{
 			stopWatch.start();
-			for (long i = 0; i < p_testData.length; i++) {
+			for (long testData : p_testData) {
 				vals += p_frontierList.popFront();
 			}
 			stopWatch.stop();
@@ -291,13 +291,13 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 			}
 
 			stopWatch.start();
-			for (int i = 0; i < threads.length; i++) {
-				threads[i].m_wait = false;
+			for (PushWorkerThread thread : threads) {
+				thread.m_wait = false;
 			}
 
-			for (int i = 0; i < threads.length; i++) {
+			for (PushWorkerThread thread : threads) {
 				try {
-					threads[i].join();
+					thread.join();
 				} catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -321,14 +321,14 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 			}
 
 			stopWatch.start();
-			for (int i = 0; i < threads.length; i++) {
-				threads[i].m_wait = false;
+			for (PopWorkerThread thread : threads) {
+				thread.m_wait = false;
 			}
 
-			for (int i = 0; i < threads.length; i++) {
+			for (PopWorkerThread thread : threads) {
 				try {
-					threads[i].join();
-					val += threads[i].m_val;
+					thread.join();
+					val += thread.m_val;
 				} catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -430,7 +430,7 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 			System.out.println("Creating random distribution test data...");
 
 			Random rand = new Random();
-			TreeSet<Long> set = new TreeSet<Long>();
+			TreeSet<Long> set = new TreeSet<>();
 			testData = new long[(int) (p_totalItemCount * p_randDistFillRate)];
 			int setCount = 0;
 
@@ -480,8 +480,8 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 	 */
 	private long createTestVector(final long[] p_testData) {
 		long testVec = 0;
-		for (int i = 0; i < p_testData.length; i++) {
-			testVec += p_testData[i];
+		for (long testData : p_testData) {
+			testVec += testData;
 		}
 		return testVec;
 	}
@@ -491,18 +491,19 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
 	private static class PushWorkerThread extends Thread {
-		public FrontierList m_frontier;
-		public long[] m_testData;
-		public volatile boolean m_wait = true;
+		FrontierList m_frontier;
+		long[] m_testData;
+		volatile boolean m_wait = true;
 
 		@Override
 		public void run() {
 			while (m_wait) {
 				// busy loop to avoid latency on start
+				Thread.yield();
 			}
 
-			for (int i = 0; i < m_testData.length; i++) {
-				m_frontier.pushBack(m_testData[i]);
+			for (long testData : m_testData) {
+				m_frontier.pushBack(testData);
 			}
 		}
 	}
@@ -512,14 +513,15 @@ public class BFSFrontierBenchmarks extends AbstractMain {
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
 	private static class PopWorkerThread extends Thread {
-		public FrontierList m_frontier;
-		public volatile long m_val;
-		public volatile boolean m_wait = true;
+		FrontierList m_frontier;
+		volatile long m_val;
+		volatile boolean m_wait = true;
 
 		@Override
 		public void run() {
 			while (m_wait) {
 				// busy loop to avoid latency on start
+				Thread.yield();
 			}
 
 			long val = 0;

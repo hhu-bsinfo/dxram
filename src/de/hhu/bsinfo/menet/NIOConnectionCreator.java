@@ -17,8 +17,11 @@ import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
 class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	// Attributes
-	private TaskExecutor m_taskExecutor;
+	private MessageCreator m_messageCreator;
+	private NIOSelector m_nioSelector;
+
 	private MessageDirectory m_messageDirectory;
+	private NIOInterface m_nioInterface;
 	private NodeMap m_nodeMap;
 
 	private int m_incomingBufferSize;
@@ -27,14 +30,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	private int m_flowControlWindowSize;
 	private int m_connectionTimeout;
 
-	private NIOInterface m_nioInterface;
-	private NIOSelector m_nioSelector;
-
 	// Constructors
 	/**
 	 * Creates an instance of NIOConnectionCreator
-	 * @param p_taskExecutor
-	 *            the task executer
 	 * @param p_messageDirectory
 	 *            the message directory
 	 * @param p_nodeMap
@@ -50,14 +48,13 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * @param p_connectionTimeout
 	 *            the connection timeout
 	 */
-	protected NIOConnectionCreator(final TaskExecutor p_taskExecutor, final MessageDirectory p_messageDirectory,
+	protected NIOConnectionCreator(final MessageDirectory p_messageDirectory,
 			final NodeMap p_nodeMap, final int p_incomingBufferSize, final int p_outgoingBufferSize,
 			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 		super();
 
 		m_nioSelector = null;
 
-		m_taskExecutor = p_taskExecutor;
 		m_messageDirectory = p_messageDirectory;
 
 		m_incomingBufferSize = p_incomingBufferSize;
@@ -77,6 +74,17 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 */
 	@Override
 	public void initialize(final short p_nodeID, final int p_listenPort) {
+		// #if LOGGER >= INFO
+		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Network: MessageCreator");
+		// #endif /* LOGGER >= INFO */
+		m_messageCreator = new MessageCreator(m_numberOfBuffers);
+		m_messageCreator.setName("Network: MessageCreator");
+		m_messageCreator.setPriority(Thread.MAX_PRIORITY);
+		m_messageCreator.start();
+
+		// #if LOGGER >= INFO
+		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Network: NIOSelector");
+		// #endif /* LOGGER >= INFO */
 		m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort);
 		m_nioSelector.setName("Network: NIOSelector");
 		m_nioSelector.setPriority(Thread.MAX_PRIORITY);
@@ -90,6 +98,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	public void close() {
 		m_nioSelector.close();
 		m_nioSelector = null;
+
+		m_messageCreator.shutdown();
+		m_messageCreator = null;
 	}
 
 	@Override
@@ -101,8 +112,6 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Creates a new connection to the given destination
 	 * @param p_destination
 	 *            the destination
-	 * @param p_listener
-	 *            the ConnectionListener
 	 * @return a new connection
 	 * @throws IOException
 	 *             if the connection could not be created
@@ -117,16 +126,18 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		condLock = new ReentrantLock(false);
 		cond = condLock.newCondition();
-		ret = new NIOConnection(p_destination, m_nodeMap, m_taskExecutor, m_messageDirectory, p_listener, condLock, cond, m_nioSelector, m_numberOfBuffers,
-				m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
+		ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, condLock, cond, m_messageCreator, m_nioSelector,
+				m_numberOfBuffers, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 
 		timeStart = System.currentTimeMillis();
 		condLock.lock();
 		while (!ret.isConnected()) {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > m_connectionTimeout) {
+				// #if LOGGER >= DEBUG
 				NetworkHandler.getLogger().debug(getClass().getSimpleName(), "connection creation time-out. Interval "
 						+ m_connectionTimeout + "ms might be to small");
+				// #endif /* LOGGER >= DEBUG */
 
 				condLock.unlock();
 				throw new IOException("Timeout occurred");
@@ -152,10 +163,12 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		NIOConnection connection;
 
 		try {
-			connection = m_nioInterface.initIncomingConnection(m_nodeMap, m_taskExecutor, m_messageDirectory, p_channel, m_nioSelector, m_numberOfBuffers);
+			connection = m_nioInterface.initIncomingConnection(m_nodeMap, m_messageDirectory, p_channel, m_messageCreator, m_nioSelector, m_numberOfBuffers);
 			fireConnectionCreated(connection);
 		} catch (final IOException e) {
+			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not create connection!");
+			// #endif /* LOGGER >= ERROR */
 			throw e;
 		}
 	}
@@ -174,7 +187,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			try {
 				p_connection.getChannel().close();
 			} catch (final IOException e) {
+				// #if LOGGER >= ERROR
 				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not close connection to " + p_connection.getDestination() + "!");
+				// #endif /* LOGGER >= ERROR */
 			}
 			fireConnectionClosed(p_connection);
 		}

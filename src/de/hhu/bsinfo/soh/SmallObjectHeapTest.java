@@ -71,8 +71,9 @@ public class SmallObjectHeapTest {
 			}
 
 			// m_memory = new SmallObjectHeap(new StorageRandomAccessFile(file));
-			// m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
-			m_memory = new SmallObjectHeap(new StorageHybridUnsafeJNINativeMemory());
+			m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
+			// m_memory = new SmallObjectHeap(new StorageHybridUnsafeJNINativeMemory());
+			// m_memory = new SmallObjectHeap(new StorageJavaHeap());
 		} catch (final IOException e1) {
 			e1.printStackTrace();
 		}

@@ -6,6 +6,8 @@ import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskListener;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
+import de.hhu.bsinfo.dxram.term.TerminalStyle;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -24,7 +26,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 	private static final Argument MS_ARG_NAME =
 			new Argument("name", "TcmdTask", true, "Name for the task for easier identification");
 
-	private static int ms_taskCounter;
+	private static int m_taskCounter;
 
 	@Override
 	public String getName() {
@@ -58,43 +60,69 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 		try {
 			payload = AbstractTaskPayload.createInstance(tid, stid);
 		} catch (final Exception e) {
-			System.out
-					.println("Cannot create task with type id " + tid + " subtype id " + stid + ": " + e.getMessage());
+			getTerminalDelegate().println(
+					"Cannot create task with type id " + tid + " subtype id " + stid + ": " + e.getMessage(),
+					TerminalColor.RED);
 			return true;
 		}
 
-		// prompt for additional parameters for the payload
-		if (!payload.terminalCommandCallbackForParameters(getTerminalDelegate())) {
-			return false;
+		// get parameters for payload
+		ArgumentList payloadRegisteredArguments = new ArgumentList();
+		ArgumentList payloadCallbackArguments = new ArgumentList();
+		payload.terminalCommandRegisterArguments(payloadRegisteredArguments);
+
+		// check if parameters were already added via terminal command args
+		for (Argument argument : payloadRegisteredArguments.getArgumentMap().values()) {
+			Argument terminalCommandArg = p_arguments.getArgument(argument.getKey());
+			if (terminalCommandArg == null) {
+				// prompt user to type in argument
+				terminalCommandArg =
+						new Argument(argument.getKey(), getTerminalDelegate().promptForUserInput(argument.getKey()));
+			}
+
+			payloadCallbackArguments.setArgument(terminalCommandArg);
 		}
 
-		Task task = new Task(payload, name + ms_taskCounter++);
+		// provide arguments to task payload
+		try {
+			payload.terminalCommandCallbackForArguments(payloadCallbackArguments);
+		} catch (final NullPointerException e) {
+			// happens if an argument was not provided (probably typo)
+			getTerminalDelegate().println("Parsing arguments of task with type id " + tid + " subtype id " + stid
+					+ " failed, missing argument?");
+		}
+		Task task = new Task(payload, name + m_taskCounter++);
 		task.registerTaskListener(this);
 
 		long taskId = computeService.submitTask(task, cgid);
 		if (taskId == -1) {
-			System.out.println("Submitting task " + task + " to compute group " + cgid + " failed.");
+			getTerminalDelegate().println("Submitting task " + task + " to compute group " + cgid + " failed.");
 			return true;
 		}
 
-		System.out.println("Task submitted to compute group " + cgid + ", task id " + taskId);
+		getTerminalDelegate().println("Task submitted to compute group " + cgid + ", task id " + taskId);
 
 		return true;
 	}
 
 	@Override
 	public void taskBeforeExecution(final Task p_task) {
-		System.out.println("ComputeTask: Starting execution " + p_task);
+		getTerminalDelegate().println("ComputeTask: Starting execution " + p_task);
 	}
 
 	@Override
 	public void taskCompleted(final Task p_task) {
-		System.out.println("ComputeTask: Finished execution " + p_task);
-		System.out.println("Return codes of slave nodes: ");
+		getTerminalDelegate().println("ComputeTask: Finished execution " + p_task);
+		getTerminalDelegate().println("Return codes of slave nodes: ");
 		int[] results = p_task.getExecutionReturnCodes();
 		short[] slaves = p_task.getSlaveNodeIdsExecutingTask();
 		for (int i = 0; i < results.length; i++) {
-			System.out.println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
+			if (results[i] != 0) {
+				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i],
+						TerminalColor.YELLOW, TerminalColor.RED, TerminalStyle.NORMAL);
+			} else {
+				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
+			}
 		}
 	}
 }

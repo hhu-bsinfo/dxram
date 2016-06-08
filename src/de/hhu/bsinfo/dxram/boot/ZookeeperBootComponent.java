@@ -90,7 +90,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		ArrayList<NodeEntry> nodes = readNodesFromSettings(p_settings);
 
 		if (!parseNodes(nodes, NodeRole.toNodeRole(p_engineSettings.getValue(DXRAMEngineConfigurationValues.ROLE)))) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Parsing nodes failed.");
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
@@ -108,17 +110,24 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		lookup = getDependentComponent(LookupComponent.class);
 		if (lookup != null && lookup.isResponsibleForBootstrapCleanup()) {
 			try {
+				// #if LOGGER >= INFO
 				m_logger.info(getClass(), "Cleaning-up ZooKeeper folder");
+				// #endif /* LOGGER >= INFO */
+
 				m_zookeeper.close(true);
 			} catch (final ZooKeeperException e) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "Closing zookeeper failed.", e);
+				// #endif /* LOGGER >= ERROR */
 			}
 		} else {
 			// LookupComponent has not been initialized or this node is not responsible for clean-up
 			try {
 				m_zookeeper.close(false);
 			} catch (final ZooKeeperException e) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "Closing zookeeper failed.", e);
+				// #endif /* LOGGER >= ERROR */
 			}
 		}
 
@@ -231,6 +240,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	public NodeRole getNodeRole(final short p_nodeID) {
 		NodeEntry entry = m_nodesConfiguration.getNode(p_nodeID);
 		if (entry == null) {
+			// #if LOGGER >= WARN
+			m_logger.warn(getClass(), "Could not find node role for " + NodeID.toHexString(p_nodeID));
+			// #endif /* LOGGER >= WARN */
 			return null;
 		}
 
@@ -243,6 +255,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		InetSocketAddress address;
 		// return "proper" invalid address if entry does not exist
 		if (entry == null) {
+			// #if LOGGER >= WARN
+			m_logger.warn(getClass(), "Could not find ip and port for node id " + NodeID.toHexString(p_nodeID));
+			// #endif /* LOGGER >= WARN */
 			address = new InetSocketAddress("255.255.255.255", 0xFFFF);
 		} else {
 			address = new InetSocketAddress(entry.getIP(), entry.getPort());
@@ -349,7 +364,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 		if (!m_shutdown) {
 			if (p_event.getType() == Event.EventType.None && p_event.getState() == KeeperState.Expired) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "ERR:ZooKeeper state expired");
+				// #endif /* LOGGER >= ERROR */
 			} else {
 				try {
 					path = p_event.getPath();
@@ -374,7 +391,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						}
 					}
 				} catch (final ZooKeeperException e) {
+					// #if LOGGER >= ERROR
 					m_logger.error(this.getClass(), "ERR:Could not access ZooKeeper", e);
+					// #endif /* LOGGER >= ERROR */
 				}
 			}
 		}
@@ -400,31 +419,41 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		for (Entry<Integer, String> entry : nodesIP.entrySet()) {
 			String ip = nodesIP.get(entry.getKey());
 			if (ip == null) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "Settings entry for node missing ip.");
+				// #endif /* LOGGER >= ERROR */
 				continue;
 			}
 
 			Integer port = nodesPort.get(entry.getKey());
 			if (port == null) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "Settings entry for node missing port.");
+				// #endif /* LOGGER >= ERROR */
 				continue;
 			}
 
 			String strRole = nodesRole.get(entry.getKey());
 			if (strRole == null) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "Settings entry for node missing role.");
+				// #endif /* LOGGER >= ERROR */
 				continue;
 			}
 
 			Short rack = nodesRack.get(entry.getKey());
 			if (rack == null) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "Settings entry for node missing rack.");
+				// #endif /* LOGGER >= ERROR */
 				continue;
 			}
 
 			Short szwitch = nodesSwitch.get(entry.getKey());
 			if (szwitch == null) {
+				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(), "Settings entry for node missing switch.");
+				// #endif /* LOGGER >= ERROR */
 				continue;
 			}
 
@@ -459,7 +488,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 					// Set barrier object
 					m_zookeeper.createBarrier(barrier);
 					if (p_cmdLineNodeRole != NodeRole.SUPERPEER) {
+						// #if LOGGER >= ERROR
 						m_logger.error(getClass(), "Bootstrap superpeer has differing command line NodeRole");
+						// #endif /* LOGGER >= ERROR */
 						m_zookeeper.close(true);
 						return false;
 					}
@@ -479,7 +510,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				ret = parseNodesNormal(p_nodes, p_cmdLineNodeRole);
 			}
 		} catch (final ZooKeeperException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Could not access zookeeper while parsing nodes.", e);
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
@@ -502,7 +535,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		int numberOfSuperpeers;
 		int seed;
 
+		// #if LOGGER == TRACE
 		m_logger.trace(this.getClass(), "Entering parseNodesBootstrap");
+		// #endif /* LOGGER == TRACE */
 
 		try {
 			if (!m_zookeeper.exists("nodes")) {
@@ -526,14 +561,18 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				if (m_ownIP.equals(entry.getIP()) && m_ownPort == entry.getPort()) {
 					m_nodesConfiguration.setOwnNodeID(nodeID);
 					m_bootstrap = nodeID;
+					// #if LOGGER >= INFO
 					m_logger.info(this.getClass(), "Own node assigned: " + entry);
+					// #endif /* LOGGER >= INFO */
 				}
 				if (entry.getRole().equals(NodeRole.SUPERPEER)) {
 					numberOfSuperpeers++;
 				}
 
 				m_nodesConfiguration.addNode((short) (nodeID & 0x0000FFFF), entry);
+				// #if LOGGER >= INFO
 				m_logger.info(this.getClass(), "Node added: " + entry);
+				// #endif /* LOGGER >= INFO */
 			}
 
 			if (!m_zookeeper.exists("nodes/new")) {
@@ -548,7 +587,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 			// check if own node entry was correctly assigned to a valid node ID
 			if (m_nodesConfiguration.getOwnNodeEntry() == null) {
+				// #if LOGGER >= ERROR
 				m_logger.error(getClass(), "Bootstrap entry for node in nodes configuration missing");
+				// #endif /* LOGGER >= ERROR */
 				m_zookeeper.close(true);
 				return false;
 			}
@@ -573,11 +614,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				m_zookeeper.create("nodes/superpeers/" + m_nodesConfiguration.getOwnNodeID());
 			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Parsing nodes bootstrap failed", e);
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
+		// #if LOGGER == TRACE
 		m_logger.trace(this.getClass(), "Exiting parseNodesBootstrap");
+		// #endif /* LOGGER == TRACE */
 
 		return true;
 	}
@@ -599,7 +644,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 		String[] splits;
 
+		// #if LOGGER == TRACE
 		m_logger.trace(this.getClass(), "Entering parseNodesNormal");
+		// #endif /* LOGGER == TRACE */
 
 		try {
 			// Parse node information
@@ -616,21 +663,29 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 				if (m_ownIP.equals(entry.getIP()) && m_ownPort == entry.getPort()) {
 					if (entry.getRole() != p_cmdLineNodeRole) {
+						// #if LOGGER >= ERROR
 						m_logger.error(getClass(),
 								"NodeRole in configuration differs from command line given NodeRole: "
 										+ entry.getRole() + " != " + p_cmdLineNodeRole);
+						// #endif /* LOGGER >= ERROR */
 						return false;
 					} else if (p_cmdLineNodeRole.equals(NodeRole.TERMINAL)) {
+						// #if LOGGER >= ERROR
 						m_logger.error(getClass(), "A Terminal node should not be in nodes list");
+						// #endif /* LOGGER >= ERROR */
 						return false;
 					}
 					m_nodesConfiguration.setOwnNodeID(nodeID);
 					m_bootstrap = nodeID;
+					// #if LOGGER >= INFO
 					m_logger.info(this.getClass(), "Own node assigned: " + entry);
+					// #endif /* LOGGER >= INFO */
 				}
 
 				m_nodesConfiguration.addNode((short) (nodeID & 0x0000FFFF), entry);
+				// #if LOGGER >= INFO
 				m_logger.info(this.getClass(), "Node added: " + entry);
+				// #endif /* LOGGER >= INFO */
 			}
 
 			m_bootstrap = Short.parseShort(new String(m_zookeeper.getData("nodes/bootstrap")));
@@ -657,7 +712,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 			if (m_nodesConfiguration.getOwnNodeID() == NodesConfiguration.INVALID_NODE_ID) {
 				// Add this node if it was not in start configuration
+				// #if LOGGER >= WARN
 				m_logger.warn(this.getClass(), "node not in nodes.config (" + m_ownIP + ", " + m_ownPort + ")");
+				// #endif /* LOGGER >= WARN */
 
 				node = m_ownIP + "/" + m_ownPort + "/" + p_cmdLineNodeRole.getAcronym() + "/" + 0 + "/" + 0;
 
@@ -704,11 +761,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				m_zookeeper.create("nodes/terminals/" + m_nodesConfiguration.getOwnNodeID());
 			}
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Parsing nodes normal failed", e);
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 
+		// #if LOGGER == TRACE
 		m_logger.trace(this.getClass(), "Exiting parseNodesNormal");
+		// #endif /* LOGGER == TRACE */
 
 		return true;
 	}
@@ -722,7 +783,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		try {
 			m_zookeeper.create(p_path);
 		} catch (final ZooKeeperException | KeeperException | InterruptedException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Creating path in zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
@@ -738,7 +801,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		try {
 			status = m_zookeeper.getStatus(p_path);
 		} catch (final ZooKeeperException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Getting status from zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return status;
@@ -755,7 +820,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		try {
 			m_zookeeper.delete(p_path, p_version);
 		} catch (final ZooKeeperException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Deleting path from zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
@@ -771,7 +838,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		try {
 			data = m_zookeeper.getData(p_path);
 		} catch (final ZooKeeperException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Getting data from zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return data;
@@ -791,7 +860,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		try {
 			data = m_zookeeper.getData(p_path, p_status);
 		} catch (final ZooKeeperException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Getting data from zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return data;
@@ -812,7 +883,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			m_zookeeper.setData(p_path, p_data, p_version);
 			return true;
 		} catch (final ZooKeeperException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Setting data on zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
 	}
@@ -829,7 +902,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		try {
 			ret = m_zookeeper.exists(p_path);
 		} catch (final ZooKeeperException e) {
+			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Checking if path exists in zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		return ret;

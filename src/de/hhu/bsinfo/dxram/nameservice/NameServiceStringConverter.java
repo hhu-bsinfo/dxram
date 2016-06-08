@@ -13,8 +13,8 @@ import java.util.Map;
 public final class NameServiceStringConverter {
 
 	private String m_nameserviceType;
-	private Map<Character, Integer> m_charMap = new HashMap<Character, Integer>();
-	private Map<Integer, Character> m_inverseCharMap = new HashMap<Integer, Character>();
+	private Map<Character, Integer> m_charMap = new HashMap<>();
+	private Map<Integer, Character> m_inverseCharMap = new HashMap<>();
 
 	/**
 	 * Creates an instance of StringConverter
@@ -93,7 +93,7 @@ public final class NameServiceStringConverter {
 
 			m_charMap.put('-', 63);
 
-			m_inverseCharMap = new HashMap<Integer, Character>();
+			m_inverseCharMap = new HashMap<>();
 			m_inverseCharMap.put(1, '0');
 			m_inverseCharMap.put(2, '1');
 			m_inverseCharMap.put(3, '2');
@@ -180,7 +180,8 @@ public final class NameServiceStringConverter {
 		if (m_nameserviceType.equals("NAME")) {
 			if (p_name.length() > 5) {
 				throw new IllegalArgumentException(
-						"String is too long! Only five characters are allowed. For greater numbers set configuration to ID");
+						"String " + p_name +
+						" is too long! Only five characters are allowed. For greater numbers set configuration to ID");
 			}
 
 			chars = p_name.toCharArray();
@@ -205,7 +206,7 @@ public final class NameServiceStringConverter {
 		String ret = null;
 
 		if (m_nameserviceType.equals("NAME")) {
-			ret = new String();
+			ret = "";
 
 			for (int i = 0; i < 32 / 6; i++) {
 				Character c = m_inverseCharMap.get((p_index >> i * 6) & 0x3F);

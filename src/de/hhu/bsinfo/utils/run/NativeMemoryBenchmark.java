@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.utils.run;
 
+import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -8,8 +9,6 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.eval.EvaluationTable;
 import de.hhu.bsinfo.utils.eval.Stopwatch;
 import de.hhu.bsinfo.utils.main.AbstractMain;
-
-import sun.misc.Unsafe;
 
 /**
  * Benchmark the JNINativeMemory implementation compiled with various

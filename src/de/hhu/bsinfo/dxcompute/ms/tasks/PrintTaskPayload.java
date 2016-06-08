@@ -5,7 +5,8 @@ import java.nio.charset.StandardCharsets;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
-import de.hhu.bsinfo.dxram.term.TerminalDelegate;
+import de.hhu.bsinfo.utils.args.ArgumentList;
+import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -15,7 +16,10 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class PrintTaskPayload extends AbstractTaskPayload {
 
-	private String m_msg = new String();
+	private static final Argument MS_ARG_MSG =
+			new Argument("msg", null, false, "Message to print.");
+
+	private String m_msg = "";
 
 	/**
 	 * Constructor
@@ -40,10 +44,13 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public boolean terminalCommandCallbackForParameters(final TerminalDelegate p_delegate) {
-		m_msg = p_delegate.promptForUserInput("msg");
+	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		p_argumentList.setArgument(MS_ARG_MSG);
+	}
 
-		return true;
+	@Override
+	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		m_msg = p_argumentList.getArgumentValue(MS_ARG_MSG, String.class);
 	}
 
 	@Override

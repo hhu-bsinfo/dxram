@@ -276,23 +276,21 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		peers = m_boot.getIDsOfOnlinePeers();
 		numberOfPeers = (short) peers.size();
 
-		/*-peers = new ArrayList<Short>();
-		peers.add((short) -15999);
-		peers.add((short) 320);
-		peers.add((short) -15615);
-		numberOfPeers = 3;*/
-
 		if (3 > numberOfPeers) {
+			// #if LOGGER >= WARN
 			m_logger.warn(BackupComponent.class,
 					"Less than three peers for backup available. Replication will be incomplete!");
+			// #endif /* LOGGER >= WARN */
 
 			newBackupPeers = new short[numberOfPeers];
 			Arrays.fill(newBackupPeers, (short) -1);
 
 			insufficientPeers = true;
 		} else if (6 > numberOfPeers) {
+			// #if LOGGER >= WARN
 			m_logger.warn(BackupComponent.class, "Less than six peers for backup available. Some peers may store more"
 					+ " than one backup range of a node!");
+			// #endif /* LOGGER >= WARN */
 
 			oldBackupPeers = new short[m_replicationFactor];
 			Arrays.fill(oldBackupPeers, (short) -1);
@@ -332,8 +330,10 @@ public class BackupComponent extends AbstractDXRAMComponent {
 							}
 						}
 					}
+					// #if LOGGER >= INFO
 					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
 							+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
+					// #endif /* LOGGER >= INFO */
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
 				}
@@ -364,8 +364,10 @@ public class BackupComponent extends AbstractDXRAMComponent {
 						}
 					}
 				}
+				// #if LOGGER >= INFO
 				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
 						+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
+				// #endif /* LOGGER >= INFO */
 				newBackupPeers[i] = peers.get(index);
 				ready = false;
 			}

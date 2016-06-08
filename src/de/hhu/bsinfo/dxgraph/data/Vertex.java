@@ -15,7 +15,10 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class Vertex implements DataStructure {
+
 	private long m_id = ChunkID.INVALID_ID;
+	private boolean m_flagWriteUserdataOnly;
+
 	private int m_userData = -1;
 	private long[] m_neighbours = new long[0];
 
@@ -50,6 +53,16 @@ public class Vertex implements DataStructure {
 	 */
 	public void setUserData(final int p_userData) {
 		m_userData = p_userData;
+	}
+
+	/**
+	 * Flag this vertex to write the userdata item only on
+	 * the next serilization call (performance hack).
+	 * @param p_flag
+	 *            True to write the userdata only, false for whole vertex on next serialization call.
+	 */
+	public void setWriteUserDataOnly(final boolean p_flag) {
+		m_flagWriteUserdataOnly = p_flag;
 	}
 
 	/**
@@ -124,8 +137,12 @@ public class Vertex implements DataStructure {
 	public int exportObject(final Exporter p_exporter, final int p_size) {
 
 		p_exporter.writeInt(m_userData);
-		p_exporter.writeInt(m_neighbours.length);
-		p_exporter.writeLongs(m_neighbours);
+
+		// performance hack for BFS
+		if (!m_flagWriteUserdataOnly) {
+			p_exporter.writeInt(m_neighbours.length);
+			p_exporter.writeLongs(m_neighbours);
+		}
 
 		return sizeofObject();
 	}

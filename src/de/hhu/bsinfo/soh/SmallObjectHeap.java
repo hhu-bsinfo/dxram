@@ -23,6 +23,7 @@ public final class SmallObjectHeap {
 	SmallObjectHeapSegment[] m_segments;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of RawMemory
 	 * @param p_storageInstance
@@ -33,6 +34,7 @@ public final class SmallObjectHeap {
 	}
 
 	// Methods
+
 	/**
 	 * Initializes the memory
 	 * @param p_size

@@ -17,7 +17,7 @@ import de.hhu.bsinfo.menet.NodeID;
  * Base class to print the statistics.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
+abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
 
 	/**
 	 * Constructor
@@ -29,7 +29,7 @@ public abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
 	 * @param p_subtypeId
 	 *            Subtype id
 	 */
-	public AbstractPrintStatisticsTask(final short p_typeId, final short p_subtypeId) {
+	AbstractPrintStatisticsTask(final short p_typeId, final short p_subtypeId) {
 		super(p_typeId, p_subtypeId);
 	}
 
@@ -42,7 +42,7 @@ public abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
 	 * @param p_statisticsService
 	 *            StatisticsService
 	 */
-	protected void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService,
+	void printStatisticsToOutput(final PrintStream p_outputStream, final BootService p_bootService,
 			final StatisticsService p_statisticsService) {
 		DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		Date date = new Date();

@@ -42,15 +42,20 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 		for (Worker worker : m_workers) {
 			if (worker.pushJob(p_job)) {
 				// causes the garbage collector to go crazy if too many jobs are pushed very quickly
-				// m_logger.debug(getClass(), "Submitted job " + p_job + " to worker " + worker);
+				// #if LOGGER >= DEBUG
+				m_logger.debug(getClass(), "Submitted job " + p_job + " to worker " + worker);
+				// #endif /* LOGGER >= DEBUG */
+
 				success = true;
 				break;
 			}
 		}
 
+		// #if LOGGER >= WARN
 		if (!success) {
 			m_logger.warn(getClass(), "Submiting job " + p_job + " failed.");
 		}
+		// #endif /* LOGGER >= WARN */
 
 		return success;
 	}
@@ -101,7 +106,9 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 	@Override
 	protected boolean shutdownComponent() {
+		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(), "Waiting for unfinished jobs...");
+		// #endif /* LOGGER >= DEBUG */
 
 		while (m_unfinishedJobs.get() > 0) {
 			Thread.yield();
@@ -111,7 +118,9 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 			worker.shutdown();
 		}
 
+		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(), "Waiting for workers to shut down...");
+		// #endif /* LOGGER >= DEBUG */
 
 		for (Worker worker : m_workers) {
 			while (worker.isRunning()) {
@@ -134,7 +143,9 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 			job = worker.stealJob();
 			if (job != null) {
+				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "Job " + job + " stolen from worker " + worker);
+				// #endif /* LOGGER == TRACE */
 				break;
 			}
 		}

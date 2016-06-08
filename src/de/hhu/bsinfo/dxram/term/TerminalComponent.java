@@ -6,6 +6,10 @@ import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdClear;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdPrint;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdQuit;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdScriptExec;
 
 /**
  * Component providing data/commands for an interactive terminal to be run on a node.
@@ -38,7 +42,10 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 * @return True if registering was successful, false if a command with the same name already exists.
 	 */
 	public boolean registerCommand(final AbstractTerminalCommand p_command) {
+		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(), "Registering command: " + p_command.getName());
+		// #endif /* LOGGER >= DEBUG */
+
 		return m_commandMap.putIfAbsent(p_command.getName(), p_command) == null;
 	}
 
@@ -61,9 +68,10 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		m_logger = getDependentComponent(LoggerComponent.class);
 
 		// register built in commands
-		registerCommand(new TerminalCommandClear());
-		registerCommand(new TerminalCommandQuit());
-		registerCommand(new TerminalCommandPrint());
+		registerCommand(new TcmdClear());
+		registerCommand(new TcmdQuit());
+		registerCommand(new TcmdPrint());
+		registerCommand(new TcmdScriptExec());
 
 		return true;
 	}

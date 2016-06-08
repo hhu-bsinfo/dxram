@@ -1,8 +1,6 @@
 
 package de.hhu.bsinfo.menet;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,9 +12,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class RequestMap {
 
 	// Attributes
-	private static Map<Integer, AbstractRequest> m_pendingRequests = new HashMap<>();
-
-	private static Lock m_lock = new ReentrantLock(false);
+	private static AbstractRequest[] m_pendingRequests;
+	private static Lock m_lock;
 
 	// Constructors
 	/**
@@ -26,16 +23,35 @@ public final class RequestMap {
 
 	// Methods
 	/**
+	 * Initializes the request map
+	 * @param p_size
+	 *            the number of entries in request map
+	 */
+	protected static void initialize(final int p_size) {
+		m_pendingRequests = new AbstractRequest[p_size];
+		m_lock = new ReentrantLock(false);
+	}
+
+	/**
 	 * Put a Request in the store
 	 * @param p_request
 	 *            the Request
 	 */
 	protected static void put(final AbstractRequest p_request) {
+		int index;
+
 		assert p_request != null;
 
 		m_lock.lock();
 
-		m_pendingRequests.put(p_request.getRequestID() & 0x00FFFFFF, p_request);
+		index = p_request.getRequestID() % m_pendingRequests.length;
+		if (m_pendingRequests[index] != null) {
+			// #if LOGGER >= ERROR
+			NetworkHandler.getLogger().error(RequestMap.class.getSimpleName(),
+					"Request for idx=" + index + " still registered! Request Map might be too small.");
+			// #endif /* LOGGER >= ERROR */
+		}
+		m_pendingRequests[index] = p_request;
 
 		m_lock.unlock();
 	}
@@ -46,12 +62,16 @@ public final class RequestMap {
 	 *            the requestID
 	 * @return the removed Request
 	 */
-	protected static AbstractRequest remove(final int p_requestID) {
+	public static AbstractRequest remove(final int p_requestID) {
+		int index;
+
 		AbstractRequest ret = null;
 
 		m_lock.lock();
 
-		ret = m_pendingRequests.remove(p_requestID);
+		index = p_requestID % m_pendingRequests.length;
+		ret = m_pendingRequests[index];
+		m_pendingRequests[index] = null;
 
 		m_lock.unlock();
 
@@ -69,7 +89,7 @@ public final class RequestMap {
 
 		m_lock.lock();
 
-		req = m_pendingRequests.get(p_resonse.getRequestID());
+		req = m_pendingRequests[p_resonse.getRequestID() % m_pendingRequests.length];
 
 		m_lock.unlock();
 

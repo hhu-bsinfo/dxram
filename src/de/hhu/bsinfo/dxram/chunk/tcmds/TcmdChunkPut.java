@@ -9,6 +9,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -79,27 +80,28 @@ public class TcmdChunkPut extends AbstractTerminalCommand {
 		} else {
 			if (lid != null) {
 				if (nid == null) {
-					System.out.println("error: missing nid for lid");
+					getTerminalDelegate().println("error: missing nid for lid", TerminalColor.RED);
 					return false;
 				}
 
 				// create cid
 				chunkId = ChunkID.getChunkID(nid, lid);
 			} else {
-				System.out.println("No cid or nid/lid specified.");
+				getTerminalDelegate().println("No cid or nid/lid specified.", TerminalColor.RED);
 				return false;
 			}
 		}
 
 		// don't allow put of index chunk
 		if (ChunkID.getLocalID(chunkId) == 0) {
-			System.out.println("Put of index chunk is not allowed.");
+			getTerminalDelegate().println("Put of index chunk is not allowed.", TerminalColor.RED);
 			return true;
 		}
 
 		Pair<Integer, Chunk[]> chunks = chunkService.get(new long[] {chunkId});
 		if (chunks.first() == 0) {
-			System.out.println("Getting chunk " + ChunkID.toHexString(chunkId) + " failed.");
+			getTerminalDelegate().println("Getting chunk " + ChunkID.toHexString(chunkId) + " failed.",
+					TerminalColor.RED);
 			return true;
 		}
 
@@ -177,16 +179,17 @@ public class TcmdChunkPut extends AbstractTerminalCommand {
 				}
 			}
 		} else {
-			System.out.println("error: Unsupported data type " + dataType);
+			getTerminalDelegate().println("error: Unsupported data type " + dataType, TerminalColor.RED);
 			return true;
 		}
 
 		// put chunk back
 		if (chunkService.put(chunk) != 1) {
-			System.out.println("error: Putting chunk " + ChunkID.toHexString(chunk.getID()) + " failed");
+			getTerminalDelegate().println("error: Putting chunk " + ChunkID.toHexString(chunk.getID()) + " failed",
+					TerminalColor.RED);
 			return true;
 		} else {
-			System.out.println("Put to chunk " + ChunkID.toHexString(chunk.getID()) + " successful.");
+			getTerminalDelegate().println("Put to chunk " + ChunkID.toHexString(chunk.getID()) + " successful.");
 		}
 
 		return true;

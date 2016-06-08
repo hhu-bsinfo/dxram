@@ -44,7 +44,7 @@ public class ConverterThread extends Thread {
 				curProgress = 1.0f;
 			}
 
-			System.out.println("Progress(" + p_msg + "): " + curProgress * 100 + "%\r");
+			System.out.println("Progress(" + p_msg + "): " + curProgress * 100 + "% (" + p_curCount + ")\r");
 		}
 	}
 }

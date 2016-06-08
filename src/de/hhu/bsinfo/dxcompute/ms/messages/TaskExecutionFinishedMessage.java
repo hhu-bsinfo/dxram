@@ -59,8 +59,8 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_taskPayloadId);
 		p_buffer.putInt(m_executionReturnCodes.length);
-		for (int i = 0; i < m_executionReturnCodes.length; i++) {
-			p_buffer.putInt(m_executionReturnCodes[i]);
+		for (int executionReturnCode : m_executionReturnCodes) {
+			p_buffer.putInt(executionReturnCode);
 		}
 	}
 

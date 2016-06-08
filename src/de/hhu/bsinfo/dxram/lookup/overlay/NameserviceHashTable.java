@@ -334,8 +334,10 @@ public class NameserviceHashTable {
 		m_threshold = (int) (m_elementCapacity * m_loadFactor);
 		m_table = newTable;
 
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(),
 				"Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
+		// #endif /* LOGGER == TRACE */
 
 		m_count = 0;
 		while (index < oldElementCapacity) {
@@ -346,7 +348,9 @@ public class NameserviceHashTable {
 			index = (index + 1) % m_elementCapacity;
 		}
 		m_count = oldCount;
+		// #if LOGGER == TRACE
 		m_logger.trace(getClass(), "done");
+		// #endif /* LOGGER == TRACE */
 	}
 
 	/**

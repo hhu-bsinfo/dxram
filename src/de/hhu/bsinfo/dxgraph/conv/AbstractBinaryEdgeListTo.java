@@ -8,29 +8,26 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Queue;
-
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Single threaded converter, expecting edge list in binary form:
  * 8 bytes source nodeId and 8 bytes destination node id.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
-public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
+abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 	/**
 	 * Constructor
 	 * @param p_description
 	 *            Description for the converter.
 	 */
-	protected AbstractBinaryEdgeListTo(final String p_description) {
+	AbstractBinaryEdgeListTo(final String p_description) {
 		super(p_description);
 	}
 
 	@Override
 	protected AbstractFileReaderThread createReaderInstance(final String p_inputPath,
-			final Queue<Pair<Long, Long>> p_bufferQueue, final int p_maxQueueSize) {
-		return new FileReaderBinaryThread(p_inputPath, p_bufferQueue, p_maxQueueSize);
+			final BinaryEdgeBuffer p_buffer) {
+		return new FileReaderBinaryThread(p_inputPath, p_buffer);
 	}
 
 	@Override
@@ -43,7 +40,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 			outputPath += "/";
 		}
 
-		BufferedWriter writer = null;
+		BufferedWriter writer;
 		try {
 			writer = new BufferedWriter(new FileWriter(outputPath + "out.roel"));
 		} catch (final IOException e1) {
@@ -51,14 +48,14 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 			return;
 		}
 
-		RandomAccessFile file = null;
+		RandomAccessFile file;
 		try {
 			file = new RandomAccessFile(p_inputRootFile, "r");
 		} catch (final FileNotFoundException e) {
 			System.out.println("Opening input file " + p_inputRootFile + " failed: " + e.getMessage());
 			try {
 				writer.close();
-			} catch (final IOException e1) {}
+			} catch (final IOException ignored) {}
 			return;
 		}
 
@@ -99,24 +96,21 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 	 * File reader for the binary edge list graph data.
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
-	protected static class FileReaderBinaryThread extends AbstractFileReaderThread {
+	private static class FileReaderBinaryThread extends AbstractFileReaderThread {
 		/**
 		 * Constructor
 		 * @param p_inputPath
 		 *            Path of the file to read.
-		 * @param p_bufferQueue
-		 *            Shared buffer queue to read the data to.
-		 * @param p_maxQueueSize
-		 *            Max amount of items to add to the queue before blocking.
+		 * @param p_buffer
+		 *            Shared buffer to read the data to.
 		 */
-		FileReaderBinaryThread(final String p_inputPath, final Queue<Pair<Long, Long>> p_bufferQueue,
-				final int p_maxQueueSize) {
-			super(p_inputPath, p_bufferQueue, p_maxQueueSize);
+		FileReaderBinaryThread(final String p_inputPath, final BinaryEdgeBuffer p_buffer) {
+			super(p_inputPath, p_buffer);
 		}
 
 		@Override
 		public int parse() {
-			RandomAccessFile file = null;
+			RandomAccessFile file;
 			try {
 				file = new RandomAccessFile(m_inputPath, "r");
 			} catch (final FileNotFoundException e) {
@@ -124,7 +118,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 				return -1;
 			}
 
-			ByteBuffer buffer = ByteBuffer.allocate(1024 * 8 * 2);
+			ByteBuffer buffer = ByteBuffer.allocate(32 * 1024);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 
 			try {
@@ -132,6 +126,7 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 				long bytesRead = 0;
 				do {
 					int read = file.read(buffer.array());
+
 					if (read == -1) {
 						break;
 					}
@@ -141,18 +136,13 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 
 					// size() performs really bad here, so try to call it very rarely
 					// by adding an addition
-					int size = m_bufferQueue.size();
 					while (buffer.hasRemaining()) {
-						Long srcNode = buffer.getLong();
-						Long destNode = buffer.getLong();
+						long srcNode = buffer.getLong();
+						long destNode = buffer.getLong();
 
-						if (size > m_maxQueueSize) {
+						while (!m_buffer.pushBack(srcNode, destNode)) {
 							Thread.yield();
-							size = m_bufferQueue.size();
 						}
-
-						m_bufferQueue.add(new Pair<Long, Long>(srcNode, destNode));
-						size++;
 
 						updateProgress("BinaryDataReading", bytesRead, fileLength);
 					}
@@ -167,17 +157,17 @@ public abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 			}
 
 			// wait until queue is empty
-			int queueSize = 0;
+			// int queueSize = 0;
 			do {
-				queueSize = m_bufferQueue.size();
-				System.out.println("BufferQueue remaining: " + m_bufferQueue.size());
-				System.out.flush();
+				// queueSize = m_bufferQueue.size();
+				// System.out.println("BufferQueue remaining: " + m_bufferQueue.size());
+				// System.out.flush();
 				try {
 					Thread.sleep(1000);
 				} catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
-			} while (queueSize > 0);
+			} while (!m_buffer.isEmpty());
 
 			return 0;
 		}
