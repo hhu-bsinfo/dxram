@@ -47,7 +47,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
  */
-public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
+public class GraphAlgorithmBFSTaskPayloadOld extends AbstractTaskPayload {
 
 	private static final String MS_BFS_RESULT_NAMESRV_IDENT = "BFR";
 
@@ -90,7 +90,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 	private int m_barrierId0 = BarrierID.INVALID_ID;
 
-	public GraphAlgorithmBFSTaskPayload() {
+	public GraphAlgorithmBFSTaskPayloadOld() {
 		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS);
 	}
 
@@ -380,30 +380,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						"I am starting BFS with entry vertex " + ChunkID.toHexString(p_entryVertex));
 				// #endif /* LOGGER >= INFO */
 
-				// mark root visited
-				if (m_visitedFrontier == null) {
-					Vertex vertex = new Vertex(p_entryVertex);
-					if (m_chunkService.get(vertex) != 1) {
-						m_loggerService.error(getClass(),
-								"Getting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
-						// TODO signal all other slaves to terminate (error)
-						return;
-					}
-
-					vertex.setUserData(m_bfsLocalResult.m_totalBFSDepth);
-					if (m_chunkService.put(vertex) != 1) {
-						m_loggerService.error(getClass(),
-								"Putting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
-						// TODO signal all other slaves to terminate (error)
-						return;
-					}
-				} else {
-					m_curFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
-				}
+				m_curFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
 			}
 
-			// root already done
-			m_bfsLocalResult.m_totalBFSDepth++;
 			m_statisticsThread.start();
 
 			long start = System.currentTimeMillis();
@@ -511,7 +490,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_curFrontier = m_nextFrontier;
 				m_nextFrontier = tmp;
 				m_nextFrontier.reset();
-				m_visitedFrontier.resetPopFront();
 
 				// also swap the references of all threads!
 				for (BFSThread thread : m_threads) {
@@ -612,13 +590,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			long vertexId = p_message.getVertex();
 			while (vertexId != -1) {
-				// TODO mark mode missing
-				// check if visited and add to frontier if not
-				long localId = ChunkID.getLocalID(vertexId);
-				if (m_visitedFrontier.pushBack(localId)) {
-					m_nextFrontier.pushBack(localId);
-				}
-
+				m_nextFrontier.pushBack(vertexId);
 				vertexId = p_message.getVertex();
 			}
 
@@ -869,12 +841,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		void runIteration() {
 			// determine to use top down or bottom up approach
 			// for next iteration
-			System.out.println(
-					">>>>>>>>>>>>> m_curFrontier.capacity(): " + m_curFrontier.capacity()
-							+ ", m_visitedFrontier.capacity(): " + m_visitedFrontier.capacity()
-							+ ", m_curFrontier.size(): " + m_curFrontier.size()
-							+ ", m_visitedFrontier.size(): " + m_visitedFrontier.size());
-			if (m_visitedFrontier.capacity() - m_visitedFrontier.size() < m_curFrontier.size()) {
+			if (m_curFrontier.size() > m_curFrontier.capacity() / 2) {
 				m_bottomUpIteration = true;
 				m_loggerService.debug(getClass(), "Going BOTTOM UP for this iteration");
 			} else {
@@ -934,11 +901,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					m_visitedFrontier.popFrontLock();
 					for (Vertex vertexBatch : m_vertexBatch) {
 						long tmp = m_visitedFrontier.popFrontInverse();
-						// skip index chunk
+						// 0 is the index chunk, re-pop
 						if (tmp == 0) {
 							tmp = m_visitedFrontier.popFrontInverse();
 						}
-
 						if (tmp != -1) {
 							vertexBatch.setID(ChunkID.getChunkID(m_nodeId, tmp));
 							validVertsInBatch++;
@@ -1017,10 +983,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					// or just remember that we have visited it and don't alter vertex data
 					boolean isVisited = false;
 
-					writeBackCount++;
-					m_sharedVertexCounter.incrementAndGet();
-					long[] neighbours = vertex.getNeighbours();
-					long vertexLocalId = ChunkID.getLocalID(vertex.getID());
 					if (m_bottomUpIteration) {
 						// for bottom up, we check if any of the neighbours are within our current frontier
 						// i.e. is a parent of our current vertex. If that's the case, we are a child and
@@ -1043,21 +1005,50 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								continue;
 							}
 
-							if (ChunkID.getCreatorID(neighbour) != m_nodeId) {
-								continue;
-							}
-
-							long neighbourLocalId = ChunkID.getLocalID(neighbour);
-							if (m_curFrontier.contains(neighbourLocalId)) {
+							if (m_curFrontier.contains(ChunkID.getLocalID(neighbour))) {
 								// got a connection, mark visited
-								// TODO differ mark mode and non mark mode
-								if (m_visitedFrontier.pushBack(vertexLocalId)) {
-									m_nextFrontier.pushBack(vertexLocalId);
+								if (m_visitedFrontier == null) {
+									if (vertex.getUserData() == -1) {
+										// set depth level
+										vertex.setUserData(m_currentDepthLevel);
+										isVisited = false;
+									} else {
+										// already visited, don't have to put back to storage
+										vertex.setID(ChunkID.INVALID_ID);
+										isVisited = true;
+									}
+								} else {
+									long id = ChunkID.getLocalID(vertex.getID());
+									isVisited = !m_visitedFrontier.pushBack(id);
 								}
+
 								break;
 							}
 						}
 					} else {
+						// going top down (standard bfs)
+
+						if (m_visitedFrontier == null) {
+							if (vertex.getUserData() == -1) {
+								// set depth level
+								vertex.setUserData(m_currentDepthLevel);
+								isVisited = false;
+							} else {
+								// already visited, don't have to put back to storage
+								vertex.setID(ChunkID.INVALID_ID);
+								isVisited = true;
+							}
+						} else {
+							long id = ChunkID.getLocalID(vertex.getID());
+							isVisited = !m_visitedFrontier.pushBack(id);
+						}
+
+					}
+
+					if (!isVisited) {
+						writeBackCount++;
+						m_sharedVertexCounter.incrementAndGet();
+						long[] neighbours = vertex.getNeighbours();
 
 						for (long neighbour : neighbours) {
 							// check if neighbors are valid, otherwise something's not ok with the data
@@ -1081,9 +1072,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 							// sort by remote and local vertices
 							short creatorId = ChunkID.getCreatorID(neighbour);
-							long localId = ChunkID.getLocalID(neighbour);
 							if (creatorId != m_nodeId) {
-								// delegate to remote, fill message buffers until they are full -> send
+								// go remote, fill message buffers until they are full -> send
 								VerticesForNextFrontierMessage msg = m_remoteMessages.get(creatorId);
 								if (msg == null) {
 									msg = new VerticesForNextFrontierMessage(creatorId,
@@ -1110,15 +1100,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									msg.addVertex(neighbour);
 								}
 							} else {
-								// mark visited
-								// TODO differ mark mode and non mark mode
-								// mark visited and add to next if not visited so far
-								if (m_visitedFrontier.pushBack(localId)) {
-									m_nextFrontier.pushBack(localId);
-								}
+								m_nextFrontier.pushBack(ChunkID.getLocalID(neighbour));
 							}
 						}
 					}
+
 				}
 
 				if (m_visitedFrontier == null) {
