@@ -428,9 +428,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 							i--;
 						}
+						System.out.println("Sent BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
 					}
 				}
 
+				System.out.println("Wait finish");
 				// busy wait until everyone is done
 				while (!m_bfsSlavesLevelFinishedCounter.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
 					Thread.yield();
@@ -460,9 +462,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 							i--;
 						}
+						System.out.println("Sent BFSTerminateMessage " + NodeID.toHexString(slavesNodeIds[i]));
 					}
 				}
 
+				System.out.println("Wait termination");
 				// wait until everyone reported the next frontier state/termination
 				while (!m_bfsSlavesEmptyNextFrontiers.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
 					Thread.yield();
@@ -593,17 +597,18 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		private void onIncomingBFSLevelFinishedMessage(final BFSLevelFinishedMessage p_message) {
-			System.out.println("onIncomingBFSLevelFinishedMessage");
-			m_bfsSlavesLevelFinishedCounter.incrementAndGet();
+			System.out.println("onIncomingBFSLevelFinishedMessage " + NodeID.toHexString(p_message.getSource()) + " | "
+					+ m_bfsSlavesLevelFinishedCounter.incrementAndGet());
 		}
 
 		private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
+
 			if (!p_message.isNextFrontierEmpty()) {
 				m_terminateBfs = false;
 			}
 
-			System.out.println("onIncomingBFSTerminateMessage");
-			m_bfsSlavesEmptyNextFrontiers.incrementAndGet();
+			System.out.println("onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getSource()) + " | "
+					+ m_bfsSlavesEmptyNextFrontiers.incrementAndGet());
 		}
 
 		/**
