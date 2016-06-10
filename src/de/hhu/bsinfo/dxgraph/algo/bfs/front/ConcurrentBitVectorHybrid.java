@@ -16,8 +16,10 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 	private long m_maxElementCount;
 	private AtomicLongArray m_vector;
 
-	private AtomicLong m_itPos = new AtomicLong(0);
 	private AtomicLong m_count = new AtomicLong(0);
+	private AtomicLong m_itPos = new AtomicLong(0);
+	private AtomicLong m_posCount = new AtomicLong(0);
+	private AtomicLong m_posCountInverse = new AtomicLong(0);
 
 	/**
 	 * Constructor
@@ -27,6 +29,7 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 	public ConcurrentBitVectorHybrid(final long p_maxElementCount) {
 		m_maxElementCount = p_maxElementCount;
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
+		m_posCountInverse.set(m_maxElementCount);
 	}
 
 	public static void main(final String[] p_args) throws Exception {
@@ -133,6 +136,8 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 	@Override
 	public void reset() {
 		m_itPos.set(0);
+		m_posCount.set(0);
+		m_posCountInverse.set(m_maxElementCount);
 		m_count.set(0);
 		for (int i = 0; i < m_vector.length(); i++) {
 			m_vector.set(i, 0);
@@ -147,8 +152,8 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 
 	@Override
 	public long popFront() {
-		if (m_count.decrementAndGet() < 0) {
-			m_count.set(0);
+		if (m_posCount.decrementAndGet() < 0) {
+			m_posCount.set(0);
 			return -1;
 		}
 
@@ -164,14 +169,16 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 		}
 	}
 
-	public void resetPopFront() {
+	public void popFrontReset() {
 		m_itPos.set(0);
+		m_posCount.set(m_count.get());
+		m_posCountInverse.set(m_maxElementCount - m_count.get());
 	}
 
 	// get the non set indices
 	public long popFrontInverse() {
-		if (m_count.incrementAndGet() >= m_maxElementCount) {
-			m_count.set(m_maxElementCount);
+		if (m_posCountInverse.decrementAndGet() < 0) {
+			m_posCountInverse.set(0);
 			return -1;
 		}
 

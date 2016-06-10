@@ -424,6 +424,7 @@ public final class NetworkHandler implements DataReceiver {
 
 		@Override
 		public void run() {
+
 			AbstractMessage message = null;
 			Entry entry;
 
@@ -431,16 +432,21 @@ public final class NetworkHandler implements DataReceiver {
 			message = m_defaultMessages.poll();
 			m_defaultMessagesLock.unlock();
 
-			entry = m_receivers.get(message.getClass());
+			try {
+				entry = m_receivers.get(message.getClass());
 
-			// missing receivers
-			if (entry != null) {
-				entry.newMessage(message);
-			} else {
-				// #if LOGGER >= ERROR
+				// missing receivers
+				if (entry != null) {
+					entry.newMessage(message);
+				} else {
+					// #if LOGGER >= ERROR
+					m_loggerInterface.error(getClass().getSimpleName(),
+							"Missing receivers for message class " + message.getClass().getSimpleName());
+					// #endif /* LOGGER >= ERROR */
+				}
+			} catch (final Exception e) {
 				m_loggerInterface.error(getClass().getSimpleName(),
-						"Missing receivers for message class " + message.getClass().getSimpleName());
-				// #endif /* LOGGER >= ERROR */
+						"Exception thrown when handling message: " + message, e);
 			}
 		}
 	}

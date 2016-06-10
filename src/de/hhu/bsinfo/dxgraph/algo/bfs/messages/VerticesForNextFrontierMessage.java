@@ -16,6 +16,10 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 	private long[] m_vertexIDs;
 	private int m_vertexPos;
 
+	private int m_numOfNeighbors;
+	private long[] m_neighborIDs;
+	private int m_neighborPos;
+
 	/**
 	 * Creates an instance of VerticesForNextFrontierRequest.
 	 * This constructor is used when receiving this message.
@@ -35,6 +39,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
 		m_batchSize = p_batchSize;
 		m_vertexIDs = new long[p_batchSize];
+		m_neighborIDs = new long[p_batchSize];
 	}
 
 	/**
@@ -64,6 +69,18 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		return m_batchSize == m_numOfVertices;
 	}
 
+	/**
+	 * Determine if any neighbors were sent with this message.
+	 * If neighbors are included, this message is sent from a node
+	 * running bottom up mode, thus needing different treatment than
+	 * a message with vertices only (top down mode).
+	 *
+	 * @return Number of neighbors in batch
+	 */
+	public int getNumNeighborsInBatch() {
+		return m_numOfNeighbors;
+	}
+
 	public boolean addVertex(final long p_vertex) {
 		if (m_vertexIDs.length == m_numOfVertices) {
 			return false;
@@ -71,6 +88,16 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 
 		m_vertexIDs[m_vertexPos++] = p_vertex & 0xFFFFFFFFFFFFL;
 		m_numOfVertices++;
+		return true;
+	}
+
+	public boolean addNeighbor(final long p_neighbor) {
+		if (m_neighborIDs.length == m_numOfNeighbors) {
+			return false;
+		}
+
+		m_neighborIDs[m_neighborPos++] = p_neighbor & 0xFFFFFFFFFFFFL;
+		m_numOfNeighbors++;
 		return true;
 	}
 
@@ -82,11 +109,23 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		return m_vertexIDs[m_vertexPos++];
 	}
 
+	public long getNeighbor() {
+		if (m_neighborIDs.length == m_neighborPos) {
+			return -1;
+		}
+
+		return m_neighborIDs[m_neighborPos++];
+	}
+
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 		p_buffer.putInt(m_numOfVertices);
 		for (int i = 0; i < m_numOfVertices; i++) {
 			p_buffer.putLong(m_vertexIDs[i]);
+		}
+		p_buffer.putInt(m_numOfNeighbors);
+		for (int i = 0; i < m_numOfNeighbors; i++) {
+			p_buffer.putLong(m_neighborIDs[i]);
 		}
 	}
 
@@ -97,10 +136,15 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		for (int i = 0; i < m_numOfVertices; i++) {
 			m_vertexIDs[i] = p_buffer.getLong();
 		}
+		m_numOfNeighbors = p_buffer.getInt();
+		m_neighborIDs = new long[m_numOfNeighbors];
+		for (int i = 0; i < m_numOfNeighbors; i++) {
+			m_neighborIDs[i] = p_buffer.getLong();
+		}
 	}
 
 	@Override
 	protected final int getPayloadLength() {
-		return Integer.BYTES + m_numOfVertices * Long.BYTES;
+		return Integer.BYTES + m_numOfVertices * Long.BYTES + Integer.BYTES + m_numOfNeighbors * Long.BYTES;
 	}
 }
