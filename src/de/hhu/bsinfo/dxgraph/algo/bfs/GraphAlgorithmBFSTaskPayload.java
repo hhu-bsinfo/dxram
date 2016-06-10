@@ -25,7 +25,6 @@ import de.hhu.bsinfo.dxgraph.load.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
@@ -930,44 +929,21 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				} while (!m_runIteration);
 
 				int validVertsInBatch = 0;
-				if (m_bottomUpIteration) {
-					m_visitedFrontier.popFrontLock();
-					for (Vertex vertexBatch : m_vertexBatch) {
-						long tmp = m_visitedFrontier.popFrontInverse();
-						// skip index chunk
-						if (tmp == 0) {
-							tmp = m_visitedFrontier.popFrontInverse();
+				m_curFrontier.popFrontLock();
+				for (Vertex vertexBatch : m_vertexBatch) {
+					long tmp = m_curFrontier.popFront();
+					if (tmp != -1) {
+						vertexBatch.setID(ChunkID.getChunkID(m_nodeId, tmp));
+						validVertsInBatch++;
+					} else {
+						if (validVertsInBatch == 0) {
+							enterIdle = true;
+							break;
 						}
-
-						if (tmp != -1) {
-							vertexBatch.setID(ChunkID.getChunkID(m_nodeId, tmp));
-							validVertsInBatch++;
-						} else {
-							if (validVertsInBatch == 0) {
-								enterIdle = true;
-								break;
-							}
-							vertexBatch.setID(ChunkID.INVALID_ID);
-						}
+						vertexBatch.setID(ChunkID.INVALID_ID);
 					}
-					m_visitedFrontier.popFrontUnlock();
-				} else {
-					m_curFrontier.popFrontLock();
-					for (Vertex vertexBatch : m_vertexBatch) {
-						long tmp = m_curFrontier.popFront();
-						if (tmp != -1) {
-							vertexBatch.setID(ChunkID.getChunkID(m_nodeId, tmp));
-							validVertsInBatch++;
-						} else {
-							if (validVertsInBatch == 0) {
-								enterIdle = true;
-								break;
-							}
-							vertexBatch.setID(ChunkID.INVALID_ID);
-						}
-					}
-					m_curFrontier.popFrontUnlock();
 				}
+				m_curFrontier.popFrontUnlock();
 
 				if (validVertsInBatch == 0) {
 					// make sure to send out remaining messages which have not reached the
@@ -1003,6 +979,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					return;
 				}
 
+				// ------------------------------------------------------------
+
 				int writeBackCount = 0;
 				for (int i = 0; i < validVertsInBatch; i++) {
 					// check first if visited
@@ -1019,121 +997,84 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 					writeBackCount++;
 					m_sharedVertexCounter.incrementAndGet();
+
 					long[] neighbours = vertex.getNeighbours();
 					long vertexLocalId = ChunkID.getLocalID(vertex.getID());
-					if (m_bottomUpIteration) {
-						// for bottom up, we check if any of the neighbours are within our current frontier
-						// i.e. is a parent of our current vertex. If that's the case, we are a child and
-						// have to be added to the next frontier
-						for (long neighbour : vertex.getNeighbours()) {
-							// check if neighbors are valid, otherwise something's not ok with the data
-							if (neighbour == ChunkID.INVALID_ID) {
-								// #if LOGGER >= WARN
-								m_loggerService.warn(getClass(), "Invalid neighbor found on vertex " + vertex);
-								// #endif /* LOGGER >= WARN */
-								continue;
-							}
-
-							// don't allow access to the index chunk
-							if (ChunkID.getLocalID(neighbour) == 0) {
-								// #if LOGGER >= WARN
-								m_loggerService.warn(getClass(), "Neighbor id refers to index chunk " + ChunkID
-										.toHexString(neighbour) + ", vertex " + vertex);
-								// #endif /* LOGGER >= WARN */
-								continue;
-							}
-
-							if (ChunkID.getCreatorID(neighbour) != m_nodeId) {
-								continue;
-							}
-
-							long neighbourLocalId = ChunkID.getLocalID(neighbour);
-							if (m_curFrontier.contains(neighbourLocalId)) {
-								// got a connection, mark visited
-								// TODO differ mark mode and non mark mode
-								if (m_visitedFrontier.pushBack(vertexLocalId)) {
-									m_nextFrontier.pushBack(vertexLocalId);
-								}
-								break;
-							}
+					for (long neighbour : neighbours) {
+						// check if neighbors are valid, otherwise something's not ok with the data
+						if (neighbour == ChunkID.INVALID_ID) {
+							// #if LOGGER >= WARN
+							m_loggerService.warn(getClass(), "Invalid neighbor found on vertex " + vertex);
+							// #endif /* LOGGER >= WARN */
+							continue;
 						}
-					} else {
 
-						for (long neighbour : neighbours) {
-							// check if neighbors are valid, otherwise something's not ok with the data
-							if (neighbour == ChunkID.INVALID_ID) {
-								// #if LOGGER >= WARN
-								m_loggerService.warn(getClass(), "Invalid neighbor found on vertex " + vertex);
-								// #endif /* LOGGER >= WARN */
-								continue;
+						// don't allow access to the index chunk
+						if (ChunkID.getLocalID(neighbour) == 0) {
+							// #if LOGGER >= WARN
+							m_loggerService.warn(getClass(), "Neighbor id refers to index chunk " + ChunkID
+									.toHexString(neighbour) + ", vertex " + vertex);
+							// #endif /* LOGGER >= WARN */
+							continue;
+						}
+
+						m_sharedEdgeCounter.incrementAndGet();
+
+						// sort by remote and local vertices
+						short creatorId = ChunkID.getCreatorID(neighbour);
+						long localId = ChunkID.getLocalID(neighbour);
+						if (creatorId != m_nodeId) {
+							// delegate to remote, fill message buffers until they are full -> send
+							VerticesForNextFrontierMessage msg = m_remoteMessages.get(creatorId);
+							if (msg == null) {
+								msg = new VerticesForNextFrontierMessage(creatorId,
+										m_vertexMessageBatchSize);
+
+								m_remoteMessages.put(creatorId, msg);
 							}
 
-							// don't allow access to the index chunk
-							if (ChunkID.getLocalID(neighbour) == 0) {
-								// #if LOGGER >= WARN
-								m_loggerService.warn(getClass(), "Neighbor id refers to index chunk " + ChunkID
-										.toHexString(neighbour) + ", vertex " + vertex);
-								// #endif /* LOGGER >= WARN */
-								continue;
+							// add vertex to message batch
+							if (!msg.addVertex(neighbour)) {
+								// neighbor does not fit anymore, full
+								if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+									// #if LOGGER >= ERROR
+									m_loggerService.error(getClass(), "Sending vertex message to node "
+											+ NodeID.toHexString(creatorId) + " failed");
+									// #endif /* LOGGER >= ERROR */
+									return;
+								}
+
+								// don't reuse requests, does not work with previous responses counting as fulfilled
+								msg = new VerticesForNextFrontierMessage(creatorId,
+										m_vertexMessageBatchSize);
+								m_remoteMessages.put(msg.getDestination(), msg);
+								msg.addVertex(neighbour);
+							}
+						} else {
+							// mark visited
+							// TODO differ mark mode and non mark mode
+							// mark visited and add to next if not visited so far
+							if (m_visitedFrontier.pushBack(localId)) {
+								m_nextFrontier.pushBack(localId);
 							}
 
-							m_sharedEdgeCounter.incrementAndGet();
-
-							// sort by remote and local vertices
-							short creatorId = ChunkID.getCreatorID(neighbour);
-							long localId = ChunkID.getLocalID(neighbour);
-							if (creatorId != m_nodeId) {
-								// delegate to remote, fill message buffers until they are full -> send
-								VerticesForNextFrontierMessage msg = m_remoteMessages.get(creatorId);
-								if (msg == null) {
-									msg = new VerticesForNextFrontierMessage(creatorId,
-											m_vertexMessageBatchSize);
-
-									m_remoteMessages.put(creatorId, msg);
-								}
-
-								// add vertex to message batch
-								if (!msg.addVertex(neighbour)) {
-									// neighbor does not fit anymore, full
-									if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
-										// #if LOGGER >= ERROR
-										m_loggerService.error(getClass(), "Sending vertex message to node "
-												+ NodeID.toHexString(creatorId) + " failed");
-										// #endif /* LOGGER >= ERROR */
-										return;
-									}
-
-									// don't reuse requests, does not work with previous responses counting as fulfilled
-									msg = new VerticesForNextFrontierMessage(creatorId,
-											m_vertexMessageBatchSize);
-									m_remoteMessages.put(msg.getDestination(), msg);
-									msg.addVertex(neighbour);
-								}
-							} else {
-								// mark visited
-								// TODO differ mark mode and non mark mode
-								// mark visited and add to next if not visited so far
-								if (m_visitedFrontier.pushBack(localId)) {
-									m_nextFrontier.pushBack(localId);
-								}
-							}
 						}
 					}
 				}
 
-				if (m_visitedFrontier == null) {
-					// for marking mode, write back data
-					int put =
-							m_chunkService
-									.put(ChunkLockOperation.NO_LOCK_OPERATION, m_vertexBatch, 0, validVertsInBatch);
-					if (put != writeBackCount) {
-						// #if LOGGER >= ERROR
-						m_loggerService.error(getClass(),
-								"Putting vertices in BFS Thread " + m_id + " failed: " + put + " != " + writeBackCount);
-						// #endif /* LOGGER >= ERROR */
-						return;
-					}
-				}
+//				if (m_visitedFrontier == null) {
+				//					// for marking mode, write back data
+				//					int put =
+				//							m_chunkService
+				//									.put(ChunkLockOperation.NO_LOCK_OPERATION, m_vertexBatch, 0, validVertsInBatch);
+				//					if (put != writeBackCount) {
+				//						// #if LOGGER >= ERROR
+				//						m_loggerService.error(getClass(),
+				//								"Putting vertices in BFS Thread " + m_id + " failed: " + put + " != " + writeBackCount);
+				//						// #endif /* LOGGER >= ERROR */
+				//						return;
+				//					}
+				//				}
 			}
 		}
 	}
