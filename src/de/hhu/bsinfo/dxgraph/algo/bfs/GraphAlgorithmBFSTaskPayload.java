@@ -516,10 +516,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				}
 				// --------------------------------
 
-				// don't allow remote nodes to add delegates to our frontiers to avoid
-				// data race on frontier swap
-				m_remoteDelegatesForNextFrontier.writeLock().lock();
-
 				// evaluate our own frontier first
 				if (!m_nextFrontier.isEmpty()) {
 					m_terminateBfs = false;
@@ -565,10 +561,20 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									+ ", total edges traversed " + m_bfsLocalResult.m_totalVisitedVertices
 									+ ", num vertices of graph visited " + m_visitedFrontier.size());
 					// #endif /* LOGGER >= INFO */
+
+					// TODO remove
+					if (m_visitedFrontier.size() != 8) {
+						m_loggerService.error(getClass(), "VISITED FRONTIER SIZE " + m_visitedFrontier.size());
+					}
+
 					break;
 				}
 				// reset for next run
 				m_terminateBfs = true;
+
+				// don't allow remote nodes to add delegates to our frontiers to avoid
+				// data race on frontier swap
+				m_remoteDelegatesForNextFrontier.writeLock().lock();
 
 				// all nodes are finished, frontier swap
 				ConcurrentBitVectorHybrid tmp = m_curFrontier;

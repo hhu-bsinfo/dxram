@@ -105,7 +105,8 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 				if (!m_vector.compareAndSet(index, val, val | tmp)) {
 					continue;
 				}
-				m_count.incrementAndGet();
+				//m_count.incrementAndGet();
+				System.out.println("push back " + m_count.incrementAndGet() + "/" + (p_index - m_offset));
 				return true;
 			}
 
@@ -164,6 +165,7 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 			if ((m_vector.get((int) (itPos / 64L)) & (1L << (itPos % 64L))) != 0) {
 				m_itPos.set(itPos + 1);
 
+				System.out.println("Pop front " + m_posCountInverse.get() + "/" + (itPos + m_offset));
 				return itPos + m_offset;
 			}
 
