@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadPartitionIndexTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.chunk.ChunkMemoryService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -69,6 +70,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
+	private ChunkMemoryService m_chunkMemoryService;
 	private NameserviceService m_nameserviceService;
 	private NetworkService m_networkService;
 	private BootService m_bootService;
@@ -94,6 +96,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	public int execute(final DXRAMServiceAccessor p_dxram) {
 		m_loggerService = p_dxram.getService(LoggerService.class);
 		m_chunkService = p_dxram.getService(ChunkService.class);
+		m_chunkMemoryService = p_dxram.getService(ChunkMemoryService.class);
 		m_nameserviceService = p_dxram.getService(NameserviceService.class);
 		m_networkService = p_dxram.getService(NetworkService.class);
 		m_bootService = p_dxram.getService(BootService.class);
@@ -291,6 +294,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private volatile boolean m_terminateBfs = true;
 		private ReentrantReadWriteLock m_remoteDelegatesForNextFrontier = new ReentrantReadWriteLock(false);
 
+		private AtomicLong m_edgeCountNextFrontier = new AtomicLong(0);
+
 		/**
 		 * Constructor
 		 *
@@ -322,10 +327,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 *                              information with the graph.
 		 */
 		void init(final long p_totalVertexCount, final boolean p_verticesMarkVisited) {
-			m_curFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount);
-			m_nextFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount);
+			m_curFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
+			m_nextFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
 			if (!p_verticesMarkVisited) {
-				m_visitedFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount);
+				m_visitedFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
 			}
 
 			m_networkService.registerReceiver(VerticesForNextFrontierMessage.class, this);
@@ -426,21 +431,34 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					// last iteration was bottom up approach, check if we should switch
 					// TODO hardcoded edge degree 16
 					if (m_curFrontier.size()
-							< m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getEdgeCount() / 14 * 16) {
+							< m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount() / 14 * 16) {
 						bottomUpApproach = false;
 					}
 				} else {
 					// last iteration was top down approach, check if we should switch
 					if (numEdgesInFrontier
-							> m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount() / 10) {
+							> m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getEdgeCount() / 10) {
 						bottomUpApproach = true;
 					}
 				}
 
+				m_loggerService.debug(getClass(), "BFS iteration executed "
+						+ (bottomUpApproach ? "BOTTOM UP" : "TOP DOWN")
+						+ ", curFront size: " + m_curFrontier.size()
+						+ ", numEdgesInFrontier " + numEdgesInFrontier
+						+ ", partition vertex count " + m_graphPartitionIndex.getPartitionIndex(getSlaveId())
+						.getVertexCount()
+						+ ", partition edge count " + m_graphPartitionIndex.getPartitionIndex(getSlaveId())
+						.getEdgeCount());
+
 				m_loggerService.info(getClass(), "BFS level " + m_bfsLocalResult.m_totalBFSDepth
 						+ " with " + (bottomUpApproach ? "BOTTOM UP" : "TOP DOWN")
 						+ " approach, frontier size " + m_curFrontier.size()
-						+ " edges in cur frontier " + numEdgesInFrontier);
+						+ " edges in cur frontier " + numEdgesInFrontier
+						+ ", visited verts so far " + m_visitedFrontier.size());
+
+				// reset
+				numEdgesInFrontier = 0;
 
 				// kick off threads with current frontier
 				for (BFSThread thread : m_threads) {
@@ -455,7 +473,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							Thread.yield();
 							continue;
 						}
-						numEdgesInFrontier += m_threads[t].getEdgeCountLastIteration();
+						numEdgesInFrontier += m_threads[t].getEdgeCountNextFrontier();
 						t++;
 					}
 				}
@@ -560,6 +578,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_curFrontier.popFrontReset();
 				m_visitedFrontier.popFrontReset();
 
+				numEdgesInFrontier += m_edgeCountNextFrontier.get();
+				m_edgeCountNextFrontier.set(0);
+
 				// also swap the references of all threads!
 				for (BFSThread thread : m_threads) {
 					thread.triggerFrontierSwap();
@@ -658,10 +679,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			if (p_message.getNumNeighborsInBatch() > 0) {
 				// bottom up approach
 				VerticesForNextFrontierMessage reply =
-						new VerticesForNextFrontierMessage(p_message.getSource(), p_message.getBatchSize());
+						new VerticesForNextFrontierMessage(p_message.getSource(), m_vertexBatchSize);
 				long vertexId = p_message.getVertex();
 				long neighborId = p_message.getNeighbor();
 				while (vertexId != -1) {
+					System.out.println("mark request bottom up " + ChunkID.toHexString(vertexId) + "/" + ChunkID
+							.toHexString(neighborId));
+
 					// check if the remote vertex is a neighbor of the
 					// local parent (on this node)
 					// -> inter node edge
@@ -688,11 +712,23 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 				long vertexId = p_message.getVertex();
 				while (vertexId != -1) {
+					System.out.println("mark response top down " + ChunkID.toHexString(vertexId));
 					// TODO mark mode missing
 					// check if visited and add to frontier if not
 					long localId = ChunkID.getLocalID(vertexId);
 					if (m_visitedFrontier.pushBack(localId)) {
 						m_nextFrontier.pushBack(localId);
+						System.out.println("Visited: " + ChunkID.toHexString(vertexId));
+
+						// read num of edges for calculating bottom up <-> top down switching formula
+						int numEdges = m_chunkMemoryService.readInt(vertexId, 4);
+						if (numEdges != -1) {
+							m_edgeCountNextFrontier.addAndGet(numEdges);
+						} else {
+							m_loggerService.error(getClass(),
+									"Could not read num neighbors field of vertex " + ChunkID
+											.toHexString(vertexId));
+						}
 					}
 
 					vertexId = p_message.getVertex();
@@ -887,7 +923,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private volatile boolean m_runIteration;
 		private volatile boolean m_exitThread;
 		private volatile boolean m_bottomUpIteration;
-		private AtomicLong m_edgeCountLastIteration = new AtomicLong(0);
+		private AtomicLong m_edgeCountNextFrontier = new AtomicLong(0);
 
 		private AtomicLong m_sharedVertexCounter;
 		private AtomicLong m_sharedEdgeCounter;
@@ -944,12 +980,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 */
 		void runIteration(final boolean p_bottomUpIteration) {
 			m_bottomUpIteration = p_bottomUpIteration;
-			m_edgeCountLastIteration.set(0);
+			m_edgeCountNextFrontier.set(0);
 			m_runIteration = true;
 		}
 
-		long getEdgeCountLastIteration() {
-			return m_edgeCountLastIteration.get();
+		long getEdgeCountNextFrontier() {
+			return m_edgeCountNextFrontier.get();
 		}
 
 		/**
@@ -1091,6 +1127,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					writeBackCount++;
 					m_sharedVertexCounter.incrementAndGet();
 
+					System.out.println(vertex);
+
 					long[] neighbours = vertex.getNeighbours();
 					long vertexLocalId = ChunkID.getLocalID(vertex.getID());
 					for (long neighbour : neighbours) {
@@ -1112,24 +1150,23 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						}
 
 						m_sharedEdgeCounter.incrementAndGet();
-						m_edgeCountLastIteration.incrementAndGet();
 
 						// sort by remote and local vertices
-						short creatorId = ChunkID.getCreatorID(neighbour);
-						long localId = ChunkID.getLocalID(neighbour);
+						short neighborCreatorId = ChunkID.getCreatorID(neighbour);
+						long neighborLocalId = ChunkID.getLocalID(neighbour);
 
 						if (m_bottomUpIteration) {
-							if (creatorId != m_nodeId) {
+							if (neighborCreatorId != m_nodeId) {
 								// the child is on the current node but its parent is on a diferent one
 								// => inter node edge
 
 								// delegate to remote, fill message buffers until they are full -> send
-								VerticesForNextFrontierMessage msg = m_remoteMessages.get(creatorId);
+								VerticesForNextFrontierMessage msg = m_remoteMessages.get(neighborCreatorId);
 								if (msg == null) {
-									msg = new VerticesForNextFrontierMessage(creatorId,
+									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
 
-									m_remoteMessages.put(creatorId, msg);
+									m_remoteMessages.put(neighborCreatorId, msg);
 								}
 
 								// add vertex to message batch
@@ -1138,15 +1175,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
 										// #if LOGGER >= ERROR
 										m_loggerService.error(getClass(), "Sending vertex message to node "
-												+ NodeID.toHexString(creatorId) + " failed");
+												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
 										return;
 									}
 
 									// TODO message re-using? didn't work with requests due to fullfilled
-									msg = new VerticesForNextFrontierMessage(creatorId,
+									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
-									m_remoteMessages.put(creatorId, msg);
+									m_remoteMessages.put(neighborCreatorId, msg);
 									msg.addVertex(vertex.getID());
 									msg.addNeighbor(neighbour);
 								} else {
@@ -1154,27 +1191,33 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								}
 							} else {
 								// is our child connected to any of the parents
-								if (m_curFrontier.contains(localId)) {
+								if (m_curFrontier.contains(neighborLocalId)) {
 									// child -> parent relationship, got our next vertex
 									// TODO differ mark mode and non mark mode
 									// mark child (!) visited
 									if (m_visitedFrontier.pushBack(vertexLocalId)) {
 										m_nextFrontier.pushBack(vertexLocalId);
 
+										System.out.println("Visited: " + ChunkID.toHexString(vertex.getID()));
+
+										// read num of edges for calculating bottom up <-> top down switching formula
+										m_edgeCountNextFrontier.addAndGet(neighbours.length);
+
 										// we don't have to continue with any other neighbors
-										break; // for all neighbors (possible parents) of child
+										// for all neighbors (possible parents) of child
+										break;
 									}
 								}
 							}
 						} else {
-							if (creatorId != m_nodeId) {
+							if (neighborCreatorId != m_nodeId) {
 								// delegate to remote, fill message buffers until they are full -> send
-								VerticesForNextFrontierMessage msg = m_remoteMessages.get(creatorId);
+								VerticesForNextFrontierMessage msg = m_remoteMessages.get(neighborCreatorId);
 								if (msg == null) {
-									msg = new VerticesForNextFrontierMessage(creatorId,
+									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
 
-									m_remoteMessages.put(creatorId, msg);
+									m_remoteMessages.put(neighborCreatorId, msg);
 								}
 
 								// add vertex to message batch
@@ -1183,13 +1226,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
 										// #if LOGGER >= ERROR
 										m_loggerService.error(getClass(), "Sending vertex message to node "
-												+ NodeID.toHexString(creatorId) + " failed");
+												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
 										return;
 									}
 
 									// don't reuse requests, does not work with previous responses counting as fulfilled
-									msg = new VerticesForNextFrontierMessage(creatorId,
+									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
 									m_remoteMessages.put(msg.getDestination(), msg);
 									msg.addVertex(neighbour);
@@ -1198,8 +1241,21 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								// mark visited
 								// TODO differ mark mode and non mark mode
 								// mark visited and add to next if not visited so far
-								if (m_visitedFrontier.pushBack(localId)) {
-									m_nextFrontier.pushBack(localId);
+								if (m_visitedFrontier.pushBack(neighborLocalId)) {
+									m_nextFrontier.pushBack(neighborLocalId);
+
+									System.out.println("Visited: " + ChunkID.toHexString(neighbour));
+
+									// read num of edges for calculating bottom up <-> top down switching formula
+									int numEdges = m_chunkMemoryService.readInt(neighbour, 4);
+									if (numEdges != -1) {
+										m_edgeCountNextFrontier.addAndGet(numEdges);
+									} else {
+										m_loggerService.error(getClass(),
+												"Could not read num neighbors field of vertex " + ChunkID
+														.toHexString(neighbour));
+									}
+
 								}
 
 							}

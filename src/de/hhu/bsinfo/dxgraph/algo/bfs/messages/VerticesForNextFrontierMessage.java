@@ -86,7 +86,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 			return false;
 		}
 
-		m_vertexIDs[m_vertexPos++] = p_vertex & 0xFFFFFFFFFFFFL;
+		m_vertexIDs[m_vertexPos++] = p_vertex;
 		m_numOfVertices++;
 		return true;
 	}
@@ -96,7 +96,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 			return false;
 		}
 
-		m_neighborIDs[m_neighborPos++] = p_neighbor & 0xFFFFFFFFFFFFL;
+		m_neighborIDs[m_neighborPos++] = p_neighbor;
 		m_numOfNeighbors++;
 		return true;
 	}

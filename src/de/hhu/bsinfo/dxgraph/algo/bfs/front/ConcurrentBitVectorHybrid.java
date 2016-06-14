@@ -14,6 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ConcurrentBitVectorHybrid implements FrontierList {
 	private long m_maxElementCount;
+	private long m_offset;
 	private AtomicLongArray m_vector;
 
 	private AtomicLong m_count = new AtomicLong(0);
@@ -26,15 +27,16 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 	 *
 	 * @param p_maxElementCount Specify the maximum number of elements.
 	 */
-	public ConcurrentBitVectorHybrid(final long p_maxElementCount) {
+	public ConcurrentBitVectorHybrid(final long p_maxElementCount, final long p_offset) {
 		m_maxElementCount = p_maxElementCount;
+		m_offset = p_offset;
 		m_vector = new AtomicLongArray((int) ((p_maxElementCount / 64L) + 1L));
 		m_posCountInverse.set(m_maxElementCount);
 	}
 
 	public static void main(final String[] p_args) throws Exception {
 		final int vecSize = 10000000;
-		ConcurrentBitVectorHybrid vec = new ConcurrentBitVectorHybrid(vecSize);
+		ConcurrentBitVectorHybrid vec = new ConcurrentBitVectorHybrid(vecSize, 0);
 
 		Thread[] threads = new Thread[24];
 		while (true) {
@@ -94,8 +96,8 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 
 	@Override
 	public boolean pushBack(final long p_index) {
-		long tmp = 1L << (p_index % 64L);
-		int index = (int) (p_index / 64L);
+		long tmp = 1L << ((p_index - m_offset) % 64L);
+		int index = (int) ((p_index - m_offset) / 64L);
 
 		while (true) {
 			long val = m_vector.get(index);
@@ -113,8 +115,8 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 
 	@Override
 	public boolean contains(final long p_val) {
-		long tmp = 1L << (p_val % 64L);
-		int index = (int) (p_val / 64L);
+		long tmp = 1L << ((p_val - m_offset) % 64L);
+		int index = (int) ((p_val - m_offset) / 64L);
 		return (m_vector.get(index) & tmp) != 0;
 	}
 
@@ -162,7 +164,7 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 			if ((m_vector.get((int) (itPos / 64L)) & (1L << (itPos % 64L))) != 0) {
 				m_itPos.set(itPos + 1);
 
-				return itPos;
+				return itPos + m_offset;
 			}
 
 			itPos++;
@@ -187,7 +189,8 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 			if ((m_vector.get((int) (itPos / 64L)) & (1L << (itPos % 64L))) == 0) {
 				m_itPos.set(itPos + 1);
 
-				return itPos;
+				System.out.println("Pop front inverse " + m_posCountInverse.get() + "/" + (itPos + m_offset));
+				return itPos + m_offset;
 			}
 
 			itPos++;

@@ -15,6 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Manages the network connections
+ *
  * @author Florian Klein 18.03.2012
  */
 class NIOSelector extends Thread {
@@ -36,16 +37,16 @@ class NIOSelector extends Thread {
 	private boolean m_running;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of NIOSelector
-	 * @param p_connectionCreator
-	 *            the NIOConnectionCreator
-	 * @param p_nioInterface
-	 *            the NIOInterface to send/receive data
-	 * @param p_port
-	 *            the port
+	 *
+	 * @param p_connectionCreator the NIOConnectionCreator
+	 * @param p_nioInterface      the NIOInterface to send/receive data
+	 * @param p_port              the port
 	 */
-	protected NIOSelector(final NIOConnectionCreator p_connectionCreator, final NIOInterface p_nioInterface, final int p_port) {
+	protected NIOSelector(final NIOConnectionCreator p_connectionCreator, final NIOInterface p_nioInterface,
+			final int p_port) {
 		m_serverChannel = null;
 		m_selector = null;
 
@@ -75,12 +76,14 @@ class NIOSelector extends Thread {
 				exception = e;
 
 				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
+				NetworkHandler.getLogger()
+						.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
 				// #endif /* LOGGER >= ERROR */
 
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {}
+				} catch (final InterruptedException e1) {
+				}
 			}
 		}
 
@@ -92,8 +95,10 @@ class NIOSelector extends Thread {
 	}
 
 	// Getter
+
 	/**
 	 * Returns the Selector
+	 *
 	 * @return the Selector
 	 */
 	protected Selector getSelector() {
@@ -110,7 +115,8 @@ class NIOSelector extends Thread {
 		while (iterator.hasNext()) {
 			SelectionKey key = iterator.next();
 			if (key.attachment() != null) {
-				ret += "[" + NodeID.toHexString(((NIOConnection) key.attachment()).getDestination()) + ", " + key.interestOps() + "] ";
+				ret += "[" + NodeID.toHexString(((NIOConnection) key.attachment()).getDestination()) + ", " + key
+						.interestOps() + "] ";
 			}
 		}
 
@@ -138,7 +144,10 @@ class NIOSelector extends Thread {
 				interest = changeRequest.getOperations();
 				if ((interest & READWRITE_MASK) != 0) {
 					// Either READ, WRITE or READ | WRITE -> change interest only
-					connection.getChannel().keyFor(m_selector).interestOps(interest);
+					if (connection.getChannel().keyFor(m_selector).interestOps() != (SelectionKey.OP_WRITE
+							| SelectionKey.OP_READ)) {
+						connection.getChannel().keyFor(m_selector).interestOps(interest);
+					}
 				} else if (interest == CLOSE) {
 					// CLOSE -> close connection
 					m_connectionCreator.closeConnection(connection);
@@ -184,8 +193,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Accept a new incoming connection
-	 * @throws IOException
-	 *             if the new connection could not be accesses
+	 *
+	 * @throws IOException if the new connection could not be accesses
 	 */
 	private void accept() throws IOException {
 		SocketChannel channel;
@@ -198,8 +207,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Execute key by creating a new connection, reading from channel or writing to channel
-	 * @param p_key
-	 *            the current key
+	 *
+	 * @param p_key the current key
 	 */
 	public void dispatch(final SelectionKey p_key) {
 		boolean complete = true;
@@ -219,7 +228,8 @@ class NIOSelector extends Thread {
 						} catch (final IOException e) {
 							// #if LOGGER >= ERROR
 							NetworkHandler.getLogger().error(getClass().getSimpleName(),
-									"Could not read from channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
+									"Could not read from channel (" + NodeID.toHexString(connection.getDestination())
+											+ ")!");
 							// #endif /* LOGGER >= ERROR */
 							successful = false;
 						}
@@ -239,7 +249,8 @@ class NIOSelector extends Thread {
 					} catch (final IOException e) {
 						// #if LOGGER >= ERROR
 						NetworkHandler.getLogger().error(getClass().getSimpleName(),
-								"Could not write to channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
+								"Could not write to channel (" + NodeID.toHexString(connection.getDestination())
+										+ ")!");
 						// #endif /* LOGGER >= ERROR */
 						complete = false;
 					}
@@ -247,7 +258,8 @@ class NIOSelector extends Thread {
 					if (!complete) {
 						// If there is still data left to write on this connection, add another write request
 						m_changeLock.lock();
-						m_changeRequests.add(new ChangeOperationsRequest(connection, SelectionKey.OP_WRITE | SelectionKey.OP_READ));
+						m_changeRequests.add(new ChangeOperationsRequest(connection,
+								SelectionKey.OP_WRITE | SelectionKey.OP_READ));
 						m_changeLock.unlock();
 					}
 					// Set interest to READ after writing; do not if channel was blocked and data is left
@@ -265,8 +277,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Append the given ChangeOperationsRequest to the Queue
-	 * @param p_request
-	 *            the ChangeOperationsRequest
+	 *
+	 * @param p_request the ChangeOperationsRequest
 	 */
 	protected void changeOperationInterestAsync(final ChangeOperationsRequest p_request) {
 		boolean res;
@@ -282,8 +294,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Append the given NIOConnection to the Queue
-	 * @param p_connection
-	 *            the NIOConnection to close
+	 *
+	 * @param p_connection the NIOConnection to close
 	 */
 	protected void closeConnectionAsync(final NIOConnection p_connection) {
 		m_changeLock.lock();

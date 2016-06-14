@@ -337,10 +337,10 @@ public class GraphAlgorithmBFSTaskPayloadOld extends AbstractTaskPayload {
 		 */
 		void init(final long p_totalVertexCount, final boolean p_verticesMarkVisited,
 				final boolean p_compressedVertexMessages) {
-			m_curFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount);
-			m_nextFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount);
+			m_curFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
+			m_nextFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
 			if (!p_verticesMarkVisited) {
-				m_visitedFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount);
+				m_visitedFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
 			}
 
 			m_networkService.registerReceiver(VerticesForNextFrontierMessage.class, this);
