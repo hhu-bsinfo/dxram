@@ -2,8 +2,6 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -949,8 +947,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private short m_nodeId;
 		private Vertex[] m_vertexBatch;
 		private int m_currentDepthLevel;
-		private HashMap<Short, VerticesForNextFrontierMessage> m_remoteMessages =
-				new HashMap<>();
+		private VerticesForNextFrontierMessage[] m_remoteMessages = new VerticesForNextFrontierMessage[NodeID.MAX_ID];
 
 		private volatile boolean m_runIteration;
 		private volatile boolean m_exitThread;
@@ -1111,21 +1108,24 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				if (validVertsInBatch == 0) {
 					// make sure to send out remaining messages which have not reached the
 					// batch size, yet (because they will never reach it in this round)
-					for (Entry<Short, VerticesForNextFrontierMessage> entry : m_remoteMessages.entrySet()) {
-						VerticesForNextFrontierMessage msg = entry.getValue();
-						if (msg.getBatchSize() > 0) {
-							if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
-								// #if LOGGER >= ERROR
-								m_loggerService.error(getClass(), "Sending vertex message to node "
-										+ NodeID.toHexString(msg.getDestination()) + " failed");
-								// #endif /* LOGGER >= ERROR */
-								return;
-							}
+					short[] slaveNodeIds = getSlaveNodeIds();
+					for (short slaveNodeId : slaveNodeIds) {
+						if (slaveNodeId != m_nodeId) {
+							VerticesForNextFrontierMessage msg = m_remoteMessages[slaveNodeId & 0xFFFF];
+							if (msg != null && msg.getBatchSize() > 0) {
+								if (m_networkService.sendMessage(msg) != NetworkErrorCodes.SUCCESS) {
+									// #if LOGGER >= ERROR
+									m_loggerService.error(getClass(), "Sending vertex message to node "
+											+ NodeID.toHexString(msg.getDestination()) + " failed");
+									// #endif /* LOGGER >= ERROR */
+									return;
+								}
 
-							// don't reuse requests, does not work with previous responses counting as fulfilled
-							msg = new VerticesForNextFrontierMessage(msg.getDestination(),
-									m_vertexMessageBatchSize);
-							m_remoteMessages.put(entry.getKey(), msg);
+								// don't reuse requests, does not work with previous responses counting as fulfilled
+								m_remoteMessages[slaveNodeId & 0xFFFF] =
+										new VerticesForNextFrontierMessage(msg.getDestination(),
+												m_vertexMessageBatchSize);
+							}
 						}
 					}
 
@@ -1191,12 +1191,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								// => inter node edge
 
 								// delegate to remote, fill message buffers until they are full -> send
-								VerticesForNextFrontierMessage msg = m_remoteMessages.get(neighborCreatorId);
+								VerticesForNextFrontierMessage msg = m_remoteMessages[neighborCreatorId & 0xFFFF];
 								if (msg == null) {
 									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
 
-									m_remoteMessages.put(neighborCreatorId, msg);
+									m_remoteMessages[neighborCreatorId & 0xFFFF] = msg;
 								}
 
 								// add vertex to message batch
@@ -1213,7 +1213,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									// TODO message re-using? didn't work with requests due to fullfilled
 									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
-									m_remoteMessages.put(neighborCreatorId, msg);
+									m_remoteMessages[neighborCreatorId & 0xFFFF] = msg;
 									msg.addVertex(vertex.getID());
 									msg.addNeighbor(neighbour);
 								} else {
@@ -1240,12 +1240,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						} else {
 							if (neighborCreatorId != m_nodeId) {
 								// delegate to remote, fill message buffers until they are full -> send
-								VerticesForNextFrontierMessage msg = m_remoteMessages.get(neighborCreatorId);
+								VerticesForNextFrontierMessage msg = m_remoteMessages[neighborCreatorId & 0xFFFF];
 								if (msg == null) {
 									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
 
-									m_remoteMessages.put(neighborCreatorId, msg);
+									m_remoteMessages[neighborCreatorId & 0xFFFF] = msg;
 								}
 
 								// add vertex to message batch
@@ -1262,7 +1262,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									// don't reuse requests, does not work with previous responses counting as fulfilled
 									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
 											m_vertexMessageBatchSize);
-									m_remoteMessages.put(msg.getDestination(), msg);
+									m_remoteMessages[msg.getDestination() & 0xFFFF] = msg;
 									msg.addVertex(neighbour);
 								}
 							} else {
