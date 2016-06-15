@@ -114,4 +114,8 @@ abstract class AbstractConnectionCreator {
 
 	}
 
+	public boolean keyIsPending() {
+		return true;
+	}
+
 }

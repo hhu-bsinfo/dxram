@@ -61,7 +61,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * This service provides access to the backend storage system.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class ChunkService extends AbstractDXRAMService implements MessageReceiver {
@@ -86,8 +85,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-	}
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
@@ -136,7 +134,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the status of the chunk service.
-	 *
 	 * @return Status object with current status of the service.
 	 */
 	public Status getStatus() {
@@ -158,8 +155,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the status of a remote node specified by a node id.
-	 *
-	 * @param p_nodeID Node id to get the status from.
+	 * @param p_nodeID
+	 *            Node id to get the status from.
 	 * @return Status object with status information of the remote node or null if getting status failed.
 	 */
 	public Status getStatus(final short p_nodeID) {
@@ -195,7 +192,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the total amount of memory.
-	 *
 	 * @return Total amount of memory in bytes.
 	 */
 	public long getTotalMemory() {
@@ -204,7 +200,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get the amounf of free memory.
-	 *
 	 * @return Amount of free memory in bytes.
 	 */
 	public long getFreeMemory() {
@@ -213,9 +208,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Create a new chunk.
-	 *
-	 * @param p_size  Size of the new chunk.
-	 * @param p_count Number of chunks to create with the specified size.
+	 * @param p_size
+	 *            Size of the new chunk.
+	 * @param p_count
+	 *            Number of chunks to create with the specified size.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
 	public long[] create(final int p_size, final int p_count) {
@@ -262,7 +258,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
 					"create[size " + p_size + ", count " + p_count + "] -> " + ChunkID.toHexString(chunkIDs[0])
-							+ ", ...");
+					+ ", ...");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -273,8 +269,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 * Create new chunks according to the data structures provided.
 	 * Important: This does NOT put/write the contents of the data structure provided.
 	 * It creates chunks with the sizes of the data structures and sets the IDs.
-	 *
-	 * @param p_dataStructures Data structures to create chunks for.
+	 * @param p_dataStructures
+	 *            Data structures to create chunks for.
 	 * @return Number of successfully created chunks.
 	 */
 	public int create(final DataStructure... p_dataStructures) {
@@ -340,8 +336,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Create chunks with different sizes.
-	 *
-	 * @param p_sizes List of sizes to create chunks for.
+	 * @param p_sizes
+	 *            List of sizes to create chunks for.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
 	public long[] createSizes(final int... p_sizes) {
@@ -399,9 +395,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Create chunks on another node.
-	 *
-	 * @param p_peer  NodeID of the peer to create the chunks on.
-	 * @param p_sizes Sizes to create chunks of.
+	 * @param p_peer
+	 *            NodeID of the peer to create the chunks on.
+	 * @param p_sizes
+	 *            Sizes to create chunks of.
 	 * @return ChunkIDs/Handles identifying the created chunks.
 	 */
 	public long[] createRemote(final short p_peer, final int... p_sizes) {
@@ -469,13 +466,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
 						+ p_sizes.length + ") " + p_sizes[0]
-						+ ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
+								+ ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
 				// #endif /* LOGGER == TRACE */
 			} else {
 				// #if LOGGER == TRACE
 				m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
 						+ p_sizes.length + ") " + p_sizes[0]
-						+ ", ...] -> -1");
+								+ ", ...] -> -1");
 				// #endif /* LOGGER == TRACE */
 			}
 		}
@@ -485,8 +482,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Remove chunks/data structures from the storage.
-	 *
-	 * @param p_dataStructures Data structures to remove from the storage.
+	 * @param p_dataStructures
+	 *            Data structures to remove from the storage.
 	 * @return Number of successfully removed data structures.
 	 */
 	public int remove(final DataStructure... p_dataStructures) {
@@ -500,8 +497,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Remove chunks/data structures from the storage (by handle/ID).
-	 *
-	 * @param p_chunkIDs ChunkIDs/Handles of the data structures to remove. Invalid values are ignored.
+	 * @param p_chunkIDs
+	 *            ChunkIDs/Handles of the data structures to remove. Invalid values are ignored.
 	 * @return Number of successfully removed data structures.
 	 */
 	public int remove(final long... p_chunkIDs) {
@@ -515,7 +512,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
 					"remove[dataStructures(" + p_chunkIDs.length + ") " + ChunkID.toHexString(p_chunkIDs[0])
-							+ ", ...]");
+					+ ", ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -688,8 +685,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 *
-	 * @param p_dataStructres Data structures to put/update. Null values are ignored.
+	 * @param p_dataStructres
+	 *            Data structures to put/update. Null values are ignored.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final DataStructure... p_dataStructres) {
@@ -698,9 +695,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 *
-	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures       Data structures to put/update. Null values or chunks with invalid IDs are ignored.
+	 * @param p_chunkUnlockOperation
+	 *            Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures
+	 *            Data structures to put/update. Null values or chunks with invalid IDs are ignored.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
@@ -709,11 +707,14 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 *
-	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures       Data structures to put/update. Null values or chunks with invalid IDs are ignored.
-	 * @param p_offset               Start offset within the array.
-	 * @param p_count                Number of items to put.
+	 * @param p_chunkUnlockOperation
+	 *            Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures
+	 *            Data structures to put/update. Null values or chunks with invalid IDs are ignored.
+	 * @param p_offset
+	 *            Start offset within the array.
+	 * @param p_count
+	 *            Number of items to put.
 	 * @return Number of successfully updated data structures.
 	 */
 	public int put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure[] p_dataStructures,
@@ -901,8 +902,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get/Read the data stored in the backend storage into the provided data structures.
-	 *
-	 * @param p_dataStructures Data structures to read the stored data into. Null values or invalid IDs are ignored.
+	 * @param p_dataStructures
+	 *            Data structures to read the stored data into. Null values or invalid IDs are ignored.
 	 * @return Number of successfully read data structures.
 	 */
 	public int get(final DataStructure... p_dataStructures) {
@@ -911,10 +912,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get/Read the data stored in the backend storage into the provided data structures.
-	 *
-	 * @param p_dataStructures Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
-	 * @param p_offset         Start offset within the array.
-	 * @param p_count          Number of elements to read.
+	 * @param p_dataStructures
+	 *            Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
+	 * @param p_offset
+	 *            Start offset within the array.
+	 * @param p_count
+	 *            Number of elements to read.
 	 * @return Number of successfully read data structures.
 	 */
 	public int get(final DataStructure[] p_dataStructures, final int p_offset, final int p_count) {
@@ -1043,8 +1046,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	/**
 	 * Get/Read the data stored in the backend storage for chunks of unknown size. Use this if the payload size is
 	 * unknown, only!
-	 *
-	 * @param p_chunkIDs Array with ChunkIDs.
+	 * @param p_chunkIDs
+	 *            Array with ChunkIDs.
 	 * @return Int telling how many chunks were successful retrieved and a chunk array with the chunk data
 	 */
 	public Pair<Integer, Chunk[]> get(final long... p_chunkIDs) {
@@ -1172,8 +1175,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 * Special local only get version. Use this if you already delegate tasks with non local
 	 * chunks/data structures to the remote owning them. This speeds up access to local only chunks a lot.
 	 * Get/Read the data stored in the backend storage into the provided data structures.
-	 *
-	 * @param p_dataStructures Data structures to read the stored data into. Null values or invalid IDs are ignored.
+	 * @param p_dataStructures
+	 *            Data structures to read the stored data into. Null values or invalid IDs are ignored.
 	 * @return Number of successfully read data structures.
 	 */
 	public int getLocal(final DataStructure... p_dataStructures) {
@@ -1184,10 +1187,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 * Special local only get version. Use this if you already delegate tasks with non local
 	 * chunks/data structures to the remote owning them. This speeds up access to local only chunks a lot.
 	 * Get/Read the data stored in the backend storage into the provided data structures.
-	 *
-	 * @param p_dataStructures Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
-	 * @param p_offset         Start offset within the array.
-	 * @param p_count          Number of elements to read.
+	 * @param p_dataStructures
+	 *            Array with data structures to read the stored data to. Null values or invalid IDs are ignored.
+	 * @param p_offset
+	 *            Start offset within the array.
+	 * @param p_count
+	 *            Number of elements to read.
 	 * @return Number of successfully read data structures.
 	 */
 	public int getLocal(final DataStructure[] p_dataStructures, final int p_offset, final int p_count) {
@@ -1233,7 +1238,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			} else {
 				m_logger.error(getClass(),
 						"Getting local chunk " + ChunkID.toHexString(p_dataStructures[i + p_offset].getID())
-								+ " failed, not available.");
+						+ " failed, not available.");
 			}
 		}
 		m_memoryManager.unlockAccess();
@@ -1257,8 +1262,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 * chunks/data structures to the remote owning them. This speeds up access to local only chunks a lot.
 	 * Get/Read the data stored in the backend storage for chunks of unknown size. Use this if the payload size is
 	 * unknown, only!
-	 *
-	 * @param p_chunkIDs Array with ChunkIDs.
+	 * @param p_chunkIDs
+	 *            Array with ChunkIDs.
 	 * @return Int telling how many chunks were successful retrieved and a chunk array with the chunk data
 	 */
 	public Pair<Integer, Chunk[]> getLocal(final long... p_chunkIDs) {
@@ -1299,7 +1304,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			} else {
 				m_logger.error(getClass(),
 						"Getting local chunk " + ChunkID.toHexString(p_chunkIDs[i])
-								+ " failed, not available.");
+						+ " failed, not available.");
 			}
 		}
 		m_memoryManager.unlockAccess();
@@ -1321,7 +1326,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get all chunk ID ranges of all locally stored chunks.
-	 *
 	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
 	 */
 	public ArrayList<Long> getAllLocalChunkIDRanges() {
@@ -1337,8 +1341,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	/**
 	 * Get all chunk ID ranges of all stored chunks from a specific node.
 	 * This does not include migrated chunks.
-	 *
-	 * @param p_nodeID NodeID of the node to get the ranges from.
+	 * @param p_nodeID
+	 *            NodeID of the node to get the ranges from.
 	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
 	 */
 	public ArrayList<Long> getAllLocalChunkIDRanges(final short p_nodeID) {
@@ -1358,7 +1362,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					role + " " + NodeID.toHexString(p_nodeID)
-							+ " is not allowed to get local chunk id ranges (not allowed to have any)");
+					+ " is not allowed to get local chunk id ranges (not allowed to have any)");
 			// #endif /* LOGGER >= ERROR */
 			return list;
 		}
@@ -1385,7 +1389,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Get all chunk ID ranges of all migrated chunks stored on this node.
-	 *
 	 * @return List of migrated chunk ID ranges with blocks of start ID and end ID.
 	 */
 	public ArrayList<Long> getAllMigratedChunkIDRanges() {
@@ -1401,8 +1404,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	/**
 	 * Get all chunk ID ranges of all stored chunks from a specific node.
 	 * This does not include migrated chunks.
-	 *
-	 * @param p_nodeID NodeID of the node to get the ranges from.
+	 * @param p_nodeID
+	 *            NodeID of the node to get the ranges from.
 	 * @return List of local chunk ID ranges with blocks of start ID and end ID.
 	 */
 	public ArrayList<Long> getAllMigratedChunkIDRanges(final short p_nodeID) {
@@ -1422,7 +1425,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
 					role + " " + NodeID.toHexString(p_nodeID)
-							+ " is not allowed to get migrated chunk id ranges (not allowed to have any)");
+					+ " is not allowed to get migrated chunk id ranges (not allowed to have any)");
 			// #endif /* LOGGER >= ERROR */
 			return list;
 		}
@@ -1458,29 +1461,29 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case ChunkMessages.SUBTYPE_GET_REQUEST:
-						incomingGetRequest((GetRequest) p_message);
-						break;
-					case ChunkMessages.SUBTYPE_PUT_REQUEST:
-						incomingPutRequest((PutRequest) p_message);
-						break;
-					case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
-						incomingRemoveRequest((RemoveRequest) p_message);
-						break;
-					case ChunkMessages.SUBTYPE_CREATE_REQUEST:
-						incomingCreateRequest((CreateRequest) p_message);
-						break;
-					case ChunkMessages.SUBTYPE_STATUS_REQUEST:
-						incomingStatusRequest((StatusRequest) p_message);
-						break;
-					case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
-						incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
-						break;
-					case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
-						incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
-						break;
-					default:
-						break;
+				case ChunkMessages.SUBTYPE_GET_REQUEST:
+					incomingGetRequest((GetRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_PUT_REQUEST:
+					incomingPutRequest((PutRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_REMOVE_REQUEST:
+					incomingRemoveRequest((RemoveRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_CREATE_REQUEST:
+					incomingCreateRequest((CreateRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_STATUS_REQUEST:
+					incomingStatusRequest((StatusRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_GET_LOCAL_CHUNKID_RANGES_REQUEST:
+					incomingGetLocalChunkIDRangesRequest((GetLocalChunkIDRangesRequest) p_message);
+					break;
+				case ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST:
+					incomingGetMigratedChunkIDRangesRequest((GetMigratedChunkIDRangesRequest) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}
@@ -1571,8 +1574,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handles an incoming GetRequest
-	 *
-	 * @param p_request the GetRequest
+	 * @param p_request
+	 *            the GetRequest
 	 */
 	private void incomingGetRequest(final GetRequest p_request) {
 
@@ -1621,8 +1624,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handles an incoming PutRequest
-	 *
-	 * @param p_request the PutRequest
+	 * @param p_request
+	 *            the PutRequest
 	 */
 	private void incomingPutRequest(final PutRequest p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();
@@ -1726,8 +1729,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handles an incoming RemoveRequest
-	 *
-	 * @param p_request the RemoveRequest
+	 * @param p_request
+	 *            the RemoveRequest
 	 */
 	private void incomingRemoveRequest(final RemoveRequest p_request) {
 		// #ifdef STATISTICS
@@ -1833,8 +1836,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handle incoming create requests.
-	 *
-	 * @param p_request Request to handle
+	 * @param p_request
+	 *            Request to handle
 	 */
 	private void incomingCreateRequest(final CreateRequest p_request) {
 		// #ifdef STATISTICS
@@ -1869,8 +1872,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handle incoming status requests.
-	 *
-	 * @param p_request Request to handle
+	 * @param p_request
+	 *            Request to handle
 	 */
 	private void incomingStatusRequest(final StatusRequest p_request) {
 		Status status = getStatus();
@@ -1886,8 +1889,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handle incoming get local chunk id ranges requests.
-	 *
-	 * @param p_request Request to handle
+	 * @param p_request
+	 *            Request to handle
 	 */
 	private void incomingGetLocalChunkIDRangesRequest(final GetLocalChunkIDRangesRequest p_request) {
 		ArrayList<Long> cidRangesLocalChunks = null;
@@ -1915,8 +1918,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	/**
 	 * Handle incoming get migrated local chunk id ranges requests.
-	 *
-	 * @param p_request Request to handle
+	 * @param p_request
+	 *            Request to handle
 	 */
 	private void incomingGetMigratedChunkIDRangesRequest(final GetMigratedChunkIDRangesRequest p_request) {
 		ArrayList<Long> cidRangesMigratedChunks = null;
@@ -1946,7 +1949,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	/**
 	 * Status object for the chunk service containing various information
 	 * about it.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
 	 */
 	public static class Status implements Importable, Exportable {
@@ -1968,7 +1970,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the amount of free memory in bytes.
-		 *
 		 * @return Free memory in bytes.
 		 */
 		public long getFreeMemory() {
@@ -1977,7 +1978,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total amount of memory in bytes available.
-		 *
 		 * @return Total amount of memory in bytes.
 		 */
 		public long getTotalMemory() {
@@ -1986,7 +1986,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total amount of memory allocated and usable for actual payload/data.
-		 *
 		 * @return Total amount of memory usable for payload (in bytes).
 		 */
 		public long getTotalPayloadMemory() {
@@ -1995,7 +1994,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total number of active/allocated memory blocks.
-		 *
 		 * @return Number of allocated memory blocks.
 		 */
 		public long getNumberOfActiveMemoryBlocks() {
@@ -2004,7 +2002,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total number of currently active chunks.
-		 *
 		 * @return Number of active/allocated chunks.
 		 */
 		public long getNumberOfActiveChunks() {
@@ -2013,7 +2010,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the amount of memory used by chunk payload/data.
-		 *
 		 * @return Amount of memory used by chunk payload in bytes.
 		 */
 		public long getTotalChunkPayloadMemory() {
@@ -2022,7 +2018,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the number of currently allocated CID tables.
-		 *
 		 * @return Number of CID tables.
 		 */
 		public long getCIDTableCount() {
@@ -2031,7 +2026,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		/**
 		 * Get the total memory used by CID tables (payload only).
-		 *
 		 * @return Total memory used by CID tables in bytes.
 		 */
 		public long getTotalMemoryCIDTables() {

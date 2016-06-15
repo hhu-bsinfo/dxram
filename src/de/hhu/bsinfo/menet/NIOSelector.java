@@ -3,7 +3,9 @@ package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -143,10 +145,17 @@ class NIOSelector extends Thread {
 				connection = changeRequest.getConnection();
 				interest = changeRequest.getOperations();
 				if ((interest & READWRITE_MASK) != 0) {
-					// Either READ, WRITE or READ | WRITE -> change interest only
-					if (connection.getChannel().keyFor(m_selector).interestOps() != (SelectionKey.OP_WRITE
-							| SelectionKey.OP_READ)) {
-						connection.getChannel().keyFor(m_selector).interestOps(interest);
+					try {
+						// Either READ (is never registered), WRITE or READ | WRITE -> change interest only
+						key = connection.getChannel().keyFor(m_selector);
+						if (key != null && key.interestOps() != READWRITE_MASK) {
+							// Key might be null if connection was closed during shutdown or due to closing a duplicate connection
+							// If key interest is READ | WRITE the interest must not be overwritten with WRITE as both incoming
+							// buffers might be filled causing a deadlock
+							key.interestOps(interest);
+						}
+					} catch (final CancelledKeyException e) {
+						// Ignore
 					}
 				} else if (interest == CLOSE) {
 					// CLOSE -> close connection
@@ -183,7 +192,9 @@ class NIOSelector extends Thread {
 					}
 					selected.clear();
 				}
-			} catch (final Exception e) {
+			} catch (final ClosedSelectorException e) {
+				// Ignore!
+			} catch (final IOException e) {
 				// #if LOGGER >= ERROR
 				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Key selection failed!");
 				// #endif /* LOGGER >= ERROR */
@@ -198,6 +209,8 @@ class NIOSelector extends Thread {
 	 */
 	private void accept() throws IOException {
 		SocketChannel channel;
+
+		// System.out.println("accepting");
 
 		channel = m_serverChannel.accept();
 		channel.configureBlocking(false);
@@ -220,6 +233,7 @@ class NIOSelector extends Thread {
 			try {
 				if (p_key.isReadable()) {
 					if (connection == null) {
+						// System.out.println("connection null, creating");
 						// Channel was accepted but not used already -> Read NodeID, create NIOConnection and attach to key
 						m_connectionCreator.createConnection((SocketChannel) p_key.channel());
 					} else {
@@ -265,6 +279,7 @@ class NIOSelector extends Thread {
 					// Set interest to READ after writing; do not if channel was blocked and data is left
 					p_key.interestOps(SelectionKey.OP_READ);
 				} else if (p_key.isConnectable()) {
+					// System.out.println("connecting");
 					NIOInterface.connect(connection);
 				}
 			} catch (final IOException e) {

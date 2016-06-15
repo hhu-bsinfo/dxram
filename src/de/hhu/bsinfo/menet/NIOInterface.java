@@ -59,29 +59,20 @@ final class NIOInterface {
 	 */
 	protected NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
 			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_numberOfBuffers)
-			throws IOException {
+					throws IOException {
 		NIOConnection connection = null;
-		ByteBuffer buffer;
+		ByteBuffer buffer = ByteBuffer.allocate(2);
 
 		m_readBuffer.clear();
-
-		if (p_channel.read(m_readBuffer) == -1) {
+		if (p_channel.read(buffer) == -1) {
 			p_channel.keyFor(p_nioSelector.getSelector()).cancel();
 			p_channel.close();
 		} else {
-			m_readBuffer.flip();
+			buffer.flip();
 
-			connection = new NIOConnection(m_readBuffer.getShort(), p_nodeMap, p_messageDirectory, p_channel, p_messageCreator,
+			connection = new NIOConnection(buffer.getShort(), p_nodeMap, p_messageDirectory, p_channel, p_messageCreator,
 					p_nioSelector, p_numberOfBuffers, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 			p_channel.register(p_nioSelector.getSelector(), SelectionKey.OP_READ, connection);
-
-			if (m_readBuffer.hasRemaining()) {
-				buffer = ByteBuffer.allocate(m_readBuffer.remaining());
-				buffer.put(m_readBuffer);
-				buffer.flip();
-
-				connection.addIncoming(buffer);
-			}
 		}
 
 		return connection;

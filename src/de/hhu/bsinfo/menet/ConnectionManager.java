@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
@@ -31,6 +32,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	private boolean m_deactivated;
 
 	private ReentrantLock m_incomingOutgoingLock;
+	private Condition m_cond;
 	private ReentrantLock m_applicationThreadLock;
 
 	// Constructors
@@ -56,6 +58,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 		m_incomingOutgoingLock = new ReentrantLock(false);
 		m_applicationThreadLock = new ReentrantLock(false);
+		m_cond = m_incomingOutgoingLock.newCondition();
 	}
 
 	/**
@@ -141,20 +144,33 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 			ret = m_connections[p_destination & 0xFFFF];
 			if (ret == null && !m_deactivated) {
-				if (m_connectionList.size() == MAX_CONNECTIONS) {
-					dismissRandomConnection();
-				}
-				m_incomingOutgoingLock.unlock();
 
-				try {
-					ret = m_creator.createConnection(p_destination, m_connectionListener);
-				} catch (final IOException e) {
-					throw e;
+				while (m_creator.keyIsPending()) {
+					// System.out.println("Key is pending -> waiting");
+					try {
+						m_cond.await();
+					} catch (final InterruptedException e) {
+					}
 				}
 
-				m_incomingOutgoingLock.lock();
-				if (null != ret) {
-					addConnection(ret, false);
+				ret = m_connections[p_destination & 0xFFFF];
+				if (ret == null && !m_deactivated) {
+					if (m_connectionList.size() == MAX_CONNECTIONS) {
+						dismissRandomConnection();
+					}
+					m_incomingOutgoingLock.unlock();
+
+					try {
+						ret = m_creator.createConnection(p_destination, m_connectionListener);
+					} catch (final IOException e) {
+						throw e;
+					}
+
+					m_incomingOutgoingLock.lock();
+					if (null != ret) {
+						// System.out.println("Created outgoing connection to " + NodeID.toHexString(p_destination) + ", " + System.currentTimeMillis());
+						addConnection(ret, false);
+					}
 				}
 			}
 
@@ -175,28 +191,31 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		short remoteNodeID;
 		AbstractConnection connection;
 
-		System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!");
-
 		remoteNodeID = p_connection.getDestination();
 		connection = m_connections[remoteNodeID & 0xFFFF];
 		if (connection == null) {
+
+			// System.out.println("No connection registered for " + NodeID.toHexString(remoteNodeID));
+
 			// No entry for this NodeID -> insert connection
 			m_connections[remoteNodeID & 0xFFFF] = p_connection;
 			m_connectionList.add(p_connection);
 			p_connection.setListener(m_connectionListener);
-
-			System.out.println("????????????????????????????");
 		} else {
 			// There is already a connection for this destination -> connection duplicate consensus
 			if (remoteNodeID > m_ownNodeID) {
 				// Use the remote node's connection as its NodeID is greater
 				if (p_isIncoming) {
+
+					// System.out.println("   Overwriting with new connection initiated by " + NodeID.toHexString(remoteNodeID) + ", " +
+					// System.currentTimeMillis());
+
 					// Overwrite the connection as p_connection was initiated by the remote node
 					m_connections[remoteNodeID & 0xFFFF] = p_connection;
 					m_connectionList.add(p_connection);
 					p_connection.setListener(m_connectionListener);
 
-					System.out.println(">>>>>>> " + connection.getInputOutputQueueLength());
+					// System.out.println("   Old connection: " + connection);
 
 					// Close old connection
 					connection.close();
@@ -204,7 +223,9 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 				} else {
 					// Keep the connection as its creation was initiated by the remote node
 
-					System.out.println(">>>>>>> " + p_connection.getInputOutputQueueLength());
+					// System.out.println("Keeping the connection initiated by " + NodeID.toHexString(remoteNodeID) + ", " + System.currentTimeMillis());
+
+					// System.out.println("   Old connection: " + p_connection);
 
 					// Close new connection
 					p_connection.close();
@@ -213,12 +234,16 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 			} else {
 				// Use this node's connection as this node has a greater NodeID
 				if (!p_isIncoming) {
+
+					// System.out.println("Overwriting with new connection initiated by " + NodeID.toHexString(m_ownNodeID) + ", " +
+					// System.currentTimeMillis());
+
 					// Overwrite the connection as p_connection was initiated by this node
 					m_connections[remoteNodeID & 0xFFFF] = p_connection;
 					m_connectionList.add(p_connection);
 					p_connection.setListener(m_connectionListener);
 
-					System.out.println(">>>>>>> " + connection.getInputOutputQueueLength());
+					// System.out.println("   Old connection: " + connection);
 
 					// Close old connection
 					connection.close();
@@ -226,7 +251,9 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 				} else {
 					// Keep the connection as its creation was initiated by this node
 
-					System.out.println(">>>>>>> " + p_connection.getInputOutputQueueLength());
+					// System.out.println("Keeping the connection initiated by " + NodeID.toHexString(m_ownNodeID) + ", " + System.currentTimeMillis());
+
+					// System.out.println("   Old connection: " + p_connection);
 
 					// Close new connection
 					p_connection.close();
@@ -285,7 +312,9 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	@Override
 	public void connectionCreated(final AbstractConnection p_connection) {
 		m_incomingOutgoingLock.lock();
+		// System.out.println("Created incoming connection to " + NodeID.toHexString(p_connection.getDestination()) + ", " + System.currentTimeMillis());
 		addConnection(p_connection, true);
+		m_cond.signalAll();
 		m_incomingOutgoingLock.unlock();
 	}
 
