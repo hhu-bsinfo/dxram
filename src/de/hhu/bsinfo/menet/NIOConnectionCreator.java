@@ -4,6 +4,7 @@ package de.hhu.bsinfo.menet;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -108,6 +109,19 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		return m_nioSelector.toString();
 	}
 
+	@Override
+	public boolean keyIsPending() {
+		byte counter = 0;
+
+		Iterator<SelectionKey> iter = m_nioSelector.getSelector().keys().iterator();
+		while (iter.hasNext()) {
+			if (iter.next().attachment() == null && ++counter == 2) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Creates a new connection to the given destination
 	 * @param p_destination
@@ -129,6 +143,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, condLock, cond, m_messageCreator, m_nioSelector,
 				m_numberOfBuffers, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 
+		ret.connect();
+
 		timeStart = System.currentTimeMillis();
 		condLock.lock();
 		while (!ret.isConnected()) {
@@ -147,6 +163,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			} catch (final InterruptedException e) { /* ignore */}
 		}
 		condLock.unlock();
+		// System.out.println("Time for connection creation: " + (System.currentTimeMillis() - timeStart));
 
 		return ret;
 	}
@@ -164,7 +181,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		try {
 			connection = m_nioInterface.initIncomingConnection(m_nodeMap, m_messageDirectory, p_channel, m_messageCreator, m_nioSelector, m_numberOfBuffers);
-			fireConnectionCreated(connection);
+			if (connection != null) {
+				fireConnectionCreated(connection);
+			}
 		} catch (final IOException e) {
 			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not create connection!");

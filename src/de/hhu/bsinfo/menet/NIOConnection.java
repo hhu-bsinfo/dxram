@@ -81,7 +81,6 @@ public class NIOConnection extends AbstractConnection {
 
 		m_messageCreator = p_messageCreator;
 		m_nioSelector = p_nioSelector;
-		m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
 		m_outgoing = new ArrayDeque<>();
 
@@ -157,6 +156,13 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	// Methods
+
+	/**
+	 * Register connect interest
+	 */
+	protected void connect() {
+		m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
+	}
 
 	/**
 	 * Append an incoming ByteBuffer to the Queue
@@ -247,9 +253,12 @@ public class NIOConnection extends AbstractConnection {
 		ByteBuffer buffer;
 		ByteBuffer ret = null;
 
+		// int counter = 0;
+
 		while (true) {
 			m_outgoingLock.lock();
 			buffer = m_outgoing.poll();
+			// counter++;
 			m_outgoingLock.unlock();
 			if (buffer == null) {
 				break;
@@ -286,6 +295,8 @@ public class NIOConnection extends AbstractConnection {
 			}
 		}
 
+		// System.out.print("Writing " + counter + " messages. ");
+
 		return ret;
 	}
 
@@ -294,6 +305,16 @@ public class NIOConnection extends AbstractConnection {
 	 */
 	@Override
 	protected void doClose() {
+		while (!m_outgoing.isEmpty()) {
+			Thread.yield();
+		}
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		m_nioSelector.closeConnectionAsync(this);
 	}
 

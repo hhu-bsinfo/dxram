@@ -143,14 +143,17 @@
 	</target>
 	
 	<target name="move-debug" depends="compile-debug" description="moves jar file to DXRAM.jar">
+		<copy file="${build_proj_dir}/${name}-debug.jar" tofile="DXRAM.jar" />
 		<move file="${build_proj_dir}/${name}-debug.jar" tofile="${build_proj_dir}/DXRAM.jar" />
 	</target>
 	
 	<target name="move-release" depends="compile-release" description="moves jar file to DXRAM.jar">
+		<copy file="${build_proj_dir}/${name}-release.jar" tofile="DXRAM.jar" />
 		<move file="${build_proj_dir}/${name}-release.jar" tofile="${build_proj_dir}/DXRAM.jar" />
 	</target>
 	
 	<target name="move-performance" depends="compile-performance" description="moves jar file to DXRAM.jar">
+		<copy file="${build_proj_dir}/${name}-performance.jar" tofile="DXRAM.jar" />
 		<move file="${build_proj_dir}/${name}-performance.jar" tofile="${build_proj_dir}/DXRAM.jar" />
 	</target>
 </project>
