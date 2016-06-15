@@ -451,7 +451,7 @@ public class GraphAlgorithmBFSTaskPayloadOld extends AbstractTaskPayload {
 				for (int i = 0; i < slavesNodeIds.length; i++) {
 					if (i != ownId) {
 						BFSTerminateMessage msg =
-								new BFSTerminateMessage(slavesNodeIds[i], m_nextFrontier.isEmpty());
+								new BFSTerminateMessage(slavesNodeIds[i], 0, 0);
 						NetworkErrorCodes err = m_networkService.sendMessage(msg);
 						if (err != NetworkErrorCodes.SUCCESS) {
 							m_loggerService.error(getClass(),
@@ -604,9 +604,9 @@ public class GraphAlgorithmBFSTaskPayloadOld extends AbstractTaskPayload {
 
 		private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
 
-			if (!p_message.isNextFrontierEmpty()) {
-				m_terminateBfs = false;
-			}
+//			if (!p_message.isNextFrontierEmpty()) {
+			//				m_terminateBfs = false;
+			//			}
 
 			System.out.println("onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getSource()) + " | "
 					+ m_bfsSlavesEmptyNextFrontiers.incrementAndGet());

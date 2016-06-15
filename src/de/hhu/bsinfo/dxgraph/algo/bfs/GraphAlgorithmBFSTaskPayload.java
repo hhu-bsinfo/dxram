@@ -296,6 +296,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		private AtomicLong m_edgeCountNextFrontier = new AtomicLong(0);
 
+		private AtomicLong m_nextFrontVertices = new AtomicLong(0);
+		private AtomicLong m_nextFrontEdges = new AtomicLong(0);
+
 		/**
 		 * Constructor
 		 *
@@ -383,7 +386,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 */
 		void execute(final long p_entryVertex) {
 			boolean bottomUpApproach = false;
-			long numEdgesInFrontier = 0;
+			long numEdgesInNextFrontier = 0;
 
 			if (p_entryVertex != ChunkID.INVALID_ID) {
 				// #if LOGGER >= INFO
@@ -409,7 +412,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						return;
 					}
 
-					numEdgesInFrontier = vertex.getNeighbours().length;
+					numEdgesInNextFrontier = vertex.getNeighbours().length;
 				} else {
 					m_visitedFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
 					m_visitedFrontier.popFrontReset();
@@ -423,47 +426,47 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_bfsLocalResult.m_totalBFSDepth++;
 			m_statisticsThread.start();
 
+			// values to calculate top down <-> bottom up switching
+			long fullGraphVertexCount = m_graphPartitionIndex.calcTotalVertexCount();
+			long fullGraphEdgeCount = m_graphPartitionIndex.calcTotalEdgeCount();
+			long fullGraphNextFrontVertexCount = 0;
+			long fullGraphNextFrontEdgeCount = 0;
+
 			long start = System.currentTimeMillis();
 
 			while (true) {
+				// TODO switch to deactivate optimized bfs method
+
 				// determine bfs approach for next iteration
 				if (bottomUpApproach) {
 					// last iteration was bottom up approach, check if we should switch
 					// TODO hardcoded edge degree 16
-					if (m_curFrontier.size()
-							< m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount() / 14 * 16) {
+					if (fullGraphNextFrontVertexCount
+							< fullGraphVertexCount / 14 * 16) {
 						bottomUpApproach = false;
 					}
 				} else {
 					// last iteration was top down approach, check if we should switch
-					if (numEdgesInFrontier
-							> m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getEdgeCount() / 10) {
+					if (fullGraphNextFrontEdgeCount
+							> fullGraphEdgeCount / 10) {
 						bottomUpApproach = true;
 					}
 				}
 
-				m_loggerService.debug(getClass(), "BFS iteration executed "
+				m_loggerService.info(getClass(), "BFS iteration "
 						+ (bottomUpApproach ? "BOTTOM UP" : "TOP DOWN")
-						+ ", curFront size: " + m_curFrontier.size()
-						+ ", numEdgesInFrontier " + numEdgesInFrontier
-						+ ", partition vertex count " + m_graphPartitionIndex.getPartitionIndex(getSlaveId())
-						.getVertexCount()
-						+ ", partition edge count " + m_graphPartitionIndex.getPartitionIndex(getSlaveId())
-						.getEdgeCount());
-
-				m_loggerService.info(getClass(), "BFS level " + m_bfsLocalResult.m_totalBFSDepth
-						+ " with " + (bottomUpApproach ? "BOTTOM UP" : "TOP DOWN")
-						+ " approach, frontier size " + m_curFrontier.size()
-						+ " edges in cur frontier " + numEdgesInFrontier
-						+ ", visited verts so far " + m_visitedFrontier.size());
-
-				// reset
-				numEdgesInFrontier = 0;
+						+ ", curFront size: " + fullGraphNextFrontVertexCount
+						+ ", numEdgesInFrontier " + fullGraphNextFrontEdgeCount
+						+ ", vertex count " + fullGraphVertexCount
+						+ ", edge count " + fullGraphEdgeCount);
 
 				// kick off threads with current frontier
 				for (BFSThread thread : m_threads) {
 					thread.runIteration(bottomUpApproach);
 				}
+
+				// reset local counter
+				numEdgesInNextFrontier = 0;
 
 				// wait actively until threads are done with their current iteration
 				{
@@ -473,7 +476,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							Thread.yield();
 							continue;
 						}
-						numEdgesInFrontier += m_threads[t].getEdgeCountNextFrontier();
+						numEdgesInNextFrontier += m_threads[t].getEdgeCountNextFrontier();
 						t++;
 					}
 				}
@@ -521,16 +524,24 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					m_terminateBfs = false;
 				}
 
+				// also get counter for remote incoming edges
+				numEdgesInNextFrontier += m_edgeCountNextFrontier.get();
+				m_edgeCountNextFrontier.set(0);
+
 				// --------------------------------
 				// barrier
 				{
+					m_nextFrontVertices.addAndGet(m_nextFrontier.size());
+					m_nextFrontEdges.addAndGet(numEdgesInNextFrontier);
+
 					// inform all other slaves about our next frontier size to determine termination
 					short ownId = getSlaveId();
 					short[] slavesNodeIds = getSlaveNodeIds();
 					for (int i = 0; i < slavesNodeIds.length; i++) {
 						if (i != ownId) {
 							BFSTerminateMessage msg =
-									new BFSTerminateMessage(slavesNodeIds[i], m_nextFrontier.isEmpty());
+									new BFSTerminateMessage(slavesNodeIds[i], m_nextFrontier.size(),
+											numEdgesInNextFrontier);
 							NetworkErrorCodes err = m_networkService.sendMessage(msg);
 							if (err != NetworkErrorCodes.SUCCESS) {
 								m_loggerService.error(getClass(),
@@ -550,6 +561,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					while (!m_bfsSlavesEmptyNextFrontiers.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
 						Thread.yield();
 					}
+
+					fullGraphNextFrontVertexCount = m_nextFrontVertices.getAndSet(0);
+					fullGraphNextFrontEdgeCount = m_nextFrontEdges.getAndSet(0);
 				}
 				// --------------------------------
 
@@ -583,9 +597,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_nextFrontier.reset();
 				m_curFrontier.popFrontReset();
 				m_visitedFrontier.popFrontReset();
-
-				numEdgesInFrontier += m_edgeCountNextFrontier.get();
-				m_edgeCountNextFrontier.set(0);
 
 				// also swap the references of all threads!
 				for (BFSThread thread : m_threads) {
@@ -751,9 +762,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
 
-			if (!p_message.isNextFrontierEmpty()) {
+			long nextFrontVerts = p_message.getFrontierNextVertices();
+			long nextFrontEdges = p_message.getFrontierNextEdges();
+
+			if (nextFrontVerts != 0) {
 				m_terminateBfs = false;
 			}
+
+			m_nextFrontVertices.addAndGet(nextFrontVerts);
+			m_nextFrontEdges.addAndGet(nextFrontEdges);
 
 			System.out.println("onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getSource()) + " | "
 					+ m_bfsSlavesEmptyNextFrontiers.incrementAndGet());
