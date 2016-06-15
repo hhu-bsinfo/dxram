@@ -9,9 +9,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSTerminateMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
 import de.hhu.bsinfo.utils.log.LoggerInterface;
 import de.hhu.bsinfo.utils.log.LoggerNull;
@@ -335,12 +332,6 @@ public final class NetworkHandler implements DataReceiver {
 		// #if LOGGER == TRACE
 		m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
 		// #endif /* LOGGER == TRACE */
-
-		if (p_message instanceof BFSTerminateMessage ||
-				p_message instanceof BFSLevelFinishedMessage ||
-				p_message instanceof VerticesForNextFrontierMessage) {
-			System.out.println("@@@@@@@@@@@@@@ " + p_message);
-		}
 
 		if (p_message instanceof AbstractResponse) {
 			RequestMap.fulfill((AbstractResponse) p_message);

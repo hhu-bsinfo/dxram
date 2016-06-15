@@ -315,10 +315,6 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				return false;
 			}
 
-			for (int i = 0; i < readCount; i++) {
-				System.out.println(vertexBuffer[i]);
-			}
-
 			count = m_chunkService.put((DataStructure[]) vertexBuffer);
 			if (count != readCount) {
 				// #if LOGGER >= ERROR
