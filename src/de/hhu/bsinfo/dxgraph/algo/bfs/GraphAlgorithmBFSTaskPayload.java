@@ -65,6 +65,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private static final Argument MS_ARG_MARK_VERTICES =
 			new Argument("markVertices", "true", true,
 					"Mark the actual vertices/data visited with the level. On false, we just remember if we have visited it");
+	private static final Argument MS_ARG_BEAMER_MODE =
+			new Argument("beamerMode", "true", true,
+					"Run the BFS algorithm with bottom up optimized mode (beamer). False to run top-down approach only");
+	private static final Argument MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG =
+			new Argument("beamerFormulaGraphEdgeDeg", "16", true,
+					"Avg. edge degree of the graph (parameter on typical rmat generators). "
+							+ "Used to determine top down <-> bottom up switching on beamer mode");
 
 	private static final String MS_BARRIER_IDENT_0 = "BF0";
 
@@ -85,6 +92,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private int m_vertexMessageBatchSize = 100;
 	private int m_numberOfThreadsPerNode = 4;
 	private boolean m_markVertices = true;
+	private boolean m_beamerMode = true;
+	private int m_beamerFormulaGraphEdgeDeg = 16;
 
 	private int m_barrierId0 = BarrierID.INVALID_ID;
 
@@ -235,6 +244,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_vertexMessageBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_MSG_BATCH_SIZE, Integer.class);
 		m_numberOfThreadsPerNode = p_argumentList.getArgumentValue(MS_ARG_NUM_THREADS, Integer.class);
 		m_markVertices = p_argumentList.getArgumentValue(MS_ARG_MARK_VERTICES, Boolean.class);
+		m_beamerMode = p_argumentList.getArgumentValue(MS_ARG_BEAMER_MODE, Boolean.class);
+		m_beamerFormulaGraphEdgeDeg =
+				p_argumentList.getArgumentValue(MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG, Integer.class);
 	}
 
 	@Override
@@ -308,8 +320,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_bfsLocalResult = new BFSResult();
 			m_bfsLocalResult.m_rootVertexId = p_bfsEntryNode;
 			GraphPartitionIndex.Entry entry = m_graphPartitionIndex.getPartitionIndex(getSlaveId());
-			m_bfsLocalResult.m_graphSizeVertices = entry.getVertexCount();
-			m_bfsLocalResult.m_graphSizeEdges = entry.getEdgeCount();
+			m_bfsLocalResult.m_graphPartitionSizeVertices = entry.getVertexCount();
+			m_bfsLocalResult.m_graphPartitionSizeEdges = entry.getEdgeCount();
 		}
 
 		/**
@@ -388,22 +400,28 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			boolean bottomUpApproach = false;
 			long numEdgesInNextFrontier;
 
+			// values to calculate top down <-> bottom up switching
+			long fullGraphVertexCount = m_graphPartitionIndex.calcTotalVertexCount();
+			long fullGraphEdgeCount = m_graphPartitionIndex.calcTotalEdgeCount();
+			long fullGraphNextFrontVertexCount = 0;
+			long fullGraphNextFrontEdgeCount = 0;
+
 			if (p_entryVertex != ChunkID.INVALID_ID) {
 				// #if LOGGER >= INFO
 				m_loggerService.info(getClass(),
 						"I am starting BFS with entry vertex " + ChunkID.toHexString(p_entryVertex));
 				// #endif /* LOGGER >= INFO */
 
+				Vertex vertex = new Vertex(p_entryVertex);
+				if (m_chunkService.get(vertex) != 1) {
+					m_loggerService.error(getClass(),
+							"Getting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
+					// TODO signal all other slaves to terminate (error)
+					return;
+				}
+
 				// mark root visited
 				if (m_visitedFrontier == null) {
-					Vertex vertex = new Vertex(p_entryVertex);
-					if (m_chunkService.get(vertex) != 1) {
-						m_loggerService.error(getClass(),
-								"Getting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
-						// TODO signal all other slaves to terminate (error)
-						return;
-					}
-
 					vertex.setUserData(m_bfsLocalResult.m_totalBFSDepth);
 					if (m_chunkService.put(vertex) != 1) {
 						m_loggerService.error(getClass(),
@@ -411,13 +429,18 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						// TODO signal all other slaves to terminate (error)
 						return;
 					}
-
-					numEdgesInNextFrontier = vertex.getNeighbours().length;
 				} else {
 					m_visitedFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
 					m_visitedFrontier.popFrontReset();
 				}
+
+				numEdgesInNextFrontier = vertex.getNeighbours().length;
+
 				m_curFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
+
+				fullGraphNextFrontVertexCount++;
+				fullGraphNextFrontEdgeCount += numEdgesInNextFrontier;
+				m_bfsLocalResult.m_totalVisitedEdges += numEdgesInNextFrontier;
 			}
 
 			m_curFrontier.popFrontReset();
@@ -426,30 +449,23 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_bfsLocalResult.m_totalBFSDepth++;
 			m_statisticsThread.start();
 
-			// values to calculate top down <-> bottom up switching
-			long fullGraphVertexCount = m_graphPartitionIndex.calcTotalVertexCount();
-			long fullGraphEdgeCount = m_graphPartitionIndex.calcTotalEdgeCount();
-			long fullGraphNextFrontVertexCount = 0;
-			long fullGraphNextFrontEdgeCount = 0;
-
-			long start = System.currentTimeMillis();
-
 			while (true) {
-				// TODO switch to deactivate optimized bfs method
-
-				// determine bfs approach for next iteration
-				if (bottomUpApproach) {
-					// last iteration was bottom up approach, check if we should switch
-					// TODO hardcoded edge degree 16
-					if (fullGraphNextFrontVertexCount
-							< fullGraphVertexCount / 14 * 16) {
-						bottomUpApproach = false;
-					}
-				} else {
-					// last iteration was top down approach, check if we should switch
-					if (fullGraphNextFrontEdgeCount
-							> fullGraphEdgeCount / 10) {
-						bottomUpApproach = true;
+				if (m_beamerMode) {
+					// determine bfs approach for next iteration
+					// formula taken from beamer's "Distributed Memory Breadth-First Search Revisited:
+					// Enabling Bottom-Up Search"
+					if (bottomUpApproach) {
+						// last iteration was bottom up approach, check if we should switch
+						if (fullGraphNextFrontVertexCount
+								< fullGraphVertexCount / 14 * m_beamerFormulaGraphEdgeDeg) {
+							bottomUpApproach = false;
+						}
+					} else {
+						// last iteration was top down approach, check if we should switch
+						if (fullGraphNextFrontEdgeCount
+								> fullGraphEdgeCount / 10) {
+							bottomUpApproach = true;
+						}
 					}
 				}
 
@@ -525,6 +541,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				// also get counter for remote incoming edges
 				numEdgesInNextFrontier += m_edgeCountNextFrontier.get();
 				m_edgeCountNextFrontier.set(0);
+
+				m_bfsLocalResult.m_totalVisitedEdges += numEdgesInNextFrontier;
 
 				// --------------------------------
 				// barrier
@@ -606,8 +624,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_bfsLocalResult.m_totalBFSDepth++;
 			}
 
-			System.out.println(">>>>>>>>>>>>> iteration time: " + (System.currentTimeMillis() - start));
-
 			m_statisticsThread.shutdown();
 			try {
 				m_statisticsThread.join();
@@ -615,12 +631,19 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 
 			// collect further results
-			m_bfsLocalResult.m_totalVisitedVertices = m_statisticsThread.getTotalVertexCount();
+			m_bfsLocalResult.m_graphFullSizeVertices = fullGraphVertexCount;
+			m_bfsLocalResult.m_graphFullSizeEdges = fullGraphEdgeCount;
+			m_bfsLocalResult.m_graphPartitionSizeVertices =
+					m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount();
+			m_bfsLocalResult.m_graphPartitionSizeEdges =
+					m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getEdgeCount();
+			m_bfsLocalResult.m_totalVisitedVertices = m_visitedFrontier.size();
+			m_bfsLocalResult.m_totalVerticesTraversed = m_statisticsThread.getTotalVertexCount();
 			m_bfsLocalResult.m_totalEdgesTraversed = m_statisticsThread.getTotalEdgeCount();
-			m_bfsLocalResult.m_maxVertsPerSecond = m_statisticsThread.getMaxVerticesVisitedPerSec();
-			m_bfsLocalResult.m_maxEdgesPerSecond = m_statisticsThread.getMaxEdgesTraversedPerSec();
-			m_bfsLocalResult.m_avgVertsPerSecond = m_statisticsThread.getAvgVerticesPerSec();
-			m_bfsLocalResult.m_avgEdgesPerSecond = m_statisticsThread.getAvgEdgesPerSec();
+			m_bfsLocalResult.m_maxTraversedVertsPerSecond = m_statisticsThread.getMaxVerticesVisitedPerSec();
+			m_bfsLocalResult.m_maxTraversedEdgesPerSecond = m_statisticsThread.getMaxEdgesTraversedPerSec();
+			m_bfsLocalResult.m_avgTraversedVertsPerSecond = m_statisticsThread.getAvgVerticesPerSec();
+			m_bfsLocalResult.m_avgTraversedEdgesPerSecond = m_statisticsThread.getAvgEdgesPerSec();
 			m_bfsLocalResult.m_totalTimeMs = m_statisticsThread.getTotalTimeMs();
 		}
 
@@ -712,7 +735,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			} else {
 				// top down approach
 
-				// check if we are allowed to add
+				// check if we are allowed to add, not allowed on termination ->
+				// block messages that are already sent by a node starting the next iteration
+				// but the current node is not ready, yet
 				m_remoteDelegatesForNextFrontier.readLock().lock();
 
 				long vertexId = p_message.getVertex();
