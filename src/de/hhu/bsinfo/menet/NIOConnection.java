@@ -320,7 +320,9 @@ public class NIOConnection extends AbstractConnection {
 			try {
 				Thread.sleep(500);
 			} catch (final InterruptedException e) {
+				// #if LOGGER >= WARN
 				NetworkHandler.getLogger().warn(getClass().getSimpleName(), "Interupt. Messages might not have been sent before connection closure!");
+				// #endif /* LOGGER >= WARN */
 			}
 		}
 

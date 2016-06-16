@@ -208,8 +208,10 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 			m_connectionList.add(p_connection);
 			p_connection.setListener(m_connectionListener);
 		} else {
+			// #if LOGGER >= DEBUG
 			NetworkHandler.getLogger().debug(getClass().getSimpleName(),
 					"Collision with already established connection! Closing connection created by node with lower NodeID.");
+			// #endif /* LOGGER >= DEBUG */
 
 			// There is already a connection for this destination -> connection duplicate consensus
 			if (remoteNodeID > m_ownNodeID) {

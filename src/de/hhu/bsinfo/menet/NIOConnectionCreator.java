@@ -4,6 +4,7 @@ package de.hhu.bsinfo.menet;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -113,12 +114,18 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	public boolean keyIsPending() {
 		byte counter = 0;
 
-		Iterator<SelectionKey> iter = m_nioSelector.getSelector().keys().iterator();
-		while (iter.hasNext()) {
-			if (iter.next().attachment() == null && ++counter == 2) {
-				return true;
+		try {
+			Iterator<SelectionKey> iter = m_nioSelector.getSelector().keys().iterator();
+			while (iter.hasNext()) {
+				if (iter.next().attachment() == null && ++counter == 2) {
+					return true;
+				}
 			}
+		} catch (final ConcurrentModificationException e) {
+			// A connection was closed during iteration -> try again
+			return keyIsPending();
 		}
+
 		return false;
 	}
 
