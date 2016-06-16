@@ -36,6 +36,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	private ReentrantLock m_applicationThreadLock;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of ConnectionStore
 	 * @param p_creator
@@ -125,6 +126,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 	}
 
 	// Methods
+
 	/**
 	 * Get the connection for the given destination
 	 * @param p_destination
