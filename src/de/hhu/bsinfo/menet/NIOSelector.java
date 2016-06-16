@@ -153,7 +153,7 @@ class NIOSelector extends Thread {
 					}
 				} else if (interest == CLOSE) {
 					// CLOSE -> close connection
-					m_connectionCreator.closeConnection(connection);
+					m_connectionCreator.closeConnection(connection, false);
 				} else {
 					// CONNECT -> register with connection as attachment (ACCEPT is registered directly)
 					try {
@@ -204,8 +204,6 @@ class NIOSelector extends Thread {
 	private void accept() throws IOException {
 		SocketChannel channel;
 
-		// System.out.println("accepting");
-
 		channel = m_serverChannel.accept();
 		channel.configureBlocking(false);
 
@@ -227,7 +225,6 @@ class NIOSelector extends Thread {
 			try {
 				if (p_key.isReadable()) {
 					if (connection == null) {
-						// System.out.println("connection null, creating");
 						// Channel was accepted but not used already -> Read NodeID, create NIOConnection and attach to key
 						m_connectionCreator.createConnection((SocketChannel) p_key.channel());
 					} else {
@@ -241,7 +238,7 @@ class NIOSelector extends Thread {
 							successful = false;
 						}
 						if (!successful) {
-							m_connectionCreator.closeConnection(connection);
+							m_connectionCreator.closeConnection(connection, true);
 						}
 					}
 				} else if (p_key.isWritable()) {
@@ -270,7 +267,6 @@ class NIOSelector extends Thread {
 					// Set interest to READ after writing; do not if channel was blocked and data is left
 					p_key.interestOps(SelectionKey.OP_READ);
 				} else if (p_key.isConnectable()) {
-					// System.out.println("connecting");
 					NIOInterface.connect(connection);
 				}
 			} catch (final IOException e) {

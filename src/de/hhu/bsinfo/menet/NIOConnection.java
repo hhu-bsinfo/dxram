@@ -301,18 +301,27 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	/**
-	 * Closes the connection
+	 * Closes the connection immediately
 	 */
 	@Override
 	protected void doClose() {
-		while (!m_outgoing.isEmpty()) {
-			Thread.yield();
-		}
-		try {
-			Thread.sleep(500);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		m_nioSelector.closeConnectionAsync(this);
+	}
+
+	/**
+	 * Closes the connection when there is no data left in transfer
+	 */
+	@Override
+	protected void doCloseGracefully() {
+		if (!m_outgoing.isEmpty()) {
+			while (!m_outgoing.isEmpty()) {
+				Thread.yield();
+			}
+			try {
+				Thread.sleep(500);
+			} catch (final InterruptedException e) {
+				NetworkHandler.getLogger().warn(getClass().getSimpleName(), "Interupt. Messages might not have been sent before connection closure!");
+			}
 		}
 
 		m_nioSelector.closeConnectionAsync(this);

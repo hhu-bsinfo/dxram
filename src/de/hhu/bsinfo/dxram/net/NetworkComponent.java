@@ -184,7 +184,6 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.CONNECTION_TIMEOUT_MS);
 	}
 
 	@Override
@@ -229,6 +228,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 				return false;
 			}
 		}
+		m_requestTimeoutMs = p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 
 		m_networkHandler.initialize(
 				m_boot.getNodeID(),
@@ -237,9 +237,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 				p_settings.getValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE),
 				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS),
 				p_settings.getValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE),
-				p_settings.getValue(NetworkConfigurationValues.Component.CONNECTION_TIMEOUT_MS));
-
-		m_requestTimeoutMs = p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
+				m_requestTimeoutMs);
 
 		return true;
 	}

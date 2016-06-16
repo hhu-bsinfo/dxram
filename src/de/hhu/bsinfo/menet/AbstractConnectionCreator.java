@@ -67,6 +67,14 @@ abstract class AbstractConnectionCreator {
 	public abstract String getSelectorStatus();
 
 	/**
+	 * Check if there a remote node tries to open a connection currently
+	 * @return whether a remote node opens a connection to this node currently or not
+	 */
+	public boolean keyIsPending() {
+		return true;
+	}
+
+	/**
 	 * Informs the ConnectionCreatorListener about a new connection
 	 * @param p_connection
 	 *            the new connection
@@ -112,10 +120,6 @@ abstract class AbstractConnectionCreator {
 		 */
 		void connectionClosed(AbstractConnection p_connection);
 
-	}
-
-	public boolean keyIsPending() {
-		return true;
 	}
 
 }

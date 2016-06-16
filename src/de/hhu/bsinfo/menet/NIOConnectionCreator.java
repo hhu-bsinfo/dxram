@@ -159,11 +159,10 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				throw new IOException("Timeout occurred");
 			}
 			try {
-				cond.awaitNanos(20000);
+				cond.awaitNanos(1000);
 			} catch (final InterruptedException e) { /* ignore */}
 		}
 		condLock.unlock();
-		// System.out.println("Time for connection creation: " + (System.currentTimeMillis() - timeStart));
 
 		return ret;
 	}
@@ -196,8 +195,10 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 * Closes the given connection
 	 * @param p_connection
 	 *            the connection
+	 * @param p_informConnectionManager
+	 *            whether to inform the connection manager or not
 	 */
-	protected void closeConnection(final NIOConnection p_connection) {
+	protected void closeConnection(final NIOConnection p_connection, final boolean p_informConnectionManager) {
 		SelectionKey key;
 
 		key = p_connection.getChannel().keyFor(m_nioSelector.getSelector());
@@ -210,7 +211,9 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not close connection to " + p_connection.getDestination() + "!");
 				// #endif /* LOGGER >= ERROR */
 			}
-			fireConnectionClosed(p_connection);
+			if (p_informConnectionManager) {
+				fireConnectionClosed(p_connection);
+			}
 		}
 	}
 
