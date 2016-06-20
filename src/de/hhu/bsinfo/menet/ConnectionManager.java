@@ -179,12 +179,12 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		}
 
 		// Do not send any messages within the first m_connectionTimeout milliseconds since connection creation
-		if (System.currentTimeMillis() - ret.getCreationTimestamp() < m_connectionTimeout) {
+		/*-if (System.currentTimeMillis() - ret.getCreationTimestamp() < m_connectionTimeout) {
 			try {
 				Thread.sleep(1);
 			} catch (final InterruptedException e) {}
 			ret = getConnection(p_destination);
-		}
+		}*/
 
 		return ret;
 	}
@@ -200,6 +200,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		short remoteNodeID;
 		AbstractConnection connection;
 
+		p_connection.setListener(m_connectionListener);
 		remoteNodeID = p_connection.getDestination();
 		connection = m_connections[remoteNodeID & 0xFFFF];
 		if (connection == null) {
@@ -220,15 +221,16 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 					// Overwrite the connection as p_connection was initiated by the remote node
 					m_connections[remoteNodeID & 0xFFFF] = p_connection;
 					m_connectionList.add(p_connection);
-					p_connection.setListener(m_connectionListener);
 
 					// Close old connection
+					m_connectionList.remove(connection);
 					connection.close();
 					connection.cleanup();
 				} else {
 					// Keep the connection as its creation was initiated by the remote node
 
 					// Close new connection
+					m_connectionList.remove(p_connection);
 					p_connection.closeGracefully();
 					p_connection.cleanup();
 				}
@@ -238,15 +240,16 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 					// Overwrite the connection as p_connection was initiated by this node
 					m_connections[remoteNodeID & 0xFFFF] = p_connection;
 					m_connectionList.add(p_connection);
-					p_connection.setListener(m_connectionListener);
 
 					// Close old connection
+					m_connectionList.remove(connection);
 					connection.closeGracefully();
 					connection.cleanup();
 				} else {
 					// Keep the connection as its creation was initiated by this node
 
 					// Close new connection
+					m_connectionList.remove(p_connection);
 					p_connection.close();
 					p_connection.cleanup();
 				}

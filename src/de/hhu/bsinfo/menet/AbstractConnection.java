@@ -28,6 +28,7 @@ public abstract class AbstractConnection {
 
 	private long m_creationTimestamp;
 	private long m_lastAccessTimestamp;
+	private long m_closingTimestamp;
 
 	private ReentrantLock m_lock;
 
@@ -68,6 +69,7 @@ public abstract class AbstractConnection {
 
 		m_creationTimestamp = System.currentTimeMillis();
 		m_lastAccessTimestamp = 0;
+		m_closingTimestamp = -1;
 
 		m_flowControlWindowSize = p_flowControlWindowSize;
 		m_flowControlCondLock = new ReentrantLock(false);
@@ -134,7 +136,22 @@ public abstract class AbstractConnection {
 		return m_lastAccessTimestamp;
 	}
 
+	/**
+	 * Get the closing timestamp
+	 * @return the closing timestamp
+	 */
+	public final long getClosingTimestamp() {
+		return m_closingTimestamp;
+	}
+
 	// Setters
+	/**
+	 * Set the closing timestamp
+	 */
+	public final void setClosingTimestamp() {
+		m_closingTimestamp = System.currentTimeMillis();
+	}
+
 	/**
 	 * Marks the connection as (not) connected
 	 * @param p_connected

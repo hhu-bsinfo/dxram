@@ -87,7 +87,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		// #if LOGGER >= INFO
 		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Network: NIOSelector");
 		// #endif /* LOGGER >= INFO */
-		m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort);
+		m_nioSelector = new NIOSelector(this, m_nioInterface, p_listenPort, m_connectionTimeout);
 		m_nioSelector.setName("Network: NIOSelector");
 		m_nioSelector.setPriority(Thread.MAX_PRIORITY);
 		m_nioSelector.start();

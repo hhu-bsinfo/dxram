@@ -253,12 +253,9 @@ public class NIOConnection extends AbstractConnection {
 		ByteBuffer buffer;
 		ByteBuffer ret = null;
 
-		// int counter = 0;
-
 		while (true) {
 			m_outgoingLock.lock();
 			buffer = m_outgoing.poll();
-			// counter++;
 			m_outgoingLock.unlock();
 			if (buffer == null) {
 				break;
@@ -295,8 +292,6 @@ public class NIOConnection extends AbstractConnection {
 			}
 		}
 
-		// System.out.print("Writing " + counter + " messages. ");
-
 		return ret;
 	}
 
@@ -305,6 +300,7 @@ public class NIOConnection extends AbstractConnection {
 	 */
 	@Override
 	protected void doClose() {
+		setClosingTimestamp();
 		m_nioSelector.closeConnectionAsync(this);
 	}
 
@@ -324,8 +320,13 @@ public class NIOConnection extends AbstractConnection {
 				NetworkHandler.getLogger().warn(getClass().getSimpleName(), "Interupt. Messages might not have been sent before connection closure!");
 				// #endif /* LOGGER >= WARN */
 			}
+			// #if LOGGER >= DEBUG
+			NetworkHandler.getLogger().debug(getClass().getSimpleName(),
+					"Waiting for all scheduled message to be sent over to be closed duplicate connection!");
+			// #endif /* LOGGER >= DEBUG */
 		}
 
+		setClosingTimestamp();
 		m_nioSelector.closeConnectionAsync(this);
 	}
 
