@@ -20,10 +20,10 @@
 		<tid __id="3" __type="short">1</tid>
 		<stid __id="3" __type="short">3</stid>
 		<bfsRootNameserviceEntryName __id="3" __type="str">BFS0</bfsRootNameserviceEntryName>
-		<vertexBatchSize __id="3" __type="int">1000</vertexBatchSize>
-		<vertexMessageBatchSize __id="3" __type="int">1000</vertexMessageBatchSize>
-		<numThreadsPerNode __id="3" __type="int">4</numThreadsPerNode>
-		<markVertices __id="3" __type="bool">true</markVertices>
+		<vertexBatchSize __id="3" __type="int">200</vertexBatchSize>
+		<vertexMessageBatchSize __id="3" __type="int">200</vertexMessageBatchSize>
+		<numThreadsPerNode __id="3" __type="int">6</numThreadsPerNode>
+		<markVertices __id="3" __type="bool">false</markVertices>
 		<beamerMode __id="3" __type="bool">true</beamerMode>
 		<beamerFormulaGraphEdgeDeg __id="3" __type="int">16</beamerFormulaGraphEdgeDeg>
 	</ComputeTask>

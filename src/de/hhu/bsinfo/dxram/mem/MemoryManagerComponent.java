@@ -35,6 +35,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	private long m_numActiveChunks;
 	private long m_totalActiveChunkMemory;
 
+	private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
+
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private StatisticsComponent m_statistics;
@@ -88,7 +90,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
 			// #if LOGGER == TRACE
 			// // m_logger.trace(getClass(),
-					// // "Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
+			// // "Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
 			// #endif /* LOGGER == TRACE */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 			m_rawMemory.initialize(ramSize,
@@ -407,8 +409,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
 
-			SmallObjectHeapDataStructureImExporter importer =
-					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			// pool the im/exporters
+			SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
+
+			//			SmallObjectHeapDataStructureImExporter importer =
+			//					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (importer.importObject(p_dataStructure) < 0) {
 				ret = MemoryErrorCodes.READ;
 			}
@@ -449,8 +454,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
 			ret = new byte[chunkSize];
 
-			SmallObjectHeapDataStructureImExporter importer =
-					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			// pool the im/exporters
+			SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
+			//			SmallObjectHeapDataStructureImExporter importer =
+			//					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (importer.readBytes(ret) != chunkSize) {
 				ret = null;
 			}
@@ -493,8 +500,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
-			SmallObjectHeapDataStructureImExporter exporter =
-					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+
+			// pool the im/exporters
+			SmallObjectHeapDataStructureImExporter exporter = getImExporter(address, chunkSize);
+			//			SmallObjectHeapDataStructureImExporter exporter =
+			//					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (exporter.exportObject(p_dataStructure) < 0) {
 				ret = MemoryErrorCodes.WRITE;
 			}
@@ -864,6 +874,34 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		}
 
 		return m_cidTable.getCIDRangesOfAllLocalChunks();
+	}
+
+	/**
+	 * Pooling the im/exporters to lower memory footprint.
+	 *
+	 * @param p_address   Start address of the chunk
+	 * @param p_chunkSize Size of the chunk
+	 * @return Im/Exporter for the chunk
+	 */
+	private SmallObjectHeapDataStructureImExporter getImExporter(final long p_address, final int p_chunkSize) {
+		long tid = Thread.currentThread().getId();
+		if (tid > 65536) {
+			throw new RuntimeException("Exceeded max. thread id");
+		}
+
+		// pool the im/exporters
+		SmallObjectHeapDataStructureImExporter importer = m_imexporter[(int) tid];
+		if (importer == null) {
+			m_imexporter[(int) tid] =
+					new SmallObjectHeapDataStructureImExporter(m_rawMemory, p_address, 0, p_chunkSize);
+			importer = m_imexporter[(int) tid];
+		} else {
+			importer.setAllocatedMemoryStartAddress(p_address);
+			importer.setOffset(0);
+			importer.setChunkSize(p_chunkSize);
+		}
+
+		return importer;
 	}
 
 	/**

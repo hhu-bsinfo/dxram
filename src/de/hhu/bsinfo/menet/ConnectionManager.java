@@ -13,6 +13,7 @@ import de.hhu.bsinfo.menet.AbstractConnectionCreator.ConnectionCreatorListener;
 
 /**
  * Manages the network connections
+ *
  * @author Florian Klein 18.03.2012
  */
 public final class ConnectionManager implements ConnectionCreatorListener {
@@ -39,16 +40,14 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Creates an instance of ConnectionStore
-	 * @param p_creator
-	 *            the ConnectionCreator
-	 * @param p_listener
-	 *            the ConnectionListener
-	 * @param p_ownNodeID
-	 *            the own NodeID needed for connection duplicate consensus
-	 * @param p_connectionTimeout
-	 *            the connection timeout
+	 *
+	 * @param p_creator           the ConnectionCreator
+	 * @param p_listener          the ConnectionListener
+	 * @param p_ownNodeID         the own NodeID needed for connection duplicate consensus
+	 * @param p_connectionTimeout the connection timeout
 	 */
-	ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener, final short p_ownNodeID, final int p_connectionTimeout) {
+	ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener, final short p_ownNodeID,
+			final int p_connectionTimeout) {
 		m_connections = new AbstractConnection[65536];
 		m_connectionList = new ArrayList<AbstractConnection>(65536);
 
@@ -74,6 +73,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Returns the status of all connections
+	 *
 	 * @return the statuses
 	 */
 	public String getConnectionStatuses() {
@@ -91,15 +91,15 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Checks if there is a congested connection
+	 *
 	 * @return whether there is congested connection or not
 	 */
 	public boolean atLeastOneConnectionIsCongested() {
 		boolean ret = false;
 
 		m_incomingOutgoingLock.lock();
-		Iterator<AbstractConnection> iter = m_connectionList.iterator();
-		while (iter.hasNext()) {
-			if (iter.next().isCongested()) {
+		for (int i = 0; i < m_connectionList.size(); i++) {
+			if (m_connectionList.get(i).isCongested()) {
 				ret = true;
 				break;
 			}
@@ -129,11 +129,10 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Get the connection for the given destination
-	 * @param p_destination
-	 *            the destination
+	 *
+	 * @param p_destination the destination
 	 * @return the connection
-	 * @throws IOException
-	 *             if the connection could not be get
+	 * @throws IOException if the connection could not be get
 	 */
 	public AbstractConnection getConnection(final short p_destination) throws IOException {
 		AbstractConnection ret;
@@ -151,7 +150,8 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 				while (m_creator.keyIsPending()) {
 					try {
 						m_cond.await();
-					} catch (final InterruptedException e) {}
+					} catch (final InterruptedException e) {
+					}
 				}
 
 				ret = m_connections[p_destination & 0xFFFF];
@@ -182,7 +182,8 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		if (System.currentTimeMillis() - ret.getCreationTimestamp() < m_connectionTimeout) {
 			try {
 				Thread.sleep(1);
-			} catch (final InterruptedException e) {}
+			} catch (final InterruptedException e) {
+			}
 			ret = getConnection(p_destination);
 		}
 
@@ -191,10 +192,9 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Add a new connection. Use duplicate consensus if there is already a connection for the specific NodeID.
-	 * @param p_connection
-	 *            the new connection
-	 * @param p_isIncoming
-	 *            whether the new connection's creation was initialized by remote node or not
+	 *
+	 * @param p_connection the new connection
+	 * @param p_isIncoming whether the new connection's creation was initialized by remote node or not
 	 */
 	private void addConnection(final AbstractConnection p_connection, final boolean p_isIncoming) {
 		short remoteNodeID;
@@ -210,7 +210,7 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 		} else {
 			// #if LOGGER >= DEBUG
 			// // NetworkHandler.getLogger().debug(getClass().getSimpleName(),
-					// // "Collision with already established connection! Closing connection created by node with lower NodeID.");
+			// // "Collision with already established connection! Closing connection created by node with lower NodeID.");
 			// #endif /* LOGGER >= DEBUG */
 
 			// There is already a connection for this destination -> connection duplicate consensus
@@ -278,8 +278,8 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Closes the connection for the given destination
-	 * @param p_destination
-	 *            the destination
+	 *
+	 * @param p_destination the destination
 	 */
 	public void closeConnection(final short p_destination) {
 		AbstractConnection connection;
@@ -299,8 +299,8 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * A new connection was created
-	 * @param p_connection
-	 *            the new connection
+	 *
+	 * @param p_connection the new connection
 	 */
 	@Override
 	public void connectionCreated(final AbstractConnection p_connection) {
@@ -312,8 +312,8 @@ public final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * A connection was closed
-	 * @param p_connection
-	 *            the closed connection
+	 *
+	 * @param p_connection the closed connection
 	 */
 	@Override
 	public void connectionClosed(final AbstractConnection p_connection) {
