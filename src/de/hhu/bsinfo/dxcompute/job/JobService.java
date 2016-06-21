@@ -57,7 +57,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	 */
 	public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Registering job type " + p_typeID + " for class " + p_clazz);
+		// // m_logger.debug(getClass(), "Registering job type " + p_typeID + " for class " + p_clazz);
 		// #endif /* LOGGER >= DEBUG */
 
 		AbstractJob.registerType(p_typeID, p_clazz);
@@ -220,7 +220,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		// // m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 		if (p_message != null) {
 			if (p_message.getType() == JobMessages.TYPE) {
@@ -240,7 +240,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 			}
 		}
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting incomingMessage");
+		// // m_logger.trace(getClass(), "Exiting incomingMessage");
 		// #endif /* LOGGER == TRACE */
 	}
 

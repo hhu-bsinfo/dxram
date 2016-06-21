@@ -150,7 +150,7 @@ public final class NetworkHandler implements DataReceiver {
 			final int p_connectionTimeout) {
 
 		// #if LOGGER == TRACE
-		m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
+		// // m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
 		// #endif /* LOGGER == TRACE */
 
 		m_nodeMap = p_nodeMap;
@@ -161,7 +161,7 @@ public final class NetworkHandler implements DataReceiver {
 		m_manager = new ConnectionManager(m_connectionCreator, this, p_ownNodeID, p_connectionTimeout);
 
 		// #if LOGGER == TRACE
-		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
+		// // m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -280,7 +280,7 @@ public final class NetworkHandler implements DataReceiver {
 		p_message.beforeSend();
 
 		// #if LOGGER == TRACE
-		m_loggerInterface.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
+		// // m_loggerInterface.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
@@ -324,7 +324,7 @@ public final class NetworkHandler implements DataReceiver {
 		p_message.afterSend();
 
 		// #if LOGGER == TRACE
-		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting sendMessage");
+		// // m_loggerInterface.trace(getClass().getSimpleName(), "Exiting sendMessage");
 		// #endif /* LOGGER == TRACE */
 
 		return 0;
@@ -338,7 +338,7 @@ public final class NetworkHandler implements DataReceiver {
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
+		// // m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message instanceof AbstractResponse) {

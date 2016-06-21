@@ -221,7 +221,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
+			// // m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -256,9 +256,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(),
-					"create[size " + p_size + ", count " + p_count + "] -> " + ChunkID.toHexString(chunkIDs[0])
-					+ ", ...");
+			// // m_logger.trace(getClass(),
+					// // "create[size " + p_size + ", count " + p_count + "] -> " + ChunkID.toHexString(chunkIDs[0])
+					// // + ", ...");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -282,7 +282,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
+			// // m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -327,7 +327,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ")] -> " + count);
+			// // m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ")] -> " + count);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -349,7 +349,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+			// // m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -385,8 +385,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> "
-					+ ChunkID.toHexString(chunkIDs[0]) + ", ...");
+			// // m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> "
+					// // + ChunkID.toHexString(chunkIDs[0]) + ", ...");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -410,8 +410,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
-					+ p_sizes.length + ") " + p_sizes[0] + ", ...]");
+			// // m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+					// // + p_sizes.length + ") " + p_sizes[0] + ", ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -464,15 +464,15 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		if (!m_performanceFlag) {
 			if (chunkIDs != null) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
-						+ p_sizes.length + ") " + p_sizes[0]
-								+ ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
+				// // m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+						// // + p_sizes.length + ") " + p_sizes[0]
+								// // + ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
 				// #endif /* LOGGER == TRACE */
 			} else {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
-						+ p_sizes.length + ") " + p_sizes[0]
-								+ ", ...] -> -1");
+				// // m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+						// // + p_sizes.length + ") " + p_sizes[0]
+								// // + ", ...] -> -1");
 				// #endif /* LOGGER == TRACE */
 			}
 		}
@@ -510,9 +510,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(),
-					"remove[dataStructures(" + p_chunkIDs.length + ") " + ChunkID.toHexString(p_chunkIDs[0])
-					+ ", ...]");
+			// // m_logger.trace(getClass(),
+					// // "remove[dataStructures(" + p_chunkIDs.length + ") " + ChunkID.toHexString(p_chunkIDs[0])
+					// // + ", ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -675,8 +675,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") "
-					+ ChunkID.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
+			// // m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") "
+					// // + ChunkID.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -727,8 +727,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") ...]");
+			// // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					// // + p_dataStructures.length + ") ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -875,9 +875,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
 						// #if LOGGER == TRACE
-						m_logger.trace(getClass(),
-								"Logging " + dataStructures.length + " chunks to "
-										+ NodeID.toHexString(backupPeers[i]));
+						// // m_logger.trace(getClass(),
+								// // "Logging " + dataStructures.length + " chunks to "
+										// // + NodeID.toHexString(backupPeers[i]));
 						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
@@ -892,8 +892,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					+ p_dataStructures.length + ") ...] -> " + chunksPut);
+			// // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					// // + p_dataStructures.length + ") ...] -> " + chunksPut);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -931,7 +931,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
+			// // m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1036,7 +1036,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+			// // m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1060,7 +1060,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
+			// // m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1164,7 +1164,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
+			// // m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1206,7 +1206,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "getLocal[dataStructures(" + p_count + ") ...]");
+			// // m_logger.trace(getClass(), "getLocal[dataStructures(" + p_count + ") ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1249,8 +1249,8 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(),
-					"getLocal[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+			// // m_logger.trace(getClass(),
+					// // "getLocal[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1276,7 +1276,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...]");
+			// // m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1317,7 +1317,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
+			// // m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1454,7 +1454,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+			// // m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -1490,7 +1490,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (!m_performanceFlag) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "Exiting incomingMessage");
+			// // m_logger.trace(getClass(), "Exiting incomingMessage");
 			// #endif /* LOGGER == TRACE */
 		}
 	}
@@ -1711,9 +1711,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
 						// #if LOGGER == TRACE
-						m_logger.trace(ChunkService.class,
-								"Logging " + dataStructures.length + " chunks to "
-										+ NodeID.toHexString(backupPeers[i]));
+						// // m_logger.trace(ChunkService.class,
+								// // "Logging " + dataStructures.length + " chunks to "
+										// // + NodeID.toHexString(backupPeers[i]));
 						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));

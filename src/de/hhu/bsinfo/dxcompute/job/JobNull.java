@@ -31,7 +31,7 @@ public class JobNull extends AbstractJob {
 		LoggerService logger = getService(LoggerService.class);
 
 		// #if LOGGER >= DEBUG
-		logger.debug(getClass(), "I am null job.");
+		// // logger.debug(getClass(), "I am null job.");
 		// #endif /* LOGGER >= DEBUG */
 	}
 }

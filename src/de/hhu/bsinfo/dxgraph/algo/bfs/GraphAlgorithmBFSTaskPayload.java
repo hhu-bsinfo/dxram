@@ -185,6 +185,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 		// #endif /* LOGGER >= INFO */
 
+		// #if LOGGER >= INFO
+		m_loggerService.info(getClass(), "BFS mode: " + (m_beamerMode ? "BEAMER" : "TOP DOWN ONLY"));
+		// #endif /* LOGGER >= INFO */
+
 		int iteration = 0;
 		for (long root : rootList.getRoots()) {
 			// #if LOGGER >= INFO
@@ -229,6 +233,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		p_argumentList.setArgument(MS_ARG_VERTEX_MSG_BATCH_SIZE);
 		p_argumentList.setArgument(MS_ARG_NUM_THREADS);
 		p_argumentList.setArgument(MS_ARG_MARK_VERTICES);
+		p_argumentList.setArgument(MS_ARG_BEAMER_MODE);
+		p_argumentList.setArgument(MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG);
 	}
 
 	@Override
@@ -253,8 +259,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		p_exporter.writeInt(m_vertexMessageBatchSize);
 		p_exporter.writeInt(m_numberOfThreadsPerNode);
 		p_exporter.writeByte((byte) (m_markVertices ? 1 : 0));
+		p_exporter.writeByte((byte) (m_beamerMode ? 1 : 0));
+		p_exporter.writeInt(m_beamerFormulaGraphEdgeDeg);
 
-		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES;
+		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
+				+ Integer.BYTES;
 	}
 
 	@Override
@@ -269,14 +278,17 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_vertexMessageBatchSize = p_importer.readInt();
 		m_numberOfThreadsPerNode = p_importer.readInt();
 		m_markVertices = p_importer.readByte() > 0;
+		m_beamerMode = p_importer.readByte() > 0;
+		m_beamerFormulaGraphEdgeDeg = p_importer.readInt();
 
-		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES;
+		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
+				+ Integer.BYTES;
 	}
 
 	@Override
 	public int sizeofObject() {
 		return super.sizeofObject() + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3
-				+ Byte.BYTES;
+				+ 2 * Byte.BYTES + Integer.BYTES;
 	}
 
 	/**
@@ -593,7 +605,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_remoteDelegatesForNextFrontier.writeLock().unlock();
 
 				// #if LOGGER >= DEBUG
-				m_loggerService.debug(getClass(), "Frontier swap, new cur frontier size: " + m_curFrontier.size());
+				// // m_loggerService.debug(getClass(), "Frontier swap, new cur frontier size: " + m_curFrontier.size());
 				// #endif /* LOGGER >= DEBUG */
 
 				// go for next run
@@ -632,7 +644,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 
 			// #if LOGGER >= DEBUG
-			m_loggerService.debug(getClass(), "Joining BFS threads...");
+			// // m_loggerService.debug(getClass(), "Joining BFS threads...");
 			// #endif /* LOGGER >= DEBUG */
 
 			for (BFSThread thread : m_threads) {
@@ -648,7 +660,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_networkService.unregisterReceiver(BFSResultMessage.class, this);
 
 			// #if LOGGER >= DEBUG
-			m_loggerService.debug(getClass(), "BFS shutdown");
+			// // m_loggerService.debug(getClass(), "BFS shutdown");
 			// #endif /* LOGGER >= DEBUG */
 		}
 

@@ -406,7 +406,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		SubmitTaskResponse response;
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Incoming remote submit task request " + p_request);
+		// // m_logger.debug(getClass(), "Incoming remote submit task request " + p_request);
 		// #endif /* LOGGER >= DEBUG */
 
 		// check if we were able to create an instance (missing task class registration)
