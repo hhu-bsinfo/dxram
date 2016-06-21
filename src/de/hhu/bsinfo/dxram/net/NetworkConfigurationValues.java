@@ -25,8 +25,6 @@ public class NetworkConfigurationValues {
 		public static final Pair<String, Integer> FLOW_CONTROL_WINDOW_SIZE =
 				new Pair<String, Integer>("FlowControlWindowSize", 1024 * 1024);
 		public static final Pair<String, Integer> REQUEST_TIMEOUT_MS =
-				new Pair<String, Integer>("RequestTimeoutMs", 2000);
-		public static final Pair<String, Integer> CONNECTION_TIMEOUT_MS =
-				new Pair<String, Integer>("ConnectionTimeoutMs", 2000);
+				new Pair<String, Integer>("RequestTimeoutMs", 333);
 	}
 }

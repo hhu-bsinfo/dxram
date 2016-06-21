@@ -26,7 +26,8 @@ public abstract class AbstractConnection {
 
 	private DataReceiver m_listener;
 
-	private long m_timestamp;
+	private long m_creationTimestamp;
+	private long m_lastAccessTimestamp;
 
 	private ReentrantLock m_lock;
 
@@ -65,7 +66,8 @@ public abstract class AbstractConnection {
 
 		m_connected = false;
 
-		m_timestamp = 0;
+		m_creationTimestamp = System.currentTimeMillis();
+		m_lastAccessTimestamp = 0;
 
 		m_flowControlWindowSize = p_flowControlWindowSize;
 		m_flowControlCondLock = new ReentrantLock(false);
@@ -117,11 +119,19 @@ public abstract class AbstractConnection {
 	}
 
 	/**
+	 * Get the creation timestamp
+	 * @return the creation timestamp
+	 */
+	public final long getCreationTimestamp() {
+		return m_creationTimestamp;
+	}
+
+	/**
 	 * Get the timestamp of the last access
 	 * @return the timestamp of the last access
 	 */
-	public final long getTimestamp() {
-		return m_timestamp;
+	public final long getLastAccessTimestamp() {
+		return m_lastAccessTimestamp;
 	}
 
 	// Setters
@@ -182,7 +192,7 @@ public abstract class AbstractConnection {
 			return;
 		}
 
-		m_timestamp = System.currentTimeMillis();
+		m_lastAccessTimestamp = System.currentTimeMillis();
 	}
 
 	/**
@@ -213,7 +223,7 @@ public abstract class AbstractConnection {
 	protected abstract String getInputOutputQueueLength();
 
 	/**
-	 * Closes the connection
+	 * Closes the connection immediately
 	 */
 	public final void close() {
 		m_connected = false;
@@ -222,9 +232,23 @@ public abstract class AbstractConnection {
 	}
 
 	/**
-	 * Closes the connection
+	 * Closes the connection when there is no data left in transfer
+	 */
+	public final void closeGracefully() {
+		m_connected = false;
+
+		doCloseGracefully();
+	}
+
+	/**
+	 * Closes the connection immediately
 	 */
 	protected abstract void doClose();
+
+	/**
+	 * Closes the connection when there is no data left in transfer
+	 */
+	protected abstract void doCloseGracefully();
 
 	/**
 	 * Called when the connection was closed.
@@ -357,7 +381,7 @@ public abstract class AbstractConnection {
 			}
 			m_flowControlCondLock.unlock();
 
-			m_timestamp = System.currentTimeMillis();
+			m_lastAccessTimestamp = System.currentTimeMillis();
 
 			if (p_buffer != null) {
 				while (p_buffer.hasRemaining()) {
