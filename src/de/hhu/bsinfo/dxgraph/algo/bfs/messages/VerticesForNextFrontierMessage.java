@@ -42,6 +42,9 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		m_neighborIDs = new long[p_batchSize];
 	}
 
+	/**
+	 * Reset the buffers and position to re-use the message (lowering memory footprint)
+	 */
 	public void reset() {
 		m_numOfVertices = 0;
 		m_vertexPos = 0;
@@ -68,15 +71,6 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 	}
 
 	/**
-	 * Check if this batch is full.
-	 *
-	 * @return True if full, false if batch size not reached, yet.
-	 */
-	public boolean isBatchFull() {
-		return m_batchSize == m_numOfVertices;
-	}
-
-	/**
 	 * Determine if any neighbors were sent with this message.
 	 * If neighbors are included, this message is sent from a node
 	 * running bottom up mode, thus needing different treatment than
@@ -88,6 +82,12 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		return m_numOfNeighbors;
 	}
 
+	/**
+	 * Add a vertex to the batch
+	 *
+	 * @param p_vertex Vertex to add
+	 * @return True if adding successful, false if batch is full
+	 */
 	public boolean addVertex(final long p_vertex) {
 		if (m_vertexIDs.length == m_numOfVertices) {
 			return false;
@@ -98,6 +98,12 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		return true;
 	}
 
+	/**
+	 * Add a neighbor to the batch (optional to vertices)
+	 *
+	 * @param p_neighbor Neighbor to add
+	 * @return True if successful, false if batch is full
+	 */
 	public boolean addNeighbor(final long p_neighbor) {
 		if (m_neighborIDs.length == m_numOfNeighbors) {
 			return false;
@@ -108,6 +114,11 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		return true;
 	}
 
+	/**
+	 * Get the next vertex in the batch. An internal counter is incremented.
+	 *
+	 * @return Valid vertex id if successful, -1 if batch is empty.
+	 */
 	public long getVertex() {
 		if (m_vertexIDs.length == m_vertexPos) {
 			return -1;
@@ -116,6 +127,11 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		return m_vertexIDs[m_vertexPos++];
 	}
 
+	/**
+	 * Get the next neighbor in the batch. An internal counter is incremented.
+	 *
+	 * @return Valid neighbor id if successful, -1 if batch is empty
+	 */
 	public long getNeighbor() {
 		if (m_neighborIDs.length == m_neighborPos) {
 			return -1;

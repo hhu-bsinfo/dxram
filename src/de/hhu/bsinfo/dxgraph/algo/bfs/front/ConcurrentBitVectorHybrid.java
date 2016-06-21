@@ -8,7 +8,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Thread safe, lock free implementation of a frontier listed based on
- * a bit vector.
+ * a bit vector. This class is using a hybrid approach, optimized for
+ * both standard BFS top-down approach and Beamer's direction optimized
+ * variant.
+ * Using a lock free implementation for adding vertices and a
+ * lock'd variant for removing vertices from the vector.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
@@ -22,10 +26,13 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 	private AtomicLong m_posCount = new AtomicLong(0);
 	private AtomicLong m_posCountInverse = new AtomicLong(0);
 
+	private ReentrantLock m_popFrontLock = new ReentrantLock(false);
+
 	/**
 	 * Constructor
 	 *
 	 * @param p_maxElementCount Specify the maximum number of elements.
+	 * @param p_offset          Offset applied to the vertex IDs (i.e. what's the first vertex id)
 	 */
 	public ConcurrentBitVectorHybrid(final long p_maxElementCount, final long p_offset) {
 		m_maxElementCount = p_maxElementCount;
@@ -146,8 +153,10 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 		}
 	}
 
-	private ReentrantLock m_popFrontLock = new ReentrantLock(false);
-
+	/**
+	 * Make sure to call this to lock the vector before calling
+	 * popFront or popFrontInverse.
+	 */
 	public void popFrontLock() {
 		m_popFrontLock.lock();
 	}
@@ -171,13 +180,21 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 		}
 	}
 
+	/**
+	 * Reset the counters for the popFront call (only). Does not reset the
+	 * data stored in the vector.
+	 */
 	public void popFrontReset() {
 		m_itPos.set(0);
 		m_posCount.set(m_count.get());
 		m_posCountInverse.set(m_maxElementCount - m_count.get());
 	}
 
-	// get the non set indices
+	/**
+	 * Get the inverse elements (i.e. all non set bits).
+	 *
+	 * @return Next non set element (0) in the vector or -1 if no 0 elements available anymore.
+	 */
 	public long popFrontInverse() {
 		if (m_posCountInverse.decrementAndGet() < 0) {
 			m_posCountInverse.set(0);
@@ -196,6 +213,10 @@ public class ConcurrentBitVectorHybrid implements FrontierList {
 		}
 	}
 
+	/**
+	 * Make sure to call this to unlock the vector after calling
+	 * popFront or popFrontInverse.
+	 */
 	public void popFrontUnlock() {
 		m_popFrontLock.unlock();
 	}
