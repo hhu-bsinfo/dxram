@@ -47,8 +47,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
-	private static final String MS_BFS_RESULT_NAMESRV_IDENT = "BFR";
-
 	private static final Argument MS_ARG_BFS_ROOT =
 			new Argument("bfsRootNameserviceEntryName", null, false,
 					"Name of the nameservice entry for the roots to use for BFS.");
@@ -303,6 +301,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private ConcurrentBitVectorHybrid m_curFrontier;
 		private ConcurrentBitVectorHybrid m_nextFrontier;
 		private ConcurrentBitVectorHybrid m_visitedFrontier;
+		private boolean m_markVisited;
 
 		private BFSThread[] m_threads;
 		private StatisticsThread m_statisticsThread;
@@ -350,9 +349,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		void init(final long p_totalVertexCount, final boolean p_verticesMarkVisited) {
 			m_curFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
 			m_nextFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
-			if (!p_verticesMarkVisited) {
-				m_visitedFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
-			}
+			m_visitedFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
+
+			m_markVisited = p_verticesMarkVisited;
 
 			m_networkService.registerReceiver(VerticesForNextFrontierMessage.class, this);
 			m_networkService.registerReceiver(BFSLevelFinishedMessage.class, this);
@@ -409,18 +408,18 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				}
 
 				// mark root visited
-				if (m_visitedFrontier == null) {
-					vertex.setUserData(m_bfsLocalResult.m_totalBFSDepth);
-					if (m_chunkService.put(vertex) != 1) {
+				if (m_markVisited) {
+					// mark data mode
+					if (!m_chunkMemoryService.writeInt(vertex.getID(), 0, m_bfsLocalResult.m_totalBFSDepth)) {
 						m_loggerService.error(getClass(),
-								"Putting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
+								"Marking root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
 						// TODO signal all other slaves to terminate (error)
 						return;
 					}
-				} else {
-					m_visitedFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
-					m_visitedFrontier.popFrontReset();
 				}
+
+				m_visitedFrontier.pushBack(ChunkID.getLocalID(p_entryVertex));
+				m_visitedFrontier.popFrontReset();
 
 				numEdgesInNextFrontier = vertex.getNeighbours().length;
 
@@ -730,11 +729,14 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 				long vertexId = p_message.getVertex();
 				while (vertexId != -1) {
-					// TODO mark mode missing
 					// check if visited and add to frontier if not
 					long localId = ChunkID.getLocalID(vertexId);
 					if (m_visitedFrontier.pushBack(localId)) {
 						m_nextFrontier.pushBack(localId);
+
+						if (m_markVisited) {
+							m_chunkMemoryService.writeInt(vertexId, 0, m_bfsLocalResult.m_totalBFSDepth);
+						}
 
 						// read num of edges for calculating bottom up <-> top down switching formula
 						int numEdges = m_chunkMemoryService.readInt(vertexId, 4);
@@ -1151,7 +1153,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 				// --------------------------------------------------
 
-				int writeBackCount = 0;
 				for (int i = 0; i < validVertsInBatch; i++) {
 					// check first if visited
 					Vertex vertex = m_vertexBatch[i];
@@ -1161,7 +1162,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						continue;
 					}
 
-					writeBackCount++;
 					m_sharedVertexCounter.incrementAndGet();
 
 					long[] neighbours = vertex.getNeighbours();
@@ -1215,7 +1215,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										return;
 									}
 
-									// TODO message re-using? didn't work with requests due to fullfilled
 									msg.reset();
 									m_remoteMessages[neighborCreatorId & 0xFFFF] = msg;
 									msg.addVertex(vertex.getID());
@@ -1227,13 +1226,19 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								// is our child connected to any of the parents
 								if (m_curFrontier.contains(neighborLocalId)) {
 									// child -> parent relationship, got our next vertex
-									// TODO differ mark mode and non mark mode
 									// mark child (!) visited
 									if (m_visitedFrontier.pushBack(vertexLocalId)) {
 										m_nextFrontier.pushBack(vertexLocalId);
 
 										// read num of edges for calculating bottom up <-> top down switching formula
 										m_edgeCountNextFrontier.addAndGet(neighbours.length);
+
+										if (m_markVertices && !m_chunkMemoryService
+												.writeInt(vertex.getID(), 0, m_currentDepthLevel)) {
+											m_loggerService.error(getClass(),
+													"Marking vertex " + ChunkID.toHexString(vertexLocalId)
+															+ " failed");
+										}
 
 										// we don't have to continue with any other neighbors
 										// for all neighbors (possible parents) of child
@@ -1269,11 +1274,16 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									msg.addVertex(neighbour);
 								}
 							} else {
-								// mark visited
-								// TODO differ mark mode and non mark mode
 								// mark visited and add to next if not visited so far
 								if (m_visitedFrontier.pushBack(neighborLocalId)) {
 									m_nextFrontier.pushBack(neighborLocalId);
+
+									if (m_markVertices && !m_chunkMemoryService
+											.writeInt(neighbour, 0, m_currentDepthLevel)) {
+										m_loggerService.error(getClass(),
+												"Marking vertex " + ChunkID.toHexString(vertexLocalId)
+														+ " failed");
+									}
 
 									// read num of edges for calculating bottom up <-> top down switching formula
 									int numEdges = m_chunkMemoryService.readInt(neighbour, 4);
@@ -1291,22 +1301,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						}
 					}
 				}
-
-				// --------------------------------------------------
-
-				//				if (m_visitedFrontier == null) {
-				//					// for marking mode, write back data
-				//					int put =
-				//							m_chunkService
-				//									.put(ChunkLockOperation.NO_LOCK_OPERATION, m_vertexBatch, 0, validVertsInBatch);
-				//					if (put != writeBackCount) {
-				//						// #if LOGGER >= ERROR
-				//						m_loggerService.error(getClass(),
-				//								"Putting vertices in BFS Thread " + m_id + " failed: " + put + " != " + writeBackCount);
-				//						// #endif /* LOGGER >= ERROR */
-				//						return;
-				//					}
-				//				}
 			}
 		}
 	}
