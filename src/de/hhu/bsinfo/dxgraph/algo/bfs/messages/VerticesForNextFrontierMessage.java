@@ -42,6 +42,13 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 		m_neighborIDs = new long[p_batchSize];
 	}
 
+	public void reset() {
+		m_numOfVertices = 0;
+		m_vertexPos = 0;
+		m_numOfNeighbors = 0;
+		m_neighborPos = 0;
+	}
+
 	/**
 	 * Get max size of this vertex batch.
 	 *

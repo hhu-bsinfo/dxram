@@ -406,6 +406,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
+
 			SmallObjectHeapDataStructureImExporter importer =
 					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (importer.importObject(p_dataStructure) < 0) {

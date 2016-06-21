@@ -12,8 +12,6 @@ public final class BFSMessages {
 	public static final byte SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE = 2;
 	public static final byte SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE = 3;
 	public static final byte SUBTYPE_BFS_TERMINATE_MESSAGE = 4;
-	public static final byte SUBTYPE_BFS_VERTICES_INTER_NODE_EDGE_EXISTS_MESSAGE = 5;
-	public static final byte SUBTYPE_PING_MESSAGE = 6;
 
 	/**
 	 * Static class

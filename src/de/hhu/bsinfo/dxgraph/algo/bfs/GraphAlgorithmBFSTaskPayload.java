@@ -13,7 +13,6 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSResultMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSTerminateMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.PingMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
@@ -122,9 +121,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_networkService.registerMessageType(BFSMessages.TYPE,
 				BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE,
 				BFSResultMessage.class);
-		m_networkService.registerMessageType(BFSMessages.TYPE,
-				BFSMessages.SUBTYPE_PING_MESSAGE,
-				PingMessage.class);
 
 		// cache node id
 		m_nodeId = m_bootService.getNodeID();
@@ -350,7 +346,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_networkService.registerReceiver(BFSLevelFinishedMessage.class, this);
 			m_networkService.registerReceiver(BFSTerminateMessage.class, this);
 			m_networkService.registerReceiver(BFSResultMessage.class, this);
-			m_networkService.registerReceiver(PingMessage.class, this);
 
 			m_statisticsThread = new StatisticsThread();
 
@@ -370,23 +365,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			// sync before running
 			m_synchronizationService.barrierSignOn(m_barrierId0, -1);
-
-			// TODO workaround for network issue creating multiple socket connections
-			{
-				try {
-					Thread.sleep(getSlaveId() * 1000);
-				} catch (final InterruptedException ignore) {
-				}
-
-				// send ping message to force open socket connections in order
-				for (short slave : getSlaveNodeIds()) {
-					if (slave != m_nodeId) {
-						m_networkService.sendMessage(new PingMessage(slave));
-					}
-				}
-
-				m_synchronizationService.barrierSignOn(m_barrierId0, -1);
-			}
 		}
 
 		/**
@@ -699,9 +677,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		/**
-		 * Handle incoming AbstractVerticesForNextFrontierRequest messages.
+		 * Handle incoming VerticesForNextFrontierMessage messages.
 		 *
-		 * @param p_message AbstractVerticesForNextFrontierRequest to handle
+		 * @param p_message VerticesForNextFrontierMessage to handle
 		 */
 		private void onIncomingVerticesForNextFrontierMessage(final VerticesForNextFrontierMessage p_message) {
 			// this determines whether the message comes from a node running top down or bottom up approach
@@ -764,10 +742,20 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			}
 		}
 
+		/**
+		 * Handle incoming BFSLevelFinishedMessage messages.
+		 *
+		 * @param p_message BFSLevelFinishedMessage to handle
+		 */
 		private void onIncomingBFSLevelFinishedMessage(final BFSLevelFinishedMessage p_message) {
 			m_bfsSlavesLevelFinishedCounter.incrementAndGet();
 		}
 
+		/**
+		 * Handle incoming BFSTerminateMessage messages.
+		 *
+		 * @param p_message BFSTerminateMessage to handle
+		 */
 		private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
 
 			long nextFrontVerts = p_message.getFrontierNextVertices();
@@ -1006,6 +994,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Trigger running a single iteration until all vertices of the current frontier are processed.
+		 *
+		 * @param p_bottomUpIteration BFS direction for this iteration
 		 */
 		void runIteration(final boolean p_bottomUpIteration) {
 			m_bottomUpIteration = p_bottomUpIteration;
@@ -1013,6 +1003,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_runIteration = true;
 		}
 
+		/**
+		 * Get the edge count of the vertices added to the next frontier in this bfs iteration.
+		 *
+		 * @return Edge count of the the vertices added to the next frontier.
+		 */
 		long getEdgeCountNextFrontier() {
 			return m_edgeCountNextFrontier.get();
 		}
@@ -1121,10 +1116,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									return;
 								}
 
-								// don't reuse requests, does not work with previous responses counting as fulfilled
-								m_remoteMessages[slaveNodeId & 0xFFFF] =
-										new VerticesForNextFrontierMessage(msg.getDestination(),
-												m_vertexMessageBatchSize);
+								// re-use messages
+								m_remoteMessages[slaveNodeId & 0xFFFF].reset();
 							}
 						}
 					}
@@ -1211,8 +1204,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									}
 
 									// TODO message re-using? didn't work with requests due to fullfilled
-									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
-											m_vertexMessageBatchSize);
+									msg.reset();
 									m_remoteMessages[neighborCreatorId & 0xFFFF] = msg;
 									msg.addVertex(vertex.getID());
 									msg.addNeighbor(neighbour);
@@ -1259,9 +1251,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										return;
 									}
 
-									// don't reuse requests, does not work with previous responses counting as fulfilled
-									msg = new VerticesForNextFrontierMessage(neighborCreatorId,
-											m_vertexMessageBatchSize);
+									// re-use messages
+									msg.reset();
 									m_remoteMessages[msg.getDestination() & 0xFFFF] = msg;
 									msg.addVertex(neighbour);
 								}
