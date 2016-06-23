@@ -465,7 +465,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			reader.close();
 		} catch (final FileNotFoundException e) {
 			// #if LOGGER >= DEBUG
-			m_logger.debug(getClass(), "No history found: " + p_file);
+			// // m_logger.debug(getClass(), "No history found: " + p_file);
 			// #endif /* LOGGER >= DEBUG */
 		} catch (final IOException e) {
 			// #if LOGGER >= ERROR

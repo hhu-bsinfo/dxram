@@ -210,7 +210,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		m_state = State.STATE_IDLE;
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Entering idle state");
+		// // m_logger.debug(getClass(), "Entering idle state");
 		// #endif /* LOGGER >= DEBUG */
 	}
 
@@ -254,7 +254,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 				m_lastPingMs = System.currentTimeMillis();
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Pinging slaves, " + m_signedOnSlaves.size() + " online.");
+				// // m_logger.trace(getClass(), "Pinging slaves, " + m_signedOnSlaves.size() + " online.");
 				// #endif /* LOGGER == TRACE */
 			}
 
@@ -336,14 +336,14 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		taskPayload.setSlaveId((short) -1);
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(),
-				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
+		// // m_logger.debug(getClass(),
+				// // "Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
 		// #endif /* LOGGER >= DEBUG */
 
 		Pair<short[], long[]> result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Syncing done.");
+		// // m_logger.debug(getClass(), "Syncing done.");
 		// #endif /* LOGGER >= DEBUG */
 
 		// grab return codes from barrier
@@ -370,7 +370,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		m_joinLock.unlock();
 
 		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Entering idle state");
+		// // m_logger.debug(getClass(), "Entering idle state");
 		// #endif /* LOGGER >= DEBUG */
 	}
 
@@ -426,7 +426,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			m_joinLock.unlock();
 		} else {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "Cannot join slave, master not in idle state.");
+			// // m_logger.trace(getClass(), "Cannot join slave, master not in idle state.");
 			// #endif /* LOGGER == TRACE */
 
 			// send response that joining is not possible currently

@@ -126,7 +126,7 @@ public class SecondaryLog extends AbstractLog {
 		createLogAndWriteHeader(SECLOG_HEADER);
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Initialized secondary log (" + m_secondaryLogSize + ")");
+		// // m_logger.trace(getClass(), "Initialized secondary log (" + m_secondaryLogSize + ")");
 		// #endif /* LOGGER == TRACE */
 	}
 

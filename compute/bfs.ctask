@@ -23,7 +23,8 @@
 		<vertexBatchSize __id="3" __type="int">1000</vertexBatchSize>
 		<vertexMessageBatchSize __id="3" __type="int">1000</vertexMessageBatchSize>
 		<numThreadsPerNode __id="3" __type="int">4</numThreadsPerNode>
-		<markVertices __id="3" __type="bool">false</markVertices>
-		<compVertexMsgs __id="3" __type="bool">false</compVertexMsgs>
+		<markVertices __id="3" __type="bool">true</markVertices>
+		<beamerMode __id="3" __type="bool">true</beamerMode>
+		<beamerFormulaGraphEdgeDeg __id="3" __type="int">16</beamerFormulaGraphEdgeDeg>
 	</ComputeTask>
 </conf>

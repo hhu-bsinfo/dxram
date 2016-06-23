@@ -381,8 +381,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 				if (0 > Collections.binarySearch(p_peers, currentPeer)) {
 					p_trees.add(getCIDTree(currentPeer));
 					// #if LOGGER == TRACE
-					m_logger.trace(getClass(), "Spreading meta-data of " + NodeID.toHexString(currentPeer)
-							+ " to " + NodeID.toHexString(m_successor));
+					// // m_logger.trace(getClass(), "Spreading meta-data of " + NodeID.toHexString(currentPeer)
+							// // + " to " + NodeID.toHexString(m_successor));
 					// #endif /* LOGGER == TRACE */
 				}
 				if (index == m_assignedPeersIncludingBackup.size()) {
@@ -796,8 +796,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		LookupTree tree;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer="
-				+ NodeID.toHexString(p_contactSuperpeer));
+		// // m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer="
+				// // + NodeID.toHexString(p_contactSuperpeer));
 		// #endif /* LOGGER == TRACE */
 
 		contactSuperpeer = p_contactSuperpeer;
@@ -812,7 +812,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		if (m_nodeID == contactSuperpeer) {
 			if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Setting up new ring, I am " + NodeID.toHexString(m_nodeID));
+				// // m_logger.trace(getClass(), "Setting up new ring, I am " + NodeID.toHexString(m_nodeID));
 				// #endif /* LOGGER == TRACE */
 				setSuccessor(m_nodeID);
 			} else {
@@ -824,8 +824,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		} else {
 			while (-1 != contactSuperpeer) {
 				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Contacting " + NodeID.toHexString(contactSuperpeer)
-						+ " to join the ring, I am " + NodeID.toHexString(m_nodeID));
+				// // m_logger.trace(getClass(), "Contacting " + NodeID.toHexString(contactSuperpeer)
+						// // + " to join the ring, I am " + NodeID.toHexString(m_nodeID));
 				// #endif /* LOGGER == TRACE */
 
 				joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_SUPERPEER);
@@ -855,7 +855,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Starting stabilization thread");
+		// // m_logger.trace(getClass(), "Starting stabilization thread");
 		// #endif /* LOGGER == TRACE */
 		m_stabilizationThread =
 				new SuperpeerStabilizationThread(this, m_nodeID, m_overlayLock, m_initialNumberOfSuperpeers,
@@ -866,7 +866,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_stabilizationThread.start();
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
+		// // m_logger.trace(getClass(), "Exiting createOrJoinSuperpeerOverlay");
 		// #endif /* LOGGER == TRACE */
 
 		return true;
@@ -1115,7 +1115,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		boolean newNodeisSuperpeer;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Got request: JOIN_REQUEST from " + NodeID.toHexString(p_joinRequest.getSource()));
+		// // m_logger.trace(getClass(), "Got request: JOIN_REQUEST from " + NodeID.toHexString(p_joinRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		joiningNode = p_joinRequest.getNewNode();
@@ -1232,9 +1232,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		chunkID = p_getLookupRangeRequest.getChunkID();
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"Got request: GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource())
-						+ " chunkID: " + ChunkID.toHexString(chunkID));
+		// // m_logger.trace(getClass(),
+				// // "Got request: GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource())
+						// // + " chunkID: " + ChunkID.toHexString(chunkID));
 		// #endif /* LOGGER == TRACE */
 
 		m_dataLock.lock();
@@ -1245,9 +1245,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 		m_dataLock.unlock();
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource()) + " chunkID "
-						+ ChunkID.toHexString(chunkID) + " reply location: " + result);
+		// // m_logger.trace(getClass(),
+				// // "GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource()) + " chunkID "
+						// // + ChunkID.toHexString(chunkID) + " reply location: " + result);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_network.sendMessage(
@@ -1269,8 +1269,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		LookupTree tree;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"Got Message: REMOVE_CHUNKIDS_REQUEST from " + NodeID.toHexString(p_removeChunkIDsRequest.getSource()));
+		// // m_logger.trace(getClass(),
+				// // "Got Message: REMOVE_CHUNKIDS_REQUEST from " + NodeID.toHexString(p_removeChunkIDsRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		chunkIDs = p_removeChunkIDsRequest.getChunkIDs();
@@ -1343,8 +1343,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		id = p_insertIDRequest.getID();
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from "
-				+ NodeID.toHexString(p_insertIDRequest.getSource()) + ", id " + id);
+		// // m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from "
+				// // + NodeID.toHexString(p_insertIDRequest.getSource()) + ", id " + id);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID,
@@ -1401,8 +1401,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		id = p_getChunkIDForNameserviceEntryRequest.getID();
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
-				+ NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource()) + ", id " + id);
+		// // m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
+				// // + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource()) + ", id " + id);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID,
@@ -1411,9 +1411,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 			chunkID = m_idTable.get(id);
 			m_mappingLock.unlock();
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(),
-					"GET_CHUNKID_REQUEST from " + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource())
-							+ ", id " + id + ", reply chunkID " + ChunkID.toHexString(chunkID));
+			// // m_logger.trace(getClass(),
+					// // "GET_CHUNKID_REQUEST from " + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource())
+							// // + ", id " + id + ", reply chunkID " + ChunkID.toHexString(chunkID));
 			// #endif /* LOGGER == TRACE */
 		}
 		if (m_network.sendMessage(
@@ -1431,8 +1431,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 	private void incomingGetNameserviceEntryCountRequest(
 			final GetNameserviceEntryCountRequest p_getNameserviceEntryCountRequest) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
-				+ NodeID.toHexString(p_getNameserviceEntryCountRequest.getSource()));
+		// // m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
+				// // + NodeID.toHexString(p_getNameserviceEntryCountRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_network.sendMessage(
@@ -1451,8 +1451,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 	private void incomingGetNameserviceEntriesRequest(
 			final GetNameserviceEntriesRequest p_getNameserviceEntriesRequest) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Got request: GET_NAMESERVICE_ENTRIES from "
-				+ p_getNameserviceEntriesRequest.getSource());
+		// // m_logger.trace(getClass(), "Got request: GET_NAMESERVICE_ENTRIES from "
+				// // + p_getNameserviceEntriesRequest.getSource());
 		// #endif /* LOGGER == TRACE */
 
 		if (m_network.sendMessage(
@@ -1477,8 +1477,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		boolean isBackup;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"Got Message: MIGRATE_REQUEST from " + NodeID.toHexString(p_migrateRequest.getSource()));
+		// // m_logger.trace(getClass(),
+				// // "Got Message: MIGRATE_REQUEST from " + NodeID.toHexString(p_migrateRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		nodeID = p_migrateRequest.getNodeID();
@@ -1562,8 +1562,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		boolean isBackup;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"Got Message: MIGRATE_RANGE_REQUEST from " + NodeID.toHexString(p_migrateRangeRequest.getSource()));
+		// // m_logger.trace(getClass(),
+				// // "Got Message: MIGRATE_RANGE_REQUEST from " + NodeID.toHexString(p_migrateRangeRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		nodeID = p_migrateRangeRequest.getNodeID();
@@ -1654,8 +1654,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		boolean isBackup;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"Got Message: INIT_RANGE_REQUEST from " + NodeID.toHexString(p_initRangeRequest.getSource()));
+		// // m_logger.trace(getClass(),
+				// // "Got Message: INIT_RANGE_REQUEST from " + NodeID.toHexString(p_initRangeRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		primaryAndBackupPeers = new LookupRangeWithBackupPeers(p_initRangeRequest.getLookupRange());
@@ -1733,9 +1733,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 		ArrayList<Long> migrationBackupRanges;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"Got request: GET_ALL_BACKUP_RANGES_REQUEST "
-						+ NodeID.toHexString(p_getAllBackupRangesRequest.getSource()));
+		// // m_logger.trace(getClass(),
+				// // "Got request: GET_ALL_BACKUP_RANGES_REQUEST "
+						// // + NodeID.toHexString(p_getAllBackupRangesRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		m_dataLock.lock();
@@ -1771,8 +1771,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		LookupTree tree;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Got request: SET_RESTORER_AFTER_RECOVERY_MESSAGE "
-				+ NodeID.toHexString(p_setRestorerAfterRecoveryMessage.getSource()));
+		// // m_logger.trace(getClass(), "Got request: SET_RESTORER_AFTER_RECOVERY_MESSAGE "
+				// // + NodeID.toHexString(p_setRestorerAfterRecoveryMessage.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		m_dataLock.lock();

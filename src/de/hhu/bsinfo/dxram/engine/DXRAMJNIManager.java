@@ -31,7 +31,7 @@ public class DXRAMJNIManager {
 	 */
 	public void setup(final DXRAMEngine.Settings p_settings) {
 		// #if LOGGER >= DEBUG
-		m_logger.debug(LOG_HEADER, "Setting up JNI classes...");
+		// // m_logger.debug(LOG_HEADER, "Setting up JNI classes...");
 		// #endif /* LOGGER >= DEBUG */
 
 		String path;
@@ -54,7 +54,7 @@ public class DXRAMJNIManager {
 			path = cwd + "/jni/libJNIconsole." + extension;
 		}
 		// #if LOGGER >= DEBUG
-		m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
+		// // m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
 		// #endif /* LOGGER >= DEBUG */
 
 		JNIconsole.load(path);
@@ -64,7 +64,7 @@ public class DXRAMJNIManager {
 			path = cwd + "/jni/libJNINativeMemory." + extension;
 		}
 		// #if LOGGER >= DEBUG
-		m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
+		// // m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
 		// #endif /* LOGGER >= DEBUG */
 
 		JNINativeMemory.load(path);

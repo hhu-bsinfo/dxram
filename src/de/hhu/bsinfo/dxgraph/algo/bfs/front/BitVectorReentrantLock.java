@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Created by nothaas on 6/3/16.
+ * BitVector implementation using a reentrant lock for synchronization
  */
 public class BitVectorReentrantLock {
 	private long m_maxElementCount;

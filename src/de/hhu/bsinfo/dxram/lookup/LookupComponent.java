@@ -66,7 +66,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		LookupRange ret = null;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering get with: p_chunkID=" + ChunkID.toHexString(p_chunkID));
+		// // m_logger.trace(getClass(), "Entering get with: p_chunkID=" + ChunkID.toHexString(p_chunkID));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -95,7 +95,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting get");
+		// // m_logger.trace(getClass(), "Exiting get");
 		// #endif /* LOGGER == TRACE */
 		return ret;
 	}
@@ -108,7 +108,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	public void removeChunkIDs(final long[] p_chunkIDs) {
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering remove with " + p_chunkIDs.length + " chunkIDs");
+		// // m_logger.trace(getClass(), "Entering remove with " + p_chunkIDs.length + " chunkIDs");
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -123,7 +123,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting remove");
+		// // m_logger.trace(getClass(), "Exiting remove");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -138,8 +138,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 		// Insert ChunkID <-> ApplicationID mapping
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(),
-				"Entering insertID with: p_id=" + p_id + ", p_chunkID=" + ChunkID.toHexString(p_chunkID));
+		// // m_logger.trace(getClass(),
+				// // "Entering insertID with: p_id=" + p_id + ", p_chunkID=" + ChunkID.toHexString(p_chunkID));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -155,7 +155,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting insertID");
+		// // m_logger.trace(getClass(), "Exiting insertID");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -173,7 +173,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 		// Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering getChunkID with: p_id=" + p_id);
+		// // m_logger.trace(getClass(), "Entering getChunkID with: p_id=" + p_id);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -188,7 +188,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 				if (null == chunkID) {
 					// Cache miss -> ask superpeer
 					// #if LOGGER == TRACE
-					m_logger.trace(getClass(), "value not cached for application cache: " + p_id);
+					// // m_logger.trace(getClass(), "value not cached for application cache: " + p_id);
 					// #endif /* LOGGER == TRACE */
 
 					ret = m_peer.getChunkIDForNameserviceEntry(p_id, p_timeoutMs);
@@ -204,7 +204,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting getChunkID");
+		// // m_logger.trace(getClass(), "Exiting getChunkID");
 		// #endif /* LOGGER == TRACE */
 
 		return ret;
@@ -256,8 +256,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	public void migrate(final long p_chunkID, final short p_nodeID) {
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering migrate with: p_chunkID=" + ChunkID.toHexString(p_chunkID)
-				+ ", p_nodeID=" + NodeID.toHexString(p_nodeID));
+		// // m_logger.trace(getClass(), "Entering migrate with: p_chunkID=" + ChunkID.toHexString(p_chunkID)
+				// // + ", p_nodeID=" + NodeID.toHexString(p_nodeID));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -273,7 +273,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting migrate");
+		// // m_logger.trace(getClass(), "Exiting migrate");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -289,8 +289,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + ChunkID.toHexString(p_startCID)
-				+ ", p_endChunkID=" + ChunkID.toHexString(p_endCID) + ", p_nodeID=" + NodeID.toHexString(p_nodeID));
+		// // m_logger.trace(getClass(), "Entering migrateRange with: p_startChunkID=" + ChunkID.toHexString(p_startCID)
+				// // + ", p_endChunkID=" + ChunkID.toHexString(p_endCID) + ", p_nodeID=" + NodeID.toHexString(p_nodeID));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -306,7 +306,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting migrateRange");
+		// // m_logger.trace(getClass(), "Exiting migrateRange");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -321,9 +321,9 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 			final LookupRangeWithBackupPeers p_primaryAndBackupPeers) {
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering initRange with: p_endChunkID="
-				+ ChunkID.toHexString(p_firstChunkIDOrRangeID) + ", p_primaryAndBackupPeers="
-				+ p_primaryAndBackupPeers);
+		// // m_logger.trace(getClass(), "Entering initRange with: p_endChunkID="
+				// // + ChunkID.toHexString(p_firstChunkIDOrRangeID) + ", p_primaryAndBackupPeers="
+				// // + p_primaryAndBackupPeers);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -335,7 +335,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting initRange");
+		// // m_logger.trace(getClass(), "Exiting initRange");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -349,7 +349,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		BackupRange[] ret = null;
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering getAllBackupRanges with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		// // m_logger.trace(getClass(), "Entering getAllBackupRanges with: p_nodeID=" + NodeID.toHexString(p_nodeID));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -361,7 +361,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting getAllBackupRanges");
+		// // m_logger.trace(getClass(), "Exiting getAllBackupRanges");
 		// #endif /* LOGGER == TRACE */
 		return ret;
 	}
@@ -373,7 +373,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	 */
 	public void setRestorerAfterRecovery(final short p_owner) {
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Entering updateAllAfterRecovery with: p_owner=" + NodeID.toHexString(p_owner));
+		// // m_logger.trace(getClass(), "Entering updateAllAfterRecovery with: p_owner=" + NodeID.toHexString(p_owner));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -385,7 +385,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "Exiting updateAllAfterRecovery");
+		// // m_logger.trace(getClass(), "Exiting updateAllAfterRecovery");
 		// #endif /* LOGGER == TRACE */
 	}
 
