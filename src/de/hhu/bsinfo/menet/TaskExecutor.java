@@ -1,15 +1,12 @@
 
 package de.hhu.bsinfo.menet;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Access to a singleton of an ExecutorService
@@ -23,10 +20,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class TaskExecutor {
 
 	private final ExecutorService m_executor;
-	private final HashMap<Short, TaskQueue> m_taskMap;
+	// private final HashMap<Short, TaskQueue> m_taskMap;
 	private final String m_name;
 
-	private ReentrantLock m_taskMapLock;
+	// private ReentrantLock m_taskMapLock;
 
 	// Constructors
 	/**
@@ -37,10 +34,10 @@ public final class TaskExecutor {
 	 *            Number of Threads to create
 	 */
 	public TaskExecutor(final String p_name, final int p_threads) {
-		m_taskMap = new HashMap<>();
+		// m_taskMap = new HashMap<>();
 		m_name = p_name;
 
-		m_taskMapLock = new ReentrantLock(false);
+		// m_taskMapLock = new ReentrantLock(false);
 
 		m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());
 	}
@@ -50,14 +47,14 @@ public final class TaskExecutor {
 	 * @param p_name
 	 *            Identifier for debug prints
 	 */
-	public TaskExecutor(final String p_name) {
+	/*-public TaskExecutor(final String p_name) {
 		m_taskMap = new HashMap<>();
 		m_name = p_name;
 
 		m_taskMapLock = new ReentrantLock(false);
 
 		m_executor = Executors.newCachedThreadPool(new ExecutorThreadFactory());
-	}
+	}*/
 
 	// Methods
 	/**
@@ -82,7 +79,7 @@ public final class TaskExecutor {
 	 * @param p_runnable
 	 *            Task to be executed
 	 */
-	public void execute(final short p_id, final Runnable p_runnable) {
+	/*-public void execute(final short p_id, final Runnable p_runnable) {
 		TaskQueue taskQueue;
 
 		m_taskMapLock.lock();
@@ -96,7 +93,7 @@ public final class TaskExecutor {
 		// store task
 		taskQueue.add(p_runnable);
 		m_taskMapLock.unlock();
-	}
+	}*/
 
 	/**
 	 * Purges the task queue for a specific identifier.
@@ -104,13 +101,13 @@ public final class TaskExecutor {
 	 * @param p_id
 	 *            Task identifier which will be purged
 	 */
-	public void purgeQueue(final short p_id) {
+	/*-public void purgeQueue(final short p_id) {
 		m_taskMapLock.lock();
 		if (m_taskMap.containsKey(p_id)) {
 			m_taskMap.remove(p_id);
 		}
 		m_taskMapLock.unlock();
-	}
+	}*/
 
 	/**
 	 * Initiate a graceful shutdown of the thread pool
@@ -135,62 +132,62 @@ public final class TaskExecutor {
 	 * finishedTask method after it has finished
 	 * @author Marc Ewert 14.08.14
 	 */
-	private class TaskQueue implements Runnable {
-
-		private final ArrayDeque<Runnable> m_queue;
-		private ReentrantLock m_queueLock;
-
-		/**
-		 * Creates a new TaskQueue
-		 */
-		TaskQueue() {
-			m_queue = new ArrayDeque<>();
-			m_queueLock = new ReentrantLock(false);
-		}
-
-		/**
-		 * Enqueue a new task to be executed
-		 * @param p_runnable
-		 *            Task to be executed
-		 */
-		public void add(final Runnable p_runnable) {
-			m_queueLock.lock();
-			// enqueue itself when this is the first task
-			if (m_queue.size() == 0) {
-				execute(this);
-			}
-
-			m_queue.offer(p_runnable);
-			m_queueLock.unlock();
-		}
-
-		@Override
-		public void run() {
-			Runnable runnable;
-
-			m_queueLock.lock();
-			runnable = m_queue.peek();
-			m_queueLock.unlock();
-
-			try {
-				runnable.run();
-			} catch (final Exception e) {
-				// #if LOGGER >= ERROR
-				NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
-				// #endif /* LOGGER >= ERROR */
-			} finally {
-				m_queueLock.lock();
-				// remove executed task
-				m_queue.remove();
-
-				// enqueue itself again when there are tasks left
-				if (m_queue.size() > 0) {
-					execute(this);
-				}
-				m_queueLock.unlock();
-			}
-		}
-	}
+	// private class TaskQueue implements Runnable {
+	//
+	// private final ArrayDeque<Runnable> m_queue;
+	// private ReentrantLock m_queueLock;
+	//
+	// /**
+	// * Creates a new TaskQueue
+	// */
+	// TaskQueue() {
+	// m_queue = new ArrayDeque<>();
+	// m_queueLock = new ReentrantLock(false);
+	// }
+	//
+	// /**
+	// * Enqueue a new task to be executed
+	// * @param p_runnable
+	// * Task to be executed
+	// */
+	// public void add(final Runnable p_runnable) {
+	// m_queueLock.lock();
+	// // enqueue itself when this is the first task
+	// if (m_queue.size() == 0) {
+	// execute(this);
+	// }
+	//
+	// m_queue.offer(p_runnable);
+	// m_queueLock.unlock();
+	// }
+	//
+	// @Override
+	// public void run() {
+	// Runnable runnable;
+	//
+	// m_queueLock.lock();
+	// runnable = m_queue.peek();
+	// m_queueLock.unlock();
+	//
+	// try {
+	// runnable.run();
+	// } catch (final Exception e) {
+	// // #if LOGGER >= ERROR
+	// NetworkHandler.getLogger().error(getClass().getSimpleName(), m_name + ":exception during " + runnable, e);
+	// // #endif /* LOGGER >= ERROR */
+	// } finally {
+	// m_queueLock.lock();
+	// // remove executed task
+	// m_queue.remove();
+	//
+	// // enqueue itself again when there are tasks left
+	// if (m_queue.size() > 0) {
+	// execute(this);
+	// }
+	// m_queueLock.unlock();
+	// }
+	// }
+	// }
 
 	/**
 	 * Creates new Threads for the TaskExecutor

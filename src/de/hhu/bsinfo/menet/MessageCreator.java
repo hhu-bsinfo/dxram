@@ -10,7 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Uses a ring-buffer implementation for incoming buffers.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.05.16
  */
-public class MessageCreator extends Thread {
+class MessageCreator extends Thread {
 
 	// Attributes
 	private boolean m_shutdown;
@@ -87,7 +87,7 @@ public class MessageCreator extends Thread {
 	 *            the incoming buffer
 	 * @return whether the job was added or not
 	 */
-	public boolean pushJob(final NIOConnection p_connection, final ByteBuffer p_buffer) {
+	protected boolean pushJob(final NIOConnection p_connection, final ByteBuffer p_buffer) {
 		m_lock.lock();
 		int posBack = m_posBack;
 
@@ -113,7 +113,7 @@ public class MessageCreator extends Thread {
 	 *            the job array to be filled
 	 * @return whether the job array was filled or not
 	 */
-	public boolean popJob(final Object[] p_job) {
+	private boolean popJob(final Object[] p_job) {
 		int posFront = m_posFront;
 		int posFront2 = posFront % m_size;
 
@@ -133,7 +133,7 @@ public class MessageCreator extends Thread {
 	 * Returns the number of pending buffers.
 	 * @return the number of pending buffers
 	 */
-	public int size() {
+	protected int size() {
 		int ret;
 
 		m_lock.lock();

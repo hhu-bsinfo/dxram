@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Represents a network connection
  * @author Florian Klein 18.03.2012
  */
-public class NIOConnection extends AbstractConnection {
+class NIOConnection extends AbstractConnection {
 
 	// Attributes
 	private SocketChannel m_channel;
@@ -310,20 +310,13 @@ public class NIOConnection extends AbstractConnection {
 	@Override
 	protected void doCloseGracefully() {
 		if (!m_outgoing.isEmpty()) {
+			// #if LOGGER >= DEBUG
+			NetworkHandler.getLogger().debug(getClass().getSimpleName(),
+					"Waiting for all scheduled message to be sent over to be closed connection!");
+			// #endif /* LOGGER >= DEBUG */
 			while (!m_outgoing.isEmpty()) {
 				Thread.yield();
 			}
-			try {
-				Thread.sleep(500);
-			} catch (final InterruptedException e) {
-				// #if LOGGER >= WARN
-				NetworkHandler.getLogger().warn(getClass().getSimpleName(), "Interupt. Messages might not have been sent before connection closure!");
-				// #endif /* LOGGER >= WARN */
-			}
-			// #if LOGGER >= DEBUG
-			NetworkHandler.getLogger().debug(getClass().getSimpleName(),
-					"Waiting for all scheduled message to be sent over to be closed duplicate connection!");
-			// #endif /* LOGGER >= DEBUG */
 		}
 
 		setClosingTimestamp();

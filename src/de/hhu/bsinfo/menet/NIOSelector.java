@@ -84,7 +84,7 @@ class NIOSelector extends Thread {
 
 				// #if LOGGER >= ERROR
 				NetworkHandler.getLogger()
-						.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
+				.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
 				// #endif /* LOGGER >= ERROR */
 
 				try {
@@ -164,8 +164,8 @@ class NIOSelector extends Thread {
 					}
 				} else if (interest == CLOSE) {
 					// CLOSE -> close connection
-					// Only close connection if since request at least the time for five connection timeouts has elapsed
-					if (System.currentTimeMillis() - connection.getClosingTimestamp() > (5 * m_connectionTimeout)) {
+					// Only close connection if since request at least the time for two connection timeouts has elapsed
+					if (System.currentTimeMillis() - connection.getClosingTimestamp() > (2 * m_connectionTimeout)) {
 						// #if LOGGER >= DEBUG
 						try {
 							NetworkHandler.getLogger().debug(getClass().getSimpleName(),
@@ -243,7 +243,7 @@ class NIOSelector extends Thread {
 	 * @param p_key
 	 *            the current key
 	 */
-	public void dispatch(final SelectionKey p_key) {
+	private void dispatch(final SelectionKey p_key) {
 		boolean complete = true;
 		boolean successful = true;
 		NIOConnection connection;
@@ -262,7 +262,7 @@ class NIOSelector extends Thread {
 							// #if LOGGER >= ERROR
 							NetworkHandler.getLogger().error(getClass().getSimpleName(),
 									"Could not read from channel (" + NodeID.toHexString(connection.getDestination())
-											+ ")!");
+									+ ")!");
 							// #endif /* LOGGER >= ERROR */
 							successful = false;
 						}
@@ -283,7 +283,7 @@ class NIOSelector extends Thread {
 						// #if LOGGER >= ERROR
 						NetworkHandler.getLogger().error(getClass().getSimpleName(),
 								"Could not write to channel (" + NodeID.toHexString(connection.getDestination())
-										+ ")!");
+								+ ")!");
 						// #endif /* LOGGER >= ERROR */
 						complete = false;
 					}

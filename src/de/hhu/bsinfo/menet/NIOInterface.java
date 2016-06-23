@@ -4,7 +4,6 @@ package de.hhu.bsinfo.menet;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -14,9 +13,7 @@ import java.nio.channels.SocketChannel;
 final class NIOInterface {
 
 	// Attributes
-	private int m_incomingBufferSize;
 	private int m_outgoingBufferSize;
-	private int m_flowControlWindowSize;
 
 	private ByteBuffer m_readBuffer;
 	private ByteBuffer m_writeBuffer;
@@ -27,55 +24,48 @@ final class NIOInterface {
 	 *            the size of incoming buffer
 	 * @param p_outgoingBufferSize
 	 *            the size of outgoing buffer
-	 * @param p_flowControlWindowSize
-	 *            the maximal number of ByteBuffer to schedule for sending/receiving
 	 */
-	NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) {
-		m_incomingBufferSize = p_incomingBufferSize;
+	NIOInterface(final int p_incomingBufferSize, final int p_outgoingBufferSize) {
 		m_outgoingBufferSize = p_outgoingBufferSize;
-		m_flowControlWindowSize = p_flowControlWindowSize;
 
 		m_readBuffer = ByteBuffer.allocateDirect(p_incomingBufferSize);
 		m_writeBuffer = ByteBuffer.allocateDirect(m_outgoingBufferSize);
 	}
 
 	/**
-	 * Creates a new connection
-	 * @param p_nodeMap
-	 *            the node map
-	 * @param p_messageDirectory
-	 *            the message directory
+	 * Reads the NodeID of the remote node that creates this new connection
 	 * @param p_channel
 	 *            the channel of the connection
-	 * @param p_messageCreator
-	 *            the message creator
 	 * @param p_nioSelector
 	 *            the NIOSelector
-	 * @param p_numberOfBuffers
-	 *            the number of buffers to schedule
 	 * @throws IOException
 	 *             if the connection could not be created
-	 * @return the new NIOConnection
+	 * @return the NodeID
 	 */
-	protected NIOConnection initIncomingConnection(final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
-			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_numberOfBuffers)
+	protected short readRemoteNodeID(final SocketChannel p_channel, final NIOSelector p_nioSelector)
 			throws IOException {
-		NIOConnection connection = null;
+		short ret = -1;
+		int bytes = 0;
+		int counter = 0;
 		ByteBuffer buffer = ByteBuffer.allocate(2);
 
 		m_readBuffer.clear();
-		if (p_channel.read(buffer) == -1) {
-			p_channel.keyFor(p_nioSelector.getSelector()).cancel();
-			p_channel.close();
-		} else {
-			buffer.flip();
-
-			connection = new NIOConnection(buffer.getShort(), p_nodeMap, p_messageDirectory, p_channel, p_messageCreator,
-					p_nioSelector, p_numberOfBuffers, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
-			p_channel.register(p_nioSelector.getSelector(), SelectionKey.OP_READ, connection);
+		while (counter < buffer.capacity()) {
+			bytes = p_channel.read(buffer);
+			if (bytes == -1) {
+				// #if LOGGER >= ERROR
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not read remote NodeID from new incoming connection!");
+				// #endif /* LOGGER >= ERROR */
+				p_channel.keyFor(p_nioSelector.getSelector()).cancel();
+				p_channel.close();
+				return -1;
+			}
+			counter += bytes;
 		}
+		buffer.flip();
+		ret = buffer.getShort();
 
-		return connection;
+		return ret;
 	}
 
 	/**

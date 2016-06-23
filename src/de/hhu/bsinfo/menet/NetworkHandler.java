@@ -77,7 +77,7 @@ public final class NetworkHandler implements DataReceiver {
 	 * Returns the LoggerInterface
 	 * @return the LoggerInterface
 	 */
-	public static LoggerInterface getLogger() {
+	protected static LoggerInterface getLogger() {
 		return m_loggerInterface;
 	}
 
@@ -155,10 +155,10 @@ public final class NetworkHandler implements DataReceiver {
 
 		m_nodeMap = p_nodeMap;
 
-		m_connectionCreator = new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_incomingBufferSize,
+		m_connectionCreator = new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_ownNodeID, p_incomingBufferSize,
 				p_outgoingBufferSize, p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
 		m_connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
-		m_manager = new ConnectionManager(m_connectionCreator, this, p_ownNodeID, p_connectionTimeout);
+		m_manager = new ConnectionManager(m_connectionCreator, this);
 
 		// #if LOGGER == TRACE
 		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
@@ -508,7 +508,6 @@ public final class NetworkHandler implements DataReceiver {
 				m_exclusiveMessagesLock.unlock();
 			} else {
 				m_exclusiveMessages.offer(p_message);
-
 				if (m_exclusiveMessages.size() == 1) {
 					m_messageAvailable.signal();
 				}

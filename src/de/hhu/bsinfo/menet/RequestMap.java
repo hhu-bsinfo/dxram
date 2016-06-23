@@ -106,6 +106,7 @@ public final class RequestMap {
 
 		if (p_response != null) {
 			request = remove(p_response.getRequestID());
+
 			if (request != null) {
 				request.fulfill(p_response);
 			}
