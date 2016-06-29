@@ -20,7 +20,7 @@ import de.hhu.bsinfo.menet.AbstractConnectionCreator.ConnectionCreatorListener;
 final class ConnectionManager implements ConnectionCreatorListener {
 
 	// Constants
-	private static final int MAX_CONNECTIONS = 100;
+	protected static final int MAX_CONNECTIONS = 100;
 
 	// Attributes
 	private AbstractConnection[] m_connections;
@@ -153,7 +153,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 			ret = m_connections[p_destination & 0xFFFF];
 			if (ret == null && !m_deactivated) {
 
-				while (m_creator.keyIsPending()) {
+				while (m_creator.keyIsPending() || m_waiting) {
 					m_waiting = true;
 					m_waitingFor = -1;
 					try {

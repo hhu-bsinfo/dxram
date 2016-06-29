@@ -181,7 +181,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_MAP_ENTRY_COUNT);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.INCOMING_BUFFER_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS);
+		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_PENDING_BUFFERS_PER_CONNECTION);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE);
 		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 	}
@@ -235,7 +235,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 				new NodeMappings(m_boot),
 				p_settings.getValue(NetworkConfigurationValues.Component.INCOMING_BUFFER_SIZE),
 				p_settings.getValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE),
-				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_BUFFERS),
+				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_PENDING_BUFFERS_PER_CONNECTION),
 				p_settings.getValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE),
 				m_requestTimeoutMs);
 

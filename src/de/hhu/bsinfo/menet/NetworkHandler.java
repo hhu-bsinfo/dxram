@@ -138,7 +138,7 @@ public final class NetworkHandler implements DataReceiver {
 	 *            the size of incoming buffer
 	 * @param p_outgoingBufferSize
 	 *            the size of outgoing buffer
-	 * @param p_numberOfBuffers
+	 * @param p_numberOfBuffersPerConnection
 	 *            the number of bytes until a flow control message must be received to continue sending
 	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
@@ -146,7 +146,7 @@ public final class NetworkHandler implements DataReceiver {
 	 *            the connection timeout
 	 */
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize,
-			final int p_outgoingBufferSize, final int p_numberOfBuffers, final int p_flowControlWindowSize,
+			final int p_outgoingBufferSize, final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize,
 			final int p_connectionTimeout) {
 
 		// #if LOGGER == TRACE
@@ -156,7 +156,7 @@ public final class NetworkHandler implements DataReceiver {
 		m_nodeMap = p_nodeMap;
 
 		m_connectionCreator = new NIOConnectionCreator(m_messageDirectory, m_nodeMap, p_ownNodeID, p_incomingBufferSize,
-				p_outgoingBufferSize, p_numberOfBuffers, p_flowControlWindowSize, p_connectionTimeout);
+				p_outgoingBufferSize, p_numberOfBuffersPerConnection, p_flowControlWindowSize, p_connectionTimeout);
 		m_connectionCreator.initialize(p_ownNodeID, p_nodeMap.getAddress(p_ownNodeID).getPort());
 		m_manager = new ConnectionManager(m_connectionCreator, this);
 

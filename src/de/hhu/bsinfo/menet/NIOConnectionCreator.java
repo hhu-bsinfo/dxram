@@ -28,7 +28,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	private int m_incomingBufferSize;
 	private int m_outgoingBufferSize;
-	private int m_numberOfBuffers;
+	private int m_numberOfBuffersPerConnection;
 	private int m_flowControlWindowSize;
 	private int m_connectionTimeout;
 
@@ -45,7 +45,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 *            the size of incoming buffer
 	 * @param p_outgoingBufferSize
 	 *            the size of outgoing buffer
-	 * @param p_numberOfBuffers
+	 * @param p_numberOfBuffersPerConnection
 	 *            the number of bytes until a flow control message must be received to continue sending
 	 * @param p_flowControlWindowSize
 	 *            the maximal number of ByteBuffer to schedule for sending/receiving
@@ -54,7 +54,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	 */
 	protected NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap,
 			final short p_ownNodeID, final int p_incomingBufferSize, final int p_outgoingBufferSize,
-			final int p_numberOfBuffers, final int p_flowControlWindowSize, final int p_connectionTimeout) {
+			final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize, final int p_connectionTimeout) {
 		super();
 
 		m_nioSelector = null;
@@ -63,7 +63,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 		m_incomingBufferSize = p_incomingBufferSize;
 		m_outgoingBufferSize = p_outgoingBufferSize;
-		m_numberOfBuffers = p_numberOfBuffers;
+		m_numberOfBuffersPerConnection = p_numberOfBuffersPerConnection;
 		m_flowControlWindowSize = p_flowControlWindowSize;
 		m_connectionTimeout = p_connectionTimeout;
 
@@ -82,7 +82,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		// #if LOGGER >= INFO
 		NetworkHandler.getLogger().info(getClass().getSimpleName(), "Network: MessageCreator");
 		// #endif /* LOGGER >= INFO */
-		m_messageCreator = new MessageCreator(m_numberOfBuffers);
+		m_messageCreator = new MessageCreator(m_numberOfBuffersPerConnection);
 		m_messageCreator.setName("Network: MessageCreator");
 		m_messageCreator.setPriority(Thread.MAX_PRIORITY);
 		m_messageCreator.start();
@@ -151,7 +151,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		condLock = new ReentrantLock(false);
 		cond = condLock.newCondition();
 		ret = new NIOConnection(p_destination, m_nodeMap, m_messageDirectory, condLock, cond, m_messageCreator, m_nioSelector,
-				m_numberOfBuffers, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
+				m_numberOfBuffersPerConnection, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 
 		ret.connect();
 
@@ -204,7 +204,7 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 				if (remoteNodeID > m_ownNodeID) {
 					// Remote node is allowed to open this connection -> proceed
 					connection = new NIOConnection(remoteNodeID, m_nodeMap, m_messageDirectory, p_channel, m_messageCreator,
-							m_nioSelector, m_numberOfBuffers, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
+							m_nioSelector, m_numberOfBuffersPerConnection, m_incomingBufferSize, m_outgoingBufferSize, m_flowControlWindowSize);
 					// Register connection as attachment
 					p_channel.register(m_nioSelector.getSelector(), SelectionKey.OP_READ, connection);
 

@@ -222,6 +222,15 @@ abstract class AbstractConnection {
 	protected abstract void doWrite(final AbstractMessage p_message) throws NetworkException;
 
 	/**
+	 * Writes data to the connection without delay
+	 * @param p_message
+	 *            the AbstractMessage to send
+	 * @throws NetworkException
+	 *             if message buffer is too small
+	 */
+	protected abstract void doForceWrite(AbstractMessage p_message) throws NetworkException;
+
+	/**
 	 * Returns whether there is data left to send in output queue
 	 * @return whether the output queue is empty (false) or not (true)
 	 */
@@ -313,7 +322,7 @@ abstract class AbstractConnection {
 		m_sentMessages++;
 
 		try {
-			doWrite(message);
+			doForceWrite(message);
 		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);

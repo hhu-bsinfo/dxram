@@ -12,11 +12,15 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 class MessageCreator extends Thread {
 
+	// Constants
+	private static final long MAX_PENDING_BYTES = Integer.MAX_VALUE;
+
 	// Attributes
 	private boolean m_shutdown;
 
 	private Object[] m_buffer;
 	private int m_size;
+	private long m_currentBytes;
 
 	private int m_posFront;
 	private int m_posBack;
@@ -25,12 +29,13 @@ class MessageCreator extends Thread {
 
 	/**
 	 * Creates an instance of IncomingBufferStorageAndMessageCreator
-	 * @param p_incomingBufferLimit
+	 * @param p_incomingBufferLimitPerConnection
 	 *            the maximal number of pending incoming buffers
 	 */
-	MessageCreator(final int p_incomingBufferLimit) {
-		m_size = p_incomingBufferLimit;
-		m_buffer = new Object[p_incomingBufferLimit * 2];
+	MessageCreator(final int p_incomingBufferLimitPerConnection) {
+		m_size = p_incomingBufferLimitPerConnection * ConnectionManager.MAX_CONNECTIONS;
+		m_buffer = new Object[m_size * 2];
+		m_currentBytes = 0;
 
 		m_posFront = 0;
 		m_posBack = 0;
@@ -91,7 +96,8 @@ class MessageCreator extends Thread {
 		m_lock.lock();
 		int posBack = m_posBack;
 
-		if (((posBack + 1) % m_size) == (m_posFront % m_size)) {
+		if (((posBack + 1) % m_size) == (m_posFront % m_size) || m_currentBytes >= MAX_PENDING_BYTES) {
+			// Return without adding the job if queue is full or too many bytes are pending
 			m_lock.unlock();
 			return false;
 		}
@@ -100,6 +106,8 @@ class MessageCreator extends Thread {
 		m_buffer[(posBack2 * 2) % m_buffer.length] = p_connection;
 		m_buffer[(posBack2 * 2 + 1) % m_buffer.length] = p_buffer;
 		m_posBack = posBack + 1;
+
+		m_currentBytes += p_buffer.remaining();
 
 		m_cond.signal();
 		m_lock.unlock();
@@ -125,6 +133,8 @@ class MessageCreator extends Thread {
 		p_job[0] = m_buffer[(posFront2 * 2) % m_buffer.length];
 		p_job[1] = m_buffer[(posFront2 * 2 + 1) % m_buffer.length];
 		m_posFront = posFront + 1;
+
+		m_currentBytes -= ((ByteBuffer) p_job[1]).remaining();
 
 		return true;
 	}
