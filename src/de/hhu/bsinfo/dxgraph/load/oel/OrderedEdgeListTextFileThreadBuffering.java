@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxgraph.data.Vertex;
 /**
  * Implementation reading vertex data from a buffer filled by a separate file reading thread.
  * The vertex data is stored in text format.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class OrderedEdgeListTextFileThreadBuffering extends AbstractOrderedEdgeListThreadBuffering {
@@ -19,13 +20,13 @@ public class OrderedEdgeListTextFileThreadBuffering extends AbstractOrderedEdgeL
 
 	/**
 	 * Constructor
-	 * @param p_path
-	 *            Filepath of the file to read.
-	 * @param p_bufferLimit
-	 *            Max vertices to keep buffered.
+	 *
+	 * @param p_path        Filepath of the file to read.
+	 * @param p_bufferLimit Max vertices to keep buffered.
 	 */
-	public OrderedEdgeListTextFileThreadBuffering(final String p_path, final int p_bufferLimit) {
-		super(p_path, p_bufferLimit);
+	public OrderedEdgeListTextFileThreadBuffering(final String p_path, final int p_bufferLimit,
+			final long p_partitionStartOffset, final long p_partitionEndOffset) {
+		super(p_path, p_bufferLimit, p_partitionStartOffset, p_partitionEndOffset);
 	}
 
 	@Override

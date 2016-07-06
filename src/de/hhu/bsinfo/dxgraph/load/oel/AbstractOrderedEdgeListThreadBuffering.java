@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxgraph.data.Vertex;
 
 /**
  * Base class running a buffered reader of vertex data in a separate thread to speed up loading.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements OrderedEdgeList {
@@ -14,16 +15,21 @@ abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements 
 	private int m_bufferLimit = 1000;
 	private ConcurrentLinkedQueue<Vertex> m_vertexBuffer = new ConcurrentLinkedQueue<>();
 
+	protected long m_partitionStartOffset;
+	protected long m_partitionEndOffset;
+
 	/**
 	 * Constructor
-	 * @param p_path
-	 *            Filepath to the ordered edge list file.
-	 * @param p_bufferLimit
-	 *            Max number of vertices to keep buffered for reading.
+	 *
+	 * @param p_path        Filepath to the ordered edge list file.
+	 * @param p_bufferLimit Max number of vertices to keep buffered for reading.
 	 */
-	AbstractOrderedEdgeListThreadBuffering(final String p_path, final int p_bufferLimit) {
+	AbstractOrderedEdgeListThreadBuffering(final String p_path, final int p_bufferLimit,
+			final long p_partitionStartOffset, final long p_partitionEndOffset) {
 		super("OrderedEdgeListFileBuffering " + p_path);
 		m_bufferLimit = p_bufferLimit;
+		m_partitionStartOffset = p_partitionStartOffset;
+		m_partitionEndOffset = p_partitionEndOffset;
 
 		String file = p_path;
 
@@ -72,13 +78,14 @@ abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements 
 
 	/**
 	 * Setup the file to read from.
-	 * @param p_path
-	 *            Filepath to the ordered edge list file.
+	 *
+	 * @param p_path Filepath to the ordered edge list file.
 	 */
 	protected abstract void setupFile(final String p_path);
 
 	/**
 	 * Read a single vertex from the file.
+	 *
 	 * @return Vertex read from the file or null if eof.
 	 */
 	protected abstract Vertex readFileVertex();

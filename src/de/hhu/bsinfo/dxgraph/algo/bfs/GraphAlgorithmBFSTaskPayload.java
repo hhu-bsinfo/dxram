@@ -19,7 +19,7 @@ import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadPartitionIndexTaskPayload;
-import de.hhu.bsinfo.dxgraph.load.GraphPartitionIndex;
+import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkMemoryService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;

@@ -7,10 +7,10 @@ import java.util.Arrays;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
+import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
-import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListTextFileThreadBuffering;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -100,7 +100,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			return -2;
 		}
 
-		OrderedEdgeList graphPartitionOel = setupOrderedEdgeListForCurrentSlave(m_path);
+		OrderedEdgeList graphPartitionOel = setupOrderedEdgeListForCurrentSlave(m_path, graphPartitionIndex);
 		if (graphPartitionOel == null) {
 			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Setting up graph partition for current slave failed.");
@@ -175,7 +175,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	 * @param p_path Path with indexed graph data partitions.
 	 * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
 	 */
-	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path) {
+	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path,
+			final GraphPartitionIndex p_graphPartitionIndex) {
 		OrderedEdgeList orderedEdgeList = null;
 
 		// check if directory exists
@@ -200,7 +201,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 			// looking for format xxx.oel.<slave id>
 			if (tokens.length > 1) {
-				if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
+				if (tokens[1].equals("boel")) {
 					return true;
 				}
 			}
@@ -214,30 +215,25 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
-			String[] tokens = file.getName().split("\\.");
+			// #if LOGGER >= DEBUG
+			// // m_loggerService.debug(getClass(), "Found partition for slave: " + file);
+			// #endif /* LOGGER >= DEBUG */
 
-			// looking for format xxx.oel.<slave id>
-			if (tokens.length > 2) {
-				if (Integer.parseInt(tokens[2]) == getSlaveId()) {
-					if (tokens[1].equals("oel")) {
-						// #if LOGGER >= DEBUG
-						// // m_loggerService.debug(getClass(), "Found partition for slave: " + file);
-						// #endif /* LOGGER >= DEBUG */
+			long startOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getFileStartOffset();
+			long endOffset;
 
-						orderedEdgeList = new OrderedEdgeListTextFileThreadBuffering(file.getAbsolutePath(),
-								m_vertexBatchSize * 1000);
-						break;
-					} else if (tokens[1].equals("boel")) {
-						// #if LOGGER >= DEBUG
-						// // m_loggerService.debug(getClass(), "Found partition for slave: " + file);
-						// #endif /* LOGGER >= DEBUG */
-
-						orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
-								m_vertexBatchSize * 1000);
-						break;
-					}
-				}
+			// last partition
+			if (getSlaveId() + 1 >= p_graphPartitionIndex.getTotalPartitionCount()) {
+				endOffset = Long.MAX_VALUE;
+			} else {
+				endOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId() + 1).getFileStartOffset();
 			}
+
+			orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
+					m_vertexBatchSize * 1000,
+					startOffset,
+					endOffset);
+			break;
 		}
 
 		return orderedEdgeList;
@@ -250,6 +246,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	 * @param p_graphPartitionIndex Index for all partitions to rebase vertex ids to current node.
 	 * @return True if loading successful, false on error.
 	 */
+
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
 		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
