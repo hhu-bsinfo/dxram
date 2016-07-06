@@ -11,7 +11,6 @@ import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRoots;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRootsBinaryFile;
-import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRootsTextFile;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -207,7 +206,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 			// looking for format xxx.roel
 			if (tokens.length > 1) {
-				if (tokens[1].equals("roel")) {
+				if (tokens[1].equals("broots")) {
 					return true;
 				}
 			}
@@ -221,26 +220,12 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
-			String[] tokens = file.getName().split("\\.");
+			// #if LOGGER >= DEBUG
+			// // m_loggerService.debug(getClass(), "Found root list: " + file);
+			// #endif /* LOGGER >= DEBUG */
 
-			// looking for format xxx.roel
-			if (tokens.length > 1) {
-				if (tokens[1].equals("roel")) {
-					// #if LOGGER >= DEBUG
-					// // m_loggerService.debug(getClass(), "Found root list: " + file);
-					// #endif /* LOGGER >= DEBUG */
-
-					orderedEdgeListRoots = new OrderedEdgeListRootsTextFile(file.getAbsolutePath());
-					break;
-				} else if (tokens[1].equals("broots")) {
-					// #if LOGGER >= DEBUG
-					// // m_loggerService.debug(getClass(), "Found root list: " + file);
-					// #endif /* LOGGER >= DEBUG */
-
-					orderedEdgeListRoots = new OrderedEdgeListRootsBinaryFile(file.getAbsolutePath());
-					break;
-				}
-			}
+			orderedEdgeListRoots = new OrderedEdgeListRootsBinaryFile(file.getAbsolutePath());
+			break;
 		}
 
 		return orderedEdgeListRoots;

@@ -211,12 +211,12 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 		// add filtered files
 		// #if LOGGER >= DEBUG
-		// // m_loggerService.debug(getClass(), "Setting up oel for current slave, iterating files in " + p_path);
+		m_loggerService.debug(getClass(), "Setting up oel for current slave, iterating files in " + p_path);
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
 			// #if LOGGER >= DEBUG
-			// // m_loggerService.debug(getClass(), "Found partition for slave: " + file);
+			m_loggerService.debug(getClass(), "Found partition for slave: " + file);
 			// #endif /* LOGGER >= DEBUG */
 
 			long startOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getFileStartOffset();

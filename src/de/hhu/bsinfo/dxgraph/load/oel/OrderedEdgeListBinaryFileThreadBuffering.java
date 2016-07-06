@@ -1,6 +1,9 @@
 
 package de.hhu.bsinfo.dxgraph.load.oel;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -15,7 +18,8 @@ import de.hhu.bsinfo.dxgraph.data.Vertex;
  */
 public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdgeListThreadBuffering {
 
-	private RandomAccessFile m_file;
+	private DataInputStream m_file;
+	private long m_position;
 
 	/**
 	 * Constructor
@@ -31,11 +35,13 @@ public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdg
 	@Override
 	protected void setupFile(final String p_path) {
 		try {
-			m_file = new RandomAccessFile(p_path, "r");
-			m_file.seek(m_partitionStartOffset);
+			RandomAccessFile file = new RandomAccessFile(p_path, "r");
+			file.seek(m_partitionStartOffset);
+			m_file = new DataInputStream(new BufferedInputStream(new FileInputStream(file.getFD())));
 			if (m_partitionEndOffset == Long.MAX_VALUE) {
-				m_partitionEndOffset = m_file.length();
+				m_partitionEndOffset = file.length();
 			}
+			m_position = 0;
 		} catch (final FileNotFoundException e) {
 			throw new RuntimeException("Cannot load graph from file '" + p_path + "', does not exist.");
 		} catch (final IOException e) {
@@ -49,13 +55,15 @@ public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdg
 		Vertex vertex = new Vertex();
 
 		try {
-			if (m_file.getFilePointer() < m_partitionEndOffset) {
-				int count = m_file.readInt();
+			if (m_position < m_partitionEndOffset) {
+				int count = Integer.reverseBytes(m_file.readInt());
+				m_position += Integer.BYTES;
 				vertex.setNeighbourCount(count);
 				long[] neighbours = vertex.getNeighbours();
 				for (int i = 0; i < neighbours.length; i++) {
-					neighbours[i] = m_file.readLong();
+					neighbours[i] = Long.reverseBytes(m_file.readLong());
 				}
+				m_position += Long.BYTES * count;
 			} else {
 				return null;
 			}

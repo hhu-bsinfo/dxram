@@ -19,21 +19,14 @@ public class OrderedEdgeListRootsBinaryFile implements OrderedEdgeListRoots {
 	/**
 	 * Constructor
 	 *
-	 * @param p_path Filepath to read the roots from.
+	 * @param p_filePath Path to the file to read from
 	 */
-	public OrderedEdgeListRootsBinaryFile(final String p_path) {
-
-		String file = p_path;
-
-		int lastIndexPath = file.lastIndexOf('/');
-		if (lastIndexPath != -1) {
-			file = file.substring(lastIndexPath + 1);
-		}
+	public OrderedEdgeListRootsBinaryFile(final String p_filePath) {
 
 		try {
-			m_file = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
+			m_file = new DataInputStream(new BufferedInputStream(new FileInputStream(p_filePath)));
 		} catch (final FileNotFoundException e) {
-			throw new RuntimeException("Cannot load graph roots from file '" + p_path + "', does not exist.");
+			throw new RuntimeException("Cannot load graph roots from file '" + p_filePath + "', does not exist.");
 		}
 	}
 
@@ -41,7 +34,7 @@ public class OrderedEdgeListRootsBinaryFile implements OrderedEdgeListRoots {
 	public long getRoot() {
 		long value;
 		try {
-			value = m_file.readLong();
+			value = Long.reverseBytes(m_file.readLong());
 		} catch (final IOException e) {
 			return -1;
 		}
