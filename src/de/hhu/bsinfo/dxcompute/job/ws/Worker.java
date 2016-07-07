@@ -115,8 +115,8 @@ public class Worker extends Thread {
 				m_isIdle = false;
 
 				// #if LOGGER >= DEBUG
-				// // m_workerDelegate.getLoggerComponent().debug(getClass(),
-						// // "Worker " + m_id + ": Executing job " + job + " from queue.");
+				// // // // m_workerDelegate.getLoggerComponent().debug(getClass(),
+						// // // // "Worker " + m_id + ": Executing job " + job + " from queue.");
 				// #endif /* LOGGER >= DEBUG */
 
 				m_workerDelegate.executingJob(job);
@@ -130,8 +130,8 @@ public class Worker extends Thread {
 				m_isIdle = false;
 
 				// #if LOGGER >= DEBUG
-				// // m_workerDelegate.getLoggerComponent().debug(getClass(),
-						// // "Worker " + m_id + ": Executing stolen job " + job);
+				// // // // m_workerDelegate.getLoggerComponent().debug(getClass(),
+						// // // // "Worker " + m_id + ": Executing stolen job " + job);
 				// #endif /* LOGGER >= DEBUG */
 
 				m_workerDelegate.executingJob(job);

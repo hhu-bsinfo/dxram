@@ -101,8 +101,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 				for (short peer : backupPeers) {
 					if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
 						// #if LOGGER == TRACE
-						// // m_logger.trace(getClass(),
-								// // "Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
+						// // // // m_logger.trace(getClass(),
+								// // // // "Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
 						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(peer, p_dataStructure));
@@ -130,7 +130,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 			m_memoryManager.put(chunk);
 
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "Stored recovered chunk " + chunk + " locally");
+			// // // // m_logger.trace(getClass(), "Stored recovered chunk " + chunk + " locally");
 			// #endif /* LOGGER == TRACE */
 		}
 		m_memoryManager.unlockManage();
@@ -159,7 +159,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 			m_memoryManager.put(chunk);
 
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "Stored migrated chunk " + chunk + " locally");
+			// // // // m_logger.trace(getClass(), "Stored migrated chunk " + chunk + " locally");
 			// #endif /* LOGGER == TRACE */
 
 			if (m_backup.isActive()) {

@@ -159,7 +159,7 @@ public class PrimaryWriteBuffer {
 		m_writerThread.start();
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Initialized primary write buffer (" + m_writeBufferSize + ")");
+		// // // // m_logger.trace(getClass(), "Initialized primary write buffer (" + m_writeBufferSize + ")");
 		// #endif /* LOGGER == TRACE */
 	}
 

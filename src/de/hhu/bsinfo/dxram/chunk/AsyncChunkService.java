@@ -112,12 +112,12 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 		if (p_dataStructures[0] == null) {
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+			// // // // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
 			// #endif /* LOGGER == TRACE */
 		} else {
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					// // + p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			// // // // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					// // // // + p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 
@@ -227,13 +227,13 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 		if (p_dataStructures[0] == null) {
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					// // + p_dataStructures.length + ") ...]");
+			// // // // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					// // // // + p_dataStructures.length + ") ...]");
 			// #endif /* LOGGER == TRACE */
 		} else {
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-					// // + p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
+			// // // // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+					// // // // + p_dataStructures.length + ") " + ChunkID.toHexString(p_dataStructures[0].getID()) + ", ...]");
 			// #endif /* LOGGER == TRACE */
 		}
 		return;
@@ -242,7 +242,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		// // // // m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
@@ -258,7 +258,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		}
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Exiting incomingMessage");
+		// // // // m_logger.trace(getClass(), "Exiting incomingMessage");
 		// #endif /* LOGGER == TRACE */
 	}
 

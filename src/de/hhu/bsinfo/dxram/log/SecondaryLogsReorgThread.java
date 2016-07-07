@@ -124,7 +124,7 @@ public final class SecondaryLogsReorgThread extends Thread {
 			// Check if there is an urgent reorganization request -> reorganize complete secondary log and signal
 			if (m_secLog != null) {
 				// #if LOGGER >= DEBUG
-				// // m_logger.debug(SecondaryLogsReorgThread.class, "Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
+				// // // // m_logger.debug(SecondaryLogsReorgThread.class, "Got urgent reorganization request for " + m_secLog.getRangeIDOrFirstLocalID() + ".");
 				// #endif /* LOGGER >= DEBUG */
 
 				// Leave current secondary log
@@ -180,8 +180,8 @@ public final class SecondaryLogsReorgThread extends Thread {
 					secondaryLog = iter.next();
 					iter.remove();
 					// #if LOGGER == TRACE
-					// // m_logger.trace(SecondaryLogsReorgThread.class, "Got reorganization request for " + secondaryLog.getRangeIDOrFirstLocalID()
-							// // + ". Queue length: " + m_reorganizationRequests.size());
+					// // // // m_logger.trace(SecondaryLogsReorgThread.class, "Got reorganization request for " + secondaryLog.getRangeIDOrFirstLocalID()
+							// // // // + ". Queue length: " + m_reorganizationRequests.size());
 					// #endif /* LOGGER == TRACE */
 					m_requestLock.unlock();
 
@@ -215,13 +215,13 @@ public final class SecondaryLogsReorgThread extends Thread {
 
 			// Reorganize one segment
 			// #if LOGGER == TRACE
-			// // m_logger.trace(SecondaryLogsReorgThread.class, "Going to reorganize " + secondaryLog.getRangeIDOrFirstLocalID() + ".");
+			// // // // m_logger.trace(SecondaryLogsReorgThread.class, "Going to reorganize " + secondaryLog.getRangeIDOrFirstLocalID() + ".");
 			// #endif /* LOGGER == TRACE */
 			m_logService.getAccessToSecLog(secondaryLog);
 			final long start = System.currentTimeMillis();
 			secondaryLog.reorganizeIteratively(m_reorgSegmentData, m_allVersions);
 			// #if LOGGER == TRACE
-			// // m_logger.trace(SecondaryLogsReorgThread.class, "Time to reorganize segment: " + (System.currentTimeMillis() - start));
+			// // // // m_logger.trace(SecondaryLogsReorgThread.class, "Time to reorganize segment: " + (System.currentTimeMillis() - start));
 			// #endif /* LOGGER == TRACE */
 
 			if (counter++ == iterationsPerLog) {

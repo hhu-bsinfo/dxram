@@ -52,8 +52,8 @@ public class EventComponent extends AbstractDXRAMComponent {
 
 		listeners.add(p_listener);
 		// #if LOGGER >= DEBUG
-		// // m_logger.debug(getClass(),
-				// // "Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
+		// // // // m_logger.debug(getClass(),
+				// // // // "Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
 		// #endif /* LOGGER >= DEBUG */
 	}
 
@@ -66,7 +66,7 @@ public class EventComponent extends AbstractDXRAMComponent {
 	 */
 	public <T extends AbstractEvent> void fireEvent(final T p_event) {
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Event fired: " + p_event);
+		// // // // m_logger.trace(getClass(), "Event fired: " + p_event);
 		// #endif /* LOGGER == TRACE */
 
 		ArrayList<EventListener<?>> listeners = m_eventListener.get(p_event.getClass().getName());

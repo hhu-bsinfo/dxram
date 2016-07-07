@@ -41,7 +41,7 @@ public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdg
 			if (m_partitionEndOffset == Long.MAX_VALUE) {
 				m_partitionEndOffset = file.length();
 			}
-			m_position = 0;
+			m_position = m_partitionStartOffset;
 		} catch (final FileNotFoundException e) {
 			throw new RuntimeException("Cannot load graph from file '" + p_path + "', does not exist.");
 		} catch (final IOException e) {

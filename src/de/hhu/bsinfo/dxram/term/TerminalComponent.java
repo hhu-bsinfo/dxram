@@ -43,7 +43,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 */
 	public boolean registerCommand(final AbstractTerminalCommand p_command) {
 		// #if LOGGER >= DEBUG
-		// // m_logger.debug(getClass(), "Registering command: " + p_command.getName());
+		// // // // m_logger.debug(getClass(), "Registering command: " + p_command.getName());
 		// #endif /* LOGGER >= DEBUG */
 
 		return m_commandMap.putIfAbsent(p_command.getName(), p_command) == null;

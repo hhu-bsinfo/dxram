@@ -80,7 +80,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 */
 	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Sending message " + p_message);
+		// // // // m_logger.trace(getClass(), "Sending message " + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		int res = m_networkHandler.sendMessage(p_message);
@@ -118,13 +118,13 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 */
 	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Sending request (sync): " + p_request);
+		// // // // m_logger.trace(getClass(), "Sending request (sync): " + p_request);
 		// #endif /* LOGGER == TRACE */
 
 		NetworkErrorCodes err = sendMessage(p_request);
 		if (err == NetworkErrorCodes.SUCCESS) {
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
+			// // // // m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
 			// #endif /* LOGGER == TRACE */
 
 			if (!p_request.waitForResponses(m_requestTimeoutMs)) {
@@ -133,13 +133,13 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 				// #endif /* LOGGER >= ERROR */
 
 				// #if LOGGER >= DEBUG
-				// // m_logger.debug(this.getClass(), m_networkHandler.getStatus());
+				// // // // m_logger.debug(this.getClass(), m_networkHandler.getStatus());
 				// #endif /* LOGGER >= DEBUG */
 
 				err = NetworkErrorCodes.RESPONSE_TIMEOUT;
 			} else {
 				// #if LOGGER == TRACE
-				// // m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
+				// // // // m_logger.trace(getClass(), "Received response: " + p_request.getResponse());
 				// #endif /* LOGGER == TRACE */
 			}
 		}

@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
+import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 
 /**
@@ -89,8 +90,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(),
-			// // "Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
+			// // // // m_logger.trace(getClass(),
+			// // // // "Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
 			// #endif /* LOGGER == TRACE */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 			m_rawMemory.initialize(ramSize,
@@ -211,6 +212,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			return chunkID;
 		}
 
+		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
+					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			// #endif /* LOGGER >= ERROR */
+			return chunkID;
+		}
+
 		if (m_cidTable.get(0) != 0) {
 			// delete old entry
 			address = m_cidTable.delete(0, false);
@@ -261,6 +270,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			return chunkID;
 		}
 
+		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
+					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			// #endif /* LOGGER >= ERROR */
+			return chunkID;
+		}
+
 		// verify this id is not used
 		if (m_cidTable.get(p_chunkId) == 0) {
 			address = m_rawMemory.malloc(p_size);
@@ -303,6 +320,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk");
+			// #endif /* LOGGER >= ERROR */
+			return chunkID;
+		}
+
+		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
+					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
 			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}

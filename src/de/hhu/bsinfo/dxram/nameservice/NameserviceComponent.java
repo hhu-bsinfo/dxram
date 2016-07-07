@@ -68,8 +68,8 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		try {
 			final int id = m_converter.convert(p_name);
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_chunkId) + ", name "
-					// // + p_name + ", id " + id);
+			// // // // m_logger.trace(getClass(), "Registering chunkID " + ChunkID.toHexString(p_chunkId) + ", name "
+					// // // // + p_name + ", id " + id);
 			// #endif /* LOGGER == TRACE */
 
 			m_lookup.insertNameserviceEntry(id, p_chunkId);
@@ -95,13 +95,13 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 		try {
 			final int id = m_converter.convert(p_name);
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "Lookup name " + p_name + ", id " + id);
+			// // // // m_logger.trace(getClass(), "Lookup name " + p_name + ", id " + id);
 			// #endif /* LOGGER == TRACE */
 
 			ret = m_lookup.getChunkIDForNameserviceEntry(id, p_timeoutMs);
 
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID " + ChunkID.toHexString(ret));
+			// // // // m_logger.trace(getClass(), "Lookup name " + p_name + ", resulting chunkID " + ChunkID.toHexString(ret));
 			// #endif /* LOGGER == TRACE */
 		} catch (final IllegalArgumentException e) {
 			// #if LOGGER >= ERROR

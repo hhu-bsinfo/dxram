@@ -211,14 +211,10 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 		// add filtered files
 		// #if LOGGER >= DEBUG
-		m_loggerService.debug(getClass(), "Setting up oel for current slave, iterating files in " + p_path);
+		// // m_loggerService.debug(getClass(), "Setting up oel for current slave, iterating files in " + p_path);
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
-			// #if LOGGER >= DEBUG
-			m_loggerService.debug(getClass(), "Found partition for slave: " + file);
-			// #endif /* LOGGER >= DEBUG */
-
 			long startOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getFileStartOffset();
 			long endOffset;
 
@@ -228,6 +224,12 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			} else {
 				endOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId() + 1).getFileStartOffset();
 			}
+
+			// #if LOGGER >= INFO
+			m_loggerService.info(getClass(),
+					"Partition for slave " + getSlaveId() + "graph data file: start " + startOffset + ", end "
+							+ endOffset);
+			// #endif /* LOGGER >= INFO */
 
 			orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
 					m_vertexBatchSize * 1000,

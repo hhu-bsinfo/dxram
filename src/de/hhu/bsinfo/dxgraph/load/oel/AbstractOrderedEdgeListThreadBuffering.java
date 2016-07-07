@@ -31,13 +31,6 @@ abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements 
 		m_partitionStartOffset = p_partitionStartOffset;
 		m_partitionEndOffset = p_partitionEndOffset;
 
-		String file = p_path;
-
-		int lastIndexPath = file.lastIndexOf('/');
-		if (lastIndexPath != -1) {
-			file = file.substring(lastIndexPath + 1);
-		}
-
 		setupFile(p_path);
 
 		start();
