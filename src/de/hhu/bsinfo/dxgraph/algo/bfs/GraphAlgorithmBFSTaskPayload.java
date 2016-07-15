@@ -15,11 +15,11 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSResultMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSTerminateMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
+import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadPartitionIndexTaskPayload;
-import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkMemoryService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
@@ -1127,6 +1127,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									m_loggerService.error(getClass(), "Sending vertex message to node "
 											+ NodeID.toHexString(msg.getDestination()) + " failed");
 									// #endif /* LOGGER >= ERROR */
+									// TODO abort on error flag
 									return;
 								}
 
@@ -1146,9 +1147,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				if (gett != validVertsInBatch) {
 					// #if LOGGER >= ERROR
 					m_loggerService.error(getClass(),
-							"Getting vertices in BFS Thread " + m_id + " failed: " + gett + " != " + validVertsInBatch);
+							"Error on getting vertices in BFS Thread " + m_id + ": " + gett + " != "
+									+ validVertsInBatch);
 					// #endif /* LOGGER >= ERROR */
-					return;
+					// TODO abort on error flag
+					// return
 				}
 
 				// --------------------------------------------------
@@ -1212,6 +1215,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										m_loggerService.error(getClass(), "Sending vertex message to node "
 												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
+										// TODO abort on error flag
 										return;
 									}
 
@@ -1265,6 +1269,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										m_loggerService.error(getClass(), "Sending vertex message to node "
 												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
+										// TODO abort on error flag
 										return;
 									}
 

@@ -287,9 +287,23 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				// also add current node ID
 				long[] neighbours = vertex.getNeighbours();
 				if (!p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(neighbours)) {
+					// #if LOGGER >= ERROR
 					m_loggerService.error(getClass(),
 							"Rebasing of neighbors of " + vertex + " failed, out of vertex id range of graph: " + Arrays
 									.toString(neighbours));
+					// #endif /* LOGGER >= ERROR */
+				}
+
+				// for now: check if we exceed the max number of neighbors that fit into a chunk
+				// this needs to be changed later to split the neighbor list and have a linked list
+				// we don't get this very often, so there aren't any real performance issues
+				if (neighbours.length > 134217660) {
+					// #if LOGGER >= WARNING
+					m_loggerService.warn(getClass(), "Neighbor count of vertex " + vertex + " exceeds total number"
+							+ "of neighbors that fit into a single vertex; will be truncated");
+					// #endif /* LOGGER >= WARNING */
+
+					vertex.setNeighbourCount(134217660);
 				}
 
 				vertexBuffer[readCount] = vertex;
@@ -311,7 +325,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + readCount);
 				// #endif /* LOGGER >= ERROR */
-				return false;
+				//return false;
 			}
 
 			count = m_chunkService.put((DataStructure[]) vertexBuffer);
@@ -320,7 +334,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				m_loggerService.error(getClass(),
 						"Putting vertex data for chunks failed: " + count + " != " + readCount);
 				// #endif /* LOGGER >= ERROR */
-				return false;
+				//return false;
 			}
 
 			totalVerticesLoaded += readCount;
