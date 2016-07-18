@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
@@ -34,12 +35,18 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			new Argument("graphPath", null, false, "Path containing the graph data to load.");
 	private static final Argument MS_ARG_VERTEX_BATCH_SIZE =
 			new Argument("vertexBatchSize", null, false, "Size of a vertex batch for the loading process.");
+	private static final Argument MS_ARG_FILTER_DUP_EDGES =
+			new Argument("filterDupEdges", null, false, "Check for and filter duplicate edges per vertex.");
+	private static final Argument MS_ARG_FILTER_SELF_LOOPS =
+			new Argument("filterSelfLoops", null, false, "Check for and filter self loops per vertex.");
 
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
 	private String m_path = "./";
 	private int m_vertexBatchSize = 100;
+	private boolean m_filterDupEdges;
+	private boolean m_filterSelfLoops;
 
 	/**
 	 * Constructor
@@ -129,15 +136,31 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
+	public void handleSignal(final Signal p_signal) {
+		switch (p_signal) {
+			case SIGNAL_ABORT: {
+				// ignore signal here
+				break;
+			}
+			default:
+				break;
+		}
+	}
+
+	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
 		p_argumentList.setArgument(MS_ARG_PATH);
 		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
+		p_argumentList.setArgument(MS_ARG_FILTER_DUP_EDGES);
+		p_argumentList.setArgument(MS_ARG_FILTER_SELF_LOOPS);
 	}
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
 		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
 		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
+		m_filterDupEdges = p_argumentList.getArgumentValue(MS_ARG_FILTER_DUP_EDGES, Boolean.class);
+		m_filterSelfLoops = p_argumentList.getArgumentValue(MS_ARG_FILTER_SELF_LOOPS, Boolean.class);
 	}
 
 	@Override
@@ -147,8 +170,10 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		p_exporter.writeInt(m_path.length());
 		p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
 		p_exporter.writeInt(m_vertexBatchSize);
+		p_exporter.writeByte((byte) (m_filterDupEdges ? 1 : 0));
+		p_exporter.writeByte((byte) (m_filterSelfLoops ? 1 : 0));
 
-		return size + Integer.BYTES + m_path.length() + Integer.BYTES;
+		return size + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	@Override
@@ -160,19 +185,22 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		p_importer.readBytes(tmp);
 		m_path = new String(tmp, StandardCharsets.US_ASCII);
 		m_vertexBatchSize = p_importer.readInt();
+		m_filterDupEdges = p_importer.readByte() > 0;
+		m_filterSelfLoops = p_importer.readByte() > 0;
 
-		return size + Integer.BYTES + m_path.length() + Integer.BYTES;
+		return size + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	@Override
 	public int sizeofObject() {
-		return super.sizeofObject() + Integer.BYTES + m_path.length() + Integer.BYTES;
+		return super.sizeofObject() + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	/**
 	 * Setup an edge list instance for the current slave node.
 	 *
-	 * @param p_path Path with indexed graph data partitions.
+	 * @param p_path                Path with indexed graph data partitions.
+	 * @param p_graphPartitionIndex Loaded partition index of the graph
 	 * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
 	 */
 	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path,
@@ -231,10 +259,20 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 							+ endOffset);
 			// #endif /* LOGGER >= INFO */
 
+			// get the first vertex id of the partition to load
+			long startVertexId = 0;
+			for (int i = 0; i < getSlaveId(); i++) {
+				startVertexId += p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount();
+			}
+
 			orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
 					m_vertexBatchSize * 1000,
 					startOffset,
-					endOffset);
+					endOffset,
+					m_filterDupEdges,
+					m_filterSelfLoops,
+					p_graphPartitionIndex.calcTotalVertexCount(),
+					startVertexId);
 			break;
 		}
 
@@ -353,15 +391,24 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				"Loading done, vertex/edge count: " + totalVerticesLoaded + "/" + totalEdgesLoaded);
 		// #endif /* LOGGER >= INFO */
 
-		if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded
-				|| currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
-			// #if LOGGER >= ERROR
-			m_loggerService.error(getClass(),
-					"Loading failed, vertex/edge count (" + totalVerticesLoaded + "/" + totalEdgesLoaded
-							+ ") does not match data in graph partition index (" + currentPartitionIndexEntry
-							.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
-			// #endif /* LOGGER >= ERROR */
-			return false;
+		// filtering removes edges, so this would always fail
+		if (!m_filterSelfLoops && !m_filterDupEdges) {
+			if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded
+					|| currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
+				// #if LOGGER >= ERROR
+				m_loggerService.error(getClass(),
+						"Loading failed, vertex/edge count (" + totalVerticesLoaded + "/" + totalEdgesLoaded
+								+ ") does not match data in graph partition index (" + currentPartitionIndexEntry
+								.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
+				// #endif /* LOGGER >= ERROR */
+				return false;
+			}
+		} else {
+			// #if LOGGER >= INFO
+			m_loggerService.info(getClass(),
+					"Graph was filtered during loading: duplicate edges " + m_filterDupEdges + ", self loops "
+							+ m_filterSelfLoops);
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return true;

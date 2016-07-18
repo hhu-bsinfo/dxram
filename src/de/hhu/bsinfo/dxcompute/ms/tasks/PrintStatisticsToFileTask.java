@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -15,6 +16,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Print the statistics to a file.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
@@ -33,8 +35,8 @@ public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
 
 	/**
 	 * Set the filepath to the output file to print to.
-	 * @param p_path
-	 *            Filepath of the file to print to.
+	 *
+	 * @param p_path Filepath of the file to print to.
 	 */
 	public void setOutputFilePath(final String p_path) {
 		m_path = p_path;
@@ -87,6 +89,11 @@ public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
 		out.close();
 
 		return 0;
+	}
+
+	@Override
+	public void handleSignal(final Signal p_signal) {
+		// ignore signals
 	}
 
 	@Override

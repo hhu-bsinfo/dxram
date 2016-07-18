@@ -4,9 +4,12 @@ package de.hhu.bsinfo.dxgraph.algo.bfs;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVectorHybrid;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
@@ -67,6 +70,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			new Argument("beamerFormulaGraphEdgeDeg", "16", true,
 					"Avg. edge degree of the graph (parameter on typical rmat generators). "
 							+ "Used to determine top down <-> bottom up switching on beamer mode");
+	private static final Argument MS_ARG_ABORT_BFS_ON_ERROR =
+			new Argument("abortBFSOnError", null, true, "Abort BFS execution on error or continue even on errors");
 
 	private static final String MS_BARRIER_IDENT_0 = "BF0";
 
@@ -89,6 +94,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private boolean m_markVertices = true;
 	private boolean m_beamerMode = true;
 	private int m_beamerFormulaGraphEdgeDeg = 16;
+	private boolean m_abortBFSOnError = true;
+
+	private BFS m_curBFS = null;
+	private Lock m_signalLock = new ReentrantLock(false);
+	private volatile boolean m_signalAbortTriggered = false;
 
 	private int m_barrierId0 = BarrierID.INVALID_ID;
 
@@ -189,21 +199,34 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		int iteration = 0;
 		for (long root : rootList.getRoots()) {
+			if (m_signalAbortTriggered) {
+				break;
+			}
+
 			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(), "Executing BFS with root " + ChunkID.toHexString(root));
 			// #endif /* LOGGER >= INFO */
 
-			BFS bfs = new BFS(root);
-			bfs.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount(), m_markVertices);
+			m_signalLock.lock();
+			m_curBFS = new BFS(root);
+			m_signalLock.unlock();
+
+			m_curBFS.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount(), m_markVertices);
 			if (ChunkID.getCreatorID(root) == m_nodeId) {
-				bfs.execute(root);
+				m_curBFS.execute(root);
 			} else {
-				bfs.execute(ChunkID.INVALID_ID);
+				m_curBFS.execute(ChunkID.INVALID_ID);
 			}
 
-			System.out.println("Local results of iteration " + iteration + ":\n" + bfs.getBFSResult());
+			System.out.println("Local results of iteration " + iteration + ":\n" + m_curBFS.getBFSResult());
 
-			bfs.shutdown();
+			m_signalLock.lock();
+			// check if an abort signal has killed the run
+			if (m_curBFS != null) {
+				m_curBFS.shutdown();
+				m_curBFS = null;
+			}
+			m_signalLock.unlock();
 
 			// limit this to a single iteration on marking vertices
 			// because we altered the vertex data, further iterations won't work (vertices already marked as visited)
@@ -221,7 +244,32 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_barrierId0 = BarrierID.INVALID_ID;
 		}
 
-		return 0;
+		if (m_signalAbortTriggered) {
+			return -5;
+		} else {
+			return 0;
+		}
+	}
+
+	@Override
+	public void handleSignal(final Signal p_signal) {
+		switch (p_signal) {
+			case SIGNAL_ABORT: {
+				m_signalAbortTriggered = true;
+
+				// kill everything running
+				m_signalLock.lock();
+
+				if (m_curBFS != null) {
+					m_curBFS.shutdown();
+					m_curBFS = null;
+				}
+
+				m_signalLock.unlock();
+
+				break;
+			}
+		}
 	}
 
 	@Override
@@ -233,6 +281,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		p_argumentList.setArgument(MS_ARG_MARK_VERTICES);
 		p_argumentList.setArgument(MS_ARG_BEAMER_MODE);
 		p_argumentList.setArgument(MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG);
+		p_argumentList.setArgument(MS_ARG_ABORT_BFS_ON_ERROR);
 	}
 
 	@Override
@@ -245,6 +294,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_beamerMode = p_argumentList.getArgumentValue(MS_ARG_BEAMER_MODE, Boolean.class);
 		m_beamerFormulaGraphEdgeDeg =
 				p_argumentList.getArgumentValue(MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG, Integer.class);
+		m_abortBFSOnError = p_argumentList.getArgumentValue(MS_ARG_ABORT_BFS_ON_ERROR, Boolean.class);
 	}
 
 	@Override
@@ -259,9 +309,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		p_exporter.writeByte((byte) (m_markVertices ? 1 : 0));
 		p_exporter.writeByte((byte) (m_beamerMode ? 1 : 0));
 		p_exporter.writeInt(m_beamerFormulaGraphEdgeDeg);
+		p_exporter.writeByte((byte) (m_abortBFSOnError ? 1 : 0));
 
 		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
-				+ Integer.BYTES;
+				+ Integer.BYTES + Byte.BYTES;
 	}
 
 	@Override
@@ -278,15 +329,16 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_markVertices = p_importer.readByte() > 0;
 		m_beamerMode = p_importer.readByte() > 0;
 		m_beamerFormulaGraphEdgeDeg = p_importer.readInt();
+		m_abortBFSOnError = p_importer.readByte() > 0;
 
 		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
-				+ Integer.BYTES;
+				+ Integer.BYTES + Byte.BYTES;
 	}
 
 	@Override
 	public int sizeofObject() {
 		return super.sizeofObject() + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3
-				+ 2 * Byte.BYTES + Integer.BYTES;
+				+ 2 * Byte.BYTES + Integer.BYTES + Byte.BYTES;
 	}
 
 	/**
@@ -403,7 +455,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				if (m_chunkService.get(vertex) != 1) {
 					m_loggerService.error(getClass(),
 							"Getting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
-					// TODO signal all other slaves to terminate (error)
+					// signal all other slaves to terminate (error)
+					sendSignalToMaster(Signal.SIGNAL_ABORT);
 					return;
 				}
 
@@ -413,7 +466,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					if (!m_chunkMemoryService.writeInt(vertex.getID(), 0, m_bfsLocalResult.m_totalBFSDepth)) {
 						m_loggerService.error(getClass(),
 								"Marking root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
-						// TODO signal all other slaves to terminate (error)
+						sendSignalToMaster(Signal.SIGNAL_ABORT);
 						return;
 					}
 				}
@@ -477,6 +530,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					while (t < m_threads.length) {
 						if (!m_threads[t].hasIterationFinished()) {
 							Thread.yield();
+							if (m_signalAbortTriggered) {
+								return;
+							}
+
 							continue;
 						}
 						numEdgesInNextFrontier += m_threads[t].getEdgeCountNextFrontier();
@@ -505,10 +562,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								m_loggerService.error(getClass(),
 										"Sending level finished message to " + NodeID.toHexString(slavesNodeIds[i])
 												+ " failed: " + err);
-								// TODO abort execution and have the master send a kill signal
+								// abort execution and have the master send a kill signal
 								// for this task to all other slaves
-
-								i--;
+								sendSignalToMaster(Signal.SIGNAL_ABORT);
+								return;
 							}
 						}
 					}
@@ -516,6 +573,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					// busy wait until everyone is done
 					while (!m_bfsSlavesLevelFinishedCounter.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
 						Thread.yield();
+						if (m_signalAbortTriggered) {
+							return;
+						}
 					}
 				}
 				// --------------------------------
@@ -550,10 +610,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 								m_loggerService.error(getClass(),
 										"Sending bfs terminate message to " + NodeID.toHexString(slavesNodeIds[i])
 												+ " failed: " + err);
-								// TODO abort execution and have the master send a kill signal
+								// abort execution and have the master send a kill signal
 								// for this task to all other slaves
-
-								i--;
+								sendSignalToMaster(Signal.SIGNAL_ABORT);
+								return;
 							}
 						}
 					}
@@ -632,12 +692,25 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_bfsLocalResult.m_avgTraversedVertsPerSecond = m_statisticsThread.getAvgVerticesPerSec();
 			m_bfsLocalResult.m_avgTraversedEdgesPerSecond = m_statisticsThread.getAvgEdgesPerSec();
 			m_bfsLocalResult.m_totalTimeMs = m_statisticsThread.getTotalTimeMs();
+
+			m_statisticsThread = null;
 		}
 
 		/**
 		 * Shutdown the instance and cleanup resources used for the BFS run.
 		 */
 		void shutdown() {
+			// thread not shut down if execution was aborted
+			if (m_statisticsThread != null) {
+				m_statisticsThread.shutdown();
+				try {
+					m_statisticsThread.join();
+				} catch (final InterruptedException ignored) {
+				}
+
+				m_statisticsThread = null;
+			}
+
 			for (BFSThread thread : m_threads) {
 				thread.exitThread();
 			}
@@ -1127,8 +1200,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									m_loggerService.error(getClass(), "Sending vertex message to node "
 											+ NodeID.toHexString(msg.getDestination()) + " failed");
 									// #endif /* LOGGER >= ERROR */
-									// TODO abort on error flag
-									return;
+									if (m_abortBFSOnError) {
+										sendSignalToMaster(Signal.SIGNAL_ABORT);
+										return;
+									}
 								}
 
 								// re-use messages
@@ -1150,8 +1225,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							"Error on getting vertices in BFS Thread " + m_id + ": " + gett + " != "
 									+ validVertsInBatch);
 					// #endif /* LOGGER >= ERROR */
-					// TODO abort on error flag
-					// return
+					if (m_abortBFSOnError) {
+						sendSignalToMaster(Signal.SIGNAL_ABORT);
+						return;
+					}
 				}
 
 				// --------------------------------------------------
@@ -1215,8 +1292,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										m_loggerService.error(getClass(), "Sending vertex message to node "
 												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
-										// TODO abort on error flag
-										return;
+										if (m_abortBFSOnError) {
+											sendSignalToMaster(Signal.SIGNAL_ABORT);
+											return;
+										}
 									}
 
 									msg.reset();
@@ -1269,8 +1348,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										m_loggerService.error(getClass(), "Sending vertex message to node "
 												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
-										// TODO abort on error flag
-										return;
+										if (m_abortBFSOnError) {
+											sendSignalToMaster(Signal.SIGNAL_ABORT);
+											return;
+										}
 									}
 
 									// re-use messages

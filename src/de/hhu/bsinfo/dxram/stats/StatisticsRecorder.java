@@ -2,14 +2,13 @@
 package de.hhu.bsinfo.dxram.stats;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Records statistics for a number of operations. Create one recorder
  * for a subset of operations, for example: category memory management,
  * operations alloc, free, ...
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class StatisticsRecorder {
@@ -23,10 +22,9 @@ public class StatisticsRecorder {
 
 	/**
 	 * Constructor
-	 * @param p_categoryId
-	 *            Category identifier for this recorder.
-	 * @param p_categoryName
-	 *            Readable category name string.
+	 *
+	 * @param p_categoryId   Category identifier for this recorder.
+	 * @param p_categoryName Readable category name string.
 	 */
 	public StatisticsRecorder(final int p_categoryId, final String p_categoryName) {
 		m_categoryId = p_categoryId;
@@ -35,6 +33,7 @@ public class StatisticsRecorder {
 
 	/**
 	 * Get the category id.
+	 *
 	 * @return Category id.
 	 */
 	public int getId() {
@@ -43,6 +42,7 @@ public class StatisticsRecorder {
 
 	/**
 	 * Get the name of the recorder (category).
+	 *
 	 * @return Name of the recorder.
 	 */
 	public String getName() {
@@ -51,6 +51,7 @@ public class StatisticsRecorder {
 
 	/**
 	 * Check if the recorder is enabled to record statistics.
+	 *
 	 * @return True if enabled, false otherwise.
 	 */
 	public boolean isEnabled() {
@@ -59,8 +60,8 @@ public class StatisticsRecorder {
 
 	/**
 	 * Enable/Disable the recorder.
-	 * @param p_enabled
-	 *            True to enable, false to disable.
+	 *
+	 * @param p_enabled True to enable, false to disable.
 	 */
 	public void setEnabled(final boolean p_enabled) {
 		m_enabled = p_enabled;
@@ -68,8 +69,8 @@ public class StatisticsRecorder {
 
 	/**
 	 * Create a new operation to be recorded within this recorder.
-	 * @param p_name
-	 *            Name for the operation.
+	 *
+	 * @param p_name Name for the operation.
 	 * @return Id to identify the newly created operation.
 	 */
 	public int createOperation(final String p_name) {
@@ -82,8 +83,8 @@ public class StatisticsRecorder {
 
 	/**
 	 * Get an operation from the recorder.
-	 * @param p_id
-	 *            Id of the operation to get.
+	 *
+	 * @param p_id Id of the operation to get.
 	 * @return Operation referenced by id.
 	 */
 	public Operation getOperation(final int p_id) {
@@ -106,6 +107,7 @@ public class StatisticsRecorder {
 	 * of one task/method call, for example: memory management
 	 * -> alloc operation
 	 * Each operation is part of a recorder.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
 	public static final class Operation {
@@ -120,28 +122,33 @@ public class StatisticsRecorder {
 		private boolean m_enabled = true;
 
 		// stats per thread, avoids having locks
-		private Map<Long, Stats> m_statsMap = new ConcurrentHashMap<Long, Stats>();
+		//private Map<Long, Stats> m_statsMap = new ConcurrentHashMap<Long, Stats>();
+
+		private static int ms_blockSizeStatsMap = 100;
+		private Stats[][] m_statsMap = new Stats[ms_blockSizeStatsMap][];
+		private int m_statsMapBlockPos;
 
 		/**
 		 * Constructor
-		 * @param p_categoryId
-		 *            Id of the category this operation belongs to.
-		 * @param p_categoryName
-		 *            Name of the category this operation belongs to.
-		 * @param p_id
-		 *            Id of the operation.
-		 * @param p_name
-		 *            Name of the operation.
+		 *
+		 * @param p_categoryId   Id of the category this operation belongs to.
+		 * @param p_categoryName Name of the category this operation belongs to.
+		 * @param p_id           Id of the operation.
+		 * @param p_name         Name of the operation.
 		 */
 		private Operation(final int p_categoryId, final String p_categoryName, final int p_id, final String p_name) {
 			m_categoryId = p_categoryId;
 			m_id = p_id;
 			m_categoryName = p_categoryName;
 			m_name = p_name;
+
+			m_statsMap[0] = new Stats[ms_blockSizeStatsMap];
+			m_statsMapBlockPos = 1;
 		}
 
 		/**
 		 * Get the category id this operation belongs to.
+		 *
 		 * @return Category id.
 		 */
 		public int getCategoryId() {
@@ -150,6 +157,7 @@ public class StatisticsRecorder {
 
 		/**
 		 * Get the id of the operation (within the category)
+		 *
 		 * @return Id of the operation.
 		 */
 		public int getId() {
@@ -166,6 +174,10 @@ public class StatisticsRecorder {
 			}
 
 			long threadId = Thread.currentThread().getId();
+			if (threadId > m_statsMapBlockPos * ms_blockSizeStatsMap) {
+				// TODO add more 
+			}
+
 			Stats stats = m_statsMap.get(threadId);
 			if (stats == null) {
 				stats = new Stats(threadId);
@@ -179,8 +191,8 @@ public class StatisticsRecorder {
 		/**
 		 * Call this when/before you start/enter the call/operation you want
 		 * to record.
-		 * @param p_val
-		 *            Value to added to the long counter.
+		 *
+		 * @param p_val Value to added to the long counter.
 		 */
 		public void enter(final long p_val) {
 			if (!m_enabled) {
@@ -202,8 +214,8 @@ public class StatisticsRecorder {
 		/**
 		 * Call this when/before you start/enter the call/operation you want
 		 * to record.
-		 * @param p_val
-		 *            Value to added to the double counter.
+		 *
+		 * @param p_val Value to added to the double counter.
 		 */
 		public void enter(final double p_val) {
 			if (!m_enabled) {
@@ -255,6 +267,7 @@ public class StatisticsRecorder {
 
 		/**
 		 * Internal state for an operation for statistics.
+		 *
 		 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 		 */
 		public static final class Stats {
@@ -272,8 +285,8 @@ public class StatisticsRecorder {
 
 			/**
 			 * Constructor
-			 * @param p_threadId
-			 *            Id of the thread this object is used in.
+			 *
+			 * @param p_threadId Id of the thread this object is used in.
 			 */
 			private Stats(final long p_threadId) {
 				m_threadId = p_threadId;
@@ -281,6 +294,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Get the operation count recorded (i.e. how often was enter called).
+			 *
 			 * @return Operation count.
 			 */
 			public long getOpCount() {
@@ -289,6 +303,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Get the total amount of time we were in the enter/leave section in ns.
+			 *
 			 * @return Total time in ns.
 			 */
 			public long getTotalTimeNs() {
@@ -297,6 +312,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Get the shortest time we spent in the enter/leave section in ns.
+			 *
 			 * @return Shortest time in ns.
 			 */
 			public long getShortestTimeNs() {
@@ -305,6 +321,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Get the longest time we spent in the enter/leave section in ns.
+			 *
 			 * @return Longest time in ns.
 			 */
 			public long getLongestTimeNs() {
@@ -313,6 +330,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Get the avarage time we spent in the enter/leave section in ns.
+			 *
 			 * @return Avarage time in ns.
 			 */
 			public long getAvarageTimeNs() {
@@ -321,6 +339,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Get the long counter. Depending on the operation, this is used for tracking different things.
+			 *
 			 * @return Long counter value.
 			 */
 			public long getCounter() {
@@ -329,6 +348,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Get the double counter. Depending on the operation, this is used for tracking different things.
+			 *
 			 * @return Double counter value.
 			 */
 			public double getCounter2() {
@@ -337,6 +357,7 @@ public class StatisticsRecorder {
 
 			/**
 			 * Calculate the number of operations per second.
+			 *
 			 * @return Number of operations per second.
 			 */
 			public float getOpsPerSecond() {

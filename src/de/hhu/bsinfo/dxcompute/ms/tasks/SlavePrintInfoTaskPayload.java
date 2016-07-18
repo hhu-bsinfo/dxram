@@ -2,11 +2,13 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Print information about the current slave to the console.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class SlavePrintInfoTaskPayload extends AbstractTaskPayload {
@@ -29,5 +31,10 @@ public class SlavePrintInfoTaskPayload extends AbstractTaskPayload {
 		}
 
 		return 0;
+	}
+
+	@Override
+	public void handleSignal(final Signal p_signal) {
+		// ignore signals
 	}
 }

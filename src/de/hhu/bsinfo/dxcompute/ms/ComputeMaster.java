@@ -10,9 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static de.hhu.bsinfo.dxcompute.ms.Signal.SIGNAL_ABORT;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
+import de.hhu.bsinfo.dxcompute.ms.messages.SignalMessage;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -176,6 +178,9 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 					case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
 						incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
 						break;
+					case MasterSlaveMessages.SUBTYPE_SIGNAL:
+						incomingSignalMessage((SignalMessage) p_message);
+						break;
 					default:
 						break;
 				}
@@ -337,7 +342,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 		// #if LOGGER >= DEBUG
 		// // // // m_logger.debug(getClass(),
-				// // // // "Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
+		// // // // "Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
 		// #endif /* LOGGER >= DEBUG */
 
 		Pair<short[], long[]> result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
@@ -438,6 +443,40 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 				m_logger.error(getClass(), "Sending response to join request of slave "
 						+ NodeID.toHexString(p_message.getSource()) + "failed: " + err);
 				// #endif /* LOGGER >= ERROR */
+			}
+		}
+	}
+
+	/**
+	 * Handle a SignalMessage
+	 *
+	 * @param p_message SignalMessage
+	 */
+	private void incomingSignalMessage(final SignalMessage p_message) {
+		switch (p_message.getSignal()) {
+			case SIGNAL_ABORT: {
+				// the slave requested aborting the currently running task
+				// send an abort to all other slaves as well
+				for (short slaveNodeId : m_signedOnSlaves) {
+					NetworkErrorCodes err =
+							m_network.sendMessage(new SignalMessage(slaveNodeId, p_message.getSignal()));
+					if (err != NetworkErrorCodes.SUCCESS) {
+						// #if LOGGER >= ERROR
+						m_logger.error(getClass(), "Sending signal to slave "
+								+ NodeID.toHexString(p_message.getSource()) + "failed: " + err);
+						// #endif /* LOGGER >= ERROR */
+					}
+				}
+
+				break;
+			}
+			default: {
+				// #if LOGGER >= ERROR
+
+				m_logger.error(getClass(), "Unhandled signal " + p_message.getSignal() + " from peer " +
+						NodeID.toHexString(p_message.getSource()));
+				// #endif /* LOGGER >= ERROR */
+				break;
 			}
 		}
 	}

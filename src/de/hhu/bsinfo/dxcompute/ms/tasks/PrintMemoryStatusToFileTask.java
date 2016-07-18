@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
@@ -14,6 +15,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Print the current memory status to a file.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPayload {
@@ -32,8 +34,8 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 
 	/**
 	 * Set the filepath to the output file to print to.
-	 * @param p_path
-	 *            Filepath of the file to print to.
+	 *
+	 * @param p_path Filepath of the file to print to.
 	 */
 	public void setOutputFilePath(final String p_path) {
 		m_path = p_path;
@@ -85,6 +87,11 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 		out.close();
 
 		return 0;
+	}
+
+	@Override
+	public void handleSignal(final Signal p_signal) {
+		// ignore signals
 	}
 
 	@Override

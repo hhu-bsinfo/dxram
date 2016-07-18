@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 import java.nio.charset.StandardCharsets;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -12,6 +13,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Print a message to the console.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class PrintTaskPayload extends AbstractTaskPayload {
@@ -30,8 +32,8 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Message to print.
-	 * @param p_msg
-	 *            Message.
+	 *
+	 * @param p_msg Message.
 	 */
 	public void setMessage(final String p_msg) {
 		m_msg = p_msg;
@@ -41,6 +43,11 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 	public int execute(final DXRAMServiceAccessor p_dxram) {
 		System.out.println(m_msg);
 		return 0;
+	}
+
+	@Override
+	public void handleSignal(final Signal p_signal) {
+		// ignore signals
 	}
 
 	@Override

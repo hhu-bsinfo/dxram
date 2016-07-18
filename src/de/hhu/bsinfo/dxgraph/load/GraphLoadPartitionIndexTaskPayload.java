@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -103,6 +104,16 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 		}
 
 		return 0;
+	}
+
+	@Override
+	public void handleSignal(final Signal p_signal) {
+		switch (p_signal) {
+			case SIGNAL_ABORT: {
+				// ignore signal here
+				break;
+			}
+		}
 	}
 
 	@Override

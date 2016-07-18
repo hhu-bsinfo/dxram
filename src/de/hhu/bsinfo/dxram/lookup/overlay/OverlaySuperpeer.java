@@ -85,6 +85,7 @@ import de.hhu.bsinfo.utils.CRC16;
 
 /**
  * Superpper functionality for overlay
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public class OverlaySuperpeer implements MessageReceiver {
@@ -132,28 +133,18 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Creates an instance of OverlaySuperpeer
-	 * @param p_nodeID
-	 *            the own NodeID
-	 * @param p_contactSuperpeer
-	 *            the superpeer to contact for joining
-	 * @param p_initialNumberOfSuperpeers
-	 *            the number of expeced superpeers
-	 * @param p_sleepInterval
-	 *            the ping interval
-	 * @param p_maxNumOfBarriers
-	 *            Max number of barriers
-	 * @param p_storageMaxNumEntries
-	 *            Max number of entries for the superpeer storage (-1 to disable)
-	 * @param p_storageMaxSizeBytes
-	 *            Max size for the superpeer storage in bytes
-	 * @param p_boot
-	 *            the BootComponent
-	 * @param p_logger
-	 *            the LoggerComponent
-	 * @param p_network
-	 *            the NetworkComponent
-	 * @param p_event
-	 *            the EventComponent
+	 *
+	 * @param p_nodeID                    the own NodeID
+	 * @param p_contactSuperpeer          the superpeer to contact for joining
+	 * @param p_initialNumberOfSuperpeers the number of expeced superpeers
+	 * @param p_sleepInterval             the ping interval
+	 * @param p_maxNumOfBarriers          Max number of barriers
+	 * @param p_storageMaxNumEntries      Max number of entries for the superpeer storage (-1 to disable)
+	 * @param p_storageMaxSizeBytes       Max size for the superpeer storage in bytes
+	 * @param p_boot                      the BootComponent
+	 * @param p_logger                    the LoggerComponent
+	 * @param p_network                   the NetworkComponent
+	 * @param p_event                     the EventComponent
 	 */
 	public OverlaySuperpeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers,
 			final int p_sleepInterval, final int p_maxNumOfBarriers, final int p_storageMaxNumEntries,
@@ -212,6 +203,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Returns whether this superpeer is last in overlay or not
+	 *
 	 * @return whether this superpeer is last in overlay or not
 	 */
 	public boolean isLastSuperpeer() {
@@ -236,6 +228,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Returns current predecessor
+	 *
 	 * @return the predecessor
 	 */
 	protected short getPredecessor() {
@@ -244,8 +237,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Sets the predecessor for the current superpeer
-	 * @param p_nodeID
-	 *            NodeID of the predecessor
+	 *
+	 * @param p_nodeID NodeID of the predecessor
 	 * @note assumes m_overlayLock has been locked
 	 */
 	protected void setPredecessor(final short p_nodeID) {
@@ -257,6 +250,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Returns current successor
+	 *
 	 * @return the sucessor
 	 */
 	protected short getSuccessor() {
@@ -265,8 +259,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Sets the successor for the current superpeer
-	 * @param p_nodeID
-	 *            NodeID of the successor
+	 *
+	 * @param p_nodeID NodeID of the successor
 	 * @note assumes m_overlayLock has been locked
 	 */
 	protected void setSuccessor(final short p_nodeID) {
@@ -278,6 +272,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Returns all peers
+	 *
 	 * @return all peers
 	 */
 	protected ArrayList<Short> getPeers() {
@@ -286,10 +281,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Determines all peers that are in the responsible area
-	 * @param p_oldSuperpeer
-	 *            the old superpeer
-	 * @param p_currentSuperpeer
-	 *            the new superpeer
+	 *
+	 * @param p_oldSuperpeer     the old superpeer
+	 * @param p_currentSuperpeer the new superpeer
 	 * @return all peers in responsible area
 	 */
 	ArrayList<Short> getPeersInResponsibleArea(final short p_oldSuperpeer, final short p_currentSuperpeer) {
@@ -328,8 +322,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Removes given peer from all backup ranges as backup peer
-	 * @param p_failedPeer
-	 *            the failed peer
+	 *
+	 * @param p_failedPeer the failed peer
 	 */
 	void removeFailedPeer(final short p_failedPeer) {
 		LookupTree tree;
@@ -351,10 +345,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Compares given peer list with local list and returns all missing backup data
-	 * @param p_peers
-	 *            all peers the requesting superpeer stores backups for
-	 * @param p_trees
-	 *            an empty ArrayList to put missing LookupTrees in
+	 *
+	 * @param p_peers all peers the requesting superpeer stores backups for
+	 * @param p_trees an empty ArrayList to put missing LookupTrees in
 	 * @return the backup data of missing peers in given peer list
 	 */
 	byte[] compareAndReturnBackups(final ArrayList<Short> p_peers, final ArrayList<LookupTree> p_trees) {
@@ -382,7 +375,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 					p_trees.add(getCIDTree(currentPeer));
 					// #if LOGGER == TRACE
 					// // // // m_logger.trace(getClass(), "Spreading meta-data of " + NodeID.toHexString(currentPeer)
-							// // // // + " to " + NodeID.toHexString(m_successor));
+					// // // // + " to " + NodeID.toHexString(m_successor));
 					// #endif /* LOGGER == TRACE */
 				}
 				if (index == m_assignedPeersIncludingBackup.size()) {
@@ -405,10 +398,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Stores given backups
-	 * @param p_trees
-	 *            the new LookupTrees
-	 * @param p_mappings
-	 *            the new mappings
+	 *
+	 * @param p_trees    the new LookupTrees
+	 * @param p_mappings the new mappings
 	 */
 	void storeIncomingBackups(final ArrayList<LookupTree> p_trees, final byte[] p_mappings) {
 		LookupTree tree;
@@ -427,8 +419,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Deletes all CIDTrees that are not in the responsible area
-	 * @param p_responsibleArea
-	 *            the responsible area
+	 *
+	 * @param p_responsibleArea the responsible area
 	 * @note assumes m_overlayLock has been locked
 	 * @note is called periodically
 	 */
@@ -465,8 +457,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Takes over failed superpeers peers and CIDTrees
-	 * @param p_nodeID
-	 *            the NodeID
+	 *
+	 * @param p_nodeID the NodeID
 	 */
 	void takeOverPeersAndCIDTrees(final short p_nodeID) {
 		short predecessor;
@@ -533,8 +525,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles a node failure
-	 * @param p_failedNode
-	 *            the failed nodes NodeID
+	 *
+	 * @param p_failedNode the failed nodes NodeID
 	 */
 	void failureHandling(final short p_failedNode) {
 		short[] responsibleArea;
@@ -589,7 +581,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				m_overlayLock.unlock();
 				if (3 < m_superpeers.size()
 						&& OverlayHelper.getResponsibleSuperpeer((short) (responsibleArea[0] + 1), m_superpeers,
-								m_overlayLock, m_logger) == p_failedNode) {
+						m_overlayLock, m_logger) == p_failedNode) {
 					// #if LOGGER >= INFO
 					m_logger.info(getClass(), "Failed node " + NodeID.toHexString(p_failedNode)
 							+ " was in my responsible area -> spreading his data");
@@ -782,10 +774,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Joins the superpeer overlay through contactSuperpeer
-	 * @param p_contactSuperpeer
-	 *            NodeID of a known superpeer
-	 * @param p_sleepInterval
-	 *            the ping interval
+	 *
+	 * @param p_contactSuperpeer NodeID of a known superpeer
+	 * @param p_sleepInterval    the ping interval
 	 * @return whether the joining was successful
 	 */
 	private boolean createOrJoinSuperpeerOverlay(final short p_contactSuperpeer, final int p_sleepInterval) {
@@ -797,7 +788,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(), "Entering createOrJoinSuperpeerOverlay with: p_contactSuperpeer="
-				// // // // + NodeID.toHexString(p_contactSuperpeer));
+		// // // // + NodeID.toHexString(p_contactSuperpeer));
 		// #endif /* LOGGER == TRACE */
 
 		contactSuperpeer = p_contactSuperpeer;
@@ -825,7 +816,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			while (-1 != contactSuperpeer) {
 				// #if LOGGER == TRACE
 				// // // // m_logger.trace(getClass(), "Contacting " + NodeID.toHexString(contactSuperpeer)
-						// // // // + " to join the ring, I am " + NodeID.toHexString(m_nodeID));
+				// // // // + " to join the ring, I am " + NodeID.toHexString(m_nodeID));
 				// #endif /* LOGGER == TRACE */
 
 				joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_SUPERPEER);
@@ -896,8 +887,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Returns the requested CIDTree
-	 * @param p_nodeID
-	 *            NodeID for that the CIDTree is requested
+	 *
+	 * @param p_nodeID NodeID for that the CIDTree is requested
 	 * @return the CIDTree for given NodeID
 	 * @note assumes m_dataLock has been locked
 	 */
@@ -907,10 +898,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Adds the given CIDTree to NIDTable
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_tree
-	 *            the CIDTree to add
+	 *
+	 * @param p_nodeID the NodeID
+	 * @param p_tree   the CIDTree to add
 	 * @note assumes m_dataLock has been locked
 	 */
 	private void addCIDTree(final short p_nodeID, final LookupTree p_tree) {
@@ -925,8 +915,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Deletes the given CIDTree
-	 * @param p_nodeID
-	 *            the NodeID
+	 *
+	 * @param p_nodeID the NodeID
 	 * @note assumes m_dataLock has been locked
 	 */
 	private void deleteCIDTree(final short p_nodeID) {
@@ -942,10 +932,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Spread data of failed superpeer
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_responsibleArea
-	 *            the responsible area
+	 *
+	 * @param p_nodeID          the NodeID
+	 * @param p_responsibleArea the responsible area
 	 */
 	private void spreadDataOfFailedSuperpeer(final short p_nodeID, final short[] p_responsibleArea) {
 		short currentPeer;
@@ -1006,8 +995,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Spread backups of failed superpeer
-	 * @param p_backupSuperpeers
-	 *            the current backup superpeers
+	 *
+	 * @param p_backupSuperpeers the current backup superpeers
 	 */
 	private void spreadBackupsOfThisSuperpeer(final short[] p_backupSuperpeers) {
 		short currentPeer;
@@ -1095,8 +1084,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming JoinRequest
-	 * @param p_joinRequest
-	 *            the JoinRequest
+	 *
+	 * @param p_joinRequest the JoinRequest
 	 */
 	private void incomingJoinRequest(final JoinRequest p_joinRequest) {
 		short joiningNode;
@@ -1222,8 +1211,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming GetLookupRangeRequest
-	 * @param p_getLookupRangeRequest
-	 *            the GetLookupRangeRequest
+	 *
+	 * @param p_getLookupRangeRequest the GetLookupRangeRequest
 	 */
 	private void incomingGetLookupRangeRequest(final GetLookupRangeRequest p_getLookupRangeRequest) {
 		long chunkID;
@@ -1233,8 +1222,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 		chunkID = p_getLookupRangeRequest.getChunkID();
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(),
-				// // // // "Got request: GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource())
-						// // // // + " chunkID: " + ChunkID.toHexString(chunkID));
+		// // // // "Got request: GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource())
+		// // // // + " chunkID: " + ChunkID.toHexString(chunkID));
 		// #endif /* LOGGER == TRACE */
 
 		m_dataLock.lock();
@@ -1246,8 +1235,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(),
-				// // // // "GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource()) + " chunkID "
-						// // // // + ChunkID.toHexString(chunkID) + " reply location: " + result);
+		// // // // "GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource()) + " chunkID "
+		// // // // + ChunkID.toHexString(chunkID) + " reply location: " + result);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_network.sendMessage(
@@ -1258,8 +1247,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming RemoveChunkIDsRequest
-	 * @param p_removeChunkIDsRequest
-	 *            the RemoveChunkIDsRequest
+	 *
+	 * @param p_removeChunkIDsRequest the RemoveChunkIDsRequest
 	 */
 	private void incomingRemoveChunkIDsRequest(final RemoveChunkIDsRequest p_removeChunkIDsRequest) {
 		long[] chunkIDs;
@@ -1270,7 +1259,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(),
-				// // // // "Got Message: REMOVE_CHUNKIDS_REQUEST from " + NodeID.toHexString(p_removeChunkIDsRequest.getSource()));
+		// // // // "Got Message: REMOVE_CHUNKIDS_REQUEST from " + NodeID.toHexString(p_removeChunkIDsRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		chunkIDs = p_removeChunkIDsRequest.getChunkIDs();
@@ -1334,8 +1323,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming InsertIDRequest
-	 * @param p_insertIDRequest
-	 *            the InsertIDRequest
+	 *
+	 * @param p_insertIDRequest the InsertIDRequest
 	 */
 	private void incomingInsertNameserviceEntriesRequest(final InsertNameserviceEntriesRequest p_insertIDRequest) {
 		int id;
@@ -1344,7 +1333,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		id = p_insertIDRequest.getID();
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(), "Got request: INSERT_ID_REQUEST from "
-				// // // // + NodeID.toHexString(p_insertIDRequest.getSource()) + ", id " + id);
+		// // // // + NodeID.toHexString(p_insertIDRequest.getSource()) + ", id " + id);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID,
@@ -1391,8 +1380,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming GetChunkIDForNameserviceEntryRequest
-	 * @param p_getChunkIDForNameserviceEntryRequest
-	 *            the GetChunkIDForNameserviceEntryRequest
+	 *
+	 * @param p_getChunkIDForNameserviceEntryRequest the GetChunkIDForNameserviceEntryRequest
 	 */
 	private void incomingGetChunkIDForNameserviceEntryRequest(
 			final GetChunkIDForNameserviceEntryRequest p_getChunkIDForNameserviceEntryRequest) {
@@ -1402,7 +1391,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		id = p_getChunkIDForNameserviceEntryRequest.getID();
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
-				// // // // + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource()) + ", id " + id);
+		// // // // + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource()) + ", id " + id);
 		// #endif /* LOGGER == TRACE */
 
 		if (m_superpeers.isEmpty() || OverlayHelper.isNodeInRange(m_hashGenerator.hash(id), m_predecessor, m_nodeID,
@@ -1412,8 +1401,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 			m_mappingLock.unlock();
 			// #if LOGGER == TRACE
 			// // // // m_logger.trace(getClass(),
-					// // // // "GET_CHUNKID_REQUEST from " + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource())
-							// // // // + ", id " + id + ", reply chunkID " + ChunkID.toHexString(chunkID));
+			// // // // "GET_CHUNKID_REQUEST from " + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource())
+			// // // // + ", id " + id + ", reply chunkID " + ChunkID.toHexString(chunkID));
 			// #endif /* LOGGER == TRACE */
 		}
 		if (m_network.sendMessage(
@@ -1425,14 +1414,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming GetNameserviceEntryCountRequest
-	 * @param p_getNameserviceEntryCountRequest
-	 *            the GetNameserviceEntryCountRequest
+	 *
+	 * @param p_getNameserviceEntryCountRequest the GetNameserviceEntryCountRequest
 	 */
 	private void incomingGetNameserviceEntryCountRequest(
 			final GetNameserviceEntryCountRequest p_getNameserviceEntryCountRequest) {
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(), "Got request: GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST from "
-				// // // // + NodeID.toHexString(p_getNameserviceEntryCountRequest.getSource()));
+		// // // // + NodeID.toHexString(p_getNameserviceEntryCountRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		if (m_network.sendMessage(
@@ -1445,14 +1434,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming GetNameserviceEntriesRequest
-	 * @param p_getNameserviceEntriesRequest
-	 *            the GetNameserviceEntriesRequest
+	 *
+	 * @param p_getNameserviceEntriesRequest the GetNameserviceEntriesRequest
 	 */
 	private void incomingGetNameserviceEntriesRequest(
 			final GetNameserviceEntriesRequest p_getNameserviceEntriesRequest) {
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(), "Got request: GET_NAMESERVICE_ENTRIES from "
-				// // // // + p_getNameserviceEntriesRequest.getSource());
+		// // // // + p_getNameserviceEntriesRequest.getSource());
 		// #endif /* LOGGER == TRACE */
 
 		if (m_network.sendMessage(
@@ -1464,8 +1453,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming MigrateRequest
-	 * @param p_migrateRequest
-	 *            the MigrateRequest
+	 *
+	 * @param p_migrateRequest the MigrateRequest
 	 */
 	private void incomingMigrateRequest(final MigrateRequest p_migrateRequest) {
 		short nodeID;
@@ -1478,7 +1467,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(),
-				// // // // "Got Message: MIGRATE_REQUEST from " + NodeID.toHexString(p_migrateRequest.getSource()));
+		// // // // "Got Message: MIGRATE_REQUEST from " + NodeID.toHexString(p_migrateRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		nodeID = p_migrateRequest.getNodeID();
@@ -1548,8 +1537,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming MigrateRangeRequest
-	 * @param p_migrateRangeRequest
-	 *            the MigrateRangeRequest
+	 *
+	 * @param p_migrateRangeRequest the MigrateRangeRequest
 	 */
 	private void incomingMigrateRangeRequest(final MigrateRangeRequest p_migrateRangeRequest) {
 		short nodeID;
@@ -1563,7 +1552,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(),
-				// // // // "Got Message: MIGRATE_RANGE_REQUEST from " + NodeID.toHexString(p_migrateRangeRequest.getSource()));
+		// // // // "Got Message: MIGRATE_RANGE_REQUEST from " + NodeID.toHexString(p_migrateRangeRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		nodeID = p_migrateRangeRequest.getNodeID();
@@ -1641,8 +1630,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming InitRangeRequest
-	 * @param p_initRangeRequest
-	 *            the InitRangeRequest
+	 *
+	 * @param p_initRangeRequest the InitRangeRequest
 	 */
 	private void incomingInitRangeRequest(final InitRangeRequest p_initRangeRequest) {
 		LookupRangeWithBackupPeers primaryAndBackupPeers;
@@ -1655,7 +1644,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(),
-				// // // // "Got Message: INIT_RANGE_REQUEST from " + NodeID.toHexString(p_initRangeRequest.getSource()));
+		// // // // "Got Message: INIT_RANGE_REQUEST from " + NodeID.toHexString(p_initRangeRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		primaryAndBackupPeers = new LookupRangeWithBackupPeers(p_initRangeRequest.getLookupRange());
@@ -1722,8 +1711,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming GetAllBackupRangesRequest
-	 * @param p_getAllBackupRangesRequest
-	 *            the GetAllBackupRangesRequest
+	 *
+	 * @param p_getAllBackupRangesRequest the GetAllBackupRangesRequest
 	 */
 	private void incomingGetAllBackupRangesRequest(final GetAllBackupRangesRequest p_getAllBackupRangesRequest) {
 		int counter = 0;
@@ -1734,8 +1723,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(),
-				// // // // "Got request: GET_ALL_BACKUP_RANGES_REQUEST "
-						// // // // + NodeID.toHexString(p_getAllBackupRangesRequest.getSource()));
+		// // // // "Got request: GET_ALL_BACKUP_RANGES_REQUEST "
+		// // // // + NodeID.toHexString(p_getAllBackupRangesRequest.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		m_dataLock.lock();
@@ -1763,8 +1752,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming SetRestorerAfterRecoveryMessage
-	 * @param p_setRestorerAfterRecoveryMessage
-	 *            the SetRestorerAfterRecoveryMessage
+	 *
+	 * @param p_setRestorerAfterRecoveryMessage the SetRestorerAfterRecoveryMessage
 	 */
 	private void incomingSetRestorerAfterRecoveryMessage(
 			final SetRestorerAfterRecoveryMessage p_setRestorerAfterRecoveryMessage) {
@@ -1772,7 +1761,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 		// #if LOGGER == TRACE
 		// // // // m_logger.trace(getClass(), "Got request: SET_RESTORER_AFTER_RECOVERY_MESSAGE "
-				// // // // + NodeID.toHexString(p_setRestorerAfterRecoveryMessage.getSource()));
+		// // // // + NodeID.toHexString(p_setRestorerAfterRecoveryMessage.getSource()));
 		// #endif /* LOGGER == TRACE */
 
 		m_dataLock.lock();
@@ -1785,8 +1774,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming BarrierAllocRequest
-	 * @param p_request
-	 *            the BarrierAllocRequest
+	 *
+	 * @param p_request the BarrierAllocRequest
 	 */
 	private void incomingBarrierAllocRequest(final BarrierAllocRequest p_request) {
 		int barrierId = m_barriersTable.allocateBarrier(p_request.getBarrierSize());
@@ -1807,8 +1796,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming BarrierFreeRequest
-	 * @param p_message
-	 *            the BarrierFreeRequest
+	 *
+	 * @param p_message the BarrierFreeRequest
 	 */
 	private void incomingBarrierFreeRequest(final BarrierFreeRequest p_message) {
 		BarrierFreeResponse response = new BarrierFreeResponse(p_message);
@@ -1833,8 +1822,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming BarrierSignOnRequest
-	 * @param p_request
-	 *            the BarrierSignOnRequest
+	 *
+	 * @param p_request the BarrierSignOnRequest
 	 */
 	private void incomingBarrierSignOnRequest(final BarrierSignOnRequest p_request) {
 		int barrierId = p_request.getBarrierId();
@@ -1870,8 +1859,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming BarrierGetStatusRequest
-	 * @param p_request
-	 *            the BarrierGetStatusRequest
+	 *
+	 * @param p_request the BarrierGetStatusRequest
 	 */
 	private void incomingBarrierGetStatusRequest(final BarrierGetStatusRequest p_request) {
 		short[] signedOnPeers = m_barriersTable.getSignedOnPeers(p_request.getBarrierId());
@@ -1894,8 +1883,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming BarrierChangeSizeRequest
-	 * @param p_request
-	 *            the BarrierChangeSizeRequest
+	 *
+	 * @param p_request the BarrierChangeSizeRequest
 	 */
 	private void incomingBarrierChangeSizeRequest(final BarrierChangeSizeRequest p_request) {
 		BarrierChangeSizeResponse response = new BarrierChangeSizeResponse(p_request);
@@ -1916,8 +1905,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming SuperpeerStorageCreateRequest
-	 * @param p_request
-	 *            the SuperpeerStorageCreateRequest
+	 *
+	 * @param p_request the SuperpeerStorageCreateRequest
 	 */
 	private void incomingSuperpeerStorageCreateRequest(final SuperpeerStorageCreateRequest p_request) {
 		m_storageLock.writeLock().lock();
@@ -1959,8 +1948,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming SuperpeerStorageGetRequest
-	 * @param p_request
-	 *            the SuperpeerStorageGetRequest
+	 *
+	 * @param p_request the SuperpeerStorageGetRequest
 	 */
 	private void incomingSuperpeerStorageGetRequest(final SuperpeerStorageGetRequest p_request) {
 		m_storageLock.readLock().lock();
@@ -1990,8 +1979,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming SuperpeerStoragePutRequest
-	 * @param p_request
-	 *            the SuperpeerStoragePutRequest
+	 *
+	 * @param p_request the SuperpeerStoragePutRequest
 	 */
 	private void incomingSuperpeerStoragePutRequest(final SuperpeerStoragePutRequest p_request) {
 		Chunk chunk = p_request.getChunk();
@@ -2033,8 +2022,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming SuperpeerStorageRemoveMessage
-	 * @param p_request
-	 *            the SuperpeerStorageRemoveMessage
+	 *
+	 * @param p_request the SuperpeerStorageRemoveMessage
 	 */
 	private void incomingSuperpeerStorageRemoveMessage(final SuperpeerStorageRemoveMessage p_request) {
 		m_storageLock.writeLock().lock();
@@ -2068,8 +2057,8 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming SuperpeerStorageStatusRequest
-	 * @param p_request
-	 *            the SuperpeerStorageStatusRequest
+	 *
+	 * @param p_request the SuperpeerStorageStatusRequest
 	 */
 	private void incomingSuperpeerStorageStatusRequest(final SuperpeerStorageStatusRequest p_request) {
 		m_storageLock.readLock().lock();
@@ -2087,82 +2076,82 @@ public class OverlaySuperpeer implements MessageReceiver {
 
 	/**
 	 * Handles an incoming Message
-	 * @param p_message
-	 *            the Message
+	 *
+	 * @param p_message the Message
 	 */
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case LookupMessages.SUBTYPE_JOIN_REQUEST:
-					incomingJoinRequest((JoinRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST:
-					incomingGetLookupRangeRequest((GetLookupRangeRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST:
-					incomingRemoveChunkIDsRequest((RemoveChunkIDsRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST:
-					incomingInsertNameserviceEntriesRequest((InsertNameserviceEntriesRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST:
-					incomingGetChunkIDForNameserviceEntryRequest((GetChunkIDForNameserviceEntryRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST:
-					incomingGetNameserviceEntryCountRequest((GetNameserviceEntryCountRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST:
-					incomingGetNameserviceEntriesRequest((GetNameserviceEntriesRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
-					incomingMigrateRequest((MigrateRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST:
-					incomingMigrateRangeRequest((MigrateRangeRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_INIT_RANGE_REQUEST:
-					incomingInitRangeRequest((InitRangeRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST:
-					incomingGetAllBackupRangesRequest((GetAllBackupRangesRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE:
-					incomingSetRestorerAfterRecoveryMessage((SetRestorerAfterRecoveryMessage) p_message);
-					break;
-				case LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST:
-					incomingBarrierAllocRequest((BarrierAllocRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST:
-					incomingBarrierFreeRequest((BarrierFreeRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST:
-					incomingBarrierSignOnRequest((BarrierSignOnRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST:
-					incomingBarrierGetStatusRequest((BarrierGetStatusRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST:
-					incomingBarrierChangeSizeRequest((BarrierChangeSizeRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST:
-					incomingSuperpeerStorageCreateRequest((SuperpeerStorageCreateRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST:
-					incomingSuperpeerStorageGetRequest((SuperpeerStorageGetRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST:
-					incomingSuperpeerStoragePutRequest((SuperpeerStoragePutRequest) p_message);
-					break;
-				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE:
-					incomingSuperpeerStorageRemoveMessage((SuperpeerStorageRemoveMessage) p_message);
-					break;
-				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST:
-					incomingSuperpeerStorageStatusRequest((SuperpeerStorageStatusRequest) p_message);
-					break;
-				default:
-					break;
+					case LookupMessages.SUBTYPE_JOIN_REQUEST:
+						incomingJoinRequest((JoinRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST:
+						incomingGetLookupRangeRequest((GetLookupRangeRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST:
+						incomingRemoveChunkIDsRequest((RemoveChunkIDsRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST:
+						incomingInsertNameserviceEntriesRequest((InsertNameserviceEntriesRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST:
+						incomingGetChunkIDForNameserviceEntryRequest((GetChunkIDForNameserviceEntryRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST:
+						incomingGetNameserviceEntryCountRequest((GetNameserviceEntryCountRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST:
+						incomingGetNameserviceEntriesRequest((GetNameserviceEntriesRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
+						incomingMigrateRequest((MigrateRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST:
+						incomingMigrateRangeRequest((MigrateRangeRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_INIT_RANGE_REQUEST:
+						incomingInitRangeRequest((InitRangeRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST:
+						incomingGetAllBackupRangesRequest((GetAllBackupRangesRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE:
+						incomingSetRestorerAfterRecoveryMessage((SetRestorerAfterRecoveryMessage) p_message);
+						break;
+					case LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST:
+						incomingBarrierAllocRequest((BarrierAllocRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST:
+						incomingBarrierFreeRequest((BarrierFreeRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST:
+						incomingBarrierSignOnRequest((BarrierSignOnRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST:
+						incomingBarrierGetStatusRequest((BarrierGetStatusRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST:
+						incomingBarrierChangeSizeRequest((BarrierChangeSizeRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST:
+						incomingSuperpeerStorageCreateRequest((SuperpeerStorageCreateRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST:
+						incomingSuperpeerStorageGetRequest((SuperpeerStorageGetRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST:
+						incomingSuperpeerStoragePutRequest((SuperpeerStoragePutRequest) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE:
+						incomingSuperpeerStorageRemoveMessage((SuperpeerStorageRemoveMessage) p_message);
+						break;
+					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST:
+						incomingSuperpeerStorageStatusRequest((SuperpeerStorageStatusRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
