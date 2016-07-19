@@ -2,7 +2,8 @@
 package de.hhu.bsinfo.dxram.stats;
 
 import java.util.ArrayList;
-import java.util.Map.Entry;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Records statistics for a number of operations. Create one recorder
@@ -122,11 +123,10 @@ public class StatisticsRecorder {
 		private boolean m_enabled = true;
 
 		// stats per thread, avoids having locks
-		//private Map<Long, Stats> m_statsMap = new ConcurrentHashMap<Long, Stats>();
-
 		private static int ms_blockSizeStatsMap = 100;
 		private Stats[][] m_statsMap = new Stats[ms_blockSizeStatsMap][];
 		private int m_statsMapBlockPos;
+		private Lock m_mapLock = new ReentrantLock(false);
 
 		/**
 		 * Constructor
@@ -174,14 +174,18 @@ public class StatisticsRecorder {
 			}
 
 			long threadId = Thread.currentThread().getId();
-			if (threadId > m_statsMapBlockPos * ms_blockSizeStatsMap) {
-				// TODO add more 
+			if (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+				m_mapLock.lock();
+				while (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+					m_statsMap[m_statsMapBlockPos++] = new Stats[ms_blockSizeStatsMap];
+				}
+				m_mapLock.unlock();
 			}
 
-			Stats stats = m_statsMap.get(threadId);
+			Stats stats = m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)];
 			if (stats == null) {
 				stats = new Stats(threadId);
-				m_statsMap.put(threadId, stats);
+				m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
 			}
 
 			stats.m_opCount++;
@@ -200,10 +204,19 @@ public class StatisticsRecorder {
 			}
 
 			long threadId = Thread.currentThread().getId();
-			Stats stats = m_statsMap.get(threadId);
+			if (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+				m_mapLock.lock();
+				while (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+					m_statsMap[m_statsMapBlockPos++] = new Stats[ms_blockSizeStatsMap];
+				}
+				m_mapLock.unlock();
+			}
+
+			Stats stats = m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)];
 			if (stats == null) {
 				stats = new Stats(threadId);
-				m_statsMap.put(threadId, stats);
+				m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] =
+						stats;
 			}
 
 			stats.m_opCount++;
@@ -223,10 +236,18 @@ public class StatisticsRecorder {
 			}
 
 			long threadId = Thread.currentThread().getId();
-			Stats stats = m_statsMap.get(threadId);
+			if (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+				m_mapLock.lock();
+				while (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+					m_statsMap[m_statsMapBlockPos++] = new Stats[ms_blockSizeStatsMap];
+				}
+				m_mapLock.unlock();
+			}
+
+			Stats stats = m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)];
 			if (stats == null) {
 				stats = new Stats(threadId);
-				m_statsMap.put(threadId, stats);
+				m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)] = stats;
 			}
 
 			stats.m_opCount++;
@@ -243,7 +264,16 @@ public class StatisticsRecorder {
 			}
 
 			long threadId = Thread.currentThread().getId();
-			Stats stats = m_statsMap.get(threadId);
+			if (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+				m_mapLock.lock();
+				while (threadId >= m_statsMapBlockPos * ms_blockSizeStatsMap) {
+					m_statsMap[m_statsMapBlockPos++] = new Stats[ms_blockSizeStatsMap];
+				}
+				m_mapLock.unlock();
+			}
+
+			Stats stats = m_statsMap[(int) (threadId / ms_blockSizeStatsMap)][(int) (threadId % ms_blockSizeStatsMap)];
+
 			long duration = System.nanoTime() - stats.m_timeNsStart;
 			stats.m_totalTimeNs += duration;
 			if (duration < stats.m_shortestTimeNs) {
@@ -258,8 +288,10 @@ public class StatisticsRecorder {
 		public String toString() {
 			String str = "[" + m_categoryId + " " + m_categoryName + "] " + m_id + " " + m_name + " (enabled "
 					+ m_enabled + "): ";
-			for (Entry<Long, Stats> entry : m_statsMap.entrySet()) {
-				str += "\n\t\t" + entry;
+			for (int i = 0; i < m_statsMapBlockPos; i++) {
+				for (int j = 0; j < ms_blockSizeStatsMap; j++) {
+					str += "\n\t\t" + m_statsMap[i][j];
+				}
 			}
 
 			return str;
