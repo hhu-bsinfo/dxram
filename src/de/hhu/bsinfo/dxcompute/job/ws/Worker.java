@@ -5,6 +5,7 @@ import de.hhu.bsinfo.dxcompute.job.AbstractJob;
 
 /**
  * Worker thread executing jobs using a work stealing approach.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class Worker extends Thread {
@@ -19,10 +20,9 @@ public class Worker extends Thread {
 
 	/**
 	 * Constructor
-	 * @param p_id
-	 *            ID of this worker.
-	 * @param p_workerDelegate
-	 *            Delegate for callbacks/notifications.
+	 *
+	 * @param p_id             ID of this worker.
+	 * @param p_workerDelegate Delegate for callbacks/notifications.
 	 */
 	public Worker(final int p_id, final WorkerDelegate p_workerDelegate) {
 		super("JobWorker " + p_id);
@@ -35,6 +35,7 @@ public class Worker extends Thread {
 
 	/**
 	 * Get the ID of this worker.
+	 *
 	 * @return ID of this worker.
 	 */
 	public int getID() {
@@ -43,6 +44,7 @@ public class Worker extends Thread {
 
 	/**
 	 * Steal a job from this worker's queue.
+	 *
 	 * @return Job stolen or null if nothing to steal or stealing failed.
 	 */
 	public AbstractJob stealJob() {
@@ -51,8 +53,8 @@ public class Worker extends Thread {
 
 	/**
 	 * Push a new job to this worker's queue.
-	 * @param p_job
-	 *            Job to push to queue.
+	 *
+	 * @param p_job Job to push to queue.
 	 * @return True if pushing job was successful, false if it failed (queue full).
 	 */
 	public boolean pushJob(final AbstractJob p_job) {
@@ -62,6 +64,7 @@ public class Worker extends Thread {
 
 	/**
 	 * Get the number of jobs currently scheduled.
+	 *
 	 * @return Num jobs currently scheduled.
 	 */
 	public int getQueueJobsScheduled() {
@@ -70,6 +73,7 @@ public class Worker extends Thread {
 
 	/**
 	 * Check if worker is currently idling.
+	 *
 	 * @return True if idling, false otherwise.
 	 */
 	public boolean isIdle() {
@@ -85,6 +89,7 @@ public class Worker extends Thread {
 
 	/**
 	 * Check if the worker is running.
+	 *
 	 * @return True if running, false otherwise
 	 */
 	public boolean isRunning() {
@@ -115,8 +120,8 @@ public class Worker extends Thread {
 				m_isIdle = false;
 
 				// #if LOGGER >= DEBUG
-				// // // // m_workerDelegate.getLoggerComponent().debug(getClass(),
-						// // // // "Worker " + m_id + ": Executing job " + job + " from queue.");
+				m_workerDelegate.getLoggerComponent().debug(getClass(),
+						"Worker " + m_id + ": Executing job " + job + " from queue.");
 				// #endif /* LOGGER >= DEBUG */
 
 				m_workerDelegate.executingJob(job);
@@ -130,8 +135,8 @@ public class Worker extends Thread {
 				m_isIdle = false;
 
 				// #if LOGGER >= DEBUG
-				// // // // m_workerDelegate.getLoggerComponent().debug(getClass(),
-						// // // // "Worker " + m_id + ": Executing stolen job " + job);
+				m_workerDelegate.getLoggerComponent().debug(getClass(),
+						"Worker " + m_id + ": Executing stolen job " + job);
 				// #endif /* LOGGER >= DEBUG */
 
 				m_workerDelegate.executingJob(job);

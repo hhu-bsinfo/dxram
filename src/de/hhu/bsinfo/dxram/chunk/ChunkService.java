@@ -36,7 +36,6 @@ import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
@@ -76,7 +75,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	private TerminalComponent m_terminal;
 
 	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs;
-	private boolean m_performanceFlag;
 
 	/**
 	 * Constructor
@@ -91,8 +89,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
-		m_performanceFlag = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PERFORMANCE_FLAG);
-
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
@@ -223,11 +219,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		assert p_size > 0 && p_count > 0;
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "create[size " + p_size + ", count " + p_count + "]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (!role.equals(NodeRole.PEER)) {
@@ -258,13 +252,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(),
-			// // // // "create[size " + p_size + ", count " + p_count + "] -> " + ChunkID.toHexString(chunkIDs[0])
-			// // // // + ", ...");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(),
+				"create[size " + p_size + ", count " + p_count + "] -> " + ChunkID.toHexString(chunkIDs[0])
+						+ ", ...");
+		// #endif /* LOGGER == TRACE */
 
 		return chunkIDs;
 	}
@@ -284,11 +276,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return count;
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "create[numDataStructures " + p_dataStructures.length + "...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (!role.equals(NodeRole.PEER)) {
@@ -329,11 +319,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ")] -> " + count);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "create[numDataStructures(" + p_dataStructures.length + ")] -> " + count);
+		// #endif /* LOGGER == TRACE */
 
 		return count;
 	}
@@ -351,11 +339,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return new long[0];
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (!role.equals(NodeRole.PEER)) {
@@ -387,12 +373,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_create);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> "
-			// // // // + ChunkID.toHexString(chunkIDs[0]) + ", ...");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "create[sizes(" + p_sizes.length + ") " + p_sizes[0] + ", ...] -> "
+				+ ChunkID.toHexString(chunkIDs[0]) + ", ...");
+		// #endif /* LOGGER == TRACE */
 
 		return chunkIDs;
 	}
@@ -411,12 +395,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return new long[0];
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
-			// // // // + p_sizes.length + ") " + p_sizes[0] + ", ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+				+ p_sizes.length + ") " + p_sizes[0] + ", ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
@@ -464,20 +446,18 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remoteCreate);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			if (chunkIDs != null) {
-				// #if LOGGER == TRACE
-				// // // // m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
-				// // // // + p_sizes.length + ") " + p_sizes[0]
-				// // // // + ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
-				// #endif /* LOGGER == TRACE */
-			} else {
-				// #if LOGGER == TRACE
-				// // // // m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
-				// // // // + p_sizes.length + ") " + p_sizes[0]
-				// // // // + ", ...] -> -1");
-				// #endif /* LOGGER == TRACE */
-			}
+		if (chunkIDs != null) {
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+					+ p_sizes.length + ") " + p_sizes[0]
+					+ ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
+			// #endif /* LOGGER == TRACE */
+		} else {
+			// #if LOGGER == TRACE
+			m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+					+ p_sizes.length + ") " + p_sizes[0]
+					+ ", ...] -> -1");
+			// #endif /* LOGGER == TRACE */
 		}
 
 		return chunkIDs;
@@ -511,13 +491,11 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return chunksRemoved;
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(),
-			// // // // "remove[dataStructures(" + p_chunkIDs.length + ") " + ChunkID.toHexString(p_chunkIDs[0])
-			// // // // + ", ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(),
+				"remove[dataStructures(" + p_chunkIDs.length + ") " + ChunkID.toHexString(p_chunkIDs[0])
+						+ ", ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
@@ -676,12 +654,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_remove);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") "
-			// // // // + ChunkID.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "remove[dataStructures(" + p_chunkIDs.length + ") "
+				+ ChunkID.toHexString(p_chunkIDs[0]) + ", ...] -> " + chunksRemoved);
+		// #endif /* LOGGER == TRACE */
 
 		return chunksRemoved;
 	}
@@ -724,12 +700,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return chunksPut;
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-			// // // // + p_dataStructures.length + ") ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+				+ p_dataStructures.length + ") ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
@@ -874,9 +848,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
 						// #if LOGGER == TRACE
-						// // // // m_logger.trace(getClass(),
-						// // // // "Logging " + dataStructures.length + " chunks to "
-						// // // // + NodeID.toHexString(backupPeers[i]));
+						m_logger.trace(getClass(),
+								"Logging " + dataStructures.length + " chunks to "
+										+ NodeID.toHexString(backupPeers[i]));
 						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));
@@ -889,12 +863,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_put);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
-			// // // // + p_dataStructures.length + ") ...] -> " + chunksPut);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures("
+				+ p_dataStructures.length + ") ...] -> " + chunksPut);
+		// #endif /* LOGGER == TRACE */
 
 		return chunksPut;
 	}
@@ -926,11 +898,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return totalChunksGot;
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "get[dataStructures(" + p_count + ") ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
@@ -1031,11 +1001,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "get[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+		// #endif /* LOGGER == TRACE */
 
 		return totalChunksGot;
 	}
@@ -1055,11 +1023,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return ret;
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
@@ -1159,11 +1125,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "get[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
+		// #endif /* LOGGER == TRACE */
 
 		return ret;
 	}
@@ -1199,11 +1163,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return totalChunksGot;
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "getLocal[dataStructures(" + p_count + ") ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "getLocal[dataStructures(" + p_count + ") ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
@@ -1242,12 +1204,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(),
-			// // // // "getLocal[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(),
+				"getLocal[dataStructures(" + p_dataStructures.length + ") ...] -> " + totalChunksGot);
+		// #endif /* LOGGER == TRACE */
 
 		return totalChunksGot;
 	}
@@ -1269,11 +1229,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			return ret;
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...]");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...]");
+		// #endif /* LOGGER == TRACE */
 
 		NodeRole role = m_boot.getNodeRole();
 		if (role.equals(NodeRole.SUPERPEER)) {
@@ -1311,11 +1269,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		m_statistics.leave(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_get);
 		// #endif /* STATISTICS */
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "getLocal[chunkIDs(" + p_chunkIDs.length + ") ...] -> " + p_chunkIDs.length);
+		// #endif /* LOGGER == TRACE */
 
 		return ret;
 	}
@@ -1450,11 +1406,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
@@ -1486,11 +1440,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			}
 		}
 
-		if (!m_performanceFlag) {
-			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "Exiting incomingMessage");
-			// #endif /* LOGGER == TRACE */
-		}
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "Exiting incomingMessage");
+		// #endif /* LOGGER == TRACE */
 	}
 
 	// -----------------------------------------------------------------------------------
@@ -1709,9 +1661,9 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 				for (int i = 0; i < backupPeers.length; i++) {
 					if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != -1) {
 						// #if LOGGER == TRACE
-						// // // // m_logger.trace(ChunkService.class,
-						// // // // "Logging " + dataStructures.length + " chunks to "
-						// // // // + NodeID.toHexString(backupPeers[i]));
+						m_logger.trace(ChunkService.class,
+								"Logging " + dataStructures.length + " chunks to "
+										+ NodeID.toHexString(backupPeers[i]));
 						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(backupPeers[i], dataStructures));

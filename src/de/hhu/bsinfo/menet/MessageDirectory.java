@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * 1 - FlowcontrolMessage @see de.uniduesseldorf.dxram.core.net.AbstractConnection.FlowcontrolMessage
  * @author Marc Ewert 21.10.14
  */
-public final class MessageDirectory {
+final class MessageDirectory {
 
 	// Attributes
 	private Constructor<?>[][] m_constructors = new Constructor[0][0];
@@ -24,7 +24,7 @@ public final class MessageDirectory {
 	/**
 	 * MessageDirectory is not designated to be instantiable
 	 */
-	public MessageDirectory() {}
+	protected MessageDirectory() {}
 
 	/**
 	 * Registers a Message Type for receiving
@@ -36,7 +36,7 @@ public final class MessageDirectory {
 	 *            Message class
 	 * @return True if successful, false if the specified type and subtype are already in use.
 	 */
-	public boolean register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
+	protected boolean register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		Constructor<?>[][] constructors = m_constructors;
 		Constructor<?> constructor;
 
@@ -87,7 +87,7 @@ public final class MessageDirectory {
 	 *            the subtype of the Message
 	 * @return true if registered
 	 */
-	public boolean contains(final byte p_type, final byte p_subtype) {
+	private boolean contains(final byte p_type, final byte p_subtype) {
 		boolean result;
 		final Constructor<?>[][] constructors = m_constructors;
 
@@ -128,7 +128,7 @@ public final class MessageDirectory {
 	 *            the subtype of the Message
 	 * @return a new Message instance
 	 */
-	public AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
+	protected AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
 		AbstractMessage ret;
 		Constructor<?> constructor;
 

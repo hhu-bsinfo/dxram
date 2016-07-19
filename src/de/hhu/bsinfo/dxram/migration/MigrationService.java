@@ -29,6 +29,7 @@ import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Migration service providing migration of chunks.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public class MigrationService extends AbstractDXRAMService implements MessageReceiver {
@@ -50,10 +51,9 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 	/**
 	 * Migrates the corresponding Chunk for the giving ID to another Node
-	 * @param p_chunkID
-	 *            the ID
-	 * @param p_target
-	 *            the Node where to migrate the Chunk
+	 *
+	 * @param p_chunkID the ID
+	 * @param p_target  the Node where to migrate the Chunk
 	 * @return true=success, false=failed
 	 */
 	public boolean migrate(final long p_chunkID, final short p_target) {
@@ -80,7 +80,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 				if (chunk != null) {
 					// #if LOGGER == TRACE
-					// // // // m_logger.trace(getClass(), "Sending migration request to " + p_target);
+					m_logger.trace(getClass(), "Sending migration request to " + p_target);
 					// #endif /* LOGGER == TRACE */
 
 					MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});
@@ -123,7 +123,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 				}
 			} else {
 				// #if LOGGER >= ERROR
-				m_logger.error(getClass(), "Chunk with ChunkID " + ChunkID.toHexString(p_chunkID) + " could not be migrated");
+				m_logger.error(getClass(),
+						"Chunk with ChunkID " + ChunkID.toHexString(p_chunkID) + " could not be migrated");
 				// #endif /* LOGGER >= ERROR */
 				ret = false;
 			}
@@ -134,12 +135,10 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 	/**
 	 * Migrates the corresponding Chunks for the giving ID range to another Node
-	 * @param p_startChunkID
-	 *            the first ID
-	 * @param p_endChunkID
-	 *            the last ID
-	 * @param p_target
-	 *            the Node where to migrate the Chunks
+	 *
+	 * @param p_startChunkID the first ID
+	 * @param p_endChunkID   the last ID
+	 * @param p_target       the Node where to migrate the Chunks
 	 * @return true=success, false=failed
 	 */
 	public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
@@ -185,7 +184,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 								size += chunk.getDataSize();
 							} else {
 								// #if LOGGER >= ERROR
-								m_logger.error(getClass(), "Chunk with ChunkID " + ChunkID.toHexString(iter) + " could not be migrated");
+								m_logger.error(getClass(),
+										"Chunk with ChunkID " + ChunkID.toHexString(iter) + " could not be migrated");
 								// #endif /* LOGGER >= ERROR */
 							}
 							iter++;
@@ -193,9 +193,11 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 						m_memoryManager.unlockAccess();
 
 						// #if LOGGER >= INFO
-						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to " + NodeID.toHexString(p_target));
+						m_logger.info(getClass(), "Sending " + counter + " Chunks (" + size + " Bytes) to " + NodeID
+								.toHexString(p_target));
 						// #endif /* LOGGER >= INFO */
-						if (m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter))) != NetworkErrorCodes.SUCCESS) {
+						if (m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)))
+								!= NetworkErrorCodes.SUCCESS) {
 							// #if LOGGER >= ERROR
 							m_logger.error(getClass(), "Could not migrate chunks");
 							// #endif /* LOGGER >= ERROR */
@@ -234,7 +236,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 					ret = true;
 				} else {
 					// #if LOGGER >= ERROR
-					m_logger.error(getClass(), "Chunks could not be migrated because end of range is before start of range");
+					m_logger.error(getClass(),
+							"Chunks could not be migrated because end of range is before start of range");
 					// #endif /* LOGGER >= ERROR */
 					ret = false;
 				}
@@ -255,8 +258,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 	/**
 	 * Migrates all chunks to another node. Is called for promotion.
-	 * @param p_target
-	 *            the peer that should take over all chunks
+	 *
+	 * @param p_target the peer that should take over all chunks
 	 */
 	public void migrateAll(final short p_target) {
 		long localID;
@@ -288,7 +291,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {}
+	protected void registerDefaultSettingsService(final Settings p_settings) {
+	}
 
 	@Override
 	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
@@ -311,8 +315,8 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 	/**
 	 * Handles an incoming MigrationRequest
-	 * @param p_request
-	 *            the MigrationRequest
+	 *
+	 * @param p_request the MigrationRequest
 	 */
 	private void incomingMigrationRequest(final MigrationRequest p_request) {
 		MigrationResponse response = new MigrationResponse(p_request);
@@ -329,11 +333,11 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 		if (p_message != null) {
 			if (p_message.getType() == MigrationMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
-					incomingMigrationRequest((MigrationRequest) p_message);
-					break;
-				default:
-					break;
+					case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
+						incomingMigrationRequest((MigrationRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -345,8 +349,10 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 * Register network messages we use in here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST, MigrationRequest.class);
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE, MigrationResponse.class);
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST,
+				MigrationRequest.class);
+		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE,
+				MigrationResponse.class);
 	}
 
 	/**

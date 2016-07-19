@@ -239,7 +239,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 		// add filtered files
 		// #if LOGGER >= DEBUG
-		// // m_loggerService.debug(getClass(), "Setting up oel for current slave, iterating files in " + p_path);
+		m_loggerService.debug(getClass(), "Setting up oel for current slave, iterating files in " + p_path);
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
@@ -406,7 +406,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		} else {
 			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(),
-					"Graph was filtered during loading: duplicate edges " + m_filterDupEdges + ", self loops "
+					"Graph was filtered during loadin: duplicate edges " + m_filterDupEdges + ", self loops "
 							+ m_filterSelfLoops);
 			// #endif /* LOGGER >= INFO */
 		}

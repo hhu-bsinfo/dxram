@@ -41,6 +41,7 @@ import de.hhu.bsinfo.utils.Tools;
 
 /**
  * This service provides access to the backend storage system.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class LogService extends AbstractDXRAMService implements MessageReceiver {
@@ -90,6 +91,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Returns all log catalogs
+	 *
 	 * @return the array of log catalogs
 	 */
 	public LogCatalog[] getAllLogCatalogs() {
@@ -98,17 +100,13 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Returns the secondary log
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_source
-	 *            the source NodeID
-	 * @param p_rangeID
-	 *            the RangeID for migrations or -1
+	 *
+	 * @param p_chunkID the ChunkID
+	 * @param p_source  the source NodeID
+	 * @param p_rangeID the RangeID for migrations or -1
 	 * @return the secondary log
-	 * @throws IOException
-	 *             if the secondary log could not be returned
-	 * @throws InterruptedException
-	 *             if the secondary log could not be returned
+	 * @throws IOException          if the secondary log could not be returned
+	 * @throws InterruptedException if the secondary log could not be returned
 	 */
 	public SecondaryLog getSecondaryLog(final long p_chunkID, final short p_source,
 			final byte p_rangeID) throws IOException, InterruptedException {
@@ -130,17 +128,13 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Returns the secondary log buffer
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_source
-	 *            the source NodeID
-	 * @param p_rangeID
-	 *            the RangeID for migrations or -1
+	 *
+	 * @param p_chunkID the ChunkID
+	 * @param p_source  the source NodeID
+	 * @param p_rangeID the RangeID for migrations or -1
 	 * @return the secondary log buffer
-	 * @throws IOException
-	 *             if the secondary log buffer could not be returned
-	 * @throws InterruptedException
-	 *             if the secondary log buffer could not be returned
+	 * @throws IOException          if the secondary log buffer could not be returned
+	 * @throws InterruptedException if the secondary log buffer could not be returned
 	 */
 	public SecondaryLogBuffer getSecondaryLogBuffer(final long p_chunkID, final short p_source, final byte p_rangeID)
 			throws IOException,
@@ -166,8 +160,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Returns the backup range
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the first ChunkID of the range
 	 */
 	public long getBackupRange(final long p_chunkID) {
@@ -186,12 +180,10 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Prints the metadata of one node's log
-	 * @param p_owner
-	 *            the NodeID
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID
+	 *
+	 * @param p_owner   the NodeID
+	 * @param p_chunkID the ChunkID
+	 * @param p_rangeID the RangeID
 	 * @note for testing only
 	 */
 	public void printBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) {
@@ -246,10 +238,9 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Flushes the primary log write buffer
-	 * @throws IOException
-	 *             if primary log could not be flushed
-	 * @throws InterruptedException
-	 *             if caller is interrupted
+	 *
+	 * @throws IOException          if primary log could not be flushed
+	 * @throws InterruptedException if caller is interrupted
 	 */
 	public void flushDataToPrimaryLog() throws IOException, InterruptedException {
 		m_writeBuffer.signalWriterThreadAndFlushToPrimLog();
@@ -257,10 +248,9 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Flushes all secondary log buffers
-	 * @throws IOException
-	 *             if at least one secondary log could not be flushed
-	 * @throws InterruptedException
-	 *             if caller is interrupted
+	 *
+	 * @throws IOException          if at least one secondary log could not be flushed
+	 * @throws InterruptedException if caller is interrupted
 	 */
 	public void flushDataToSecondaryLogs() throws IOException, InterruptedException {
 		LogCatalog cat;
@@ -347,7 +337,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 				// #endif /* LOGGER >= ERROR */
 			}
 			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "Initialized primary log (" + m_primaryLogSize + ")");
+			m_logger.trace(getClass(), "Initialized primary log (" + m_primaryLogSize + ")");
 			// #endif /* LOGGER == TRACE */
 
 			// Create primary log buffer
@@ -438,8 +428,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Get access to secondary log for reorganization thread
-	 * @param p_secLog
-	 *            the Secondary Log
+	 *
+	 * @param p_secLog the Secondary Log
 	 */
 	protected void getAccessToSecLog(final SecondaryLog p_secLog) {
 		if (!p_secLog.isAccessed()) {
@@ -455,8 +445,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Get access to secondary log for reorganization thread
-	 * @param p_secLog
-	 *            the Secondary Log
+	 *
+	 * @param p_secLog the Secondary Log
 	 */
 	protected void leaveSecLog(final SecondaryLog p_secLog) {
 		if (p_secLog.isAccessed()) {
@@ -466,22 +456,15 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Prints the metadata of one log entry
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_localID
-	 *            the LocalID
-	 * @param p_payload
-	 *            buffer with payload
-	 * @param p_offset
-	 *            offset within buffer
-	 * @param p_length
-	 *            length of payload
-	 * @param p_version
-	 *            version of chunk
-	 * @param p_index
-	 *            index of log entry
-	 * @param p_logEntryHeader
-	 *            the log entry header
+	 *
+	 * @param p_nodeID         the NodeID
+	 * @param p_localID        the LocalID
+	 * @param p_payload        buffer with payload
+	 * @param p_offset         offset within buffer
+	 * @param p_length         length of payload
+	 * @param p_version        version of chunk
+	 * @param p_index          index of log entry
+	 * @param p_logEntryHeader the log entry header
 	 */
 	private void printMetadata(final short p_nodeID, final long p_localID, final byte[] p_payload, final int p_offset,
 			final int p_length,
@@ -495,7 +478,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 						new String(Arrays.copyOfRange(p_payload,
 								p_offset + p_logEntryHeader.getHeaderSize(p_payload, p_offset), p_offset
 										+ p_logEntryHeader.getHeaderSize(p_payload, p_offset) + PAYLOAD_PRINT_LENGTH))
-				.trim().getBytes();
+								.trim().getBytes();
 
 				if (Tools.looksLikeUTF8(array)) {
 					System.out.println("Log Entry " + p_index + ": \t ChunkID - " + chunkID + "(" + p_nodeID + ", "
@@ -525,12 +508,10 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Reads the local data of one log
-	 * @param p_owner
-	 *            the NodeID
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID
+	 *
+	 * @param p_owner   the NodeID
+	 * @param p_chunkID the ChunkID
+	 * @param p_rangeID the RangeID
 	 * @return the local data
 	 * @note for testing only
 	 */
@@ -548,13 +529,15 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 				ret = getSecondaryLog(p_chunkID, p_owner, p_rangeID).readAllSegments();
 			}
-		} catch (final IOException | InterruptedException e) {}
+		} catch (final IOException | InterruptedException e) {
+		}
 
 		return ret;
 	}
 
 	/**
 	 * Returns the current utilization of primary log and all secondary logs
+	 *
 	 * @return the current utilization
 	 */
 	public String getCurrentUtilization() {
@@ -616,8 +599,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Returns the current utilization of given node
-	 * @param p_nodeID
-	 *            the NodeID of the peer whose utilization is printed
+	 *
+	 * @param p_nodeID the NodeID of the peer whose utilization is printed
 	 * @return the current utilization
 	 */
 	public String getCurrentUtilization(final short p_nodeID) {
@@ -637,8 +620,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Handles an incoming LogMessage
-	 * @param p_message
-	 *            the LogMessage
+	 *
+	 * @param p_message the LogMessage
 	 */
 	private void incomingLogMessage(final LogMessage p_message) {
 		long chunkID;
@@ -677,8 +660,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Handles an incoming RemoveMessage
-	 * @param p_message
-	 *            the RemoveMessage
+	 *
+	 * @param p_message the RemoveMessage
 	 */
 	private void incomingRemoveMessage(final RemoveMessage p_message) {
 		long chunkID;
@@ -702,8 +685,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Handles an incoming InitRequest
-	 * @param p_request
-	 *            the InitRequest
+	 *
+	 * @param p_request the InitRequest
 	 */
 	private void incomingInitRequest(final InitRequest p_request) {
 		short owner;
@@ -732,7 +715,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 									m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
 									m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize, m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize,
+							m_logSegmentSize);
 				}
 			} else {
 				if (!cat.exists(-1, (byte) firstChunkIDOrRangeID)) {
@@ -742,7 +726,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 							m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
 							m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize, m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize,
+							m_logSegmentSize);
 				}
 			}
 		} catch (final IOException | InterruptedException e) {
@@ -764,13 +749,14 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 	/**
 	 * Handles an incoming GetUtilizationRequest
-	 * @param p_request
-	 *            the GetUtilizationRequest
+	 *
+	 * @param p_request the GetUtilizationRequest
 	 */
 	private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
 
 		if (m_loggingIsActive) {
-			final NetworkErrorCodes err = m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
+			final NetworkErrorCodes err =
+					m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
 			// #if LOGGER >= ERROR
 			if (err != NetworkErrorCodes.SUCCESS) {
 				m_logger.error(LogService.class, "Could not answer GetUtilizationRequest: " + err);
@@ -794,20 +780,20 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		if (p_message != null) {
 			if (p_message.getType() == LogMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case LogMessages.SUBTYPE_LOG_MESSAGE:
-					incomingLogMessage((LogMessage) p_message);
-					break;
-				case LogMessages.SUBTYPE_REMOVE_MESSAGE:
-					incomingRemoveMessage((RemoveMessage) p_message);
-					break;
-				case LogMessages.SUBTYPE_INIT_REQUEST:
-					incomingInitRequest((InitRequest) p_message);
-					break;
-				case LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST:
-					incomingGetUtilizationRequest((GetUtilizationRequest) p_message);
-					break;
-				default:
-					break;
+					case LogMessages.SUBTYPE_LOG_MESSAGE:
+						incomingLogMessage((LogMessage) p_message);
+						break;
+					case LogMessages.SUBTYPE_REMOVE_MESSAGE:
+						incomingRemoveMessage((RemoveMessage) p_message);
+						break;
+					case LogMessages.SUBTYPE_INIT_REQUEST:
+						incomingInitRequest((InitRequest) p_message);
+						break;
+					case LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST:
+						incomingGetUtilizationRequest((GetUtilizationRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -821,8 +807,10 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	private void registerNetworkMessages() {
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessage.class);
 		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST, GetUtilizationRequest.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE, GetUtilizationResponse.class);
+		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST,
+				GetUtilizationRequest.class);
+		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE,
+				GetUtilizationResponse.class);
 	}
 
 	/**

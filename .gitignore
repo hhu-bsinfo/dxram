@@ -9,3 +9,8 @@
 /cmd_*
 *.DS_Store
 log.txt
+/.idea
+*.swp
+/DXRAM.jar
+/dxram.iml
+/dxram_term_history

@@ -7,10 +7,10 @@ import java.nio.ByteBuffer;
  * Used to confirm received bytes
  * @author Marc Ewert 14.10.2014
  */
-public final class FlowControlMessage extends AbstractMessage {
+final class FlowControlMessage extends AbstractMessage {
 
-	public static final byte TYPE = 0;
-	public static final byte SUBTYPE = 1;
+	protected static final byte TYPE = 0;
+	protected static final byte SUBTYPE = 1;
 
 	private int m_confirmedBytes;
 

@@ -216,10 +216,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		setupJNI();
 
 		// #if LOGGER >= DEBUG
-		// // // // m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up components...");
-		// // // // setupComponents(m_configuration);
-		// // // // m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up services...");
-		// // // // setupServices(m_configuration);
+		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up components...");
+		setupComponents(m_configuration);
+		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, "Setting up services...");
+		setupServices(m_configuration);
 		// #endif /* LOGGER >= DEBUG */
 
 		// sort list by initialization priority
@@ -405,7 +405,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 					try {
 						m_components.put(clazz.getName(),
 								(AbstractDXRAMComponent) ctor
-								.newInstance(new Object[] {priorityInit, priorityShutdown}));
+										.newInstance(new Object[] {priorityInit, priorityShutdown}));
 					} catch (final InstantiationException | IllegalAccessException | IllegalArgumentException
 							| InvocationTargetException e) {
 						// #if LOGGER >= ERROR
@@ -565,7 +565,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		overrideConfigurationWithVMArguments();
 
 		// #if LOGGER >= DEBUG
-		// // // // m_logger.debug(DXRAM_ENGINE_LOG_HEADER, m_configuration.toString());
+		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, m_configuration.toString());
 		// #endif /* LOGGER >= DEBUG */
 
 		// setup components and services
@@ -670,8 +670,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			// #if LOGGER >= DEBUG
-			// // // // m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-					// // // // "Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
+			m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
+					"Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
 			// #endif /* LOGGER >= DEBUG */
 
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.IP, keyValue[1]);
@@ -681,8 +681,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			// #if LOGGER >= DEBUG
-			// // // // m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-					// // // // "Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
+			m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
+					"Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
 			// #endif /* LOGGER >= DEBUG */
 
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.PORT, Integer.parseInt(keyValue[1]));
@@ -692,8 +692,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		keyValue[1] = System.getProperty(keyValue[0]);
 		if (keyValue[1] != null) {
 			// #if LOGGER >= DEBUG
-			// // // // m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-					// // // // "Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
+			m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
+					"Overriding '" + keyValue[0] + "' with vm argument '" + keyValue[1] + "'.");
 			// #endif /* LOGGER >= DEBUG */
 
 			m_settings.overrideValue(DXRAMEngineConfigurationValues.ROLE, keyValue[1]);

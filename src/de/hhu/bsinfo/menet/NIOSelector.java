@@ -17,7 +17,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Manages the network connections
- *
  * @author Florian Klein 18.03.2012
  */
 class NIOSelector extends Thread {
@@ -33,7 +32,8 @@ class NIOSelector extends Thread {
 	private NIOConnectionCreator m_connectionCreator;
 	private NIOInterface m_nioInterface;
 
-	private final LinkedHashSet<ChangeOperationsRequest> m_changeRequests;
+	private int m_connectionTimeout;
+	private LinkedHashSet<ChangeOperationsRequest> m_changeRequests;
 	private ReentrantLock m_changeLock;
 
 	private boolean m_running;
@@ -42,19 +42,24 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Creates an instance of NIOSelector
-	 *
-	 * @param p_connectionCreator the NIOConnectionCreator
-	 * @param p_nioInterface      the NIOInterface to send/receive data
-	 * @param p_port              the port
+	 * @param p_connectionCreator
+	 *            the NIOConnectionCreator
+	 * @param p_nioInterface
+	 *            the NIOInterface to send/receive data
+	 * @param p_connectionTimeout
+	 *            the connection timeout
+	 * @param p_port
+	 *            the port
 	 */
 	protected NIOSelector(final NIOConnectionCreator p_connectionCreator, final NIOInterface p_nioInterface,
-			final int p_port) {
+			final int p_port, final int p_connectionTimeout) {
 		m_serverChannel = null;
 		m_selector = null;
 
 		m_nioInterface = p_nioInterface;
 		m_connectionCreator = p_connectionCreator;
 
+		m_connectionTimeout = p_connectionTimeout;
 		m_changeRequests = new LinkedHashSet<ChangeOperationsRequest>();
 		m_changeLock = new ReentrantLock(false);
 
@@ -79,13 +84,12 @@ class NIOSelector extends Thread {
 
 				// #if LOGGER >= ERROR
 				NetworkHandler.getLogger()
-						.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
+				.error(getClass().getSimpleName(), "Could not bind network address. Retry in 1s.");
 				// #endif /* LOGGER >= ERROR */
 
 				try {
 					Thread.sleep(1000);
-				} catch (final InterruptedException e1) {
-				}
+				} catch (final InterruptedException e1) {}
 			}
 		}
 
@@ -100,7 +104,6 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Returns the Selector
-	 *
 	 * @return the Selector
 	 */
 	protected Selector getSelector() {
@@ -134,6 +137,8 @@ class NIOSelector extends Thread {
 		Set<SelectionKey> selected = null;
 		SelectionKey key = null;
 
+		LinkedHashSet<ChangeOperationsRequest> delayedCloseOperations = new LinkedHashSet<ChangeOperationsRequest>();
+
 		while (m_running) {
 			m_changeLock.lock();
 			Iterator<ChangeOperationsRequest> iter;
@@ -159,7 +164,20 @@ class NIOSelector extends Thread {
 					}
 				} else if (interest == CLOSE) {
 					// CLOSE -> close connection
-					m_connectionCreator.closeConnection(connection, false);
+					// Only close connection if since request at least the time for two connection timeouts has elapsed
+					if (System.currentTimeMillis() - connection.getClosingTimestamp() > (2 * m_connectionTimeout)) {
+						// #if LOGGER >= DEBUG
+						try {
+							NetworkHandler.getLogger().debug(getClass().getSimpleName(),
+									"Closing connection to " + connection.getDestination() + ";" + connection.getChannel().getRemoteAddress());
+						} catch (final IOException e) {}
+						// #endif /* LOGGER >= DEBUG */
+						// Close connection
+						m_connectionCreator.closeConnection(connection, false);
+					} else {
+						// Delay connection closure
+						delayedCloseOperations.add(changeRequest);
+					}
 				} else {
 					// CONNECT -> register with connection as attachment (ACCEPT is registered directly)
 					try {
@@ -170,6 +188,10 @@ class NIOSelector extends Thread {
 						// #endif /* LOGGER >= ERROR */
 					}
 				}
+			}
+			if (!delayedCloseOperations.isEmpty()) {
+				m_changeRequests.addAll(delayedCloseOperations);
+				delayedCloseOperations.clear();
 			}
 			m_changeLock.unlock();
 
@@ -204,8 +226,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Accept a new incoming connection
-	 *
-	 * @throws IOException if the new connection could not be accesses
+	 * @throws IOException
+	 *             if the new connection could not be accesses
 	 */
 	private void accept() throws IOException {
 		SocketChannel channel;
@@ -218,10 +240,10 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Execute key by creating a new connection, reading from channel or writing to channel
-	 *
-	 * @param p_key the current key
+	 * @param p_key
+	 *            the current key
 	 */
-	public void dispatch(final SelectionKey p_key) {
+	private void dispatch(final SelectionKey p_key) {
 		boolean complete = true;
 		boolean successful = true;
 		NIOConnection connection;
@@ -240,7 +262,7 @@ class NIOSelector extends Thread {
 							// #if LOGGER >= ERROR
 							NetworkHandler.getLogger().error(getClass().getSimpleName(),
 									"Could not read from channel (" + NodeID.toHexString(connection.getDestination())
-											+ ")!");
+									+ ")!");
 							// #endif /* LOGGER >= ERROR */
 							successful = false;
 						}
@@ -261,7 +283,7 @@ class NIOSelector extends Thread {
 						// #if LOGGER >= ERROR
 						NetworkHandler.getLogger().error(getClass().getSimpleName(),
 								"Could not write to channel (" + NodeID.toHexString(connection.getDestination())
-										+ ")!");
+								+ ")!");
 						// #endif /* LOGGER >= ERROR */
 						complete = false;
 					}
@@ -288,8 +310,8 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Append the given ChangeOperationsRequest to the Queue
-	 *
-	 * @param p_request the ChangeOperationsRequest
+	 * @param p_request
+	 *            the ChangeOperationsRequest
 	 */
 	protected void changeOperationInterestAsync(final ChangeOperationsRequest p_request) {
 		boolean res;
@@ -305,15 +327,15 @@ class NIOSelector extends Thread {
 
 	/**
 	 * Append the given NIOConnection to the Queue
-	 *
-	 * @param p_connection the NIOConnection to close
+	 * @param p_connection
+	 *            the NIOConnection to close
 	 */
 	protected void closeConnectionAsync(final NIOConnection p_connection) {
 		m_changeLock.lock();
 		m_changeRequests.add(new ChangeOperationsRequest(p_connection, CLOSE));
 		m_changeLock.unlock();
 
-		m_selector.wakeup();
+		// m_selector.wakeup();
 	}
 
 	/**

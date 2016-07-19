@@ -3,8 +3,6 @@ package de.hhu.bsinfo.menet;
 
 import java.io.IOException;
 
-import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
-
 /**
  * Creates new network connections
  * @author Florian Klein
@@ -52,13 +50,11 @@ abstract class AbstractConnectionCreator {
 	 * Creates a new connection to the given destination
 	 * @param p_destination
 	 *            the destination
-	 * @param p_listener
-	 *            the ConnectionListener
 	 * @return a new connection
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	public abstract AbstractConnection createConnection(short p_destination, DataReceiver p_listener) throws IOException;
+	public abstract AbstractConnection createConnection(short p_destination) throws IOException;
 
 	/**
 	 * Returns the selector status
@@ -83,6 +79,17 @@ abstract class AbstractConnectionCreator {
 		if (m_listener != null) {
 			m_listener.connectionCreated(p_connection);
 			p_connection.setConnected(true);
+		}
+	}
+
+	/**
+	 * Informs the ConnectionCreatorListener to create a new connection
+	 * @param p_destination
+	 *            the remote NodeID
+	 */
+	protected final void fireCreateConnection(final short p_destination) {
+		if (m_listener != null) {
+			m_listener.createConnection(p_destination);
 		}
 	}
 
@@ -112,6 +119,13 @@ abstract class AbstractConnectionCreator {
 		 *            the new connection
 		 */
 		void connectionCreated(AbstractConnection p_connection);
+
+		/**
+		 * A new connection must be created
+		 * @param p_destination
+		 *            the remote NodeID
+		 */
+		void createConnection(short p_destination);
 
 		/**
 		 * A connection was closed

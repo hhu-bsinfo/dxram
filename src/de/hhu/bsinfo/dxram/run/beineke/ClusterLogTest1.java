@@ -11,8 +11,8 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 /**
  * First test case for Cluster 2016.
  * Tests the performance of the chunk and network interfaces:
- * - Three clients create CHUNKS_PER_CLIENT chunks of size CHUNK_SIZE and wait for requests.
- * - One master puts a range of chunks (CHUNKS_PER_PUT, random offset, random client) periodically.
+ * - Three masters create CHUNKS_PER_CLIENT chunks of size CHUNK_SIZE and wait for requests.
+ * - One client puts a range of chunks (CHUNKS_PER_PUT, random offset, random client) periodically.
  * - Network bandwidth is logged externally.
  * @author Kevin Beineke
  *         19.01.2016

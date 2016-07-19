@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Florian Klein 18.03.2012
  * @author Marc Ewert 14.10.2014
  */
-public abstract class AbstractConnection {
+abstract class AbstractConnection {
 
 	// Attributes
 	private final DataHandler m_dataHandler;
@@ -28,6 +28,7 @@ public abstract class AbstractConnection {
 
 	private long m_creationTimestamp;
 	private long m_lastAccessTimestamp;
+	private long m_closingTimestamp;
 
 	private ReentrantLock m_lock;
 
@@ -68,6 +69,7 @@ public abstract class AbstractConnection {
 
 		m_creationTimestamp = System.currentTimeMillis();
 		m_lastAccessTimestamp = 0;
+		m_closingTimestamp = -1;
 
 		m_flowControlWindowSize = p_flowControlWindowSize;
 		m_flowControlCondLock = new ReentrantLock(false);
@@ -134,7 +136,22 @@ public abstract class AbstractConnection {
 		return m_lastAccessTimestamp;
 	}
 
+	/**
+	 * Get the closing timestamp
+	 * @return the closing timestamp
+	 */
+	public final long getClosingTimestamp() {
+		return m_closingTimestamp;
+	}
+
 	// Setters
+	/**
+	 * Set the closing timestamp
+	 */
+	protected final void setClosingTimestamp() {
+		m_closingTimestamp = System.currentTimeMillis();
+	}
+
 	/**
 	 * Marks the connection as (not) connected
 	 * @param p_connected
@@ -172,7 +189,7 @@ public abstract class AbstractConnection {
 	 * @throws IOException
 	 *             if the data could not be written
 	 */
-	public final void write(final AbstractMessage p_message) throws IOException {
+	protected final void write(final AbstractMessage p_message) throws IOException {
 		m_flowControlCondLock.lock();
 		while (m_unconfirmedBytes > m_flowControlWindowSize) {
 			try {
@@ -205,6 +222,15 @@ public abstract class AbstractConnection {
 	protected abstract void doWrite(final AbstractMessage p_message) throws NetworkException;
 
 	/**
+	 * Writes data to the connection without delay
+	 * @param p_message
+	 *            the AbstractMessage to send
+	 * @throws NetworkException
+	 *             if message buffer is too small
+	 */
+	protected abstract void doForceWrite(AbstractMessage p_message) throws NetworkException;
+
+	/**
 	 * Returns whether there is data left to send in output queue
 	 * @return whether the output queue is empty (false) or not (true)
 	 */
@@ -225,7 +251,7 @@ public abstract class AbstractConnection {
 	/**
 	 * Closes the connection immediately
 	 */
-	public final void close() {
+	protected final void close() {
 		m_connected = false;
 
 		doClose();
@@ -234,7 +260,7 @@ public abstract class AbstractConnection {
 	/**
 	 * Closes the connection when there is no data left in transfer
 	 */
-	public final void closeGracefully() {
+	protected final void closeGracefully() {
 		m_connected = false;
 
 		doCloseGracefully();
@@ -253,19 +279,23 @@ public abstract class AbstractConnection {
 	/**
 	 * Called when the connection was closed.
 	 */
-	public void cleanup() {}
+	protected void cleanup() {}
 
 	/**
 	 * Informs the ConnectionListener about a new message
 	 * @param p_message
 	 *            the new message
 	 */
-	protected void deliverMessage(final AbstractMessage p_message) {
+	private void deliverMessage(final AbstractMessage p_message) {
 		if (p_message instanceof FlowControlMessage) {
 			handleFlowControlMessage((FlowControlMessage) p_message);
 		} else {
 			if (m_listener != null) {
 				m_listener.newMessage(p_message);
+			} else {
+				// #if LOGGER >= ERROR
+				NetworkHandler.getLogger().error(getClass().getSimpleName(), "No listener registered. Message will be discarded: " + p_message);
+				// #endif /* LOGGER >= ERROR */
 			}
 		}
 	}
@@ -292,7 +322,7 @@ public abstract class AbstractConnection {
 		m_sentMessages++;
 
 		try {
-			doWrite(message);
+			doForceWrite(message);
 		} catch (final NetworkException e) {
 			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send flow control message", e);
@@ -340,7 +370,7 @@ public abstract class AbstractConnection {
 	 * Manages for reacting to connections
 	 * @author Marc Ewert 11.04.2014
 	 */
-	public interface DataReceiver {
+	protected interface DataReceiver {
 
 		// Methods
 		/**
@@ -397,6 +427,7 @@ public abstract class AbstractConnection {
 								message.setDestination(m_nodeMap.getOwnNodeID());
 								message.setSource(m_destination);
 								m_receivedMessages++;
+
 								deliverMessage(message);
 							}
 						}

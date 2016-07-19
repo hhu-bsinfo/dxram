@@ -8,6 +8,7 @@ import de.hhu.bsinfo.utils.log.Logger;
 
 /**
  * Separate class to avoid further bloating of DXRAMEngine to setup JNI related things (used by DXRAMEngine).
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class DXRAMJNIManager {
@@ -17,8 +18,8 @@ public class DXRAMJNIManager {
 
 	/**
 	 * Constructor
-	 * @param p_logger
-	 *            Logger so this class can do some logging as well.
+	 *
+	 * @param p_logger Logger so this class can do some logging as well.
 	 */
 	public DXRAMJNIManager(final Logger p_logger) {
 		m_logger = p_logger;
@@ -26,12 +27,12 @@ public class DXRAMJNIManager {
 
 	/**
 	 * Setup JNI related things for DXRAM according to the provided profile via settings.
-	 * @param p_settings
-	 *            Settings data for setup.
+	 *
+	 * @param p_settings Settings data for setup.
 	 */
 	public void setup(final DXRAMEngine.Settings p_settings) {
 		// #if LOGGER >= DEBUG
-		// // // // m_logger.debug(LOG_HEADER, "Setting up JNI classes...");
+		m_logger.debug(LOG_HEADER, "Setting up JNI classes...");
 		// #endif /* LOGGER >= DEBUG */
 
 		String path;
@@ -54,7 +55,7 @@ public class DXRAMJNIManager {
 			path = cwd + "/jni/libJNIconsole." + extension;
 		}
 		// #if LOGGER >= DEBUG
-		// // // // m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
+		m_logger.debug(LOG_HEADER, "Loading JNIconsole: " + path);
 		// #endif /* LOGGER >= DEBUG */
 
 		JNIconsole.load(path);
@@ -64,7 +65,7 @@ public class DXRAMJNIManager {
 			path = cwd + "/jni/libJNINativeMemory." + extension;
 		}
 		// #if LOGGER >= DEBUG
-		// // // // m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
+		m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
 		// #endif /* LOGGER >= DEBUG */
 
 		JNINativeMemory.load(path);

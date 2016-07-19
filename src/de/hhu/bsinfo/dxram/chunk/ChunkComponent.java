@@ -17,6 +17,7 @@ import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Component for chunk handling.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public class ChunkComponent extends AbstractDXRAMComponent {
@@ -30,12 +31,11 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public ChunkComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -43,8 +43,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Create the index chunk for the nameservice.
-	 * @param p_size
-	 *            Size of the index chunk.
+	 *
+	 * @param p_size Size of the index chunk.
 	 * @return Chunkid of the index chunk.
 	 */
 	public long createIndexChunk(final int p_size) {
@@ -62,8 +62,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Internal chunk create for management data
-	 * @param p_size
-	 *            Size of the chunk
+	 *
+	 * @param p_size Size of the chunk
 	 * @return Chunkid of the created chunk.
 	 */
 	public long createChunk(final int p_size) {
@@ -81,8 +81,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Internal chunk put for management data.
-	 * @param p_dataStructure
-	 *            Data structure to put
+	 *
+	 * @param p_dataStructure Data structure to put
 	 * @return True if successful, false otherwise
 	 */
 	public boolean putChunk(final DataStructure p_dataStructure) {
@@ -101,8 +101,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 				for (short peer : backupPeers) {
 					if (peer != m_boot.getNodeID() && peer != NodeID.INVALID_ID) {
 						// #if LOGGER == TRACE
-						// // // // m_logger.trace(getClass(),
-								// // // // "Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
+						m_logger.trace(getClass(),
+								"Logging " + ChunkID.toHexString(p_dataStructure.getID()) + " to " + peer);
 						// #endif /* LOGGER == TRACE */
 
 						m_network.sendMessage(new LogMessage(peer, p_dataStructure));
@@ -116,8 +116,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Put a recovered chunks into local memory.
-	 * @param p_chunks
-	 *            Chunks to put.
+	 *
+	 * @param p_chunks Chunks to put.
 	 */
 	public void putRecoveredChunks(final Chunk[] p_chunks) {
 		Chunk chunk = null;
@@ -130,7 +130,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 			m_memoryManager.put(chunk);
 
 			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "Stored recovered chunk " + chunk + " locally");
+			m_logger.trace(getClass(), "Stored recovered chunk " + chunk + " locally");
 			// #endif /* LOGGER == TRACE */
 		}
 		m_memoryManager.unlockManage();
@@ -138,8 +138,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Puts migrated or recovered Chunks
-	 * @param p_chunks
-	 *            the Chunks
+	 *
+	 * @param p_chunks the Chunks
 	 * @return whether storing foreign chunks was successful or not
 	 */
 	public boolean putForeignChunks(final Chunk[] p_chunks) {
@@ -159,7 +159,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 			m_memoryManager.put(chunk);
 
 			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(), "Stored migrated chunk " + chunk + " locally");
+			m_logger.trace(getClass(), "Stored migrated chunk " + chunk + " locally");
 			// #endif /* LOGGER == TRACE */
 
 			if (m_backup.isActive()) {
@@ -205,7 +205,8 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
+	}
 
 	@Override
 	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,

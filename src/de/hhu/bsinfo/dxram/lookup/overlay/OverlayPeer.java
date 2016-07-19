@@ -787,8 +787,6 @@ public class OverlayPeer implements MessageReceiver {
 	public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
 		assert p_storageId < Math.pow(2, 31) && p_storageId >= 0;
 
-		System.out.println(">>>>");
-
 		boolean check = false;
 		if (!OverlayHelper.isOverlayStable(m_initialNumberOfSuperpeers, m_superpeers.size())) {
 			check = true;
@@ -1041,7 +1039,7 @@ public class OverlayPeer implements MessageReceiver {
 		JoinResponse joinResponse = null;
 
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(getClass(), "Entering joinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
+		m_logger.trace(getClass(), "Entering joinSuperpeerOverlay with: p_contactSuperpeer=" + p_contactSuperpeer);
 		// #endif /* LOGGER == TRACE */
 
 		contactSuperpeer = p_contactSuperpeer;
@@ -1055,9 +1053,9 @@ public class OverlayPeer implements MessageReceiver {
 
 		while (-1 != contactSuperpeer) {
 			// #if LOGGER == TRACE
-			// // // // m_logger.trace(getClass(),
-			// // // // "Contacting " + contactSuperpeer + " to get the responsible superpeer, I am "
-			// // // // + NodeID.toHexString(m_nodeID));
+			m_logger.trace(getClass(),
+					"Contacting " + contactSuperpeer + " to get the responsible superpeer, I am "
+							+ NodeID.toHexString(m_nodeID));
 			// #endif /* LOGGER == TRACE */
 
 			joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_NOT_SUPERPEER);
@@ -1076,7 +1074,7 @@ public class OverlayPeer implements MessageReceiver {
 		OverlayHelper.insertSuperpeer(m_mySuperpeer, m_superpeers);
 
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(getClass(), "Exiting joinSuperpeerOverlay");
+		m_logger.trace(getClass(), "Exiting joinSuperpeerOverlay");
 		// #endif /* LOGGER == TRACE */
 
 		return true;
@@ -1098,8 +1096,8 @@ public class OverlayPeer implements MessageReceiver {
 		AskAboutSuccessorResponse response;
 
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(OverlayHelper.class,
-		// // // // "Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		m_logger.trace(OverlayHelper.class,
+				"Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
 		// #endif /* LOGGER == TRACE */
 
 		m_overlayLock.lock();
@@ -1150,7 +1148,7 @@ public class OverlayPeer implements MessageReceiver {
 			m_overlayLock.unlock();
 		}
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
+		m_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
 		// #endif /* LOGGER == TRACE */
 
 		return responsibleSuperpeer;
@@ -1166,7 +1164,7 @@ public class OverlayPeer implements MessageReceiver {
 
 		source = p_sendSuperpeersMessage.getSource();
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + NodeID.toHexString(source));
+		m_logger.trace(getClass(), "Got Message: SEND_SUPERPEERS_MESSAGE from " + NodeID.toHexString(source));
 		// #endif /* LOGGER == TRACE */
 
 		m_overlayLock.lock();

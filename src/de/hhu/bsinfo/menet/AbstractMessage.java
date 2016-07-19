@@ -13,19 +13,18 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class AbstractMessage {
 
 	// Constants
-	public static final int INVALID_MESSAGE_ID = -1;
-	public static final byte DEFAULT_TYPE = 0;
-	public static final byte DEFAULT_SUBTYPE = 0;
-	public static final byte DEFAULT_STATUS_CODE = 0;
-	public static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
-	public static final byte DEFAULT_RATING_VALUE = 1;
+	private static final int INVALID_MESSAGE_ID = -1;
+	private static final byte DEFAULT_TYPE = 0;
+	private static final byte DEFAULT_SUBTYPE = 0;
+	private static final byte DEFAULT_STATUS_CODE = 0;
+	protected static final boolean DEFAULT_EXCLUSIVITY_VALUE = false;
 
 	/*- Header size:
 	 *  messageID + type + subtype + exclusivity + statusCode + payloadSize
 	 *  3b        + 1b   + 1b      + 1b          + 1b         + 4b           = 11 bytes
 	 */
-	public static final byte HEADER_SIZE = 11;
-	public static final byte PAYLOAD_SIZE_LENGTH = 4;
+	protected static final byte HEADER_SIZE = 11;
+	protected static final byte PAYLOAD_SIZE_LENGTH = 4;
 
 	// Attributes
 	// (!) MessageID occupies only 3 byte in message header
@@ -118,7 +117,7 @@ public abstract class AbstractMessage {
 	 * @param p_statusCode
 	 *            the status code
 	 */
-	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype,
+	private AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype,
 			final boolean p_exclusivity,
 			final byte p_statusCode) {
 		assert p_destination != NodeID.INVALID_ID;

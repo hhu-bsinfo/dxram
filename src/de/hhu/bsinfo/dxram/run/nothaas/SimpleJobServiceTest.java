@@ -21,6 +21,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  * Run this as a peer, start one superpeer and an additional
  * peer service as remote instancing receiving remote jobs if this
  * options was selected.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
 public class SimpleJobServiceTest extends AbstractMain implements JobEventListener {
@@ -55,8 +56,8 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 
 	/**
 	 * Java main entry point.
-	 * @param p_args
-	 *            Main arguments.
+	 *
+	 * @param p_args Main arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new SimpleJobServiceTest();
@@ -129,6 +130,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 
 	/**
 	 * Implementation of a job for this test.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
 	 */
 	public static class JobTest extends AbstractJob {
@@ -143,8 +145,8 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 
 		/**
 		 * Constructor
-		 * @param p_parameterChunkIDs
-		 *            ChunkIDs to pass to the job.
+		 *
+		 * @param p_parameterChunkIDs ChunkIDs to pass to the job.
 		 */
 		public JobTest(final long... p_parameterChunkIDs) {
 			super(p_parameterChunkIDs);
@@ -161,7 +163,7 @@ public class SimpleJobServiceTest extends AbstractMain implements JobEventListen
 			try {
 				// abusing chunkID for time to wait
 				// #if LOGGER >= DEBUG
-				// // // // logger.debug(getClass(), "Sleeping " + p_chunkIDs[0]);
+				logger.debug(getClass(), "Sleeping " + p_chunkIDs[0]);
 				// #endif /* LOGGER >= DEBUG */
 
 				Thread.sleep(p_chunkIDs[0]);

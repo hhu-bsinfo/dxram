@@ -18,6 +18,7 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 
 /**
  * Component for remote logging of chunks.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public class LogComponent extends AbstractDXRAMComponent {
@@ -33,10 +34,9 @@ public class LogComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Creates the log component
-	 * @param p_priorityInit
-	 *            the initialization priority
-	 * @param p_priorityShutdown
-	 *            the shutdown priority
+	 *
+	 * @param p_priorityInit     the initialization priority
+	 * @param p_priorityShutdown the shutdown priority
 	 */
 	public LogComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -44,12 +44,10 @@ public class LogComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns the header size
-	 * @param p_nodeID
-	 *            the NodeID
-	 * @param p_localID
-	 *            the LocalID
-	 * @param p_size
-	 *            the size of the Chunk
+	 *
+	 * @param p_nodeID  the NodeID
+	 * @param p_localID the LocalID
+	 * @param p_size    the size of the Chunk
 	 * @return the header size
 	 */
 	public short getAproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
@@ -58,10 +56,9 @@ public class LogComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Initializes a new backup range
-	 * @param p_firstChunkIDOrRangeID
-	 *            the beginning of the range
-	 * @param p_backupPeers
-	 *            the backup peers
+	 *
+	 * @param p_firstChunkIDOrRangeID the beginning of the range
+	 * @param p_backupPeers           the backup peers
 	 */
 	public void initBackupRange(final long p_firstChunkIDOrRangeID, final short[] p_backupPeers) {
 		InitRequest request;
@@ -72,7 +69,8 @@ public class LogComponent extends AbstractDXRAMComponent {
 		if (null != p_backupPeers) {
 			for (int i = 0; i < p_backupPeers.length; i++) {
 				if (ChunkID.getCreatorID(p_firstChunkIDOrRangeID) != -1) {
-					request = new InitRequest(p_backupPeers[i], p_firstChunkIDOrRangeID, ChunkID.getCreatorID(p_firstChunkIDOrRangeID));
+					request = new InitRequest(p_backupPeers[i], p_firstChunkIDOrRangeID,
+							ChunkID.getCreatorID(p_firstChunkIDOrRangeID));
 				} else {
 					request = new InitRequest(p_backupPeers[i], p_firstChunkIDOrRangeID, m_boot.getNodeID());
 				}
@@ -89,18 +87,16 @@ public class LogComponent extends AbstractDXRAMComponent {
 			}
 		}
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(LogService.class, "Time to initialize range: " + (System.currentTimeMillis() - time));
+		m_logger.trace(LogService.class, "Time to initialize range: " + (System.currentTimeMillis() - time));
 		// #endif /* LOGGER == TRACE */
 	}
 
 	/**
 	 * Recovers all Chunks of given backup range
-	 * @param p_owner
-	 *            the NodeID of the node whose Chunks have to be restored
-	 * @param p_chunkID
-	 *            the ChunkID
-	 * @param p_rangeID
-	 *            the RangeID
+	 *
+	 * @param p_owner   the NodeID of the node whose Chunks have to be restored
+	 * @param p_chunkID the ChunkID
+	 * @param p_rangeID the RangeID
 	 * @return the recovered Chunks
 	 */
 	public Chunk[] recoverBackupRange(final short p_owner, final long p_chunkID, final byte p_rangeID) {
@@ -126,17 +122,17 @@ public class LogComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Recovers all Chunks of given backup range
-	 * @param p_fileName
-	 *            the file name
-	 * @param p_path
-	 *            the path of the folder the file is in
+	 *
+	 * @param p_fileName the file name
+	 * @param p_path     the path of the folder the file is in
 	 * @return the recovered Chunks
 	 */
 	public Chunk[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) {
 		Chunk[] ret = null;
 
 		try {
-			ret = SecondaryLog.recoverBackupRangeFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize, m_logSegmentSize);
+			ret = SecondaryLog.recoverBackupRangeFromFile(p_fileName, p_path, m_useChecksum, m_secondaryLogSize,
+					m_logSegmentSize);
 		} catch (final IOException | InterruptedException e) {
 			// #if LOGGER >= ERROR
 			m_logger.error(LogService.class, "Could not recover from file " + p_path + ": " + e);
@@ -147,7 +143,8 @@ public class LogComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
+			final Settings p_settings) {
 
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
@@ -158,16 +155,12 @@ public class LogComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Sets attributes from log service
-	 * @param p_logService
-	 *            the log service
-	 * @param p_backupDirectory
-	 *            the backup directory
-	 * @param p_useChecksum
-	 *            whether checksums are used or not
-	 * @param p_secondaryLogSize
-	 *            the secondary log size
-	 * @param p_logSegmentSize
-	 *            the segment size
+	 *
+	 * @param p_logService       the log service
+	 * @param p_backupDirectory  the backup directory
+	 * @param p_useChecksum      whether checksums are used or not
+	 * @param p_secondaryLogSize the secondary log size
+	 * @param p_logSegmentSize   the segment size
 	 */
 	protected void setAttributes(final LogService p_logService, final String p_backupDirectory,
 			final boolean p_useChecksum, final long p_secondaryLogSize, final int p_logSegmentSize) {
@@ -178,7 +171,8 @@ public class LogComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
+	}
 
 	@Override
 	protected boolean shutdownComponent() {

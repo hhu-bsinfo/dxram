@@ -117,7 +117,9 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_terminal = getComponent(TerminalComponent.class);
 
-		loadHistoryFromFile("dxram_term_history");
+		if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+			loadHistoryFromFile("dxram_term_history");
+		}
 
 		return true;
 	}
@@ -465,7 +467,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			reader.close();
 		} catch (final FileNotFoundException e) {
 			// #if LOGGER >= DEBUG
-			// // // // m_logger.debug(getClass(), "No history found: " + p_file);
+			m_logger.debug(getClass(), "No history found: " + p_file);
 			// #endif /* LOGGER >= DEBUG */
 		} catch (final IOException e) {
 			// #if LOGGER >= ERROR

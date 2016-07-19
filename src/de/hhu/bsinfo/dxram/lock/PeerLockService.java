@@ -34,6 +34,7 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class PeerLockService extends AbstractLockService implements MessageReceiver, EventListener<NodeFailureEvent> {
@@ -200,7 +201,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						if (idle) {
 							try {
 								Thread.sleep(m_remoteLockSendIntervalMs);
-							} catch (final InterruptedException e) {}
+							} catch (final InterruptedException e) {
+							}
 						}
 
 						// Remote lock
@@ -208,19 +210,19 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						NetworkErrorCodes errNet = m_network.sendSync(request);
 						if (errNet != NetworkErrorCodes.SUCCESS) {
 							switch (errNet) {
-							case DESTINATION_UNREACHABLE:
-								err = ErrorCode.PEER_NOT_AVAILABLE;
-								break;
-							case SEND_DATA:
-								m_lookup.invalidate(p_chunkID);
-								err = ErrorCode.NETWORK;
-								break;
-							case RESPONSE_TIMEOUT:
-								err = ErrorCode.NETWORK;
-								break;
-							default:
-								assert 1 == 2;
-								break;
+								case DESTINATION_UNREACHABLE:
+									err = ErrorCode.PEER_NOT_AVAILABLE;
+									break;
+								case SEND_DATA:
+									m_lookup.invalidate(p_chunkID);
+									err = ErrorCode.NETWORK;
+									break;
+								case RESPONSE_TIMEOUT:
+									err = ErrorCode.NETWORK;
+									break;
+								default:
+									assert 1 == 2;
+									break;
 							}
 
 							break;
@@ -304,16 +306,16 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						NetworkErrorCodes errNet = m_network.sendMessage(message);
 						if (errNet != NetworkErrorCodes.SUCCESS) {
 							switch (errNet) {
-							case DESTINATION_UNREACHABLE:
-								err = ErrorCode.PEER_NOT_AVAILABLE;
-								break;
-							case SEND_DATA:
-								m_lookup.invalidate(p_chunkID);
-								err = ErrorCode.NETWORK;
-								break;
-							default:
-								assert 1 == 2;
-								break;
+								case DESTINATION_UNREACHABLE:
+									err = ErrorCode.PEER_NOT_AVAILABLE;
+									break;
+								case SEND_DATA:
+									m_lookup.invalidate(p_chunkID);
+									err = ErrorCode.NETWORK;
+									break;
+								default:
+									assert 1 == 2;
+									break;
 							}
 						}
 					}
@@ -332,8 +334,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	public void eventTriggered(final NodeFailureEvent p_event) {
 		if (p_event.getRole() == NodeRole.PEER) {
 			// #if LOGGER >= DEBUG
-			// // // // m_logger.debug(getClass(), "Connection to peer " + p_event.getNodeID()
-					// // // // + " lost, unlocking all chunks locked by lost instance.");
+			m_logger.debug(getClass(), "Connection to peer " + p_event.getNodeID()
+					+ " lost, unlocking all chunks locked by lost instance.");
 			// #endif /* LOGGER >= DEBUG */
 
 			if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
@@ -348,36 +350,36 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
 			if (p_message.getType() == LockMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case LockMessages.SUBTYPE_LOCK_REQUEST:
-					incomingLockRequest((LockRequest) p_message);
-					break;
-				case LockMessages.SUBTYPE_UNLOCK_MESSAGE:
-					incomingUnlockMessage((UnlockMessage) p_message);
-					break;
-				case LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST:
-					incomingLockedListRequest((GetLockedListRequest) p_message);
-					break;
-				default:
-					break;
+					case LockMessages.SUBTYPE_LOCK_REQUEST:
+						incomingLockRequest((LockRequest) p_message);
+						break;
+					case LockMessages.SUBTYPE_UNLOCK_MESSAGE:
+						incomingUnlockMessage((UnlockMessage) p_message);
+						break;
+					case LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST:
+						incomingLockedListRequest((GetLockedListRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
 
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(getClass(), "Exiting incomingMessage");
+		m_logger.trace(getClass(), "Exiting incomingMessage");
 		// #endif /* LOGGER == TRACE */
 	}
 
 	/**
 	 * Handles an incoming LockRequest
-	 * @param p_request
-	 *            the LockRequest
+	 *
+	 * @param p_request the LockRequest
 	 */
 	private void incomingLockRequest(final LockRequest p_request) {
 		boolean success = false;
@@ -404,8 +406,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	/**
 	 * Handles an incoming UnlockMessage
-	 * @param p_message
-	 *            the UnlockMessage
+	 *
+	 * @param p_message the UnlockMessage
 	 */
 	private void incomingUnlockMessage(final UnlockMessage p_message) {
 		// #ifdef STATISTICS
@@ -421,8 +423,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	/**
 	 * Handles an incoming GetLockedListRequest
-	 * @param p_request
-	 *            the GetLockedListRequest
+	 *
+	 * @param p_request the GetLockedListRequest
 	 */
 	private void incomingLockedListRequest(final GetLockedListRequest p_request) {
 		ArrayList<Pair<Long, Short>> list = m_lock.getLockedList();

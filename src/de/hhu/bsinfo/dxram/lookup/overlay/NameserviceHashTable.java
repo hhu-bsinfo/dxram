@@ -15,6 +15,7 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * HashTable to store ID-Mappings (Linear probing)
+ *
  * @author Kevin Beineke
  *         27.01.2014
  */
@@ -29,14 +30,13 @@ public class NameserviceHashTable {
 	private LoggerComponent m_logger;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of IDHashTable
-	 * @param p_initialElementCapacity
-	 *            the initial capacity of IDHashTable
-	 * @param p_loadFactor
-	 *            the load factor of IDHashTable
-	 * @param p_logger
-	 *            the LoggerComponent
+	 *
+	 * @param p_initialElementCapacity the initial capacity of IDHashTable
+	 * @param p_loadFactor             the load factor of IDHashTable
+	 * @param p_logger                 the LoggerComponent
 	 */
 	public NameserviceHashTable(final int p_initialElementCapacity, final float p_loadFactor,
 			final LoggerComponent p_logger) {
@@ -59,12 +59,10 @@ public class NameserviceHashTable {
 
 	/**
 	 * Sets the key-value tuple at given index
-	 * @param p_index
-	 *            the index
-	 * @param p_key
-	 *            the key
-	 * @param p_value
-	 *            the value
+	 *
+	 * @param p_index the index
+	 * @param p_key   the key
+	 * @param p_value the value
 	 */
 	public final void set(final int p_index, final int p_key, final long p_value) {
 		int index;
@@ -77,8 +75,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Gets the key at given index
-	 * @param p_index
-	 *            the index
+	 *
+	 * @param p_index the index
 	 * @return the key
 	 */
 	public final int getKey(final int p_index) {
@@ -87,8 +85,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Gets the value at given index
-	 * @param p_index
-	 *            the index
+	 *
+	 * @param p_index the index
 	 * @return the value
 	 */
 	public final long getValue(final int p_index) {
@@ -100,6 +98,7 @@ public class NameserviceHashTable {
 
 	/**
 	 * Returns the number of keys in IDHashTable
+	 *
 	 * @return the number of keys in IDHashTable
 	 */
 	public final int size() {
@@ -108,6 +107,7 @@ public class NameserviceHashTable {
 
 	/**
 	 * Tests if IDHashTable is empty
+	 *
 	 * @return true if IDHashTable maps no keys to values, false otherwise
 	 */
 	public final boolean isEmpty() {
@@ -126,8 +126,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Returns if there is an entry with given value in IDHashTable
-	 * @param p_value
-	 *            the searched value
+	 *
+	 * @param p_value the searched value
 	 * @return whether there is an entry with given value in IDHashTable or not
 	 */
 	public final boolean containsValue(final long p_value) {
@@ -144,8 +144,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Returns if there is an entry with given key in IDHashTable
-	 * @param p_key
-	 *            the searched key (is incremented before insertion to avoid 0)
+	 *
+	 * @param p_key the searched key (is incremented before insertion to avoid 0)
 	 * @return whether there is an entry with given key in IDHashTable or not
 	 */
 	public final boolean containsKey(final int p_key) {
@@ -169,8 +169,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Returns the value to which the specified key is mapped in IDHashTable
-	 * @param p_key
-	 *            the searched key (is incremented before insertion to avoid 0)
+	 *
+	 * @param p_key the searched key (is incremented before insertion to avoid 0)
 	 * @return the value to which the key is mapped in IDHashTable
 	 */
 	public final long get(final int p_key) {
@@ -195,6 +195,7 @@ public class NameserviceHashTable {
 
 	/**
 	 * Get all entries of the nameservice map.
+	 *
 	 * @return Array list with entries as pairs of index + value
 	 */
 	public ArrayList<Pair<Integer, Long>> get() {
@@ -213,10 +214,9 @@ public class NameserviceHashTable {
 
 	/**
 	 * Maps the given key to the given value in IDHashTable
-	 * @param p_key
-	 *            the key (is incremented before insertion to avoid 0)
-	 * @param p_value
-	 *            the value
+	 *
+	 * @param p_key   the key (is incremented before insertion to avoid 0)
+	 * @param p_value the value
 	 * @return the old value
 	 */
 	public final long put(final int p_key, final long p_value) {
@@ -250,8 +250,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Removes the given key from IDHashTable
-	 * @param p_key
-	 *            the key (is incremented before insertion to avoid 0)
+	 *
+	 * @param p_key the key (is incremented before insertion to avoid 0)
 	 * @return the value
 	 */
 	public final long remove(final int p_key) {
@@ -285,8 +285,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Removes all entries of given Peer from IDHashTable
-	 * @param p_nodeID
-	 *            the NodeID
+	 *
+	 * @param p_nodeID the NodeID
 	 */
 	public final void remove(final short p_nodeID) {
 		int iter;
@@ -335,8 +335,8 @@ public class NameserviceHashTable {
 		m_table = newTable;
 
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(getClass(),
-				// // // // "Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
+		m_logger.trace(getClass(),
+				"Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
 		// #endif /* LOGGER == TRACE */
 
 		m_count = 0;
@@ -349,14 +349,14 @@ public class NameserviceHashTable {
 		}
 		m_count = oldCount;
 		// #if LOGGER == TRACE
-		// // // // m_logger.trace(getClass(), "done");
+		m_logger.trace(getClass(), "done");
 		// #endif /* LOGGER == TRACE */
 	}
 
 	/**
 	 * Hashes the given key
-	 * @param p_key
-	 *            the key
+	 *
+	 * @param p_key the key
 	 * @return the hash value
 	 */
 	public final int hash(final int p_key) {
@@ -373,6 +373,7 @@ public class NameserviceHashTable {
 
 	/**
 	 * Returns all entries of IDHashTable in a byte array
+	 *
 	 * @return all data in IDHashTable
 	 */
 	public final byte[] toArray() {
@@ -393,16 +394,12 @@ public class NameserviceHashTable {
 
 	/**
 	 * Returns all entries of IDHashTable in a byte array
-	 * @param p_bound1
-	 *            the first bound
-	 * @param p_bound2
-	 *            the second bound
-	 * @param p_isOnlySuperpeer
-	 *            whether this is the only superpeer or not
-	 * @param p_interval
-	 *            the type of interval
-	 * @param p_hashGenerator
-	 *            the CRC16 hash generator
+	 *
+	 * @param p_bound1          the first bound
+	 * @param p_bound2          the second bound
+	 * @param p_isOnlySuperpeer whether this is the only superpeer or not
+	 * @param p_interval        the type of interval
+	 * @param p_hashGenerator   the CRC16 hash generator
 	 * @return all data in IDHashTable
 	 */
 	public final byte[] toArray(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer,
@@ -429,16 +426,12 @@ public class NameserviceHashTable {
 
 	/**
 	 * Returns the number of entries without backups
-	 * @param p_bound1
-	 *            the first bound
-	 * @param p_bound2
-	 *            the second bound
-	 * @param p_isOnlySuperpeer
-	 *            whether this is the only superpeer or not
-	 * @param p_interval
-	 *            the type of interval
-	 * @param p_hashGenerator
-	 *            the CRC16 hash generator
+	 *
+	 * @param p_bound1          the first bound
+	 * @param p_bound2          the second bound
+	 * @param p_isOnlySuperpeer whether this is the only superpeer or not
+	 * @param p_interval        the type of interval
+	 * @param p_hashGenerator   the CRC16 hash generator
 	 * @return number of own entries
 	 */
 	public final int getNumberOfOwnEntries(final short p_bound1, final short p_bound2, final boolean p_isOnlySuperpeer,
@@ -460,8 +453,8 @@ public class NameserviceHashTable {
 
 	/**
 	 * Puts all mappings stored in a byte array in IDHashTable
-	 * @param p_data
-	 *            the byte array
+	 *
+	 * @param p_data the byte array
 	 */
 	public final void putAll(final byte[] p_data) {
 		ByteBuffer data;
@@ -527,12 +520,12 @@ public class NameserviceHashTable {
 		private long m_value;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of Entry
-		 * @param p_key
-		 *            the key
-		 * @param p_value
-		 *            the value
+		 *
+		 * @param p_key   the key
+		 * @param p_value the value
 		 */
 		protected Entry(final int p_key, final long p_value) {
 			m_key = p_key;
