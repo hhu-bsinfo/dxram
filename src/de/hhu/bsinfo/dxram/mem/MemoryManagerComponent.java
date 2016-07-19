@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -32,7 +32,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
-	private ReentrantReadWriteLock m_lock;
+	//	private ReentrantReadWriteLock m_lock;
+	private AtomicInteger m_lock;
 	private long m_numActiveChunks;
 	private long m_totalActiveChunkMemory;
 
@@ -99,7 +100,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 
-			m_lock = new ReentrantReadWriteLock(false);
+			//			m_lock = new ReentrantReadWriteLock(false);
+			m_lock = new AtomicInteger(0);
 
 			m_numActiveChunks = 0;
 			m_totalActiveChunkMemory = 0;
@@ -127,7 +129,19 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void lockManage() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.writeLock().lock();
+			//			m_lock.writeLock().lock();
+
+			// set flag to block further readers from entering
+			while (true) {
+				int v = m_lock.get();
+				if (m_lock.compareAndSet(v, v | 0x40000000)) {
+					break;
+				}
+			}
+
+			while (!m_lock.compareAndSet(0x40000000, 0x80000000)) {
+
+			}
 		}
 	}
 
@@ -136,7 +150,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void lockAccess() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.readLock().lock();
+
+			//			m_lock.readLock().lock();
+
+			while (true) {
+				int v = m_lock.get() & 0xCFFFFFFF;
+				if (m_lock.compareAndSet(v, v + 1)) {
+					break;
+				}
+			}
+
 		}
 	}
 
@@ -145,7 +168,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void unlockManage() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.writeLock().unlock();
+			//			m_lock.writeLock().unlock();
+
+			m_lock.set(0);
 		}
 	}
 
@@ -154,7 +179,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void unlockAccess() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.readLock().unlock();
+			//			m_lock.readLock().unlock();
+
+			m_lock.decrementAndGet();
 		}
 	}
 

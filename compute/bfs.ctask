@@ -10,6 +10,8 @@
 		<stid __id="1" __type="short">1</stid>
 		<graphPath __id="1" __type="str">../../graph_data/oel/kron_21_16</graphPath>
 		<vertexBatchSize __id="1" __type="int">1000</vertexBatchSize>
+		<filterSelfLoops __id="1" __type="bool">true</filterSelfLoops>
+		<filterDupEdges __id="1" __type="bool">true</filterDupEdges>
 	</ComputeTask>
 	<ComputeTask>
 		<tid __id="2" __type="short">1</tid>
@@ -26,5 +28,6 @@
 		<markVertices __id="3" __type="bool">false</markVertices>
 		<beamerMode __id="3" __type="bool">true</beamerMode>
 		<beamerFormulaGraphEdgeDeg __id="3" __type="int">16</beamerFormulaGraphEdgeDeg>
+		<abortBFSOnError __id="3" __type="bool">true</abortBFSOnError>
 	</ComputeTask>
 </conf>
