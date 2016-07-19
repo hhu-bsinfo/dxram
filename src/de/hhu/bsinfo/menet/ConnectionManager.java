@@ -82,7 +82,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 * Returns the status of all connections
 	 * @return the statuses
 	 */
-	public String getConnectionStatuses() {
+	protected String getConnectionStatuses() {
 		String ret = "";
 
 		m_connectionCreationLock.lock();
@@ -253,14 +253,14 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 */
 	/*-public void closeConnection(final short p_destination) {
 		AbstractConnection connection;
-
+	
 		assert p_destination != NodeID.INVALID_ID;
-
+	
 		m_connectionCreationLock.lock();
 		connection = m_connections[p_destination & 0xFFFF];
 		m_connections[p_destination & 0xFFFF] = null;
 		m_connectionList.remove(connection);
-
+	
 		if (connection != null) {
 			connection.close();
 		}

@@ -63,7 +63,8 @@ class NIOConnection extends AbstractConnection {
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final ReentrantLock p_lock,
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap,
+			final MessageDirectory p_messageDirectory, final ReentrantLock p_lock,
 			final Condition p_cond, final MessageCreator p_messageCreator, final NIOSelector p_nioSelector,
 			final int p_numberOfBuffersPerConnection, final int p_incomingBufferSize, final int p_outgoingBufferSize,
 			final int p_flowControlWindowSize) throws IOException {
@@ -86,7 +87,7 @@ class NIOConnection extends AbstractConnection {
 		m_messageCreator = p_messageCreator;
 		m_nioSelector = p_nioSelector;
 
-		m_outgoing = new ArrayDeque<>();
+		m_outgoing = new ArrayDeque<>(m_numberOfBuffersPerConnection / 8);
 
 		m_connectionCondLock = p_lock;
 		m_connectionCond = p_cond;
@@ -121,9 +122,12 @@ class NIOConnection extends AbstractConnection {
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
-			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_numberOfBuffersPerConnection,
-			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap,
+			final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
+			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector,
+			final int p_numberOfBuffersPerConnection,
+			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize)
+			throws IOException {
 		super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;

@@ -332,8 +332,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	public void eventTriggered(final NodeFailureEvent p_event) {
 		if (p_event.getRole() == NodeRole.PEER) {
 			// #if LOGGER >= DEBUG
-			// // m_logger.debug(getClass(), "Connection to peer " + p_event.getNodeID()
-					// // + " lost, unlocking all chunks locked by lost instance.");
+			m_logger.debug(getClass(), "Connection to peer " + p_event.getNodeID()
+					+ " lost, unlocking all chunks locked by lost instance.");
 			// #endif /* LOGGER >= DEBUG */
 
 			if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
@@ -348,7 +348,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
+		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
@@ -370,7 +370,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		}
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Exiting incomingMessage");
+		m_logger.trace(getClass(), "Exiting incomingMessage");
 		// #endif /* LOGGER == TRACE */
 	}
 

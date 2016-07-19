@@ -225,7 +225,7 @@ public final class OverlayHelper {
 		int index;
 
 		// #if LOGGER == TRACE
-		// // p_logger.trace(OverlayHelper.class, "Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		p_logger.trace(OverlayHelper.class, "Entering getResponsibleSuperpeer with: p_nodeID=" + NodeID.toHexString(p_nodeID));
 		// #endif /* LOGGER == TRACE */
 
 		p_overlayLock.lock();
@@ -246,7 +246,7 @@ public final class OverlayHelper {
 			p_overlayLock.unlock();
 		}
 		// #if LOGGER == TRACE
-		// // p_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
+		p_logger.trace(OverlayHelper.class, "Exiting getResponsibleSuperpeer");
 		// #endif /* LOGGER == TRACE */
 
 		return responsibleSuperpeer;

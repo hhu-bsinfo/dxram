@@ -251,7 +251,7 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 				m_disabledRecorders.put(entry.getValue(), true);
 
 				// #if LOGGER >= DEBUG
-				// // m_logger.debug(getClass(), "Recorder " + entry.getValue() + " disabled.");
+				m_logger.debug(getClass(), "Recorder " + entry.getValue() + " disabled.");
 				// #endif /* LOGGER >= DEBUG */
 			}
 		}

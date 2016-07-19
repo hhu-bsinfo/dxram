@@ -347,7 +347,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 				// #endif /* LOGGER >= ERROR */
 			}
 			// #if LOGGER == TRACE
-			// // m_logger.trace(getClass(), "Initialized primary log (" + m_primaryLogSize + ")");
+			m_logger.trace(getClass(), "Initialized primary log (" + m_primaryLogSize + ")");
 			// #endif /* LOGGER == TRACE */
 
 			// Create primary log buffer

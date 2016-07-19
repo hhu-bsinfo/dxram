@@ -536,7 +536,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		int seed;
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(this.getClass(), "Entering parseNodesBootstrap");
+		m_logger.trace(this.getClass(), "Entering parseNodesBootstrap");
 		// #endif /* LOGGER == TRACE */
 
 		try {
@@ -621,7 +621,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		}
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(this.getClass(), "Exiting parseNodesBootstrap");
+		m_logger.trace(this.getClass(), "Exiting parseNodesBootstrap");
 		// #endif /* LOGGER == TRACE */
 
 		return true;
@@ -645,7 +645,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		String[] splits;
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(this.getClass(), "Entering parseNodesNormal");
+		m_logger.trace(this.getClass(), "Entering parseNodesNormal");
 		// #endif /* LOGGER == TRACE */
 
 		try {
@@ -768,7 +768,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		}
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(this.getClass(), "Exiting parseNodesNormal");
+		m_logger.trace(this.getClass(), "Exiting parseNodesNormal");
 		// #endif /* LOGGER == TRACE */
 
 		return true;

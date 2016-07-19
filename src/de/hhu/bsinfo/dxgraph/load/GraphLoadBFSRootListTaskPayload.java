@@ -214,7 +214,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 
 		// add filtered files
 		// #if LOGGER >= DEBUG
-		// // m_loggerService.debug(getClass(), "Setting up root oel, iterating files in " + p_path);
+		m_loggerService.debug(getClass(), "Setting up root oel, iterating files in " + p_path);
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
@@ -224,7 +224,7 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			if (tokens.length > 1) {
 				if (tokens[1].equals("roel")) {
 					// #if LOGGER >= DEBUG
-					// // m_loggerService.debug(getClass(), "Found root list: " + file);
+					m_loggerService.debug(getClass(), "Found root list: " + file);
 					// #endif /* LOGGER >= DEBUG */
 
 					orderedEdgeListRoots = new OrderedEdgeListRootsTextFile(file.getAbsolutePath());

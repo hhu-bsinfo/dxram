@@ -161,8 +161,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 			timeNow = System.currentTimeMillis();
 			if (timeNow - timeStart > m_connectionTimeout) {
 				// #if LOGGER >= DEBUG
-				// // NetworkHandler.getLogger().debug(getClass().getSimpleName(), "connection creation time-out. Interval "
-						// // + m_connectionTimeout + "ms might be to small");
+				NetworkHandler.getLogger().debug(getClass().getSimpleName(), "connection creation time-out. Interval "
+						+ m_connectionTimeout + "ms might be to small");
 				// #endif /* LOGGER >= DEBUG */
 
 				condLock.unlock();

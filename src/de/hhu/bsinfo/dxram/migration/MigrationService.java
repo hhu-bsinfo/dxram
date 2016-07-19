@@ -80,7 +80,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 				if (chunk != null) {
 					// #if LOGGER == TRACE
-					// // m_logger.trace(getClass(), "Sending migration request to " + p_target);
+					m_logger.trace(getClass(), "Sending migration request to " + p_target);
 					// #endif /* LOGGER == TRACE */
 
 					MigrationRequest request = new MigrationRequest(p_target, new Chunk[] {chunk});

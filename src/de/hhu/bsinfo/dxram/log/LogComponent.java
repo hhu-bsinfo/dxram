@@ -89,7 +89,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 			}
 		}
 		// #if LOGGER == TRACE
-		// // m_logger.trace(LogService.class, "Time to initialize range: " + (System.currentTimeMillis() - time));
+		m_logger.trace(LogService.class, "Time to initialize range: " + (System.currentTimeMillis() - time));
 		// #endif /* LOGGER == TRACE */
 	}
 

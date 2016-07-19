@@ -25,7 +25,7 @@ public final class NetworkHandler implements DataReceiver {
 
 	private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
 
-	private final DefaultMessageHandler m_defaultMessageHandler;
+	private final DefaultMessageHandlerPool m_defaultMessageHandlerPool;
 	private final ExclusiveMessageHandler m_exclusiveMessageHandler;
 
 	private MessageDirectory m_messageDirectory;
@@ -58,7 +58,7 @@ public final class NetworkHandler implements DataReceiver {
 		m_receivers = new HashMap<>();
 		m_receiversLock = new ReentrantLock(false);
 
-		m_defaultMessageHandler = new DefaultMessageHandler(p_numMessageHandlerThreads);
+		m_defaultMessageHandlerPool = new DefaultMessageHandlerPool(p_numMessageHandlerThreads);
 
 		m_exclusiveMessageHandler = new ExclusiveMessageHandler();
 		m_exclusiveMessageHandler.setName("Network: ExclusiveMessageHandler");
@@ -150,7 +150,7 @@ public final class NetworkHandler implements DataReceiver {
 			final int p_connectionTimeout) {
 
 		// #if LOGGER == TRACE
-		// // m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
+		m_loggerInterface.trace(getClass().getSimpleName(), "Entering initialize");
 		// #endif /* LOGGER == TRACE */
 
 		m_nodeMap = p_nodeMap;
@@ -161,7 +161,7 @@ public final class NetworkHandler implements DataReceiver {
 		m_manager = new ConnectionManager(m_connectionCreator, this);
 
 		// #if LOGGER == TRACE
-		// // m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
+		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 		// #endif /* LOGGER == TRACE */
 	}
 
@@ -184,18 +184,7 @@ public final class NetworkHandler implements DataReceiver {
 	 */
 	public void close() {
 		// Shutdown default message handler(s)
-		m_defaultMessageHandler.m_executor.shutdown();
-		try {
-			m_defaultMessageHandler.m_executor.awaitTermination();
-			// #if LOGGER >= INFO
-			m_loggerInterface.info(getClass().getSimpleName(), "Shutdown of DefaultMessageHandler(s) successful.");
-			// #endif /* LOGGER >= INFO */
-		} catch (final InterruptedException e) {
-			// #if LOGGER >= WARN
-			m_loggerInterface.warn(getClass().getSimpleName(),
-					"Could not wait for default message handler thread pool to finish. Interrupted.");
-			// #endif /* LOGGER >= WARN */
-		}
+		m_defaultMessageHandlerPool.shutdown();
 
 		// Shutdown exclusive message handler
 		m_exclusiveMessageHandler.interrupt();
@@ -280,7 +269,7 @@ public final class NetworkHandler implements DataReceiver {
 		p_message.beforeSend();
 
 		// #if LOGGER == TRACE
-		// // m_loggerInterface.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
+		m_loggerInterface.trace(getClass().getSimpleName(), "Entering sendMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
@@ -324,7 +313,7 @@ public final class NetworkHandler implements DataReceiver {
 		p_message.afterSend();
 
 		// #if LOGGER == TRACE
-		// // m_loggerInterface.trace(getClass().getSimpleName(), "Exiting sendMessage");
+		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting sendMessage");
 		// #endif /* LOGGER == TRACE */
 
 		return 0;
@@ -338,7 +327,7 @@ public final class NetworkHandler implements DataReceiver {
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
 		// #if LOGGER == TRACE
-		// // m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
+		m_loggerInterface.trace(getClass().getSimpleName(), "Received new message: " + p_message);
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message instanceof AbstractResponse) {
@@ -346,7 +335,7 @@ public final class NetworkHandler implements DataReceiver {
 		} else {
 			if (!p_message.isExclusive()) {
 				int maxMessages = m_numMessageHandlerThreads * 2;
-				while (!m_defaultMessageHandler.newMessage(p_message, maxMessages)) {
+				while (!m_defaultMessageHandlerPool.newMessage(p_message, maxMessages)) {
 					// Too many pending messages -> wait
 					if (m_manager.atLeastOneConnectionIsCongested()) {
 						// All message handler could be blocked if a connection is congested (deadlock) -> add all (more
@@ -375,35 +364,69 @@ public final class NetworkHandler implements DataReceiver {
 	// Classes
 
 	/**
-	 * Distributes incoming messages
-	 * @author Marc Ewert 17.09.2014
+	 * Distributes incoming default messages
+	 * @author Kevin Beineke 19.07.2016
 	 */
-	private class DefaultMessageHandler implements Runnable {
+	private class DefaultMessageHandlerPool {
 
 		// Attributes
+		private DefaultMessageHandler[] m_threads;
 		private final ArrayDeque<AbstractMessage> m_defaultMessages;
 		private ReentrantLock m_defaultMessagesLock;
-		private final TaskExecutor m_executor;
+		private Condition m_messageAvailable;
 
 		// Constructors
 
 		/**
-		 * Creates an instance of MessageHandler
+		 * Creates an instance of DefaultMessageHandlerPool
 		 * @param p_numMessageHandlerThreads
 		 *            the number of default message handler
 		 */
-		DefaultMessageHandler(final int p_numMessageHandlerThreads) {
+		private DefaultMessageHandlerPool(final int p_numMessageHandlerThreads) {
 			m_defaultMessages = new ArrayDeque<>();
 			m_defaultMessagesLock = new ReentrantLock(false);
+			m_messageAvailable = m_defaultMessagesLock.newCondition();
 
 			// #if LOGGER >= INFO
 			m_loggerInterface.info(getClass().getSimpleName(),
-					"Network: DefaultMessageHandler: Initialising " + p_numMessageHandlerThreads + " threads");
+					"Network: DefaultMessageHandlerPool: Initialising " + p_numMessageHandlerThreads + " threads");
 			// #endif /* LOGGER >= INFO */
-			m_executor = new TaskExecutor("Network: DefaultMessageHandler", p_numMessageHandlerThreads);
+
+			DefaultMessageHandler t;
+			m_threads = new DefaultMessageHandler[p_numMessageHandlerThreads];
+			for (int i = 0; i < m_threads.length; i++) {
+				t = new DefaultMessageHandler(m_defaultMessages, m_defaultMessagesLock, m_messageAvailable);
+				t.setName("Network: DefaultMessageHandler " + (i + 1));
+				m_threads[i] = t;
+				t.start();
+			}
 		}
 
 		// Methods
+		/**
+		 * Closes alle default message handler
+		 */
+		private void shutdown() {
+			DefaultMessageHandler t;
+			for (int i = 0; i < m_threads.length; i++) {
+				t = m_threads[i];
+				t.interrupt();
+				t.shutdown();
+
+				try {
+					t.join();
+					// #if LOGGER >= INFO
+					m_loggerInterface.info(getClass().getSimpleName(),
+							"Shutdown of DefaultMessageHandler " + (i + 1) + " successful.");
+					// #endif /* LOGGER >= INFO */
+				} catch (final InterruptedException e) {
+					// #if LOGGER >= WARN
+					m_loggerInterface.warn(getClass().getSimpleName(),
+							"Could not wait for default message handler to finish. Interrupted.");
+					// #endif /* LOGGER >= WARN */
+				}
+			}
+		}
 
 		/**
 		 * Enqueue a new message for delivering
@@ -413,7 +436,7 @@ public final class NetworkHandler implements DataReceiver {
 		 *            the maximal number of pending messages
 		 * @return whether the message was appended or not
 		 */
-		public boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
+		private boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
 			boolean ret = true;
 
 			m_defaultMessagesLock.lock();
@@ -422,46 +445,90 @@ public final class NetworkHandler implements DataReceiver {
 				m_defaultMessagesLock.unlock();
 			} else {
 				m_defaultMessages.offer(p_message);
-				m_defaultMessagesLock.unlock();
 
-				m_executor.execute(this);
+				m_messageAvailable.signal();
+				m_defaultMessagesLock.unlock();
 			}
 
 			return ret;
 		}
+	}
+
+	/**
+	 * Executes incoming default messages
+	 * @author Kevin Beineke 19.07.2016
+	 */
+	private class DefaultMessageHandler extends Thread {
+
+		// Attributes
+		private ArrayDeque<AbstractMessage> m_defaultMessages;
+		private ReentrantLock m_defaultMessagesLock;
+		private Condition m_messageAvailable;
+		private boolean m_shutdown;
+
+		// Constructors
+		/**
+		 * Creates an instance of DefaultMessageHandler
+		 * @param p_queue
+		 *            the message queue
+		 * @param p_lock
+		 *            the lock for accessing message queue
+		 * @param p_cond
+		 *            the condition for new messages
+		 */
+		private DefaultMessageHandler(final ArrayDeque<AbstractMessage> p_queue, final ReentrantLock p_lock,
+				final Condition p_cond) {
+			m_defaultMessages = p_queue;
+			m_defaultMessagesLock = p_lock;
+			m_messageAvailable = p_cond;
+		}
+
+		// Methods
+		/**
+		 * Closes the handler
+		 */
+		private void shutdown() {
+			m_shutdown = true;
+		}
 
 		@Override
 		public void run() {
-
 			AbstractMessage message = null;
 			Entry entry;
 
-			m_defaultMessagesLock.lock();
-			message = m_defaultMessages.poll();
-			m_defaultMessagesLock.unlock();
+			while (!m_shutdown) {
+				while (message == null) {
+					m_defaultMessagesLock.lock();
+					if (m_defaultMessages.size() == 0) {
+						try {
+							m_messageAvailable.await();
+						} catch (final InterruptedException e) {
+							m_defaultMessagesLock.unlock();
+							return;
+						}
+					}
 
-			try {
+					message = m_defaultMessages.poll();
+					m_defaultMessagesLock.unlock();
+				}
+
 				entry = m_receivers.get(message.getClass());
 
-				// missing receivers
 				if (entry != null) {
 					entry.newMessage(message);
 				} else {
 					// #if LOGGER >= ERROR
-					m_loggerInterface.error(getClass().getSimpleName(),
-							"Missing receivers for message class " + message.getClass().getSimpleName());
+					m_loggerInterface.error(getClass().getSimpleName(), "Default message queue is empty!");
 					// #endif /* LOGGER >= ERROR */
 				}
-			} catch (final Exception e) {
-				m_loggerInterface.error(getClass().getSimpleName(),
-						"Exception thrown when handling message: " + message, e);
+				message = null;
 			}
 		}
 	}
 
 	/**
-	 * Distributes incoming messages
-	 * @author Marc Ewert 17.09.2014
+	 * Executes incoming exclusive messages
+	 * @author Kevin Beineke 19.07.2016
 	 */
 	private class ExclusiveMessageHandler extends Thread {
 
@@ -530,7 +597,7 @@ public final class NetworkHandler implements DataReceiver {
 						try {
 							m_messageAvailable.await();
 						} catch (final InterruptedException e) {
-							m_shutdown = true;
+							m_exclusiveMessagesLock.unlock();
 							return;
 						}
 					}

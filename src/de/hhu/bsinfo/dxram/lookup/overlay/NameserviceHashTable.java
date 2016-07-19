@@ -335,8 +335,8 @@ public class NameserviceHashTable {
 		m_table = newTable;
 
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(),
-				// // "Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
+		m_logger.trace(getClass(),
+				"Reached threshold (" + oldThreshold + ") -> Rehashing. New size: " + m_elementCapacity + " ... ");
 		// #endif /* LOGGER == TRACE */
 
 		m_count = 0;
@@ -349,7 +349,7 @@ public class NameserviceHashTable {
 		}
 		m_count = oldCount;
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "done");
+		m_logger.trace(getClass(), "done");
 		// #endif /* LOGGER == TRACE */
 	}
 

@@ -7,7 +7,6 @@ import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.menet.TaskExecutor;
 
 /**
  * Node local event system to notify other listening components about
@@ -52,8 +51,8 @@ public class EventComponent extends AbstractDXRAMComponent {
 
 		listeners.add(p_listener);
 		// #if LOGGER >= DEBUG
-		// // m_logger.debug(getClass(),
-				// // "Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
+		m_logger.debug(getClass(),
+				"Registered listener " + p_listener.getClass().getName() + " for event " + p_class.getName());
 		// #endif /* LOGGER >= DEBUG */
 	}
 
@@ -66,7 +65,7 @@ public class EventComponent extends AbstractDXRAMComponent {
 	 */
 	public <T extends AbstractEvent> void fireEvent(final T p_event) {
 		// #if LOGGER == TRACE
-		// // m_logger.trace(getClass(), "Event fired: " + p_event);
+		m_logger.trace(getClass(), "Event fired: " + p_event);
 		// #endif /* LOGGER == TRACE */
 
 		ArrayList<EventListener<?>> listeners = m_eventListener.get(p_event.getClass().getName());
@@ -97,7 +96,7 @@ public class EventComponent extends AbstractDXRAMComponent {
 			// #if LOGGER >= INFO
 			m_logger.info(getClass().getSimpleName(), "EventExecutor: Initialising " + threadCount + " threads");
 			// #endif /* LOGGER >= INFO */
-			m_executor = new TaskExecutor("EventExecutor", threadCount);
+			m_executor = new TaskExecutor("EventExecutor", threadCount, m_logger);
 		}
 
 		return true;
