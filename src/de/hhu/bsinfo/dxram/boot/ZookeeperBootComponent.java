@@ -7,6 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.data.Stat;
+
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeInfo;
 import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeList;
@@ -21,15 +27,9 @@ import de.hhu.bsinfo.utils.BloomFilter;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.data.Stat;
 
 /**
  * Implementation of the BootComponent interface with zookeeper.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class ZookeeperBootComponent extends AbstractBootComponent implements Watcher {
@@ -53,11 +53,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityInit
+	 *            Priority for initialization of this component.
+	 *            When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown
+	 *            Priority for shutting down this component.
+	 *            When choosing the order, consider component dependencies here.
 	 */
 	public ZookeeperBootComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -143,8 +144,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						return true;
 					}
 				}
-			} catch (final ZooKeeperException e) {
-			}
+			} catch (final ZooKeeperException e) {}
 		}
 		if (zookeeperPathExists("nodes/peers")) {
 			try {
@@ -154,8 +154,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						return true;
 					}
 				}
-			} catch (final ZooKeeperException e) {
-			}
+			} catch (final ZooKeeperException e) {}
 		}
 		if (zookeeperPathExists("nodes/terminals")) {
 			try {
@@ -165,8 +164,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						return true;
 					}
 				}
-			} catch (final ZooKeeperException e) {
-			}
+			} catch (final ZooKeeperException e) {}
 		}
 
 		return false;
@@ -184,8 +182,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				for (String child : children) {
 					ids.add(Short.parseShort(child));
 				}
-			} catch (final ZooKeeperException e) {
-			}
+			} catch (final ZooKeeperException e) {}
 		}
 		if (zookeeperPathExists("nodes/peers")) {
 			try {
@@ -193,8 +190,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				for (String child : children) {
 					ids.add(Short.parseShort(child));
 				}
-			} catch (final ZooKeeperException e) {
-			}
+			} catch (final ZooKeeperException e) {}
 		}
 		if (zookeeperPathExists("nodes/terminals")) {
 			try {
@@ -202,8 +198,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				for (String child : children) {
 					ids.add(Short.parseShort(child));
 				}
-			} catch (final ZooKeeperException e) {
-			}
+			} catch (final ZooKeeperException e) {}
 		}
 
 		return ids;
@@ -225,8 +220,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 						ids.add(Short.parseShort(child));
 					}
 				}
-			} catch (final ZooKeeperException e) {
-			}
+			} catch (final ZooKeeperException e) {}
 		}
 
 		return ids;
@@ -380,8 +374,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 					while (m_isStarting) {
 						try {
 							Thread.sleep(100);
-						} catch (final InterruptedException e) {
-						}
+						} catch (final InterruptedException e) {}
 					}
 					if (null != path) {
 						if (path.equals(prefix + "nodes/new")) {
@@ -410,8 +403,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Read the nodes list from the settings instance.
-	 *
-	 * @param p_settings Settings instance of the component.
+	 * @param p_settings
+	 *            Settings instance of the component.
 	 * @return List of node entries read from the settings.
 	 */
 	private ArrayList<NodeEntry> readNodesFromSettings(final Settings p_settings) {
@@ -473,9 +466,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Parses the configured nodes
-	 *
-	 * @param p_nodes           the nodes to parse
-	 * @param p_cmdLineNodeRole the role from command line
+	 * @param p_nodes
+	 *            the nodes to parse
+	 * @param p_cmdLineNodeRole
+	 *            the role from command line
 	 * @return the parsed nodes
 	 */
 	private boolean parseNodes(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole) {
@@ -529,9 +523,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	/**
 	 * Parses information from a nodes configuration object and creates routing information
 	 * in zookeeper. Also assigns valid node IDs and
-	 *
-	 * @param p_nodes           the nodes to parse
-	 * @param p_cmdLineNodeRole the role from command line
+	 * @param p_nodes
+	 *            the nodes to parse
+	 * @param p_cmdLineNodeRole
+	 *            the role from command line
 	 * @return whether parsing was successful or not
 	 * @note this method is called by bootstrap only
 	 */
@@ -634,9 +629,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Parses nodes.config and stores routing information in net for nodes
-	 *
-	 * @param p_nodes           the nodes to parse
-	 * @param p_cmdLineNodeRole the role from command line
+	 * @param p_nodes
+	 *            the nodes to parse
+	 * @param p_cmdLineNodeRole
+	 *            the role from command line
 	 * @return whether parsing was successful or not
 	 * @note this method is called by every node except bootstrap
 	 */
@@ -780,8 +776,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Create a path in zookeeper.
-	 *
-	 * @param p_path Path to create.
+	 * @param p_path
+	 *            Path to create.
 	 */
 	private void zookeeperCreate(final String p_path) {
 		try {
@@ -795,8 +791,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get the status of a path.
-	 *
-	 * @param p_path Path to get the status of.
+	 * @param p_path
+	 *            Path to get the status of.
 	 * @return Status of the path.
 	 */
 	private Stat zookeeperGetStatus(final String p_path) {
@@ -815,9 +811,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Delete a path in zookeeper.
-	 *
-	 * @param p_path    Path to delete.
-	 * @param p_version Version of the path to delete.
+	 * @param p_path
+	 *            Path to delete.
+	 * @param p_version
+	 *            Version of the path to delete.
 	 */
 	private void zookeeperDelete(final String p_path, final int p_version) {
 		try {
@@ -831,8 +828,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get data from a path.
-	 *
-	 * @param p_path Path to get the data of.
+	 * @param p_path
+	 *            Path to get the data of.
 	 * @return Data stored with the path.
 	 */
 	private byte[] zookeeperGetData(final String p_path) {
@@ -851,9 +848,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Get data from a path.
-	 *
-	 * @param p_path   Path to get the data of.
-	 * @param p_status Status of the node.
+	 * @param p_path
+	 *            Path to get the data of.
+	 * @param p_status
+	 *            Status of the node.
 	 * @return Data from the path.
 	 */
 	private byte[] zookeeperGetData(final String p_path, final Stat p_status) {
@@ -872,10 +870,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Set data for a path.
-	 *
-	 * @param p_path    Path to set the data for.
-	 * @param p_data    Data to set.
-	 * @param p_version Version of the path.
+	 * @param p_path
+	 *            Path to set the data for.
+	 * @param p_data
+	 *            Data to set.
+	 * @param p_version
+	 *            Version of the path.
 	 * @return True if successful, false otherwise.
 	 */
 	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) {
@@ -892,8 +892,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Check if a path exists.
-	 *
-	 * @param p_path Path to check.
+	 * @param p_path
+	 *            Path to check.
 	 * @return True if exists, false otherwise.
 	 */
 	private boolean zookeeperPathExists(final String p_path) {
