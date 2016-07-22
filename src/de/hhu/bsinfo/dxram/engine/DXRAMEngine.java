@@ -764,7 +764,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		addDataTypeParser(m_dataTypeParsers, new DataTypeParserBoolean());
 
 		for (int i = 0; i < 100; i++) {
-			keyValue[0] = "dxram.confVal." + i;
+			keyValue[0] = "dxram.config.val." + i;
 			keyValue[1] = System.getProperty(keyValue[0]);
 			if (keyValue[1] == null) {
 				break;
@@ -781,10 +781,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 					}
 					// no parser to support, ignore
 
-					// #if LOGGER >= DEBUG
-					m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-							"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
-					// #endif /* LOGGER >= DEBUG */
+					System.out.println(
+							"[DXRAMEngine] Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
+
 					// name#id#type#val
 				} else if (items.length == 4) {
 					int id = Integer.parseInt(items[1]);
@@ -794,18 +793,16 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 						Object value = parser.parse(items[3]);
 
 						// add the value and do replace existing values
-						m_configuration.addValue(items[0], 0, value, true);
+						m_configuration.addValue(items[0], id, value, true);
 					}
-					// #if LOGGER >= DEBUG
-					m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-							"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
-					// #endif /* LOGGER >= DEBUG */
+					System.out.println(
+							"[DXRAMEngine] Overriding '" + items[0] + "." + id + "' with vm argument '" + items[2]
+									+ " '.");
 				} else {
 					System.out.println("[DXRAMEngine] VM Argument error: invalid format");
 
 				}
 			}
-
 		}
 	}
 

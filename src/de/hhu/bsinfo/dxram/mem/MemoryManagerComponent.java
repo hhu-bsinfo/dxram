@@ -73,7 +73,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
-		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE);
 	}
 
 	@Override
@@ -95,8 +94,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 					"Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
 			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
-			m_rawMemory.initialize(ramSize,
-					p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
+			m_rawMemory.initialize(ramSize, ramSize);
 			m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 
