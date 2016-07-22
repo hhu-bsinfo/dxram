@@ -3,9 +3,9 @@ package de.hhu.bsinfo.utils.conf;
 
 public class ConfigurationTest {
 	public static void main(String[] args) {
-		// createConfiguration("test.conf");
-		// readConfiguration("test.conf");
-		readConfiguration("config/dxram.conf");
+		createConfiguration("config/dxram.default.gen.conf");
+		//readConfiguration("test.conf");
+		readConfiguration("config/dxram.default.conf");
 	}
 
 	public static void createConfiguration(final String p_path) {

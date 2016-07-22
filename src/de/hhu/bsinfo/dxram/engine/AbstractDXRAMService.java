@@ -33,6 +33,13 @@ public abstract class AbstractDXRAMService {
 		return this.getClass().getSimpleName();
 	}
 
+	public void preInit(final DXRAMEngine p_engine) {
+		m_parentEngine = p_engine;
+
+		m_settings = new Settings(m_parentEngine.getConfiguration(), m_parentEngine.getLogger(), getServiceName());
+		registerDefaultSettingsService(m_settings);
+	}
+
 	/**
 	 * Start this service.
 	 * @param p_engine

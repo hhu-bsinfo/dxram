@@ -1,12 +1,19 @@
 
 package de.hhu.bsinfo.utils.conf;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -83,9 +90,24 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 		DocumentBuilder builder = null;
 		try {
 			builder = factory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {}
+		} catch (ParserConfigurationException e) {
+		}
 		Document document = builder.newDocument();
 		generateXML(document, p_configuration);
+
+		// write the content into xml file
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		try {
+			Transformer transformer = transformerFactory.newTransformer();
+			DOMSource source = new DOMSource(document);
+			StreamResult result = new StreamResult(new File(p_configuration.getName()));
+			transformer.transform(source, result);
+		} catch (TransformerConfigurationException e) {
+			e.printStackTrace();
+		} catch (TransformerException e) {
+			e.printStackTrace();
+		}
+
 
 		if (!m_loader.save(document)) {
 			throw new ConfigurationException("Saving configuration " + p_configuration.getName() + " failed.");
@@ -169,293 +191,126 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 		}
 	}
 
+
 	private void generateXML(final Document p_document, final Configuration p_configuration) throws ConfigurationException {
 
 		Element confRoot = p_document.createElement(ROOT_ELEMENT);
 		p_document.appendChild(confRoot);
 
-		// TODO finish this...
-		throw new RuntimeException("Not implemented/finished, stefan TODO");
-		// generateChildren(p_document, confRoot, p_configuration);
+		generateChildren(p_document, confRoot, p_configuration);
+
 	}
 
-	// // if we got one index for the path -> generate full hierarchy with index 0 and add value
-	// // otherwise:
-	// // 1. remove leaf and check if the path minus leaf already exists (multiple possible -> list)
-	// // not, empty list: fully create it as inner leafs only -> return parent of leaf
-	// // exists, list got items: iterate possible parent of leaf and check get any child from that and check against attribute id
-	// // id matches: add leaf to the same parent with same id and abort iteration
-	// // id does not match any possible parent: create new parent and add new leaf to it with id
-	// //
-	// private void generateChildren(final Document p_document, final Element p_root, final Configuration p_configuration) {
-	// for (Entry<String, Map<Integer, Object>> it : p_configuration.m_parameters.entrySet())
-	// {
-	// // two possibilities:
-	// // 1. single item: we can create an entry without further processing
-	// // 2. multiple indexed items: we have to work on some kind of lists
-	// if (it.getValue().size() == 1)
-	// {
-	// // it's just one element, but easier to get it like that
-	// for (Entry<Integer, Object> it2 : it.getValue().entrySet())
-	// {
-	// Element leaf = generateHierarchy(p_document, p_root, it.getKey());
-	// setLeaf(p_document, leaf, it2.getValue(), it2.getKey());
-	// }
-	// }
-	// else
-	// {
-	// for (Entry<Integer, Object> it2 : it.getValue().entrySet())
-	// {
-	//
-	// }
-	// }
-	//
-	// for (Entry<Integer, Object> it2 : it.getValue().entrySet())
-	// {
-	// Element elem = generateHierarchy(p_document, p_root, it.getKey(), it2.getKey());
-	// Object value = it2.getValue();
-	//
-	//
-	//
-	//
-	// }
-	// }
-	// }
-	//
-	// private ArrayList<Element> getParentsListOfLeaf(final Element p_root, final String p_path)
-	// {
-	// ArrayList<Element> parents = new ArrayList<Element>();
-	// String[] pathTokens = p_path.split(Configuration.KEY_SEQ_SEPARATOR);
-	//
-	// // drop first token, it is empty (-1)
-	// if (pathTokens.length - 1 == 1)
-	// {
-	// // leaf on root
-	// parents.add(p_root);
-	// }
-	// else
-	// {
-	//
-	// }
-	//
-	// return parents;
-	// }
-	//
-	// private ArrayList<Element> getParentsOfLeaf(final Element p_root, final String p_path)
-	// {
-	// ArrayList<Element> parents = new ArrayList<Element>();
-	// String[] pathTokens = p_path.split(Configuration.KEY_SEQ_SEPARATOR);
-	//
-	// // drop first token, it is empty (-1)
-	// if (pathTokens.length - 1 == 1)
-	// {
-	// // leaf on root
-	// parents.add(p_root);
-	// }
-	// else
-	// {
-	// // crate path to parent of parent of leaf
-	// String pathParent = new String("");
-	// for (int i = 1; i < pathTokens.length - 1; i++)
-	// {
-	// Element next = null;
-	//
-	//
-	//
-	// // check if element already exists (inner nodes)
-	// NodeList nodes = cur.getChildNodes();
-	// for (int j = 0; j < nodes.getLength(); j++) {
-	// Node child = nodes.item(j);
-	// if (child.getNodeType() == Element.ELEMENT_NODE)
-	// {
-	// Element elem = (Element) child;
-	// if (elem.getTagName().equals(items[i])) {
-	// next = (Element) child;
-	// break;
-	// }
-	// }
-	// }
-	//
-	// // create if not exists
-	// if (next == null) {
-	// next = p_document.createElement(items[i]);
-	// cur.appendChild(next);
-	// }
-	//
-	// cur = next;
-	// }
-	//
-	//
-	//
-	// generateHierarchy()
-	//
-	// // leaf further down the tree
-	// // iterate to parent which might contain multiple parents of the leaf
-	// // i = 1: ignore empty element created by split due to leading / for root
-	// for (int i = 1; i < pathTokens.length; i++)
-	// {
-	// Element next = null;
-	//
-	// // check if element already exists (inner nodes)
-	// NodeList nodes = cur.getChildNodes();
-	// for (int j = 0; j < nodes.getLength(); j++) {
-	// Node child = nodes.item(j);
-	// if (child.getNodeType() == Element.ELEMENT_NODE)
-	// {
-	// Element elem = (Element) child;
-	// if (elem.getTagName().equals(items[i])) {
-	// next = (Element) child;
-	// break;
-	// }
-	// }
-	// }
-	//
-	// // create if not exists
-	// if (next == null) {
-	// next = p_document.createElement(items[i]);
-	// cur.appendChild(next);
-	// }
-	//
-	// cur = next;
-	// }
-	// }
-	//
-	// return parents;
-	// }
-	//
-	// private void setLeaf(final Document p_document, final Element p_element, final Object p_value, final int p_index)
-	// {
-	// p_element.setAttribute(ATTR_KEY_ID, Integer.toString(p_index));
-	//
-	// if (p_value instanceof String) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_STR);
-	// p_element.appendChild(p_document.createTextNode((String) p_value));
-	// } else if (p_value instanceof Byte) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_BYTE);
-	// p_element.appendChild(p_document.createTextNode(((Byte) p_value).toString()));
-	// } else if (p_value instanceof Short) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_SHORT);
-	// p_element.appendChild(p_document.createTextNode(((Short) p_value).toString()));
-	// } else if (p_value instanceof Integer) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_INT);
-	// p_element.appendChild(p_document.createTextNode(((Integer) p_value).toString()));
-	// } else if (p_value instanceof Long) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_LONG);
-	// p_element.appendChild(p_document.createTextNode(((Long) p_value).toString()));
-	// } else if (p_value instanceof Float) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_FLOAT);
-	// p_element.appendChild(p_document.createTextNode(((Float) p_value).toString()));
-	// } else if (p_value instanceof Double) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_DOUBLE);
-	// p_element.appendChild(p_document.createTextNode(((Double) p_value).toString()));
-	// } else if (p_value instanceof Boolean) {
-	// p_element.setAttribute(ATTR_KEY_TYPE, TYPE_BOOLEAN);
-	// p_element.appendChild(p_document.createTextNode(((Boolean) p_value).toString()));
-	// } else {
-	// // not supported, ignoring
-	// }
-	// }
-	//
-	//
-	//
-	// private Element generateEntry(final Document p_document, final Element p_root, final String p_path, final int p_index)
-	// {
-	// String[] items = p_path.split(Configuration.KEY_SEQ_SEPARATOR);
-	// Element leafParent = p_root;
-	//
-	// // i = 1: ignore empty element created by split due to leading / for root
-	// // generate or get existing inner nodes up the the node before the leaf
-	// for (int i = 1; i < items.length - 1; i++)
-	// {
-	// Element cur = null;
-	//
-	// NodeList nodes = leafParent.getChildNodes();
-	// for (int j = 0; j < nodes.getLength(); j++) {
-	// Node child = nodes.item(j);
-	// if (child.getNodeType() == Element.ELEMENT_NODE)
-	// {
-	// Element elem = (Element) child;
-	// if (elem.getTagName().equals(items[i])) {
-	// cur = (Element) child;
-	// break;
-	// }
-	// }
-	// }
-	//
-	// // check if this is a parent of a leaf
-	// if (i == items.length - 2)
-	// {
-	//
-	// }
-	// else
-	// {
-	// // lower inner node
-	// // create new inner node if not available
-	// if (cur == null) {
-	// cur = p_document.createElement(items[i]);
-	// leafParent.appendChild(cur);
-	// }
-	// }
-	//
-	//
-	//
-	// leafParent = cur;
-	// }
-	//
-	// if (leafParent.getParentNode() != null)
-	// {
-	// // adding leaf further down the tree
-	// // check if multiple inner nodes with the same name exist
-	//
-	// }
-	// else
-	// {
-	// // adding leaf to root
-	//
-	// }
-	//
-	// Element elem = p_document.createElement(items[items.length - 1]);
-	// elem.setAttribute(ATTR_KEY_ID, (new Integer(p_index)).toString());
-	// leafParent.appendChild(elem);
-	//
-	// return null;
-	// }
-	//
-	// // generates a hierarchy of inner nodes and
-	// // reuses existing ones i.e. does not create duplicate inner nodes
-	// private Element generateHierarchy(final Document p_document, final Element p_root, final String p_path)
-	// {
-	// String[] items = p_path.split(Configuration.KEY_SEQ_SEPARATOR);
-	// Element cur = p_root;
-	//
-	// // i = 1: ignore empty element created by split due to leading / for root
-	// for (int i = 1; i < items.length; i++)
-	// {
-	// Element next = null;
-	//
-	// // check if element already exists (inner nodes)
-	// NodeList nodes = cur.getChildNodes();
-	// for (int j = 0; j < nodes.getLength(); j++) {
-	// Node child = nodes.item(j);
-	// if (child.getNodeType() == Element.ELEMENT_NODE)
-	// {
-	// Element elem = (Element) child;
-	// if (elem.getTagName().equals(items[i])) {
-	// next = (Element) child;
-	// break;
-	// }
-	// }
-	// }
-	//
-	// // create if not exists
-	// if (next == null) {
-	// next = p_document.createElement(items[i]);
-	// cur.appendChild(next);
-	// }
-	//
-	// cur = next;
-	// }
-	//
-	// return cur;
-	// }
+	private void generateChildren(final Document p_document, final Element p_root, final Configuration p_configuration) {
+		for (Map.Entry<String, Map<Integer, Object>> it : p_configuration.m_parameters.entrySet()) {
+
+			//two possibilities:
+			// 1. single item: we can create an entry without processing
+			// 2. multiple indexd items: we have to work on some kind of lists
+			if (it.getValue().size() == 1) {
+				//it's just one element, but easier to get it like that
+				for (Map.Entry<Integer, Object> it2 : it.getValue().entrySet()) {
+					Element leaf = generateHierarchy(p_document, p_root, it.getKey(), 0);
+					setLeaf(p_document, leaf, it2.getValue(), it2.getKey());
+				}
+			} else {
+				for (Map.Entry<Integer, Object> it2 : it.getValue().entrySet()) {
+					Element element = generateHierarchy(p_document, p_root, it.getKey(), it2.getKey());
+					setLeaf(p_document, element, it2.getValue(), it2.getKey());
+				}
+			}
+
+		}
+	}
+
+	private Element generateHierarchy(final Document p_document, final Element p_root, final String p_path, final int p_id) {
+		String[] items = p_path.split(Configuration.KEY_SEQ_SEPARATOR);
+		Element cur = p_root;
+
+
+		for (int i = 1; i < items.length; i++) {
+			Element next = null;
+
+			NodeList nodes = cur.getChildNodes();
+			for (int j = 0; j < nodes.getLength(); j++) {
+				Node child = nodes.item(j);
+				if (child.getNodeType() == Element.ELEMENT_NODE) {
+					Element element = (Element) child;
+					if (element.getTagName().equals(items[i])) {
+						if (element.hasAttribute(ATTR_KEY_ID)) {
+							int elementValue = Integer.parseInt(element.getAttribute(ATTR_KEY_ID));
+							if (elementValue != p_id ) {
+								next = p_document.createElement(items[i - 1]);
+								cur.getParentNode().appendChild(next);
+								i = i - 1;
+							}
+						} else {
+							NodeList nodes2 = element.getChildNodes();
+							for(int k=0; k<nodes2.getLength(); k++) {
+								Node child2 = nodes2.item(k);
+								if(child2.getNodeType() == Element.ELEMENT_NODE) {
+									Element element2 = (Element) child2;
+									if(element2.hasAttribute(ATTR_KEY_ID)) {
+										int elmtId = Integer.parseInt(element2.getAttribute(ATTR_KEY_ID));
+										if(elmtId == p_id) {
+											next = (Element) child;
+											break;
+										} else continue;
+									} else {
+										next = (Element) child;
+										break;
+									}
+								}
+							}
+
+						}
+					}
+				}
+			}
+
+
+			if (next == null) {
+				next = p_document.createElement(items[i]);
+				cur.appendChild(next);
+			}
+			cur = next;
+		}
+
+		return cur;
+	}
+
+
+	private void setLeaf(final Document p_document, final Element p_element, final Object p_value, final int p_index) {
+		p_element.setAttribute(ATTR_KEY_ID, Integer.toString(p_index));
+
+		if (p_value instanceof String) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "str");
+			p_element.appendChild(p_document.createTextNode((String) p_value));
+		} else if (p_value instanceof Byte) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "byte");
+			p_element.appendChild(p_document.createTextNode(((Byte) p_value).toString()));
+		} else if (p_value instanceof Short) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "short");
+			p_element.appendChild(p_document.createTextNode(((Short) p_value).toString()));
+		} else if (p_value instanceof Integer) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "int");
+			p_element.appendChild(p_document.createTextNode(((Integer) p_value).toString()));
+		} else if (p_value instanceof Long) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "long");
+			p_element.appendChild(p_document.createTextNode(((Long) p_value).toString()));
+		} else if (p_value instanceof Float) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "float");
+			p_element.appendChild(p_document.createTextNode(((Float) p_value).toString()));
+		} else if (p_value instanceof Double) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "double");
+			p_element.appendChild(p_document.createTextNode(((Double) p_value).toString()));
+		} else if (p_value instanceof Boolean) {
+			p_element.setAttribute(ATTR_KEY_TYPE, "bool");
+			p_element.appendChild(p_document.createTextNode(((Boolean) p_value).toString()));
+		} else {
+			//not supported, ignoring
+		}
+	}
 }
+
+
