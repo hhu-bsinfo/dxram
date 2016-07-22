@@ -51,7 +51,7 @@ public final class DXRAM {
 	 * @return True if initializing was successful, false otherwise.
 	 */
 	public boolean initialize(final String... p_configurationFiles) {
-		boolean ret = initialize(p_configurationFiles);
+		boolean ret = m_engine.init(p_configurationFiles);
 		if (ret) {
 			printNodeInfo();
 		}
