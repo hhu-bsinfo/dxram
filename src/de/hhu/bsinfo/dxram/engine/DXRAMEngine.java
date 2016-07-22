@@ -549,7 +549,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		setupLogger();
 
 		// #if LOGGER >= DEBUG
-		// // m_logger.debug(DXRAM_ENGINE_LOG_HEADER, m_configuration.toString());
+		m_logger.debug(DXRAM_ENGINE_LOG_HEADER, m_configuration.toString());
 		// #endif /* LOGGER >= DEBUG */
 
 		// setup components and services
