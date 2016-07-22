@@ -14,3 +14,4 @@ log.txt
 /DXRAM.jar
 /dxram.iml
 /dxram_term_history
+out/*

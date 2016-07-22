@@ -95,20 +95,6 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 		Document document = builder.newDocument();
 		generateXML(document, p_configuration);
 
-		// write the content into xml file
-		TransformerFactory transformerFactory = TransformerFactory.newInstance();
-		try {
-			Transformer transformer = transformerFactory.newTransformer();
-			DOMSource source = new DOMSource(document);
-			StreamResult result = new StreamResult(new File(p_configuration.getName()));
-			transformer.transform(source, result);
-		} catch (TransformerConfigurationException e) {
-			e.printStackTrace();
-		} catch (TransformerException e) {
-			e.printStackTrace();
-		}
-
-
 		if (!m_loader.save(document)) {
 			throw new ConfigurationException("Saving configuration " + p_configuration.getName() + " failed.");
 		}
@@ -192,6 +178,12 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 	}
 
 
+	/**
+	 * Generates the xml document with the aid of the Configuration object.
+	 * @param p_document XML Document
+	 * @param p_configuration Configuration object
+	 * @throws ConfigurationException
+     */
 	private void generateXML(final Document p_document, final Configuration p_configuration) throws ConfigurationException {
 
 		Element confRoot = p_document.createElement(ROOT_ELEMENT);
@@ -201,6 +193,12 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 
 	}
 
+	/**
+	 * Appends xml document for each configuration in the Configuration object.
+	 * @param p_document
+	 * @param p_root
+	 * @param p_configuration
+     */
 	private void generateChildren(final Document p_document, final Element p_root, final Configuration p_configuration) {
 		for (Map.Entry<String, Map<Integer, Object>> it : p_configuration.m_parameters.entrySet()) {
 
@@ -223,6 +221,14 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 		}
 	}
 
+	/**
+	 * Generates a hierarchy for the element that will be appended on basis of p_path
+	 * @param p_document XML document
+	 * @param p_root root
+	 * @param p_path path of the element
+	 * @param p_id id
+     * @return
+     */
 	private Element generateHierarchy(final Document p_document, final Element p_root, final String p_path, final int p_id) {
 		String[] items = p_path.split(Configuration.KEY_SEQ_SEPARATOR);
 		Element cur = p_root;
@@ -236,15 +242,15 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 				Node child = nodes.item(j);
 				if (child.getNodeType() == Element.ELEMENT_NODE) {
 					Element element = (Element) child;
-					if (element.getTagName().equals(items[i])) {
-						if (element.hasAttribute(ATTR_KEY_ID)) {
+					if (element.getTagName().equals(items[i])) { // path is up to now equal
+						if (element.hasAttribute(ATTR_KEY_ID)) { // current element has an id attribute
 							int elementValue = Integer.parseInt(element.getAttribute(ATTR_KEY_ID));
-							if (elementValue != p_id ) {
+							if (elementValue != p_id ) { // id is different so append child on the prior node
 								next = p_document.createElement(items[i - 1]);
 								cur.getParentNode().appendChild(next);
 								i = i - 1;
 							}
-						} else {
+						} else { // current element has not an id attribute -> check if childs have an id attribute with the a
 							NodeList nodes2 = element.getChildNodes();
 							for(int k=0; k<nodes2.getLength(); k++) {
 								Node child2 = nodes2.item(k);
@@ -280,6 +286,13 @@ public class ConfigurationXMLParser implements ConfigurationParser {
 	}
 
 
+	/**
+	 * Appends the leaf as a child in the xml document and assignes the value of the leaf.
+	 * @param p_document XML Document
+	 * @param p_element leaf
+	 * @param p_value Value of Leaf
+     * @param p_index Index attribute
+     */
 	private void setLeaf(final Document p_document, final Element p_element, final Object p_value, final int p_index) {
 		p_element.setAttribute(ATTR_KEY_ID, Integer.toString(p_index));
 

@@ -517,7 +517,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		if(keyValue[1] != null) {
 			configurations.add(keyValue[1]);
 		} else {
-			// no vm argument check if default config exist
 			System.out.println("[DXRAMEngine] No VM argument -Ddxram.config=... was entered! Please fix it and restart the application!");
 			System.exit(1);
 		}
@@ -548,8 +547,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		boolean fileReadSuccessful = true;
 
-		// overriding order:
-		// config, default values, class parameters, vm arguments
+		// load config files
 		for (String configFile : configurationFiles) {
 			System.out.println("[DXRAMEngine] Loading configuration file " + configFile);
 			int configLoadSuccessful = loadConfiguration(configFile);
@@ -589,6 +587,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		preInitComponents();
 		preInitServices();
 
+        // load remaining configs dxram.config.0, ...
 		if(!fileReadSuccessful) {
 			saveConfiguration(System.getProperty("dxram.config"));
 			for (int i=1; i< configurationFiles.length; i++) { // 1 because vm argument was entered wrong
@@ -602,6 +601,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	}
 
+    /**
+     * Initialize components
+     */
 	private void preInitComponents() {
 		for(Entry<String, AbstractDXRAMComponent> comp : m_components.entrySet()) {
 			AbstractDXRAMComponent component = comp.getValue();
@@ -609,6 +611,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		}
 	}
 
+    /**
+     * Initialize services.
+     */
 	private void preInitServices() {
 		for(Entry<String, AbstractDXRAMService> serv : m_services.entrySet()) {
 			AbstractDXRAMService service = serv.getValue();
@@ -727,7 +732,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 * @param p_configurationFolder File to save the configuration to.
 	 * @return True if saving was successful, false otherwise.
 	 */
-	@SuppressWarnings("unused")
 	private boolean saveConfiguration(final String p_configurationFolder) {
 		final ConfigurationXMLLoader loader = new ConfigurationXMLLoaderFile(p_configurationFolder);
 		final ConfigurationParser parser = new ConfigurationXMLParser(loader);
@@ -771,77 +775,67 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 * Override a few configuration values with parameters provided by the VM arguments.
 	 */
 	private void overrideConfigurationWithVMArguments() {
-		final String[] keyValue;
-		keyValue = new String[2];
+        final String[] keyValue;
+        keyValue = new String[2];
 
-		Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
-		// add default type parsers
+        Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
+        // add default type parsers
         addDataTypeParser(m_dataTypeParsers, new DataTypeParserString());
         addDataTypeParser(m_dataTypeParsers, new DataTypeParserByte());
-		addDataTypeParser(m_dataTypeParsers, new DataTypeParserShort());
-		addDataTypeParser(m_dataTypeParsers, new DataTypeParserInt());
-		addDataTypeParser(m_dataTypeParsers, new DataTypeParserLong());
-		addDataTypeParser(m_dataTypeParsers, new DataTypeParserFloat());
-		addDataTypeParser(m_dataTypeParsers, new DataTypeParserDouble());
-		addDataTypeParser(m_dataTypeParsers, new DataTypeParserBool());
-		addDataTypeParser(m_dataTypeParsers, new DataTypeParserBoolean());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserShort());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserInt());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserLong());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserFloat());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserDouble());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserBool());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserBoolean());
 
-		for(int i=0; i<100; i++) {
-			keyValue[0] = "dxram.confVal." + i;
-			keyValue[1] = System.getProperty(keyValue[0]);
-			if (keyValue[1] == null) {
-				break;
-			}else {
-				String[] items = keyValue[1].split("#");
-				if(items.length == 3) { // name#type#val
+        for(int i=0; i<100; i++) {
+            keyValue[0] = "dxram.confVal." + i;
+            keyValue[1] = System.getProperty(keyValue[0]);
+            if (keyValue[1] == null) {
+                break;
+            }else {
+                String[] items = keyValue[1].split("#");
+                if(items.length == 3) { // name#type#val
                     DataTypeParser parser = m_dataTypeParsers.get(items[1]);
                     if (parser != null) {
                         Object value = parser.parse(items[2]);
 
-                        // add the value and do not replace existing values
-                        // i.e. if same index is available multiple times, only the first one is used
+                        // add the value and do replace existing values
                         m_configuration.addValue(items[0], 0, value, true);
                     }
                     // no parser to support, ignore
 
-					// #if LOGGER >= DEBUG
-					// m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-					//		"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
-					// #endif /* LOGGER >= DEBUG */
-					System.out.println(	"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
-				} else if(items.length == 4) { // name#id#type#val
-					int id = Integer.parseInt(items[1]);
+                    // #if LOGGER >= DEBUG
+                    // m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
+                    //		"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
+                    // #endif /* LOGGER >= DEBUG */
+                } else if(items.length == 4) { // name#id#type#val
+                    int id = Integer.parseInt(items[1]);
 
                     DataTypeParser parser = m_dataTypeParsers.get(items[2]);
                     if (parser != null) {
                         Object value = parser.parse(items[3]);
 
-                        // add the value and do not replace existing values
-                        // i.e. if same index is available multiple times, only the first one is used
+                        // add the value and do replace existing values
                         m_configuration.addValue(items[0], 0, value, true);
                     }
-					// #if LOGGER >= DEBUG
-					// m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-					//		"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
-					// #endif /* LOGGER >= DEBUG */
-				} else {
-					System.out.println("[DXRAMEngine] VM Argument error: invalid format");
+                    // #if LOGGER >= DEBUG
+                    // m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
+                    //		"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
+                    // #endif /* LOGGER >= DEBUG */
+                } else {
+                    System.out.println("[DXRAMEngine] VM Argument error: invalid format");
 
-				}
-			}
+                }
+            }
 
-		}
+        }
 	}
 
-    /**
-     * Adds the DataTypeParser in the hashmap
-     * @param m_dataTypeParsers
-     * @param p_dataTypeParser
-     * @return
-     */
-    private boolean addDataTypeParser(Map<String, DataTypeParser> m_dataTypeParsers, DataTypeParser p_dataTypeParser) {
-        return m_dataTypeParsers.put(p_dataTypeParser.getTypeIdentifer(), p_dataTypeParser) == null;
-
+    private boolean addDataTypeParser(Map<String, DataTypeParser> m_dataTypeParsers, DataTypeParser p_parser) {
+        return m_dataTypeParsers.put(p_parser.getTypeIdentifer(), p_parser) == null;
     }
 
     /**
