@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.conf.Configuration;
@@ -28,6 +26,7 @@ import de.hhu.bsinfo.utils.log.LogDestinationConsole;
 import de.hhu.bsinfo.utils.log.LogDestinationFile;
 import de.hhu.bsinfo.utils.log.LogLevel;
 import de.hhu.bsinfo.utils.log.Logger;
+import de.hhu.bsinfo.utils.reflect.dt.*;
 
 /**
  * Main class to run DXRAM with components and services.
@@ -773,9 +772,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 */
 	private void overrideConfigurationWithVMArguments() {
 		final String[] keyValue;
-
 		keyValue = new String[2];
 
+		Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
+		// add default type parsers
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserString());
+        addDataTypeParser(m_dataTypeParsers, new DataTypeParserByte());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserShort());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserInt());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserLong());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserFloat());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserDouble());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserBool());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserBoolean());
 
 		for(int i=0; i<100; i++) {
 			keyValue[0] = "dxram.confVal." + i;
@@ -785,23 +794,15 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 			}else {
 				String[] items = keyValue[1].split("#");
 				if(items.length == 3) { // name#type#val
-					if(items[1].equals("str")) {
-						m_configuration.addValue(items[0], items[2]);
-					} else if(items[1].equals("byte")) {
-						m_configuration.addValue(items[0], Byte.parseByte(items[2]));
-					} else if(items[1].equals("short")) {
-						m_configuration.addValue(items[0], Short.parseShort(items[2]));
-					} else if(items[1].equals("int")) {
-						m_configuration.addValue(items[0], Integer.parseInt(items[2]));
-					} else if(items[1].equals("long")) {
-						m_configuration.addValue(items[0], Long.parseLong(items[2]));
-					} else if(items[1].equals("float")) {
-						m_configuration.addValue(items[0], Float.parseFloat(items[2]));
-					} else if(items[1].equals("double")) {
-						m_configuration.addValue(items[0], Double.parseDouble(items[2]));
-					} else if(items[1].equals("bool")) {
-						m_configuration.addValue(items[0], Boolean.parseBoolean(items[2]));
-					}
+                    DataTypeParser parser = m_dataTypeParsers.get(items[1]);
+                    if (parser != null) {
+                        Object value = parser.parse(items[2]);
+
+                        // add the value and do not replace existing values
+                        // i.e. if same index is available multiple times, only the first one is used
+                        m_configuration.addValue(items[0], 0, value, true);
+                    }
+                    // no parser to support, ignore
 
 					// #if LOGGER >= DEBUG
 					// m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
@@ -810,24 +811,15 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 					System.out.println(	"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
 				} else if(items.length == 4) { // name#id#type#val
 					int id = Integer.parseInt(items[1]);
-					if(items[2].equals("str")) {
-						m_configuration.addValue(items[0], id, items[3]);
-					} else if(items[2].equals("byte")) {
-						m_configuration.addValue(items[0], id, Byte.parseByte(items[3]));
-					} else if(items[2].equals("short")) {
-						m_configuration.addValue(items[0], id, Short.parseShort(items[3]));
-					} else if(items[2].equals("int")) {
-						m_configuration.addValue(items[0], id, Integer.parseInt(items[3]));
-					} else if(items[2].equals("long")) {
-						m_configuration.addValue(items[0], id, Long.parseLong(items[3]));
-					} else if(items[2].equals("float")) {
-						m_configuration.addValue(items[0], id, Float.parseFloat(items[3]));
-					} else if(items[2].equals("double")) {
-						m_configuration.addValue(items[0], id, Double.parseDouble(items[3]));
-					} else if(items[2].equals("bool")) {
-						m_configuration.addValue(items[0], Boolean.parseBoolean(items[3]));
-					}
 
+                    DataTypeParser parser = m_dataTypeParsers.get(items[2]);
+                    if (parser != null) {
+                        Object value = parser.parse(items[3]);
+
+                        // add the value and do not replace existing values
+                        // i.e. if same index is available multiple times, only the first one is used
+                        m_configuration.addValue(items[0], 0, value, true);
+                    }
 					// #if LOGGER >= DEBUG
 					// m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
 					//		"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
@@ -841,7 +833,18 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		}
 	}
 
-	/**
+    /**
+     * Adds the DataTypeParser in the hashmap
+     * @param m_dataTypeParsers
+     * @param p_dataTypeParser
+     * @return
+     */
+    private boolean addDataTypeParser(Map<String, DataTypeParser> m_dataTypeParsers, DataTypeParser p_dataTypeParser) {
+        return m_dataTypeParsers.put(p_dataTypeParser.getTypeIdentifer(), p_dataTypeParser) == null;
+
+    }
+
+    /**
 	 * Setup the logger.
 	 */
 	private void setupLogger() {
