@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.conf.Configuration;
 import de.hhu.bsinfo.utils.conf.ConfigurationException;
@@ -26,7 +25,16 @@ import de.hhu.bsinfo.utils.log.LogDestinationConsole;
 import de.hhu.bsinfo.utils.log.LogDestinationFile;
 import de.hhu.bsinfo.utils.log.LogLevel;
 import de.hhu.bsinfo.utils.log.Logger;
-import de.hhu.bsinfo.utils.reflect.dt.*;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParser;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBool;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserBoolean;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserByte;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserDouble;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserFloat;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserInt;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserLong;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserShort;
+import de.hhu.bsinfo.utils.reflect.dt.DataTypeParserString;
 
 /**
  * Main class to run DXRAM with components and services.
@@ -45,8 +53,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	private Logger m_logger;
 	private DXRAMJNIManager m_jniManager;
 
-	private HashMap<String, AbstractDXRAMComponent> m_components = new HashMap<String, AbstractDXRAMComponent>();
-	private HashMap<String, AbstractDXRAMService> m_services = new HashMap<String, AbstractDXRAMService>();
+	private HashMap<String, AbstractDXRAMComponent> m_components = new HashMap<>();
+	private HashMap<String, AbstractDXRAMService> m_services = new HashMap<>();
 
 	/**
 	 * Constructor
@@ -171,12 +179,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 * Initialize the engine. Executes various bootstrapping tasks,
 	 * initializes components and services.
 	 * This will expect the most essential parameters to start to be provided
-	 * via vm arguments (dxram.config, dxram.network.ip, dxram.network.port, dxram.role)
+	 * via vm arguments.
 	 *
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean init() {
-		return init(null, null, null, new String[0]);
+		return init(new String[0]);
 	}
 
 	/**
@@ -187,28 +195,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 * @return True if successful, false otherwise.
 	 */
 	public boolean init(final String... p_configurationFiles) {
-		return init(null, null, null, p_configurationFiles);
-	}
-
-	/**
-	 * Initialize the engine. Executes various bootstrapping tasks,
-	 * initializes components and services.
-	 *
-	 * @param p_overrideNetworkIP  Overriding the configuration file provided IP address (example: 127.0.0.1).
-	 * @param p_overridePort       Overriding the configuration file provided port number (example: 22223).
-	 * @param p_overrideRole       Overriding the configuration file provided role (example: Superpeer).
-	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
-	 * @return True if successful, false otherwise.
-	 */
-	public boolean init(final String p_overrideNetworkIP, final String p_overridePort,
-			final NodeRole p_overrideRole, final String... p_configurationFiles) {
 		assert !m_isInitilized;
 
 		final List<AbstractDXRAMComponent> list;
 		final Comparator<AbstractDXRAMComponent> comp;
 
-		bootstrap(p_overrideNetworkIP, p_overridePort,
-				p_overrideRole, p_configurationFiles);
+		bootstrap(p_configurationFiles);
 
 		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine...");
@@ -224,13 +216,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		// #endif /* LOGGER >= DEBUG */
 
 		// sort list by initialization priority
-		list = new ArrayList<AbstractDXRAMComponent>(m_components.values());
-		comp = new Comparator<AbstractDXRAMComponent>() {
-			@Override
-			public int compare(final AbstractDXRAMComponent p_o1, final AbstractDXRAMComponent p_o2) {
-				return (new Integer(p_o1.getPriorityInit())).compareTo(new Integer(p_o2.getPriorityInit()));
-			}
-		};
+		list = new ArrayList<>(m_components.values());
+		comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityInit())).compareTo(p_o2.getPriorityInit());
 		Collections.sort(list, comp);
 
 		// #if LOGGER >= INFO
@@ -283,30 +270,24 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down engine...");
-		//
+		// #endif /* LOGGER >= INFO */
+		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + m_services.size() + " services...");
 		// #endif /* LOGGER >= INFO */
 
-		for (AbstractDXRAMService service : m_services.values()) {
+		m_services.values().stream().filter(service -> !service.shutdown()).forEach(service -> {
 			// #if LOGGER >= ERROR
-			if (!service.shutdown()) {
-				m_logger.error(DXRAM_ENGINE_LOG_HEADER,
-						"Shutting down service '" + service.getServiceName() + "' failed.");
-			}
+			m_logger.error(DXRAM_ENGINE_LOG_HEADER,
+					"Shutting down service '" + service.getServiceName() + "' failed.");
 			// #endif /* LOGGER >= ERROR */
-		}
+		});
 		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down services done.");
 		// #endif /* LOGGER >= INFO */
 
-		list = new ArrayList<AbstractDXRAMComponent>(m_components.values());
+		list = new ArrayList<>(m_components.values());
 
-		comp = new Comparator<AbstractDXRAMComponent>() {
-			@Override
-			public int compare(final AbstractDXRAMComponent p_o1, final AbstractDXRAMComponent p_o2) {
-				return (new Integer(p_o1.getPriorityShutdown())).compareTo(new Integer(p_o2.getPriorityShutdown()));
-			}
-		};
+		comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityShutdown())).compareTo(p_o2.getPriorityShutdown());
 
 		Collections.sort(list, comp);
 
@@ -314,9 +295,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + list.size() + " components...");
 		// #endif /* LOGGER >= INFO */
 
-		for (AbstractDXRAMComponent component : list) {
-			component.shutdown();
-		}
+		list.forEach(AbstractDXRAMComponent::shutdown);
 
 		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down components done.");
@@ -349,7 +328,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		if (componentsClass != null) {
 			for (Entry<Integer, String> component : componentsClass.entrySet()) {
 				final Boolean enabled = componentsEnabled.get(component.getKey());
-				if (enabled != null && enabled.booleanValue()) {
+				if (enabled != null && enabled) {
 					final Integer priorityInit = componentsPriorityInit.get(component.getKey());
 					if (priorityInit == null) {
 						// #if LOGGER >= ERROR
@@ -368,7 +347,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 						continue;
 					}
 
-					Class<?> clazz = null;
+					Class<?> clazz;
 					try {
 						clazz = Class.forName(component.getValue());
 					} catch (final ClassNotFoundException e) {
@@ -391,7 +370,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 						}
 					}
 
-					Constructor<?> ctor = null;
+					Constructor<?> ctor;
 
 					try {
 						ctor = clazz.getConstructor(Integer.TYPE, Integer.TYPE);
@@ -406,7 +385,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 					try {
 						m_components.put(clazz.getName(),
 								(AbstractDXRAMComponent) ctor
-										.newInstance(new Object[] {priorityInit, priorityShutdown}));
+										.newInstance(priorityInit, priorityShutdown));
 					} catch (final InstantiationException | IllegalAccessException | IllegalArgumentException
 							| InvocationTargetException e) {
 						// #if LOGGER >= ERROR
@@ -446,12 +425,13 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		if (servicesClass == null) {
 			m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 					"Setting up services, service class list in configuration " + p_configuration.getName());
+			return;
 		}
 
 		for (Entry<Integer, String> service : servicesClass.entrySet()) {
 			final Boolean enabled = servicesEnabled.get(service.getKey());
-			if (enabled != null && enabled.booleanValue()) {
-				Class<?> clazz = null;
+			if (enabled != null && enabled) {
+				Class<?> clazz;
 				try {
 					clazz = Class.forName(service.getValue());
 				} catch (final ClassNotFoundException e) {
@@ -497,16 +477,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	/**
 	 * Execute bootstrapping tasks for the engine.
 	 *
-	 * @param p_overrideNetworkIP  Overriding the configuration file provided IP address (example: 127.0.0.1).
-	 * @param p_overridePort       Overriding the configuration file provided port number (example: 22223).
-	 * @param p_overrideRole       Overriding the configuration file provided role (example: Superpeer).
 	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
 	 */
-	private void bootstrap(final String p_overrideNetworkIP, final String p_overridePort,
-						   final NodeRole p_overrideRole, final String... p_configurationFiles) {
+	private void bootstrap(final String... p_configurationFiles) {
 		String[] configurationFiles = p_configurationFiles;
-		final ArrayList<String> configurations = new ArrayList<String>();
-
+		final ArrayList<String> configurations = new ArrayList<>();
 
 		// check for configuration items dxram.config
 		final String[] keyValue;
@@ -514,32 +489,33 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		keyValue[0] = "dxram.config";
 		keyValue[1] = System.getProperty(keyValue[0]);
-		if(keyValue[1] != null) {
+		if (keyValue[1] != null) {
 			configurations.add(keyValue[1]);
 		} else {
-			System.out.println("[DXRAMEngine] No VM argument -Ddxram.config=... was entered! Please fix it and restart the application!");
+			System.out.println(
+					"[DXRAMEngine] No VM argument -Ddxram.config=... was entered! Please fix it and restart the application!");
 			System.exit(1);
 		}
 
 		// allow a max of 100 configs (should be plenty enough)
-		for(int i=0; i < 100; i++) {
+		for (int i = 0; i < 100; i++) {
 			keyValue[0] = "dxram.config." + i;
 			keyValue[1] = System.getProperty(keyValue[0]);
 			// break if don't have a chain of configs
-			if(keyValue[1] == null) {
+			if (keyValue[1] == null) {
 				break;
 			}
 
 			configurations.add(keyValue[1]);
 		}
 
-		if(configurations.isEmpty() && configurationFiles.length == 0) {
+		if (configurations.isEmpty() && configurationFiles.length == 0) {
 			System.out.println("[WARN][DXRAMEngine] No dxram configuration specified via vm args.");
 		}
 
 		// override configuration files provided via api call with vm arguments
 		// if any vm args exist
-		if(!configurations.isEmpty()) {
+		if (!configurations.isEmpty()) {
 			configurationFiles = configurations.toArray(new String[0]);
 		}
 
@@ -559,11 +535,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 			}
 		}
 
-
 		m_settings = new Settings(m_configuration, m_logger);
 
 		// default configuration values from engine (if values don't exist)
-		if(!fileReadSuccessful) {
+		if (!fileReadSuccessful) {
 			initDefaultComponentsAndServices();
 
 		}
@@ -587,62 +562,77 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		preInitComponents();
 		preInitServices();
 
-        // load remaining configs dxram.config.0, ...
-		if(!fileReadSuccessful) {
+		// load remaining configs dxram.config.0, ...
+		if (!fileReadSuccessful) {
 			saveConfiguration(System.getProperty("dxram.config"));
-			for (int i=1; i< configurationFiles.length; i++) { // 1 because vm argument was entered wrong
+			// 1 because vm argument was entered wrong
+			for (int i = 1; i < configurationFiles.length; i++) {
 				System.out.println("[DXRAMEngine] Loading configuration file " + configurationFiles[i]);
 				final int configLoadSuccessful = loadConfiguration(configurationFiles[i]);
 				if (configLoadSuccessful != 0) {
-					System.out.println("[DXRAMEngine] Loading from configuration file failed: could not find configuration file.");
+					System.out.println(
+							"[DXRAMEngine] Loading from configuration file failed: could not find configuration file.");
 				}
 			}
 		}
 
 	}
 
-    /**
-     * Initialize components
-     */
+	/**
+	 * Initialize components
+	 */
 	private void preInitComponents() {
-		for(Entry<String, AbstractDXRAMComponent> comp : m_components.entrySet()) {
+		for (Entry<String, AbstractDXRAMComponent> comp : m_components.entrySet()) {
 			AbstractDXRAMComponent component = comp.getValue();
 			component.preInit(this);
 		}
 	}
 
-    /**
-     * Initialize services.
-     */
+	/**
+	 * Initialize services.
+	 */
 	private void preInitServices() {
-		for(Entry<String, AbstractDXRAMService> serv : m_services.entrySet()) {
+		for (Entry<String, AbstractDXRAMService> serv : m_services.entrySet()) {
 			AbstractDXRAMService service = serv.getValue();
 			service.preInit(this);
 		}
 	}
 
 	/**
-	 *
+	 * Add default components and services to a new configuration
 	 */
 	private void initDefaultComponentsAndServices() {
 		// hard-coded with default values
 		//components
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 0, "de.hhu.bsinfo.dxram.engine.NullComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 1, "de.hhu.bsinfo.dxram.logger.LoggerComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 2, "de.hhu.bsinfo.dxram.term.TerminalComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 3, "de.hhu.bsinfo.dxram.event.EventComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 4, "de.hhu.bsinfo.dxram.stats.StatisticsComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 5, "de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 6, "de.hhu.bsinfo.dxram.net.NetworkComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 7, "de.hhu.bsinfo.dxram.lookup.LookupComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 8, "de.hhu.bsinfo.dxram.mem.MemoryManagerComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 9, "de.hhu.bsinfo.dxram.lock.PeerLockComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class",10, "de.hhu.bsinfo.dxram.log.LogComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class",11, "de.hhu.bsinfo.dxram.backup.BackupComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class",12, "de.hhu.bsinfo.dxram.chunk.ChunkComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class",13, "de.hhu.bsinfo.dxram.nameservice.NameserviceComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 0, "de.hhu.bsinfo.dxram.engine.NullComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 1, "de.hhu.bsinfo.dxram.logger.LoggerComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 2, "de.hhu.bsinfo.dxram.term.TerminalComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 3, "de.hhu.bsinfo.dxram.event.EventComponent");
+		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 4,
+				"de.hhu.bsinfo.dxram.stats.StatisticsComponent");
+		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 5,
+				"de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 6, "de.hhu.bsinfo.dxram.net.NetworkComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 7, "de.hhu.bsinfo.dxram.lookup.LookupComponent");
+		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 8,
+				"de.hhu.bsinfo.dxram.mem.MemoryManagerComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 9, "de.hhu.bsinfo.dxram.lock.PeerLockComponent");
+		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 10, "de.hhu.bsinfo.dxram.log.LogComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 11, "de.hhu.bsinfo.dxram.backup.BackupComponent");
+		m_configuration
+				.addValue("/DXRAMEngine/Components/Component/Class", 12, "de.hhu.bsinfo.dxram.chunk.ChunkComponent");
+		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 13,
+				"de.hhu.bsinfo.dxram.nameservice.NameserviceComponent");
 		//enabled and priority flags flags for components
-		for(int i=0; i<=13; i++) {
+		for (int i = 0; i <= 13; i++) {
 			m_configuration.addValue("/DXRAMEngine/Components/Component/Enabled", i, Boolean.TRUE);
 			m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityInit", i, i);
 		}
@@ -656,28 +646,32 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 7, 993);
 		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 8, 992);
 		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 9, 991);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown",10, 990);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown",11, 989);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown",12, 988);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown",13, 987);
-
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 10, 990);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 11, 989);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 12, 988);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 13, 987);
 
 		//services
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 0, "de.hhu.bsinfo.dxram.engine.NullService");
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 1, "de.hhu.bsinfo.dxram.chunk.ChunkService");
-		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 2, "de.hhu.bsinfo.dxram.nameservice.NameserviceService");
+		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 2,
+				"de.hhu.bsinfo.dxram.nameservice.NameserviceService");
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 3, "de.hhu.bsinfo.dxram.lock.PeerLockService");
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 4, "de.hhu.bsinfo.dxram.logger.LoggerService");
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 5, "de.hhu.bsinfo.dxram.term.TerminalService");
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 6, "de.hhu.bsinfo.dxram.boot.BootService");
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 7, "de.hhu.bsinfo.dxram.net.NetworkService");
-		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 8, "de.hhu.bsinfo.dxram.stats.StatisticsService");
-		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 9, "de.hhu.bsinfo.dxram.chunk.AsyncChunkService");
-		m_configuration.addValue("/DXRAMEngine/Services/Service/Class",10, "de.hhu.bsinfo.dxram.migration.MigrationService");
-		m_configuration.addValue("/DXRAMEngine/Services/Service/Class",11, "de.hhu.bsinfo.dxram.log.LogService");
-		m_configuration.addValue("/DXRAMEngine/Services/Service/Class",12, "de.hhu.bsinfo.dxram.sync.SynchronizationService");
+		m_configuration
+				.addValue("/DXRAMEngine/Services/Service/Class", 8, "de.hhu.bsinfo.dxram.stats.StatisticsService");
+		m_configuration
+				.addValue("/DXRAMEngine/Services/Service/Class", 9, "de.hhu.bsinfo.dxram.chunk.AsyncChunkService");
+		m_configuration
+				.addValue("/DXRAMEngine/Services/Service/Class", 10, "de.hhu.bsinfo.dxram.migration.MigrationService");
+		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 11, "de.hhu.bsinfo.dxram.log.LogService");
+		m_configuration
+				.addValue("/DXRAMEngine/Services/Service/Class", 12, "de.hhu.bsinfo.dxram.sync.SynchronizationService");
 		//enabled flags for servies
-		for(int i=0; i<=12; i++) {
+		for (int i = 0; i <= 12; i++) {
 			m_configuration.addValue("/DXRAMEngine/Services/Service/Enabled", i, Boolean.TRUE);
 		}
 
@@ -685,7 +679,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		registerDefaultConfigurationValues();
 
 	}
-
 
 	/**
 	 * Register default configuration values of the engine.
@@ -752,93 +745,83 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	}
 
 	/**
-	 * Override a few configuration values with the provided paramters.
-	 *
-	 * @param p_networkIP Network IP of the instance.
-	 * @param p_port      Port number of the instance.
-	 * @param p_role      Role of the instance.
+	 * Override a few configuration values with parameters provided by the VM arguments.
 	 */
-	private void overrideConfigurationWithParameters(final String p_networkIP,
-			final String p_port, final NodeRole p_role) {
-		if (p_networkIP != null) {
-			m_settings.overrideValue(DXRAMEngineConfigurationValues.IP, p_networkIP);
-		}
-		if (p_port != null) {
-			m_settings.overrideValue(DXRAMEngineConfigurationValues.PORT, Integer.parseInt(p_port));
-		}
-		if (p_role != null) {
-			m_settings.overrideValue(DXRAMEngineConfigurationValues.ROLE, p_role.toString());
+	private void overrideConfigurationWithVMArguments() {
+		final String[] keyValue;
+		keyValue = new String[2];
+
+		Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<>();
+		// add default type parsers
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserString());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserByte());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserShort());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserInt());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserLong());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserFloat());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserDouble());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserBool());
+		addDataTypeParser(m_dataTypeParsers, new DataTypeParserBoolean());
+
+		for (int i = 0; i < 100; i++) {
+			keyValue[0] = "dxram.confVal." + i;
+			keyValue[1] = System.getProperty(keyValue[0]);
+			if (keyValue[1] == null) {
+				break;
+			} else {
+				String[] items = keyValue[1].split("#");
+				// name#type#val
+				if (items.length == 3) {
+					DataTypeParser parser = m_dataTypeParsers.get(items[1]);
+					if (parser != null) {
+						Object value = parser.parse(items[2]);
+
+						// add the value and do replace existing values
+						m_configuration.addValue(items[0], 0, value, true);
+					}
+					// no parser to support, ignore
+
+					// #if LOGGER >= DEBUG
+					m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
+							"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
+					// #endif /* LOGGER >= DEBUG */
+					// name#id#type#val
+				} else if (items.length == 4) {
+					int id = Integer.parseInt(items[1]);
+
+					DataTypeParser parser = m_dataTypeParsers.get(items[2]);
+					if (parser != null) {
+						Object value = parser.parse(items[3]);
+
+						// add the value and do replace existing values
+						m_configuration.addValue(items[0], 0, value, true);
+					}
+					// #if LOGGER >= DEBUG
+					m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
+							"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
+					// #endif /* LOGGER >= DEBUG */
+				} else {
+					System.out.println("[DXRAMEngine] VM Argument error: invalid format");
+
+				}
+			}
+
 		}
 	}
 
 	/**
-	 * Override a few configuration values with parameters provided by the VM arguments.
+	 * Add a data type parser for parsing vm arguments
+	 *
+	 * @param m_dataTypeParsers List to add the parser to
+	 * @param p_parser          Parse to add
+	 * @return True if successful, false if the parser already exists.
 	 */
-	private void overrideConfigurationWithVMArguments() {
-        final String[] keyValue;
-        keyValue = new String[2];
-
-        Map<String, DataTypeParser> m_dataTypeParsers = new HashMap<String, DataTypeParser>();
-        // add default type parsers
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserString());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserByte());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserShort());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserInt());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserLong());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserFloat());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserDouble());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserBool());
-        addDataTypeParser(m_dataTypeParsers, new DataTypeParserBoolean());
-
-        for(int i=0; i<100; i++) {
-            keyValue[0] = "dxram.confVal." + i;
-            keyValue[1] = System.getProperty(keyValue[0]);
-            if (keyValue[1] == null) {
-                break;
-            }else {
-                String[] items = keyValue[1].split("#");
-                if(items.length == 3) { // name#type#val
-                    DataTypeParser parser = m_dataTypeParsers.get(items[1]);
-                    if (parser != null) {
-                        Object value = parser.parse(items[2]);
-
-                        // add the value and do replace existing values
-                        m_configuration.addValue(items[0], 0, value, true);
-                    }
-                    // no parser to support, ignore
-
-                    // #if LOGGER >= DEBUG
-                    // m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-                    //		"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
-                    // #endif /* LOGGER >= DEBUG */
-                } else if(items.length == 4) { // name#id#type#val
-                    int id = Integer.parseInt(items[1]);
-
-                    DataTypeParser parser = m_dataTypeParsers.get(items[2]);
-                    if (parser != null) {
-                        Object value = parser.parse(items[3]);
-
-                        // add the value and do replace existing values
-                        m_configuration.addValue(items[0], 0, value, true);
-                    }
-                    // #if LOGGER >= DEBUG
-                    // m_logger.debug(DXRAM_ENGINE_LOG_HEADER,
-                    //		"Overriding '" + items[0] + "' with vm argument '" + items[2] + "'.");
-                    // #endif /* LOGGER >= DEBUG */
-                } else {
-                    System.out.println("[DXRAMEngine] VM Argument error: invalid format");
-
-                }
-            }
-
-        }
+	private boolean addDataTypeParser(final Map<String, DataTypeParser> m_dataTypeParsers,
+			final DataTypeParser p_parser) {
+		return m_dataTypeParsers.put(p_parser.getTypeIdentifer(), p_parser) == null;
 	}
 
-    private boolean addDataTypeParser(Map<String, DataTypeParser> m_dataTypeParsers, DataTypeParser p_parser) {
-        return m_dataTypeParsers.put(p_parser.getTypeIdentifer(), p_parser) == null;
-    }
-
-    /**
+	/**
 	 * Setup the logger.
 	 */
 	private void setupLogger() {
@@ -878,7 +861,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		private Configuration m_configuration;
 		private Logger m_logger;
-		private String m_basePath = new String();
+		private String m_basePath = "";
 
 		/**
 		 * Constructor
