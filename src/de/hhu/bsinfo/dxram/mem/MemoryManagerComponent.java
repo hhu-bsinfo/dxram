@@ -91,7 +91,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
 			// #if LOGGER == INFO
 			m_logger.info(getClass(),
-					"Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
+					"Allocating native memory (" + (ramSize / 1024 / 1024) + " mb). This may take a while.");
 			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 			m_rawMemory.initialize(ramSize, ramSize);

@@ -13,6 +13,7 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
  * Base class for an entry point of a DXRAM application.
  * If DXRAM is integrated into an existing application,
  * just use the DXRAM class instead.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.02.16
  */
 public class DXRAMMain extends AbstractMain {
@@ -29,8 +30,8 @@ public class DXRAMMain extends AbstractMain {
 
 	/**
 	 * Constructor
-	 * @param p_description
-	 *            Override the description for main.
+	 *
+	 * @param p_description Override the description for main.
 	 */
 	public DXRAMMain(final String p_description) {
 		super(p_description);
@@ -39,8 +40,8 @@ public class DXRAMMain extends AbstractMain {
 
 	/**
 	 * Main entry point
-	 * @param p_args
-	 *            Program arguments.
+	 *
+	 * @param p_args Program arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new DXRAMMain();
@@ -48,7 +49,8 @@ public class DXRAMMain extends AbstractMain {
 	}
 
 	@Override
-	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {}
+	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
+	}
 
 	@Override
 	protected int main(final ArgumentList p_arguments) {
@@ -62,8 +64,8 @@ public class DXRAMMain extends AbstractMain {
 
 	/**
 	 * Override this to implement your application built on top of DXRAM.
-	 * @param p_arguments
-	 *            Arguments provided by the application.
+	 *
+	 * @param p_arguments Arguments provided by the application.
 	 * @return Exit code of the application.
 	 */
 	protected int mainApplication(final ArgumentList p_arguments) {
@@ -80,20 +82,20 @@ public class DXRAMMain extends AbstractMain {
 			System.out.println(">>> DXRAM started <<<");
 
 			while (true) {
-				// Wait a moment
+				// Wait
 				try {
-					Thread.sleep(3000);
-				} catch (final InterruptedException e) {}
+					Thread.sleep(100000);
+				} catch (final InterruptedException e) {
+				}
 			}
 		}
 	}
 
 	/**
 	 * Get a service from DXRAM.
-	 * @param <T>
-	 *            Type of the implemented service.
-	 * @param p_class
-	 *            Class of the service to get.
+	 *
+	 * @param <T>     Type of the implemented service.
+	 * @param p_class Class of the service to get.
 	 * @return DXRAM service or null if not available.
 	 */
 	protected <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
@@ -102,6 +104,7 @@ public class DXRAMMain extends AbstractMain {
 
 	/**
 	 * Get the DXRAM instance.
+	 *
 	 * @return DXRAM instance.
 	 */
 	protected DXRAM getDXRAM() {
@@ -110,6 +113,7 @@ public class DXRAMMain extends AbstractMain {
 
 	/**
 	 * Run the built in terminal. The calling thread will be used for this.
+	 *
 	 * @return True if execution was successful and finished, false if starting the terminal failed.
 	 */
 	protected boolean runTerminal() {

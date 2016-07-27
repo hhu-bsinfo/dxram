@@ -150,7 +150,10 @@ public class Worker extends Thread {
 			}
 
 			m_isIdle = true;
-			Thread.yield();
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+			}
 		}
 
 		// #if LOGGER >= INFO

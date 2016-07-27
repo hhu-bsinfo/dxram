@@ -1,7 +1,10 @@
 
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -16,6 +19,7 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSResultMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSTerminateMessage;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.PingMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
@@ -133,6 +137,32 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		// cache node id
 		m_nodeId = m_bootService.getNodeID();
 
+		// TODO workaround for network issue creating multiple socket connections
+		{
+			m_networkService.registerMessageType(BFSMessages.TYPE,
+					BFSMessages.SUBTYPE_PING_MESSAGE,
+					PingMessage.class);
+
+			// sync before running
+			m_synchronizationService.barrierSignOn(m_barrierId0, -1);
+
+			{
+				try {
+					Thread.sleep(getSlaveId() * 500);
+				} catch (final InterruptedException ignore) {
+				}
+
+				// send ping message to force open socket connections in order
+				for (short slave : getSlaveNodeIds()) {
+					if (slave != m_nodeId) {
+						m_networkService.sendMessage(new PingMessage(slave));
+					}
+				}
+
+				m_synchronizationService.barrierSignOn(m_barrierId0, -1);
+			}
+		}
+
 		// get partition index of the graph
 		long graphPartitionIndexChunkId = m_nameserviceService
 				.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + getComputeGroupId(), 5000);
@@ -174,6 +204,16 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			return -4;
 		}
 
+		{
+			List<GarbageCollectorMXBean> gcList = ManagementFactory.getGarbageCollectorMXBeans();
+			for (GarbageCollectorMXBean gc : gcList) {
+				if (gc.getCollectionCount() > 0 || gc.getCollectionTime() > 0) {
+					// #if LOGGER >= INFO
+					m_loggerService.info(getClass(), "Using garbage collector " + gc.getName() + " for BFS");
+					// #endif /* LOGGER >= INFO */
+				}
+			}
+		}
 		// create barriers for bfs and register
 		// or get the newly created barriers
 		if (getSlaveId() == 0) {
@@ -201,6 +241,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		for (long root : rootList.getRoots()) {
 			if (m_signalAbortTriggered) {
 				break;
+			}
+
+			// #if LOGGER >= INFO
+			m_loggerService.info(getClass(), "Triggering GC...");
+			// #endif /* LOGGER >= INFO */
+			System.gc();
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
 			}
 
 			// #if LOGGER >= INFO
@@ -529,7 +578,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					int t = 0;
 					while (t < m_threads.length) {
 						if (!m_threads[t].hasIterationFinished()) {
-							Thread.yield();
+							try {
+								Thread.sleep(2);
+							} catch (InterruptedException e) {
+							}
 							if (m_signalAbortTriggered) {
 								return;
 							}
@@ -557,11 +609,16 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					for (int i = 0; i < slavesNodeIds.length; i++) {
 						if (i != ownId) {
 							BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(slavesNodeIds[i]);
+							//							System.out.println("<<<<< BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
 							NetworkErrorCodes err = m_networkService.sendMessage(msg);
+							//							System.out.println(
+							//									"<<<<<??? BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
 							if (err != NetworkErrorCodes.SUCCESS) {
+								// #if LOGGER >= ERROR
 								m_loggerService.error(getClass(),
 										"Sending level finished message to " + NodeID.toHexString(slavesNodeIds[i])
 												+ " failed: " + err);
+								// #endif /* LOGGER >= ERROR */
 								// abort execution and have the master send a kill signal
 								// for this task to all other slaves
 								sendSignalToMaster(Signal.SIGNAL_ABORT);
@@ -571,8 +628,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					}
 
 					// busy wait until everyone is done
+					//					System.out.println("!!!!! " + getSlaveNodeIds().length);
 					while (!m_bfsSlavesLevelFinishedCounter.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
-						Thread.yield();
+						try {
+							Thread.sleep(2);
+						} catch (InterruptedException e) {
+						}
 						if (m_signalAbortTriggered) {
 							return;
 						}
@@ -605,7 +666,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							BFSTerminateMessage msg =
 									new BFSTerminateMessage(slavesNodeIds[i], m_nextFrontier.size(),
 											numEdgesInNextFrontier);
+							//							System.out.println("<<<<< BFSTerminateMessage " + NodeID.toHexString(slavesNodeIds[i]));
 							NetworkErrorCodes err = m_networkService.sendMessage(msg);
+							//							System.out.println("<<<<<??? BFSTerminateMessage " + NodeID.toHexString(slavesNodeIds[i]));
 							if (err != NetworkErrorCodes.SUCCESS) {
 								m_loggerService.error(getClass(),
 										"Sending bfs terminate message to " + NodeID.toHexString(slavesNodeIds[i])
@@ -619,8 +682,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					}
 
 					// wait until everyone reported the next frontier state/termination
+					//					System.out.println("!!!!! " + getSlaveNodeIds().length);
 					while (!m_bfsSlavesEmptyNextFrontiers.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
-						Thread.yield();
+						try {
+							Thread.sleep(2);
+						} catch (InterruptedException e) {
+						}
 					}
 
 					fullGraphNextFrontVertexCount = m_nextFrontVertices.getAndSet(0);
@@ -835,6 +902,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * @param p_message BFSLevelFinishedMessage to handle
 		 */
 		private void onIncomingBFSLevelFinishedMessage(final BFSLevelFinishedMessage p_message) {
+			//			System.out.println(">>>> onIncomingBFSLevelFinishedMessage " + NodeID.toHexString(p_message.getSource()));
 			m_bfsSlavesLevelFinishedCounter.incrementAndGet();
 		}
 
@@ -844,6 +912,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * @param p_message BFSTerminateMessage to handle
 		 */
 		private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
+
+			//			System.out.println(">>>> onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getSource()));
 
 			long nextFrontVerts = p_message.getFrontierNextVertices();
 			long nextFrontEdges = p_message.getFrontierNextEdges();
@@ -1139,7 +1209,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					}
 
 					if (!m_runIteration) {
-						Thread.yield();
+						try {
+							Thread.sleep(2);
+						} catch (InterruptedException e) {
+						}
 					}
 				} while (!m_runIteration);
 

@@ -105,6 +105,19 @@ public final class NetworkHandler implements DataReceiver {
 		return str;
 	}
 
+//	class PrintThread extends Thread {
+	//		public void run() {
+	//			while (true) {
+	//				System.out.println(getStatus());
+	//				try {
+	//					Thread.sleep(4000);
+	//				} catch (InterruptedException e) {
+	//					e.printStackTrace();
+	//				}
+	//			}
+	//		}
+	//	}
+
 	/**
 	 * Registers a message type
 	 *
@@ -156,6 +169,8 @@ public final class NetworkHandler implements DataReceiver {
 		// #if LOGGER == TRACE
 		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 		// #endif /* LOGGER == TRACE */
+
+//		(new PrintThread()).start();
 	}
 
 	/**
@@ -520,14 +535,9 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	/**
-	 * <<<<<<< HEAD
-	 * Distributes incoming messages
+	 * Executes incoming exclusive messages
 	 *
-	 * @author Marc Ewert 17.09.2014
-	 *         =======
-	 *         Executes incoming exclusive messages
 	 * @author Kevin Beineke 19.07.2016
-	 *         >>>>>>> 599b67b22cd63a44d7f26133f9b8ad25731c889b
 	 */
 	private class ExclusiveMessageHandler extends Thread {
 
