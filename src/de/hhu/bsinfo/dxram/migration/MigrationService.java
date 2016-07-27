@@ -139,7 +139,6 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 
 	/**
 	 * Triggers a migrate call to the node a specified chunk
-	 * Also invalidates that specified chunk in the cache
 	 * @param p_chunkID
 	 *            the ID
 	 * @param p_target
@@ -148,7 +147,6 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	public void targetMigrate(final long p_chunkID, final short p_target) {
 
 		m_network.sendMessage(new MigrationRemoteMessage(ChunkID.getCreatorID(p_chunkID), p_chunkID, p_target));
-		m_lookup.invalidate(p_chunkID);
 	}
 
 	/**
