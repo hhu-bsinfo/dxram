@@ -48,7 +48,7 @@ public class MigrationRemoteMessage extends AbstractMessage {
 		return m_target;
 	}
 
-	// Methods
+	// Network Data Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
 

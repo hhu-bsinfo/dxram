@@ -4,9 +4,9 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.menet.AbstractResponse;
 
-public class SendLookupTreeMessage extends AbstractMessage {
+public class LookupTreeResponse extends AbstractResponse {
 
 	// Attributes
 	LookupTree m_tree;
@@ -15,7 +15,7 @@ public class SendLookupTreeMessage extends AbstractMessage {
 	/**
 	 * Creates an instance of SendBackupsMessage
 	 */
-	public SendLookupTreeMessage() {
+	public LookupTreeResponse() {
 		super();
 
 		m_tree = null;
@@ -30,8 +30,8 @@ public class SendLookupTreeMessage extends AbstractMessage {
 	 * @param p_trees
 	 *            the CIDTrees
 	 */
-	public SendLookupTreeMessage(final short p_destination, final LookupTree p_trees) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SEND_LOOK_UP_TREE);
+	public LookupTreeResponse(final RequestLookupTreeFromSuperPeer p_request, final LookupTree p_trees) {
+		super(p_request, LookupMessages.SUBTYPE_SEND_LOOK_UP_TREE);
 
 		m_tree = p_trees;
 	}

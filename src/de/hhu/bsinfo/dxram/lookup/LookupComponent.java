@@ -46,6 +46,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	private CacheTree m_chunkIDCacheTree;
 	private Cache<Integer, Long> m_applicationIDCache;
 
+	private NetworkComponent m_network;
+
 	/**
 	 * Creates the lookup component
 	 * @param p_priorityInit
@@ -81,6 +83,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 				if (ret == null) {
 					// Cache miss -> get LookupRange from superpeer
 					ret = m_peer.getLookupRange(p_chunkID);
+
+					// mike Cash stimmt eventuell nicht
 
 					// Add response to cache
 					if (ret != null) {
@@ -248,24 +252,33 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	}
 
 	//
+
+	public short getMyResponsibleSuperPeer() {
+
+		return m_peer.getMyResponsibleSuperPeer();
+	}
+
 	/**
 	 * Get Lookup Tree from Superpeer
 	 * @param p_nodeID
 	 *            the NodeID
 	 * @return LookupTree from SuperPeerOverlay
+	 * @note This method must be called by a superpeer
 	 */
-	public LookupTree getSuperPeerLookUpTree(final short p_nodeID) {
+	public LookupTree superPeerGetLookUpTree(final short p_nodeID) {
 		LookupTree ret = null;
 
-		m_logger.trace(getClass(), "Entering getLookupTree with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		m_logger.trace(getClass(), "Entering getSuperPeerLookUpTree with: p_nodeID=" + NodeID.toHexString(p_nodeID));
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			ret = m_superpeer.getCIDTree(p_nodeID);
+			System.out.println("Tree:" + "\n" + ret + "\nfrom" + NodeID.toHexString(p_nodeID));
 		} else {
-			m_logger.error(getClass(), "Superpeer must not call this method!");
+
+			m_logger.error(getClass(), "Peer must not call this method!");
 		}
 
-		m_logger.trace(getClass(), "Exiting getAllBackupRanges");
+		m_logger.trace(getClass(), "Exiting getSuperPeerLookUpTree");
 		return ret;
 	}
 	//
@@ -532,7 +545,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	 * Get the status of a specific barrier.
 	 * @param p_barrierId
 	 *            Id of the barrier.
-	 * @return Array of currently signed on peers with the first index being the number of signed on peers or null on error.
+	 * @return Array of currently signed on peers with the first index being the number of signed on peers or null on
+	 *         error.
 	 */
 	public short[] barrierGetStatus(final int p_barrierId) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -742,6 +756,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_event = getDependentComponent(EventComponent.class);
+
+		m_network = getDependentComponent(NetworkComponent.class);
 
 		m_cachesEnabled = p_settings.getValue(LookupConfigurationValues.Component.CACHES_ENABLED);
 		if (m_cachesEnabled) {

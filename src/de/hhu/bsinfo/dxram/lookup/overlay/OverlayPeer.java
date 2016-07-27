@@ -177,6 +177,15 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
+	 * @author Mike
+	 *         Getter for node id of superpeer
+	 * @return m_mySuperpeer member variable
+	 */
+	public short getMyResponsibleSuperPeer() {
+		return m_mySuperpeer;
+	}
+
+	/**
 	 * Remove the ChunkIDs from range after deletion of that chunks
 	 * @param p_chunkIDs
 	 *            the ChunkIDs
@@ -699,15 +708,15 @@ public class OverlayPeer implements MessageReceiver {
 			if (p_message != null) {
 				if (p_message.getType() == LookupMessages.TYPE) {
 					switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE: {
-						releaseMessage[0] = (BarrierReleaseMessage) p_message;
-						if (releaseMessage[0].getBarrierId() == p_barrierId) {
-							waitForRelease.release();
+						case LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE: {
+							releaseMessage[0] = (BarrierReleaseMessage) p_message;
+							if (releaseMessage[0].getBarrierId() == p_barrierId) {
+								waitForRelease.release();
+							}
+							break;
 						}
-						break;
-					}
-					default:
-						break;
+						default:
+							break;
 					}
 				}
 			}
@@ -1187,14 +1196,14 @@ public class OverlayPeer implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
-					incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
-					break;
-				case LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE:
-					incomingNameserviceUpdatePeerCachesMessage((NameserviceUpdatePeerCachesMessage) p_message);
-					break;
-				default:
-					break;
+					case LookupMessages.SUBTYPE_SEND_SUPERPEERS_MESSAGE:
+						incomingSendSuperpeersMessage((SendSuperpeersMessage) p_message);
+						break;
+					case LookupMessages.SUBTYPE_NAMESERVICE_UPDATE_PEER_CACHES_MESSAGE:
+						incomingNameserviceUpdatePeerCachesMessage((NameserviceUpdatePeerCachesMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
