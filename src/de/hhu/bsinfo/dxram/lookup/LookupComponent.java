@@ -16,6 +16,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.event.NameserviceCacheEntryUpdateEvent;
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
 import de.hhu.bsinfo.dxram.lookup.overlay.CacheTree;
+import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlaySuperpeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.SuperpeerStorage;
@@ -45,6 +46,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	private long m_maxCacheSize = -1;
 	private CacheTree m_chunkIDCacheTree;
 	private Cache<Integer, Long> m_applicationIDCache;
+
+	private NetworkComponent m_network;
 
 	/**
 	 * Creates the lookup component
@@ -245,6 +248,48 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 		return ret;
 	}
+
+	/**
+	 * get the responsible super peer
+	 *
+	 * @return responsible super peer
+	 */
+
+	public short getMyResponsibleSuperPeer() {
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Superpeer must not call this method!");
+			// #endif /* LOGGER >= ERROR */
+			return NodeID.INVALID_ID;
+		} else {
+			return m_peer.getMyResponsibleSuperPeer();
+		}
+	}
+
+	/**
+	 * Get Lookup Tree from Superpeer
+	 *
+	 * @param p_nodeID the NodeID
+	 * @return LookupTree from SuperPeerOverlay
+	 * @note This method must be called by a superpeer
+	 */
+	public LookupTree superPeerGetLookUpTree(final short p_nodeID) {
+		LookupTree ret = null;
+
+		// #if LOGGER >= TRACE
+		m_logger.trace(getClass(), "Entering getSuperPeerLookUpTree with: p_nodeID=" + NodeID.toHexString(p_nodeID));
+		// #endif /* LOGGER >= TRACE */
+
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			ret = m_superpeer.getCIDTree(p_nodeID);
+		} else {
+			m_logger.error(getClass(), "Peer must not call this method!");
+		}
+
+		m_logger.trace(getClass(), "Exiting getSuperPeerLookUpTree");
+		return ret;
+	}
+	//
 
 	/**
 	 * Store migration of given ChunkID to a new location
@@ -502,7 +547,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	 * Get the status of a specific barrier.
 	 *
 	 * @param p_barrierId Id of the barrier.
-	 * @return Array of currently signed on peers with the first index being the number of signed on peers or null on error.
+	 * @return Array of currently signed on peers with the first index being the number of signed on peers or null on
+	 * error.
 	 */
 	public short[] barrierGetStatus(final int p_barrierId) {
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
@@ -712,6 +758,8 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_event = getDependentComponent(EventComponent.class);
+
+		m_network = getDependentComponent(NetworkComponent.class);
 
 		m_cachesEnabled = p_settings.getValue(LookupConfigurationValues.Component.CACHES_ENABLED);
 		if (m_cachesEnabled) {

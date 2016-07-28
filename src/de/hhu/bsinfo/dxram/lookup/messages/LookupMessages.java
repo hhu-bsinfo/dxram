@@ -68,6 +68,12 @@ public final class LookupMessages {
 	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST = 54;
 	public static final byte SUBTYPE_SUPERPEER_STORAGE_STATUS_RESPONSE = 55;
 
+	public static final byte SUBTYPE_REQUEST_SEND_LOOK_UP_TREE = 56;
+	public static final byte SUBTYPE_SEND_LOOK_UP_TREE = 57;
+	public static final byte SUBTYPE_REQUEST_LOOK_UP_TREE_FROM_SERVER = 58;
+	public static final byte SUBTYPE_REQUEST_RESPONSIBLE_SUPERPEER = 59;
+	public static final byte SUBTYPE_RESPONSE_RESPONSIBLE_SUPERPEER = 60;
+
 	/**
 	 * Hidden constructor
 	 */

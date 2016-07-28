@@ -171,8 +171,9 @@ public class TcmdChunkGet extends AbstractTerminalCommand {
 						if (hex) {
 							str += Integer.toHexString(buffer.get() & 0xFF) + " ";
 						} else {
-							str += buffer.get() + " ";
+							str += (char) buffer.get();
 						}
+
 					}
 				} catch (final BufferOverflowException e) {
 					// that's fine, trunc data

@@ -172,6 +172,15 @@ public class OverlayPeer implements MessageReceiver {
 	}
 
 	/**
+	 * @author Mike
+	 *         Getter for node id of superpeer
+	 * @return m_mySuperpeer member variable
+	 */
+	public short getMyResponsibleSuperPeer() {
+		return m_mySuperpeer;
+	}
+
+	/**
 	 * Remove the ChunkIDs from range after deletion of that chunks
 	 *
 	 * @param p_chunkIDs the ChunkIDs

@@ -892,7 +892,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 * @return the CIDTree for given NodeID
 	 * @note assumes m_dataLock has been locked
 	 */
-	private LookupTree getCIDTree(final short p_nodeID) {
+	public LookupTree getCIDTree(final short p_nodeID) {
 		return m_nodeTable[p_nodeID & 0xFFFF];
 	}
 

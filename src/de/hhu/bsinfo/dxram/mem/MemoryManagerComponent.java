@@ -32,7 +32,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
-	//	private ReentrantReadWriteLock m_lock;
+	// private ReentrantReadWriteLock m_lock;
 	private AtomicInteger m_lock;
 	private long m_numActiveChunks;
 	private long m_totalActiveChunkMemory;
@@ -98,7 +98,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 
-			//			m_lock = new ReentrantReadWriteLock(false);
+			// m_lock = new ReentrantReadWriteLock(false);
 			m_lock = new AtomicInteger(0);
 
 			m_numActiveChunks = 0;
@@ -127,7 +127,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void lockManage() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			//			m_lock.writeLock().lock();
+			// m_lock.writeLock().lock();
 
 			// set flag to block further readers from entering
 			while (true) {
@@ -149,7 +149,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	public void lockAccess() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
 
-			//			m_lock.readLock().lock();
+			// m_lock.readLock().lock();
 
 			while (true) {
 				int v = m_lock.get() & 0xCFFFFFFF;
@@ -166,7 +166,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void unlockManage() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			//			m_lock.writeLock().unlock();
+			// m_lock.writeLock().unlock();
 
 			m_lock.set(0);
 		}
@@ -177,7 +177,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void unlockAccess() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			//			m_lock.readLock().unlock();
+			// m_lock.readLock().unlock();
 
 			m_lock.decrementAndGet();
 		}
@@ -294,6 +294,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
+
+		chunkID = p_chunkId;
 
 		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
 			// #if LOGGER >= ERROR
@@ -462,8 +464,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			// pool the im/exporters
 			SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
 
-			//			SmallObjectHeapDataStructureImExporter importer =
-			//					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			// SmallObjectHeapDataStructureImExporter importer =
+			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (importer.importObject(p_dataStructure) < 0) {
 				ret = MemoryErrorCodes.READ;
 			}
@@ -506,8 +508,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 			// pool the im/exporters
 			SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
-			//			SmallObjectHeapDataStructureImExporter importer =
-			//					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			// SmallObjectHeapDataStructureImExporter importer =
+			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (importer.readBytes(ret) != chunkSize) {
 				ret = null;
 			}
@@ -553,8 +555,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 			// pool the im/exporters
 			SmallObjectHeapDataStructureImExporter exporter = getImExporter(address, chunkSize);
-			//			SmallObjectHeapDataStructureImExporter exporter =
-			//					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			// SmallObjectHeapDataStructureImExporter exporter =
+			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (exporter.exportObject(p_dataStructure) < 0) {
 				ret = MemoryErrorCodes.WRITE;
 			}
@@ -573,10 +575,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 * Removes a Chunk from the memory
 	 * This is a management call and has to be locked using lockManage().
 	 *
-	 * @param p_chunkID the ChunkID of the Chunk
+	 * @param p_chunkID     the ChunkID of the Chunk
+	 * @param p_wasMigrated default value for this parameter should be false!
+	 *                      if chunk was deleted during migration this flag should be set to true
 	 * @return MemoryErrorCodes indicating success or failure
 	 */
-	public MemoryErrorCodes remove(final long p_chunkID) {
+	public MemoryErrorCodes remove(final long p_chunkID, final boolean p_wasMigrated) {
 		long addressDeletedChunk;
 		int size;
 		MemoryErrorCodes ret = MemoryErrorCodes.SUCCESS;
@@ -598,13 +602,18 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		addressDeletedChunk = m_cidTable.delete(p_chunkID, true);
 		if (addressDeletedChunk != -1) {
 			// more space for another zombie for reuse in LID store?
-			if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
-				// detach reference to zombie
+			if (p_wasMigrated) {
+
 				m_cidTable.delete(p_chunkID, false);
 			} else {
-				// no space for zombie in LID store, keep him "alive" in table
-			}
 
+				if (m_cidTable.putChunkIDForReuse(ChunkID.getLocalID(p_chunkID))) {
+					// detach reference to zombie
+					m_cidTable.delete(p_chunkID, false);
+				} else {
+					// no space for zombie in LID store, keep him "alive" in table
+				}
+			}
 			size = m_rawMemory.getSizeBlock(addressDeletedChunk);
 			// #ifdef STATISTICS
 			m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_free, size);

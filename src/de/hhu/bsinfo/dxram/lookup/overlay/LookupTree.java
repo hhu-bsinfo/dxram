@@ -12,7 +12,9 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
+import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
@@ -343,7 +345,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 			if (null == m_root) {
 				createOrReplaceEntry((long) Math.pow(2, 48), p_creator);
 			}
-			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
+			backupPeers = ((p_backupPeers[2] & 0x000000000000FFFFL) << 32)
+					+ ((p_backupPeers[1] & 0x000000000000FFFFL) << 16) + (p_backupPeers[0] & 0x0000FFFF);
 			m_backupRanges.add(new long[] {p_startID, backupPeers});
 		}
 		return true;
@@ -359,8 +362,9 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	 */
 	public boolean initMigrationRange(final int p_rangeID, final short[] p_backupPeers) {
 
-		m_migrationBackupRanges.add(p_rangeID, ((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
-				+ (p_backupPeers[0] & 0x0000FFFF));
+		m_migrationBackupRanges.add(p_rangeID,
+				((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
+						+ (p_backupPeers[0] & 0x0000FFFF));
 
 		return true;
 	}
@@ -589,15 +593,19 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 			element = m_backupRanges.get(i);
 			backupNodes = element[1];
 			backupPeers =
-					new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16), (short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
+					new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16),
+							(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
 			if (p_failedPeer == backupPeers[0]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
+						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
 				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[1]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
+						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
 				element[1] = backupNodes;
 			} else if (p_failedPeer == backupPeers[2]) {
-				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32) + ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
+				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
+						+ ((backupPeers[1] & 0x000000000000FFFFL) << 16) + (backupPeers[0] & 0x0000FFFF);
 				element[1] = backupNodes;
 			}
 		}
@@ -1430,7 +1438,8 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 		}
 		ret.append("[" + p_node.getNumberOfEntries() + ", " + p_node.getNumberOfChildren() + "] ");
 		for (int i = 0; i < p_node.getNumberOfEntries(); i++) {
-			ret.append("(LocalID: " + p_node.getLocalID(i) + " NodeID: " + p_node.getNodeID(i) + ")");
+			ret.append("(LocalID: " + ChunkID.toHexString(p_node.getLocalID(i)) + " NodeID: "
+					+ NodeID.toHexString(p_node.getNodeID(i)) + ")");
 			if (i < p_node.getNumberOfEntries() - 1) {
 				ret.append(", ");
 			}
@@ -1580,16 +1589,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_keys[mid];
+				midVal = m_keys[mid];
 
-			if (midVal < p_localID) {
-				low = mid + 1;
-			} else if (midVal > p_localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < p_localID) {
+					low = mid + 1;
+				} else if (midVal > p_localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1779,16 +1788,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-			midVal = m_children[mid].getLocalID(0);
+				midVal = m_children[mid].getLocalID(0);
 
-			if (midVal < localID) {
-				low = mid + 1;
-			} else if (midVal > localID) {
-				high = mid - 1;
-			} else {
-				ret = mid;
-				break;
-			}
+				if (midVal < localID) {
+					low = mid + 1;
+				} else if (midVal > localID) {
+					high = mid - 1;
+				} else {
+					ret = mid;
+					break;
+				}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
