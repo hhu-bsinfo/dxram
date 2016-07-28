@@ -7,10 +7,10 @@
 
 
 # Determine logger command
-logger_cmd="sed '/#if[ \t]*LOGGER/,/#endif[ \t]*\/\*[ \t]*LOGGER/{/#if/n;/#endif/"'!'"s/^\([ \t]*\)\/\/ /\1/}'"
+logger_cmd="sed -e '/#if[ \t]*LOGGER/,/#endif[ \t]*\/\*[ \t]*LOGGER/{/#if/n;/#endif/"'!'"s/^\([ \t]*\)\/\/ /\1/' -e '}'"
 
 # Determine statistics command
-statistics_cmd="sed '/#ifdef[ \t]*STATISTICS/,/#endif[ \t]*\/\*[ \t]*STATISTICS/{/#ifdef/n;/#endif/"'!'"s/^\([ \t]*\)\/\/ /\1/}'"
+statistics_cmd="sed -e '/#ifdef[ \t]*STATISTICS/,/#endif[ \t]*\/\*[ \t]*STATISTICS/{/#ifdef/n;/#endif/"'!'"s/^\([ \t]*\)\/\/ /\1/' -e '}'"
 
 
 find ../src/ -name "*.java" -print | while read input

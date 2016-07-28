@@ -251,11 +251,21 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 		return ret;
 	}
 
-	//
+	/**
+	 * get the responsible super peer
+	 * @return responsible super peer
+	 */
 
 	public short getMyResponsibleSuperPeer() {
 
-		return m_peer.getMyResponsibleSuperPeer();
+		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Superpeer must not call this method!");
+			// #endif /* LOGGER >= ERROR */
+			return NodeID.INVALID_ID;
+		} else {
+			return m_peer.getMyResponsibleSuperPeer();
+		}
 	}
 
 	/**
@@ -272,7 +282,6 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 
 		if (m_boot.getNodeRole().equals(NodeRole.SUPERPEER)) {
 			ret = m_superpeer.getCIDTree(p_nodeID);
-			System.out.println("Tree:" + "\n" + ret + "\nfrom" + NodeID.toHexString(p_nodeID));
 		} else {
 
 			m_logger.error(getClass(), "Peer must not call this method!");

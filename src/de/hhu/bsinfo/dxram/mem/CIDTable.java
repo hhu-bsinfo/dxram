@@ -11,6 +11,7 @@ import de.hhu.bsinfo.soh.SmallObjectHeap;
 
 /**
  * Paging-like Tables for the ChunkID-VA mapping
+ *
  * @author Florian Klein
  *         13.02.2014
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
@@ -50,14 +51,11 @@ public final class CIDTable {
 
 	/**
 	 * Creates an instance of CIDTable
-	 * @param p_ownNodeID
-	 *            ID of the current node.
-	 * @param p_statistics
-	 *            Statistics component for recording.
-	 * @param p_statisticsRecorderIDs
-	 *            Metadata for statistics recording
-	 * @param p_logger
-	 *            Logger component for logging.
+	 *
+	 * @param p_ownNodeID             ID of the current node.
+	 * @param p_statistics            Statistics component for recording.
+	 * @param p_statisticsRecorderIDs Metadata for statistics recording
+	 * @param p_logger                Logger component for logging.
 	 */
 	public CIDTable(final short p_ownNodeID, final StatisticsComponent p_statistics,
 			final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs,
@@ -70,8 +68,8 @@ public final class CIDTable {
 
 	/**
 	 * Initializes the CIDTable
-	 * @param p_rawMemory
-	 *            The raw memory instance to use for allocation.
+	 *
+	 * @param p_rawMemory The raw memory instance to use for allocation.
 	 */
 	public void initialize(final SmallObjectHeap p_rawMemory) {
 		m_rawMemory = p_rawMemory;
@@ -100,6 +98,7 @@ public final class CIDTable {
 
 	/**
 	 * Get the number of tables currently allocated.
+	 *
 	 * @return Number of tables currently allocated.
 	 */
 	public int getTableCount() {
@@ -108,6 +107,7 @@ public final class CIDTable {
 
 	/**
 	 * Get the total amount of memory used by the tables.
+	 *
 	 * @return Amount of memory used by the tables (in bytes)
 	 */
 	public long getTotalMemoryTables() {
@@ -116,6 +116,7 @@ public final class CIDTable {
 
 	/**
 	 * Get a free LID from the CIDTable
+	 *
 	 * @return a free LID and version, or -1 if there is none
 	 */
 	public long getFreeLID() {
@@ -135,8 +136,8 @@ public final class CIDTable {
 
 	/**
 	 * Gets an entry of the level 0 table
-	 * @param p_chunkID
-	 *            the ChunkID of the entry
+	 *
+	 * @param p_chunkID the ChunkID of the entry
 	 * @return the entry. 0 for invalid/unused.
 	 */
 	public long get(final long p_chunkID) {
@@ -149,10 +150,9 @@ public final class CIDTable {
 
 	/**
 	 * Sets an entry of the level 0 table
-	 * @param p_chunkID
-	 *            the ChunkID of the entry
-	 * @param p_addressChunk
-	 *            the address of the chunk
+	 *
+	 * @param p_chunkID      the ChunkID of the entry
+	 * @param p_addressChunk the address of the chunk
 	 * @return True if successful, false if allocation of a new table failed, out of memory
 	 */
 	public boolean set(final long p_chunkID, final long p_addressChunk) {
@@ -161,10 +161,9 @@ public final class CIDTable {
 
 	/**
 	 * Gets and deletes an entry of the level 0 table
-	 * @param p_chunkID
-	 *            the ChunkID of the entry
-	 * @param p_flagZombie
-	 *            Flag the deleted entry as a zombie or not zombie i.e. fully deleted.
+	 *
+	 * @param p_chunkID    the ChunkID of the entry
+	 * @param p_flagZombie Flag the deleted entry as a zombie or not zombie i.e. fully deleted.
 	 * @return The address of the chunk which was removed from the table.
 	 */
 	public long delete(final long p_chunkID, final boolean p_flagZombie) {
@@ -175,8 +174,8 @@ public final class CIDTable {
 
 	/**
 	 * Puts the LocalID of a deleted migrated Chunk to LIDStore
-	 * @param p_chunkID
-	 *            the ChunkID of the entry
+	 *
+	 * @param p_chunkID the ChunkID of the entry
 	 * @return m_cidTable
 	 */
 	public boolean putChunkIDForReuse(final long p_chunkID) {
@@ -185,6 +184,7 @@ public final class CIDTable {
 
 	/**
 	 * Returns the ChunkID ranges of all locally stored Chunks
+	 *
 	 * @return the ChunkID ranges in an ArrayList
 	 */
 	public ArrayList<Long> getCIDRangesOfAllLocalChunks() {
@@ -233,6 +233,7 @@ public final class CIDTable {
 
 	/**
 	 * Returns the ChunkIDs of all migrated Chunks
+	 *
 	 * @return the ChunkIDs of all migrated Chunks
 	 */
 	public ArrayList<Long> getCIDOfAllMigratedChunks() {
@@ -257,6 +258,7 @@ public final class CIDTable {
 
 	/**
 	 * Creates the NodeID table
+	 *
 	 * @return the address of the table
 	 */
 	private long createNIDTable() {
@@ -286,6 +288,7 @@ public final class CIDTable {
 
 	/**
 	 * Creates a table
+	 *
 	 * @return the address of the table
 	 */
 	private long createLIDTable() {
@@ -315,10 +318,9 @@ public final class CIDTable {
 
 	/**
 	 * Reads a table entry
-	 * @param p_addressTable
-	 *            the table
-	 * @param p_index
-	 *            the index of the entry
+	 *
+	 * @param p_addressTable the table
+	 * @param p_index        the index of the entry
 	 * @return the entry
 	 */
 	private long readEntry(final long p_addressTable, final long p_index) {
@@ -335,12 +337,10 @@ public final class CIDTable {
 
 	/**
 	 * Writes a table entry
-	 * @param p_addressTable
-	 *            the table
-	 * @param p_index
-	 *            the index of the entry
-	 * @param p_entry
-	 *            the entry
+	 *
+	 * @param p_addressTable the table
+	 * @param p_index        the index of the entry
+	 * @param p_entry        the entry
 	 */
 	private void writeEntry(final long p_addressTable, final long p_index, final long p_entry) {
 		long value;
@@ -353,12 +353,10 @@ public final class CIDTable {
 
 	/**
 	 * Gets an entry of the level 0 table
-	 * @param p_chunkID
-	 *            the ChunkID of the entry
-	 * @param p_addressTable
-	 *            the current table
-	 * @param p_level
-	 *            the table level
+	 *
+	 * @param p_chunkID      the ChunkID of the entry
+	 * @param p_addressTable the current table
+	 * @param p_level        the table level
 	 * @return the entry
 	 */
 	private long getEntry(final long p_chunkID, final long p_addressTable, final int p_level) {
@@ -386,14 +384,11 @@ public final class CIDTable {
 
 	/**
 	 * Sets an entry of the level 0 table
-	 * @param p_chunkID
-	 *            the ChunkID of the entry
-	 * @param p_addressChunk
-	 *            the address of the chunk
-	 * @param p_addressTable
-	 *            the address of the current CID table
-	 * @param p_level
-	 *            the table level
+	 *
+	 * @param p_chunkID      the ChunkID of the entry
+	 * @param p_addressChunk the address of the chunk
+	 * @param p_addressTable the address of the current CID table
+	 * @param p_level        the table level
 	 * @return True if successful, false if no further table could be allocated (out of memory)
 	 */
 	private boolean setEntry(final long p_chunkID, final long p_addressChunk, final long p_addressTable,
@@ -432,15 +427,12 @@ public final class CIDTable {
 
 	/**
 	 * Gets and deletes an entry of the level 0 table
-	 * @param p_chunkID
-	 *            the ChunkID of the entry
-	 * @param p_addressTable
-	 *            the current table
-	 * @param p_level
-	 *            the table level
-	 * @param p_flagZombie
-	 *            flag the deleted entry as zombie i.e. keep the chunk
-	 *            allocated but remove it from the table index.
+	 *
+	 * @param p_chunkID      the ChunkID of the entry
+	 * @param p_addressTable the current table
+	 * @param p_level        the table level
+	 * @param p_flagZombie   flag the deleted entry as zombie i.e. keep the chunk
+	 *                       allocated but remove it from the table index.
 	 * @return the entry
 	 */
 	private long deleteEntry(final long p_chunkID, final long p_addressTable, final int p_level,
@@ -486,12 +478,10 @@ public final class CIDTable {
 
 	/**
 	 * Adds all ChunkID ranges to an ArrayList
-	 * @param p_unfinishedCID
-	 *            the unfinished ChunkID
-	 * @param p_table
-	 *            the current table
-	 * @param p_level
-	 *            the current table level
+	 *
+	 * @param p_unfinishedCID the unfinished ChunkID
+	 * @param p_table         the current table
+	 * @param p_level         the current table level
 	 * @return the ArrayList
 	 */
 	private ArrayList<Long> getAllRanges(final long p_unfinishedCID, final long p_table, final int p_level) {
@@ -529,12 +519,10 @@ public final class CIDTable {
 
 	/**
 	 * Adds all ChunkIDs to an ArrayList
-	 * @param p_unfinishedCID
-	 *            the unfinished ChunkID
-	 * @param p_table
-	 *            the current table
-	 * @param p_level
-	 *            the current table level
+	 *
+	 * @param p_unfinishedCID the unfinished ChunkID
+	 * @param p_table         the current table
+	 * @param p_level         the current table level
 	 * @return the ArrayList
 	 */
 	private ArrayList<Long> getAllEntries(final long p_unfinishedCID, final long p_table, final int p_level) {
@@ -581,12 +569,10 @@ public final class CIDTable {
 
 	/**
 	 * Counts the subtables
-	 * @param p_addressTable
-	 *            the current table
-	 * @param p_level
-	 *            the level of the table
-	 * @param p_count
-	 *            the table counts
+	 *
+	 * @param p_addressTable the current table
+	 * @param p_level        the level of the table
+	 * @param p_count        the table counts
 	 */
 	private void countTables(final long p_addressTable, final int p_level, final int[] p_count) {
 		long entry;
@@ -617,8 +603,10 @@ public final class CIDTable {
 	}
 
 	// Classes
+
 	/**
 	 * Stores free LocalIDs
+	 *
 	 * @author Florian Klein
 	 *         30.04.2014
 	 */
@@ -639,6 +627,7 @@ public final class CIDTable {
 		private volatile long m_overallCount;
 
 		// Constructors
+
 		/**
 		 * Creates an instance of LIDStore
 		 */
@@ -651,8 +640,10 @@ public final class CIDTable {
 		}
 
 		// Methods
+
 		/**
 		 * Gets a free LocalID
+		 *
 		 * @return a free LocalID
 		 */
 		public long get() {
@@ -677,8 +668,8 @@ public final class CIDTable {
 
 		/**
 		 * Puts a free LocalID
-		 * @param p_localID
-		 *            a LocalID
+		 *
+		 * @param p_localID a LocalID
 		 * @return True if adding an entry to our local ID store was successful, false otherwise.
 		 */
 		public boolean put(final long p_localID) {
@@ -715,12 +706,10 @@ public final class CIDTable {
 
 		/**
 		 * Finds free LIDs in the CIDTable
-		 * @param p_addressTable
-		 *            the table
-		 * @param p_level
-		 *            the table level
-		 * @param p_offset
-		 *            the offset of the LID
+		 *
+		 * @param p_addressTable the table
+		 * @param p_level        the table level
+		 * @param p_offset       the offset of the LID
 		 * @return true if free LIDs were found, false otherwise
 		 */
 		private boolean findFreeLIDs(final long p_addressTable, final int p_level, final long p_offset) {

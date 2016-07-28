@@ -65,20 +65,20 @@ If you don't want to use eclipser proceed as follows:
 Create two new Run Configurations in IntelliJ by creating them in the context menu under _Run > Edit Configuration ..._.
 The first one should be named DXRAMMainPeer(22222) and should have following VM Options:
 ```
-    -Ddxram.config=config/dxram.student.conf
-    -Ddxram.config.0=config/dxram.nodes.student.conf
-    -Ddxram.network.ip=127.0.0.1
-    -Ddxram.network.port=22222
-    -Ddxram.role=Peer
+	-Ddxram.config=config/dxram.nothaas.conf
+	-Ddxram.config.0=config/dxram.nodes.local.conf
+	-Ddxram.config.val.0=/DXRAMEngine/Settings/IP#str#127.0.0.1
+	-Ddxram.config.val.1=/DXRAMEngine/Settings/Port#int#22222
+	-Ddxram.config.val.2=/DXRAMEngine/Settings/Role#str#Peer
     -Xmx1024M
 ```
 The second one should be named DXRAMSuperpeer(22221) and should have following VM Options:
 ```
-    -Ddxram.config=config/dxram.student.conf
-    -Ddxram.config.0=config/dxram.nodes.student.conf
-    -Ddxram.network.ip=127.0.0.1
-    -Ddxram.network.port=22221
-    -Ddxram.role=Superpeer
+	-Ddxram.config=config/dxram.default.conf
+	-Ddxram.config.0=config/dxram.nodes.local.conf
+	-Ddxram.config.val.0=/DXRAMEngine/Settings/IP#str#127.0.0.1
+	-Ddxram.config.val.1=/DXRAMEngine/Settings/Port#int#22221
+	-Ddxram.config.val.2=/DXRAMEngine/Settings/Role#str#Superpeer
     -Xmx1024M
 ```
 Don't forget choosing the DXRAMMain class as the main class.
@@ -143,9 +143,18 @@ following entry in said configuration under "ComponentSettings" by setting
 both RamSize and SegmentSize values to the desired total ram size:
 ```xml
 	<MemoryManagerComponent>
-		<RamSize __type="long" __unit="gb2b">1</RamSize>						
-		<SegmentSize __type="long" __unit="gb2b">1</SegmentSize>
+		<KeyValueStoreSizeBytes __type="long" __unit="gb2b">1</KeyValueStoreSizeBytes>
 	</MemoryManagerComponent>
+```
+Or add a vm argument override to the list on startup, for example (1 GB):
+```
+	-Ddxram.config=config/dxram.nothaas.conf
+	-Ddxram.config.0=config/dxram.nodes.local.conf
+	-Ddxram.config.val.0=/DXRAMEngine/Settings/IP#str#127.0.0.1
+	-Ddxram.config.val.1=/DXRAMEngine/Settings/Port#int#22222
+	-Ddxram.config.val.2=/DXRAMEngine/Settings/Role#str#Peer
+	-Ddxram.config.val.3=/DXRAMEngine/ComponentSettings/MemoryManagerComponent/KeyValueStoreSizeBytes#long#1073741824
+    -Xmx1024M
 ```
 
 #### Logger and Debugging
@@ -166,6 +175,7 @@ support limiting the output to different levels: disabled, error, warning, info,
 ```
 You can adjust the global level (here debug) to limit all log output to 
 a certain level or individual for either console (here info) or file (here error).
+Again, this can be added as vm argument override in the same scheme as the key value store size.
 
 ## Test and Run
 Execute the _start_zookeeper.sh_ in a terminal to start ZooKeeper. Now 
@@ -185,11 +195,11 @@ jni comes with compiled labraries for native access for some parts of dxram.
 ## Running the jar file
 The jar-file can run the core DXRAM system. To run a superpeer locally use:
 ```bash
-java -Ddxram.config=config/dxram-student.conf -Ddxram.config.0=config/dxram.nodes.student.conf -Ddxram.network.ip=127.0.0.1 -Ddxram.network.port=22221 -Ddxram.role=Superpeer -cp DXRAM.jar de.hhu.bsinfo.dxram.run.DXRAMMain 
+java -Ddxram.config=config/dxram.default.conf -Ddxram.config.0=config/dxram.nodes.local.conf -Ddxram.config.val.0=/DXRAMEngine/Settings/IP#str#127.0.0.1 -Ddxram.config.val.1=/DXRAMEngine/Settings/Port#int#22221 -Ddxram.config.val.2=/DXRAMEngine/Settings/Role#str#Superpeer -cp DXRAM.jar de.hhu.bsinfo.dxram.run.DXRAMMain 
 ```
 To run the peer locally:
 ```bash
-java -Ddxram.config=config/dxram-student.conf -Ddxram.config.0=config/dxram.nodes.student.conf -Ddxram.network.ip=127.0.0.1 -Ddxram.network.port=22222 -Ddxram.role=Peer -cp DXRAM.jar de.hhu.bsinfo.dxram.run.DXRAMMain 
+java -Ddxram.config=config/dxram.default.conf -Ddxram.config.0=config/dxram.nodes.local.conf -Ddxram.config.val.0=/DXRAMEngine/Settings/IP#str#127.0.0.1 -Ddxram.config.val.1=/DXRAMEngine/Settings/Port#int#22222 -Ddxram.config.val.2=/DXRAMEngine/Settings/Role#str#Peer -cp DXRAM.jar de.hhu.bsinfo.dxram.run.DXRAMMain 
 ```
 
 When running this on a distributed setup (like a cluster), make sure to adjust the network addresses.

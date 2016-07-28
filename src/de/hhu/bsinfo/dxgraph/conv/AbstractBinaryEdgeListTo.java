@@ -12,13 +12,14 @@ import java.nio.ByteOrder;
 /**
  * Single threaded converter, expecting edge list in binary form:
  * 8 bytes source nodeId and 8 bytes destination node id.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
  */
 abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 	/**
 	 * Constructor
-	 * @param p_description
-	 *            Description for the converter.
+	 *
+	 * @param p_description Description for the converter.
 	 */
 	AbstractBinaryEdgeListTo(final String p_description) {
 		super(p_description);
@@ -55,7 +56,8 @@ abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 			System.out.println("Opening input file " + p_inputRootFile + " failed: " + e.getMessage());
 			try {
 				writer.close();
-			} catch (final IOException ignored) {}
+			} catch (final IOException ignored) {
+			}
 			return;
 		}
 
@@ -94,15 +96,15 @@ abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 
 	/**
 	 * File reader for the binary edge list graph data.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 24.02.16
 	 */
 	private static class FileReaderBinaryThread extends AbstractFileReaderThread {
 		/**
 		 * Constructor
-		 * @param p_inputPath
-		 *            Path of the file to read.
-		 * @param p_buffer
-		 *            Shared buffer to read the data to.
+		 *
+		 * @param p_inputPath Path of the file to read.
+		 * @param p_buffer    Shared buffer to read the data to.
 		 */
 		FileReaderBinaryThread(final String p_inputPath, final BinaryEdgeBuffer p_buffer) {
 			super(p_inputPath, p_buffer);
@@ -118,7 +120,7 @@ abstract class AbstractBinaryEdgeListTo extends AbstractConverter {
 				return -1;
 			}
 
-			ByteBuffer buffer = ByteBuffer.allocate(32 * 1024);
+			ByteBuffer buffer = ByteBuffer.allocate(128 * 1024);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 
 			try {

@@ -32,6 +32,7 @@ import de.hhu.bsinfo.menet.NodeID;
 /**
  * This service provides access to the backend storage system.
  * It does not replace the normal ChunkService, but extends it capabilities with async operations.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.02.16
  */
 public class AsyncChunkService extends AbstractDXRAMService implements MessageReceiver {
@@ -52,7 +53,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {}
+	protected void registerDefaultSettingsService(final Settings p_settings) {
+	}
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
@@ -91,8 +93,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_dataStructres
-	 *            Data structures to put/update.
+	 *
+	 * @param p_dataStructres Data structures to put/update.
 	 */
 	public void put(final DataStructure... p_dataStructres) {
 		put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
@@ -100,10 +102,9 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 * @param p_chunkUnlockOperation
-	 *            Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures
-	 *            Data structures to put/update.
+	 *
+	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures       Data structures to put/update.
 	 */
 	public void put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
 		if (p_dataStructures.length == 0) {
@@ -112,7 +113,9 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 		if (p_dataStructures[0] == null) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length + ") ...]");
+			m_logger.trace(getClass(),
+					"put[unlockOp " + p_chunkUnlockOperation + ", dataStructures(" + p_dataStructures.length
+							+ ") ...]");
 			// #endif /* LOGGER == TRACE */
 		} else {
 			// #if LOGGER == TRACE
@@ -144,42 +147,42 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 			MemoryErrorCodes err = m_memoryManager.put(dataStructure);
 			switch (err) {
-			case SUCCESS: {
-				// unlock chunks
-				if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
-					boolean writeLock = false;
-					if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
-						writeLock = true;
-					}
+				case SUCCESS: {
+					// unlock chunks
+					if (p_chunkUnlockOperation != ChunkLockOperation.NO_LOCK_OPERATION) {
+						boolean writeLock = false;
+						if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
+							writeLock = true;
+						}
 
-					m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
-				}
-				break;
-			}
-			case DOES_NOT_EXIST: {
-				// remote or migrated, figure out location and sort by peers
-				LookupRange lookupRange = m_lookup.getLookupRange(dataStructure.getID());
-				if (lookupRange == null) {
-					continue;
-				} else {
-					short peer = lookupRange.getPrimaryPeer();
-
-					ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
-					if (remoteChunksOfPeer == null) {
-						remoteChunksOfPeer = new ArrayList<DataStructure>();
-						remoteChunksByPeers.put(peer, remoteChunksOfPeer);
+						m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
 					}
-					remoteChunksOfPeer.add(dataStructure);
+					break;
 				}
-				break;
-			}
-			default: {
-				// #if LOGGER >= ERROR
-				m_logger.error(getClass(),
-						"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
-				// #endif /* LOGGER >= ERROR */
-				break;
-			}
+				case DOES_NOT_EXIST: {
+					// remote or migrated, figure out location and sort by peers
+					LookupRange lookupRange = m_lookup.getLookupRange(dataStructure.getID());
+					if (lookupRange == null) {
+						continue;
+					} else {
+						short peer = lookupRange.getPrimaryPeer();
+
+						ArrayList<DataStructure> remoteChunksOfPeer = remoteChunksByPeers.get(peer);
+						if (remoteChunksOfPeer == null) {
+							remoteChunksOfPeer = new ArrayList<DataStructure>();
+							remoteChunksByPeers.put(peer, remoteChunksOfPeer);
+						}
+						remoteChunksOfPeer.add(dataStructure);
+					}
+					break;
+				}
+				default: {
+					// #if LOGGER >= ERROR
+					m_logger.error(getClass(),
+							"Putting local chunk " + ChunkID.toHexString(dataStructure.getID()) + " failed.");
+					// #endif /* LOGGER >= ERROR */
+					break;
+				}
 			}
 		}
 
@@ -248,11 +251,11 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		if (p_message != null) {
 			if (p_message.getType() == ChunkMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case ChunkMessages.SUBTYPE_PUT_MESSAGE:
-					incomingPutMessage((PutMessage) p_message);
-					break;
-				default:
-					break;
+					case ChunkMessages.SUBTYPE_PUT_MESSAGE:
+						incomingPutMessage((PutMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -295,8 +298,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Handles an incoming PutRequest
-	 * @param p_request
-	 *            the PutRequest
+	 *
+	 * @param p_request the PutRequest
 	 */
 	private void incomingPutMessage(final PutMessage p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();
@@ -311,7 +314,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 			MemoryErrorCodes err = m_memoryManager.put(chunks[i]);
 			// #if LOGGER >= WARN
 			if (err != MemoryErrorCodes.SUCCESS) {
-				m_logger.warn(getClass(), "Putting chunk " + ChunkID.toHexString(chunks[i].getID()) + " failed: " + err);
+				m_logger.warn(getClass(),
+						"Putting chunk " + ChunkID.toHexString(chunks[i].getID()) + " failed: " + err);
 			}
 			// #endif /* LOGGER >= WARN */
 		}

@@ -117,7 +117,9 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_terminal = getComponent(TerminalComponent.class);
 
-		loadHistoryFromFile("dxram_term_history");
+		if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
+			loadHistoryFromFile("dxram_term_history");
+		}
 
 		return true;
 	}

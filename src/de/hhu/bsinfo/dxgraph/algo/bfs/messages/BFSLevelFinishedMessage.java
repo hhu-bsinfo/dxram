@@ -3,7 +3,10 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
- * Created by nothaas on 6/2/16.
+ * Message broadcasted by one bfs peer to all other participating peers when
+ * the current peer has finished his iteration.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 19.05.16
  */
 public class BFSLevelFinishedMessage extends AbstractMessage {
 	/**
@@ -15,7 +18,7 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
 	}
 
 	/**
-	 * Creates an instance of VerticesForNextFrontierRequest
+	 * Creates an instance of BFSLevelFinishedMessage
 	 *
 	 * @param p_destination the destination
 	 */

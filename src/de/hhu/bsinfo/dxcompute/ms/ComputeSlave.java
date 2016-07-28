@@ -7,6 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
+import de.hhu.bsinfo.dxcompute.ms.messages.SignalMessage;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -27,12 +28,13 @@ import de.hhu.bsinfo.menet.NodeID;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
+class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, TaskPayloadSlaveInterface {
 
 	private short m_masterNodeId = NodeID.INVALID_ID;
 
 	private volatile AbstractTaskPayload m_task;
 	private Lock m_executeTaskLock = new ReentrantLock(false);
+	private Lock m_handleSignalLock = new ReentrantLock(false);
 
 	private int m_masterExecutionBarrierId;
 
@@ -65,9 +67,12 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
 		m_network.registerMessageType(MasterSlaveMessages.TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
+		m_network.registerMessageType(MasterSlaveMessages.TYPE,
+				MasterSlaveMessages.SUBTYPE_SIGNAL, SignalMessage.class);
 
 		m_network.register(SlaveJoinResponse.class, this);
 		m_network.register(ExecuteTaskRequest.class, this);
+		m_network.register(SignalMessage.class, this);
 
 		m_masterExecutionBarrierId = BarrierID.INVALID_ID;
 
@@ -118,10 +123,24 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
 					case MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST:
 						incomingExecuteTaskRequest((ExecuteTaskRequest) p_message);
 						break;
+					case MasterSlaveMessages.SUBTYPE_SIGNAL:
+						incomingSignalMessage((SignalMessage) p_message);
+						break;
 					default:
 						break;
 				}
 			}
+		}
+	}
+
+	@Override
+	public void sendSignalToMaster(final Signal p_signal) {
+		NetworkErrorCodes err = m_network.sendMessage(new SignalMessage(m_masterNodeId, p_signal));
+		if (err != NetworkErrorCodes.SUCCESS) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(),
+					"Sending signal to master " + NodeID.toHexString(m_masterNodeId) + " failed: " + err);
+			// #endif /* LOGGER >= ERROR */
 		}
 	}
 
@@ -237,13 +256,19 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
 		// #endif /* LOGGER >= INFO */
 
 		m_executeTaskLock.lock();
+		m_task.setSlaveInterface(this);
+
 		int result = m_task.execute(getServiceAccessor());
+
+		m_task.setSlaveInterface(null);
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Execution finished, return code: " + result);
 		// #endif /* LOGGER >= INFO */
 
+		m_handleSignalLock.lock();
 		m_task = null;
 		m_executeTaskLock.unlock();
+		m_handleSignalLock.unlock();
 
 		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(),
@@ -305,5 +330,19 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver {
 				m_task = task;
 			}
 		}
+	}
+
+	/**
+	 * Handle a SignalMessage
+	 *
+	 * @param p_message SignalMessage
+	 */
+	private void incomingSignalMessage(final SignalMessage p_message) {
+		m_handleSignalLock.lock();
+		if (m_task != null) {
+			m_task.handleSignal(p_message.getSignal());
+		}
+
+		m_handleSignalLock.unlock();
 	}
 }

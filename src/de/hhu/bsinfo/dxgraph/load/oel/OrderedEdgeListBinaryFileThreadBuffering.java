@@ -6,35 +6,58 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 
 /**
  * Implementation reading vertex data from a buffer filled by a separate file reading thread.
  * The vertex data is stored in binary format.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdgeListThreadBuffering {
 
 	private DataInputStream m_file;
+	private long m_position;
+	private long m_vertexIDCounter;
 
 	/**
 	 * Constructor
-	 * @param p_path
-	 *            Filepath of the file to read.
-	 * @param p_bufferLimit
-	 *            Max vertices to keep buffered.
+	 *
+	 * @param p_path                  Filepath of the file to read.
+	 * @param p_bufferLimit           Max vertices to keep buffered.
+	 * @param p_partitionStartOffset  Offset in the file to start reading at for the selected partition
+	 * @param p_partitionEndOffset    Offset in the file the partition ends
+	 * @param p_filterDupEdges        Filter duplicate edges while loading
+	 * @param p_filterSelfLoops       Filter self loops while loading
+	 * @param p_graphTotalVertexCount Total number of vertices of the full graph
+	 * @param p_startVertexID         ID of the first vertex in the partition
 	 */
-	public OrderedEdgeListBinaryFileThreadBuffering(final String p_path, final int p_bufferLimit) {
-		super(p_path, p_bufferLimit);
+	public OrderedEdgeListBinaryFileThreadBuffering(final String p_path, final int p_bufferLimit,
+			final long p_partitionStartOffset, final long p_partitionEndOffset,
+			final boolean p_filterDupEdges, final boolean p_filterSelfLoops,
+			final long p_graphTotalVertexCount, final long p_startVertexID) {
+		super(p_path, p_bufferLimit, p_partitionStartOffset, p_partitionEndOffset, p_filterDupEdges, p_filterSelfLoops);
+
+		m_vertexIDCounter = p_startVertexID;
 	}
 
 	@Override
 	protected void setupFile(final String p_path) {
 		try {
-			m_file = new DataInputStream(new BufferedInputStream(new FileInputStream(p_path)));
+			RandomAccessFile file = new RandomAccessFile(p_path, "r");
+			file.seek(m_partitionStartOffset);
+			m_file = new DataInputStream(new BufferedInputStream(new FileInputStream(file.getFD())));
+			if (m_partitionEndOffset == Long.MAX_VALUE) {
+				m_partitionEndOffset = file.length();
+			}
+			m_position = m_partitionStartOffset;
 		} catch (final FileNotFoundException e) {
 			throw new RuntimeException("Cannot load graph from file '" + p_path + "', does not exist.");
+		} catch (final IOException e) {
+			throw new RuntimeException(
+					"Seeking to position " + m_partitionStartOffset + " on file '" + p_path + "' failed");
 		}
 	}
 
@@ -43,11 +66,72 @@ public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdg
 		Vertex vertex = new Vertex();
 
 		try {
-			int count = m_file.readInt();
-			vertex.setNeighbourCount(count);
-			long[] neighbours = vertex.getNeighbours();
-			for (int i = 0; i < neighbours.length; i++) {
-				neighbours[i] = m_file.readLong();
+			if (m_position < m_partitionEndOffset) {
+				int count = Integer.reverseBytes(m_file.readInt());
+				m_position += Integer.BYTES;
+				vertex.setNeighbourCount(count);
+				long[] neighbours = vertex.getNeighbours();
+
+				if (m_filterDupEdges && m_filterSelfLoops) {
+					count = 0;
+					for (int i = 0; i < neighbours.length; i++) {
+						long v = Long.reverseBytes(m_file.readLong());
+
+						if (v != m_vertexIDCounter) {
+							boolean found = false;
+							for (int j = 0; j < i; j++) {
+								if (neighbours[j] == v) {
+									found = true;
+									break;
+								}
+							}
+							if (!found) {
+								neighbours[count++] = v;
+							}
+						}
+					}
+
+					vertex.setNeighbourCount(count);
+				} else if (m_filterDupEdges) {
+					count = 0;
+					for (int i = 0; i < neighbours.length; i++) {
+						long v = Long.reverseBytes(m_file.readLong());
+
+						boolean found = false;
+						for (int j = 0; j < i; j++) {
+							if (neighbours[j] == v) {
+								found = true;
+								break;
+							}
+						}
+						if (!found) {
+							neighbours[count++] = v;
+						}
+					}
+
+					vertex.setNeighbourCount(count);
+				} else if (m_filterSelfLoops) {
+					int pos = 0;
+					for (int i = 0; i < neighbours.length; i++) {
+						long v = Long.reverseBytes(m_file.readLong());
+						if (v == m_vertexIDCounter) {
+							count--;
+						} else {
+							neighbours[pos++] = v;
+						}
+					}
+
+					vertex.setNeighbourCount(count);
+				} else {
+					for (int i = 0; i < neighbours.length; i++) {
+						neighbours[i] = Long.reverseBytes(m_file.readLong());
+					}
+				}
+
+				m_position += Long.BYTES * count;
+				m_vertexIDCounter++;
+			} else {
+				return null;
 			}
 		} catch (final IOException e1) {
 			return null;

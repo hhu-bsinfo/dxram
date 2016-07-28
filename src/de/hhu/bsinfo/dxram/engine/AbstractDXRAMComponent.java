@@ -63,6 +63,35 @@ public abstract class AbstractDXRAMComponent {
 	}
 
 	/**
+	 *
+	 */
+	public void preInit(final DXRAMEngine p_engine) {
+
+		m_parentEngine = p_engine;
+
+		String componentInterfaceIdentifier = new String();
+
+		// is superclass abstract and not DXRAMComponent -> interface
+
+		if (Modifier.isAbstract(this.getClass().getSuperclass().getModifiers())
+				&& !this.getClass().getSuperclass().equals(AbstractDXRAMComponent.class)) {
+
+			componentInterfaceIdentifier = this.getClass().getSuperclass().getSimpleName();
+
+		}
+		m_settings = new Settings(m_parentEngine.getConfiguration(),
+				m_parentEngine.getLogger(),
+				componentInterfaceIdentifier,
+				this.getClass().getSimpleName());
+
+		registerDefaultSettingsComponent(m_settings);
+
+
+	}
+
+
+
+	/**
 	 * Initialize this component.
 	 * @param p_engine
 	 *            Engine this component is part of (parent).

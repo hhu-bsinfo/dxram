@@ -10,6 +10,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 /**
  * Importer/Exporter wrapper to allow Importables/Exportables to be directly written
  * to the SmallObjectHeap.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
 public class SmallObjectHeapDataStructureImExporter implements Importer, Exporter {
@@ -21,20 +22,29 @@ public class SmallObjectHeapDataStructureImExporter implements Importer, Exporte
 
 	/**
 	 * Constructor
-	 * @param p_heap
-	 *            The heap to access for the importer/exporter.
-	 * @param p_allocatedMemoryStartAddress
-	 *            The start address of the allocated memory block to access.
-	 * @param p_offset
-	 *            The start offset within the allocated block.
-	 * @param p_chunkSize
-	 *            The total size of the chunk
+	 *
+	 * @param p_heap                        The heap to access for the importer/exporter.
+	 * @param p_allocatedMemoryStartAddress The start address of the allocated memory block to access.
+	 * @param p_offset                      The start offset within the allocated block.
+	 * @param p_chunkSize                   The total size of the chunk
 	 */
 	public SmallObjectHeapDataStructureImExporter(final SmallObjectHeap p_heap,
 			final long p_allocatedMemoryStartAddress, final int p_offset, final int p_chunkSize) {
 		m_heap = p_heap;
 		m_allocatedMemoryStartAddress = p_allocatedMemoryStartAddress;
 		m_offset = p_offset;
+		m_chunkSize = p_chunkSize;
+	}
+
+	public void setAllocatedMemoryStartAddress(final long p_allocatedMemoryStartAddress) {
+		m_allocatedMemoryStartAddress = p_allocatedMemoryStartAddress;
+	}
+
+	public void setOffset(final int p_offset) {
+		m_offset = p_offset;
+	}
+
+	public void setChunkSize(final int p_chunkSize) {
 		m_chunkSize = p_chunkSize;
 	}
 

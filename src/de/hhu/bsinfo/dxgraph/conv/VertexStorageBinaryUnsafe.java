@@ -202,33 +202,58 @@ class VertexStorageBinaryUnsafe implements VertexStorage {
 		// }
 
 		// reallocate to expand array
-		int sizeNew = sizeOld + 1;
-		long ptrNewArray = m_unsafe.allocateMemory(sizeNew * Long.BYTES);
-		m_totalMemory.addAndGet(sizeNew * Long.BYTES);
-		if (ptrOldArray != -1) {
-			// move previous data
-			m_unsafe.copyMemory(ptrOldArray, ptrNewArray, sizeOld * Long.BYTES);
+		final int neighborBatchAlloc = 10;
+		if (sizeOld % neighborBatchAlloc == 0) {
+			int sizeNew = sizeOld + neighborBatchAlloc;
+			long ptrNewArray = m_unsafe.allocateMemory(sizeNew * Long.BYTES);
 
-			// swap pointers
-			m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
+			m_totalMemory.addAndGet(sizeNew * Long.BYTES);
+			if (ptrOldArray != -1) {
+				// move previous data
+				m_unsafe.copyMemory(ptrOldArray, ptrNewArray, sizeOld * Long.BYTES);
 
-			// free old data
-			m_unsafe.freeMemory(ptrOldArray);
-			m_totalMemory.addAndGet(-sizeOld * Long.BYTES);
-		} else {
-			// swap invalid poiner for first allocation
-			m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
+				// swap pointers
+				m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
+
+				// free old data
+				m_unsafe.freeMemory(ptrOldArray);
+				m_totalMemory.addAndGet(-sizeOld * Long.BYTES);
+			} else {
+				// swap invalid poiner for first allocation
+				m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
+			}
+
+			ptrOldArray = ptrNewArray;
 		}
+		//
+		//		int sizeNew = sizeOld + 1;
+		//		long ptrNewArray = m_unsafe.allocateMemory(sizeNew * Long.BYTES);
+		//		m_totalMemory.addAndGet(sizeNew * Long.BYTES);
+		//		if (ptrOldArray != -1) {
+		//			// move previous data
+		//			m_unsafe.copyMemory(ptrOldArray, ptrNewArray, sizeOld * Long.BYTES);
+		//
+		//			// swap pointers
+		//			m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
+		//
+		//			// free old data
+		//			m_unsafe.freeMemory(ptrOldArray);
+		//			m_totalMemory.addAndGet(-sizeOld * Long.BYTES);
+		//		} else {
+		//			// swap invalid poiner for first allocation
+		//			m_unsafe.putLong(ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES + 4, ptrNewArray);
+		//		}
 
 		if (p_neighbourVertexId == -1) {
 			System.out.println("Invalid neighbour: " + p_neighbourVertexId);
 		}
 
-		m_unsafe.putLong(ptrNewArray + sizeOld * Long.BYTES, p_neighbourVertexId);
+		m_unsafe.putLong(ptrOldArray + (sizeOld + 1) * Long.BYTES, p_neighbourVertexId);
 
 		// expecting old size and lock -> swap with new size (old size + 1) and unlocked
-		if (!m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, entryHeader, sizeNew)) {
-			throw new RuntimeException("Invalid synchronsation state.");
+		if (!m_unsafe.compareAndSwapInt(null, ptrBlock + tableEntryIndex * MS_ENTRY_SIZE_BYTES, entryHeader,
+				(sizeOld + 1))) {
+			throw new RuntimeException("Invalid synchronization state.");
 		}
 
 		m_edgeCount.incrementAndGet();

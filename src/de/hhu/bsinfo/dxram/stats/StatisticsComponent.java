@@ -12,6 +12,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 /**
  * Component to record statistics (time, call count, avarage values etc)
  * in DXRAM.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class StatisticsComponent extends AbstractDXRAMComponent {
@@ -24,12 +25,11 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public StatisticsComponent(int p_priorityInit, int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -37,8 +37,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Create a new recorder to record statistics of a module.
-	 * @param p_class
-	 *            Class to create a recorder for.
+	 *
+	 * @param p_class Class to create a recorder for.
 	 * @return Id of the newly created recorder (handle).
 	 */
 	public int createRecorder(final Class<?> p_class) {
@@ -55,17 +55,17 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Add a new operation to an existing recorder.
-	 * @param p_id
-	 *            Recorder id to add a new operation to.
-	 * @param p_operationName
-	 *            Name of the operation to create.
+	 *
+	 * @param p_id            Recorder id to add a new operation to.
+	 * @param p_operationName Name of the operation to create.
 	 * @return Id of the operation created (handle).
 	 */
 	public int createOperation(final int p_id, final String p_operationName) {
 		StatisticsRecorder recorder = m_recorders.get(p_id);
 		if (recorder == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot create operation " + p_operationName + " for recorder id " + p_id + " no such recorder registered.");
+			m_logger.error(getClass(), "Cannot create operation " + p_operationName + " for recorder id " + p_id
+					+ " no such recorder registered.");
 			// #endif /* LOGGER >= ERROR */
 			return StatisticsRecorder.Operation.INVALID_ID;
 		}
@@ -76,10 +76,9 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	/**
 	 * Call this when/before you start/enter the call/operation you want
 	 * to record.
-	 * @param p_recorderId
-	 *            Id of the recorder to record this call on.
-	 * @param p_operationId
-	 *            Id of the operation to record.
+	 *
+	 * @param p_recorderId  Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
 	 */
 	public void enter(final int p_recorderId, final int p_operationId) {
 		if (!m_enabledOverride) {
@@ -89,7 +88,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder recorder = m_recorders.get(p_recorderId);
 		if (recorder == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId + " no such recorder registered.");
+			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such recorder registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -97,7 +97,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder.Operation operation = recorder.getOperation(p_operationId);
 		if (operation == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId + " no such operation registered.");
+			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such operation registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -108,12 +109,10 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	/**
 	 * Call this when/before you start/enter the call/operation you want
 	 * to record.
-	 * @param p_recorderId
-	 *            Id of the recorder to record this call on.
-	 * @param p_operationId
-	 *            Id of the operation to record.
-	 * @param p_val
-	 *            Additional value to be added to the long counter.
+	 *
+	 * @param p_recorderId  Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
+	 * @param p_val         Additional value to be added to the long counter.
 	 */
 	public void enter(final int p_recorderId, final int p_operationId, final long p_val) {
 		if (!m_enabledOverride) {
@@ -123,7 +122,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder recorder = m_recorders.get(p_recorderId);
 		if (recorder == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId + " no such recorder registered.");
+			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such recorder registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -131,7 +131,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder.Operation operation = recorder.getOperation(p_operationId);
 		if (operation == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId + " no such operation registered.");
+			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such operation registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -142,12 +143,10 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	/**
 	 * Call this when/before you start/enter the call/operation you want
 	 * to record.
-	 * @param p_recorderId
-	 *            Id of the recorder to record this call on.
-	 * @param p_operationId
-	 *            Id of the operation to record.
-	 * @param p_val
-	 *            Additional value to be added to the double counter.
+	 *
+	 * @param p_recorderId  Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
+	 * @param p_val         Additional value to be added to the double counter.
 	 */
 	public void enter(final int p_recorderId, final int p_operationId, final double p_val) {
 		if (!m_enabledOverride) {
@@ -157,7 +156,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder recorder = m_recorders.get(p_recorderId);
 		if (recorder == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId + " no such recorder registered.");
+			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such recorder registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -165,7 +165,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder.Operation operation = recorder.getOperation(p_operationId);
 		if (operation == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId + " no such operation registered.");
+			m_logger.error(getClass(), "Cannot enter operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such operation registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -175,10 +176,9 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Call this when/after you ended/left the call/operation.
-	 * @param p_recorderId
-	 *            Id of the recorder to record this call on.
-	 * @param p_operationId
-	 *            Id of the operation to record.
+	 *
+	 * @param p_recorderId  Id of the recorder to record this call on.
+	 * @param p_operationId Id of the operation to record.
 	 */
 	public void leave(final int p_recorderId, final int p_operationId) {
 		if (!m_enabledOverride) {
@@ -188,7 +188,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder recorder = m_recorders.get(p_recorderId);
 		if (recorder == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot leave operation " + p_operationId + " for recorder id " + p_recorderId + " no such recorder registered.");
+			m_logger.error(getClass(), "Cannot leave operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such recorder registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -196,7 +197,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		StatisticsRecorder.Operation operation = recorder.getOperation(p_operationId);
 		if (operation == null) {
 			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Cannot leave operation " + p_operationId + " for recorder id " + p_recorderId + " no such operation registered.");
+			m_logger.error(getClass(), "Cannot leave operation " + p_operationId + " for recorder id " + p_recorderId
+					+ " no such operation registered.");
 			// #endif /* LOGGER >= ERROR */
 			return;
 		}
@@ -206,6 +208,7 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Get a list of all registered/created recorders.
+	 *
 	 * @return List of StatisticsRecorders.
 	 */
 	public ArrayList<StatisticsRecorder> getRecorders() {
@@ -214,8 +217,8 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Get a specific recorder.
-	 * @param p_class
-	 *            Class this recorder was created for.
+	 *
+	 * @param p_class Class this recorder was created for.
 	 * @return StatisticsRecorder if one was created for that class or null.
 	 */
 	public StatisticsRecorder getRecorder(final Class<?> p_class) {

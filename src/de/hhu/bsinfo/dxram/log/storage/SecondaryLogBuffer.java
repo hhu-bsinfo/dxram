@@ -9,6 +9,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
  * This class implements the secondary log buffer
+ *
  * @author Kevin Beineke
  *         20.06.2014
  */
@@ -24,18 +25,17 @@ public final class SecondaryLogBuffer {
 	private int m_logSegmentSize;
 
 	// Constructors
+
 	/**
 	 * Creates an instance of SecondaryLogBuffer
-	 * @param p_logger
-	 *            the logger component
-	 * @param p_secondaryLog
-	 *            Instance of the corresponding secondary log. Used to write directly to secondary
-	 * @param p_bufferSize
-	 *            the secondary log buffer size
-	 * @param p_logSegmentSize
-	 *            the segment size
+	 *
+	 * @param p_logger         the logger component
+	 * @param p_secondaryLog   Instance of the corresponding secondary log. Used to write directly to secondary
+	 * @param p_bufferSize     the secondary log buffer size
+	 * @param p_logSegmentSize the segment size
 	 */
-	public SecondaryLogBuffer(final LoggerComponent p_logger, final SecondaryLog p_secondaryLog, final int p_bufferSize, final int p_logSegmentSize) {
+	public SecondaryLogBuffer(final LoggerComponent p_logger, final SecondaryLog p_secondaryLog, final int p_bufferSize,
+			final int p_logSegmentSize) {
 		m_logger = p_logger;
 		m_secondaryLog = p_secondaryLog;
 		m_logSegmentSize = p_logSegmentSize;
@@ -48,8 +48,10 @@ public final class SecondaryLogBuffer {
 	}
 
 	// Getter
+
 	/**
 	 * Returns the number of bytes
+	 *
 	 * @return the number of bytes
 	 */
 	public int getOccupiedSpace() {
@@ -58,6 +60,7 @@ public final class SecondaryLogBuffer {
 
 	/**
 	 * Returns whether the secondary log buffer is empty or not
+	 *
 	 * @return whether buffer is empty or not
 	 */
 	public boolean isBufferEmpty() {
@@ -65,6 +68,7 @@ public final class SecondaryLogBuffer {
 	}
 
 	// Methods
+
 	/**
 	 * Closes the buffer
 	 */
@@ -84,19 +88,16 @@ public final class SecondaryLogBuffer {
 	/**
 	 * Buffers given data in secondary log buffer or writes it in secondary log if buffer
 	 * contains enough data
-	 * @param p_buffer
-	 *            buffer with data to append
-	 * @param p_bufferOffset
-	 *            offset in buffer
-	 * @param p_entryOrRangeSize
-	 *            size of the log entry/range
-	 * @throws IOException
-	 *             if the secondary log could not be written or buffer be read
-	 * @throws InterruptedException
-	 *             if the caller was interrupted
+	 *
+	 * @param p_buffer           buffer with data to append
+	 * @param p_bufferOffset     offset in buffer
+	 * @param p_entryOrRangeSize size of the log entry/range
 	 * @return whether the buffer was flushed or not
+	 * @throws IOException          if the secondary log could not be written or buffer be read
+	 * @throws InterruptedException if the caller was interrupted
 	 */
-	public boolean bufferData(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
+	public boolean bufferData(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize)
+			throws IOException, InterruptedException {
 		boolean ret = false;
 		byte[] buffer;
 
@@ -118,12 +119,10 @@ public final class SecondaryLogBuffer {
 
 	/**
 	 * Changes log entries for storing in secondary log
-	 * @param p_buffer
-	 *            the log entries
-	 * @param p_bufferOffset
-	 *            offset in buffer
-	 * @param p_entryOrRangeSize
-	 *            size of the log entry/range
+	 *
+	 * @param p_buffer           the log entries
+	 * @param p_bufferOffset     offset in buffer
+	 * @param p_entryOrRangeSize size of the log entry/range
 	 * @return processed buffer
 	 */
 	private byte[] processBuffer(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) {
@@ -137,11 +136,13 @@ public final class SecondaryLogBuffer {
 		while (oldBufferOffset < p_bufferOffset + p_entryOrRangeSize) {
 			// Determine header of next log entry
 			logEntryHeader = AbstractLogEntryHeader.getPrimaryHeader(p_buffer, oldBufferOffset);
-			logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader.getLength(p_buffer, oldBufferOffset);
+			logEntrySize = logEntryHeader.getHeaderSize(p_buffer, oldBufferOffset) + logEntryHeader
+					.getLength(p_buffer, oldBufferOffset);
 
 			// Copy primary log header, but skip NodeID and RangeID
-			newBufferOffset += AbstractLogEntryHeader.convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize,
-					p_buffer.length - oldBufferOffset, logEntryHeader.getConversionOffset());
+			newBufferOffset += AbstractLogEntryHeader
+					.convertAndPut(p_buffer, oldBufferOffset, buffer, newBufferOffset, logEntrySize,
+							p_buffer.length - oldBufferOffset, logEntryHeader.getConversionOffset());
 			oldBufferOffset += logEntrySize;
 		}
 		buffer = Arrays.copyOf(buffer, newBufferOffset);
@@ -152,18 +153,15 @@ public final class SecondaryLogBuffer {
 	/**
 	 * Flushes all data in secondary log buffer to secondary log regardless of the size
 	 * Appends given data to buffer data and writes all data at once
-	 * @param p_buffer
-	 *            buffer with data to append
-	 * @param p_bufferOffset
-	 *            offset in buffer
-	 * @param p_entryOrRangeSize
-	 *            size of the log entry/range
-	 * @throws IOException
-	 *             if the secondary log could not be written or buffer be read
-	 * @throws InterruptedException
-	 *             if the caller was interrupted
+	 *
+	 * @param p_buffer           buffer with data to append
+	 * @param p_bufferOffset     offset in buffer
+	 * @param p_entryOrRangeSize size of the log entry/range
+	 * @throws IOException          if the secondary log could not be written or buffer be read
+	 * @throws InterruptedException if the caller was interrupted
 	 */
-	public void flushAllDataToSecLog(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize) throws IOException, InterruptedException {
+	public void flushAllDataToSecLog(final byte[] p_buffer, final int p_bufferOffset, final int p_entryOrRangeSize)
+			throws IOException, InterruptedException {
 		byte[] dataToWrite;
 
 		if (isBufferEmpty()) {
@@ -192,10 +190,9 @@ public final class SecondaryLogBuffer {
 
 	/**
 	 * Flushes all data in secondary log buffer to secondary log regardless of the size
-	 * @throws IOException
-	 *             if the secondary log could not be written or buffer be read
-	 * @throws InterruptedException
-	 *             if the caller was interrupted
+	 *
+	 * @throws IOException          if the secondary log could not be written or buffer be read
+	 * @throws InterruptedException if the caller was interrupted
 	 */
 	public void flushSecLogBuffer() throws IOException, InterruptedException {
 

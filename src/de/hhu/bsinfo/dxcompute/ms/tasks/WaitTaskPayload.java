@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -10,6 +11,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Wait for specified amount of time.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class WaitTaskPayload extends AbstractTaskPayload {
@@ -28,8 +30,8 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 
 	/**
 	 * Set the time to wait in ms.
-	 * @param p_timeMs
-	 *            Time to wait in ms.
+	 *
+	 * @param p_timeMs Time to wait in ms.
 	 */
 	public void setWaitTimeMs(final int p_timeMs) {
 		m_waitMs = p_timeMs;
@@ -44,6 +46,11 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 		}
 
 		return 0;
+	}
+
+	@Override
+	public void handleSignal(final Signal p_signal) {
+		// ignore signals
 	}
 
 	@Override

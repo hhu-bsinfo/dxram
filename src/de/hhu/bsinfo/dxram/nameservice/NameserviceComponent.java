@@ -20,6 +20,7 @@ import de.hhu.bsinfo.utils.Pair;
  * Nameservice component providing mappings of string identifiers to chunkIDs.
  * Note: The character set and length of the string are limited. Refer to
  * the convert class for details.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class NameserviceComponent extends AbstractDXRAMComponent {
@@ -35,12 +36,11 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public NameserviceComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -48,10 +48,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Register a DataStructure for a specific name.
-	 * @param p_dataStructure
-	 *            DataStructure to register.
-	 * @param p_name
-	 *            Name to associate with the ID of the DataStructure.
+	 *
+	 * @param p_dataStructure DataStructure to register.
+	 * @param p_name          Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final DataStructure p_dataStructure, final String p_name) {
 		register(p_dataStructure.getID(), p_name);
@@ -59,10 +58,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Register a chunk id for a specific name.
-	 * @param p_chunkId
-	 *            Chunk id to register.
-	 * @param p_name
-	 *            Name to associate with the ID of the DataStructure.
+	 *
+	 * @param p_chunkId Chunk id to register.
+	 * @param p_name    Name to associate with the ID of the DataStructure.
 	 */
 	public void register(final long p_chunkId, final String p_name) {
 		try {
@@ -83,11 +81,10 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Get the chunk ID of the specific name from the service.
-	 * @param p_name
-	 *            Registered name to get the chunk ID for.
-	 * @param p_timeoutMs
-	 *            Timeout for trying to get the entry (if it does not exist, yet).
-	 *            set this to -1 for infinite loop if you know for sure, that the entry has to exist
+	 *
+	 * @param p_name      Registered name to get the chunk ID for.
+	 * @param p_timeoutMs Timeout for trying to get the entry (if it does not exist, yet).
+	 *                    set this to -1 for infinite loop if you know for sure, that the entry has to exist
 	 * @return If the name was registered with a chunk ID before, returns the chunk ID, -1 otherwise.
 	 */
 	public long getChunkID(final String p_name, final int p_timeoutMs) {
@@ -114,6 +111,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Remove the name of a registered DataStructure from lookup.
+	 *
 	 * @return the number of entries in name service
 	 */
 	public int getEntryCount() {
@@ -122,6 +120,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Get all available name mappings
+	 *
 	 * @return List of available name mappings
 	 */
 	public ArrayList<Pair<String, Long>> getAllEntries() {
@@ -186,10 +185,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Inserts the nameservice entry to chunk with LocalID 0 for backup
-	 * @param p_key
-	 *            the key
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_key     the key
+	 * @param p_chunkID the ChunkID
 	 * @return whether this operation was successful
 	 */
 	private boolean insertMapping(final int p_key, final long p_chunkID) {

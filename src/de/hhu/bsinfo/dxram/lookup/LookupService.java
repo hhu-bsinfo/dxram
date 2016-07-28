@@ -4,8 +4,6 @@ package de.hhu.bsinfo.dxram.lookup;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
-import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
@@ -16,14 +14,13 @@ import de.hhu.bsinfo.dxram.lookup.messages.RequestSendLookupTreeMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.ResponseResponsibleSuperPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.tcmds.TcmdPrintLookUpTree;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Look up service providing look ups for e.g. use in TCMDs
@@ -35,16 +32,10 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private LoggerComponent m_logger;
-	private MemoryManagerComponent m_memoryManager;
 	private NetworkComponent m_network;
-	private AbstractLockComponent m_lock;
-	private StatisticsComponent m_statistics;
 	private TerminalComponent m_terminal;
 
 	private LookupComponent m_lookup;
-	private short m_nodeID;
-
-	private boolean m_performanceFlag;
 
 	/**
 	 * Constructor
@@ -54,26 +45,20 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(Settings p_settings) {}
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
 
 	@Override
-	protected boolean startService(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			Settings p_settings) {
-
-		m_performanceFlag = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PERFORMANCE_FLAG);
+	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
+			final Settings p_settings) {
 
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
-		m_lock = getComponent(AbstractLockComponent.class);
-		m_statistics = getComponent(StatisticsComponent.class);
 
 		//
 		m_lookup = getComponent(LookupComponent.class);
-		m_nodeID = getComponent(AbstractBootComponent.class).getNodeID();
 		m_terminal = getComponent(TerminalComponent.class);
 		m_terminal.registerCommand(new TcmdPrintLookUpTree());
 
@@ -90,67 +75,63 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	@Override
 	protected boolean shutdownService() {
 
-		m_memoryManager = null;
 		m_network = null;
 		m_lookup = null;
 
 		return true;
 	}
 
-	private void incomingRequestLookupTreeOnServerMessage(RequestLookupTreeFromSuperPeer p_message) {
-
-		System.out.println("incomingRequestSendLookupTreeFromServerMessage "
-				+ "from " + p_message.getTreeNodeID() + "to" + p_message.getDestination());
+	/**
+	 * Sends a Response to a LookupTree Request
+	 * @param p_message
+	 *            the LookupTreeRequest
+	 */
+	private void incomingRequestLookupTreeOnServerMessage(final RequestLookupTreeFromSuperPeer p_message) {
 
 		LookupTree tree = m_lookup.superPeerGetLookUpTree(p_message.getTreeNodeID());
 
 		final NetworkErrorCodes err =
 				m_network.sendMessage(new LookupTreeResponse(p_message, tree));
+		// #if LOGGER >= ERROR
 		if (err != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(LogService.class, "Could not acknowledge initilization of backup range: " + err);
 		}
+		// #endif
 
 	}
 
-	private void incomingSendLookupTreeMessage(LookupTreeResponse p_message) {
-
-		System.out.println("incoming Send LookupTree Message:");
-		if (p_message.getCIDTree() != null)
-			System.out.println(p_message.getCIDTree().toString());
-		else
-			System.out.println("Lookup Tree Tree is null");
-	}
-
-	private void incomingRequestResponsibleSuperPeer(RequestResponsibleSuperPeer p_message) {
+	/**
+	 * handles the request for the responsible Superpeer of this node
+	 * @param p_message
+	 *            the Request for the ResponsibleSuperPeer
+	 */
+	private void incomingRequestResponsibleSuperPeer(final RequestResponsibleSuperPeer p_message) {
 
 		short superPeerID = m_lookup.getMyResponsibleSuperPeer();
 
+		// #if LOGGER >= ERROR
 		if (m_network
 				.sendMessage(new ResponseResponsibleSuperPeer(p_message, superPeerID)) != NetworkErrorCodes.SUCCESS) {
 			m_logger.error(LogService.class, "could not send requested super peer response ");
 		}
-
+		// #endif
 	}
 
 	@Override
-	public void onIncomingMessage(AbstractMessage p_message) {
+	public void onIncomingMessage(final AbstractMessage p_message) {
 
-		System.out.println("incoming message");
 		if (p_message != null) {
 			if (p_message.getType() == LookupMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_SEND_LOOK_UP_TREE:
-						incomingSendLookupTreeMessage((LookupTreeResponse) p_message);
-						break;
 					case LookupMessages.SUBTYPE_REQUEST_LOOK_UP_TREE_FROM_SERVER:
 						incomingRequestLookupTreeOnServerMessage((RequestLookupTreeFromSuperPeer) p_message);
-						break;
-					default:
 						break;
 					case LookupMessages.SUBTYPE_REQUEST_RESPONSIBLE_SUPERPEER:
 						incomingRequestResponsibleSuperPeer((RequestResponsibleSuperPeer) p_message);
 						break;
 					case LookupMessages.SUBTYPE_RESPONSE_RESPONSIBLE_SUPERPEER:
+						break;
+					default:
 						break;
 				}
 			}
@@ -158,70 +139,54 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	}
 
-	public short getResponsibleSuperPeer(short p_nid) {
+	/**
+	 * Sends a method to a node id to request the responsible peer
+	 * @param p_nid
+	 *            node id to get responsible super peer from
+	 * @return
+	 * 		node ID of superpeer
+	 */
+	public short getResponsibleSuperPeer(final short p_nid) {
 
-		// // first send a message to Node which Tree is requested and then send a request to the responsible super peer
-		// final NetworkErrorCodes err = m_network.sendMessage(new RequestSendLookupTreeMessage(p_nid));
-		// if (err != NetworkErrorCodes.SUCCESS) {
-		// m_logger.error(LogService.class, "Could not acknowledge initilization of backup range: " + err);
-		// }
-
-		short responsibleSuperPeer = -1;
+		short responsibleSuperPeer = NodeID.INVALID_ID;
 		RequestResponsibleSuperPeer superPeerRequest;
 		ResponseResponsibleSuperPeer superPeerResponse;
 
-		while (-1 == responsibleSuperPeer) {
-
-			superPeerRequest = new RequestResponsibleSuperPeer(p_nid);
-			if (m_network.sendSync(superPeerRequest) != NetworkErrorCodes.SUCCESS) {
-				continue;
-			}
-
-			superPeerResponse = superPeerRequest.getResponse(ResponseResponsibleSuperPeer.class);
-			responsibleSuperPeer = superPeerResponse.getResponsibleSuperPeer();
+		superPeerRequest = new RequestResponsibleSuperPeer(p_nid);
+		if (m_network.sendSync(superPeerRequest) != NetworkErrorCodes.SUCCESS) {
 
 		}
 
-		//
-		// while (-1 != contactSuperpeer) {
-		// // #if LOGGER == TRACE
-		// m_logger.trace(getClass(), "Contacting " + NodeID.toHexString(contactSuperpeer)
-		// + " to join the ring, I am " + NodeID.toHexString(m_nodeID));
-		// // #endif /* LOGGER == TRACE */
-		//
-		// joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, IS_SUPERPEER);
-		// if (m_network.sendSync(joinRequest) != NetworkErrorCodes.SUCCESS) {
-		// // Contact superpeer is not available, get a new contact superpeer
-		// contactSuperpeer = m_boot.getNodeIDBootstrap();
-		// continue;
-		// }
-		//
-		// joinResponse = joinRequest.getResponse(JoinResponse.class);
-		// contactSuperpeer = joinResponse.getNewContactSuperpeer();
-		// }
-		//
+		superPeerResponse = superPeerRequest.getResponse(ResponseResponsibleSuperPeer.class);
+		responsibleSuperPeer = superPeerResponse.getResponsibleSuperPeer();
 
 		return responsibleSuperPeer;
 	}
 
-	public LookupTree getLookupTreeFromSuperPeer(short p_superPeerNid, short p_nodeId) {
+	/**
+	 * sends a message to a superpeer to get a lookuptree from
+	 * @param p_superPeerNid
+	 *            superpeer where the lookuptree to get from
+	 * @param p_nodeId
+	 *            node id which lookuptree to get
+	 * @return
+	 * 		requested lookup Tree
+	 */
+	public LookupTree getLookupTreeFromSuperPeer(final short p_superPeerNid, final short p_nodeId) {
 
 		LookupTree retTree = null;
 
 		RequestLookupTreeFromSuperPeer lookupTreeRequest;
 		LookupTreeResponse lookupTreeResponse;
 
-		while (null == retTree) {
+		lookupTreeRequest = new RequestLookupTreeFromSuperPeer(p_superPeerNid, p_nodeId);
 
-			lookupTreeRequest = new RequestLookupTreeFromSuperPeer(p_superPeerNid, p_nodeId);
-			if (m_network.sendSync(lookupTreeRequest) != NetworkErrorCodes.SUCCESS) {
-				continue;
-			}
-
-			lookupTreeResponse = lookupTreeRequest.getResponse(LookupTreeResponse.class);
-			retTree = lookupTreeResponse.getCIDTree();
+		if (m_network.sendSync(lookupTreeRequest) != NetworkErrorCodes.SUCCESS) {
 
 		}
+
+		lookupTreeResponse = lookupTreeRequest.getResponse(LookupTreeResponse.class);
+		retTree = lookupTreeResponse.getCIDTree();
 
 		return retTree;
 	}

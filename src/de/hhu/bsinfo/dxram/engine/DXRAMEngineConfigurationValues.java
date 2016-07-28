@@ -20,7 +20,6 @@ public final class DXRAMEngineConfigurationValues {
 			new Pair<String, Boolean>("Logger/File/BackupOld", false);
 	public static final Pair<String, String> LOGGER_CONSOLE_LEVEL =
 			new Pair<String, String>("Logger/Console/Level", "trace");
-	public static final Pair<String, Boolean> PERFORMANCE_FLAG = new Pair<String, Boolean>("PerformanceFlag", false);
 
 	/**
 	 * Private constructor, static class.

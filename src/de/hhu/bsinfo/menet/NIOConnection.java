@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Represents a network connection
  * @author Florian Klein 18.03.2012
  */
-public class NIOConnection extends AbstractConnection {
+class NIOConnection extends AbstractConnection {
 
 	// Attributes
 	private SocketChannel m_channel;
@@ -24,6 +24,8 @@ public class NIOConnection extends AbstractConnection {
 
 	private int m_incomingBufferSize;
 	private int m_outgoingBufferSize;
+
+	private int m_numberOfBuffersPerConnection;
 
 	private ReentrantLock m_connectionCondLock;
 	private Condition m_connectionCond;
@@ -50,7 +52,7 @@ public class NIOConnection extends AbstractConnection {
 	 *            the incoming buffer storage and message creator
 	 * @param p_nioSelector
 	 *            the NIOSelector
-	 * @param p_numberOfBuffers
+	 * @param p_numberOfBuffersPerConnection
 	 *            the number of buffers to schedule
 	 * @param p_incomingBufferSize
 	 *            the size of incoming buffer
@@ -61,14 +63,17 @@ public class NIOConnection extends AbstractConnection {
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final ReentrantLock p_lock,
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap,
+			final MessageDirectory p_messageDirectory, final ReentrantLock p_lock,
 			final Condition p_cond, final MessageCreator p_messageCreator, final NIOSelector p_nioSelector,
-			final int p_numberOfBuffers, final int p_incomingBufferSize, final int p_outgoingBufferSize,
+			final int p_numberOfBuffersPerConnection, final int p_incomingBufferSize, final int p_outgoingBufferSize,
 			final int p_flowControlWindowSize) throws IOException {
 		super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;
 		m_outgoingBufferSize = p_outgoingBufferSize;
+
+		m_numberOfBuffersPerConnection = p_numberOfBuffersPerConnection;
 
 		m_channel = SocketChannel.open();
 		m_channel.configureBlocking(false);
@@ -81,9 +86,8 @@ public class NIOConnection extends AbstractConnection {
 
 		m_messageCreator = p_messageCreator;
 		m_nioSelector = p_nioSelector;
-		m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
 
-		m_outgoing = new ArrayDeque<>();
+		m_outgoing = new ArrayDeque<>(m_numberOfBuffersPerConnection / 8);
 
 		m_connectionCondLock = p_lock;
 		m_connectionCond = p_cond;
@@ -107,7 +111,7 @@ public class NIOConnection extends AbstractConnection {
 	 *            the incoming buffer storage and message creator
 	 * @param p_nioSelector
 	 *            the NIOSelector
-	 * @param p_numberOfBuffers
+	 * @param p_numberOfBuffersPerConnection
 	 *            the number of buffers to schedule
 	 * @param p_incomingBufferSize
 	 *            the size of incoming buffer
@@ -118,13 +122,18 @@ public class NIOConnection extends AbstractConnection {
 	 * @throws IOException
 	 *             if the connection could not be created
 	 */
-	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap, final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
-			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector, final int p_numberOfBuffers,
-			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize) throws IOException {
+	protected NIOConnection(final short p_destination, final NodeMap p_nodeMap,
+			final MessageDirectory p_messageDirectory, final SocketChannel p_channel,
+			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector,
+			final int p_numberOfBuffersPerConnection,
+			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize)
+			throws IOException {
 		super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;
 		m_outgoingBufferSize = p_outgoingBufferSize;
+
+		m_numberOfBuffersPerConnection = p_numberOfBuffersPerConnection;
 
 		m_channel = p_channel;
 		m_channel.configureBlocking(false);
@@ -159,6 +168,13 @@ public class NIOConnection extends AbstractConnection {
 	// Methods
 
 	/**
+	 * Register connect interest
+	 */
+	protected void connect() {
+		m_nioSelector.changeOperationInterestAsync(new ChangeOperationsRequest(this, SelectionKey.OP_CONNECT));
+	}
+
+	/**
 	 * Append an incoming ByteBuffer to the Queue
 	 * @param p_buffer
 	 *            the ByteBuffer
@@ -178,6 +194,16 @@ public class NIOConnection extends AbstractConnection {
 	@Override
 	protected void doWrite(final AbstractMessage p_message) throws NetworkException {
 		writeToChannel(p_message.getBuffer());
+	}
+
+	/**
+	 * Writes data to the connection
+	 * @param p_message
+	 *            the AbstractMessage to send
+	 */
+	@Override
+	protected void doForceWrite(final AbstractMessage p_message) throws NetworkException {
+		writeToChannelForced(p_message.getBuffer());
 	}
 
 	@Override
@@ -215,6 +241,26 @@ public class NIOConnection extends AbstractConnection {
 	 *            Buffer
 	 */
 	private void writeToChannel(final ByteBuffer p_buffer) {
+		m_outgoingLock.lock();
+		while (m_outgoing.size() == m_numberOfBuffersPerConnection) {
+			m_outgoingLock.unlock();
+			Thread.yield();
+			m_outgoingLock.lock();
+		}
+
+		m_outgoing.offer(p_buffer);
+		m_outgoingLock.unlock();
+
+		// Change operation (read <-> write) and/or connection
+		m_nioSelector.changeOperationInterestAsync(m_writeOperation);
+	}
+
+	/**
+	 * Enqueue buffer to be written into the channel (never delays)
+	 * @param p_buffer
+	 *            Buffer
+	 */
+	private void writeToChannelForced(final ByteBuffer p_buffer) {
 		m_outgoingLock.lock();
 		m_outgoing.offer(p_buffer);
 		m_outgoingLock.unlock();
@@ -290,10 +336,30 @@ public class NIOConnection extends AbstractConnection {
 	}
 
 	/**
-	 * Closes the connection
+	 * Closes the connection immediately
 	 */
 	@Override
 	protected void doClose() {
+		setClosingTimestamp();
+		m_nioSelector.closeConnectionAsync(this);
+	}
+
+	/**
+	 * Closes the connection when there is no data left in transfer
+	 */
+	@Override
+	protected void doCloseGracefully() {
+		if (!m_outgoing.isEmpty()) {
+			// #if LOGGER >= DEBUG
+			NetworkHandler.getLogger().debug(getClass().getSimpleName(),
+					"Waiting for all scheduled messages to be sent over to be closed connection!");
+			// #endif /* LOGGER >= DEBUG */
+			while (!m_outgoing.isEmpty()) {
+				Thread.yield();
+			}
+		}
+
+		setClosingTimestamp();
 		m_nioSelector.closeConnectionAsync(this);
 	}
 

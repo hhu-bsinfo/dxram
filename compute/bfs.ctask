@@ -3,27 +3,31 @@
 	<ComputeTask>
 		<tid __id="0" __type="short">1</tid>
 		<stid __id="0" __type="short">0</stid>
-		<graphPath __id="0" __type="str">../../graph_data/oel/kron_16_16_2</graphPath>
+		<graphPartitionIndexFile __id="0" __type="str">../../graph_data/oel/kron_21_16/out.2.ioel</graphPartitionIndexFile>
 	</ComputeTask>
 	<ComputeTask>
 		<tid __id="1" __type="short">1</tid>
 		<stid __id="1" __type="short">1</stid>
-		<graphPath __id="1" __type="str">../../graph_data/oel/kron_16_16_2</graphPath>
+		<graphPath __id="1" __type="str">../../graph_data/oel/kron_21_16</graphPath>
 		<vertexBatchSize __id="1" __type="int">1000</vertexBatchSize>
+		<filterSelfLoops __id="1" __type="bool">true</filterSelfLoops>
+		<filterDupEdges __id="1" __type="bool">true</filterDupEdges>
 	</ComputeTask>
 	<ComputeTask>
 		<tid __id="2" __type="short">1</tid>
 		<stid __id="2" __type="short">2</stid>
-		<graphPath __id="2" __type="str">../../graph_data/oel/kron_16_16_2</graphPath>
+		<graphPath __id="2" __type="str">../../graph_data/oel/kron_21_16</graphPath>
 	</ComputeTask>
 	<ComputeTask>
 		<tid __id="3" __type="short">1</tid>
 		<stid __id="3" __type="short">3</stid>
 		<bfsRootNameserviceEntryName __id="3" __type="str">BFS0</bfsRootNameserviceEntryName>
-		<vertexBatchSize __id="3" __type="int">1000</vertexBatchSize>
-		<vertexMessageBatchSize __id="3" __type="int">1000</vertexMessageBatchSize>
-		<numThreadsPerNode __id="3" __type="int">4</numThreadsPerNode>
+		<vertexBatchSize __id="3" __type="int">200</vertexBatchSize>
+		<vertexMessageBatchSize __id="3" __type="int">200</vertexMessageBatchSize>
+		<numThreadsPerNode __id="3" __type="int">6</numThreadsPerNode>
 		<markVertices __id="3" __type="bool">false</markVertices>
-		<compVertexMsgs __id="3" __type="bool">false</compVertexMsgs>
+		<beamerMode __id="3" __type="bool">true</beamerMode>
+		<beamerFormulaGraphEdgeDeg __id="3" __type="int">16</beamerFormulaGraphEdgeDeg>
+		<abortBFSOnError __id="3" __type="bool">true</abortBFSOnError>
 	</ComputeTask>
 </conf>

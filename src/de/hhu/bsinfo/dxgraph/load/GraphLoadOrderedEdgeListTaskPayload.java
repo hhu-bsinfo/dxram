@@ -6,11 +6,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
+import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
-import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListTextFileThreadBuffering;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -34,12 +35,18 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			new Argument("graphPath", null, false, "Path containing the graph data to load.");
 	private static final Argument MS_ARG_VERTEX_BATCH_SIZE =
 			new Argument("vertexBatchSize", null, false, "Size of a vertex batch for the loading process.");
+	private static final Argument MS_ARG_FILTER_DUP_EDGES =
+			new Argument("filterDupEdges", null, false, "Check for and filter duplicate edges per vertex.");
+	private static final Argument MS_ARG_FILTER_SELF_LOOPS =
+			new Argument("filterSelfLoops", null, false, "Check for and filter self loops per vertex.");
 
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
 	private String m_path = "./";
 	private int m_vertexBatchSize = 100;
+	private boolean m_filterDupEdges;
+	private boolean m_filterSelfLoops;
 
 	/**
 	 * Constructor
@@ -100,7 +107,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			return -2;
 		}
 
-		OrderedEdgeList graphPartitionOel = setupOrderedEdgeListForCurrentSlave(m_path);
+		OrderedEdgeList graphPartitionOel = setupOrderedEdgeListForCurrentSlave(m_path, graphPartitionIndex);
 		if (graphPartitionOel == null) {
 			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(), "Setting up graph partition for current slave failed.");
@@ -129,15 +136,31 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
+	public void handleSignal(final Signal p_signal) {
+		switch (p_signal) {
+			case SIGNAL_ABORT: {
+				// ignore signal here
+				break;
+			}
+			default:
+				break;
+		}
+	}
+
+	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
 		p_argumentList.setArgument(MS_ARG_PATH);
 		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
+		p_argumentList.setArgument(MS_ARG_FILTER_DUP_EDGES);
+		p_argumentList.setArgument(MS_ARG_FILTER_SELF_LOOPS);
 	}
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
 		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
 		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
+		m_filterDupEdges = p_argumentList.getArgumentValue(MS_ARG_FILTER_DUP_EDGES, Boolean.class);
+		m_filterSelfLoops = p_argumentList.getArgumentValue(MS_ARG_FILTER_SELF_LOOPS, Boolean.class);
 	}
 
 	@Override
@@ -147,8 +170,10 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		p_exporter.writeInt(m_path.length());
 		p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
 		p_exporter.writeInt(m_vertexBatchSize);
+		p_exporter.writeByte((byte) (m_filterDupEdges ? 1 : 0));
+		p_exporter.writeByte((byte) (m_filterSelfLoops ? 1 : 0));
 
-		return size + Integer.BYTES + m_path.length() + Integer.BYTES;
+		return size + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	@Override
@@ -160,22 +185,26 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		p_importer.readBytes(tmp);
 		m_path = new String(tmp, StandardCharsets.US_ASCII);
 		m_vertexBatchSize = p_importer.readInt();
+		m_filterDupEdges = p_importer.readByte() > 0;
+		m_filterSelfLoops = p_importer.readByte() > 0;
 
-		return size + Integer.BYTES + m_path.length() + Integer.BYTES;
+		return size + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	@Override
 	public int sizeofObject() {
-		return super.sizeofObject() + Integer.BYTES + m_path.length() + Integer.BYTES;
+		return super.sizeofObject() + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	/**
 	 * Setup an edge list instance for the current slave node.
 	 *
-	 * @param p_path Path with indexed graph data partitions.
+	 * @param p_path                Path with indexed graph data partitions.
+	 * @param p_graphPartitionIndex Loaded partition index of the graph
 	 * @return OrderedEdgeList instance giving access to the list found for this slave or null on error.
 	 */
-	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path) {
+	private OrderedEdgeList setupOrderedEdgeListForCurrentSlave(final String p_path,
+			final GraphPartitionIndex p_graphPartitionIndex) {
 		OrderedEdgeList orderedEdgeList = null;
 
 		// check if directory exists
@@ -200,7 +229,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 			// looking for format xxx.oel.<slave id>
 			if (tokens.length > 1) {
-				if (tokens[1].equals("oel") || tokens[1].equals("boel")) {
+				if (tokens[1].equals("boel")) {
 					return true;
 				}
 			}
@@ -214,30 +243,37 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
-			String[] tokens = file.getName().split("\\.");
+			long startOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getFileStartOffset();
+			long endOffset;
 
-			// looking for format xxx.oel.<slave id>
-			if (tokens.length > 2) {
-				if (Integer.parseInt(tokens[2]) == getSlaveId()) {
-					if (tokens[1].equals("oel")) {
-						// #if LOGGER >= DEBUG
-						m_loggerService.debug(getClass(), "Found partition for slave: " + file);
-						// #endif /* LOGGER >= DEBUG */
-
-						orderedEdgeList = new OrderedEdgeListTextFileThreadBuffering(file.getAbsolutePath(),
-								m_vertexBatchSize * 1000);
-						break;
-					} else if (tokens[1].equals("boel")) {
-						// #if LOGGER >= DEBUG
-						m_loggerService.debug(getClass(), "Found partition for slave: " + file);
-						// #endif /* LOGGER >= DEBUG */
-
-						orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
-								m_vertexBatchSize * 1000);
-						break;
-					}
-				}
+			// last partition
+			if (getSlaveId() + 1 >= p_graphPartitionIndex.getTotalPartitionCount()) {
+				endOffset = Long.MAX_VALUE;
+			} else {
+				endOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId() + 1).getFileStartOffset();
 			}
+
+			// #if LOGGER >= INFO
+			m_loggerService.info(getClass(),
+					"Partition for slave " + getSlaveId() + "graph data file: start " + startOffset + ", end "
+							+ endOffset);
+			// #endif /* LOGGER >= INFO */
+
+			// get the first vertex id of the partition to load
+			long startVertexId = 0;
+			for (int i = 0; i < getSlaveId(); i++) {
+				startVertexId += p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount();
+			}
+
+			orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
+					m_vertexBatchSize * 1000,
+					startOffset,
+					endOffset,
+					m_filterDupEdges,
+					m_filterSelfLoops,
+					p_graphPartitionIndex.calcTotalVertexCount(),
+					startVertexId);
+			break;
 		}
 
 		return orderedEdgeList;
@@ -250,6 +286,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	 * @param p_graphPartitionIndex Index for all partitions to rebase vertex ids to current node.
 	 * @return True if loading successful, false on error.
 	 */
+
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
 		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
@@ -288,9 +325,23 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				// also add current node ID
 				long[] neighbours = vertex.getNeighbours();
 				if (!p_graphPartitionIndex.rebaseGlobalVertexIdToLocalPartitionVertexId(neighbours)) {
+					// #if LOGGER >= ERROR
 					m_loggerService.error(getClass(),
 							"Rebasing of neighbors of " + vertex + " failed, out of vertex id range of graph: " + Arrays
 									.toString(neighbours));
+					// #endif /* LOGGER >= ERROR */
+				}
+
+				// for now: check if we exceed the max number of neighbors that fit into a chunk
+				// this needs to be changed later to split the neighbor list and have a linked list
+				// we don't get this very often, so there aren't any real performance issues
+				if (neighbours.length > 134217660) {
+					// #if LOGGER >= WARNING
+					m_loggerService.warn(getClass(), "Neighbor count of vertex " + vertex + " exceeds total number"
+							+ "of neighbors that fit into a single vertex; will be truncated");
+					// #endif /* LOGGER >= WARNING */
+
+					vertex.setNeighbourCount(134217660);
 				}
 
 				vertexBuffer[readCount] = vertex;
@@ -312,7 +363,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(), "Creating chunks for vertices failed: " + count + " != " + readCount);
 				// #endif /* LOGGER >= ERROR */
-				return false;
+				//return false;
 			}
 
 			count = m_chunkService.put((DataStructure[]) vertexBuffer);
@@ -321,7 +372,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				m_loggerService.error(getClass(),
 						"Putting vertex data for chunks failed: " + count + " != " + readCount);
 				// #endif /* LOGGER >= ERROR */
-				return false;
+				//return false;
 			}
 
 			totalVerticesLoaded += readCount;
@@ -340,15 +391,24 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 				"Loading done, vertex/edge count: " + totalVerticesLoaded + "/" + totalEdgesLoaded);
 		// #endif /* LOGGER >= INFO */
 
-		if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded
-				|| currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
-			// #if LOGGER >= ERROR
-			m_loggerService.error(getClass(),
-					"Loading failed, vertex/edge count (" + totalVerticesLoaded + "/" + totalEdgesLoaded
-							+ ") does not match data in graph partition index (" + currentPartitionIndexEntry
-							.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
-			// #endif /* LOGGER >= ERROR */
-			return false;
+		// filtering removes edges, so this would always fail
+		if (!m_filterSelfLoops && !m_filterDupEdges) {
+			if (currentPartitionIndexEntry.getVertexCount() != totalVerticesLoaded
+					|| currentPartitionIndexEntry.getEdgeCount() != totalEdgesLoaded) {
+				// #if LOGGER >= ERROR
+				m_loggerService.error(getClass(),
+						"Loading failed, vertex/edge count (" + totalVerticesLoaded + "/" + totalEdgesLoaded
+								+ ") does not match data in graph partition index (" + currentPartitionIndexEntry
+								.getVertexCount() + "/" + currentPartitionIndexEntry.getEdgeCount() + ")");
+				// #endif /* LOGGER >= ERROR */
+				return false;
+			}
+		} else {
+			// #if LOGGER >= INFO
+			m_loggerService.info(getClass(),
+					"Graph was filtered during loadin: duplicate edges " + m_filterDupEdges + ", self loops "
+							+ m_filterSelfLoops);
+			// #endif /* LOGGER >= INFO */
 		}
 
 		return true;

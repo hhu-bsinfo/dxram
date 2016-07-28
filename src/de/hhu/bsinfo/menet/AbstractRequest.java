@@ -11,14 +11,12 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractRequest extends AbstractMessage {
 
 	// Constants
-	public static final long WAITING_TIMEOUT = 20;
+	private static final long WAITING_TIMEOUT = 20;
 
 	// Attributes
 	private boolean m_fulfilled;
-	private AbstractAction<AbstractRequest> m_fulfillAction;
 
 	private boolean m_aborted;
-	private AbstractAction<AbstractRequest> m_abortAction;
 
 	private boolean m_ignoreTimeout;
 
@@ -32,9 +30,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 */
 	protected AbstractRequest() {
 		super();
-
-		m_fulfillAction = null;
-		m_abortAction = null;
 
 		m_wait = new Semaphore(0, false);
 
@@ -67,9 +62,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 	 */
 	public AbstractRequest(final short p_destination, final byte p_type, final byte p_subtype, final boolean p_exclusivity) {
 		super(p_destination, p_type, p_subtype, p_exclusivity);
-
-		m_fulfillAction = null;
-		m_abortAction = null;
 
 		m_wait = new Semaphore(0, false);
 
@@ -176,15 +168,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 	}
 
 	/**
-	 * Registers the Action, that will be executed, if the Request is fulfilled
-	 * @param p_action
-	 *            the Action
-	 */
-	public final void registerFulfillAction(final AbstractAction<AbstractRequest> p_action) {
-		m_fulfillAction = p_action;
-	}
-
-	/**
 	 * Fulfill the Request
 	 * @param p_response
 	 *            the Response
@@ -198,35 +181,6 @@ public abstract class AbstractRequest extends AbstractMessage {
 
 		m_fulfilled = true;
 		m_wait.release();
-
-		if (m_fulfillAction != null) {
-			m_fulfillAction.execute(this);
-		}
-	}
-
-	/**
-	 * Registers the Action, that will be executed, if the Request is aborted
-	 * @param p_action
-	 *            the Action
-	 */
-	public final void registerAbortAction(final AbstractAction<AbstractRequest> p_action) {
-		m_abortAction = p_action;
-	}
-
-	/**
-	 * Aborts the Request
-	 */
-	public final void abort() {
-		RequestMap.remove(getRequestID());
-
-		// RequestStatistic.getInstance().requestAborted(getRequestID(), getClass());
-
-		m_aborted = true;
-		m_wait.release();
-
-		if (m_abortAction != null) {
-			m_abortAction.execute(this);
-		}
 	}
 
 	@Override

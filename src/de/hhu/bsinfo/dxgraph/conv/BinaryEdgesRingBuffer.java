@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Binary edge buffer implementation based on a lock free ring buffer.
  * One writer/adder and many consumers/readers supported.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.05.16
  */
 class BinaryEdgesRingBuffer implements BinaryEdgeBuffer {

@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.dxgraph.load;
+package de.hhu.bsinfo.dxgraph.data;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -72,6 +72,15 @@ public class GraphPartitionIndex implements DataStructure {
 	}
 
 	/**
+	 * Get the total number of partitions
+	 *
+	 * @return Total number of partitions.
+	 */
+	public int getTotalPartitionCount() {
+		return m_index.size();
+	}
+
+	/**
 	 * Rebase a graph global vertexId to a partition local vertex id using the index.
 	 *
 	 * @param p_vertexId Graph global vertexId to rebase.
@@ -120,8 +129,6 @@ public class GraphPartitionIndex implements DataStructure {
 
 			if (tmp == ChunkID.INVALID_ID) {
 				res = false;
-
-				System.out.println(">>>>>> " + p_vertexIds[i]);
 			}
 
 			p_vertexIds[i] = tmp;
@@ -133,7 +140,7 @@ public class GraphPartitionIndex implements DataStructure {
 	@Override
 	public int importObject(final Importer p_importer, final int p_size) {
 		int size = p_importer.readInt();
-		m_index = new TreeMap<Integer, Entry>();
+		m_index = new TreeMap<>();
 		for (int i = 0; i < size; i++) {
 			Entry entry = new Entry();
 			p_importer.importObject(entry);
@@ -199,6 +206,7 @@ public class GraphPartitionIndex implements DataStructure {
 		private int m_partitionIndex = -1;
 		private long m_vertexCount = -1;
 		private long m_edgeCount = -1;
+		private long m_fileStartOffset = -1;
 
 		/**
 		 * Default constructor
@@ -210,17 +218,19 @@ public class GraphPartitionIndex implements DataStructure {
 		/**
 		 * Constructor
 		 *
-		 * @param p_nodeId         Node id the partition gets assigned to.
-		 * @param p_partitionIndex Partition index.
-		 * @param p_vertexCount    Number of vertices in this partition.
-		 * @param p_edgeCount      Number of edges in this partition.
+		 * @param p_nodeId          Node id the partition gets assigned to.
+		 * @param p_partitionIndex  Partition index.
+		 * @param p_vertexCount     Number of vertices in this partition.
+		 * @param p_edgeCount       Number of edges in this partition.
+		 * @param p_fileStartOffset Offset in the file where the partition starts
 		 */
 		public Entry(final short p_nodeId, final int p_partitionIndex, final long p_vertexCount,
-				final long p_edgeCount) {
+				final long p_edgeCount, final long p_fileStartOffset) {
 			m_nodeId = p_nodeId;
 			m_partitionIndex = p_partitionIndex;
 			m_vertexCount = p_vertexCount;
 			m_edgeCount = p_edgeCount;
+			m_fileStartOffset = p_fileStartOffset;
 		}
 
 		/**
@@ -259,19 +269,29 @@ public class GraphPartitionIndex implements DataStructure {
 			return m_edgeCount;
 		}
 
+		/**
+		 * Offset in the file where the partition starts.
+		 *
+		 * @return File offset.
+		 */
+		public long getFileStartOffset() {
+			return m_fileStartOffset;
+		}
+
 		@Override
 		public int importObject(final Importer p_importer, final int p_size) {
 			m_nodeId = p_importer.readShort();
 			m_partitionIndex = p_importer.readInt();
 			m_vertexCount = p_importer.readLong();
 			m_edgeCount = p_importer.readLong();
+			m_fileStartOffset = p_importer.readLong();
 
 			return sizeofObject();
 		}
 
 		@Override
 		public int sizeofObject() {
-			return Short.BYTES + Integer.BYTES + Long.BYTES + Long.BYTES;
+			return Short.BYTES + Integer.BYTES + Long.BYTES + Long.BYTES + Long.BYTES;
 		}
 
 		@Override
@@ -285,6 +305,7 @@ public class GraphPartitionIndex implements DataStructure {
 			p_exporter.writeInt(m_partitionIndex);
 			p_exporter.writeLong(m_vertexCount);
 			p_exporter.writeLong(m_edgeCount);
+			p_exporter.writeLong(m_fileStartOffset);
 
 			return sizeofObject();
 		}
@@ -301,7 +322,8 @@ public class GraphPartitionIndex implements DataStructure {
 
 		@Override
 		public String toString() {
-			return m_partitionIndex + ", " + NodeID.toHexString(m_nodeId) + ", " + m_vertexCount + ", " + m_edgeCount;
+			return m_partitionIndex + ", " + NodeID.toHexString(m_nodeId) + ", " + m_vertexCount + ", " + m_edgeCount
+					+ ", " + m_fileStartOffset;
 		}
 	}
 }

@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxram.mem;
 
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
+import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
 
 /**
@@ -30,9 +31,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
-	private ReentrantReadWriteLock m_lock;
+	// private ReentrantReadWriteLock m_lock;
+	private AtomicInteger m_lock;
 	private long m_numActiveChunks;
 	private long m_totalActiveChunkMemory;
+
+	private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
 
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
@@ -69,7 +73,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
-		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE);
 	}
 
 	@Override
@@ -86,17 +89,17 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			// #endif /* STATISTICS */
 
 			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
-			// #if LOGGER == TRACE
-			m_logger.trace(getClass(),
+			// #if LOGGER == INFO
+			m_logger.info(getClass(),
 					"Allocating native memory (" + (ramSize / 1024 / 1024) + "mb). This may take a while.");
-			// #endif /* LOGGER == TRACE */
+			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
-			m_rawMemory.initialize(ramSize,
-					p_settings.getValue(MemoryManagerConfigurationValues.Component.SEGMENT_SIZE));
+			m_rawMemory.initialize(ramSize, ramSize);
 			m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 
-			m_lock = new ReentrantReadWriteLock(false);
+			// m_lock = new ReentrantReadWriteLock(false);
+			m_lock = new AtomicInteger(0);
 
 			m_numActiveChunks = 0;
 			m_totalActiveChunkMemory = 0;
@@ -124,7 +127,19 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void lockManage() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.writeLock().lock();
+			// m_lock.writeLock().lock();
+
+			// set flag to block further readers from entering
+			while (true) {
+				int v = m_lock.get();
+				if (m_lock.compareAndSet(v, v | 0x40000000)) {
+					break;
+				}
+			}
+
+			while (!m_lock.compareAndSet(0x40000000, 0x80000000)) {
+
+			}
 		}
 	}
 
@@ -133,7 +148,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void lockAccess() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.readLock().lock();
+
+			// m_lock.readLock().lock();
+
+			while (true) {
+				int v = m_lock.get() & 0xCFFFFFFF;
+				if (m_lock.compareAndSet(v, v + 1)) {
+					break;
+				}
+			}
+
 		}
 	}
 
@@ -142,7 +166,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void unlockManage() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.writeLock().unlock();
+			// m_lock.writeLock().unlock();
+
+			m_lock.set(0);
 		}
 	}
 
@@ -151,7 +177,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	 */
 	public void unlockAccess() {
 		if (m_boot.getNodeRole() == NodeRole.PEER) {
-			m_lock.readLock().unlock();
+			// m_lock.readLock().unlock();
+
+			m_lock.decrementAndGet();
 		}
 	}
 
@@ -184,6 +212,8 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		return status;
 	}
 
+	// -----------------------------------------------------------------------------
+
 	/**
 	 * The chunk ID 0 is reserved for a fixed index structure.
 	 * If the index structure is already created this will delete the old
@@ -206,6 +236,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			return chunkID;
 		}
 
+		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
+					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			// #endif /* LOGGER >= ERROR */
+			return chunkID;
+		}
+
 		if (m_cidTable.get(0) != 0) {
 			// delete old entry
 			address = m_cidTable.delete(0, false);
@@ -216,7 +254,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		address = m_rawMemory.malloc(p_size);
 		if (address >= 0) {
-			chunkID = ((long) m_boot.getNodeID() << 48) + 0;
+			chunkID = ((long) m_boot.getNodeID() << 48);
 			// register new chunk in cid table
 			if (!m_cidTable.set(chunkID, address)) {
 				// on demand allocation of new table failed
@@ -256,7 +294,17 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
+
 		chunkID = p_chunkId;
+
+		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
+					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			// #endif /* LOGGER >= ERROR */
+			return chunkID;
+		}
+
 		// verify this id is not used
 		if (m_cidTable.get(p_chunkId) == 0) {
 			address = m_rawMemory.malloc(p_size);
@@ -299,6 +347,14 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		if (role != NodeRole.PEER) {
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "a " + role + " is not allowed to create a chunk");
+			// #endif /* LOGGER >= ERROR */
+			return chunkID;
+		}
+
+		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
+					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
 			// #endif /* LOGGER >= ERROR */
 			return chunkID;
 		}
@@ -404,8 +460,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
-			SmallObjectHeapDataStructureImExporter importer =
-					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+
+			// pool the im/exporters
+			SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
+
+			// SmallObjectHeapDataStructureImExporter importer =
+			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (importer.importObject(p_dataStructure) < 0) {
 				ret = MemoryErrorCodes.READ;
 			}
@@ -446,8 +506,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
 			ret = new byte[chunkSize];
 
-			SmallObjectHeapDataStructureImExporter importer =
-					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+			// pool the im/exporters
+			SmallObjectHeapDataStructureImExporter importer = getImExporter(address, chunkSize);
+			// SmallObjectHeapDataStructureImExporter importer =
+			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (importer.readBytes(ret) != chunkSize) {
 				ret = null;
 			}
@@ -490,8 +552,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		address = m_cidTable.get(p_dataStructure.getID());
 		if (address > 0) {
 			int chunkSize = m_rawMemory.getSizeBlock(address);
-			SmallObjectHeapDataStructureImExporter exporter =
-					new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
+
+			// pool the im/exporters
+			SmallObjectHeapDataStructureImExporter exporter = getImExporter(address, chunkSize);
+			// SmallObjectHeapDataStructureImExporter exporter =
+			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
 			if (exporter.exportObject(p_dataStructure) < 0) {
 				ret = MemoryErrorCodes.WRITE;
 			}
@@ -509,11 +574,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 	/**
 	 * Removes a Chunk from the memory
 	 * This is a management call and has to be locked using lockManage().
+	 * <<<<<<< HEAD
 	 * @param p_chunkID
 	 *            the ChunkID of the Chunk
 	 * @param p_wasMigrated
 	 *            default value for this parameter should be false!
 	 *            if chunk was deleted during migration this flag should be set to true
+	 *            =======
+	 * @param p_chunkID
+	 *            the ChunkID of the Chunk
+	 *            >>>>>>> origin/master
 	 * @return MemoryErrorCodes indicating success or failure
 	 */
 	public MemoryErrorCodes remove(final long p_chunkID, final boolean p_wasMigrated) {
@@ -570,6 +640,234 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 		return ret;
 	}
+
+	// -----------------------------------------------------------------------------
+
+	/**
+	 * Read a single byte from a chunk. Use this if you need to access a very specific value
+	 * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to read.
+	 * @param p_offset
+	 *            Offset within the chunk to read.
+	 * @return The value read at the offset of the chunk.
+	 */
+	public byte readByte(final long p_chunkID, final int p_offset) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return -1;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			return m_rawMemory.readByte(address, p_offset);
+		} else {
+			return -1;
+		}
+	}
+
+	/**
+	 * Read a single short from a chunk. Use this if you need to access a very specific value
+	 * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to read.
+	 * @param p_offset
+	 *            Offset within the chunk to read.
+	 * @return The value read at the offset of the chunk.
+	 */
+	public short readShort(final long p_chunkID, final int p_offset) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return -1;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			return m_rawMemory.readShort(address, p_offset);
+		} else {
+			return -1;
+		}
+	}
+
+	/**
+	 * Read a single int from a chunk. Use this if you need to access a very specific value
+	 * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to read.
+	 * @param p_offset
+	 *            Offset within the chunk to read.
+	 * @return The value read at the offset of the chunk.
+	 */
+	public int readInt(final long p_chunkID, final int p_offset) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return -1;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			return m_rawMemory.readInt(address, p_offset);
+		} else {
+			return -1;
+		}
+	}
+
+	/**
+	 * Read a single long from a chunk. Use this if you need to access a very specific value
+	 * once to avoid reading a huge chunk. Prefer the get-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to read.
+	 * @param p_offset
+	 *            Offset within the chunk to read.
+	 * @return The value read at the offset of the chunk.
+	 */
+	public long readLong(final long p_chunkID, final int p_offset) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return -1;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			return m_rawMemory.readLong(address, p_offset);
+		} else {
+			return -1;
+		}
+	}
+
+	/**
+	 * Write a single byte to a chunk. Use this if you need to access a very specific value
+	 * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to write.
+	 * @param p_offset
+	 *            Offset within the chunk to write.
+	 * @param p_value
+	 *            Value to write.
+	 * @return True if writing chunk was successful, false otherwise.
+	 */
+	public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			m_rawMemory.writeByte(address, p_offset, p_value);
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Write a single short to a chunk. Use this if you need to access a very specific value
+	 * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to write.
+	 * @param p_offset
+	 *            Offset within the chunk to write.
+	 * @param p_value
+	 *            Value to write.
+	 * @return True if writing chunk was successful, false otherwise.
+	 */
+	public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			m_rawMemory.writeShort(address, p_offset, p_value);
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Write a single int to a chunk. Use this if you need to access a very specific value
+	 * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to write.
+	 * @param p_offset
+	 *            Offset within the chunk to write.
+	 * @param p_value
+	 *            Value to write.
+	 * @return True if writing chunk was successful, false otherwise.
+	 */
+	public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			m_rawMemory.writeInt(address, p_offset, p_value);
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Write a single long to a chunk. Use this if you need to access a very specific value
+	 * once to avoid writing a huge chunk. Prefer the put-method if more data of the chunk is needed.
+	 * @param p_chunkID
+	 *            Chunk id of the chunk to write.
+	 * @param p_offset
+	 *            Offset within the chunk to write.
+	 * @param p_value
+	 *            Value to write.
+	 * @return True if writing chunk was successful, false otherwise.
+	 */
+	public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {
+		NodeRole role = m_boot.getNodeRole();
+		if (role != NodeRole.PEER) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "a " + role + " does not store any chunks");
+			// #endif /* LOGGER >= ERROR */
+			return false;
+		}
+
+		long address = m_cidTable.get(p_chunkID);
+		if (address > 0) {
+			m_rawMemory.writeLong(address, p_offset, p_value);
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
+	// -----------------------------------------------------------------------------
 
 	/**
 	 * Returns whether this Chunk is stored locally or not.
@@ -651,6 +949,35 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		}
 
 		return m_cidTable.getCIDRangesOfAllLocalChunks();
+	}
+
+	/**
+	 * Pooling the im/exporters to lower memory footprint.
+	 * @param p_address
+	 *            Start address of the chunk
+	 * @param p_chunkSize
+	 *            Size of the chunk
+	 * @return Im/Exporter for the chunk
+	 */
+	private SmallObjectHeapDataStructureImExporter getImExporter(final long p_address, final int p_chunkSize) {
+		long tid = Thread.currentThread().getId();
+		if (tid > 65536) {
+			throw new RuntimeException("Exceeded max. thread id");
+		}
+
+		// pool the im/exporters
+		SmallObjectHeapDataStructureImExporter importer = m_imexporter[(int) tid];
+		if (importer == null) {
+			m_imexporter[(int) tid] =
+					new SmallObjectHeapDataStructureImExporter(m_rawMemory, p_address, 0, p_chunkSize);
+			importer = m_imexporter[(int) tid];
+		} else {
+			importer.setAllocatedMemoryStartAddress(p_address);
+			importer.setOffset(0);
+			importer.setChunkSize(p_chunkSize);
+		}
+
+		return importer;
 	}
 
 	/**

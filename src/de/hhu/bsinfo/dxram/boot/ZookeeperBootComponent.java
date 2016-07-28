@@ -468,9 +468,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 * Parses the configured nodes
 	 * @param p_nodes
 	 *            the nodes to parse
-	 * @return the parsed nodes
 	 * @param p_cmdLineNodeRole
 	 *            the role from command line
+	 * @return the parsed nodes
 	 */
 	private boolean parseNodes(final ArrayList<NodeEntry> p_nodes, final NodeRole p_cmdLineNodeRole) {
 		boolean ret = false;

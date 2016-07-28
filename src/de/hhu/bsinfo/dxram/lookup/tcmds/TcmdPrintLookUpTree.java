@@ -53,7 +53,6 @@ public class TcmdPrintLookUpTree extends AbstractTerminalCommand {
 			lookupTree = lookupService.getLookupTreeFromSuperPeer(responsibleSuperPeer, nid);
 		}
 
-		System.out.println("Responsible SuperPeer" + responsibleSuperPeer);
 		System.out.println("LookupTree:\n" + lookupTree);
 
 		return true;

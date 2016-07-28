@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
  * Implementation of a JobComponent using a work stealing approach for scheduling/load balancing.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class JobWorkStealingComponent extends AbstractJobComponent implements WorkerDelegate {
@@ -22,12 +23,11 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public JobWorkStealingComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -98,7 +98,8 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 		// wait until all workers are running
 		for (int i = 0; i < m_workers.length; i++) {
-			while (!m_workers[i].isRunning()) {}
+			while (!m_workers[i].isRunning()) {
+			}
 		}
 
 		return true;
