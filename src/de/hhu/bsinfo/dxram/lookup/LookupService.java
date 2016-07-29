@@ -155,7 +155,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 		superPeerRequest = new RequestResponsibleSuperPeer(p_nid);
 		if (m_network.sendSync(superPeerRequest) != NetworkErrorCodes.SUCCESS) {
-			// TODO error handling
+			TODO error handling
 		}
 
 		superPeerResponse = superPeerRequest.getResponse(ResponseResponsibleSuperPeer.class);
@@ -181,7 +181,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 		lookupTreeRequest = new RequestLookupTreeFromSuperPeer(p_superPeerNid, p_nodeId);
 
 		if (m_network.sendSync(lookupTreeRequest) != NetworkErrorCodes.SUCCESS) {
-			// TODO error handling
+			TODO error handling
 		}
 
 		lookupTreeResponse = lookupTreeRequest.getResponse(LookupTreeResponse.class);
@@ -190,7 +190,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 		return retTree;
 	}
 
-	// -----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------
 
 	/**
 	 * Register network messages we use in here.

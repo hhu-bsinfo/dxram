@@ -39,15 +39,15 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 	private Condition m_connectionCreatedCondition;
 	private ReentrantLock m_connectionCreationLock;
+	private ReentrantLock m_getConnectionLock;
 
 	// Constructors
 
 	/**
 	 * Creates an instance of ConnectionStore
-	 * @param p_creator
-	 *            the ConnectionCreator
-	 * @param p_listener
-	 *            the ConnectionListener
+	 *
+	 * @param p_creator  the ConnectionCreator
+	 * @param p_listener the ConnectionListener
 	 */
 	ConnectionManager(final AbstractConnectionCreator p_creator, final DataReceiver p_listener) {
 		m_connections = new AbstractConnection[65536];
@@ -64,6 +64,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 		m_connectionCreationLock = new ReentrantLock(false);
 		m_connectionCreatedCondition = m_connectionCreationLock.newCondition();
+		m_getConnectionLock = new ReentrantLock(false);
 
 		// Start connection creator helper thread
 		m_connectionCreatorHelperThread = new ConnectionCreatorHelperThread();
@@ -150,6 +151,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 		ret = m_connections[p_destination & 0xFFFF];
 		if (ret == null && !m_deactivated) {
+			m_getConnectionLock.lock();
 			m_connectionCreationLock.lock();
 
 			ret = m_connections[p_destination & 0xFFFF];
@@ -161,7 +163,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 					try {
 						// Wait for a connection to be finished or one ms if the pending key was closed
 						m_connectionCreatedCondition.await(1, TimeUnit.MILLISECONDS);
-					} catch (final InterruptedException e) {}
+					} catch (final InterruptedException e) {
+					}
 				}
 
 				ret = m_connections[p_destination & 0xFFFF];
@@ -174,6 +177,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 						ret = m_creator.createConnection(p_destination);
 					} catch (final IOException e) {
 						m_connectionCreationLock.unlock();
+						m_getConnectionLock.unlock();
+
 						throw e;
 					}
 
@@ -185,9 +190,11 @@ final class ConnectionManager implements ConnectionCreatorListener {
 						while (m_waiting) {
 							try {
 								m_connectionCreatedCondition.await();
-							} catch (final InterruptedException e) {}
+							} catch (final InterruptedException e) {
+							}
 						}
 						m_connectionCreationLock.unlock();
+						m_getConnectionLock.unlock();
 
 						return getConnection(p_destination);
 					} else {
@@ -198,6 +205,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 				}
 			}
 			m_connectionCreationLock.unlock();
+			m_getConnectionLock.unlock();
 		}
 
 		return ret;
@@ -270,8 +278,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * A new connection must be created
-	 * @param p_destination
-	 *            the remote NodeID
+	 *
+	 * @param p_destination the remote NodeID
 	 * @note is called by selector thread only
 	 */
 	@Override
@@ -281,8 +289,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * A new connection was created
-	 * @param p_connection
-	 *            the new connection
+	 *
+	 * @param p_connection the new connection
 	 * @note is called by selector thread only
 	 */
 	@Override
@@ -293,8 +301,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * A connection was closed
-	 * @param p_connection
-	 *            the closed connection
+	 *
+	 * @param p_connection the closed connection
 	 * @note is called by selector thread only
 	 */
 	@Override
@@ -304,6 +312,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Helper thread that asynchronously executes commands for selector thread to avoid blocking it
+	 *
 	 * @author Kevin Beineke 22.06.2016
 	 */
 	private class ConnectionCreatorHelperThread extends Thread {
@@ -314,8 +323,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 		/**
 		 * Push new job
-		 * @param p_job
-		 *            the new job to add
+		 *
+		 * @param p_job the new job to add
 		 */
 		private void pushJob(final Job p_job) {
 			m_lock.lock();
@@ -340,7 +349,8 @@ final class ConnectionManager implements ConnectionCreatorListener {
 				while (m_jobs.isEmpty()) {
 					try {
 						m_jobAvailableCondition.await();
-					} catch (final InterruptedException e) {}
+					} catch (final InterruptedException e) {
+					}
 				}
 
 				job = m_jobs.pop();
@@ -356,6 +366,10 @@ final class ConnectionManager implements ConnectionCreatorListener {
 							connection = m_creator.createConnection(destination);
 							connection.setListener(m_connectionListener);
 							addConnection(connection, false);
+							if (m_waiting && (m_waitingFor == connection.getDestination() || m_waitingFor == -1)) {
+								m_waiting = false;
+								m_connectionCreatedCondition.signal();
+							}
 						} catch (final IOException e) {
 							// TODO
 						}
@@ -393,6 +407,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 	/**
 	 * Helper class to encapsulate a job
+	 *
 	 * @author Kevin Beineke 22.06.2016
 	 */
 	private final class Job {
@@ -401,10 +416,9 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 		/**
 		 * Creates an instance of Job
-		 * @param p_id
-		 *            the static job identification
-		 * @param p_data
-		 *            the data (NodeID of destination or AbstractConnection depending on job)
+		 *
+		 * @param p_id   the static job identification
+		 * @param p_data the data (NodeID of destination or AbstractConnection depending on job)
 		 */
 		private Job(final byte p_id, final Object p_data) {
 			m_id = p_id;
@@ -413,6 +427,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 		/**
 		 * Returns the job identification
+		 *
 		 * @return the job ID
 		 */
 		public byte getID() {
@@ -421,6 +436,7 @@ final class ConnectionManager implements ConnectionCreatorListener {
 
 		/**
 		 * Returns the data
+		 *
 		 * @return the NodeID or AbstractConnection
 		 */
 		public Object getData() {
