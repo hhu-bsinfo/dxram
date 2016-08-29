@@ -11,10 +11,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.utils.locks.JNILock;
-
 /**
  * Tests concurrent allocation and freeing of memory
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public class SmallObjectHeapTest {
@@ -30,22 +29,15 @@ public class SmallObjectHeapTest {
 
 	/**
 	 * Constructor
-	 * @param p_memorySize
-	 *            Total raw memory size in bytes.
-	 * @param p_segmentSize
-	 *            Total size of a single segment
-	 * @param p_numThreads
-	 *            Number of threads to run this
-	 * @param p_numOperations
-	 *            Number of operations to execute.
-	 * @param p_mallocFreeRatio
-	 *            Malloc/free ratio.
-	 * @param p_blockSizeMin
-	 *            Minimum memory block size to alloc.
-	 * @param p_blockSizeMax
-	 *            Maximum memory block size to alloc.
-	 * @param p_debugPrint
-	 *            Enable debug prints
+	 *
+	 * @param p_memorySize      Total raw memory size in bytes.
+	 * @param p_segmentSize     Total size of a single segment
+	 * @param p_numThreads      Number of threads to run this
+	 * @param p_numOperations   Number of operations to execute.
+	 * @param p_mallocFreeRatio Malloc/free ratio.
+	 * @param p_blockSizeMin    Minimum memory block size to alloc.
+	 * @param p_blockSizeMax    Maximum memory block size to alloc.
+	 * @param p_debugPrint      Enable debug prints
 	 */
 	public SmallObjectHeapTest(final long p_memorySize, final long p_segmentSize,
 			final int p_numThreads, final int p_numOperations, final float p_mallocFreeRatio,
@@ -59,8 +51,6 @@ public class SmallObjectHeapTest {
 		assert p_blockSizeMin > 0;
 		assert p_blockSizeMax > 0;
 		assert p_blockSizeMax > p_blockSizeMin;
-
-		JNILock.load("/home/nothaas/Workspace/workspace_dxram/dxram/jni/libJNINativeMemory.so");
 
 		// m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
 		try {
@@ -128,8 +118,8 @@ public class SmallObjectHeapTest {
 
 	/**
 	 * Java main entry point.
-	 * @param p_args
-	 *            Command line arguments
+	 *
+	 * @param p_args Command line arguments
 	 */
 	public static void main(final String[] p_args) {
 		if (p_args.length < 8) {
@@ -158,6 +148,7 @@ public class SmallObjectHeapTest {
 
 	/**
 	 * Thread execution memory allocations.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
 	 */
 	public class MemoryThread implements Runnable {
@@ -174,18 +165,13 @@ public class SmallObjectHeapTest {
 
 		/**
 		 * Constructor
-		 * @param p_rawMemory
-		 *            Raw memory instance to use.
-		 * @param p_numOperations
-		 *            Number of operations to execute.
-		 * @param p_mallocFreeRatio
-		 *            Malloc/free ratio.
-		 * @param p_blockSizeMin
-		 *            Minimum memory block size to alloc.
-		 * @param p_blockSizeMax
-		 *            Maximum memory block size to alloc.
-		 * @param p_debugPrint
-		 *            Enable debug prints
+		 *
+		 * @param p_rawMemory       Raw memory instance to use.
+		 * @param p_numOperations   Number of operations to execute.
+		 * @param p_mallocFreeRatio Malloc/free ratio.
+		 * @param p_blockSizeMin    Minimum memory block size to alloc.
+		 * @param p_blockSizeMax    Maximum memory block size to alloc.
+		 * @param p_debugPrint      Enable debug prints
 		 */
 		public MemoryThread(final SmallObjectHeap p_rawMemory, final int p_numOperations, final float p_mallocFreeRatio,
 				final int p_blockSizeMin,

@@ -3,16 +3,17 @@ package de.hhu.bsinfo.soh;
 
 import java.io.File;
 
-import sun.misc.Unsafe;
 import de.hhu.bsinfo.utils.Endianness;
 import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.UnsafeHandler;
+import sun.misc.Unsafe;
 
 /**
  * Hybrid approach using Unsafe and JNINativeMemory.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.04.2015
  * @deprecated Unsafe will be deprecated in Java 9. Keeping it here for benchmarks with own native implementation
- *             JNINativeMemory
+ * JNINativeMemory
  */
 @Deprecated
 public class StorageHybridUnsafeJNINativeMemory implements Storage {
@@ -319,62 +320,5 @@ public class StorageHybridUnsafeJNINativeMemory implements Storage {
 				UNSAFE.putByte(m_memoryBase + p_ptr + i, (byte) (p_val >> (8 * (7 - i)) & 0xFF));
 			}
 		}
-	}
-
-	@Override
-	public int readShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
-		assert p_ptr >= 0;
-		assert p_ptr < m_memorySize;
-		assert p_ptr + p_length * Short.BYTES <= m_memorySize;
-
-		JNINativeMemory.readShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
-		return p_length;
-	}
-
-	@Override
-	public int readInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
-		assert p_ptr >= 0;
-		assert p_ptr < m_memorySize;
-		assert p_ptr + p_length * Integer.BYTES <= m_memorySize;
-
-		JNINativeMemory.readInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
-		return p_length;
-	}
-
-	@Override
-	public int readLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
-		assert p_ptr >= 0;
-		assert p_ptr < m_memorySize;
-		assert p_ptr + p_length * Long.BYTES <= m_memorySize;
-
-		JNINativeMemory.readLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
-		return p_length;
-	}
-
-	@Override
-	public int writeShorts(final long p_ptr, final short[] p_array, final int p_arrayOffset, final int p_length) {
-		assert p_ptr >= 0;
-		assert p_ptr + p_length * Short.BYTES <= m_memorySize;
-
-		JNINativeMemory.writeShorts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
-		return p_length;
-	}
-
-	@Override
-	public int writeInts(final long p_ptr, final int[] p_array, final int p_arrayOffset, final int p_length) {
-		assert p_ptr >= 0;
-		assert p_ptr + p_length * Integer.BYTES <= m_memorySize;
-
-		JNINativeMemory.writeInts(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
-		return p_length;
-	}
-
-	@Override
-	public int writeLongs(final long p_ptr, final long[] p_array, final int p_arrayOffset, final int p_length) {
-		assert p_ptr >= 0;
-		assert p_ptr + p_length * Long.BYTES <= m_memorySize;
-
-		JNINativeMemory.writeLongs(m_memoryBase + p_ptr, p_array, p_arrayOffset, p_length);
-		return p_length;
 	}
 }

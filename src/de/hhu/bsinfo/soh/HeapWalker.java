@@ -9,18 +9,20 @@ import java.util.Vector;
 /**
  * Helpful utility class that gathers data from a SmallObjectHeap
  * for further analysis.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
 public final class HeapWalker {
 	/**
 	 * Private Constructor, Static class.
 	 */
-	private HeapWalker() {}
+	private HeapWalker() {
+	}
 
 	/**
 	 * Walk the specified heap to gather information.
-	 * @param p_heap
-	 *            Heap to walk.
+	 *
+	 * @param p_heap Heap to walk.
 	 * @return Gather data.
 	 */
 	public static Results walk(final SmallObjectHeap p_heap) {
@@ -44,8 +46,8 @@ public final class HeapWalker {
 
 	/**
 	 * Walk a single segment and gather data.
-	 * @param p_segment
-	 *            Segment to walk.
+	 *
+	 * @param p_segment Segment to walk.
 	 * @return Gather data about the segment.
 	 */
 	private static Segment walkSegment(final SmallObjectHeapSegment p_segment) {
@@ -67,8 +69,8 @@ public final class HeapWalker {
 
 	/**
 	 * Walk the metadata of the segment.
-	 * @param p_segment
-	 *            Segment to walk.
+	 *
+	 * @param p_segment Segment to walk.
 	 * @return Gather data.
 	 */
 	private static SegmentBlock walkSegmentMetadata(final SmallObjectHeapSegment p_segment) {
@@ -86,8 +88,8 @@ public final class HeapWalker {
 
 	/**
 	 * Walk the memory blocks of a segment.
-	 * @param p_segment
-	 *            Segment to walk.
+	 *
+	 * @param p_segment Segment to walk.
 	 * @return Gather data.
 	 */
 	private static HashMap<Long, MemoryBlock> walkMemoryBlocks(final SmallObjectHeapSegment p_segment) {
@@ -110,186 +112,180 @@ public final class HeapWalker {
 			block.m_markerByte = p_segment.readRightPartOfMarker(baseAddress);
 
 			switch (block.m_markerByte) {
-			// free memory less than 12 bytes
-			case 0: {
-				int lengthFieldSize;
-				int sizeBlock;
+				// free memory less than 12 bytes
+				case 0: {
+					int lengthFieldSize;
+					int sizeBlock;
 
-				lengthFieldSize = 1;
-				// size includes length field
-				sizeBlock = (int) p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE,
-						lengthFieldSize);
+					lengthFieldSize = 1;
+					// size includes length field
+					sizeBlock = (int) p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE,
+							lengthFieldSize);
 
-				// + 2 marker bytes
-				block.m_endAddress = baseAddress + sizeBlock + SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
-				block.m_rawBlockSize = sizeBlock;
-				block.m_customState = -1;
-				block.m_prevFreeBlock = -1;
-				block.m_nextFreeBlock = -1;
-				block.m_blockPayloadSize = -1;
+					// + 2 marker bytes
+					block.m_endAddress = baseAddress + sizeBlock + SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
+					block.m_rawBlockSize = sizeBlock;
+					block.m_customState = -1;
+					block.m_prevFreeBlock = -1;
+					block.m_nextFreeBlock = -1;
+					block.m_blockPayloadSize = -1;
 
-				memoryBlocks.put(block.m_startAddress, block);
+					memoryBlocks.put(block.m_startAddress, block);
 
-				// proceed
-				baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize;
-				break;
-			}
+					// proceed
+					baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize;
+					break;
+				}
 
-			// free block with X bytes length field and size >= 12 bytes
-			case 1:
-			case 2:
-			case 3:
-			case 4:
-			case 5: {
-				int lengthFieldSize;
-				long freeBlockSize;
+				// free block with X bytes length field and size >= 12 bytes
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5: {
+					int lengthFieldSize;
+					long freeBlockSize;
 
-				lengthFieldSize = block.m_markerByte;
-				freeBlockSize =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE, lengthFieldSize);
+					lengthFieldSize = block.m_markerByte;
+					freeBlockSize =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE, lengthFieldSize);
 
-				// + 2 marker bytes
-				block.m_endAddress = baseAddress + freeBlockSize + SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
-				block.m_rawBlockSize = freeBlockSize;
-				block.m_customState = -1;
-				block.m_prevFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
-								SmallObjectHeapSegment.POINTER_SIZE);
-				block.m_nextFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
-								+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
-				// no payload
-				block.m_blockPayloadSize = -1;
+					// + 2 marker bytes
+					block.m_endAddress = baseAddress + freeBlockSize + SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
+					block.m_rawBlockSize = freeBlockSize;
+					block.m_customState = -1;
+					block.m_prevFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
+									SmallObjectHeapSegment.POINTER_SIZE);
+					block.m_nextFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
+									+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
+					// no payload
+					block.m_blockPayloadSize = -1;
 
-				memoryBlocks.put(block.m_startAddress, block);
+					memoryBlocks.put(block.m_startAddress, block);
 
-				// proceed
-				baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + freeBlockSize;
+					// proceed
+					baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + freeBlockSize;
 
-				break;
-			}
+					break;
+				}
 
-			// malloc'd block, 1 byte length field
-			case 6:
-			case 9:
-			case 12: {
-				int lengthFieldSize;
-				long blockPayloadSize;
+				// malloc'd block, 1 byte length field
+				case 6:
+				case 9:
+				case 12: {
+					int lengthFieldSize;
+					long blockPayloadSize;
 
-				lengthFieldSize = 1;
-				blockPayloadSize = p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE,
-						lengthFieldSize);
+					lengthFieldSize = 1;
+					blockPayloadSize = p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE,
+							lengthFieldSize);
 
-				// + 2 marker bytes
-				block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize
-						+ SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
-				block.m_rawBlockSize = lengthFieldSize + blockPayloadSize;
-				block.m_customState =
-						p_segment.getCustomState(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE);
-				block.m_prevFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
-								SmallObjectHeapSegment.POINTER_SIZE);
-				block.m_nextFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
-								+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
-				block.m_blockPayloadSize = blockPayloadSize;
+					// + 2 marker bytes
+					block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize
+							+ SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
+					block.m_rawBlockSize = lengthFieldSize + blockPayloadSize;
+					block.m_prevFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
+									SmallObjectHeapSegment.POINTER_SIZE);
+					block.m_nextFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
+									+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
+					block.m_blockPayloadSize = blockPayloadSize;
 
-				memoryBlocks.put(block.m_startAddress, block);
+					memoryBlocks.put(block.m_startAddress, block);
 
-				// proceed
-				baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
+					// proceed
+					baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
 
-				break;
-			}
+					break;
+				}
 
-			// malloc'd block, 2 byte length field
-			case 7:
-			case 10:
-			case 13: {
-				int lengthFieldSize;
-				long blockPayloadSize;
+				// malloc'd block, 2 byte length field
+				case 7:
+				case 10:
+				case 13: {
+					int lengthFieldSize;
+					long blockPayloadSize;
 
-				lengthFieldSize = 2;
-				blockPayloadSize =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE, lengthFieldSize);
+					lengthFieldSize = 2;
+					blockPayloadSize =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE, lengthFieldSize);
 
-				// + 2 marker bytes
-				block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize
-						+ SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
-				block.m_rawBlockSize = lengthFieldSize + blockPayloadSize;
-				block.m_customState =
-						p_segment.getCustomState(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE);
-				block.m_prevFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
-								SmallObjectHeapSegment.POINTER_SIZE);
-				block.m_nextFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
-								+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
-				block.m_blockPayloadSize = blockPayloadSize;
+					// + 2 marker bytes
+					block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize
+							+ SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
+					block.m_rawBlockSize = lengthFieldSize + blockPayloadSize;
+					block.m_prevFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
+									SmallObjectHeapSegment.POINTER_SIZE);
+					block.m_nextFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
+									+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
+					block.m_blockPayloadSize = blockPayloadSize;
 
-				memoryBlocks.put(block.m_startAddress, block);
+					memoryBlocks.put(block.m_startAddress, block);
 
-				// proceed
-				baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
+					// proceed
+					baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
 
-				break;
-			}
+					break;
+				}
 
-			// malloc'd block, 3 byte length field
-			case 8:
-			case 11:
-			case 14: {
-				int lengthFieldSize;
-				long blockPayloadSize;
+				// malloc'd block, 3 byte length field
+				case 8:
+				case 11:
+				case 14: {
+					int lengthFieldSize;
+					long blockPayloadSize;
 
-				lengthFieldSize = 3;
-				blockPayloadSize =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE, lengthFieldSize);
+					lengthFieldSize = 3;
+					blockPayloadSize =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE, lengthFieldSize);
 
-				// + 2 marker bytes
-				block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize
-						+ SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
-				block.m_rawBlockSize = lengthFieldSize + blockPayloadSize;
-				block.m_customState =
-						p_segment.getCustomState(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE);
-				block.m_prevFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
-								SmallObjectHeapSegment.POINTER_SIZE);
-				block.m_nextFreeBlock =
-						p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
-								+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
-				block.m_blockPayloadSize = blockPayloadSize;
+					// + 2 marker bytes
+					block.m_endAddress = baseAddress + lengthFieldSize + blockPayloadSize
+							+ SmallObjectHeapSegment.SIZE_MARKER_BYTE * 2;
+					block.m_rawBlockSize = lengthFieldSize + blockPayloadSize;
+					block.m_prevFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize,
+									SmallObjectHeapSegment.POINTER_SIZE);
+					block.m_nextFreeBlock =
+							p_segment.read(baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize
+									+ SmallObjectHeapSegment.POINTER_SIZE, SmallObjectHeapSegment.POINTER_SIZE);
+					block.m_blockPayloadSize = blockPayloadSize;
 
-				memoryBlocks.put(block.m_startAddress, block);
+					memoryBlocks.put(block.m_startAddress, block);
 
-				// proceed
-				baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
+					// proceed
+					baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE + lengthFieldSize + blockPayloadSize;
 
-				break;
-			}
+					break;
+				}
 
-			// free memory 1 byte
-			case 15: {
-				block.m_endAddress = baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE;
-				block.m_rawBlockSize = 0;
-				block.m_customState = -1;
-				block.m_prevFreeBlock = -1;
-				block.m_nextFreeBlock = -1;
-				block.m_blockPayloadSize = 0;
+				// free memory 1 byte
+				case 15: {
+					block.m_endAddress = baseAddress + SmallObjectHeapSegment.SIZE_MARKER_BYTE;
+					block.m_rawBlockSize = 0;
+					block.m_customState = -1;
+					block.m_prevFreeBlock = -1;
+					block.m_nextFreeBlock = -1;
+					block.m_blockPayloadSize = 0;
 
-				memoryBlocks.put(block.m_startAddress, block);
+					memoryBlocks.put(block.m_startAddress, block);
 
-				// proceed
-				baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE;
+					// proceed
+					baseAddress += SmallObjectHeapSegment.SIZE_MARKER_BYTE;
 
-				break;
-			}
+					break;
+				}
 
-			default: {
-				System.out.println("!!! Block with invalid marker detected: ptr "
-						+ block.m_startAddress + ", marker " + block.m_markerByte);
-				break;
-			}
+				default: {
+					System.out.println("!!! Block with invalid marker detected: ptr "
+							+ block.m_startAddress + ", marker " + block.m_markerByte);
+					break;
+				}
 			}
 		}
 
@@ -298,8 +294,8 @@ public final class HeapWalker {
 
 	/**
 	 * Walk the free block list of a segment.
-	 * @param p_segment
-	 *            Segment to walk.
+	 *
+	 * @param p_segment Segment to walk.
 	 * @return Gathered results.
 	 */
 	private static Vector<FreeBlockList> walkMemoryFreeBlockList(final SmallObjectHeapSegment p_segment) {
@@ -337,56 +333,56 @@ public final class HeapWalker {
 
 						// verify marker byte of memory block first
 						switch (marker) {
-						case 1:
-						case 2:
-						case 3:
-						case 4:
-						case 5: {
-							int lengthFieldSize;
-							long blockSize;
-							long ptrPrev;
-							long ptrNext;
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+							case 5: {
+								int lengthFieldSize;
+								long blockSize;
+								long ptrPrev;
+								long ptrNext;
 
-							lengthFieldSize = marker;
-							blockSize = p_segment.read(ptr, marker);
+								lengthFieldSize = marker;
+								blockSize = p_segment.read(ptr, marker);
 
-							// sanity check block size
-							if (blockSize < 12) {
-								System.out.println("!!! Block size < 12 detected: ptr "
-										+ ptr + ", marker " + marker + ", blockSize " + blockSize);
+								// sanity check block size
+								if (blockSize < 12) {
+									System.out.println("!!! Block size < 12 detected: ptr "
+											+ ptr + ", marker " + marker + ", blockSize " + blockSize);
+									break;
+								}
+
+								ptrPrev = p_segment.read(ptr + lengthFieldSize, SmallObjectHeapSegment.POINTER_SIZE);
+								ptrNext = p_segment.read(ptr + lengthFieldSize + SmallObjectHeapSegment.POINTER_SIZE,
+										SmallObjectHeapSegment.POINTER_SIZE);
+
+								block = new FreeBlock();
+								// have block position before the marker byte for the walker
+								block.m_blockAddress = ptr - 1;
+								if (ptrPrev == 0) {
+									block.m_prevBlockAddress = -1;
+								} else {
+									block.m_prevBlockAddress = ptrPrev;
+								}
+								if (ptrNext == 0) {
+									block.m_nextBlockAddress = -1;
+								} else {
+									block.m_nextBlockAddress = ptrNext;
+								}
+
+								list.m_blocks.add(block);
+
+								ptr = ptrNext;
+
 								break;
 							}
 
-							ptrPrev = p_segment.read(ptr + lengthFieldSize, SmallObjectHeapSegment.POINTER_SIZE);
-							ptrNext = p_segment.read(ptr + lengthFieldSize + SmallObjectHeapSegment.POINTER_SIZE,
-									SmallObjectHeapSegment.POINTER_SIZE);
-
-							block = new FreeBlock();
-							// have block position before the marker byte for the walker
-							block.m_blockAddress = ptr - 1;
-							if (ptrPrev == 0) {
-								block.m_prevBlockAddress = -1;
-							} else {
-								block.m_prevBlockAddress = ptrPrev;
+							default: {
+								System.out.println("!!! Block with invalid marker detected: ptr "
+										+ ptr + ", marker " + marker);
+								break;
 							}
-							if (ptrNext == 0) {
-								block.m_nextBlockAddress = -1;
-							} else {
-								block.m_nextBlockAddress = ptrNext;
-							}
-
-							list.m_blocks.add(block);
-
-							ptr = ptrNext;
-
-							break;
-						}
-
-						default: {
-							System.out.println("!!! Block with invalid marker detected: ptr "
-									+ ptr + ", marker " + marker);
-							break;
-						}
 						}
 					} while (ptr != 0);
 				}
@@ -408,7 +404,8 @@ public final class HeapWalker {
 		/**
 		 * Constructor
 		 */
-		public Results() {}
+		public Results() {
+		}
 
 		/**
 		 * Clear the results.
@@ -452,7 +449,8 @@ public final class HeapWalker {
 		/**
 		 * Constructor
 		 */
-		public Heap() {}
+		public Heap() {
+		}
 
 		@Override
 		public String toString() {
@@ -473,7 +471,8 @@ public final class HeapWalker {
 		/**
 		 * Constructor
 		 */
-		public Segment() {}
+		public Segment() {
+		}
 
 		@Override
 		public String toString() {
@@ -522,7 +521,8 @@ public final class HeapWalker {
 		/**
 		 * Constructor
 		 */
-		public SegmentBlock() {}
+		public SegmentBlock() {
+		}
 
 		@Override
 		public String toString() {
@@ -552,7 +552,8 @@ public final class HeapWalker {
 		/**
 		 * Constructor
 		 */
-		public MemoryBlock() {}
+		public MemoryBlock() {
+		}
 
 		@Override
 		public String toString() {
@@ -579,7 +580,8 @@ public final class HeapWalker {
 		/**
 		 * Constructor
 		 */
-		public FreeBlock() {}
+		public FreeBlock() {
+		}
 
 		@Override
 		public String toString() {
@@ -600,7 +602,8 @@ public final class HeapWalker {
 		/**
 		 * Constructor
 		 */
-		public FreeBlockList() {}
+		public FreeBlockList() {
+		}
 
 		@Override
 		public String toString() {
