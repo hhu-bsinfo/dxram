@@ -179,7 +179,6 @@ public final class SmallObjectHeapSegment {
 	public long malloc(final int p_size) {
 
 		if (p_size > MAX_SIZE_MEMORY_BLOCK) {
-
 			// avoid huge allocations if not enough space
 			if (p_size > m_status.getFreeSpace()) {
 				return -1;
@@ -235,24 +234,24 @@ public final class SmallObjectHeapSegment {
 	 * @param p_address the address of the block
 	 */
 	public void free(final long p_address) {
-		long blockSize;
 		long address;
 		int lengthFieldSize;
 
 		address = p_address;
 		while (true) {
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
-			blockSize = getSizeMemoryBlock(p_address);
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
 			// further blocks chained block
-			if (blockSize == CHAINED_BLOCK_LENGTH_FIELD) {
+			if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
+
 				// read address of next block, free current
 				long addrNext = readPointer(address);
-				freeReservedBlock(address, lengthFieldSize, blockSize);
+				// blockSize var is a ptr here
+				freeReservedBlock(address, lengthFieldSize, MAX_SIZE_MEMORY_BLOCK);
 				address = addrNext;
 
 			} else {
-				freeReservedBlock(address, lengthFieldSize, blockSize);
+				freeReservedBlock(address, lengthFieldSize, getSizeMemoryBlock(address));
 				break;
 			}
 
@@ -298,7 +297,6 @@ public final class SmallObjectHeapSegment {
 	 */
 	public void set(final long p_address, final long p_size, final byte p_value) {
 		assert assertSegmentBounds(p_address, p_size);
-		assert assertSegmentMaxBlocksize(p_size);
 
 		int lengthFieldSize;
 		long address;
@@ -308,10 +306,16 @@ public final class SmallObjectHeapSegment {
 		address = p_address;
 		while (size > 0) {
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 			if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
-				size -= MAX_SIZE_MEMORY_BLOCK;
-				m_memory.set(address + lengthFieldSize, MAX_SIZE_MEMORY_BLOCK, p_value);
+				if (size > MAX_SIZE_MEMORY_BLOCK) {
+					m_memory.set(address + lengthFieldSize, MAX_SIZE_MEMORY_BLOCK, p_value);
+					size -= MAX_SIZE_MEMORY_BLOCK;
+				} else {
+					m_memory.set(address + lengthFieldSize, size, p_value);
+					size = 0;
+				}
+
 				address = readPointer(address);
 			} else {
 				m_memory.set(address + lengthFieldSize, size, p_value);
@@ -457,12 +461,12 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int bytesRead = -1;
+		int bytesRead = 0;
 		int lengthFieldSize;
 		long address;
 
 		address = p_address;
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
 		if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
 			// determine which block the offset is in
@@ -480,7 +484,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curSize = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
 
@@ -505,7 +510,7 @@ public final class SmallObjectHeapSegment {
 			}
 
 		} else {
-			bytesRead = m_memory.readBytes(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+			bytesRead = m_memory.readBytes(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
 		}
 
 		return bytesRead;
@@ -525,12 +530,12 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int itemsRead = -1;
+		int itemsRead = 0;
 		int lengthFieldSize;
 		long address;
 
 		address = p_address;
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 		if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
 			// determine which block the offset is in
 			int blockCnt = (int) (p_offset / MAX_SIZE_MEMORY_BLOCK);
@@ -549,7 +554,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Short.BYTES;
 
@@ -563,7 +569,7 @@ public final class SmallObjectHeapSegment {
 						offset += curItems * Short.BYTES;
 
 						p_buffer[offsetArray] = (short) readChainedBlockValue(address, offset, Short.BYTES);
-						++offset;
+						offset = Short.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
 						++offsetArray;
 						++itemsRead;
 						--length;
@@ -584,7 +590,7 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		} else {
-			itemsRead = readShorts(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+			itemsRead = readShorts(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
 		}
 
 		return itemsRead;
@@ -604,12 +610,12 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int itemsRead = -1;
+		int itemsRead = 0;
 		int lengthFieldSize;
 		long address;
 
 		address = p_address;
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
 		if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
 			// determine which block the offset is in
@@ -629,7 +635,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Integer.BYTES;
 
@@ -643,7 +650,7 @@ public final class SmallObjectHeapSegment {
 						offset += curItems * Integer.BYTES;
 
 						p_buffer[offsetArray] = (int) readChainedBlockValue(address, offset, Integer.BYTES);
-						++offset;
+						offset = Integer.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
 						++offsetArray;
 						++itemsRead;
 						--length;
@@ -664,7 +671,7 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		} else {
-			itemsRead = readInts(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+			itemsRead = readInts(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
 		}
 
 		return itemsRead;
@@ -684,12 +691,12 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int itemsRead = -1;
+		int itemsRead = 0;
 		int lengthFieldSize;
 		long address;
 
 		address = p_address;
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
 		if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
 			// determine which block the offset is in
@@ -709,7 +716,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Long.BYTES;
 
@@ -723,7 +731,7 @@ public final class SmallObjectHeapSegment {
 						offset += curItems * Long.BYTES;
 
 						p_buffer[offsetArray] = readChainedBlockValue(address, offset, Long.BYTES);
-						++offset;
+						offset = Long.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
 						++offsetArray;
 						++itemsRead;
 						--length;
@@ -744,7 +752,7 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		} else {
-			itemsRead = readLongs(p_address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
+			itemsRead = readLongs(address + lengthFieldSize + p_offset, p_buffer, p_offsetArray, p_length);
 		}
 
 		return itemsRead;
@@ -862,7 +870,7 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int bytesWritten = -1;
+		int bytesWritten = 0;
 		int lengthFieldSize;
 		long address;
 
@@ -885,7 +893,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curSize = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
 
@@ -902,7 +911,7 @@ public final class SmallObjectHeapSegment {
 					// last block, write what's left
 					assert length <= Math.pow(2, 8 * lengthFieldSize);
 
-					m_memory.writeBytes(address + lengthFieldSize, p_value, offsetArray, (int) length);
+					m_memory.writeBytes(address + lengthFieldSize + offset, p_value, offsetArray, (int) length);
 
 					bytesWritten += length;
 					break;
@@ -930,7 +939,7 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int itemsWritten = -1;
+		int itemsWritten = 0;
 		int lengthFieldSize;
 		long address;
 
@@ -955,7 +964,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Short.BYTES;
 
@@ -969,7 +979,7 @@ public final class SmallObjectHeapSegment {
 						offset += curItems * Short.BYTES;
 
 						writeChainedBlockValue(address, offset, p_value[offsetArray], Short.BYTES);
-						++offset;
+						offset = Short.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
 						++offsetArray;
 						++itemsWritten;
 						--length;
@@ -990,7 +1000,7 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		} else {
-			itemsWritten = writeShorts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+			itemsWritten = writeShorts(address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
 		}
 
 		return itemsWritten;
@@ -1010,12 +1020,12 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int itemsWritten = -1;
+		int itemsWritten = 0;
 		int lengthFieldSize;
 		long address;
 
 		address = p_address;
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
 		if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
 			// determine which block the offset is in
@@ -1035,7 +1045,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Integer.BYTES;
 
@@ -1049,7 +1060,7 @@ public final class SmallObjectHeapSegment {
 						offset += curItems * Integer.BYTES;
 
 						writeChainedBlockValue(address, offset, p_value[offsetArray], Integer.BYTES);
-						++offset;
+						offset = Integer.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
 						++offsetArray;
 						++itemsWritten;
 						--length;
@@ -1070,7 +1081,7 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		} else {
-			itemsWritten = writeInts(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+			itemsWritten = writeInts(address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
 		}
 
 		return itemsWritten;
@@ -1090,12 +1101,12 @@ public final class SmallObjectHeapSegment {
 			final int p_length) {
 		assert assertSegmentBounds(p_address, p_offset);
 
-		int itemsWritten = -1;
+		int itemsWritten = 0;
 		int lengthFieldSize;
 		long address;
 
 		address = p_address;
-		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+		lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
 		if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
 			// determine which block the offset is in
@@ -1115,7 +1126,8 @@ public final class SmallObjectHeapSegment {
 			long length = p_length;
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
-				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD && length > MAX_SIZE_MEMORY_BLOCK) {
+				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Long.BYTES;
 
@@ -1129,7 +1141,7 @@ public final class SmallObjectHeapSegment {
 						offset += curItems * Long.BYTES;
 
 						writeChainedBlockValue(address, offset, p_value[offsetArray], Long.BYTES);
-						++offset;
+						offset = Long.BYTES - (MAX_SIZE_MEMORY_BLOCK - offset);
 						++offsetArray;
 						++itemsWritten;
 						--length;
@@ -1150,7 +1162,7 @@ public final class SmallObjectHeapSegment {
 				}
 			}
 		} else {
-			itemsWritten = writeLongs(p_address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
+			itemsWritten = writeLongs(address + lengthFieldSize + p_offset, p_value, p_offsetArray, p_length);
 		}
 
 		return itemsWritten;
@@ -1218,8 +1230,8 @@ public final class SmallObjectHeapSegment {
 				// payload block is still MAX_SIZE_MEMORY_BLOCK in size
 				lengthFieldSize = CHAINED_BLOCK_LENGTH_FIELD;
 
-				// use lengthFieldSize + 1 state to indicate block size POINTER_SIZE (5) and chained block
-				blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize + 1);
+				// use lengthFieldSize state to indicate block size POINTER_SIZE (5) and chained block
+				blockMarker = (byte) (OCCUPIED_FLAGS_OFFSET + lengthFieldSize);
 			}
 
 			blockSize = p_size + lengthFieldSize;
@@ -1289,7 +1301,7 @@ public final class SmallObjectHeapSegment {
 
 				// Write block size (or ptr to next block)
 				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
-					writePointer(address, 0xFFFFFFFF);
+					write(address, 0xFFFFFFFFFFL, lengthFieldSize);
 				} else {
 					write(address, p_size, lengthFieldSize);
 				}
@@ -1486,7 +1498,10 @@ public final class SmallObjectHeapSegment {
 
 		// unfortunate: one part of the variable is in the current and the other one in
 		// the next block
-		int frag1Size = (int) (MAX_SIZE_MEMORY_BLOCK - p_offset % MAX_SIZE_MEMORY_BLOCK);
+		int frag1Size = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
+		if (frag1Size > p_valLength) {
+			frag1Size = p_valLength;
+		}
 		int frag2Size = p_valLength - frag1Size;
 
 		if (frag2Size > 0) {
@@ -1503,14 +1518,14 @@ public final class SmallObjectHeapSegment {
 					| (frag1 & (0xFFFFFFFFFFFFFFFFL >>> (64 - (frag1Size * 8))));
 		} else {
 			switch (p_valLength) {
-				case Short.SIZE:
-					return m_memory.readShort(address + lengthFieldSize + p_offset);
-				case Integer.SIZE:
-					return m_memory.readInt(address + lengthFieldSize + p_offset);
-				case Long.SIZE:
-					return m_memory.readLong(address + lengthFieldSize + p_offset);
+				case Short.BYTES:
+					return m_memory.readShort(address + lengthFieldSize + offset);
+				case Integer.BYTES:
+					return m_memory.readInt(address + lengthFieldSize + offset);
+				case Long.BYTES:
+					return m_memory.readLong(address + lengthFieldSize + offset);
 				default:
-					return m_memory.readVal(address + lengthFieldSize + p_offset, p_valLength);
+					return m_memory.readVal(address + lengthFieldSize + offset, p_valLength);
 			}
 
 		}
@@ -1547,7 +1562,10 @@ public final class SmallObjectHeapSegment {
 
 		// unfortunate: one part of the variable is in the current and the other one in
 		// the next block
-		int frag1Size = (int) (MAX_SIZE_MEMORY_BLOCK - p_offset % MAX_SIZE_MEMORY_BLOCK);
+		int frag1Size = (int) (MAX_SIZE_MEMORY_BLOCK - offset);
+		if (frag1Size > p_valLength) {
+			frag1Size = p_valLength;
+		}
 		int frag2Size = p_valLength - frag1Size;
 
 		if (frag2Size > 0) {
@@ -1555,27 +1573,27 @@ public final class SmallObjectHeapSegment {
 			long frag1 = p_value & (0xFFFFFFFFFFFFFFFFL >>> (64 - (frag1Size * 8)));
 			long frag2 = (p_value >> (frag1Size * 8)) & (0xFFFFFFFFFFFFFFFFL >>> (64 - (frag2Size * 8)));
 
-			// fragment 2 first (little endian)
-			write(address + lengthFieldSize + offset, frag2, frag2Size);
+			// fragment 1 first (little endian)
+			write(address + lengthFieldSize + offset, frag1, frag1Size);
 
 			// next block
 			address = readPointer(address);
 			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 
-			write(address + lengthFieldSize + offset, frag1, frag1Size);
+			write(address + lengthFieldSize, frag2, frag2Size);
 		} else {
 			switch (p_valLength) {
-				case Short.SIZE:
-					m_memory.writeShort(address + lengthFieldSize + p_offset, (short) p_value);
+				case Short.BYTES:
+					m_memory.writeShort(address + lengthFieldSize + offset, (short) p_value);
 					break;
-				case Integer.SIZE:
-					m_memory.writeInt(address + lengthFieldSize + p_offset, (int) p_value);
+				case Integer.BYTES:
+					m_memory.writeInt(address + lengthFieldSize + offset, (int) p_value);
 					break;
-				case Long.SIZE:
-					m_memory.writeLong(address + lengthFieldSize + p_offset, p_value);
+				case Long.BYTES:
+					m_memory.writeLong(address + lengthFieldSize + offset, p_value);
 					break;
 				default:
-					m_memory.writeVal(address + lengthFieldSize + p_offset, p_value, p_valLength);
+					m_memory.writeVal(address + lengthFieldSize + offset, p_value, p_valLength);
 					break;
 			}
 
@@ -1766,7 +1784,8 @@ public final class SmallObjectHeapSegment {
 			// free block size
 			ret = p_marker;
 		} else {
-			ret = ((p_marker - OCCUPIED_FLAGS_OFFSET - 1) % OCCUPIED_FLAGS_OFFSET_MASK) + 1;
+			// allocated block sizes 1, 2, 3 and 5 (chained block next ptr) are used
+			ret = p_marker - OCCUPIED_FLAGS_OFFSET;
 		}
 
 		return ret;

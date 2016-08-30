@@ -1,8 +1,6 @@
 
 package de.hhu.bsinfo.soh;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -53,20 +51,10 @@ public class SmallObjectHeapTest {
 		assert p_blockSizeMax > p_blockSizeMin;
 
 		// m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
-		try {
-			File file = new File("rawMemory.dump");
-			if (file.exists()) {
-				file.delete();
-				file.createNewFile();
-			}
-
-			// m_memory = new SmallObjectHeap(new StorageRandomAccessFile(file));
-			m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
-			// m_memory = new SmallObjectHeap(new StorageHybridUnsafeJNINativeMemory());
-			// m_memory = new SmallObjectHeap(new StorageJavaHeap());
-		} catch (final IOException e1) {
-			e1.printStackTrace();
-		}
+		// m_memory = new SmallObjectHeap(new StorageRandomAccessFile(file));
+		m_memory = new SmallObjectHeap(new StorageUnsafeMemory());
+		// m_memory = new SmallObjectHeap(new StorageHybridUnsafeJNINativeMemory());
+		// m_memory = new SmallObjectHeap(new StorageJavaHeap());
 
 		if (m_memory.initialize(p_memorySize, p_segmentSize) == -1) {
 			System.out.println("Initializing memory failed.");
@@ -106,7 +94,19 @@ public class SmallObjectHeapTest {
 			}
 		}
 
+		//				File file = new File("rawMemory.dump");
+		//				if (file.exists()) {
+		//					file.delete();
+		//					try {
+		//						file.createNewFile();
+		//					} catch (IOException e) {
+		//						e.printStackTrace();
+		//					}
+		//				}
+		//				m_memory.dump(file, 0, 12 * 1024 * 1024);
+
 		System.out.println("All workers finished.");
+
 		System.out.println("Final memory status:\n" + m_memory);
 
 		HeapWalker.Results results = HeapWalker.walk(m_memory);
@@ -209,7 +209,7 @@ public class SmallObjectHeapTest {
 					// execute alloc
 					int size = 0;
 					while (size <= 0) {
-						size = (int) (Math.random() * (m_blockSizeMax - m_blockSizeMin));
+						size = (int) (Math.random() * (m_blockSizeMax - m_blockSizeMin)) + m_blockSizeMin;
 					}
 
 					long ptr = -1;
@@ -221,7 +221,265 @@ public class SmallObjectHeapTest {
 						System.out.println(">>> Allocated " + size + ":\n" + m_memory);
 					}
 					m_blocksAlloced.add(ptr);
-					m_memory.set(ptr, size, (byte) 0xFF);
+					m_memory.set(ptr, size, (byte) 0xBB);
+
+					// test writing/reading across two blocks
+					if (size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+						{
+							short v = 0x1122;
+							m_memory.writeShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, v);
+							short v2 = m_memory.readShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks short writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							int v = 0xAABBCCDD;
+							m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, v);
+							int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks int (1) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							int v = 0xAABBCCDD;
+							m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2, v);
+							int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks int (2) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							int v = 0xAABBCCDD;
+							m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3, v);
+							int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks int (3) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (1) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 2);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (2) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 3);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (3) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 4, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 4);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (4) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 5, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 5);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (5) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 6, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 6);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (6) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 7, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 7);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (7) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 8, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 8);
+							if (v != v2) {
+								System.out.println("!!! Chained blocks long (8) writing/reading failed");
+								System.exit(-1);
+							}
+						}
+						{
+							byte[] test = new byte[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0,
+									test.length);
+							byte[] test2 = new byte[test.length];
+							m_memory.readBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println("!!! Chained blocks byte array writing/reading failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							short[] test = new short[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0,
+									test.length);
+							short[] test2 = new short[test.length];
+							m_memory.readShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println("!!! Chained blocks short array writing/reading failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							int[] test = new int[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0,
+									test.length);
+							int[] test2 = new int[test.length];
+							m_memory.readInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println("!!! Chained blocks int array writing/reading failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							long[] test = new long[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test, 0,
+									test.length);
+							long[] test2 = new long[test.length];
+							m_memory.readLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println("!!! Chained blocks long array writing/reading failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							short v = 0x1122;
+							m_memory.writeShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, v);
+							short v2 = m_memory.readShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1);
+							if (v != v2) {
+								System.out.println(
+										"!!! Chained blocks short writing/reading to second full block failed");
+								System.exit(-1);
+							}
+						}
+						{
+							int v = 0x11223344;
+							m_memory.writeInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, v);
+							int v2 = m_memory.readInt(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1);
+							if (v != v2) {
+								System.out
+										.println("!!! Chained blocks int writing/reading to second full block failed");
+								System.exit(-1);
+							}
+						}
+						{
+							long v = 0x1122334455667788L;
+							m_memory.writeLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, v);
+							long v2 = m_memory.readLong(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1);
+							if (v != v2) {
+								System.out
+										.println("!!! Chained blocks long writing/reading to second full block failed");
+								System.exit(-1);
+							}
+						}
+						{
+							byte[] test = new byte[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0,
+									test.length);
+							byte[] test2 = new byte[test.length];
+							m_memory.readBytes(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println(
+											"!!! Chained blocks byte array writing/reading to second block failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							short[] test = new short[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0,
+									test.length);
+							short[] test2 = new short[test.length];
+							m_memory.readShorts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println(
+											"!!! Chained blocks short array writing/reading to second block failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							int[] test = new int[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0,
+									test.length);
+							int[] test2 = new int[test.length];
+							m_memory.readInts(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println(
+											"!!! Chained blocks int array writing/reading to second block failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							long[] test = new long[] {0x11, 0x22, 0x33, 0x44, 0x55};
+							m_memory.writeLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test, 0,
+									test.length);
+							long[] test2 = new long[test.length];
+							m_memory.readLongs(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK + 1, test2, 0,
+									test2.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != test2[i]) {
+									System.out.println(
+											"!!! Chained blocks long array writing/reading to second block failed");
+									System.exit(-1);
+								}
+							}
+						}
+					}
 
 					m_numMallocOperations--;
 				} else if (m_numFreeOperations > 0) {
