@@ -238,11 +238,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		}
 
 		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
-			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
-					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
-			// #endif /* LOGGER >= ERROR */
-			return chunkID;
+			// #if LOGGER >= WARN
+			m_logger.warn(getClass(), "Performance warning, creating a chunk with size " + p_size +
+					" exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			// #endif /* LOGGER >= WARN */
 		}
 
 		if (m_cidTable.get(0) != 0) {
@@ -298,11 +297,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		chunkID = p_chunkId;
 
 		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
-			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
-					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
-			// #endif /* LOGGER >= ERROR */
-			return chunkID;
+			// #if LOGGER >= WARN
+			m_logger.warn(getClass(), "Performance warning, creating a chunk with size " + p_size +
+					" exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			// #endif /* LOGGER >= WARN */
 		}
 
 		// verify this id is not used
@@ -352,11 +350,10 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		}
 
 		if (p_size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
-			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Creating a chunk with size " + p_size +
-					" not possible, exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
-			// #endif /* LOGGER >= ERROR */
-			return chunkID;
+			// #if LOGGER >= WARN
+			m_logger.warn(getClass(), "Performance warning, creating a chunk with size " + p_size +
+					" exceeding max size " + SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK);
+			// #endif /* LOGGER >= WARN */
 		}
 
 		// #ifdef STATISTICS
