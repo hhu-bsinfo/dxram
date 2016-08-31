@@ -1345,7 +1345,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 						if (m_bottomUpIteration) {
 							if (neighborCreatorId != m_nodeId) {
-								// the child is on the current node but its parent is on a diferent one
+								// the child is on the current node but its parent is on a different one
 								// => inter node edge
 
 								// delegate to remote, fill message buffers until they are full -> send

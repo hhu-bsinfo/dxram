@@ -274,7 +274,7 @@ public final class SmallObjectHeapSegment {
 		address = p_address;
 		while (true) {
 			// skip length byte(s)
-			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(p_address - SIZE_MARKER_BYTE));
+			lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 			if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD) {
 				// ptr to next chained block
 				size += MAX_SIZE_MEMORY_BLOCK;
@@ -555,7 +555,7 @@ public final class SmallObjectHeapSegment {
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
-						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length * Short.BYTES > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Short.BYTES;
 
@@ -636,7 +636,7 @@ public final class SmallObjectHeapSegment {
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
-						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length * Integer.BYTES > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Integer.BYTES;
 
@@ -717,7 +717,7 @@ public final class SmallObjectHeapSegment {
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
-						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length * Long.BYTES > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Long.BYTES;
 
@@ -965,7 +965,7 @@ public final class SmallObjectHeapSegment {
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
-						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length * Short.BYTES > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Short.BYTES;
 
@@ -1046,7 +1046,7 @@ public final class SmallObjectHeapSegment {
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
-						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length * Integer.BYTES > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Integer.BYTES;
 
@@ -1127,7 +1127,7 @@ public final class SmallObjectHeapSegment {
 			while (true) {
 				lengthFieldSize = getSizeFromMarker(readRightPartOfMarker(address - SIZE_MARKER_BYTE));
 				if (lengthFieldSize == CHAINED_BLOCK_LENGTH_FIELD
-						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length > MAX_SIZE_MEMORY_BLOCK) {
+						&& (offset % MAX_SIZE_MEMORY_BLOCK) + length * Long.BYTES > MAX_SIZE_MEMORY_BLOCK) {
 					// cur block and more
 					int curItems = (int) (MAX_SIZE_MEMORY_BLOCK - offset) / Long.BYTES;
 

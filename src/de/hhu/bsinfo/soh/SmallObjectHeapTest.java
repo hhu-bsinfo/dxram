@@ -226,6 +226,12 @@ public class SmallObjectHeapTest {
 					// test writing/reading across two blocks
 					if (size > SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
 						{
+							if (m_memory.getSizeBlock(ptr) <= SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK) {
+								System.out.println("!!! Chained blocks getting size failed");
+								System.exit(-1);
+							}
+						}
+						{
 							short v = 0x1122;
 							m_memory.writeShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1, v);
 							short v2 = m_memory.readShort(ptr, SmallObjectHeapSegment.MAX_SIZE_MEMORY_BLOCK - 1);
@@ -475,6 +481,104 @@ public class SmallObjectHeapTest {
 								if (test[i] != test2[i]) {
 									System.out.println(
 											"!!! Chained blocks long array writing/reading to second block failed");
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							byte[] test = new byte[size];
+							for (int i = 0; i < test.length; i++) {
+								test[i] = (byte) i;
+							}
+							m_memory.writeBytes(ptr, 0, test, 0,
+									test.length);
+							m_memory.readBytes(ptr, 0, test, 0,
+									test.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != (byte) i) {
+									System.out.println(
+											"!!! Chained blocks full byte array writing/reading failed: " + i);
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							short[] test = new short[size / Short.BYTES];
+							for (int i = 0; i < test.length; i++) {
+								test[i] = (short) i;
+							}
+							m_memory.writeShorts(ptr, 0, test, 0,
+									test.length);
+							m_memory.readShorts(ptr, 0, test, 0,
+									test.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != (short) i) {
+									System.out.println(
+											"!!! Chained blocks full short array writing/reading failed: " + i);
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							int[] test = new int[size / Integer.BYTES];
+							for (int i = 0; i < test.length; i++) {
+								test[i] = i;
+							}
+							m_memory.writeInts(ptr, 0, test, 0,
+									test.length);
+							m_memory.readInts(ptr, 0, test, 0,
+									test.length);
+							for (int i = 0; i < test.length; i++) {
+								if (test[i] != i) {
+									System.out.println(
+											"!!! Chained blocks full int array writing/reading failed: " + i);
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							long[] test = new long[size / Long.BYTES];
+							for (long i = 0; i < test.length; i++) {
+								test[(int) i] = i;
+							}
+							m_memory.writeLongs(ptr, 0, test, 0,
+									test.length);
+							m_memory.readLongs(ptr, 0, test, 0,
+									test.length);
+							for (long i = 0; i < test.length; i++) {
+								if (test[(int) i] != i) {
+									System.out.println(
+											"!!! Chained blocks full long array writing/reading failed: " + i);
+									System.exit(-1);
+								}
+							}
+						}
+						{
+							long[] test = new long[(size - 8) / Long.BYTES];
+							for (long i = 0; i < test.length; i++) {
+								test[(int) i] = i;
+							}
+							m_memory.writeInt(ptr, 0, 0xAABBCCDD);
+							m_memory.writeInt(ptr, 4, 0x11223344);
+							m_memory.writeLongs(ptr, 8, test, 0,
+									test.length);
+							if (m_memory.readInt(ptr, 0) != 0xAABBCCDD) {
+								System.out.println(
+										"!!! Chained blocks pseudo vertex int 1 writing/reading failed");
+								System.exit(-1);
+							}
+							if (m_memory.readInt(ptr, 4) != 0x11223344) {
+								System.out.println(
+										"!!! Chained blocks pseudo vertex int 1 writing/reading failed");
+								System.exit(-1);
+							}
+
+							m_memory.readLongs(ptr, 8, test, 0,
+									test.length);
+							for (long i = 0; i < test.length; i++) {
+								if (test[(int) i] != i) {
+									System.out.println(
+											"!!! Chained blocks pseudo vertex neighbors writing/reading failed: " + i);
 									System.exit(-1);
 								}
 							}
