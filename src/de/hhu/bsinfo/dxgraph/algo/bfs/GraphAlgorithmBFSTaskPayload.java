@@ -417,6 +417,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private AtomicLong m_nextFrontVertices = new AtomicLong(0);
 		private AtomicLong m_nextFrontEdges = new AtomicLong(0);
 
+		private AtomicLong m_sentVertexMsgCountLocal = new AtomicLong(0);
+		private AtomicLong m_recvVertexMsgCountLocal = new AtomicLong(0);
+
+		private Lock m_msgCountGlobalLock = new ReentrantLock(false);
+		private long m_sentVertexMsgCountGlobal;
+		private long m_recvVertexMsgCountGlobal;
+
 		/**
 		 * Constructor
 		 *
@@ -471,7 +478,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_threads[i] =
 						new BFSThread(i, m_vertexBatchSize, m_vertexMessageBatchSize, m_curFrontier, m_nextFrontier,
 								m_visitedFrontier, m_statisticsThread.m_sharedVertexCounter,
-								m_statisticsThread.m_sharedEdgeCounter);
+								m_statisticsThread.m_sharedEdgeCounter, m_sentVertexMsgCountLocal);
 				m_threads[i].start();
 			}
 
@@ -603,39 +610,74 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				// --------------------------------
 				// barrier
 				{
-					// inform all other slaves we are done
-					short ownId = getSlaveId();
-					short[] slavesNodeIds = getSlaveNodeIds();
-					for (int i = 0; i < slavesNodeIds.length; i++) {
-						if (i != ownId) {
-							BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(slavesNodeIds[i]);
-							//							System.out.println("<<<<< BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
-							NetworkErrorCodes err = m_networkService.sendMessage(msg);
-							//							System.out.println(
-							//									"<<<<<??? BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
-							if (err != NetworkErrorCodes.SUCCESS) {
-								// #if LOGGER >= ERROR
-								m_loggerService.error(getClass(),
-										"Sending level finished message to " + NodeID.toHexString(slavesNodeIds[i])
-												+ " failed: " + err);
-								// #endif /* LOGGER >= ERROR */
-								// abort execution and have the master send a kill signal
-								// for this task to all other slaves
-								sendSignalToMaster(Signal.SIGNAL_ABORT);
+					while (true) {
+						System.out.println("!!!!!!!!!!!!!!!!!!");
+						// inform all other slaves we are done
+						short ownId = getSlaveId();
+						short[] slavesNodeIds = getSlaveNodeIds();
+
+						long localSentMsgCnt = m_sentVertexMsgCountLocal.get();
+						long localRecvMsgCnt = m_recvVertexMsgCountLocal.get();
+
+						m_msgCountGlobalLock.lock();
+						m_sentVertexMsgCountGlobal += localSentMsgCnt;
+						m_recvVertexMsgCountGlobal += localRecvMsgCnt;
+						m_msgCountGlobalLock.unlock();
+
+						System.out.println(">>>>> local: " + localSentMsgCnt + " | " + localRecvMsgCnt);
+
+						for (int i = 0; i < slavesNodeIds.length; i++) {
+							if (i != ownId) {
+								BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(slavesNodeIds[i],
+										localSentMsgCnt, localRecvMsgCnt);
+								// System.out.println("<<<<< BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
+								NetworkErrorCodes err = m_networkService.sendMessage(msg);
+								// System.out.println(
+								// 		"<<<<<??? BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
+								if (err != NetworkErrorCodes.SUCCESS) {
+									// #if LOGGER >= ERROR
+									m_loggerService.error(getClass(),
+											"Sending level finished message to " + NodeID.toHexString(slavesNodeIds[i])
+													+ " failed: " + err);
+									// #endif /* LOGGER >= ERROR */
+									// abort execution and have the master send a kill signal
+									// for this task to all other slaves
+									sendSignalToMaster(Signal.SIGNAL_ABORT);
+									return;
+								}
+							}
+						}
+
+						// busy wait until everyone is done
+						//					System.out.println("!!!!! " + getSlaveNodeIds().length);
+						while (!m_bfsSlavesLevelFinishedCounter.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
+							try {
+								Thread.sleep(2);
+							} catch (InterruptedException e) {
+							}
+							if (m_signalAbortTriggered) {
 								return;
 							}
 						}
-					}
 
-					// busy wait until everyone is done
-					//					System.out.println("!!!!! " + getSlaveNodeIds().length);
-					while (!m_bfsSlavesLevelFinishedCounter.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
-						try {
-							Thread.sleep(2);
-						} catch (InterruptedException e) {
-						}
-						if (m_signalAbortTriggered) {
-							return;
+						// check if our total sent and received vertex messages are equal i.e.
+						// all sent messages were received and processed
+						// repeat this sync steps of some messages are still in transit or
+						// not fully processed, yet
+						m_msgCountGlobalLock.lock();
+						if (m_sentVertexMsgCountGlobal != m_recvVertexMsgCountGlobal) {
+							System.out.println(
+									"@@@@ " + m_sentVertexMsgCountGlobal + " != " + m_recvVertexMsgCountGlobal);
+							m_sentVertexMsgCountGlobal = 0;
+							m_recvVertexMsgCountGlobal = 0;
+							m_msgCountGlobalLock.unlock();
+						} else {
+							System.out.println(
+									"@@@@ " + m_sentVertexMsgCountGlobal + " == " + m_recvVertexMsgCountGlobal);
+							m_sentVertexMsgCountLocal.set(0);
+							m_recvVertexMsgCountLocal.set(0);
+							m_msgCountGlobalLock.unlock();
+							break;
 						}
 					}
 				}
@@ -833,6 +875,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * @param p_message VerticesForNextFrontierMessage to handle
 		 */
 		private void onIncomingVerticesForNextFrontierMessage(final VerticesForNextFrontierMessage p_message) {
+			System.out.println("$$$$ " + NodeID.toHexString(p_message.getSource()));
+
 			// this determines whether the message comes from a node running top down or bottom up approach
 			if (p_message.getNumNeighborsInBatch() > 0) {
 				// bottom up approach
@@ -858,7 +902,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						m_loggerService
 								.error(getClass(), "Sending reply for bottom up vertices next frontier failed: " + err);
 					}
+
+					m_sentVertexMsgCountLocal.incrementAndGet();
 				}
+
+				m_recvVertexMsgCountLocal.incrementAndGet();
 			} else {
 				// top down approach
 
@@ -893,6 +941,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				}
 
 				m_remoteDelegatesForNextFrontier.readLock().unlock();
+
+				m_recvVertexMsgCountLocal.incrementAndGet();
 			}
 		}
 
@@ -903,6 +953,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 */
 		private void onIncomingBFSLevelFinishedMessage(final BFSLevelFinishedMessage p_message) {
 			//			System.out.println(">>>> onIncomingBFSLevelFinishedMessage " + NodeID.toHexString(p_message.getSource()));
+
+			m_msgCountGlobalLock.lock();
+			System.out.println(
+					"???? from " + NodeID.toHexString(p_message.getSource()) + ": " + p_message.getSentMessageCount()
+							+ " | " + p_message.getReceivedMessageCount());
+			m_recvVertexMsgCountGlobal += p_message.getReceivedMessageCount();
+			m_sentVertexMsgCountGlobal += p_message.getSentMessageCount();
+			m_msgCountGlobalLock.unlock();
+
 			m_bfsSlavesLevelFinishedCounter.incrementAndGet();
 		}
 
@@ -1102,6 +1161,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private AtomicLong m_sharedVertexCounter;
 		private AtomicLong m_sharedEdgeCounter;
 
+		private AtomicLong m_sharedSentVertexMsgCount;
+
 		/**
 		 * Constructor
 		 *
@@ -1119,7 +1180,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				final ConcurrentBitVectorHybrid p_curFrontierShared,
 				final ConcurrentBitVectorHybrid p_nextFrontierShared,
 				final ConcurrentBitVectorHybrid p_visitedFrontierShared,
-				final AtomicLong p_sharedVertexCounter, final AtomicLong p_sharedEdgeCounter) {
+				final AtomicLong p_sharedVertexCounter, final AtomicLong p_sharedEdgeCounter,
+				final AtomicLong p_sharedSentVertexMsgCount) {
 			super("BFSThread-" + p_id);
 
 			m_id = p_id;
@@ -1138,6 +1200,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			m_sharedVertexCounter = p_sharedVertexCounter;
 			m_sharedEdgeCounter = p_sharedEdgeCounter;
+
+			m_sharedSentVertexMsgCount = p_sharedSentVertexMsgCount;
 		}
 
 		/**
@@ -1279,6 +1343,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									}
 								}
 
+								m_sharedSentVertexMsgCount.incrementAndGet();
+
 								// re-use messages
 								m_remoteMessages[slaveNodeId & 0xFFFF].reset();
 							}
@@ -1371,6 +1437,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 										}
 									}
 
+									m_sharedSentVertexMsgCount.incrementAndGet();
+
 									msg.reset();
 									m_remoteMessages[neighborCreatorId & 0xFFFF] = msg;
 									msg.addVertex(vertex.getID());
@@ -1426,6 +1494,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 											return;
 										}
 									}
+
+									m_sharedSentVertexMsgCount.incrementAndGet();
 
 									// re-use messages
 									msg.reset();
