@@ -407,7 +407,14 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private BFSThread[] m_threads;
 		private StatisticsThread m_statisticsThread;
 
+		private AtomicLong m_sentVertexMsgCountLocal = new AtomicLong(0);
+		private AtomicLong m_recvVertexMsgCountLocal = new AtomicLong(0);
+
+		private Lock m_msgCountGlobalLock = new ReentrantLock(false);
 		private AtomicInteger m_bfsSlavesLevelFinishedCounter = new AtomicInteger(0);
+		private long m_sentVertexMsgCountGlobal;
+		private long m_recvVertexMsgCountGlobal;
+
 		private AtomicInteger m_bfsSlavesEmptyNextFrontiers = new AtomicInteger(0);
 		private volatile boolean m_terminateBfs = true;
 		private ReentrantReadWriteLock m_remoteDelegatesForNextFrontier = new ReentrantReadWriteLock(false);
@@ -416,13 +423,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		private AtomicLong m_nextFrontVertices = new AtomicLong(0);
 		private AtomicLong m_nextFrontEdges = new AtomicLong(0);
-
-		private AtomicLong m_sentVertexMsgCountLocal = new AtomicLong(0);
-		private AtomicLong m_recvVertexMsgCountLocal = new AtomicLong(0);
-
-		private Lock m_msgCountGlobalLock = new ReentrantLock(false);
-		private long m_sentVertexMsgCountGlobal;
-		private long m_recvVertexMsgCountGlobal;
 
 		/**
 		 * Constructor
@@ -619,21 +619,17 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						long localSentMsgCnt = m_sentVertexMsgCountLocal.get();
 						long localRecvMsgCnt = m_recvVertexMsgCountLocal.get();
 
-						m_msgCountGlobalLock.lock();
-						m_sentVertexMsgCountGlobal += localSentMsgCnt;
-						m_recvVertexMsgCountGlobal += localRecvMsgCnt;
-						m_msgCountGlobalLock.unlock();
-
 						System.out.println(">>>>> local: " + localSentMsgCnt + " | " + localRecvMsgCnt);
 
 						for (int i = 0; i < slavesNodeIds.length; i++) {
 							if (i != ownId) {
 								BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(slavesNodeIds[i],
 										localSentMsgCnt, localRecvMsgCnt);
-								// System.out.println("<<<<< BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
+								System.out.println(
+										"<<<<< BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
 								NetworkErrorCodes err = m_networkService.sendMessage(msg);
-								// System.out.println(
-								// 		"<<<<<??? BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
+								System.out.println(
+										"<<<<<??? BFSLevelFinishedMessage " + NodeID.toHexString(slavesNodeIds[i]));
 								if (err != NetworkErrorCodes.SUCCESS) {
 									// #if LOGGER >= ERROR
 									m_loggerService.error(getClass(),
@@ -649,22 +645,39 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						}
 
 						// busy wait until everyone is done
-						//					System.out.println("!!!!! " + getSlaveNodeIds().length);
-						while (!m_bfsSlavesLevelFinishedCounter.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
+						// TODO doc this properly, correct termination is very tricky especially avoiding killing messages in transit
+						System.out.println("!!!!! " + getSlaveNodeIds().length);
+						while (true) {
+							m_msgCountGlobalLock.lock();
+							int tmp = m_bfsSlavesLevelFinishedCounter.get();
+							if (tmp >= getSlaveNodeIds().length - 1
+									&& m_bfsSlavesLevelFinishedCounter
+									.compareAndSet(tmp, tmp - (getSlaveNodeIds().length - 1))) {
+								break;
+							}
+							m_msgCountGlobalLock.unlock();
+
 							try {
 								Thread.sleep(2);
-							} catch (InterruptedException e) {
+							} catch (final InterruptedException ignored) {
 							}
+
 							if (m_signalAbortTriggered) {
 								return;
 							}
 						}
 
+						System.out.println("{{{{{{{{{{{{{");
+
 						// check if our total sent and received vertex messages are equal i.e.
 						// all sent messages were received and processed
 						// repeat this sync steps of some messages are still in transit or
 						// not fully processed, yet
-						m_msgCountGlobalLock.lock();
+
+						// don't forget to add the counters from our local instance
+						m_sentVertexMsgCountGlobal += localSentMsgCnt;
+						m_recvVertexMsgCountGlobal += localRecvMsgCnt;
+
 						if (m_sentVertexMsgCountGlobal != m_recvVertexMsgCountGlobal) {
 							System.out.println(
 									"@@@@ " + m_sentVertexMsgCountGlobal + " != " + m_recvVertexMsgCountGlobal);
@@ -674,6 +687,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						} else {
 							System.out.println(
 									"@@@@ " + m_sentVertexMsgCountGlobal + " == " + m_recvVertexMsgCountGlobal);
+							m_sentVertexMsgCountGlobal = 0;
+							m_recvVertexMsgCountGlobal = 0;
 							m_sentVertexMsgCountLocal.set(0);
 							m_recvVertexMsgCountLocal.set(0);
 							m_msgCountGlobalLock.unlock();
@@ -875,7 +890,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * @param p_message VerticesForNextFrontierMessage to handle
 		 */
 		private void onIncomingVerticesForNextFrontierMessage(final VerticesForNextFrontierMessage p_message) {
-			System.out.println("$$$$ " + NodeID.toHexString(p_message.getSource()));
 
 			// this determines whether the message comes from a node running top down or bottom up approach
 			if (p_message.getNumNeighborsInBatch() > 0) {
@@ -905,8 +919,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 					m_sentVertexMsgCountLocal.incrementAndGet();
 				}
-
-				m_recvVertexMsgCountLocal.incrementAndGet();
 			} else {
 				// top down approach
 
@@ -941,9 +953,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				}
 
 				m_remoteDelegatesForNextFrontier.readLock().unlock();
-
-				m_recvVertexMsgCountLocal.incrementAndGet();
 			}
+
+			m_recvVertexMsgCountLocal.incrementAndGet();
 		}
 
 		/**
@@ -952,8 +964,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		 * @param p_message BFSLevelFinishedMessage to handle
 		 */
 		private void onIncomingBFSLevelFinishedMessage(final BFSLevelFinishedMessage p_message) {
-			//			System.out.println(">>>> onIncomingBFSLevelFinishedMessage " + NodeID.toHexString(p_message.getSource()));
+			System.out.println(">>>> onIncomingBFSLevelFinishedMessage " + NodeID.toHexString(p_message.getSource()));
 
+			// wait for main thread to process
+			while (m_bfsSlavesLevelFinishedCounter.get() >= getSlaveNodeIds().length - 1) {
+				try {
+					Thread.sleep(2);
+				} catch (final InterruptedException ignored) {
+				}
+			}
 			m_msgCountGlobalLock.lock();
 			System.out.println(
 					"???? from " + NodeID.toHexString(p_message.getSource()) + ": " + p_message.getSentMessageCount()
