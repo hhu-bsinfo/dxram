@@ -1,9 +1,8 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
@@ -11,7 +10,6 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler;
-import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Created by nothaas on 9/1/16.
@@ -26,19 +24,18 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 	private AtomicLong m_sentVertexMsgCountLocal = new AtomicLong(0);
 	private AtomicLong m_recvVertexMsgCountLocal = new AtomicLong(0);
 
-	private Lock m_msgCountGlobalLock = new ReentrantLock(false);
-	private AtomicInteger m_bfsSlavesLevelFinishedCounter = new AtomicInteger(0);
-	private long m_sentVertexMsgCountGlobal;
-	private long m_recvVertexMsgCountGlobal;
+	private Semaphore[] m_finishedCounterLock = new Semaphore[] {new Semaphore(1, false), new Semaphore(1, false)};
+	private AtomicInteger[] m_bfsSlavesLevelFinishedCounter =
+			new AtomicInteger[] {new AtomicInteger(0), new AtomicInteger(0)};
+	private volatile long[] m_sentVertexMsgCountGlobal = new long[2];
+	private volatile long[] m_recvVertexMsgCountGlobal = new long[2];
 
 	public SyncBFSFinished(final short[] p_nodeIDs, final short p_ownNodeID, final NetworkService p_networkService) {
 		m_nodeIDs = p_nodeIDs;
 		m_ownNodeID = p_ownNodeID;
+		m_networkService = p_networkService;
 
 		m_signalAbortExecution = false;
-
-		// TODO register message handler
-		// TODO register message
 
 		m_networkService.registerMessageType(BFSMessages.TYPE,
 				BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE,
@@ -47,57 +44,62 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 		m_networkService.registerReceiver(BFSLevelFinishedMessage.class, this);
 	}
 
+	public void incrementSentVertexMsgCountLocal() {
+		m_sentVertexMsgCountLocal.incrementAndGet();
+	}
+
+	public void incrementReceivedVertexMsgCountLocal() {
+		m_recvVertexMsgCountLocal.incrementAndGet();
+	}
+
 	public void signalAbortExecution() {
 		m_signalAbortExecution = true;
 	}
 
 	public boolean execute() {
+		// use double buffering for certain data
+		// if we happen to have multiple iterations due to multiple repeats necessary,
+		// we have to make sure that finished messages from nodes that can already determine
+		// that another iteration i is necessary do not interfere with nodes that still have to
+		// figure that out in iteration i - 1 i.e. messages of the next evaluation phase i
+		// overtake messages of the phase i - 1 when processing them in the message handler
+		int token = 0;
+
 		while (true) {
-			System.out.println("!!!!!!!!!!!!!!!!!!");
-			// inform all other slaves we are done
+			// inform all other slaves we are done, this might need multiple tries
+			// because some vertex data messages (on the bottom up approach, only)
+			// arrive later because they are sent AFTER the sync messages are sent
+			// this cannot be determined, thus we need to count sent and received
+			// messages of all nodes and have successfully synchronized all nodes if
+			// 1. all nodes have responded to the current sync phase number (token)
+			// 2. the sum of all sent and received messages of all nodes is equal
+			// the first step is necessary to continue with the second one.
+			// if the first one "fails" we loop and wait because one node is not responding i.e. not done
+			// if the second step fails, we know that at least one node has still vertex data messages
+			// either in transit, unprocessed or currently being processed.
+			// thus, we have to go back to the first step and repeat everything hoping
+			// that all nodes are done on the next try
 
 			long localSentMsgCnt = m_sentVertexMsgCountLocal.get();
 			long localRecvMsgCnt = m_recvVertexMsgCountLocal.get();
 
-			System.out.println(">>>>> local: " + localSentMsgCnt + " | " + localRecvMsgCnt);
-
-			for (int i = 0; i < m_nodeIDs.length; i++) {
-				if (i != m_ownNodeID) {
-					BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(m_nodeIDs[i],
+			for (short nodeID : m_nodeIDs) {
+				if (nodeID != m_ownNodeID) {
+					BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(nodeID, token,
 							localSentMsgCnt, localRecvMsgCnt);
-					System.out.println(
-							"<<<<< BFSLevelFinishedMessage " + NodeID.toHexString(m_nodeIDs[i]));
+
 					NetworkErrorCodes err = m_networkService.sendMessage(msg);
-					System.out.println(
-							"<<<<<??? BFSLevelFinishedMessage " + NodeID.toHexString(m_nodeIDs[i]));
 					if (err != NetworkErrorCodes.SUCCESS) {
-						// TODO
-						//						// #if LOGGER >= ERROR
-						//						m_loggerService.error(getClass(),
-						//								"Sending level finished message to " + NodeID.toHexString(m_nodeIDs[i])
-						//										+ " failed: " + err);
-						//						// #endif /* LOGGER >= ERROR */
-						//						// abort execution and have the master send a kill signal
-						//						// for this task to all other slaves
-						//						sendSignalToMaster(Signal.SIGNAL_ABORT);
-						//						return;
 						return false;
 					}
 				}
 			}
 
 			// busy wait until everyone is done
-			// TODO doc this properly, correct termination is very tricky especially avoiding killing messages in transit
-			System.out.println("!!!!! " + m_nodeIDs.length);
 			while (true) {
-				m_msgCountGlobalLock.lock();
-				int tmp = m_bfsSlavesLevelFinishedCounter.get();
-				if (tmp >= m_nodeIDs.length - 1
-						&& m_bfsSlavesLevelFinishedCounter
-						.compareAndSet(tmp, tmp - (m_nodeIDs.length - 1))) {
+				if (m_bfsSlavesLevelFinishedCounter[token].compareAndSet(m_nodeIDs.length - 1, 0)) {
 					break;
 				}
-				m_msgCountGlobalLock.unlock();
 
 				try {
 					Thread.sleep(2);
@@ -109,36 +111,35 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 				}
 			}
 
-			System.out.println("{{{{{{{{{{{{{");
-
 			// check if our total sent and received vertex messages are equal i.e.
 			// all sent messages were received and processed
 			// repeat this sync steps of some messages are still in transit or
 			// not fully processed, yet
 
 			// don't forget to add the counters from our local instance
-			m_sentVertexMsgCountGlobal += localSentMsgCnt;
-			m_recvVertexMsgCountGlobal += localRecvMsgCnt;
+			m_sentVertexMsgCountGlobal[token] += localSentMsgCnt;
+			m_recvVertexMsgCountGlobal[token] += localRecvMsgCnt;
 
-			if (m_sentVertexMsgCountGlobal != m_recvVertexMsgCountGlobal) {
-				System.out.println(
-						"@@@@ " + m_sentVertexMsgCountGlobal + " != " + m_recvVertexMsgCountGlobal);
-				m_sentVertexMsgCountGlobal = 0;
-				m_recvVertexMsgCountGlobal = 0;
-				m_msgCountGlobalLock.unlock();
+			if (m_sentVertexMsgCountGlobal[token] != m_recvVertexMsgCountGlobal[token]) {
+				m_sentVertexMsgCountGlobal[token] = 0;
+				m_recvVertexMsgCountGlobal[token] = 0;
+				m_finishedCounterLock[token].release();
+				token += (token + 1) % 2;
 			} else {
-				System.out.println(
-						"@@@@ " + m_sentVertexMsgCountGlobal + " == " + m_recvVertexMsgCountGlobal);
-				m_sentVertexMsgCountGlobal = 0;
-				m_recvVertexMsgCountGlobal = 0;
+				m_sentVertexMsgCountGlobal[token] = 0;
+				m_recvVertexMsgCountGlobal[token] = 0;
 				m_sentVertexMsgCountLocal.set(0);
 				m_recvVertexMsgCountLocal.set(0);
-				m_msgCountGlobalLock.unlock();
+				m_finishedCounterLock[token].release();
 				break;
 			}
 		}
 
 		return true;
+	}
+
+	public void cleanup() {
+		m_networkService.unregisterReceiver(BFSLevelFinishedMessage.class, this);
 	}
 
 	@Override
@@ -158,23 +159,19 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 	}
 
 	private void onIncomingBFSLevelFinishedMessage(final BFSLevelFinishedMessage p_message) {
-		System.out.println(">>>> onIncomingBFSLevelFinishedMessage " + NodeID.toHexString(p_message.getSource()));
 
-		// wait for main thread to process
-		while (m_bfsSlavesLevelFinishedCounter.get() >= m_nodeIDs.length - 1) {
-			try {
-				Thread.sleep(2);
-			} catch (final InterruptedException ignored) {
-			}
+		try {
+			m_finishedCounterLock[p_message.getToken()].acquire();
+		} catch (InterruptedException e) {
 		}
-		m_msgCountGlobalLock.lock();
-		System.out.println(
-				"???? from " + NodeID.toHexString(p_message.getSource()) + ": " + p_message.getSentMessageCount()
-						+ " | " + p_message.getReceivedMessageCount());
-		m_recvVertexMsgCountGlobal += p_message.getReceivedMessageCount();
-		m_sentVertexMsgCountGlobal += p_message.getSentMessageCount();
-		m_msgCountGlobalLock.unlock();
 
-		m_bfsSlavesLevelFinishedCounter.incrementAndGet();
+		m_recvVertexMsgCountGlobal[p_message.getToken()] += p_message.getReceivedMessageCount();
+		m_sentVertexMsgCountGlobal[p_message.getToken()] += p_message.getSentMessageCount();
+
+		// don't unlock on last message main thread is waiting for,
+		// main thread is unlocking
+		if (m_bfsSlavesLevelFinishedCounter[p_message.getToken()].incrementAndGet() != m_nodeIDs.length - 1) {
+			m_finishedCounterLock[p_message.getToken()].release();
+		}
 	}
 }

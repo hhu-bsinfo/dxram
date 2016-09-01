@@ -12,6 +12,7 @@ import de.hhu.bsinfo.menet.AbstractMessage;
  */
 public class BFSLevelFinishedMessage extends AbstractMessage {
 
+	private int m_token;
 	private long m_sentMsgCount;
 	private long m_receivedMsgCount;
 
@@ -28,12 +29,17 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
 	 *
 	 * @param p_destination the destination
 	 */
-	public BFSLevelFinishedMessage(final short p_destination, final long p_sentMsgCount,
+	public BFSLevelFinishedMessage(final short p_destination, final int p_token, final long p_sentMsgCount,
 			final long p_receivedMsgCount) {
 		super(p_destination, BFSMessages.TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE);
 
+		m_token = p_token;
 		m_sentMsgCount = p_sentMsgCount;
 		m_receivedMsgCount = p_receivedMsgCount;
+	}
+
+	public int getToken() {
+		return m_token;
 	}
 
 	public long getSentMessageCount() {
@@ -46,18 +52,20 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
 
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
+		p_buffer.putInt(m_token);
 		p_buffer.putLong(m_sentMsgCount);
 		p_buffer.putLong(m_receivedMsgCount);
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
+		m_token = p_buffer.getInt();
 		m_sentMsgCount = p_buffer.getLong();
 		m_receivedMsgCount = p_buffer.getLong();
 	}
 
 	@Override
 	protected final int getPayloadLength() {
-		return 2 * Long.BYTES;
+		return Integer.BYTES + 2 * Long.BYTES;
 	}
 }

@@ -12,6 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * classes.
  * Currently used subtypes:
  * 1 - FlowcontrolMessage @see de.uniduesseldorf.dxram.core.net.AbstractConnection.FlowcontrolMessage
+ *
  * @author Marc Ewert 21.10.14
  */
 final class MessageDirectory {
@@ -24,16 +25,15 @@ final class MessageDirectory {
 	/**
 	 * MessageDirectory is not designated to be instantiable
 	 */
-	protected MessageDirectory() {}
+	protected MessageDirectory() {
+	}
 
 	/**
 	 * Registers a Message Type for receiving
-	 * @param p_type
-	 *            the type of the Message
-	 * @param p_subtype
-	 *            the subtype of the Message
-	 * @param p_class
-	 *            Message class
+	 *
+	 * @param p_type    the type of the Message
+	 * @param p_subtype the subtype of the Message
+	 * @param p_class   Message class
 	 * @return True if successful, false if the specified type and subtype are already in use.
 	 */
 	protected boolean register(final byte p_type, final byte p_subtype, final Class<?> p_class) {
@@ -41,17 +41,24 @@ final class MessageDirectory {
 		Constructor<?> constructor;
 
 		m_lock.lock();
-		if (contains(p_type, p_subtype)) {
-			m_lock.unlock();
-			return false;
-		}
-
 		try {
 			constructor = p_class.getDeclaredConstructor();
 		} catch (final NoSuchMethodException e) {
 			m_lock.unlock();
 			throw new IllegalArgumentException("Class " + p_class.getCanonicalName() + " has no default constructor",
 					e);
+		}
+
+		if (contains(p_type, p_subtype)) {
+			// everything's fine if the same message type for the same constructor
+			// is registered multiple times
+			if (constructors[p_type][p_subtype].equals(constructor)) {
+				m_lock.unlock();
+				return true;
+			}
+
+			m_lock.unlock();
+			return false;
 		}
 
 		// enlarge array
@@ -81,10 +88,9 @@ final class MessageDirectory {
 
 	/**
 	 * Lookup, if a specific message type is already registered
-	 * @param p_type
-	 *            the type of the Message
-	 * @param p_subtype
-	 *            the subtype of the Message
+	 *
+	 * @param p_type    the type of the Message
+	 * @param p_subtype the subtype of the Message
 	 * @return true if registered
 	 */
 	private boolean contains(final byte p_type, final byte p_subtype) {
@@ -104,10 +110,9 @@ final class MessageDirectory {
 
 	/**
 	 * Returns the constructor for a message class by its type and subtype
-	 * @param p_type
-	 *            the type of the Message
-	 * @param p_subtype
-	 *            the subtype of the Message
+	 *
+	 * @param p_type    the type of the Message
+	 * @param p_subtype the subtype of the Message
 	 * @return message class constructor
 	 */
 	private Constructor<?> getConstructor(final byte p_type, final byte p_subtype) {
@@ -122,10 +127,9 @@ final class MessageDirectory {
 
 	/**
 	 * Creates a Message instance for the type and subtype
-	 * @param p_type
-	 *            the type of the Message
-	 * @param p_subtype
-	 *            the subtype of the Message
+	 *
+	 * @param p_type    the type of the Message
+	 * @param p_subtype the subtype of the Message
 	 * @return a new Message instance
 	 */
 	protected AbstractMessage getInstance(final byte p_type, final byte p_subtype) {
