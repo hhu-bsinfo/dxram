@@ -27,11 +27,14 @@
     <target name="build-all"
             depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release, compile-performance, move-release"
             description="builds all files"/>
-    <target name="build-debug" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, move-debug"
+    <target name="build-debug"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, move-debug"
             description="builds dxram-debug.jar (contains all logger calls)"/>
-    <target name="build-release" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-release, move-release"
+    <target name="build-release"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-release, move-release"
             description="builds dxram-release-jar"/>
-    <target name="build-performance" depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-performance, move-performance"
+    <target name="build-performance"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-performance, move-performance"
             description="builds dxram-performance.jar (without any logger calls)"/>
 
 
@@ -149,8 +152,9 @@
             <classpath refid="build.classpath"/>
         </manifestclasspath>
 
-        <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false" debug="${debugOn}" optimize="${optimizeOn}"
-               encoding="UTF-8">
+        <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
+               debug="${debugOn}" optimize="${optimizeOn}"
+               target="1.8" encoding="UTF-8">
             <include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
             <include name="de/hhu/bsinfo/dxcompute/**/*.java"/>
             <include name="de/hhu/bsinfo/dxram/**/*.java"/>

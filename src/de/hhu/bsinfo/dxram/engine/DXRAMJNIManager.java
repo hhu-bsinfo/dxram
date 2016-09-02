@@ -1,7 +1,6 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import de.hhu.bsinfo.utils.JNINativeMemory;
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.OSValidator;
 import de.hhu.bsinfo.utils.log.Logger;
@@ -60,15 +59,15 @@ public class DXRAMJNIManager {
 
 		JNIconsole.load(path);
 
-		path = p_settings.getValue("JNI/JNINativeMemory", String.class);
-		if (path == null) {
-			path = cwd + "/jni/libJNINativeMemory." + extension;
-		}
-		// #if LOGGER >= DEBUG
-		m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
-		// #endif /* LOGGER >= DEBUG */
-
-		JNINativeMemory.load(path);
+		//		path = p_settings.getValue("JNI/JNINativeMemory", String.class);
+		//		if (path == null) {
+		//			path = cwd + "/jni/libJNINativeMemory." + extension;
+		//		}
+		//		// #if LOGGER >= DEBUG
+		//		m_logger.debug(LOG_HEADER, "Loading JNINativeMemory: " + path);
+		//		// #endif /* LOGGER >= DEBUG */
+		//
+		//		JNINativeMemory.load(path);
 	}
 
 }
