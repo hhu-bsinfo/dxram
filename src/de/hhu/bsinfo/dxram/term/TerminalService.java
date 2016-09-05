@@ -40,6 +40,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 	private boolean m_loop = true;
 	private BufferedWriter m_historyFile;
 
+	private String m_autostartScript;
+
 	/**
 	 * Register a new terminal command for the terminal.
 	 *
@@ -80,6 +82,11 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		System.out.println("Use '? <command>' to get information about a command.");
 		System.out.println("Use '!' or '! <command>' for interactive mode.");
 
+		if (!m_autostartScript.isEmpty()) {
+			System.out.println("Running auto start script " + m_autostartScript);
+			executeTerminalCommand("dsh file:" + m_autostartScript);
+		}
+
 		while (m_loop) {
 			arr = JNIconsole
 					.readline("$" + NodeID.toHexString(m_boot.getNodeID()) + "> ");
@@ -107,7 +114,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	@Override
 	protected void registerDefaultSettingsService(final Settings p_settings) {
-
+		p_settings.setDefaultValue(TerminalConfigurationValues.Service.AUTOSTART_SCRIPT);
 	}
 
 	@Override
@@ -120,6 +127,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
 			loadHistoryFromFile("dxram_term_history");
 		}
+
+		m_autostartScript = p_settings.getValue(TerminalConfigurationValues.Service.AUTOSTART_SCRIPT);
 
 		return true;
 	}

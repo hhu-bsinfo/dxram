@@ -60,7 +60,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-
+		p_settings.setDefaultValue(TerminalConfigurationValues.Component.ASK_ON_QUIT);
 	}
 
 	@Override
@@ -68,9 +68,11 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 			final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 
+		boolean askOnQuit = p_settings.getValue(TerminalConfigurationValues.Component.ASK_ON_QUIT);
+
 		// register built in commands
 		registerCommand(new TcmdClear());
-		registerCommand(new TcmdQuit());
+		registerCommand(new TcmdQuit(askOnQuit));
 		registerCommand(new TcmdPrint());
 		registerCommand(new TcmdScriptExec());
 
