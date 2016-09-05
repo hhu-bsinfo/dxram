@@ -61,7 +61,7 @@ If you don't want to use eclipser proceed as follows:
 Create two new Run Configurations in IntelliJ by creating them in the context menu under _Run > Edit Configuration ..._.
 The first one should be named DXRAMMainPeer(22222) and should have following VM Options:
 ```
-	-Ddxram.config=config/dxram.nothaas.conf
+	-Ddxram.config=config/dxram.default.conf
 	-Ddxram.config.0=config/dxram.nodes.local.conf
 	-Ddxram.config.val.0=/DXRAMEngine/Settings/IP#str#127.0.0.1
 	-Ddxram.config.val.1=/DXRAMEngine/Settings/Port#int#22222
