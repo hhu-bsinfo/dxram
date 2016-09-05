@@ -48,12 +48,8 @@ Name it "dxram" (name has to match dxram subfolder in workspace_dxram).
 Eclipse should detect the dxram folder in the workspace, automatically 
 disable the configuration parameters and focus the finish 
 button - press it.
-Finally, import the run configuration file in Eclipse in the 
-dxram project. Go to _File > Import … > Run/Debug > Launch Configurations_ 
-and click _Next_.
-In the next dialog select the "eclipse" directory from the dxram folder 
-as the „From Directory:“ and check the eclipse folder on the left half 
-of the split pane and click finish.
+Create two new run configurations with main class DXRAMMain. Add the
+vm arguments from the next section for the superpeer and the peer.
 
 ### Configuration IntelliJ
 Open IntelliJ and create a new project from existing sources. Choose the dxram folder from your workspace and click next until the creation process has finished.
