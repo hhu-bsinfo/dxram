@@ -606,8 +606,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					// abort execution and have the master send a kill signal
 					// for this task to all other slaves
 					sendSignalToMaster(Signal.SIGNAL_ABORT);
+					m_loggerService.error(getClass(), "Execution BFS level finished sync step failed.");
 					return;
-					// TODO logging
 				}
 
 				// --------------------------------
@@ -1024,6 +1024,15 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					str += "[MaxEdges/sec: " + m_maxEdgesPerSec + "]";
 					str += "[AvgVerts/sec: " + m_avgVerticesPerSec + "]";
 					str += "[AvgEdges/sec: " + m_avgEdgesPerSec + "]";
+					str += "[VertexMsgCntLocal (" + m_syncBFSFinished.getTokenValue() + "): " + m_syncBFSFinished
+							.getSentVertexMsgCountLocal() + "/"
+							+ m_syncBFSFinished.getReceivedVertexMsgCountLocal() + "]";
+					str += "[VertexMsgCntGlobal (" + m_syncBFSFinished.getTokenValue() + "): " + m_syncBFSFinished
+							.getSentVertexMsgCountGlobal() + "/"
+							+ m_syncBFSFinished.getReceivedVertexMsgCountGlobal() + "]";
+					str += "[BFSSlavesLevelFinishedCounter: " + m_syncBFSFinished.getBFSSlavesLevelFinishedCounter()
+							+ "]";
+					str += "[BFSSlavesEmptyNextFrontiersCounter: " + m_bfsSlavesEmptyNextFrontiers.get() + "]";
 
 					System.out.println(str);
 

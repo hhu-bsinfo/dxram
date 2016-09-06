@@ -21,6 +21,9 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 	private volatile boolean m_signalAbortExecution;
 
+	// TODO i think this can be non volatile without breaking anything -> test
+	private volatile int m_token;
+
 	private AtomicLong m_sentVertexMsgCountLocal = new AtomicLong(0);
 	private AtomicLong m_recvVertexMsgCountLocal = new AtomicLong(0);
 
@@ -30,7 +33,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 	private volatile long[] m_sentVertexMsgCountGlobal = new long[2];
 	private volatile long[] m_recvVertexMsgCountGlobal = new long[2];
 
-	public SyncBFSFinished(final short[] p_nodeIDs, final short p_ownNodeID, final NetworkService p_networkService) {
+	SyncBFSFinished(final short[] p_nodeIDs, final short p_ownNodeID, final NetworkService p_networkService) {
 		m_nodeIDs = p_nodeIDs;
 		m_ownNodeID = p_ownNodeID;
 		m_networkService = p_networkService;
@@ -44,26 +47,50 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 		m_networkService.registerReceiver(BFSLevelFinishedMessage.class, this);
 	}
 
-	public void incrementSentVertexMsgCountLocal() {
+	void incrementSentVertexMsgCountLocal() {
 		m_sentVertexMsgCountLocal.incrementAndGet();
 	}
 
-	public void incrementReceivedVertexMsgCountLocal() {
+	void incrementReceivedVertexMsgCountLocal() {
 		m_recvVertexMsgCountLocal.incrementAndGet();
 	}
 
-	public void signalAbortExecution() {
+	long getSentVertexMsgCountLocal() {
+		return m_sentVertexMsgCountLocal.get();
+	}
+
+	long getReceivedVertexMsgCountLocal() {
+		return m_recvVertexMsgCountLocal.get();
+	}
+
+	int getTokenValue() {
+		return m_token;
+	}
+
+	long getSentVertexMsgCountGlobal() {
+		return m_sentVertexMsgCountGlobal[m_token];
+	}
+
+	long getReceivedVertexMsgCountGlobal() {
+		return m_recvVertexMsgCountGlobal[m_token];
+	}
+
+	int getBFSSlavesLevelFinishedCounter() {
+		return m_bfsSlavesLevelFinishedCounter[m_token].get();
+	}
+
+	void signalAbortExecution() {
 		m_signalAbortExecution = true;
 	}
 
-	public boolean execute() {
+	boolean execute() {
 		// use double buffering for certain data
 		// if we happen to have multiple iterations due to multiple repeats necessary,
 		// we have to make sure that finished messages from nodes that can already determine
 		// that another iteration i is necessary do not interfere with nodes that still have to
 		// figure that out in iteration i - 1 i.e. messages of the next evaluation phase i
 		// overtake messages of the phase i - 1 when processing them in the message handler
-		int token = 0;
+		m_token = 0;
 
 		while (true) {
 			// inform all other slaves we are done, this might need multiple tries
@@ -85,7 +112,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 			for (short nodeID : m_nodeIDs) {
 				if (nodeID != m_ownNodeID) {
-					BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(nodeID, token,
+					BFSLevelFinishedMessage msg = new BFSLevelFinishedMessage(nodeID, m_token,
 							localSentMsgCnt, localRecvMsgCnt);
 
 					NetworkErrorCodes err = m_networkService.sendMessage(msg);
@@ -97,7 +124,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 			// busy wait until everyone is done
 			while (true) {
-				if (m_bfsSlavesLevelFinishedCounter[token].compareAndSet(m_nodeIDs.length - 1, 0)) {
+				if (m_bfsSlavesLevelFinishedCounter[m_token].compareAndSet(m_nodeIDs.length - 1, 0)) {
 					break;
 				}
 
@@ -117,20 +144,20 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 			// not fully processed, yet
 
 			// don't forget to add the counters from our local instance
-			m_sentVertexMsgCountGlobal[token] += localSentMsgCnt;
-			m_recvVertexMsgCountGlobal[token] += localRecvMsgCnt;
+			m_sentVertexMsgCountGlobal[m_token] += localSentMsgCnt;
+			m_recvVertexMsgCountGlobal[m_token] += localRecvMsgCnt;
 
-			if (m_sentVertexMsgCountGlobal[token] != m_recvVertexMsgCountGlobal[token]) {
-				m_sentVertexMsgCountGlobal[token] = 0;
-				m_recvVertexMsgCountGlobal[token] = 0;
-				m_finishedCounterLock[token].release();
-				token += (token + 1) % 2;
+			if (m_sentVertexMsgCountGlobal[m_token] != m_recvVertexMsgCountGlobal[m_token]) {
+				m_sentVertexMsgCountGlobal[m_token] = 0;
+				m_recvVertexMsgCountGlobal[m_token] = 0;
+				m_finishedCounterLock[m_token].release();
+				m_token = (m_token + 1) % 2;
 			} else {
-				m_sentVertexMsgCountGlobal[token] = 0;
-				m_recvVertexMsgCountGlobal[token] = 0;
+				m_sentVertexMsgCountGlobal[m_token] = 0;
+				m_recvVertexMsgCountGlobal[m_token] = 0;
 				m_sentVertexMsgCountLocal.set(0);
 				m_recvVertexMsgCountLocal.set(0);
-				m_finishedCounterLock[token].release();
+				m_finishedCounterLock[m_token].release();
 				break;
 			}
 		}
@@ -138,7 +165,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 		return true;
 	}
 
-	public void cleanup() {
+	void cleanup() {
 		m_networkService.unregisterReceiver(BFSLevelFinishedMessage.class, this);
 	}
 
@@ -162,7 +189,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 		try {
 			m_finishedCounterLock[p_message.getToken()].acquire();
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException ignored) {
 		}
 
 		m_recvVertexMsgCountGlobal[p_message.getToken()] += p_message.getReceivedMessageCount();
