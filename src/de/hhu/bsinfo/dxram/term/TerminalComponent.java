@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.term.tcmds.TcmdClear;
 import de.hhu.bsinfo.dxram.term.tcmds.TcmdPrint;
 import de.hhu.bsinfo.dxram.term.tcmds.TcmdQuit;
 import de.hhu.bsinfo.dxram.term.tcmds.TcmdScriptExec;
+import de.hhu.bsinfo.dxram.term.tcmds.TcmdSleep;
 
 /**
  * Component providing data/commands for an interactive terminal to be run on a node.
@@ -75,6 +76,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		registerCommand(new TcmdQuit(askOnQuit));
 		registerCommand(new TcmdPrint());
 		registerCommand(new TcmdScriptExec());
+		registerCommand(new TcmdSleep());
 
 		return true;
 	}
