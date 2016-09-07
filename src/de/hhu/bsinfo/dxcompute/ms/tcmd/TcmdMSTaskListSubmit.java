@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Semaphore;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
@@ -27,6 +28,7 @@ import de.hhu.bsinfo.utils.conf.ConfigurationXMLParser;
 /**
  * Terminal command to read a list of tasks from file, create task payloads and pass them to a compute group for
  * execution.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 27.04.16
  */
 public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements TaskListener {
@@ -37,8 +39,11 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			new Argument("file", null, false, "Task list file to parse");
 	private static final Argument MS_ARG_NAME =
 			new Argument("name", "TcmdTask", true, "Name for the tasks for easier identification");
+	private static final Argument MS_ARG_WAIT =
+			new Argument("wait", "false", true, "Wait/block until all tasks submitted are completed");
 
 	private static int m_taskCounter;
+	private Semaphore m_finished;
 
 	@Override
 	public String getName() {
@@ -55,6 +60,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 		p_arguments.setArgument(MS_ARG_CGID);
 		p_arguments.setArgument(MS_ARG_FILE);
 		p_arguments.setArgument(MS_ARG_NAME);
+		p_arguments.setArgument(MS_ARG_WAIT);
 	}
 
 	@Override
@@ -62,6 +68,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 		short cgid = p_arguments.getArgument(MS_ARG_CGID).getValue(Short.class);
 		String file = p_arguments.getArgument(MS_ARG_FILE).getValue(String.class);
 		String name = p_arguments.getArgument(MS_ARG_NAME).getValue(String.class);
+		boolean wait = p_arguments.getArgumentValue(MS_ARG_WAIT, Boolean.class);
 
 		MasterSlaveComputeService computeService =
 				getTerminalDelegate().getDXRAMService(MasterSlaveComputeService.class);
@@ -72,6 +79,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 		}
 
 		ArrayList<AbstractTaskPayload> taskPayloads = parseTaskList(taskList);
+		m_finished = new Semaphore(-(taskPayloads.size() - 1), false);
 		for (AbstractTaskPayload taskPayload : taskPayloads) {
 			Task task = new Task(taskPayload, name + m_taskCounter++);
 			task.registerTaskListener(this);
@@ -85,6 +93,15 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 		}
 
 		getTerminalDelegate().println("Submitted " + taskPayloads.size() + " to cgid " + cgid);
+
+		if (wait) {
+			getTerminalDelegate().println("Waiting for all tasks to finish...");
+			try {
+				m_finished.acquire();
+			} catch (final InterruptedException ignored) {
+
+			}
+		}
 
 		return true;
 	}
@@ -108,12 +125,14 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
 			}
 		}
+
+		m_finished.release();
 	}
 
 	/**
 	 * Load a list of tasks from a file (.ctask).
-	 * @param p_file
-	 *            Task list file
+	 *
+	 * @param p_file Task list file
 	 * @return Configuration object if successful, null otherwise.
 	 */
 	private Configuration loadTaskList(final String p_file) {
@@ -140,8 +159,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 	/**
 	 * Parse the configuration file containing the task list.
-	 * @param p_taskList
-	 *            Task list to parse.
+	 *
+	 * @param p_taskList Task list to parse.
 	 * @return List of task payload objects created from the provided list.
 	 */
 	private ArrayList<AbstractTaskPayload> parseTaskList(final Configuration p_taskList) {
@@ -199,8 +218,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 						p_taskList.getValue("/ComputeTask/" + argument.getKey(), tidEntry.getKey());
 				if (value == null) {
 					getTerminalDelegate()
-					.println("Missing value for task id " + tidEntry.getValue() + " tid " + tid + ", stid "
-							+ stid + " for key " + argument.getKey(), TerminalColor.RED);
+							.println("Missing value for task id " + tidEntry.getValue() + " tid " + tid + ", stid "
+									+ stid + " for key " + argument.getKey(), TerminalColor.RED);
 					continue;
 				}
 
@@ -213,8 +232,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			} catch (final NullPointerException e) {
 				// happens if an argument was not provided (probably typo)
 				getTerminalDelegate()
-				.println("Parsing arguments of task with type id " + tid + " subtype id " + stid + " for key "
-						+ tidEntry.getKey() + " failed, missing or mistyped argument?", TerminalColor.RED);
+						.println("Parsing arguments of task with type id " + tid + " subtype id " + stid + " for key "
+								+ tidEntry.getKey() + " failed, missing or mistyped argument?", TerminalColor.RED);
 				continue;
 			}
 			taskList.add(taskPayload);

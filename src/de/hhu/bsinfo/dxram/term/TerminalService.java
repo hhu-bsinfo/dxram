@@ -274,6 +274,11 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		ArgumentListParser argsParser = new DefaultArgumentListParser();
 		ArgumentList argsList = new ArgumentList();
 
+		// ignore comments
+		if (p_cmdString.trim().startsWith("#")) {
+			return true;
+		}
+
 		arguments = p_cmdString.split(" ");
 
 		if (arguments[0].equals("?")) {
@@ -290,7 +295,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 				System.out.println(getAvailableCommands());
 			}
 		} else if (arguments[0].equals("!") || arguments[0].equals("!")) {
-			String cmdStr = null;
+			String cmdStr;
 			if (arguments.length < 2) {
 				System.out.println("Specify command for interactive mode:");
 				cmdStr = promptForUserInput("command");

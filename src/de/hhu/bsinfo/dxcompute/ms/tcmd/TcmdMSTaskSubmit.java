@@ -1,6 +1,10 @@
 
 package de.hhu.bsinfo.dxcompute.ms.tcmd;
 
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.Task;
@@ -14,6 +18,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Terminal command to submit a task to a compute group.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskListener {
@@ -25,8 +30,12 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 			new Argument("cgid", null, false, "Id of the compute group to submit the task to");
 	private static final Argument MS_ARG_NAME =
 			new Argument("name", "TcmdTask", true, "Name for the task for easier identification");
+	private static final Argument MS_ARG_WAIT =
+			new Argument("wait", "false", true, "Wait/block until the task is completed");
 
 	private static int m_taskCounter;
+	private Lock m_lock = new ReentrantLock(false);
+	private Condition m_finished = m_lock.newCondition();
 
 	@Override
 	public String getName() {
@@ -44,6 +53,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 		p_arguments.setArgument(MS_ARG_TASK_SUBTYPE_ID);
 		p_arguments.setArgument(MS_ARG_CGID);
 		p_arguments.setArgument(MS_ARG_NAME);
+		p_arguments.setArgument(MS_ARG_WAIT);
 	}
 
 	@Override
@@ -52,6 +62,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 		Short stid = p_arguments.getArgumentValue(MS_ARG_TASK_SUBTYPE_ID, Short.class);
 		Short cgid = p_arguments.getArgumentValue(MS_ARG_CGID, Short.class);
 		String name = p_arguments.getArgumentValue(MS_ARG_NAME, String.class);
+		boolean wait = p_arguments.getArgumentValue(MS_ARG_WAIT, Boolean.class);
 
 		MasterSlaveComputeService computeService =
 				getTerminalDelegate().getDXRAMService(MasterSlaveComputeService.class);
@@ -102,6 +113,18 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 
 		getTerminalDelegate().println("Task submitted to compute group " + cgid + ", task id " + taskId);
 
+		m_lock.lock();
+		if (wait) {
+			m_lock.lock();
+			getTerminalDelegate().println("Waiting for task to finish...");
+			try {
+				m_finished.await();
+			} catch (final InterruptedException ignored) {
+
+			}
+		}
+		m_lock.unlock();
+
 		return true;
 	}
 
@@ -112,6 +135,8 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 
 	@Override
 	public void taskCompleted(final Task p_task) {
+		m_lock.lock();
+
 		getTerminalDelegate().println("ComputeTask: Finished execution " + p_task);
 		getTerminalDelegate().println("Return codes of slave nodes: ");
 		int[] results = p_task.getExecutionReturnCodes();
@@ -124,5 +149,8 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
 			}
 		}
+
+		m_finished.signal();
+		m_lock.unlock();
 	}
 }
