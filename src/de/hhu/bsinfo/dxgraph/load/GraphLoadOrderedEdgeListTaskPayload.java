@@ -9,7 +9,7 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.VertexSimple;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
@@ -289,7 +289,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	private boolean loadGraphPartition(final OrderedEdgeList p_orderedEdgeList,
 			final GraphPartitionIndex p_graphPartitionIndex) {
-		Vertex[] vertexBuffer = new Vertex[m_vertexBatchSize];
+		VertexSimple[] vertexBuffer = new VertexSimple[m_vertexBatchSize];
 		int readCount;
 
 		GraphPartitionIndex.Entry currentPartitionIndexEntry = p_graphPartitionIndex.getPartitionIndex(getSlaveId());
@@ -315,7 +315,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		while (true) {
 			readCount = 0;
 			while (readCount < vertexBuffer.length) {
-				Vertex vertex = p_orderedEdgeList.readVertex();
+				VertexSimple vertex = p_orderedEdgeList.readVertex();
 				if (vertex == null) {
 					break;
 				}

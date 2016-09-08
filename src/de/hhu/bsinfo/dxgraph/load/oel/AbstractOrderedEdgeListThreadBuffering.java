@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxgraph.load.oel;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.VertexSimple;
 
 /**
  * Base class running a buffered reader of vertex data in a separate thread to speed up loading.
@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxgraph.data.Vertex;
 abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements OrderedEdgeList {
 
 	private int m_bufferLimit = 1000;
-	private ConcurrentLinkedQueue<Vertex> m_vertexBuffer = new ConcurrentLinkedQueue<>();
+	private ConcurrentLinkedQueue<VertexSimple> m_vertexBuffer = new ConcurrentLinkedQueue<>();
 
 	protected long m_partitionStartOffset;
 	protected long m_partitionEndOffset;
@@ -46,9 +46,9 @@ abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements 
 	}
 
 	@Override
-	public Vertex readVertex() {
+	public VertexSimple readVertex() {
 		while (true) {
-			Vertex vertex = m_vertexBuffer.poll();
+			VertexSimple vertex = m_vertexBuffer.poll();
 			if (vertex != null) {
 				return vertex;
 			}
@@ -69,7 +69,7 @@ abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements 
 				Thread.yield();
 			}
 
-			Vertex vertex = readFileVertex();
+			VertexSimple vertex = readFileVertex();
 			if (vertex == null) {
 				return;
 			}
@@ -88,7 +88,7 @@ abstract class AbstractOrderedEdgeListThreadBuffering extends Thread implements 
 	/**
 	 * Read a single vertex from the file.
 	 *
-	 * @return Vertex read from the file or null if eof.
+	 * @return VertexSimple read from the file or null if eof.
 	 */
-	protected abstract Vertex readFileVertex();
+	protected abstract VertexSimple readFileVertex();
 }

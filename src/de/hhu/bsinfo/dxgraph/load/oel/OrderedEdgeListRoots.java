@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxgraph.load.oel;
 /**
  * Interface for an ordered edge list root list providing
  * entry vertex ids for algorithms like BFS.
- * Vertex indices have to start with id 1.
+ * VertexSimple indices have to start with id 1.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public interface OrderedEdgeListRoots {

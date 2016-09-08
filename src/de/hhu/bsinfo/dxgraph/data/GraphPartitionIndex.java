@@ -254,7 +254,7 @@ public class GraphPartitionIndex implements DataStructure {
 		/**
 		 * Get the vertex count of the partition.
 		 *
-		 * @return Vertex count.
+		 * @return VertexSimple count.
 		 */
 		public long getVertexCount() {
 			return m_vertexCount;
