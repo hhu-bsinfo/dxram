@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -23,6 +25,7 @@ import de.hhu.bsinfo.menet.NodeID;
 /**
  * Service providing information about the bootstrapping process like
  * node ids, node roles, addresses etc.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class BootService extends AbstractDXRAMService implements MessageReceiver {
@@ -34,8 +37,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Check if a specific node is online.
-	 * @param p_nodeID
-	 *            Node to check.
+	 *
+	 * @param p_nodeID Node to check.
 	 * @return True if online, false offline.
 	 */
 	public boolean isNodeOnline(final short p_nodeID) {
@@ -44,6 +47,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Get the ID of the node, you are currently running on.
+	 *
 	 * @return NodeID.
 	 */
 	public short getNodeID() {
@@ -52,6 +56,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Get IDs of all available (online) nodes including own.
+	 *
 	 * @return List of IDs of nodes available.
 	 */
 	public List<Short> getIDsOfOnlineNodes() {
@@ -60,6 +65,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Get the node role of the current node.
+	 *
 	 * @return Node role of current node.
 	 */
 	public NodeRole getNodeRole() {
@@ -68,8 +74,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Get the role of another nodeID.
-	 * @param p_nodeID
-	 *            Node id to get the role of.
+	 *
+	 * @param p_nodeID Node id to get the role of.
 	 * @return Role of other nodeID or null if node does not exist.
 	 */
 	public NodeRole getNodeRole(final short p_nodeID) {
@@ -78,8 +84,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Get the IP and port of another node.
-	 * @param p_nodeID
-	 *            Node ID of the node.
+	 *
+	 * @param p_nodeID Node ID of the node.
 	 * @return IP and port of the specified node or an invalid address if not available.
 	 */
 	public InetSocketAddress getNodeAddress(final short p_nodeID) {
@@ -88,6 +94,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Get IDs of all available (online) peer nodes exception our own.
+	 *
 	 * @return List of IDs of nodes available.
 	 */
 	public List<Short> getAvailablePeerNodeIDs() {
@@ -96,14 +103,21 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Check if a node is available/exists.
-	 * @param p_nodeID
-	 *            Node ID to check.
+	 *
+	 * @param p_nodeID Node ID to check.
 	 * @return True if available, false otherwise.
 	 */
 	public boolean nodeAvailable(final short p_nodeID) {
 		return m_boot.nodeAvailable(p_nodeID);
 	}
 
+	/**
+	 * Shutdown a single node or all nodes.
+	 *
+	 * @param p_nodeID       Node id to shut down or -1/0xFFFF to shut down all nodes.
+	 * @param p_hardShutdown If true this will kill the process instead of shutting down DXRAM properly.
+	 * @return True if successful, false on failure.
+	 */
 	public boolean shutdownNode(final short p_nodeID, final boolean p_hardShutdown) {
 		if (p_nodeID == m_boot.getNodeID()) {
 			// #if LOGGER >= ERROR
@@ -112,22 +126,73 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 			return false;
 		}
 
-		ShutdownMessage message = new ShutdownMessage(p_nodeID, p_hardShutdown);
-		NetworkErrorCodes err = m_network.sendMessage(message);
-		if (err != NetworkErrorCodes.SUCCESS) {
-			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "Shutting down node " + NodeID.toHexString(p_nodeID) + " failed: " + err);
-			// #endif /* LOGGER >= ERROR */
-			return false;
-		}
+		if (p_nodeID == -1) {
+			List<Short> nodeIds = m_boot.getIDsOfOnlineNodes();
 
-		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Sent remote shutdown to node " + NodeID.toHexString(p_nodeID));
-		// #endif /* LOGGER >= INFO */
+			// shutdown peers first
+			for (Short nodeId : nodeIds) {
+				if (nodeId != m_boot.getNodeID() && m_boot.getNodeRole(nodeId) == NodeRole.PEER) {
+					ShutdownMessage message = new ShutdownMessage(nodeId, p_hardShutdown);
+					NetworkErrorCodes err = m_network.sendMessage(message);
+					if (err != NetworkErrorCodes.SUCCESS) {
+						// #if LOGGER >= ERROR
+						m_logger.error(getClass(),
+								"Shutting down node " + NodeID.toHexString(nodeId) + " failed: " + err);
+						// #endif /* LOGGER >= ERROR */
+						return false;
+					}
+				}
+			}
+
+			// some delay so peers still have their superpeers when shutting down
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			// then superpeers
+			for (Short nodeId : nodeIds) {
+				if (nodeId != m_boot.getNodeID() && m_boot.getNodeRole(nodeId) == NodeRole.SUPERPEER) {
+					ShutdownMessage message = new ShutdownMessage(nodeId, p_hardShutdown);
+					NetworkErrorCodes err = m_network.sendMessage(message);
+					if (err != NetworkErrorCodes.SUCCESS) {
+						// #if LOGGER >= ERROR
+						m_logger.error(getClass(),
+								"Shutting down node " + NodeID.toHexString(nodeId) + " failed: " + err);
+						// #endif /* LOGGER >= ERROR */
+						return false;
+					}
+				}
+			}
+
+			// and ourselves
+			shutdown(p_hardShutdown);
+
+		} else {
+			ShutdownMessage message = new ShutdownMessage(p_nodeID, p_hardShutdown);
+			NetworkErrorCodes err = m_network.sendMessage(message);
+			if (err != NetworkErrorCodes.SUCCESS) {
+				// #if LOGGER >= ERROR
+				m_logger.error(getClass(), "Shutting down node " + NodeID.toHexString(p_nodeID) + " failed: " + err);
+				// #endif /* LOGGER >= ERROR */
+				return false;
+			}
+
+			// #if LOGGER >= INFO
+			m_logger.info(getClass(), "Sent remote shutdown to node " + NodeID.toHexString(p_nodeID));
+			// #endif /* LOGGER >= INFO */
+		}
 
 		return true;
 	}
 
+	/**
+	 * (Soft) reboot a DXRAM node.
+	 *
+	 * @param p_nodeID Node to reboot.
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean rebootNode(final short p_nodeID) {
 		if (p_nodeID == m_boot.getNodeID()) {
 			// #if LOGGER >= ERROR
@@ -157,14 +222,14 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 		if (p_message != null) {
 			if (p_message.getType() == BootMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case BootMessages.SUBTYPE_REBOOT_MESSAGE:
-					incomingRebootMessage((RebootMessage) p_message);
-					break;
-				case BootMessages.SUBTYPE_SHUTDOWN_MESSAGE:
-					incomingShutdownMessage((ShutdownMessage) p_message);
-					break;
-				default:
-					break;
+					case BootMessages.SUBTYPE_REBOOT_MESSAGE:
+						incomingRebootMessage((RebootMessage) p_message);
+						break;
+					case BootMessages.SUBTYPE_SHUTDOWN_MESSAGE:
+						incomingShutdownMessage((ShutdownMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -215,8 +280,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Handler an incoming RebootMessage.
-	 * @param p_message
-	 *            Message to handle.
+	 *
+	 * @param p_message Message to handle.
 	 */
 	private void incomingRebootMessage(final RebootMessage p_message) {
 		DXRAMEngine parentEngine = getParentEngine();
@@ -227,7 +292,8 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 				// wait a moment for the superpeer to detect the failure
 				try {
 					Thread.sleep(2000);
-				} catch (final InterruptedException e) {}
+				} catch (final InterruptedException e) {
+				}
 				parentEngine.init();
 			}
 		}.start();
@@ -235,21 +301,32 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 
 	/**
 	 * Handler an incoming ShutdownMessage.
-	 * @param p_message
-	 *            Message to handle.
+	 *
+	 * @param p_message Message to handle.
 	 */
 	private void incomingShutdownMessage(final ShutdownMessage p_message) {
-		if (p_message.isHardShutdown()) {
-			// quick and painless
-			System.exit(0);
+		shutdown(p_message.isHardShutdown());
+	}
+
+	/**
+	 * Shutdown the current node.
+	 *
+	 * @param p_hardShutdown True to kill the node without shutting down DXRAM, false for proper DXRAM shutdown.
+	 */
+	private void shutdown(final boolean p_hardShutdown) {
+		if (p_hardShutdown) {
+			// suicide
+			// note: this might not work correctly on every jvm implementation
+			String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+			try {
+				Runtime.getRuntime().exec("kill -9 " + pid);
+			} catch (final IOException ignored) {
+
+			}
+
 		} else {
-			DXRAMEngine parentEngine = getParentEngine();
-			new Thread() {
-				@Override
-				public void run() {
-					parentEngine.shutdown();
-				}
-			}.start();
+			// triggers the registered cleanup handler
+			System.exit(0);
 		}
 	}
 }

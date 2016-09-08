@@ -9,19 +9,21 @@ import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Shut down a dxram node.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 02.05.16
  */
 public class TcmdNodeShutdown extends AbstractTerminalCommand {
 	private static final ArgumentList.Argument MS_ARG_NID =
-			new ArgumentList.Argument("nid", null, false, "Id of the node to shut down");
+			new ArgumentList.Argument("nid", null, false, "Id of the node to shut down, or -1/0xFFFF for all nodes");
 	private static final ArgumentList.Argument MS_ARG_HARD =
-			new ArgumentList.Argument("hard", "true", true,
+			new ArgumentList.Argument("hard", "false", true,
 					"Specify a hard shutdown (whole application running DXRAM) or soft shutdown (DXRAM instance only)");
 
 	/**
 	 * Constructor
 	 */
-	public TcmdNodeShutdown() {}
+	public TcmdNodeShutdown() {
+	}
 
 	@Override
 	public String getName() {
@@ -48,7 +50,7 @@ public class TcmdNodeShutdown extends AbstractTerminalCommand {
 
 		if (!bootService.shutdownNode(nid, hard)) {
 			getTerminalDelegate()
-			.println("Shutting down node " + NodeID.toHexString(nid) + " failed.", TerminalColor.RED);
+					.println("Shutting down node " + NodeID.toHexString(nid) + " failed.", TerminalColor.RED);
 		} else {
 			getTerminalDelegate().println("Shutting down node " + NodeID.toHexString(nid) + " successful.");
 		}
