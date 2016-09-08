@@ -48,7 +48,7 @@ public class Vertex implements DataStructure {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		byte flags = p_importer.readByte();
 		m_neighborsAreEdgeObjects = (flags & (1 << 1)) > 0;
 		m_locked = (flags & (1 << 2)) > 0;
@@ -63,8 +63,6 @@ public class Vertex implements DataStructure {
 		m_neighborsCount = p_importer.readInt();
 		m_neighborIDs = new long[m_neighborsCount];
 		p_importer.readLongs(m_neighborIDs);
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -81,12 +79,7 @@ public class Vertex implements DataStructure {
 	}
 
 	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
-	}
-
-	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 
 		byte flags = 0;
 		flags |= m_neighborsAreEdgeObjects ? (1 << 0) : 0;
@@ -102,8 +95,6 @@ public class Vertex implements DataStructure {
 
 		p_exporter.writeInt(m_neighborsCount);
 		p_exporter.writeLongs(m_neighborIDs, 0, m_neighborsCount);
-
-		return sizeofObject();
 	}
 
 	@Override

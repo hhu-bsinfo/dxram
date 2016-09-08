@@ -27,26 +27,17 @@ public class TestProperty extends Property<TestProperty> {
 	}
 
 	@Override
-	public int exportObject(Exporter p_exporter, int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 		p_exporter.writeInt(m_value);
-
-		return sizeofObject();
 	}
 
 	@Override
-	public int importObject(Importer p_importer, int p_size) {
+	public void importObject(final Importer p_importer) {
 		m_value = p_importer.readInt();
-
-		return sizeofObject();
 	}
 
 	@Override
 	public int sizeofObject() {
 		return Integer.BYTES;
-	}
-
-	@Override
-	public boolean hasDynamicObjectSize() {
-		return false;
 	}
 }

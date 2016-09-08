@@ -463,9 +463,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 			// SmallObjectHeapDataStructureImExporter importer =
 			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (importer.importObject(p_dataStructure) < 0) {
-				ret = MemoryErrorCodes.READ;
-			}
+			importer.importObject(p_dataStructure);
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
@@ -554,9 +552,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			SmallObjectHeapDataStructureImExporter exporter = getImExporter(address, chunkSize);
 			// SmallObjectHeapDataStructureImExporter exporter =
 			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (exporter.exportObject(p_dataStructure) < 0) {
-				ret = MemoryErrorCodes.WRITE;
-			}
+			exporter.exportObject(p_dataStructure);
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}

@@ -113,15 +113,13 @@ public class VertexSimple implements DataStructure {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		int numNeighbours;
 
 		m_userData = p_importer.readInt();
 		numNeighbours = p_importer.readInt();
 		m_neighbours = new long[numNeighbours];
 		p_importer.readLongs(m_neighbours);
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -132,12 +130,7 @@ public class VertexSimple implements DataStructure {
 	}
 
 	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
-	}
-
-	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 
 		p_exporter.writeInt(m_userData);
 
@@ -146,8 +139,6 @@ public class VertexSimple implements DataStructure {
 			p_exporter.writeInt(m_neighbours.length);
 			p_exporter.writeLongs(m_neighbours);
 		}
-
-		return sizeofObject();
 	}
 
 	@Override

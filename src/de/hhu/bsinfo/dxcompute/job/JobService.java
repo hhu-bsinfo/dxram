@@ -505,20 +505,13 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		}
 
 		@Override
-		public boolean hasDynamicObjectSize() {
-			return false;
-		}
-
-		@Override
-		public int exportObject(final Exporter p_exporter, final int p_size) {
+		public void exportObject(final Exporter p_exporter) {
 			p_exporter.writeLong(m_numUnfinishedJobs);
-			return sizeofObject();
 		}
 
 		@Override
-		public int importObject(final Importer p_importer, final int p_size) {
+		public void importObject(final Importer p_importer) {
 			m_numUnfinishedJobs = p_importer.readLong();
-			return sizeofObject();
 		}
 	}
 }

@@ -157,38 +157,29 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 		p_exporter.writeInt(m_payloadId);
 		p_exporter.writeShort(m_slaveId);
 		p_exporter.writeInt(m_slaveNodeIds.length);
 		p_exporter.writeShorts(m_slaveNodeIds);
 		p_exporter.writeInt(m_executionReturnCodes.length);
 		p_exporter.writeInts(m_executionReturnCodes);
-
-		return sizeofObject();
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		m_payloadId = p_importer.readInt();
 		m_slaveId = p_importer.readShort();
 		m_slaveNodeIds = new short[p_importer.readInt()];
 		p_importer.readShorts(m_slaveNodeIds);
 		m_executionReturnCodes = new int[p_importer.readInt()];
 		p_importer.readInts(m_executionReturnCodes);
-
-		return sizeofObject();
 	}
 
 	@Override
 	public int sizeofObject() {
 		return Integer.BYTES + Short.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES + Integer.BYTES
 				+ m_executionReturnCodes.length * Integer.BYTES;
-	}
-
-	@Override
-	public boolean hasDynamicObjectSize() {
-		return false;
 	}
 
 	@Override

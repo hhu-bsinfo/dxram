@@ -127,25 +127,21 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		int size = super.exportObject(p_exporter, p_size);
+	public void exportObject(final Exporter p_exporter) {
+		super.exportObject(p_exporter);
 
 		p_exporter.writeInt(m_pathFile.length());
 		p_exporter.writeBytes(m_pathFile.getBytes(StandardCharsets.US_ASCII));
-
-		return size + Integer.BYTES + m_pathFile.length();
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		int size = super.importObject(p_importer, p_size);
+	public void importObject(final Importer p_importer) {
+		super.importObject(p_importer);
 
 		int strLength = p_importer.readInt();
 		byte[] tmp = new byte[strLength];
 		p_importer.readBytes(tmp);
 		m_pathFile = new String(tmp, StandardCharsets.US_ASCII);
-
-		return size + Integer.BYTES + m_pathFile.length();
 	}
 
 	@Override

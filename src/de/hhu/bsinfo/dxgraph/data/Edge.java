@@ -29,7 +29,7 @@ public class Edge implements DataStructure {
 	}
 
 	@Override
-	public int exportObject(Exporter p_exporter, int p_size) {
+	public void exportObject(Exporter p_exporter) {
 
 		p_exporter.writeLong(m_fromId);
 		p_exporter.writeLong(m_toId);
@@ -39,12 +39,10 @@ public class Edge implements DataStructure {
 			p_exporter.writeShort(m_properties[i].getID());
 			p_exporter.exportObject(m_properties[i]);
 		}
-
-		return sizeofObject();
 	}
 
 	@Override
-	public int importObject(Importer p_importer, int p_size) {
+	public void importObject(Importer p_importer) {
 
 		m_fromId = p_importer.readLong();
 		m_toId = p_importer.readLong();
@@ -55,8 +53,6 @@ public class Edge implements DataStructure {
 			m_properties[i] = PropertyManager.createInstance(p_importer.readShort());
 			p_importer.importObject(m_properties[i]);
 		}
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -69,10 +65,5 @@ public class Edge implements DataStructure {
 		}
 
 		return size;
-	}
-
-	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
 	}
 }

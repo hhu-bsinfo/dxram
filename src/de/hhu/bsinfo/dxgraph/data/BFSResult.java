@@ -45,7 +45,7 @@ public class BFSResult implements DataStructure {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		m_rootVertexId = p_importer.readLong();
 		m_graphFullSizeVertices = p_importer.readLong();
 		m_graphFullSizeEdges = p_importer.readLong();
@@ -61,8 +61,6 @@ public class BFSResult implements DataStructure {
 		m_avgTraversedEdgesPerSecond = p_importer.readLong();
 		m_totalTimeMs = p_importer.readLong();
 		m_totalBFSDepth = p_importer.readInt();
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -71,12 +69,7 @@ public class BFSResult implements DataStructure {
 	}
 
 	@Override
-	public boolean hasDynamicObjectSize() {
-		return false;
-	}
-
-	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 		p_exporter.writeLong(m_rootVertexId);
 		p_exporter.writeLong(m_graphFullSizeVertices);
 		p_exporter.writeLong(m_graphFullSizeEdges);
@@ -92,8 +85,6 @@ public class BFSResult implements DataStructure {
 		p_exporter.writeLong(m_avgTraversedEdgesPerSecond);
 		p_exporter.writeLong(m_totalTimeMs);
 		p_exporter.writeInt(m_totalBFSDepth);
-
-		return sizeofObject();
 	}
 
 	@Override

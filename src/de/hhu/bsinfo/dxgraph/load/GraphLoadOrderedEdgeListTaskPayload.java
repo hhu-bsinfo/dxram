@@ -164,21 +164,19 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		int size = super.exportObject(p_exporter, p_size);
+	public void exportObject(final Exporter p_exporter) {
+		super.exportObject(p_exporter);
 
 		p_exporter.writeInt(m_path.length());
 		p_exporter.writeBytes(m_path.getBytes(StandardCharsets.US_ASCII));
 		p_exporter.writeInt(m_vertexBatchSize);
 		p_exporter.writeByte((byte) (m_filterDupEdges ? 1 : 0));
 		p_exporter.writeByte((byte) (m_filterSelfLoops ? 1 : 0));
-
-		return size + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		int size = super.importObject(p_importer, p_size);
+	public void importObject(final Importer p_importer) {
+		super.importObject(p_importer);
 
 		int strLength = p_importer.readInt();
 		byte[] tmp = new byte[strLength];
@@ -187,8 +185,6 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		m_vertexBatchSize = p_importer.readInt();
 		m_filterDupEdges = p_importer.readByte() > 0;
 		m_filterSelfLoops = p_importer.readByte() > 0;
-
-		return size + Integer.BYTES + m_path.length() + Integer.BYTES + Byte.BYTES * 2;
 	}
 
 	@Override

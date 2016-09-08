@@ -222,7 +222,7 @@ public class SuperpeerStorage {
 		}
 
 		@Override
-		public int exportObject(final Exporter p_exporter, final int p_size) {
+		public void exportObject(final Exporter p_exporter) {
 			p_exporter.writeInt(m_maxNumItems);
 			p_exporter.writeInt(m_maxStorageSizeBytes);
 			p_exporter.writeInt(m_storageStatus.size());
@@ -231,12 +231,10 @@ public class SuperpeerStorage {
 				p_exporter.writeInt((int) (val >> 32L));
 				p_exporter.writeInt((int) val);
 			}
-
-			return sizeofObject();
 		}
 
 		@Override
-		public int importObject(final Importer p_importer, final int p_size) {
+		public void importObject(final Importer p_importer) {
 			m_maxNumItems = p_importer.readInt();
 			m_maxStorageSizeBytes = p_importer.readInt();
 			int size = p_importer.readInt();
@@ -244,18 +242,11 @@ public class SuperpeerStorage {
 			for (int i = 0; i < size; i++) {
 				m_storageStatus.add((((long) p_importer.readInt()) << 32L) | p_importer.readInt());
 			}
-
-			return sizeofObject();
 		}
 
 		@Override
 		public int sizeofObject() {
 			return Integer.BYTES * 3 + m_storageStatus.size() * Long.BYTES;
-		}
-
-		@Override
-		public boolean hasDynamicObjectSize() {
-			return true;
 		}
 	}
 }

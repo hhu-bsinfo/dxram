@@ -343,8 +343,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		int size = super.exportObject(p_exporter, p_size);
+	public void exportObject(final Exporter p_exporter) {
+		super.exportObject(p_exporter);
 
 		p_exporter.writeInt(m_bfsRootNameserviceEntry.length());
 		p_exporter.writeBytes(m_bfsRootNameserviceEntry.getBytes(StandardCharsets.US_ASCII));
@@ -355,14 +355,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		p_exporter.writeByte((byte) (m_beamerMode ? 1 : 0));
 		p_exporter.writeInt(m_beamerFormulaGraphEdgeDeg);
 		p_exporter.writeByte((byte) (m_abortBFSOnError ? 1 : 0));
-
-		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
-				+ Integer.BYTES + Byte.BYTES;
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		int size = super.importObject(p_importer, p_size);
+	public void importObject(final Importer p_importer) {
+		super.importObject(p_importer);
 
 		int strLength = p_importer.readInt();
 		byte[] tmp = new byte[strLength];
@@ -375,9 +372,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_beamerMode = p_importer.readByte() > 0;
 		m_beamerFormulaGraphEdgeDeg = p_importer.readInt();
 		m_abortBFSOnError = p_importer.readByte() > 0;
-
-		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
-				+ Integer.BYTES + Byte.BYTES;
 	}
 
 	@Override

@@ -1999,12 +1999,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		@Override
-		public boolean hasDynamicObjectSize() {
-			return false;
-		}
-
-		@Override
-		public int exportObject(final Exporter p_exporter, final int p_size) {
+		public void exportObject(final Exporter p_exporter) {
 			p_exporter.writeLong(m_freeMemoryBytes);
 			p_exporter.writeLong(m_totalMemoryBytes);
 			p_exporter.writeLong(m_totalPayloadMemoryBytes);
@@ -2013,11 +2008,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			p_exporter.writeLong(m_totalChunkPayloadMemory);
 			p_exporter.writeLong(m_cidTableCount);
 			p_exporter.writeLong(m_totalMemoryCIDTables);
-			return sizeofObject();
 		}
 
 		@Override
-		public int importObject(final Importer p_importer, final int p_size) {
+		public void importObject(final Importer p_importer) {
 			m_freeMemoryBytes = p_importer.readLong();
 			m_totalMemoryBytes = p_importer.readLong();
 			m_totalPayloadMemoryBytes = p_importer.readLong();
@@ -2026,7 +2020,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			m_totalChunkPayloadMemory = p_importer.readLong();
 			m_cidTableCount = p_importer.readLong();
 			m_totalMemoryCIDTables = p_importer.readLong();
-			return sizeofObject();
 		}
 
 		@Override
