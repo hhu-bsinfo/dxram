@@ -69,7 +69,7 @@ public class VertexSimple implements DataStructure {
 
 	/**
 	 * Add a new neighbour to the currently existing list.
-	 * This will expand the static array by one entry and
+	 * This will expand the array by one entry and
 	 * add the new neighbour at the end.
 	 *
 	 * @param p_neighbour Neighbour vertex Id to add.

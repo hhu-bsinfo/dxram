@@ -3,7 +3,10 @@ package de.hhu.bsinfo.dxgraph.data;
 import java.util.ArrayList;
 
 /**
- * Created by nothaas on 9/8/16.
+ * Manager class for property classes created. Make sure to register
+ * any newly created property classes here.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
 public class PropertyManager {
 
@@ -16,6 +19,12 @@ public class PropertyManager {
 
 	}
 
+	/**
+	 * Create a new instance of a property object by id.
+	 *
+	 * @param p_propertyId Registered id of a property object to create.
+	 * @return Property object created or null if no object with the specified id is registered.
+	 */
 	public static Property createInstance(final short p_propertyId) {
 		Class<? extends Property> clazz;
 		try {
@@ -31,6 +40,11 @@ public class PropertyManager {
 		}
 	}
 
+	/**
+	 * Register a property class.
+	 *
+	 * @param p_clazz Property class to register.
+	 */
 	public static synchronized void registerPropertyClass(final Class<? extends Property> p_clazz) {
 		if (m_registeredProperties.size() == Short.MAX_VALUE) {
 			throw new RuntimeException("Max number of properties to register exceeded");

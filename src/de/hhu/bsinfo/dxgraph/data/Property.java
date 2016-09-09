@@ -4,7 +4,9 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Importable;
 
 /**
- * Created by nothaas on 9/8/16.
+ * Base class for a property to be attached to a Vertex or an Edge.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
 public abstract class Property<T extends Property> implements Importable, Exportable {
 
@@ -12,6 +14,9 @@ public abstract class Property<T extends Property> implements Importable, Export
 
 	private short m_propertyId = PROPERY_ID;
 
+	/**
+	 * Constructor
+	 */
 	public Property() {
 		assert m_propertyId != -1;
 	}

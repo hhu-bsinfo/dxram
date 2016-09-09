@@ -1,22 +1,25 @@
 package de.hhu.bsinfo.dxgraph.data;
 
+import java.util.Arrays;
+
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Created by nothaas on 9/8/16.
+ * Basic vertex object that can be extended with further data if desired.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
 public class Vertex implements DataStructure {
+
+	public static final long INVALID_ID = ChunkID.INVALID_ID;
 
 	private long m_id = ChunkID.INVALID_ID;
 	private boolean m_neighborsAreEdgeObjects;
 	private boolean m_locked;
 
-	private int m_propertiesCount;
-	private Property[] m_properties = new Property[0];
-	private int m_neighborsCount;
 	private long[] m_neighborIDs = new long[0];
 
 	/**
@@ -47,21 +50,96 @@ public class Vertex implements DataStructure {
 		m_id = p_id;
 	}
 
+	/**
+	 * Check if the neighbor IDs of this vertex refer to actual edge objects
+	 * that can store data.
+	 *
+	 * @return If true, neighbor IDs refer to actual edge objects, false if
+	 * they refer to the neighbor vertex directly.
+	 */
+	public boolean areNeighborsEdgeObjects() {
+		return m_neighborsAreEdgeObjects;
+	}
+
+	/**
+	 * Set if the neighbor IDs refer to edge objects or directly to the
+	 * neighbor vertices.
+	 *
+	 * @param p_edgeObjects True if refering to edge objects, false to vertex objects.
+	 */
+	public void setNeighborsAreEdgeObjects(final boolean p_edgeObjects) {
+		m_neighborsAreEdgeObjects = p_edgeObjects;
+	}
+
+	/**
+	 * Check if this vertex was locked.
+	 *
+	 * @return True if locked, false otherwise.
+	 */
+	public boolean isLocked() {
+		return m_locked;
+	}
+
+	/**
+	 * Set this vertex locked.
+	 *
+	 * @param p_locked True for locked, false unlocked.
+	 */
+	public void setLocked(boolean p_locked) {
+		m_locked = p_locked;
+	}
+
+	/**
+	 * Add a new neighbour to the currently existing list.
+	 * This will expand the array by one entry and
+	 * add the new neighbour at the end.
+	 *
+	 * @param p_neighbour Neighbour vertex Id to add.
+	 */
+	public void addNeighbour(final long p_neighbour) {
+		setNeighbourCount(m_neighborIDs.length + 1);
+		m_neighborIDs[m_neighborIDs.length - 1] = p_neighbour;
+	}
+
+	/**
+	 * Get the neighbour array.
+	 *
+	 * @return Neighbour array with vertex ids.
+	 */
+	public long[] getNeighbours() {
+		return m_neighborIDs;
+	}
+
+	/**
+	 * Get the number of neighbors of this vertex.
+	 *
+	 * @return Number of neighbors.
+	 */
+	public int getNeighborCount() {
+		return m_neighborIDs.length;
+	}
+
+	/**
+	 * Resize the neighbour array.
+	 *
+	 * @param p_count Number of neighbours to resize to.
+	 */
+	public void setNeighbourCount(final int p_count) {
+		if (p_count != m_neighborIDs.length) {
+			// grow or shrink array
+			m_neighborIDs = Arrays.copyOf(m_neighborIDs, p_count);
+		}
+	}
+
+	// -----------------------------------------------------------------------------
+
 	@Override
 	public void importObject(final Importer p_importer) {
 		byte flags = p_importer.readByte();
 		m_neighborsAreEdgeObjects = (flags & (1 << 1)) > 0;
 		m_locked = (flags & (1 << 2)) > 0;
 
-		m_propertiesCount = p_importer.readInt();
-		m_properties = new Property[m_propertiesCount];
-		for (int i = 0; i < m_propertiesCount; i++) {
-			m_properties[i] = PropertyManager.createInstance(p_importer.readShort());
-			p_importer.importObject(m_properties[i]);
-		}
-
-		m_neighborsCount = p_importer.readInt();
-		m_neighborIDs = new long[m_neighborsCount];
+		m_neighborIDs = new long[p_importer.readInt()];
 		p_importer.readLongs(m_neighborIDs);
 	}
 
@@ -70,11 +148,7 @@ public class Vertex implements DataStructure {
 		int size = 0;
 
 		size += Byte.BYTES;
-		for (int i = 0; i < m_propertiesCount; i++) {
-			size += Short.BYTES + m_properties[i].sizeofObject();
-		}
-
-		size += m_neighborsCount * Long.BYTES;
+		size += m_neighborIDs.length * Long.BYTES;
 		return size;
 	}
 
@@ -87,25 +161,16 @@ public class Vertex implements DataStructure {
 
 		p_exporter.writeByte(flags);
 
-		p_exporter.writeInt(m_propertiesCount);
-		for (int i = 0; i < m_propertiesCount; i++) {
-			p_exporter.writeShort(m_properties[i].getID());
-			p_exporter.exportObject(m_properties[i]);
-		}
-
-		p_exporter.writeInt(m_neighborsCount);
-		p_exporter.writeLongs(m_neighborIDs, 0, m_neighborsCount);
+		p_exporter.writeInt(m_neighborIDs.length);
+		p_exporter.writeLongs(m_neighborIDs, 0, m_neighborIDs.length);
 	}
 
 	@Override
 	public String toString() {
-		String str = "Vertex[m_id " + Long.toHexString(m_id)
+		return "Vertex[m_id " + Long.toHexString(m_id)
 				+ ", m_neighborsAreEdgeObjects " + m_neighborsAreEdgeObjects
 				+ ", m_locked " + m_locked
-				+ ", m_propertiesCount " + m_propertiesCount
-				+ ", m_neighborsCount " + m_neighborsCount
+				+ ", m_neighborsCount " + m_neighborIDs.length
 				+ "]: ";
-
-		return str;
 	}
 }

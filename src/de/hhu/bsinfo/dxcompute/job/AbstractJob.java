@@ -28,7 +28,7 @@ public abstract class AbstractJob implements Importable, Exportable {
 	private long[] m_parameterChunkIDs;
 
 	// allow the job system to access the listeners
-	ArrayList<JobEventListener> m_eventListeners = new ArrayList<JobEventListener>();
+	ArrayList<JobEventListener> m_eventListeners = new ArrayList<>();
 
 	// nasty, but the only way to get access to services/the API for
 	// external/user code

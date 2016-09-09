@@ -4,7 +4,9 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Created by nothaas on 9/8/16.
+ * Property implementation for testing.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
 public class TestProperty extends Property<TestProperty> {
 
@@ -14,14 +16,27 @@ public class TestProperty extends Property<TestProperty> {
 
 	private int m_value;
 
+	/**
+	 * Constructor
+	 */
 	public TestProperty() {
 
 	}
 
+	/**
+	 * Get the value.
+	 *
+	 * @return Value.
+	 */
 	public int getValue() {
 		return m_value;
 	}
 
+	/**
+	 * Set the value.
+	 *
+	 * @param val Value.
+	 */
 	public void setValue(final int val) {
 		m_value = val;
 	}

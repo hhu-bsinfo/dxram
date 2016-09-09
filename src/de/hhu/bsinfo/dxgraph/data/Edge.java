@@ -6,17 +6,36 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Created by nothaas on 9/8/16.
+ * Basic edge object that can be extended with further data if desired.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
 public class Edge implements DataStructure {
+
+	public static final long INVALID_ID = ChunkID.INVALID_ID;
 
 	private long m_id = ChunkID.INVALID_ID;
 
 	private long m_fromId = ChunkID.INVALID_ID;
 	private long m_toId = ChunkID.INVALID_ID;
 
-	private int m_propertiesCount;
-	Property[] m_properties = new Property[0];
+	/**
+	 * Constructor
+	 */
+	public Edge() {
+
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param p_id Chunk ID to assign.
+	 */
+	public Edge(final long p_id) {
+		m_id = p_id;
+	}
+
+	// -----------------------------------------------------------------------------
 
 	@Override
 	public long getID() {
@@ -28,42 +47,58 @@ public class Edge implements DataStructure {
 		m_id = p_id;
 	}
 
-	@Override
-	public void exportObject(Exporter p_exporter) {
+	/**
+	 * Get the id of the source vertex (directed edge).
+	 *
+	 * @return Source vertex id.
+	 */
+	public long getFromId() {
+		return m_fromId;
+	}
 
+	/**
+	 * Set the id of the source vertex.
+	 *
+	 * @param p_id Id of the source vertex to set.
+	 */
+	public void setFromId(final long p_id) {
+		m_fromId = p_id;
+	}
+
+	/**
+	 * Get the id of the target vertex (directed edge).
+	 *
+	 * @return Target vertex id.
+	 */
+	public long getToId() {
+		return m_toId;
+	}
+
+	/**
+	 * Set the id of the target vertex.
+	 *
+	 * @param p_id Id of the target vertex to set.
+	 */
+	public void setToId(final long p_id) {
+		m_toId = p_id;
+	}
+
+	// -----------------------------------------------------------------------------
+
+	@Override
+	public void exportObject(final Exporter p_exporter) {
 		p_exporter.writeLong(m_fromId);
 		p_exporter.writeLong(m_toId);
-
-		p_exporter.writeInt(m_propertiesCount);
-		for (int i = 0; i < m_propertiesCount; i++) {
-			p_exporter.writeShort(m_properties[i].getID());
-			p_exporter.exportObject(m_properties[i]);
-		}
 	}
 
 	@Override
-	public void importObject(Importer p_importer) {
-
+	public void importObject(final Importer p_importer) {
 		m_fromId = p_importer.readLong();
 		m_toId = p_importer.readLong();
-
-		m_propertiesCount = p_importer.readInt();
-		m_properties = new Property[m_propertiesCount];
-		for (int i = 0; i < m_propertiesCount; i++) {
-			m_properties[i] = PropertyManager.createInstance(p_importer.readShort());
-			p_importer.importObject(m_properties[i]);
-		}
 	}
 
 	@Override
 	public int sizeofObject() {
-		int size = 0;
-
-		size += Long.BYTES * 2;
-		for (Property property : m_properties) {
-			size += Short.BYTES + property.sizeofObject();
-		}
-
-		return size;
+		return Long.BYTES * 2;
 	}
 }
