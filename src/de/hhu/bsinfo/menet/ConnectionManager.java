@@ -21,7 +21,7 @@ import de.hhu.bsinfo.menet.AbstractConnectionCreator.ConnectionCreatorListener;
 final class ConnectionManager implements ConnectionCreatorListener {
 
 	// Constants
-	protected static final int MAX_CONNECTIONS = 100;
+	protected static final int MAX_CONNECTIONS = 200;
 
 	// Attributes
 	private AbstractConnection[] m_connections;
@@ -246,10 +246,10 @@ final class ConnectionManager implements ConnectionCreatorListener {
 		rand = new Random();
 		while (dismiss == null) {
 			random = rand.nextInt(m_connections.length);
-			dismiss = m_connections[random];
+			dismiss = m_connections[random & 0xFFFF];
 		}
 
-		m_connections[random] = null;
+		m_connections[random & 0xFFFF] = null;
 		m_connectionList.remove(dismiss);
 
 		dismiss.close();
