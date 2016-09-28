@@ -22,6 +22,7 @@ import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * Component for managing backup ranges.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public class BackupComponent extends AbstractDXRAMComponent {
@@ -50,10 +51,9 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Creates the backup component
-	 * @param p_priorityInit
-	 *            the initialization priority
-	 * @param p_priorityShutdown
-	 *            the shutdown priority
+	 *
+	 * @param p_priorityInit     the initialization priority
+	 * @param p_priorityShutdown the shutdown priority
 	 */
 	public BackupComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -61,6 +61,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns whether backup is enabled or not
+	 *
 	 * @return whether backup is enabled or not
 	 */
 	public boolean isActive() {
@@ -69,6 +70,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Return the path to all logs
+	 *
 	 * @return the backup directory
 	 */
 	public String getBackupDirectory() {
@@ -85,10 +87,9 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	/**
 	 * Initializes the backup range for current locations
 	 * and determines new backup peers if necessary
-	 * @param p_chunkID
-	 *            the current ChunkID
-	 * @param p_size
-	 *            the size of the new created chunk
+	 *
+	 * @param p_chunkID the current ChunkID
+	 * @param p_size    the size of the new created chunk
 	 */
 	public void initBackupRange(final long p_chunkID, final int p_size) {
 		final int size;
@@ -123,8 +124,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns the corresponding backup peers
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the backup peers
 	 */
 	public short[] getBackupPeersForLocalChunks(final long p_chunkID) {
@@ -146,8 +147,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns the corresponding backup peers
-	 * @param p_chunkID
-	 *            the ChunkID
+	 *
+	 * @param p_chunkID the ChunkID
 	 * @return the backup peers
 	 */
 	public long getBackupPeersForLocalChunksAsLong(final long p_chunkID) {
@@ -183,6 +184,7 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Returns the backup peers for current migration backup range
+	 *
 	 * @return the backup peers for current migration backup range
 	 */
 	public short[] getCurrentMigrationBackupPeers() {
@@ -191,8 +193,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Puts a migrated chunk into the migration tree
-	 * @param p_chunk
-	 *            the migrated chunk
+	 *
+	 * @param p_chunk the migrated chunk
 	 * @return the RangeID of the migration backup range the chunk was put in
 	 */
 	public byte addMigratedChunk(final Chunk p_chunk) {
@@ -205,10 +207,9 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Checks if given log entry fits in current migration backup range
-	 * @param p_size
-	 *            the range size
-	 * @param p_logEntrySize
-	 *            the log entry size
+	 *
+	 * @param p_size         the range size
+	 * @param p_logEntrySize the log entry size
 	 * @return whether the entry and range fits in backup range
 	 */
 	public boolean fitsInCurrentMigrationBackupRange(final long p_size, final int p_logEntrySize) {
@@ -245,8 +246,10 @@ public class BackupComponent extends AbstractDXRAMComponent {
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
 
-			getDependentComponent(NetworkComponent.class).registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
-			getDependentComponent(NetworkComponent.class).registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
+			getDependentComponent(NetworkComponent.class)
+					.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
+			getDependentComponent(NetworkComponent.class)
+					.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
 		}
 		m_firstRangeInitialized = false;
 
@@ -260,8 +263,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Determines backup peers
-	 * @param p_localID
-	 *            the current LocalID
+	 *
+	 * @param p_localID the current LocalID
 	 */
 	private void determineBackupPeers(final long p_localID) {
 		boolean ready = false;
@@ -332,7 +335,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 					}
 					// #if LOGGER >= INFO
 					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
-							+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
+							+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID
+							.toHexString(peers.get(index)));
 					// #endif /* LOGGER >= INFO */
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
@@ -366,7 +370,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 				}
 				// #if LOGGER >= INFO
 				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
-						+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
+						+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID
+						.toHexString(peers.get(index)));
 				// #endif /* LOGGER >= INFO */
 				newBackupPeers[i] = peers.get(index);
 				ready = false;

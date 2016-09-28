@@ -7,12 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.data.Stat;
-
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeInfo;
 import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeList;
@@ -27,6 +21,11 @@ import de.hhu.bsinfo.utils.BloomFilter;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * Implementation of the BootComponent interface with zookeeper.
@@ -53,12 +52,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public ZookeeperBootComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
