@@ -10,6 +10,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * List of root vertex ids used as entry points for various graph algorithms.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class GraphRootList implements DataStructure {
@@ -25,8 +26,8 @@ public class GraphRootList implements DataStructure {
 
 	/**
 	 * Constructor
-	 * @param p_id
-	 *            Chunk id to assign.
+	 *
+	 * @param p_id Chunk id to assign.
 	 */
 	public GraphRootList(final long p_id) {
 		m_id = p_id;
@@ -34,10 +35,9 @@ public class GraphRootList implements DataStructure {
 
 	/**
 	 * Constructor
-	 * @param p_id
-	 *            Chunk id to assign.
-	 * @param p_roots
-	 *            Initial root list to assign,
+	 *
+	 * @param p_id    Chunk id to assign.
+	 * @param p_roots Initial root list to assign,
 	 */
 	public GraphRootList(final long p_id, final long[] p_roots) {
 		m_id = p_id;
@@ -46,10 +46,9 @@ public class GraphRootList implements DataStructure {
 
 	/**
 	 * Constructor
-	 * @param p_id
-	 *            Chunk id to assign.
-	 * @param p_numRoots
-	 *            Pre-allocate space for a number of roots.
+	 *
+	 * @param p_id       Chunk id to assign.
+	 * @param p_numRoots Pre-allocate space for a number of roots.
 	 */
 	public GraphRootList(final long p_id, final int p_numRoots) {
 		m_id = p_id;
@@ -58,6 +57,7 @@ public class GraphRootList implements DataStructure {
 
 	/**
 	 * Get the list of roots.
+	 *
 	 * @return List of roots.
 	 */
 	public long[] getRoots() {
@@ -66,8 +66,8 @@ public class GraphRootList implements DataStructure {
 
 	/**
 	 * Resize the static allocated root list.
-	 * @param p_count
-	 *            Number of roots to resize the list to.
+	 *
+	 * @param p_count Number of roots to resize the list to.
 	 */
 	public void setRootCount(final int p_count) {
 		if (p_count != m_roots.length) {
@@ -89,14 +89,12 @@ public class GraphRootList implements DataStructure {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		int numRoots;
 
 		numRoots = p_importer.readInt();
 		m_roots = new long[numRoots];
 		p_importer.readLongs(m_roots);
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -106,17 +104,10 @@ public class GraphRootList implements DataStructure {
 	}
 
 	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
-	}
-
-	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 
 		p_exporter.writeInt(m_roots.length);
 		p_exporter.writeLongs(m_roots);
-
-		return sizeofObject();
 	}
 
 	@Override

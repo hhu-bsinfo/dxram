@@ -74,8 +74,8 @@ class FileWriterBinaryThread extends AbstractFileWriterThread {
 	 *
 	 * @param p_file           File to write the vertex data to.
 	 * @param p_infoFile       Info file with metadata.
-	 * @param p_rangeStartIncl Vertex id range start to write.
-	 * @param p_rangeEndIncl   Vertex id range end to write.
+	 * @param p_rangeStartIncl VertexSimple id range start to write.
+	 * @param p_rangeEndIncl   VertexSimple id range end to write.
 	 * @return True if successful, false on error.
 	 */
 	private boolean dumpOrdered(final DataOutputStream p_file, final BufferedWriter p_infoFile,

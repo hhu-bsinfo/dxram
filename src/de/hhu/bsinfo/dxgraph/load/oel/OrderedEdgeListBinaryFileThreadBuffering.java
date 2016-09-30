@@ -8,7 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.VertexSimple;
 
 /**
  * Implementation reading vertex data from a buffer filled by a separate file reading thread.
@@ -62,8 +62,8 @@ public class OrderedEdgeListBinaryFileThreadBuffering extends AbstractOrderedEdg
 	}
 
 	@Override
-	protected Vertex readFileVertex() {
-		Vertex vertex = new Vertex();
+	protected VertexSimple readFileVertex() {
+		VertexSimple vertex = new VertexSimple();
 
 		try {
 			if (m_position < m_partitionEndOffset) {

@@ -1,4 +1,3 @@
-
 package de.hhu.bsinfo.dxgraph.data;
 
 import java.util.Arrays;
@@ -9,19 +8,19 @@ import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
- * Object representation of a vertex with a static list of neighbours.
- * The number of neighbours is limited to roughly 2 million entries
- * due to max chunk size being 16MB in DXRAM.
+ * Basic vertex object that can be extended with further data if desired.
  *
- * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
 public class Vertex implements DataStructure {
 
-	private long m_id = ChunkID.INVALID_ID;
-	private boolean m_flagWriteUserdataOnly;
+	public static final long INVALID_ID = ChunkID.INVALID_ID;
 
-	private int m_userData = -1;
-	private long[] m_neighbours = new long[0];
+	private long m_id = ChunkID.INVALID_ID;
+	private boolean m_neighborsAreEdgeObjects;
+	private boolean m_locked;
+
+	private long[] m_neighborIDs = new long[0];
 
 	/**
 	 * Constructor
@@ -39,67 +38,6 @@ public class Vertex implements DataStructure {
 		m_id = p_id;
 	}
 
-	/**
-	 * Get user data from the vertex.
-	 *
-	 * @return User data.
-	 */
-	public int getUserData() {
-		return m_userData;
-	}
-
-	/**
-	 * Set user data for the vertex.
-	 *
-	 * @param p_userData User data to set.
-	 */
-	public void setUserData(final int p_userData) {
-		m_userData = p_userData;
-	}
-
-	/**
-	 * Flag this vertex to write the userdata item only on
-	 * the next serilization call (performance hack).
-	 *
-	 * @param p_flag True to write the userdata only, false for whole vertex on next serialization call.
-	 */
-	public void setWriteUserDataOnly(final boolean p_flag) {
-		m_flagWriteUserdataOnly = p_flag;
-	}
-
-	/**
-	 * Add a new neighbour to the currently existing list.
-	 * This will expand the static array by one entry and
-	 * add the new neighbour at the end.
-	 *
-	 * @param p_neighbour Neighbour vertex Id to add.
-	 */
-	public void addNeighbour(final long p_neighbour) {
-		setNeighbourCount(m_neighbours.length + 1);
-		m_neighbours[m_neighbours.length - 1] = p_neighbour;
-	}
-
-	/**
-	 * Get the neighbour array.
-	 *
-	 * @return Neighbour array with vertex ids.
-	 */
-	public long[] getNeighbours() {
-		return m_neighbours;
-	}
-
-	/**
-	 * Resize the neighbour array.
-	 *
-	 * @param p_count Number of neighbours to resize to.
-	 */
-	public void setNeighbourCount(final int p_count) {
-		if (p_count != m_neighbours.length) {
-			// grow or shrink array
-			m_neighbours = Arrays.copyOf(m_neighbours, p_count);
-		}
-	}
-
 	// -----------------------------------------------------------------------------
 
 	@Override
@@ -112,58 +50,127 @@ public class Vertex implements DataStructure {
 		m_id = p_id;
 	}
 
+	/**
+	 * Check if the neighbor IDs of this vertex refer to actual edge objects
+	 * that can store data.
+	 *
+	 * @return If true, neighbor IDs refer to actual edge objects, false if
+	 * they refer to the neighbor vertex directly.
+	 */
+	public boolean areNeighborsEdgeObjects() {
+		return m_neighborsAreEdgeObjects;
+	}
+
+	/**
+	 * Set if the neighbor IDs refer to edge objects or directly to the
+	 * neighbor vertices.
+	 *
+	 * @param p_edgeObjects True if refering to edge objects, false to vertex objects.
+	 */
+	public void setNeighborsAreEdgeObjects(final boolean p_edgeObjects) {
+		m_neighborsAreEdgeObjects = p_edgeObjects;
+	}
+
+	/**
+	 * Check if this vertex was locked.
+	 *
+	 * @return True if locked, false otherwise.
+	 */
+	public boolean isLocked() {
+		return m_locked;
+	}
+
+	/**
+	 * Set this vertex locked.
+	 *
+	 * @param p_locked True for locked, false unlocked.
+	 */
+	public void setLocked(boolean p_locked) {
+		m_locked = p_locked;
+	}
+
+	/**
+	 * Add a new neighbour to the currently existing list.
+	 * This will expand the array by one entry and
+	 * add the new neighbour at the end.
+	 *
+	 * @param p_neighbour Neighbour vertex Id to add.
+	 */
+	public void addNeighbour(final long p_neighbour) {
+		setNeighbourCount(m_neighborIDs.length + 1);
+		m_neighborIDs[m_neighborIDs.length - 1] = p_neighbour;
+	}
+
+	/**
+	 * Get the neighbour array.
+	 *
+	 * @return Neighbour array with vertex ids.
+	 */
+	public long[] getNeighbours() {
+		return m_neighborIDs;
+	}
+
+	/**
+	 * Get the number of neighbors of this vertex.
+	 *
+	 * @return Number of neighbors.
+	 */
+	public int getNeighborCount() {
+		return m_neighborIDs.length;
+	}
+
+	/**
+	 * Resize the neighbour array.
+	 *
+	 * @param p_count Number of neighbours to resize to.
+	 */
+	public void setNeighbourCount(final int p_count) {
+		if (p_count != m_neighborIDs.length) {
+			// grow or shrink array
+			m_neighborIDs = Arrays.copyOf(m_neighborIDs, p_count);
+		}
+	}
+
+	// -----------------------------------------------------------------------------
+
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		int numNeighbours;
+	public void importObject(final Importer p_importer) {
+		byte flags = p_importer.readByte();
+		m_neighborsAreEdgeObjects = (flags & (1 << 1)) > 0;
+		m_locked = (flags & (1 << 2)) > 0;
 
-		m_userData = p_importer.readInt();
-		numNeighbours = p_importer.readInt();
-		m_neighbours = new long[numNeighbours];
-		p_importer.readLongs(m_neighbours);
-
-		return sizeofObject();
+		m_neighborIDs = new long[p_importer.readInt()];
+		p_importer.readLongs(m_neighborIDs);
 	}
 
 	@Override
 	public int sizeofObject() {
-		return Integer.BYTES
-				+ Integer.BYTES
-				+ Long.BYTES * m_neighbours.length;
+		int size = 0;
+
+		size += Byte.BYTES;
+		size += m_neighborIDs.length * Long.BYTES;
+		return size;
 	}
 
 	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
-	}
+	public void exportObject(final Exporter p_exporter) {
 
-	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+		byte flags = 0;
+		flags |= m_neighborsAreEdgeObjects ? (1 << 0) : 0;
+		flags |= m_locked ? (1 << 1) : 0;
 
-		p_exporter.writeInt(m_userData);
+		p_exporter.writeByte(flags);
 
-		// performance hack for BFS
-		if (!m_flagWriteUserdataOnly) {
-			p_exporter.writeInt(m_neighbours.length);
-			p_exporter.writeLongs(m_neighbours);
-		}
-
-		return sizeofObject();
+		p_exporter.writeInt(m_neighborIDs.length);
+		p_exporter.writeLongs(m_neighborIDs, 0, m_neighborIDs.length);
 	}
 
 	@Override
 	public String toString() {
-		String str = "Vertex[m_id " + Long.toHexString(m_id) + ", m_userData " + m_userData + ", numNeighbours "
-				+ m_neighbours.length + "]: ";
-		int counter = 0;
-		for (Long v : m_neighbours) {
-			str += Long.toHexString(v) + ", ";
-			counter++;
-			// avoid long strings
-			if (counter > 9) {
-				break;
-			}
-		}
-
-		return str;
+		return "Vertex[m_id " + Long.toHexString(m_id)
+				+ ", m_neighborsAreEdgeObjects " + m_neighborsAreEdgeObjects
+				+ ", m_locked " + m_locked
+				+ ", m_neighborsCount " + m_neighborIDs.length
+				+ "]: ";
 	}
 }

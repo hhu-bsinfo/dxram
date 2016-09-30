@@ -604,52 +604,68 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	private void initDefaultComponentsAndServices() {
 		// hard-coded with default values
 		//components
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 0, "de.hhu.bsinfo.dxram.engine.NullComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 1, "de.hhu.bsinfo.dxram.logger.LoggerComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 2, "de.hhu.bsinfo.dxram.term.TerminalComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 3, "de.hhu.bsinfo.dxram.event.EventComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 4,
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 0,
+				"de.hhu.bsinfo.dxram.engine.NullComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 1,
+				"de.hhu.bsinfo.dxram.logger.LoggerComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 2,
+				"de.hhu.bsinfo.dxram.term.TerminalComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 3,
+				"de.hhu.bsinfo.dxram.event.EventComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 4,
 				"de.hhu.bsinfo.dxram.stats.StatisticsComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 5,
-				"de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 6, "de.hhu.bsinfo.dxram.net.NetworkComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 7, "de.hhu.bsinfo.dxram.lookup.LookupComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 8,
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 5,
 				"de.hhu.bsinfo.dxram.mem.MemoryManagerComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 9, "de.hhu.bsinfo.dxram.lock.PeerLockComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 10, "de.hhu.bsinfo.dxram.log.LogComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 11, "de.hhu.bsinfo.dxram.backup.BackupComponent");
-		m_configuration
-				.addValue("/DXRAMEngine/Components/Component/Class", 12, "de.hhu.bsinfo.dxram.chunk.ChunkComponent");
-		m_configuration.addValue("/DXRAMEngine/Components/Component/Class", 13,
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 6,
+				"de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 7,
+				"de.hhu.bsinfo.dxram.net.NetworkComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 8,
+				"de.hhu.bsinfo.dxram.lookup.LookupComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 9,
+				"de.hhu.bsinfo.dxram.lock.PeerLockComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 10,
+				"de.hhu.bsinfo.dxram.log.LogComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 11,
+				"de.hhu.bsinfo.dxram.backup.BackupComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 12,
+				"de.hhu.bsinfo.dxram.chunk.ChunkComponent");
+		m_configuration.addValue(
+				"/DXRAMEngine/Components/Component/Class", 13,
 				"de.hhu.bsinfo.dxram.nameservice.NameserviceComponent");
 		//enabled and priority flags flags for components
 		for (int i = 0; i <= 13; i++) {
 			m_configuration.addValue("/DXRAMEngine/Components/Component/Enabled", i, Boolean.TRUE);
-			m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityInit", i, i);
+			m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityInit", i, i + 1);
 		}
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 0, 999);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 1, 998);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 2, 997);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 3, 996);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 4, 995);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 5, 986);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 6, 994);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 7, 993);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 8, 992);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 9, 991);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 10, 990);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 11, 989);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 12, 988);
-		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 13, 987);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 0, 99);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 1, 98);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 2, 97);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 3, 96);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 4, 95);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 5, 94);
+		// boot component first on shutdown
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 6, 50);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 7, 92);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 8, 91);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 9, 90);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 10, 89);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 11, 88);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 12, 87);
+		m_configuration.addValue("/DXRAMEngine/Components/Component/PriorityShutdown", 13, 86);
 
 		//services
 		m_configuration.addValue("/DXRAMEngine/Services/Service/Class", 0, "de.hhu.bsinfo.dxram.engine.NullService");

@@ -14,8 +14,8 @@ import de.hhu.bsinfo.utils.ManifestHelper;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public final class DXRAM {
-	private DXRAMEngine m_engine;
+public class DXRAM {
+	protected DXRAMEngine m_engine;
 
 	/**
 	 * Constructor
@@ -41,6 +41,8 @@ public final class DXRAM {
 		if (p_autoShutdown) {
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		}
+		postInit();
+
 		return true;
 	}
 
@@ -54,6 +56,7 @@ public final class DXRAM {
 		boolean ret = m_engine.init(p_configurationFiles);
 		if (ret) {
 			printNodeInfo();
+			postInit();
 		}
 		return ret;
 	}
@@ -73,6 +76,7 @@ public final class DXRAM {
 		}
 		if (ret) {
 			printNodeInfo();
+			postInit();
 		}
 
 		return ret;
@@ -94,6 +98,7 @@ public final class DXRAM {
 	 * Shut down DXRAM. Call this if you have not enabled auto shutdown on init.
 	 */
 	public void shutdown() {
+		preShutdown();
 		m_engine.shutdown();
 	}
 
@@ -123,6 +128,23 @@ public final class DXRAM {
 		str += "Address: " + address;
 
 		System.out.println(str);
+	}
+
+	/**
+	 * Stub method for any class extending this class.
+	 * Override this to run some tasks like initializing variables after
+	 * DXRAM has booted.
+	 */
+	protected void postInit() {
+		// stub
+	}
+
+	/**
+	 * Stub method for any class extending this class.
+	 * Override this to run cleanup before DXRAM shuts down.
+	 */
+	protected void preShutdown() {
+		// stub
 	}
 
 	/**

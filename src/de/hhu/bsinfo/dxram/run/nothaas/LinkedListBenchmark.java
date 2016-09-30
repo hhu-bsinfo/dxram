@@ -15,6 +15,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 /**
  * Very simple/minimal benchmark to test and verify the core operations
  * of the ChunkService.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class LinkedListBenchmark extends AbstractMain {
@@ -40,8 +41,8 @@ public class LinkedListBenchmark extends AbstractMain {
 
 	/**
 	 * Java main entry point.
-	 * @param p_args
-	 *            Main arguments.
+	 *
+	 * @param p_args Main arguments.
 	 */
 	public static void main(final String[] p_args) {
 		AbstractMain main = new LinkedListBenchmark();
@@ -80,8 +81,8 @@ public class LinkedListBenchmark extends AbstractMain {
 
 	/**
 	 * Create the linked list using the ChunkService.
-	 * @param p_numItems
-	 *            Length of the linked list.
+	 *
+	 * @param p_numItems Length of the linked list.
 	 * @return ChunkID of the root.
 	 */
 	private long createLinkedList(final int p_numItems) {
@@ -115,8 +116,8 @@ public class LinkedListBenchmark extends AbstractMain {
 
 	/**
 	 * Walk the linked list.
-	 * @param p_headChunkID
-	 *            Head of the linked list to start at.
+	 *
+	 * @param p_headChunkID Head of the linked list to start at.
 	 * @return Number of visited elements.
 	 */
 	private long walkLinkedList(final long p_headChunkID) {
@@ -144,6 +145,7 @@ public class LinkedListBenchmark extends AbstractMain {
 
 	/**
 	 * Simple linked list element.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
 	 */
 	private static class LinkedListElement implements DataStructure {
@@ -152,8 +154,8 @@ public class LinkedListBenchmark extends AbstractMain {
 
 		/**
 		 * Constructor
-		 * @param p_ownID
-		 *            ChunkID of the element.
+		 *
+		 * @param p_ownID ChunkID of the element.
 		 */
 		LinkedListElement(final long p_ownID) {
 			m_ownID = p_ownID;
@@ -161,8 +163,8 @@ public class LinkedListBenchmark extends AbstractMain {
 
 		/**
 		 * Set the chunkID of the element.
-		 * @param p_ownID
-		 *            ChunkID.
+		 *
+		 * @param p_ownID ChunkID.
 		 */
 		public void setOwnID(final long p_ownID) {
 			m_ownID = p_ownID;
@@ -170,8 +172,8 @@ public class LinkedListBenchmark extends AbstractMain {
 
 		/**
 		 * Set the chunkID of the next element.
-		 * @param p_nextID
-		 *            ChunkID.
+		 *
+		 * @param p_nextID ChunkID.
 		 */
 		public void setNextID(final long p_nextID) {
 			m_nextID = p_nextID;
@@ -179,6 +181,7 @@ public class LinkedListBenchmark extends AbstractMain {
 
 		/**
 		 * Get the chunkID of the next element.
+		 *
 		 * @return ChunkID.
 		 */
 		public long getNextID() {
@@ -186,10 +189,8 @@ public class LinkedListBenchmark extends AbstractMain {
 		}
 
 		@Override
-		public int importObject(final Importer p_importer, final int p_size) {
+		public void importObject(final Importer p_importer) {
 			m_nextID = p_importer.readLong();
-
-			return Long.BYTES;
 		}
 
 		@Override
@@ -198,14 +199,8 @@ public class LinkedListBenchmark extends AbstractMain {
 		}
 
 		@Override
-		public boolean hasDynamicObjectSize() {
-			return false;
-		}
-
-		@Override
-		public int exportObject(final Exporter p_exporter, final int p_size) {
+		public void exportObject(final Exporter p_exporter) {
 			p_exporter.writeLong(m_nextID);
-			return Long.BYTES;
 		}
 
 		@Override

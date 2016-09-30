@@ -138,7 +138,7 @@ public class GraphPartitionIndex implements DataStructure {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		int size = p_importer.readInt();
 		m_index = new TreeMap<>();
 		for (int i = 0; i < size; i++) {
@@ -146,8 +146,6 @@ public class GraphPartitionIndex implements DataStructure {
 			p_importer.importObject(entry);
 			m_index.put(entry.m_partitionIndex, entry);
 		}
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -160,18 +158,11 @@ public class GraphPartitionIndex implements DataStructure {
 	}
 
 	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
-	}
-
-	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 		p_exporter.writeInt(m_index.size());
 		for (Entry entry : m_index.values()) {
 			p_exporter.exportObject(entry);
 		}
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -254,7 +245,7 @@ public class GraphPartitionIndex implements DataStructure {
 		/**
 		 * Get the vertex count of the partition.
 		 *
-		 * @return Vertex count.
+		 * @return VertexSimple count.
 		 */
 		public long getVertexCount() {
 			return m_vertexCount;
@@ -279,14 +270,12 @@ public class GraphPartitionIndex implements DataStructure {
 		}
 
 		@Override
-		public int importObject(final Importer p_importer, final int p_size) {
+		public void importObject(final Importer p_importer) {
 			m_nodeId = p_importer.readShort();
 			m_partitionIndex = p_importer.readInt();
 			m_vertexCount = p_importer.readLong();
 			m_edgeCount = p_importer.readLong();
 			m_fileStartOffset = p_importer.readLong();
-
-			return sizeofObject();
 		}
 
 		@Override
@@ -295,19 +284,12 @@ public class GraphPartitionIndex implements DataStructure {
 		}
 
 		@Override
-		public boolean hasDynamicObjectSize() {
-			return false;
-		}
-
-		@Override
-		public int exportObject(final Exporter p_exporter, final int p_size) {
+		public void exportObject(final Exporter p_exporter) {
 			p_exporter.writeShort(m_nodeId);
 			p_exporter.writeInt(m_partitionIndex);
 			p_exporter.writeLong(m_vertexCount);
 			p_exporter.writeLong(m_edgeCount);
 			p_exporter.writeLong(m_fileStartOffset);
-
-			return sizeofObject();
 		}
 
 		@Override

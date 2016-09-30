@@ -15,7 +15,7 @@ public interface VertexStorage {
 	 * (not 0). Ensure that this function is implemented thread safe
 	 * @param p_hashValue
 	 *            Hash value used in the source representation. If no mapping exists for this so far, create one.
-	 * @return Continuous Vertex ID for the hash value which is used for the output graph.
+	 * @return Continuous VertexSimple ID for the hash value which is used for the output graph.
 	 */
 	long getVertexId(final long p_hashValue);
 

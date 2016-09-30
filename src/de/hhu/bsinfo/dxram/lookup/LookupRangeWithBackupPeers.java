@@ -10,6 +10,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Stores the primary peer, the lookup range boundaries and all backup peers.
+ *
  * @author Kevin Beineke
  *         03.09.2013
  */
@@ -30,14 +31,13 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 	}
 
 	// Constructors
+
 	/**
 	 * Creates an instance of LookupRangeWithBackupPeers
-	 * @param p_primaryPeer
-	 *            the primary peer
-	 * @param p_backupPeers
-	 *            the backup peers
-	 * @param p_range
-	 *            the range's beginning and ending
+	 *
+	 * @param p_primaryPeer the primary peer
+	 * @param p_backupPeers the backup peers
+	 * @param p_range       the range's beginning and ending
 	 */
 	public LookupRangeWithBackupPeers(final short p_primaryPeer, final short[] p_backupPeers, final long[] p_range) {
 		super();
@@ -49,8 +49,8 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Creates an instance of LookupRangeWithBackupPeers
-	 * @param p_primaryAndBackupPeers
-	 *            the LookupRangeWithBackupPeers in long representation
+	 *
+	 * @param p_primaryAndBackupPeers the LookupRangeWithBackupPeers in long representation
 	 */
 	public LookupRangeWithBackupPeers(final long p_primaryAndBackupPeers) {
 		this(p_primaryAndBackupPeers, null);
@@ -58,36 +58,34 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Creates an instance of LookupRangeWithBackupPeers
-	 * @param p_primaryAndBackupPeers
-	 *            the LookupRangeWithBackupPeers in long representation
-	 * @param p_range
-	 *            the corresponding range
+	 *
+	 * @param p_primaryAndBackupPeers the LookupRangeWithBackupPeers in long representation
+	 * @param p_range                 the corresponding range
 	 */
 	public LookupRangeWithBackupPeers(final long p_primaryAndBackupPeers, final long[] p_range) {
-		this((short) p_primaryAndBackupPeers, new short[] {(short) ((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
-				(short) ((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32), (short) ((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
+		this((short) p_primaryAndBackupPeers,
+				new short[] {(short) ((p_primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
+						(short) ((p_primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32),
+						(short) ((p_primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)}, p_range);
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 
 		final long primaryAndBackupPeers = p_importer.readLong();
 
 		m_primaryPeer = (short) primaryAndBackupPeers;
 		m_backupPeers = new short[] {(short) ((primaryAndBackupPeers & 0x00000000FFFF0000L) >> 16),
-				(short) ((primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32), (short) ((primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)};
+				(short) ((primaryAndBackupPeers & 0x0000FFFF00000000L) >> 32),
+				(short) ((primaryAndBackupPeers & 0xFFFF000000000000L) >> 48)};
 		m_range = new long[] {p_importer.readLong(), p_importer.readLong()};
-
-		return 3 * Long.BYTES;
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 		p_exporter.writeLong(convertToLong());
 		p_exporter.writeLong(getStartID());
 		p_exporter.writeLong(getEndID());
-
-		return 3 * Long.BYTES;
 	}
 
 	@Override
@@ -95,14 +93,11 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 		return 3 * Long.BYTES;
 	}
 
-	@Override
-	public boolean hasDynamicObjectSize() {
-		return false;
-	}
-
 	// Getter
+
 	/**
 	 * Get primary peer
+	 *
 	 * @return the primary peer
 	 */
 	public short getPrimaryPeer() {
@@ -111,6 +106,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Get backup peers
+	 *
 	 * @return the backup peers
 	 */
 	public short[] getBackupPeers() {
@@ -119,6 +115,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Get backup peers as long
+	 *
 	 * @return the backup peers
 	 */
 	public long getBackupPeersAsLong() {
@@ -126,12 +123,15 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 		if (null != m_backupPeers) {
 			if (m_backupPeers.length == 3) {
 				ret =
-						((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16)
+						((m_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL)
+								<< 16)
 								+ (m_backupPeers[0] & 0x000000000000FFFFL);
 			} else if (m_backupPeers.length == 2) {
-				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
+				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 16) + (
+						m_backupPeers[0] & 0x000000000000FFFFL);
 			} else {
-				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((-1 & 0x000000000000FFFFL) << 16) + (m_backupPeers[0] & 0x000000000000FFFFL);
+				ret = ((-1 & 0x000000000000FFFFL) << 32) + ((-1 & 0x000000000000FFFFL) << 16) + (m_backupPeers[0]
+						& 0x000000000000FFFFL);
 			}
 		}
 
@@ -140,6 +140,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Get range
+	 *
 	 * @return the beginning and ending of range
 	 */
 	public long[] getRange() {
@@ -148,6 +149,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Get the start LocalID
+	 *
 	 * @return the start LocalID
 	 */
 	public long getStartID() {
@@ -156,6 +158,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Get the end LocalID
+	 *
 	 * @return the end LocalID
 	 */
 	public long getEndID() {
@@ -163,10 +166,11 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 	}
 
 	// Setter
+
 	/**
 	 * Set primary peer
-	 * @param p_primaryPeer
-	 *            the primary peer
+	 *
+	 * @param p_primaryPeer the primary peer
 	 */
 	public void setPrimaryPeer(final short p_primaryPeer) {
 		m_primaryPeer = p_primaryPeer;
@@ -174,16 +178,18 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Set backup peers
-	 * @param p_backupPeers
-	 *            the backup peers
+	 *
+	 * @param p_backupPeers the backup peers
 	 */
 	public void setBackupPeers(final short[] p_backupPeers) {
 		m_backupPeers = p_backupPeers;
 	}
 
 	// Methods
+
 	/**
 	 * Convert this instance to long
+	 *
 	 * @return the long representation
 	 */
 	public long convertToLong() {
@@ -191,10 +197,12 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 		if (null != m_backupPeers) {
 			if (m_backupPeers.length == 3) {
 				ret =
-						((m_backupPeers[2] & 0x000000000000FFFFL) << 48) + ((m_backupPeers[1] & 0x000000000000FFFFL) << 32)
+						((m_backupPeers[2] & 0x000000000000FFFFL) << 48) + ((m_backupPeers[1] & 0x000000000000FFFFL)
+								<< 32)
 								+ ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 			} else if (m_backupPeers.length == 2) {
-				ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
+				ret = ((m_backupPeers[1] & 0x000000000000FFFFL) << 32) + ((m_backupPeers[0] & 0x000000000000FFFFL)
+						<< 16) + (m_primaryPeer & 0x0000FFFF);
 			} else {
 				ret = ((m_backupPeers[0] & 0x000000000000FFFFL) << 16) + (m_primaryPeer & 0x0000FFFF);
 			}
@@ -206,6 +214,7 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 
 	/**
 	 * Prints the LookupRangeWithBackupPeers
+	 *
 	 * @return String interpretation of LookupRangeWithBackupPeers
 	 */
 	@Override
@@ -215,7 +224,8 @@ public final class LookupRangeWithBackupPeers implements Importable, Exportable 
 		if (null != m_backupPeers) {
 			if (m_backupPeers.length == 3) {
 				if (m_backupPeers[0] == -1) {
-					ret = NodeID.toHexString(m_primaryPeer) + ", backup peers unknown (ask " + NodeID.toHexString(m_primaryPeer) + ")";
+					ret = NodeID.toHexString(m_primaryPeer) + ", backup peers unknown (ask " + NodeID
+							.toHexString(m_primaryPeer) + ")";
 				} else {
 					ret = NodeID.toHexString(m_primaryPeer) + ", [" + NodeID.toHexString(m_backupPeers[0]) + ", "
 							+ NodeID.toHexString(m_backupPeers[1]) + ", " + NodeID.toHexString(m_backupPeers[2]) + "]";

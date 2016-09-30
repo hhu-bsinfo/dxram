@@ -75,7 +75,7 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		m_logger.info(getClass(), "Running terminal...");
 		// #endif /* LOGGER >= INFO */
 
-		System.out.println("DXRAM terminal v. 0.1");
+		System.out.println(">>> DXRAM terminal <<<");
 		System.out.println(
 				"Running on node " + NodeID.toHexString(m_boot.getNodeID()) + ", role " + m_boot.getNodeRole());
 		System.out.println("Enter '?' to list all available commands.");

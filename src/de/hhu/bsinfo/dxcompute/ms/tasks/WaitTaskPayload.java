@@ -64,21 +64,17 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		int size = super.exportObject(p_exporter, p_size);
+	public void exportObject(final Exporter p_exporter) {
+		super.exportObject(p_exporter);
 
 		p_exporter.writeInt(m_waitMs);
-
-		return size + Integer.BYTES;
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		int size = super.importObject(p_importer, p_size);
+	public void importObject(final Importer p_importer) {
+		super.importObject(p_importer);
 
 		m_waitMs = p_importer.readInt();
-
-		return size + Integer.BYTES;
 	}
 
 	@Override

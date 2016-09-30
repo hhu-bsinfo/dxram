@@ -384,6 +384,31 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	/**
 	 * Create chunks on another node.
 	 *
+	 * @param p_peer           NodeID of the peer to create the chunks on.
+	 * @param p_dataStructures Data structures to create chunks for.
+	 * @return Number of successfully created chunks.
+	 */
+	public int createRemote(final short p_peer, final DataStructure... p_dataStructures) {
+		int[] sizes = new int[p_dataStructures.length];
+
+		for (int i = 0; i < sizes.length; i++) {
+			sizes[i] = p_dataStructures[i].sizeofObject();
+		}
+
+		int count = 0;
+		long[] ids = createRemote(p_peer, sizes);
+		if (ids != null) {
+			for (int i = 0; i < ids.length; i++) {
+				p_dataStructures[i].setID(ids[i]);
+			}
+		}
+
+		return count;
+	}
+
+	/**
+	 * Create chunks on another node.
+	 *
 	 * @param p_peer  NodeID of the peer to create the chunks on.
 	 * @param p_sizes Sizes to create chunks of.
 	 * @return ChunkIDs/Handles identifying the created chunks.
@@ -396,20 +421,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		// #if LOGGER == TRACE
-		m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+		m_logger.trace(getClass(), "createRemote[peer " + NodeID.toHexString(p_peer) + ", sizes("
 				+ p_sizes.length + ") " + p_sizes[0] + ", ...]");
 		// #endif /* LOGGER == TRACE */
 
-		NodeRole role = m_boot.getNodeRole();
-		if (role.equals(NodeRole.SUPERPEER)) {
-			// #if LOGGER >= ERROR
-			m_logger.error(getClass(), "a " + role + " must not create chunks");
-			// #endif /* LOGGER >= ERROR */
-			return chunkIDs;
-		}
-
 		// check if remote node is a peer
-		role = m_boot.getNodeRole(p_peer);
+		NodeRole role = m_boot.getNodeRole(p_peer);
 		if (role == null) {
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(),
@@ -448,13 +465,13 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 
 		if (chunkIDs != null) {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+			m_logger.trace(getClass(), "createRemote[peer " + NodeID.toHexString(p_peer) + ", sizes("
 					+ p_sizes.length + ") " + p_sizes[0]
 					+ ", ...] -> " + ChunkID.toHexString(chunkIDs[0]) + ", ...");
 			// #endif /* LOGGER == TRACE */
 		} else {
 			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "create[peer " + NodeID.toHexString(p_peer) + ", sizes("
+			m_logger.trace(getClass(), "createRemote[peer " + NodeID.toHexString(p_peer) + ", sizes("
 					+ p_sizes.length + ") " + p_sizes[0]
 					+ ", ...] -> -1");
 			// #endif /* LOGGER == TRACE */
@@ -1999,12 +2016,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		}
 
 		@Override
-		public boolean hasDynamicObjectSize() {
-			return false;
-		}
-
-		@Override
-		public int exportObject(final Exporter p_exporter, final int p_size) {
+		public void exportObject(final Exporter p_exporter) {
 			p_exporter.writeLong(m_freeMemoryBytes);
 			p_exporter.writeLong(m_totalMemoryBytes);
 			p_exporter.writeLong(m_totalPayloadMemoryBytes);
@@ -2013,11 +2025,10 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			p_exporter.writeLong(m_totalChunkPayloadMemory);
 			p_exporter.writeLong(m_cidTableCount);
 			p_exporter.writeLong(m_totalMemoryCIDTables);
-			return sizeofObject();
 		}
 
 		@Override
-		public int importObject(final Importer p_importer, final int p_size) {
+		public void importObject(final Importer p_importer) {
 			m_freeMemoryBytes = p_importer.readLong();
 			m_totalMemoryBytes = p_importer.readLong();
 			m_totalPayloadMemoryBytes = p_importer.readLong();
@@ -2026,7 +2037,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 			m_totalChunkPayloadMemory = p_importer.readLong();
 			m_cidTableCount = p_importer.readLong();
 			m_totalMemoryCIDTables = p_importer.readLong();
-			return sizeofObject();
 		}
 
 		@Override

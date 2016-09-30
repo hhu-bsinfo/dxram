@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
-import de.hhu.bsinfo.dxgraph.data.Vertex;
+import de.hhu.bsinfo.dxgraph.data.VertexSimple;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
 import de.hhu.bsinfo.dxgraph.load.GraphLoadPartitionIndexTaskPayload;
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -343,8 +343,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		int size = super.exportObject(p_exporter, p_size);
+	public void exportObject(final Exporter p_exporter) {
+		super.exportObject(p_exporter);
 
 		p_exporter.writeInt(m_bfsRootNameserviceEntry.length());
 		p_exporter.writeBytes(m_bfsRootNameserviceEntry.getBytes(StandardCharsets.US_ASCII));
@@ -355,14 +355,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		p_exporter.writeByte((byte) (m_beamerMode ? 1 : 0));
 		p_exporter.writeInt(m_beamerFormulaGraphEdgeDeg);
 		p_exporter.writeByte((byte) (m_abortBFSOnError ? 1 : 0));
-
-		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
-				+ Integer.BYTES + Byte.BYTES;
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		int size = super.importObject(p_importer, p_size);
+	public void importObject(final Importer p_importer) {
+		super.importObject(p_importer);
 
 		int strLength = p_importer.readInt();
 		byte[] tmp = new byte[strLength];
@@ -375,9 +372,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_beamerMode = p_importer.readByte() > 0;
 		m_beamerFormulaGraphEdgeDeg = p_importer.readInt();
 		m_abortBFSOnError = p_importer.readByte() > 0;
-
-		return size + Integer.BYTES + m_bfsRootNameserviceEntry.length() + Integer.BYTES * 3 + 2 * Byte.BYTES
-				+ Integer.BYTES + Byte.BYTES;
 	}
 
 	@Override
@@ -499,7 +493,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						"I am starting BFS with entry vertex " + ChunkID.toHexString(p_entryVertex));
 				// #endif /* LOGGER >= INFO */
 
-				Vertex vertex = new Vertex(p_entryVertex);
+				VertexSimple vertex = new VertexSimple(p_entryVertex);
 				if (m_chunkService.get(vertex) != 1) {
 					m_loggerService.error(getClass(),
 							"Getting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
@@ -1062,7 +1056,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		private ConcurrentBitVectorHybrid m_visitedFrontier;
 
 		private short m_nodeId;
-		private Vertex[] m_vertexBatch;
+		private VertexSimple[] m_vertexBatch;
 		private int m_currentDepthLevel;
 		private VerticesForNextFrontierMessage[] m_remoteMessages = new VerticesForNextFrontierMessage[NodeID.MAX_ID];
 
@@ -1104,9 +1098,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_visitedFrontier = p_visitedFrontierShared;
 
 			m_nodeId = m_bootService.getNodeID();
-			m_vertexBatch = new Vertex[p_vertexBatchSize];
+			m_vertexBatch = new VertexSimple[p_vertexBatchSize];
 			for (int i = 0; i < m_vertexBatch.length; i++) {
-				m_vertexBatch[i] = new Vertex(ChunkID.INVALID_ID);
+				m_vertexBatch[i] = new VertexSimple(ChunkID.INVALID_ID);
 				// performance hack: if writing back, we only write back what we changed
 				m_vertexBatch[i].setWriteUserDataOnly(true);
 			}
@@ -1199,7 +1193,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 				if (m_bottomUpIteration) {
 					m_visitedFrontier.popFrontLock();
-					for (Vertex vertexBatch : m_vertexBatch) {
+					for (VertexSimple vertexBatch : m_vertexBatch) {
 						long tmp = m_visitedFrontier.popFrontInverse();
 						// 0 is the index chunk, re-pop
 						if (tmp == 0) {
@@ -1219,7 +1213,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					m_visitedFrontier.popFrontUnlock();
 				} else {
 					m_curFrontier.popFrontLock();
-					for (Vertex vertexBatch : m_vertexBatch) {
+					for (VertexSimple vertexBatch : m_vertexBatch) {
 						long tmp = m_curFrontier.popFront();
 						if (tmp != -1) {
 							vertexBatch.setID(ChunkID.getChunkID(m_nodeId, tmp));
@@ -1287,7 +1281,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 				for (int i = 0; i < validVertsInBatch; i++) {
 					// check first if visited
-					Vertex vertex = m_vertexBatch[i];
+					VertexSimple vertex = m_vertexBatch[i];
 
 					// skip vertices that were already marked invalid before
 					if (vertex.getID() == ChunkID.INVALID_ID) {
