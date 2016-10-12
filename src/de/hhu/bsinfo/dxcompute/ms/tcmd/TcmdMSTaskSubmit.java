@@ -9,6 +9,7 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskListener;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.dxram.term.TerminalStyle;
@@ -69,7 +70,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 
 		AbstractTaskPayload payload;
 		try {
-			payload = AbstractTaskPayload.createInstance(tid, stid);
+			payload = TaskPayloadManager.createInstance(tid, stid);
 		} catch (final Exception e) {
 			getTerminalDelegate().println(
 					"Cannot create task with type id " + tid + " subtype id " + stid + ": " + e.getMessage(),

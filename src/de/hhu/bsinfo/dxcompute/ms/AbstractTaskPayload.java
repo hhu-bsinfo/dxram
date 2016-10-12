@@ -1,11 +1,6 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.serialization.Exportable;
@@ -21,9 +16,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public abstract class AbstractTaskPayload implements Importable, Exportable {
-
-	protected static Map<Integer, Class<? extends AbstractTaskPayload>> m_registeredTaskClasses =
-			new HashMap<>();
 
 	private short m_typeId = -1;
 	private short m_subtypeId = -1;
@@ -48,58 +40,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	public AbstractTaskPayload(final short p_typeId, final short p_subtypeId) {
 		m_typeId = p_typeId;
 		m_subtypeId = p_subtypeId;
-	}
-
-	/**
-	 * Create an instance of a registered task payload.
-	 * Throws RuntimeException If no task payload specifeid by the ids could be created.
-	 *
-	 * @param p_typeId    Type id of the task payload.
-	 * @param p_subtypeId Subtype id of the task payload.
-	 * @return New instance of the specified task payload.
-	 */
-	public static AbstractTaskPayload createInstance(final short p_typeId, final short p_subtypeId) {
-		Class<? extends AbstractTaskPayload> clazz =
-				m_registeredTaskClasses.get(((p_typeId & 0xFFFF) << 16) | p_subtypeId);
-		if (clazz == null) {
-			throw new RuntimeException(
-					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId
-							+ ", not registered.");
-		}
-
-		try {
-			Constructor<? extends AbstractTaskPayload> ctor = clazz.getConstructor();
-			return ctor.newInstance();
-		} catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
-				| IllegalArgumentException | InvocationTargetException e) {
-			throw new RuntimeException(
-					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId + ": "
-							+ e.getMessage());
-		}
-	}
-
-	/**
-	 * Get the list of registered task payload classes.
-	 *
-	 * @return List of registered task payload classes.
-	 */
-	public static Map<Integer, Class<? extends AbstractTaskPayload>> getRegisteredTaskPayloadClasses() {
-		return m_registeredTaskClasses;
-	}
-
-	/**
-	 * Register a new task payload class.
-	 *
-	 * @param p_typeId    Type id for the class.
-	 * @param p_subtypeId Subtype id for the class.
-	 * @param p_class     Class to register for the specified ids.
-	 * @return True if registeration was successful, false otherwise.
-	 */
-	public static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
-			final Class<? extends AbstractTaskPayload> p_class) {
-		Class<? extends AbstractTaskPayload> clazz =
-				m_registeredTaskClasses.put(((p_typeId & 0xFFFF) << 16) | p_subtypeId, p_class);
-		return clazz == null;
 	}
 
 	/**

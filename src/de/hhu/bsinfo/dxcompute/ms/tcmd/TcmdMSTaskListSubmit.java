@@ -12,6 +12,7 @@ import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskListener;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.dxram.term.TerminalStyle;
@@ -199,7 +200,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 
 			AbstractTaskPayload taskPayload;
 			try {
-				taskPayload = AbstractTaskPayload.createInstance(tid, stid);
+				taskPayload = TaskPayloadManager.createInstance(tid, stid);
 			} catch (final RuntimeException e) {
 				getTerminalDelegate().println(
 						"Cannot create task payload with tid " + tid + ", stid " + stid + ", not registered.",

@@ -534,28 +534,28 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	 * Register various (built in) task payloads
 	 */
 	private void registerTaskPayloads() {
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK,
 				NullTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK,
 				SlavePrintInfoTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK,
 				WaitTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK,
 				PrintTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_CONSOLE_TASK,
 				PrintMemoryStatusToConsoleTask.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_FILE_TASK,
 				PrintMemoryStatusToFileTask.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_CONSOLE_TASK,
 				PrintStatisticsToConsoleTask.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK,
 				PrintStatisticsToFileTask.class);
 	}
