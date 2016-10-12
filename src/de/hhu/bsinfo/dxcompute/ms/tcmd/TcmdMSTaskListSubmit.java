@@ -16,7 +16,6 @@ import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.dxram.term.TerminalStyle;
-import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.conf.Configuration;
@@ -117,13 +116,12 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 		getTerminalDelegate().println("ComputeTask: Finished execution " + p_task);
 		getTerminalDelegate().println("Return codes of slave nodes: ");
 		int[] results = p_task.getExecutionReturnCodes();
-		short[] slaves = p_task.getSlaveNodeIdsExecutingTask();
 		for (int i = 0; i < results.length; i++) {
 			if (results[i] != 0) {
-				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i],
+				getTerminalDelegate().println("(" + i + "): " + results[i],
 						TerminalColor.YELLOW, TerminalColor.RED, TerminalStyle.NORMAL);
 			} else {
-				getTerminalDelegate().println("(" + i + ") " + NodeID.toHexString(slaves[i]) + ": " + results[i]);
+				getTerminalDelegate().println("(" + i + "): " + results[i]);
 			}
 		}
 

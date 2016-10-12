@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -42,9 +42,9 @@ public class PrintMemoryStatusToFileTask extends AbstractPrintMemoryStatusTaskPa
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
-		ChunkService chunkService = p_dxram.getService(ChunkService.class);
-		LoggerService loggerService = p_dxram.getService(LoggerService.class);
+	public int execute(final TaskContext p_ctx) {
+		ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
+		LoggerService loggerService = p_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
 
 		if (m_path == null) {
 			return -1;

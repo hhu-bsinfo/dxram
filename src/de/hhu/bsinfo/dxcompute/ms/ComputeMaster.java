@@ -47,7 +47,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	private int m_executionBarrierId;
 
 	private volatile int m_tasksProcessed;
-	private AtomicInteger m_payloadIdCounter = new AtomicInteger(0);
 
 	/**
 	 * Constructor
@@ -101,9 +100,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		if (m_taskCount.get() < MAX_TASK_COUNT) {
 			m_tasks.add(p_task);
 			m_taskCount.incrementAndGet();
-			// set unique payload id
-			p_task.getPayload().setPayloadId(m_payloadIdCounter.getAndIncrement());
-			p_task.getPayload().setComputeGroupId(m_computeGroupId);
 			return true;
 		} else {
 			return false;
@@ -299,19 +295,20 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		for (int i = 0; i < slaves.length; i++) {
 			slaves[i] = m_signedOnSlaves.get(i);
 		}
-		taskPayload.setSalves(slaves);
 
-		task.notifyListenersExecutionStarts();
+		task.notifyListenersExecutionStarts(m_boot.getNodeID());
 
 		// send task to slaves
 		short numberOfSlavesOnExecution = 0;
 		// avoid clashes with other compute groups, but still alter the flag on every next sync
 		m_executeBarrierIdentifier = (m_executeBarrierIdentifier + 1) % 2 + m_computeGroupId * 2;
 		for (short slave : slaves) {
-			// set incremental slave id, 0 based
-			taskPayload.setSlaveId(numberOfSlavesOnExecution);
+			TaskContextData ctxData =
+					new TaskContextData(m_computeGroupId, numberOfSlavesOnExecution, slaves);
+
 			// pass barrier identifier for syncing after task along
-			ExecuteTaskRequest request = new ExecuteTaskRequest(slave, m_executeBarrierIdentifier, taskPayload);
+			ExecuteTaskRequest request =
+					new ExecuteTaskRequest(slave, m_executeBarrierIdentifier, ctxData, taskPayload);
 
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
@@ -337,8 +334,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			}
 		}
 
-		taskPayload.setSlaveId((short) -1);
-
 		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
@@ -351,13 +346,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		// #endif /* LOGGER >= DEBUG */
 
 		// grab return codes from barrier
-		short[] slaveIds = task.getPayload().getSlaveNodeIds();
-		int[] returnCodes = new int[slaveIds.length];
+		int[] returnCodes = new int[slaves.length];
 
 		// sort them to match the indices of the slave list
-		for (int j = 0; j < slaveIds.length; j++) {
+		for (int j = 0; j < slaves.length; j++) {
 			for (int i = 0; i < result.first().length; i++) {
-				if (result.first()[i] == slaveIds[j]) {
+				if (result.first()[i] == slaves[j]) {
 					returnCodes[j] = (int) result.second()[i];
 					break;
 				}
@@ -366,8 +360,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 		m_tasksProcessed++;
 
-		task.getPayload().setExecutionReturnCodes(returnCodes);
-		task.notifyListenersExecutionCompleted();
+		task.notifyListenersExecutionCompleted(returnCodes);
 
 		m_state = State.STATE_IDLE;
 		// allow further slaves to join

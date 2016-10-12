@@ -10,9 +10,9 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
@@ -60,23 +60,26 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
+	public int execute(final TaskContext p_ctx) {
 
 		// we don't have to execute this on all slaves
 		// slave 0 will do this for the whole compute group and
 		// store the result. every other slave can simply grab the
 		// index from chunk memory
-		if (getSlaveId() == 0) {
-			m_loggerService = p_dxram.getService(LoggerService.class);
-			TemporaryStorageService tmpStorage = p_dxram.getService(TemporaryStorageService.class);
-			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
+		if (p_ctx.getCtxData().getSlaveId() == 0) {
+			m_loggerService = p_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
+			TemporaryStorageService tmpStorage =
+					p_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
+			NameserviceService nameserviceService =
+					p_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
 
-			GraphPartitionIndex graphPartIndex = loadGraphPartitionIndexFromIndexFiles(m_pathFile);
+			GraphPartitionIndex graphPartIndex = loadGraphPartitionIndexFromIndexFiles(p_ctx, m_pathFile);
 			if (graphPartIndex == null) {
 				return -1;
 			}
 
-			graphPartIndex.setID(tmpStorage.generateStorageId(MS_PART_INDEX_IDENT + getComputeGroupId()));
+			graphPartIndex.setID(tmpStorage.generateStorageId(MS_PART_INDEX_IDENT
+					+ p_ctx.getCtxData().getComputeGroupId()));
 
 			// store the index for our current cLompute group
 			if (!tmpStorage.create(graphPartIndex)) {
@@ -94,12 +97,12 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 			}
 
 			// register chunk at nameservice that other slaves can find it
-			nameserviceService.register(graphPartIndex, MS_PART_INDEX_IDENT + getComputeGroupId());
+			nameserviceService.register(graphPartIndex, MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId());
 
 			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(),
 					"Successfully loaded and stored graph partition index, nameservice entry name "
-							+ MS_PART_INDEX_IDENT + getComputeGroupId() + ":\n" + graphPartIndex);
+							+ MS_PART_INDEX_IDENT + p_ctx.getCtxData().getComputeGroupId() + ":\n" + graphPartIndex);
 			// #endif /* LOGGER >= INFO */
 		}
 
@@ -152,13 +155,14 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 	/**
 	 * Load the graph partition index from one or multiple graph partition index files from a specific path.
 	 *
+	 * @param p_ctx  Task context.
 	 * @param p_path Path containing the graph partition index file(s).
 	 * @return Graph partition index object with partition entries loaded from the files.
 	 */
-	private GraphPartitionIndex loadGraphPartitionIndexFromIndexFiles(final String p_path) {
+	private GraphPartitionIndex loadGraphPartitionIndexFromIndexFiles(final TaskContext p_ctx, final String p_path) {
 		GraphPartitionIndex index = new GraphPartitionIndex();
 
-		ArrayList<GraphPartitionIndex.Entry> entries = readIndexEntriesFromFile(p_path);
+		ArrayList<GraphPartitionIndex.Entry> entries = readIndexEntriesFromFile(p_ctx, p_path);
 		if (entries != null) {
 			for (GraphPartitionIndex.Entry entry : entries) {
 				index.setPartitionEntry(entry);
@@ -174,12 +178,14 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 	 * Read the graph partition index from a single partition index file. The file can contain multiple entries (one per
 	 * line)
 	 *
+	 * @param p_ctx      Task context.
 	 * @param p_pathFile Path + filename of the index file to read.
 	 * @return List of entries read from the file or null on error.
 	 */
-	private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFile(final String p_pathFile) {
+	private ArrayList<GraphPartitionIndex.Entry> readIndexEntriesFromFile(final TaskContext p_ctx,
+			final String p_pathFile) {
 		ArrayList<GraphPartitionIndex.Entry> entries = new ArrayList<>();
-		short[] slaves = getSlaveNodeIds();
+		short[] slaves = p_ctx.getCtxData().getSlaveNodeIds();
 
 		BufferedReader reader;
 		try {

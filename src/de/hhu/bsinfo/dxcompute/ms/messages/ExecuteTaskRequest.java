@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskContextData;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractRequest;
@@ -16,6 +17,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
 public class ExecuteTaskRequest extends AbstractRequest {
 
 	private int m_barrierIdentifier = -1;
+	private TaskContextData m_ctxData;
 	private AbstractTaskPayload m_task;
 
 	/**
@@ -35,9 +37,10 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	 * @param p_task              Task to execute.
 	 */
 	public ExecuteTaskRequest(final short p_destination, final int p_barrierIdentifier,
-			final AbstractTaskPayload p_task) {
+			final TaskContextData p_ctxData, final AbstractTaskPayload p_task) {
 		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST);
 		m_barrierIdentifier = p_barrierIdentifier;
+		m_ctxData = p_ctxData;
 		m_task = p_task;
 	}
 
@@ -48,6 +51,15 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	 */
 	public int getBarrierIdentifier() {
 		return m_barrierIdentifier;
+	}
+
+	/**
+	 * Get the context data for the task to execute.
+	 *
+	 * @return Context data.
+	 */
+	public TaskContextData getTaskContextData() {
+		return m_ctxData;
 	}
 
 	/**
@@ -64,6 +76,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 		MessagesDataStructureImExporter exporter = new MessagesDataStructureImExporter(p_buffer);
 
 		p_buffer.putInt(m_barrierIdentifier);
+		exporter.exportObject(m_ctxData);
 		p_buffer.putShort(m_task.getTypeId());
 		p_buffer.putShort(m_task.getSubtypeId());
 		exporter.exportObject(m_task);
@@ -74,6 +87,8 @@ public class ExecuteTaskRequest extends AbstractRequest {
 		MessagesDataStructureImExporter importer = new MessagesDataStructureImExporter(p_buffer);
 
 		m_barrierIdentifier = p_buffer.getInt();
+		m_ctxData = new TaskContextData();
+		importer.importObject(m_ctxData);
 		short type = p_buffer.getShort();
 		short subtype = p_buffer.getShort();
 		m_task = TaskPayloadManager.createInstance(type, subtype);
@@ -82,10 +97,6 @@ public class ExecuteTaskRequest extends AbstractRequest {
 
 	@Override
 	protected final int getPayloadLength() {
-		if (m_task != null) {
-			return 2 * Short.BYTES + Integer.BYTES + m_task.sizeofObject();
-		} else {
-			return 2 * Short.BYTES + Integer.BYTES;
-		}
+		return 2 * Short.BYTES + Integer.BYTES + m_ctxData.sizeofObject() + m_task.sizeofObject();
 	}
 }

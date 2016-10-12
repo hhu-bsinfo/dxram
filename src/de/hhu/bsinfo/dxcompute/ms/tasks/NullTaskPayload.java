@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 
 /**
  * Null task payload for testing.
@@ -20,7 +20,7 @@ public class NullTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
+	public int execute(final TaskContext p_ctx) {
 		return 0;
 	}
 

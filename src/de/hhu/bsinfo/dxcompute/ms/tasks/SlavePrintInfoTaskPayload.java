@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.menet.NodeID;
 
 /**
@@ -20,12 +20,12 @@ public class SlavePrintInfoTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
+	public int execute(final TaskContext p_ctx) {
 
 		System.out.println("Task " + getClass().getSimpleName() + ": ");
-		System.out.println("OwnSlaveId: " + getSlaveId());
-		System.out.println("List of slaves in current compute group " + getComputeGroupId() + ": ");
-		short[] slaves = getSlaveNodeIds();
+		System.out.println("OwnSlaveId: " + p_ctx.getCtxData().getSlaveId());
+		System.out.println("List of slaves in current compute group " + p_ctx.getCtxData().getComputeGroupId() + ": ");
+		short[] slaves = p_ctx.getCtxData().getSlaveNodeIds();
 		for (int i = 0; i < slaves.length; i++) {
 			System.out.println(i + ": " + NodeID.toHexString(slaves[i]));
 		}

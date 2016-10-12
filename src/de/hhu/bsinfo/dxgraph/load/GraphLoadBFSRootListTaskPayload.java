@@ -7,13 +7,13 @@ import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRoots;
 import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListRootsBinaryFile;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
@@ -59,24 +59,28 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
+	public int execute(final TaskContext p_ctx) {
 
 		// we don't have to execute this on all slaves
 		// slave 0 will do this for the whole compute group and
 		// store the result. every other slave can simply grab the
 		// root list from chunk memory
-		if (getSlaveId() == 0) {
-			m_loggerService = p_dxram.getService(LoggerService.class);
-			TemporaryStorageService m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
-			NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
+		if (p_ctx.getCtxData().getSlaveId() == 0) {
+			m_loggerService = p_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
+			TemporaryStorageService m_temporaryStorageService =
+					p_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
+			NameserviceService nameserviceService =
+					p_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
 
 			// look for the graph partitioned index of the current compute group
 			long chunkIdPartitionIndex = nameserviceService
-					.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + getComputeGroupId(), 5000);
+					.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT
+							+ p_ctx.getCtxData().getComputeGroupId(), 5000);
 			if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
 				// #if LOGGER >= ERROR
 				m_loggerService.error(getClass(),
-						"Could not find partition index for current compute group " + getComputeGroupId());
+						"Could not find partition index for current compute group "
+								+ p_ctx.getCtxData().getComputeGroupId());
 				// #endif /* LOGGER >= ERROR */
 				return -1;
 			}
@@ -108,7 +112,8 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 				return -4;
 			}
 
-			rootList.setID(m_temporaryStorageService.generateStorageId(MS_BFS_ROOTS + getComputeGroupId()));
+			rootList.setID(m_temporaryStorageService.generateStorageId(MS_BFS_ROOTS
+					+ p_ctx.getCtxData().getComputeGroupId()));
 
 			// store the root list for our current compute group
 			if (!m_temporaryStorageService.create(rootList)) {
@@ -126,12 +131,12 @@ public class GraphLoadBFSRootListTaskPayload extends AbstractTaskPayload {
 			}
 
 			// register chunk at nameservice that other slaves can find it
-			nameserviceService.register(rootList, MS_BFS_ROOTS + getComputeGroupId());
+			nameserviceService.register(rootList, MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId());
 
 			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(),
 					"Successfully loaded and stored root list, nameservice entry name "
-							+ MS_BFS_ROOTS + getComputeGroupId() + ":\n" + rootList);
+							+ MS_BFS_ROOTS + p_ctx.getCtxData().getComputeGroupId() + ":\n" + rootList);
 			// #endif /* LOGGER >= INFO */
 		}
 
