@@ -55,8 +55,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	private NameserviceComponent m_nameservice;
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
-	private TerminalComponent m_terminal;
-	private LookupComponent m_lookup;
 
 	private AbstractComputeMSBase m_computeMSInstance;
 
@@ -324,8 +322,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_nameservice = getComponent(NameserviceComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_boot = getComponent(AbstractBootComponent.class);
-		m_terminal = getComponent(TerminalComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
+		TerminalComponent terminal = getComponent(TerminalComponent.class);
+		LookupComponent lookup = getComponent(LookupComponent.class);
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
 				SubmitTaskRequest.class);
@@ -347,26 +345,26 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_network.register(TaskExecutionStartedMessage.class, this);
 		m_network.register(TaskExecutionFinishedMessage.class, this);
 
-		m_terminal.registerCommand(new TcmdMSGroupList());
-		m_terminal.registerCommand(new TcmdMSComputeGroupStatus());
-		m_terminal.registerCommand(new TcmdMSTaskSubmit());
-		m_terminal.registerCommand(new TcmdMSTasks());
-		m_terminal.registerCommand(new TcmdMSTaskListSubmit());
+		terminal.registerCommand(new TcmdMSGroupList());
+		terminal.registerCommand(new TcmdMSComputeGroupStatus());
+		terminal.registerCommand(new TcmdMSTaskSubmit());
+		terminal.registerCommand(new TcmdMSTasks());
+		terminal.registerCommand(new TcmdMSTaskListSubmit());
 
 		switch (role) {
 			case MASTER:
 				m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
 						m_network, m_logger,
-						m_nameservice, m_boot, m_lookup);
+						m_nameservice, m_boot, lookup);
 				break;
 			case SLAVE:
 				m_computeMSInstance =
 						new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
-								m_nameservice, m_boot, m_lookup);
+								m_nameservice, m_boot, lookup);
 				break;
 			case NONE:
 				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
-						m_nameservice, m_boot, m_lookup);
+						m_nameservice, m_boot, lookup);
 				break;
 			default:
 				assert 1 == 2;
@@ -591,7 +589,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		 * @param p_numTasksQueued  Number of tasks queued currently on this master.
 		 * @param p_tasksProcessed  Number of tasks processed so far.
 		 */
-		public StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state,
+		StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state,
 				final ArrayList<Short> p_connectedSlaves,
 				final int p_numTasksQueued,
 				final int p_tasksProcessed) {
