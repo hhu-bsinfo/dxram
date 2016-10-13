@@ -28,11 +28,12 @@ import de.hhu.bsinfo.menet.NodeID;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, TaskPayloadSlaveInterface {
+class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, TaskSignalInterface {
 
 	private short m_masterNodeId = NodeID.INVALID_ID;
 
 	private volatile AbstractTaskPayload m_task;
+	private volatile TaskContextData m_ctxData;
 	private Lock m_executeTaskLock = new ReentrantLock(false);
 	private Lock m_handleSignalLock = new ReentrantLock(false);
 
@@ -256,11 +257,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		// #endif /* LOGGER >= INFO */
 
 		m_executeTaskLock.lock();
-		m_task.setSlaveInterface(this);
 
-		int result = m_task.execute(getServiceAccessor());
+		int result = m_task.execute(new TaskContext(m_ctxData, this, getServiceAccessor()));
 
-		m_task.setSlaveInterface(null);
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Execution finished, return code: " + result);
 		// #endif /* LOGGER >= INFO */
@@ -302,14 +301,8 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
 		if (m_executeTaskLock.tryLock() && m_state == State.STATE_IDLE) {
 			task = p_message.getTaskPayload();
-			if (task == null) {
-				// could not create proper task object from message
-				// this could be a result that we are missing a registered class for this
-				response.setStatusCode((byte) 2);
-			} else {
-				// success
-				response.setStatusCode((byte) 0);
-			}
+
+			response.setStatusCode((byte) 0);
 
 			m_executeTaskLock.unlock();
 		} else {
@@ -325,8 +318,9 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 			// #endif /* LOGGER >= ERROR */
 		} else {
 			if (task != null) {
+				m_ctxData = p_message.getTaskContextData();
+
 				// assign and start execution if non null
-				task.setComputeGroupId(m_computeGroupId);
 				m_task = task;
 			}
 		}

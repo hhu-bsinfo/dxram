@@ -47,7 +47,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	private int m_executionBarrierId;
 
 	private volatile int m_tasksProcessed;
-	private AtomicInteger m_payloadIdCounter = new AtomicInteger(0);
 
 	/**
 	 * Constructor
@@ -101,9 +100,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		if (m_taskCount.get() < MAX_TASK_COUNT) {
 			m_tasks.add(p_task);
 			m_taskCount.incrementAndGet();
-			// set unique payload id
-			p_task.getPayload().setPayloadId(m_payloadIdCounter.getAndIncrement());
-			p_task.getPayload().setComputeGroupId(m_computeGroupId);
 			return true;
 		} else {
 			return false;
@@ -238,28 +234,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		} else {
 			// check if we have to ping the slaves to check if they are still online
 			if (m_lastPingMs + m_pingIntervalMs < System.currentTimeMillis()) {
-				// check if slaves are still alive
-				List<Short> onlineNodesList = m_boot.getIDsOfOnlineNodes();
-
-				m_joinLock.lock();
-				Iterator<Short> it = m_signedOnSlaves.iterator();
-				while (it.hasNext()) {
-					short slave = it.next();
-					if (!onlineNodesList.contains(slave)) {
-						// #if LOGGER >= INFO
-						m_logger.info(getClass(),
-								"Slave " + NodeID.toHexString(slave) + " is not available anymore, removing.");
-						// #endif /* LOGGER >= INFO */
-
-						it.remove();
-					}
-				}
-				m_joinLock.unlock();
-
-				m_lastPingMs = System.currentTimeMillis();
-				// #if LOGGER == TRACE
-				m_logger.trace(getClass(), "Pinging slaves, " + m_signedOnSlaves.size() + " online.");
-				// #endif /* LOGGER == TRACE */
+				checkAllSlavesOnline();
 			}
 
 			// do nothing
@@ -274,8 +249,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	 * Execute state. Execute a task from the queue. Send it to the slaves, wait for completion of all slaves.
 	 */
 	private void stateExecute() {
-		// lock joining of further slaves
-		m_joinLock.lock();
 
 		// get next task
 		m_taskCount.decrementAndGet();
@@ -286,9 +259,36 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			m_logger.error(getClass(), "Cannot proceed with task " + task + ", missing payload.");
 			// #endif /* LOGGER >= ERROR */
 			m_state = State.STATE_IDLE;
-			m_joinLock.unlock();
 			return;
 		}
+
+		// check if enough slaves are available for the task to run
+		if (task.getPayload().getNumRequiredSlaves() != AbstractTaskPayload.NUM_REQUIRED_SLAVES_ARBITRARY
+				&& task.getPayload().getNumRequiredSlaves() > m_signedOnSlaves.size()) {
+			// #if LOGGER >= INFO
+			m_logger.info(getClass(),
+					"Not enough slaves available for task " + task + " waiting...");
+			// #endif /* LOGGER >= INFO */
+
+			while (task.getPayload().getNumRequiredSlaves() > m_signedOnSlaves.size()) {
+				// #if LOGGER >= DEBUG
+				m_logger.debug(getClass(),
+						"Not enough slaves available for task " + task + " waiting (" + m_signedOnSlaves.size() + "/"
+								+ task.getPayload().getNumRequiredSlaves() + ")...");
+				// #endif /* LOGGER >= DEBUG */
+
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+				}
+
+				// bad but might happen that a slave goes offline
+				checkAllSlavesOnline();
+			}
+		}
+
+		// lock joining of further slaves
+		m_joinLock.lock();
 
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(),
@@ -299,7 +299,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		for (int i = 0; i < slaves.length; i++) {
 			slaves[i] = m_signedOnSlaves.get(i);
 		}
-		taskPayload.setSalves(slaves);
 
 		task.notifyListenersExecutionStarts();
 
@@ -308,10 +307,12 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		// avoid clashes with other compute groups, but still alter the flag on every next sync
 		m_executeBarrierIdentifier = (m_executeBarrierIdentifier + 1) % 2 + m_computeGroupId * 2;
 		for (short slave : slaves) {
-			// set incremental slave id, 0 based
-			taskPayload.setSlaveId(numberOfSlavesOnExecution);
+			TaskContextData ctxData =
+					new TaskContextData(m_computeGroupId, numberOfSlavesOnExecution, slaves);
+
 			// pass barrier identifier for syncing after task along
-			ExecuteTaskRequest request = new ExecuteTaskRequest(slave, m_executeBarrierIdentifier, taskPayload);
+			ExecuteTaskRequest request =
+					new ExecuteTaskRequest(slave, m_executeBarrierIdentifier, ctxData, taskPayload);
 
 			NetworkErrorCodes err = m_network.sendSync(request);
 			if (err != NetworkErrorCodes.SUCCESS) {
@@ -337,8 +338,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			}
 		}
 
-		taskPayload.setSlaveId((short) -1);
-
 		// #if LOGGER >= DEBUG
 		m_logger.debug(getClass(),
 				"Syncing with " + numberOfSlavesOnExecution + "/" + m_signedOnSlaves.size() + " slaves...");
@@ -346,28 +345,34 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 		Pair<short[], long[]> result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
 
-		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Syncing done.");
-		// #endif /* LOGGER >= DEBUG */
+		int[] returnCodes;
+		if (result != null) {
+			// #if LOGGER >= DEBUG
+			m_logger.debug(getClass(), "Syncing done.");
+			// #endif /* LOGGER >= DEBUG */
 
-		// grab return codes from barrier
-		short[] slaveIds = task.getPayload().getSlaveNodeIds();
-		int[] returnCodes = new int[slaveIds.length];
+			// grab return codes from barrier
+			returnCodes = new int[slaves.length];
 
-		// sort them to match the indices of the slave list
-		for (int j = 0; j < slaveIds.length; j++) {
-			for (int i = 0; i < result.first().length; i++) {
-				if (result.first()[i] == slaveIds[j]) {
-					returnCodes[j] = (int) result.second()[i];
-					break;
+			// sort them to match the indices of the slave list
+			for (int j = 0; j < slaves.length; j++) {
+				for (int i = 0; i < result.first().length; i++) {
+					if (result.first()[i] == slaves[j]) {
+						returnCodes[j] = (int) result.second()[i];
+						break;
+					}
 				}
+			}
+		} else {
+			returnCodes = new int[slaves.length];
+			for (int i = 0; i < returnCodes.length; i++) {
+				returnCodes[i] = -1;
 			}
 		}
 
 		m_tasksProcessed++;
 
-		task.getPayload().setExecutionReturnCodes(returnCodes);
-		task.notifyListenersExecutionCompleted();
+		task.notifyListenersExecutionCompleted(returnCodes);
 
 		m_state = State.STATE_IDLE;
 		// allow further slaves to join
@@ -389,6 +394,34 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			Thread.sleep(1000);
 		} catch (final InterruptedException ignored) {
 		}
+	}
+
+	/**
+	 * Check online status of all slaves (once).
+	 */
+	private void checkAllSlavesOnline() {
+		// check if slaves are still alive
+		List<Short> onlineNodesList = m_boot.getIDsOfOnlineNodes();
+
+		m_joinLock.lock();
+		Iterator<Short> it = m_signedOnSlaves.iterator();
+		while (it.hasNext()) {
+			short slave = it.next();
+			if (!onlineNodesList.contains(slave)) {
+				// #if LOGGER >= INFO
+				m_logger.info(getClass(),
+						"Slave " + NodeID.toHexString(slave) + " is not available anymore, removing.");
+				// #endif /* LOGGER >= INFO */
+
+				it.remove();
+			}
+		}
+		m_joinLock.unlock();
+
+		m_lastPingMs = System.currentTimeMillis();
+		// #if LOGGER == TRACE
+		m_logger.trace(getClass(), "Pinging slaves, " + m_signedOnSlaves.size() + " online.");
+		// #endif /* LOGGER == TRACE */
 	}
 
 	/**

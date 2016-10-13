@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusResponse;
@@ -55,12 +56,11 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	private NameserviceComponent m_nameservice;
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
-	private TerminalComponent m_terminal;
-	private LookupComponent m_lookup;
 
 	private AbstractComputeMSBase m_computeMSInstance;
 
 	private ConcurrentMap<Integer, Task> m_remoteTasks = new ConcurrentHashMap<>();
+	private AtomicInteger m_taskIdCounter = new AtomicInteger(0);
 
 	/**
 	 * Get the compute of the current node.
@@ -163,9 +163,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	 * Submit a task to this master.
 	 *
 	 * @param p_task Task to submit to this master.
-	 * @return The task id assigned or -1 if the current node is not a master or submission failed.
+	 * @return Task id assigned or -1 if the current node is not a master or submission failed.
 	 */
-	public long submitTask(final Task p_task) {
+	public int submitTask(final Task p_task) {
 		if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot submit task " + p_task + " on non master node type");
@@ -173,11 +173,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			return -1;
 		}
 
-		p_task.setNodeIdSubmitted(m_boot.getNodeID());
-		p_task.m_serviceAccessor = getServiceAccessor();
+		p_task.assignTaskId(m_taskIdCounter.getAndIncrement());
 
 		if (((ComputeMaster) m_computeMSInstance).submitTask(p_task)) {
-			return p_task.getPayload().getPayloadId();
+			return p_task.getTaskIdAssigned();
 		} else {
 			return -1;
 		}
@@ -190,15 +189,13 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	 * @param p_computeGroupId Compute group to submit the task to.
 	 * @return Task id assigned by the remote master node or -1 if the remote node is not a master or submission failed.
 	 */
-	public long submitTask(final Task p_task, final short p_computeGroupId) {
+	public int submitTask(final Task p_task, final short p_computeGroupId) {
 		if (m_computeMSInstance.getRole() == ComputeRole.MASTER) {
 			ComputeMaster master = (ComputeMaster) m_computeMSInstance;
 			if (master.getComputeGroupId() == p_computeGroupId) {
 				return submitTask(p_task);
 			}
 		}
-
-		p_task.setNodeIdSubmitted(m_boot.getNodeID());
 
 		// get the node id of the master node of the group
 		short masterNodeId;
@@ -231,27 +228,24 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			return -1;
 		}
 
-		// get assigned payload id
-		p_task.getPayload().setComputeGroupId(response.getAssignedComputeGroupId());
-		p_task.getPayload().setPayloadId(response.getAssignedPayloadId());
-
 		// remember task for remote callbacks
-		m_remoteTasks.put(p_task.getPayload().getPayloadId(), p_task);
+		p_task.assignTaskId(response.getAssignedPayloadId());
+		p_task.setNodeIdSubmitted(m_boot.getNodeID());
+		m_remoteTasks.put(p_task.getTaskIdAssigned(), p_task);
 
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Submitted task to compute group " + p_computeGroupId + " with master node "
 				+ NodeID.toHexString(masterNodeId) + ": " + p_task);
 		// #endif /* LOGGER >= INFO */
 
-		return p_task.getPayload().getPayloadId();
+		return response.getAssignedPayloadId();
 	}
 
 	@Override
 	public void taskBeforeExecution(final Task p_task) {
 		// only used for remote tasks to callback the node they were submitted on
 		TaskExecutionStartedMessage message =
-				new TaskExecutionStartedMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(),
-						p_task.getPayload().getSlaveNodeIds());
+				new TaskExecutionStartedMessage(p_task.getNodeIdSubmitted(), p_task.getTaskIdAssigned());
 
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
@@ -266,8 +260,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	public void taskCompleted(final Task p_task) {
 		// only used for remote tasks to callback the node they were submitted on
 		TaskExecutionFinishedMessage message =
-				new TaskExecutionFinishedMessage(p_task.getNodeIdSubmitted(), p_task.getPayload().getPayloadId(),
-						p_task.getPayload().getExecutionReturnCodes());
+				new TaskExecutionFinishedMessage(p_task.getNodeIdSubmitted(), p_task.getTaskIdAssigned(),
+						p_task.getExecutionReturnCodes());
 
 		NetworkErrorCodes err = m_network.sendMessage(message);
 		if (err != NetworkErrorCodes.SUCCESS) {
@@ -278,7 +272,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 
 		// we don't have to remember this remote task anymore
-		m_remoteTasks.remove(p_task.getPayload().getPayloadId());
+		m_remoteTasks.remove(p_task.getTaskIdAssigned());
 	}
 
 	@Override
@@ -324,8 +318,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_nameservice = getComponent(NameserviceComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_boot = getComponent(AbstractBootComponent.class);
-		m_terminal = getComponent(TerminalComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
+		TerminalComponent terminal = getComponent(TerminalComponent.class);
+		LookupComponent lookup = getComponent(LookupComponent.class);
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
 				SubmitTaskRequest.class);
@@ -347,26 +341,26 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_network.register(TaskExecutionStartedMessage.class, this);
 		m_network.register(TaskExecutionFinishedMessage.class, this);
 
-		m_terminal.registerCommand(new TcmdMSGroupList());
-		m_terminal.registerCommand(new TcmdMSComputeGroupStatus());
-		m_terminal.registerCommand(new TcmdMSTaskSubmit());
-		m_terminal.registerCommand(new TcmdMSTasks());
-		m_terminal.registerCommand(new TcmdMSTaskListSubmit());
+		terminal.registerCommand(new TcmdMSGroupList());
+		terminal.registerCommand(new TcmdMSComputeGroupStatus());
+		terminal.registerCommand(new TcmdMSTaskSubmit());
+		terminal.registerCommand(new TcmdMSTasks());
+		terminal.registerCommand(new TcmdMSTaskListSubmit());
 
 		switch (role) {
 			case MASTER:
 				m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
 						m_network, m_logger,
-						m_nameservice, m_boot, m_lookup);
+						m_nameservice, m_boot, lookup);
 				break;
 			case SLAVE:
 				m_computeMSInstance =
 						new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
-								m_nameservice, m_boot, m_lookup);
+								m_nameservice, m_boot, lookup);
 				break;
 			case NONE:
 				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
-						m_nameservice, m_boot, m_lookup);
+						m_nameservice, m_boot, lookup);
 				break;
 			default:
 				assert 1 == 2;
@@ -432,18 +426,18 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			response = new SubmitTaskResponse(p_request, (short) -1, -1);
 			response.setStatusCode((byte) 1);
 		} else {
-			Task task = new Task(p_request.getTaskPayload(), "RemoteTask" + p_request);
+			Task task = new Task(p_request.getTaskPayload(), "RemoteTask " + p_request);
+			task.assignTaskId(m_taskIdCounter.getAndIncrement());
 			task.setNodeIdSubmitted(p_request.getSource());
-			task.m_serviceAccessor = getServiceAccessor();
 			task.registerTaskListener(this);
 
 			boolean ret = ((ComputeMaster) m_computeMSInstance).submitTask(task);
 
 			if (ret) {
-				m_remoteTasks.put(task.getPayload().getPayloadId(), task);
+				m_remoteTasks.put(task.getTaskIdAssigned(), task);
 
-				response = new SubmitTaskResponse(p_request, task.getPayload().getComputeGroupId(),
-						task.getPayload().getPayloadId());
+				response = new SubmitTaskResponse(p_request, m_computeMSInstance.getComputeGroupId(),
+						task.getTaskIdAssigned());
 				response.setStatusCode((byte) 0);
 			} else {
 				response = new SubmitTaskResponse(p_request, (short) -1, -1);
@@ -502,9 +496,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			Thread.yield();
 		}
 
-		task.getPayload().setPayloadId(p_message.getTaskPayloadId());
-		task.getPayload().setSalves(p_message.getSlavesAssignedForExecution());
-
 		task.notifyListenersExecutionStarts();
 	}
 
@@ -526,36 +517,35 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		// done with task, remove
 		// get return codes of execution
-		task.getPayload().setExecutionReturnCodes(p_message.getExecutionReturnCodes());
-		task.notifyListenersExecutionCompleted();
+		task.notifyListenersExecutionCompleted(p_message.getExecutionReturnCodes());
 	}
 
 	/**
 	 * Register various (built in) task payloads
 	 */
 	private void registerTaskPayloads() {
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_NULL_TASK,
 				NullTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK,
 				SlavePrintInfoTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK,
 				WaitTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK,
 				PrintTaskPayload.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_CONSOLE_TASK,
 				PrintMemoryStatusToConsoleTask.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_MEMORY_STATUS_FILE_TASK,
 				PrintMemoryStatusToFileTask.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_CONSOLE_TASK,
 				PrintStatisticsToConsoleTask.class);
-		AbstractTaskPayload.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
+		TaskPayloadManager.registerTaskPayloadClass(MasterSlaveTaskPayloads.TYPE,
 				MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK,
 				PrintStatisticsToFileTask.class);
 	}
@@ -591,7 +581,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		 * @param p_numTasksQueued  Number of tasks queued currently on this master.
 		 * @param p_tasksProcessed  Number of tasks processed so far.
 		 */
-		public StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state,
+		StatusMaster(final short p_masterNodeId, final AbstractComputeMSBase.State p_state,
 				final ArrayList<Short> p_connectedSlaves,
 				final int p_numTasksQueued,
 				final int p_tasksProcessed) {

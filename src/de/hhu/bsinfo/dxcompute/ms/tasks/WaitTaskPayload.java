@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -37,8 +37,17 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 		m_waitMs = p_timeMs;
 	}
 
+	/**
+	 * Set the number of slaves to wait for before starting this task.
+	 *
+	 * @param p_numSlaves Number of slaves to wait for.
+	 */
+	public void setSlaveCount(final short p_numSlaves) {
+		setNumRequiredSlaves(p_numSlaves);
+	}
+
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
+	public int execute(final TaskContext p_ctx) {
 		try {
 			Thread.sleep(m_waitMs);
 		} catch (final InterruptedException e) {
@@ -55,11 +64,13 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandRegisterArguments(p_argumentList);
 		p_argumentList.setArgument(MS_ARG_TIME);
 	}
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandCallbackForArguments(p_argumentList);
 		m_waitMs = p_argumentList.getArgumentValue(MS_ARG_TIME, Integer.class);
 	}
 

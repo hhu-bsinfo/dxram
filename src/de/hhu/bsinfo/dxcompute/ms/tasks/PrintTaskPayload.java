@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -40,7 +40,7 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
+	public int execute(final TaskContext p_ctx) {
 		System.out.println(m_msg);
 		return 0;
 	}
@@ -52,11 +52,13 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandRegisterArguments(p_argumentList);
 		p_argumentList.setArgument(MS_ARG_MSG);
 	}
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandCallbackForArguments(p_argumentList);
 		m_msg = p_argumentList.getArgumentValue(MS_ARG_MSG, String.class);
 	}
 

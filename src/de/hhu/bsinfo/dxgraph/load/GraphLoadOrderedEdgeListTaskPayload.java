@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.VertexSimple;
@@ -15,7 +16,6 @@ import de.hhu.bsinfo.dxgraph.load.oel.OrderedEdgeListBinaryFileThreadBuffering;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
@@ -40,6 +40,7 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	private static final Argument MS_ARG_FILTER_SELF_LOOPS =
 			new Argument("filterSelfLoops", null, false, "Check for and filter self loops per vertex.");
 
+	private TaskContext m_ctx;
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
@@ -79,19 +80,23 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
-		m_loggerService = p_dxram.getService(LoggerService.class);
-		m_chunkService = p_dxram.getService(ChunkService.class);
-		TemporaryStorageService temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
-		NameserviceService nameserviceService = p_dxram.getService(NameserviceService.class);
+	public int execute(final TaskContext p_ctx) {
+		m_ctx = p_ctx;
+		m_loggerService = m_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
+		m_chunkService = m_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
+		TemporaryStorageService temporaryStorageService =
+				m_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
+		NameserviceService nameserviceService = m_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
 
 		// look for the graph partitioned index of the current compute group
 		long chunkIdPartitionIndex = nameserviceService
-				.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + getComputeGroupId(), 5000);
+				.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT
+						+ m_ctx.getCtxData().getComputeGroupId(), 5000);
 		if (chunkIdPartitionIndex == ChunkID.INVALID_ID) {
 			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
-					"Could not find partition index for current compute group " + getComputeGroupId());
+					"Could not find partition index for current compute group "
+							+ m_ctx.getCtxData().getComputeGroupId());
 			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
@@ -149,6 +154,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandRegisterArguments(p_argumentList);
+
 		p_argumentList.setArgument(MS_ARG_PATH);
 		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
 		p_argumentList.setArgument(MS_ARG_FILTER_DUP_EDGES);
@@ -157,6 +164,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandCallbackForArguments(p_argumentList);
+
 		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
 		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
 		m_filterDupEdges = p_argumentList.getArgumentValue(MS_ARG_FILTER_DUP_EDGES, Boolean.class);
@@ -239,26 +248,30 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		// #endif /* LOGGER >= DEBUG */
 
 		for (File file : files) {
-			long startOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getFileStartOffset();
+			long startOffset =
+					p_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId()).getFileStartOffset();
 			long endOffset;
 
 			// last partition
-			if (getSlaveId() + 1 >= p_graphPartitionIndex.getTotalPartitionCount()) {
+			if (m_ctx.getCtxData().getSlaveId() + 1 >= p_graphPartitionIndex.getTotalPartitionCount()) {
 				endOffset = Long.MAX_VALUE;
 			} else {
-				endOffset = p_graphPartitionIndex.getPartitionIndex(getSlaveId() + 1).getFileStartOffset();
+				endOffset = p_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId() + 1)
+						.getFileStartOffset();
 			}
 
 			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(),
-					"Partition for slave " + getSlaveId() + "graph data file: start " + startOffset + ", end "
+					"Partition for slave " + m_ctx.getCtxData().getSlaveId() + "graph data file: start " + startOffset
+							+ ", end "
 							+ endOffset);
 			// #endif /* LOGGER >= INFO */
 
 			// get the first vertex id of the partition to load
 			long startVertexId = 0;
-			for (int i = 0; i < getSlaveId(); i++) {
-				startVertexId += p_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount();
+			for (int i = 0; i < m_ctx.getCtxData().getSlaveId(); i++) {
+				startVertexId +=
+						p_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId()).getVertexCount();
 			}
 
 			orderedEdgeList = new OrderedEdgeListBinaryFileThreadBuffering(file.getAbsolutePath(),
@@ -288,11 +301,13 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 		VertexSimple[] vertexBuffer = new VertexSimple[m_vertexBatchSize];
 		int readCount;
 
-		GraphPartitionIndex.Entry currentPartitionIndexEntry = p_graphPartitionIndex.getPartitionIndex(getSlaveId());
+		GraphPartitionIndex.Entry currentPartitionIndexEntry =
+				p_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId());
 		if (currentPartitionIndexEntry == null) {
 			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
-					"Cannot load graph, missing partition index entry for partition " + getSlaveId());
+					"Cannot load graph, missing partition index entry for partition " + m_ctx.getCtxData()
+							.getSlaveId());
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}

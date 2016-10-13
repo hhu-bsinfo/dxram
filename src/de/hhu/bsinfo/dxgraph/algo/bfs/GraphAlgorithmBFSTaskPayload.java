@@ -13,6 +13,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVectorHybrid;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
@@ -30,7 +31,6 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkMemoryService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
@@ -78,6 +78,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 	private static final String MS_BARRIER_IDENT_0 = "BF0";
 
+	private TaskContext m_ctx;
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 	private ChunkMemoryService m_chunkMemoryService;
@@ -110,15 +111,16 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
-		m_loggerService = p_dxram.getService(LoggerService.class);
-		m_chunkService = p_dxram.getService(ChunkService.class);
-		m_chunkMemoryService = p_dxram.getService(ChunkMemoryService.class);
-		m_nameserviceService = p_dxram.getService(NameserviceService.class);
-		m_networkService = p_dxram.getService(NetworkService.class);
-		m_bootService = p_dxram.getService(BootService.class);
-		m_synchronizationService = p_dxram.getService(SynchronizationService.class);
-		m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
+	public int execute(final TaskContext p_ctx) {
+		m_ctx = p_ctx;
+		m_loggerService = m_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
+		m_chunkService = m_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
+		m_chunkMemoryService = m_ctx.getDXRAMServiceAccessor().getService(ChunkMemoryService.class);
+		m_nameserviceService = m_ctx.getDXRAMServiceAccessor().getService(NameserviceService.class);
+		m_networkService = m_ctx.getDXRAMServiceAccessor().getService(NetworkService.class);
+		m_bootService = m_ctx.getDXRAMServiceAccessor().getService(BootService.class);
+		m_synchronizationService = m_ctx.getDXRAMServiceAccessor().getService(SynchronizationService.class);
+		m_temporaryStorageService = m_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
 
 		m_networkService.registerMessageType(BFSMessages.TYPE,
 				BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE,
@@ -144,12 +146,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			{
 				try {
-					Thread.sleep(getSlaveId() * 500);
+					Thread.sleep(m_ctx.getCtxData().getSlaveId() * 500);
 				} catch (final InterruptedException ignore) {
 				}
 
 				// send ping message to force open socket connections in order
-				for (short slave : getSlaveNodeIds()) {
+				for (short slave : m_ctx.getCtxData().getSlaveNodeIds()) {
 					if (slave != m_nodeId) {
 						m_networkService.sendMessage(new PingMessage(slave));
 					}
@@ -161,11 +163,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		// get partition index of the graph
 		long graphPartitionIndexChunkId = m_nameserviceService
-				.getChunkID(GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + getComputeGroupId(), 5000);
+				.getChunkID(
+						GraphLoadPartitionIndexTaskPayload.MS_PART_INDEX_IDENT + m_ctx.getCtxData().getComputeGroupId(),
+						5000);
 		if (graphPartitionIndexChunkId == ChunkID.INVALID_ID) {
 			// #if LOGGER >= ERROR
 			m_loggerService.error(getClass(),
-					"Cannot find graph partition index for compute group " + getComputeGroupId());
+					"Cannot find graph partition index for compute group " + m_ctx.getCtxData().getComputeGroupId());
 			// #endif /* LOGGER >= ERROR */
 			return -1;
 		}
@@ -212,13 +216,14 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 		// create barriers for bfs and register
 		// or get the newly created barriers
-		if (getSlaveId() == 0) {
-			m_barrierId0 = m_synchronizationService.barrierAllocate(getSlaveNodeIds().length);
+		if (m_ctx.getCtxData().getSlaveId() == 0) {
+			m_barrierId0 = m_synchronizationService.barrierAllocate(m_ctx.getCtxData().getSlaveNodeIds().length);
 
 			m_nameserviceService.register(ChunkID.getChunkID(m_nodeId, m_barrierId0),
-					MS_BARRIER_IDENT_0 + getComputeGroupId());
+					MS_BARRIER_IDENT_0 + m_ctx.getCtxData().getComputeGroupId());
 		} else {
-			m_barrierId0 = (int) (m_nameserviceService.getChunkID(MS_BARRIER_IDENT_0 + getComputeGroupId(), -1));
+			m_barrierId0 = (int) (m_nameserviceService
+					.getChunkID(MS_BARRIER_IDENT_0 + m_ctx.getCtxData().getComputeGroupId(), -1));
 		}
 
 		// #if LOGGER >= INFO
@@ -256,7 +261,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_curBFS = new BFS(root);
 			m_signalLock.unlock();
 
-			m_curBFS.init(m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount(), m_markVertices);
+			m_curBFS.init(m_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId()).getVertexCount(),
+					m_markVertices);
 			if (ChunkID.getCreatorID(root) == m_nodeId) {
 				m_curBFS.execute(root);
 			} else {
@@ -283,7 +289,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		}
 
 		// free barriers
-		if (getSlaveId() == 0) {
+		if (m_ctx.getCtxData().getSlaveId() == 0) {
 			m_synchronizationService.barrierFree(m_barrierId0);
 		} else {
 			m_barrierId0 = BarrierID.INVALID_ID;
@@ -319,6 +325,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandRegisterArguments(p_argumentList);
+
 		p_argumentList.setArgument(MS_ARG_BFS_ROOT);
 		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
 		p_argumentList.setArgument(MS_ARG_VERTEX_MSG_BATCH_SIZE);
@@ -331,6 +339,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandCallbackForArguments(p_argumentList);
+
 		m_bfsRootNameserviceEntry = p_argumentList.getArgumentValue(MS_ARG_BFS_ROOT, String.class);
 		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
 		m_vertexMessageBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_MSG_BATCH_SIZE, Integer.class);
@@ -416,7 +426,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		BFS(final long p_bfsEntryNode) {
 			m_bfsLocalResult = new BFSResult();
 			m_bfsLocalResult.m_rootVertexId = p_bfsEntryNode;
-			GraphPartitionIndex.Entry entry = m_graphPartitionIndex.getPartitionIndex(getSlaveId());
+			GraphPartitionIndex.Entry entry = m_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId());
 			m_bfsLocalResult.m_graphPartitionSizeVertices = entry.getVertexCount();
 			m_bfsLocalResult.m_graphPartitionSizeEdges = entry.getEdgeCount();
 		}
@@ -452,7 +462,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_statisticsThread = new StatisticsThread();
 
 			m_syncBFSFinished =
-					new SyncBFSFinished(getSlaveNodeIds(), getSlaveNodeIds()[getSlaveId()], m_networkService);
+					new SyncBFSFinished(m_ctx.getCtxData().getSlaveNodeIds(),
+							m_ctx.getCtxData().getSlaveNodeIds()[m_ctx.getCtxData().getSlaveId()], m_networkService);
 
 			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(), "Running BFS with " + m_numberOfThreadsPerNode + " threads on "
@@ -498,7 +509,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					m_loggerService.error(getClass(),
 							"Getting root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
 					// signal all other slaves to terminate (error)
-					sendSignalToMaster(Signal.SIGNAL_ABORT);
+					m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 					return;
 				}
 
@@ -508,7 +519,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					if (!m_chunkMemoryService.writeInt(vertex.getID(), 0, m_bfsLocalResult.m_totalBFSDepth)) {
 						m_loggerService.error(getClass(),
 								"Marking root vertex " + ChunkID.toHexString(p_entryVertex) + " failed.");
-						sendSignalToMaster(Signal.SIGNAL_ABORT);
+						m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 						return;
 					}
 				}
@@ -599,7 +610,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				if (!m_syncBFSFinished.execute()) {
 					// abort execution and have the master send a kill signal
 					// for this task to all other slaves
-					sendSignalToMaster(Signal.SIGNAL_ABORT);
+					m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 					m_loggerService.error(getClass(), "Execution BFS level finished sync step failed.");
 					return;
 				}
@@ -624,8 +635,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					m_nextFrontEdges.addAndGet(numEdgesInNextFrontier);
 
 					// inform all other slaves about our next frontier size to determine termination
-					short ownId = getSlaveId();
-					short[] slavesNodeIds = getSlaveNodeIds();
+					short ownId = m_ctx.getCtxData().getSlaveId();
+					short[] slavesNodeIds = m_ctx.getCtxData().getSlaveNodeIds();
 					for (int i = 0; i < slavesNodeIds.length; i++) {
 						if (i != ownId) {
 							BFSTerminateMessage msg =
@@ -640,7 +651,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 												+ " failed: " + err);
 								// abort execution and have the master send a kill signal
 								// for this task to all other slaves
-								sendSignalToMaster(Signal.SIGNAL_ABORT);
+								m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 								return;
 							}
 						}
@@ -648,7 +659,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 					// wait until everyone reported the next frontier state/termination
 					//					System.out.println("!!!!! " + getSlaveNodeIds().length);
-					while (!m_bfsSlavesEmptyNextFrontiers.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
+					while (!m_bfsSlavesEmptyNextFrontiers
+							.compareAndSet(m_ctx.getCtxData().getSlaveNodeIds().length - 1, 0)) {
 						try {
 							Thread.sleep(2);
 						} catch (InterruptedException e) {
@@ -713,9 +725,9 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_bfsLocalResult.m_graphFullSizeVertices = fullGraphVertexCount;
 			m_bfsLocalResult.m_graphFullSizeEdges = fullGraphEdgeCount;
 			m_bfsLocalResult.m_graphPartitionSizeVertices =
-					m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getVertexCount();
+					m_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId()).getVertexCount();
 			m_bfsLocalResult.m_graphPartitionSizeEdges =
-					m_graphPartitionIndex.getPartitionIndex(getSlaveId()).getEdgeCount();
+					m_graphPartitionIndex.getPartitionIndex(m_ctx.getCtxData().getSlaveId()).getEdgeCount();
 			m_bfsLocalResult.m_totalVisitedVertices = m_visitedFrontier.size();
 			m_bfsLocalResult.m_totalVerticesTraversed = m_statisticsThread.getTotalVertexCount();
 			m_bfsLocalResult.m_totalEdgesTraversed = m_statisticsThread.getTotalEdgeCount();
@@ -1234,7 +1246,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				if (validVertsInBatch == 0) {
 					// make sure to send out remaining messages which have not reached the
 					// batch size, yet (because they will never reach it in this round)
-					short[] slaveNodeIds = getSlaveNodeIds();
+					short[] slaveNodeIds = m_ctx.getCtxData().getSlaveNodeIds();
 					for (short slaveNodeId : slaveNodeIds) {
 						if (slaveNodeId != m_nodeId) {
 							VerticesForNextFrontierMessage msg = m_remoteMessages[slaveNodeId & 0xFFFF];
@@ -1245,7 +1257,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 											+ NodeID.toHexString(msg.getDestination()) + " failed");
 									// #endif /* LOGGER >= ERROR */
 									if (m_abortBFSOnError) {
-										sendSignalToMaster(Signal.SIGNAL_ABORT);
+										m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 										return;
 									}
 								}
@@ -1272,7 +1284,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 									+ validVertsInBatch);
 					// #endif /* LOGGER >= ERROR */
 					if (m_abortBFSOnError) {
-						sendSignalToMaster(Signal.SIGNAL_ABORT);
+						m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 						return;
 					}
 				}
@@ -1339,7 +1351,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
 										if (m_abortBFSOnError) {
-											sendSignalToMaster(Signal.SIGNAL_ABORT);
+											m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 											return;
 										}
 									}
@@ -1397,7 +1409,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 												+ NodeID.toHexString(neighborCreatorId) + " failed");
 										// #endif /* LOGGER >= ERROR */
 										if (m_abortBFSOnError) {
-											sendSignalToMaster(Signal.SIGNAL_ABORT);
+											m_ctx.getSignalInterface().sendSignalToMaster(Signal.SIGNAL_ABORT);
 											return;
 										}
 									}
