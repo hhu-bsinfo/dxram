@@ -72,7 +72,7 @@ public final class TaskPayloadManager {
 			final Class<? extends AbstractTaskPayload> p_class) {
 		Class<? extends AbstractTaskPayload> clazz =
 				m_registeredTaskClasses.put(((p_typeId & 0xFFFF) << 16) | p_subtypeId, p_class);
-		if (clazz == null) {
+		if (clazz != null) {
 			throw new KeyAlreadyExistsException("Failed registering " + p_class.getSimpleName()
 					+ " for " + p_typeId + "/" + p_subtypeId + " failed, key already used");
 		}

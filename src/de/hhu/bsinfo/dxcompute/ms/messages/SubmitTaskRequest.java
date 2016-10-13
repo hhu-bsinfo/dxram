@@ -14,6 +14,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class SubmitTaskRequest extends AbstractRequest {
+
 	private AbstractTaskPayload m_task;
 
 	/**

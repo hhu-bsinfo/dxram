@@ -83,7 +83,7 @@ public class TaskContextData implements Importable, Exportable {
 
 	@Override
 	public int sizeofObject() {
-		return Integer.BYTES + 2 * Short.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES;
+		return 2 * Short.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES;
 	}
 
 	@Override

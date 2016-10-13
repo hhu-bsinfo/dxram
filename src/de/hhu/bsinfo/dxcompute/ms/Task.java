@@ -119,12 +119,18 @@ public class Task {
 	}
 
 	/**
-	 * Trigger callbacks of all listeners: execution has started.
+	 * Set the node id that submitted this task.
 	 *
-	 * @param p_nodeIdSubmitted Id of the master node this task was submitted to.
+	 * @param p_id Node id.
 	 */
-	void notifyListenersExecutionStarts(final short p_nodeIdSubmitted) {
-		m_nodeIdSubmitted = p_nodeIdSubmitted;
+	void setNodeIdSubmitted(final short p_id) {
+		m_nodeIdSubmitted = p_id;
+	}
+
+	/**
+	 * Trigger callbacks of all listeners: execution has started.
+	 */
+	void notifyListenersExecutionStarts() {
 
 		for (TaskListener listener : m_completionListeners) {
 			listener.taskBeforeExecution(this);

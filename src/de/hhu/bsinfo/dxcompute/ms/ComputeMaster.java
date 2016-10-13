@@ -296,7 +296,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			slaves[i] = m_signedOnSlaves.get(i);
 		}
 
-		task.notifyListenersExecutionStarts(m_boot.getNodeID());
+		task.notifyListenersExecutionStarts();
 
 		// send task to slaves
 		short numberOfSlavesOnExecution = 0;
@@ -341,20 +341,28 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 		Pair<short[], long[]> result = m_lookup.barrierSignOn(m_executionBarrierId, -1);
 
-		// #if LOGGER >= DEBUG
-		m_logger.debug(getClass(), "Syncing done.");
-		// #endif /* LOGGER >= DEBUG */
+		int[] returnCodes;
+		if (result != null) {
+			// #if LOGGER >= DEBUG
+			m_logger.debug(getClass(), "Syncing done.");
+			// #endif /* LOGGER >= DEBUG */
 
-		// grab return codes from barrier
-		int[] returnCodes = new int[slaves.length];
+			// grab return codes from barrier
+			returnCodes = new int[slaves.length];
 
-		// sort them to match the indices of the slave list
-		for (int j = 0; j < slaves.length; j++) {
-			for (int i = 0; i < result.first().length; i++) {
-				if (result.first()[i] == slaves[j]) {
-					returnCodes[j] = (int) result.second()[i];
-					break;
+			// sort them to match the indices of the slave list
+			for (int j = 0; j < slaves.length; j++) {
+				for (int i = 0; i < result.first().length; i++) {
+					if (result.first()[i] == slaves[j]) {
+						returnCodes[j] = (int) result.second()[i];
+						break;
+					}
 				}
+			}
+		} else {
+			returnCodes = new int[slaves.length];
+			for (int i = 0; i < returnCodes.length; i++) {
+				returnCodes[i] = -1;
 			}
 		}
 

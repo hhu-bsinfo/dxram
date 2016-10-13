@@ -229,7 +229,9 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		}
 
 		// remember task for remote callbacks
-		m_remoteTasks.put(response.getAssignedPayloadId(), p_task);
+		p_task.assignTaskId(response.getAssignedPayloadId());
+		p_task.setNodeIdSubmitted(m_boot.getNodeID());
+		m_remoteTasks.put(p_task.getTaskIdAssigned(), p_task);
 
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Submitted task to compute group " + p_computeGroupId + " with master node "
@@ -425,6 +427,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			response.setStatusCode((byte) 1);
 		} else {
 			Task task = new Task(p_request.getTaskPayload(), "RemoteTask " + p_request);
+			task.assignTaskId(m_taskIdCounter.getAndIncrement());
+			task.setNodeIdSubmitted(p_request.getSource());
 			task.registerTaskListener(this);
 
 			boolean ret = ((ComputeMaster) m_computeMSInstance).submitTask(task);
@@ -492,7 +496,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 			Thread.yield();
 		}
 
-		task.notifyListenersExecutionStarts(p_message.getSource());
+		task.notifyListenersExecutionStarts();
 	}
 
 	/**
