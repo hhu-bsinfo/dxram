@@ -121,11 +121,15 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandRegisterArguments(p_argumentList);
+
 		p_argumentList.setArgument(MS_ARG_PATH_FILE);
 	}
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandCallbackForArguments(p_argumentList);
+
 		m_pathFile = p_argumentList.getArgumentValue(MS_ARG_PATH_FILE, String.class);
 	}
 

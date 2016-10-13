@@ -154,6 +154,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandRegisterArguments(p_argumentList);
+
 		p_argumentList.setArgument(MS_ARG_PATH);
 		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
 		p_argumentList.setArgument(MS_ARG_FILTER_DUP_EDGES);
@@ -162,6 +164,8 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandCallbackForArguments(p_argumentList);
+
 		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
 		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
 		m_filterDupEdges = p_argumentList.getArgumentValue(MS_ARG_FILTER_DUP_EDGES, Boolean.class);

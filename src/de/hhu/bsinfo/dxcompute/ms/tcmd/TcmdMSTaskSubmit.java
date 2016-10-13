@@ -101,7 +101,9 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 			// happens if an argument was not provided (probably typo)
 			getTerminalDelegate().println("Parsing arguments of task with type id " + tid + " subtype id " + stid
 					+ " failed, missing argument?");
+			return true;
 		}
+
 		Task task = new Task(payload, name + m_taskCounter++);
 		task.registerTaskListener(this);
 
