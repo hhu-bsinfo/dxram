@@ -7,6 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Represents a network message
+ *
  * @author Florian Klein 09.03.2012
  * @author Marc Ewert 18.09.2014
  */
@@ -42,6 +43,7 @@ public abstract class AbstractMessage {
 	private static ReentrantLock m_lock = new ReentrantLock(false);
 
 	// Constructors
+
 	/**
 	 * Creates an instance of Message
 	 */
@@ -59,12 +61,10 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Creates an instance of Message
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
-	 * @param p_subtype
-	 *            the message subtype
+	 *
+	 * @param p_destination the destination
+	 * @param p_type        the message type
+	 * @param p_subtype     the message subtype
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype) {
 		this(getNextMessageID(), p_destination, p_type, p_subtype, DEFAULT_EXCLUSIVITY_VALUE, DEFAULT_STATUS_CODE);
@@ -72,14 +72,11 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Creates an instance of Message
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
-	 * @param p_subtype
-	 *            the message subtype
-	 * @param p_exclusivity
-	 *            whether this message type allows parallel execution
+	 *
+	 * @param p_destination the destination
+	 * @param p_type        the message type
+	 * @param p_subtype     the message subtype
+	 * @param p_exclusivity whether this message type allows parallel execution
 	 */
 	public AbstractMessage(final short p_destination, final byte p_type, final byte p_subtype,
 			final boolean p_exclusivity) {
@@ -88,14 +85,11 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Creates an instance of Message
-	 * @param p_messageID
-	 *            the messageID
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
-	 * @param p_subtype
-	 *            the message subtype
+	 *
+	 * @param p_messageID   the messageID
+	 * @param p_destination the destination
+	 * @param p_type        the message type
+	 * @param p_subtype     the message subtype
 	 */
 	protected AbstractMessage(final int p_messageID, final short p_destination, final byte p_type,
 			final byte p_subtype) {
@@ -104,18 +98,13 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Creates an instance of Message
-	 * @param p_messageID
-	 *            the messageID
-	 * @param p_destination
-	 *            the destination
-	 * @param p_type
-	 *            the message type
-	 * @param p_subtype
-	 *            the message subtype
-	 * @param p_exclusivity
-	 *            whether this is an exclusive message or not
-	 * @param p_statusCode
-	 *            the status code
+	 *
+	 * @param p_messageID   the messageID
+	 * @param p_destination the destination
+	 * @param p_type        the message type
+	 * @param p_subtype     the message subtype
+	 * @param p_exclusivity whether this is an exclusive message or not
+	 * @param p_statusCode  the status code
 	 */
 	private AbstractMessage(final int p_messageID, final short p_destination, final byte p_type, final byte p_subtype,
 			final boolean p_exclusivity,
@@ -133,8 +122,10 @@ public abstract class AbstractMessage {
 	}
 
 	// Getters
+
 	/**
 	 * Get the messageID
+	 *
 	 * @return the messageID
 	 */
 	public final int getMessageID() {
@@ -143,6 +134,7 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Get the source
+	 *
 	 * @return the source
 	 */
 	public final short getSource() {
@@ -151,6 +143,7 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Get the destination
+	 *
 	 * @return the destination
 	 */
 	public final short getDestination() {
@@ -159,6 +152,7 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Get the message type
+	 *
 	 * @return the message type
 	 */
 	public final byte getType() {
@@ -167,6 +161,7 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Get the message subtype
+	 *
 	 * @return the message subtype
 	 */
 	public final byte getSubtype() {
@@ -175,6 +170,7 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Get the status code (definable error, success,...)
+	 *
 	 * @return Status code.
 	 */
 	public final byte getStatusCode() {
@@ -183,6 +179,7 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Returns whether this message type allows parallel execution
+	 *
 	 * @return the exclusivity
 	 */
 	public final boolean isExclusive() {
@@ -193,8 +190,8 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Set the status code (definable error, success,...)
-	 * @param p_statusCode
-	 *            the status code
+	 *
+	 * @param p_statusCode the status code
 	 */
 	public final void setStatusCode(final byte p_statusCode) {
 		m_statusCode = p_statusCode;
@@ -202,8 +199,8 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Sets source of the message
-	 * @param p_source
-	 *            the source node ID
+	 *
+	 * @param p_source the source node ID
 	 */
 	final void setSource(final short p_source) {
 		m_source = p_source;
@@ -211,32 +208,35 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Sets destination of the message
-	 * @param p_destination
-	 *            the destination node ID
+	 *
+	 * @param p_destination the destination node ID
 	 */
 	final void setDestination(final short p_destination) {
 		m_destination = p_destination;
 	}
 
 	// Methods
+
 	/**
 	 * Reads the message payload from the byte buffer
-	 * @param p_buffer
-	 *            the byte buffer
+	 *
+	 * @param p_buffer the byte buffer
 	 */
-	protected void readPayload(final ByteBuffer p_buffer) {}
+	protected void readPayload(final ByteBuffer p_buffer) {
+	}
 
 	/**
 	 * Writes the message payload into the buffer
-	 * @param p_buffer
-	 *            the buffer
-	 * @throws BufferOverflowException
-	 *             if message buffer is too small
+	 *
+	 * @param p_buffer the buffer
+	 * @throws BufferOverflowException if message buffer is too small
 	 */
-	protected void writePayload(final ByteBuffer p_buffer) {}
+	protected void writePayload(final ByteBuffer p_buffer) {
+	}
 
 	/**
 	 * Get the total number of bytes the payload requires to create a buffer.
+	 *
 	 * @return Number of bytes of the payload
 	 */
 	protected int getPayloadLength() {
@@ -245,9 +245,9 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Get a ByteBuffer with the Message as content
+	 *
 	 * @return a ByteBuffer with the Message as content
-	 * @throws NetworkException
-	 *             if message buffer is too small
+	 * @throws NetworkException if message buffer is too small
 	 */
 	protected final ByteBuffer getBuffer() throws NetworkException {
 		int payloadSize;
@@ -263,13 +263,11 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Fills a given ByteBuffer with the message
-	 * @param p_buffer
-	 *            a given ByteBuffer
-	 * @param p_payloadSize
-	 *            the payload size
+	 *
+	 * @param p_buffer      a given ByteBuffer
+	 * @param p_payloadSize the payload size
 	 * @return filled ByteBuffer
-	 * @throws NetworkException
-	 *             if message buffer is too small
+	 * @throws NetworkException if message buffer is too small
 	 */
 	private ByteBuffer fillBuffer(final ByteBuffer p_buffer, final int p_payloadSize) throws NetworkException {
 		try {
@@ -297,7 +295,8 @@ public abstract class AbstractMessage {
 		int payloadSize = getPayloadLength() + HEADER_SIZE;
 		if (pos < payloadSize) {
 			throw new NetworkException("Did not create message " + this
-					+ ", because message buffer is larger than expected payload size: " + pos + " > " + payloadSize);
+					+ ", because message contents are smaller than expected payload size: " + pos + " < "
+					+ payloadSize);
 		}
 
 		return p_buffer;
@@ -305,6 +304,7 @@ public abstract class AbstractMessage {
 
 	/**
 	 * Get next free messageID
+	 *
 	 * @return next free messageID
 	 */
 	private static int getNextMessageID() {
@@ -320,22 +320,22 @@ public abstract class AbstractMessage {
 	/**
 	 * Executed before a Message is send (not forwarded)
 	 */
-	protected void beforeSend() {}
+	protected void beforeSend() {
+	}
 
 	/**
 	 * Executed after a Message is send (not forwarded)
 	 */
-	protected void afterSend() {}
+	protected void afterSend() {
+	}
 
 	/**
 	 * Creates a Message from the given incoming byte buffer
-	 * @param p_buffer
-	 *            the byte buffer
-	 * @param p_messageDirectory
-	 *            the message directory
+	 *
+	 * @param p_buffer           the byte buffer
+	 * @param p_messageDirectory the message directory
 	 * @return the created Message
-	 * @throws NetworkException
-	 *             if the message header could not be created
+	 * @throws NetworkException if the message header could not be created
 	 */
 	protected static AbstractMessage createMessageHeader(final ByteBuffer p_buffer,
 			final MessageDirectory p_messageDirectory) throws NetworkException {
