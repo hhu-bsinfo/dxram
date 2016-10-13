@@ -340,7 +340,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
 		super.terminalCommandCallbackForArguments(p_argumentList);
-		
+
 		m_bfsRootNameserviceEntry = p_argumentList.getArgumentValue(MS_ARG_BFS_ROOT, String.class);
 		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
 		m_vertexMessageBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_MSG_BATCH_SIZE, Integer.class);

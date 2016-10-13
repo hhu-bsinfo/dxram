@@ -42,7 +42,7 @@ public class TcmdNodeList extends AbstractTerminalCommand {
 		if (strRole != null) {
 			NodeRole roleFilter = NodeRole.toNodeRole(strRole);
 			BootService boot = getTerminalDelegate().getDXRAMService(BootService.class);
-			List<Short> nodeIDs = boot.getIDsOfOnlineNodes();
+			List<Short> nodeIDs = boot.getOnlineNodeIDs();
 			getTerminalDelegate().println("Filtering by role " + roleFilter);
 			getTerminalDelegate().println("Total available nodes (" + nodeIDs.size() + "):");
 			for (short nodeId : nodeIDs) {
@@ -54,7 +54,7 @@ public class TcmdNodeList extends AbstractTerminalCommand {
 			}
 		} else {
 			BootService boot = getTerminalDelegate().getDXRAMService(BootService.class);
-			List<Short> nodeIDs = boot.getIDsOfOnlineNodes();
+			List<Short> nodeIDs = boot.getOnlineNodeIDs();
 			getTerminalDelegate().println("Available nodes (" + nodeIDs.size() + "):");
 			for (short nodeId : nodeIDs) {
 				getTerminalDelegate().println("\t" + NodeID.toHexString(nodeId) + ", " + boot.getNodeRole(nodeId) + ", "

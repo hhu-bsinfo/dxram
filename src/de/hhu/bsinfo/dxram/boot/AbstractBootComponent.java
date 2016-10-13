@@ -52,6 +52,13 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
 	public abstract List<Short> getIDsOfOnlinePeers();
 
 	/**
+	 * Get IDs of all available (online) superpeer nodes except the own.
+	 *
+	 * @return List of IDs of nodes available without own ID.
+	 */
+	public abstract List<Short> getIDsOfOnlineSuperpeers();
+
+	/**
 	 * Get the node ID, which is currently assigned to this running instance.
 	 *
 	 * @return Own NodeID.
