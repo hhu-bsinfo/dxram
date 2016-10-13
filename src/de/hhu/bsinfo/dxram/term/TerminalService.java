@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -42,6 +41,9 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 
 	private String m_autostartScript;
 
+	private TerminalScriptEngine m_scriptEngine;
+	private DXRAMContext m_dxramContext;
+
 	/**
 	 * Register a new terminal command for the terminal.
 	 *
@@ -64,28 +66,37 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 			return;
 		}
 
-		// register commands for autocompletion
-		{
-			Map<String, AbstractTerminalCommand> commands = m_terminal.getRegisteredCommands();
-			String[] commandNames = commands.keySet().toArray(new String[0]);
-			JNIconsole.autocompleteCommands(commandNames);
+		//		// register commands for autocompletion
+		//		{
+		//			Map<String, AbstractTerminalCommand> commands = m_terminal.getRegisteredCommands();
+		//			String[] commandNames = commands.keySet().toArray(new String[0]);
+		//			JNIconsole.autocompleteCommands(commandNames);
+		//		}
+
+		m_dxramContext = new DXRAMContext(getServiceAccessor(), this, m_scriptEngine);
+
+		// setup script engine
+		if (!m_scriptEngine.setupDXRAMContext(m_dxramContext)) {
+			// #if LOGGER >= ERROR
+			m_logger.error(getClass(), "Setting up DXRAM context for script engine failed");
+			// #endif /* LOGGER >= ERROR */
 		}
 
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Running terminal...");
 		// #endif /* LOGGER >= INFO */
 
-		System.out.println(">>> DXRAM terminal <<<");
+		System.out.println(">>> DXRAM Terminal <<<");
 		System.out.println(
 				"Running on node " + NodeID.toHexString(m_boot.getNodeID()) + ", role " + m_boot.getNodeRole());
-		System.out.println("Enter '?' to list all available commands.");
-		System.out.println("Use '? <command>' to get information about a command.");
-		System.out.println("Use '!' or '! <command>' for interactive mode.");
+		System.out.println("Running script engine: " + m_scriptEngine.getClass().getSimpleName());
+		System.out.println(m_scriptEngine.getHelp());
 
-		if (!m_autostartScript.isEmpty()) {
-			System.out.println("Running auto start script " + m_autostartScript);
-			executeTerminalCommand("dsh file:" + m_autostartScript);
-		}
+		// TODO autostart script file
+		//		if (!m_autostartScript.isEmpty()) {
+		//			System.out.println("Running auto start script " + m_autostartScript);
+		//			executeTerminalCommand("dsh file:" + m_autostartScript);
+		//		}
 
 		while (m_loop) {
 			arr = JNIconsole
@@ -103,13 +114,24 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 					// #endif /* LOGGER >= ERROR */
 				}
 
-				executeTerminalCommand(command);
+				//executeTerminalCommand(command);
+				execute(command);
 			}
 		}
 
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Exiting terminal...");
 		// #endif /* LOGGER >= INFO */
+	}
+
+	private void execute(final String p_text) {
+
+		// ignore comments
+		if (p_text.startsWith("?")) {
+			System.out.println(m_scriptEngine.getHelp());
+		} else {
+			m_scriptEngine.evaluate(p_text);
+		}
 	}
 
 	@Override
@@ -129,6 +151,8 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 		}
 
 		m_autostartScript = p_settings.getValue(TerminalConfigurationValues.Service.AUTOSTART_SCRIPT);
+
+		m_scriptEngine = new TerminalJavaScriptEngine();
 
 		return true;
 	}
@@ -326,6 +350,14 @@ public class TerminalService extends AbstractDXRAMService implements TerminalDel
 						return false;
 					}
 				}
+			}
+		} else if (arguments[0].equals("$")) {
+			if (arguments[1].equals("load")) {
+				if (!m_scriptEngine.loadScriptFile(arguments[2])) {
+					System.out.println("error loading script file " + arguments[2]);
+				}
+			} else {
+
 			}
 		} else {
 			if (arguments[0].isEmpty()) {
