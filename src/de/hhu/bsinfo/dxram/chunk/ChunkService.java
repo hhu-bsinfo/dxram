@@ -24,12 +24,6 @@ import de.hhu.bsinfo.dxram.chunk.messages.RemoveRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.StatusResponse;
-import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkCreate;
-import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkGet;
-import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkList;
-import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkPut;
-import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkRemove;
-import de.hhu.bsinfo.dxram.chunk.tcmds.TcmdChunkStatus;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
@@ -47,7 +41,6 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -72,7 +65,6 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	private LookupComponent m_lookup;
 	private AbstractLockComponent m_lock;
 	private StatisticsComponent m_statistics;
-	private TerminalComponent m_terminal;
 
 	private ChunkStatisticsRecorderIDs m_statisticsRecorderIDs;
 
@@ -80,7 +72,7 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 	 * Constructor
 	 */
 	public ChunkService() {
-		super();
+		super("chunk");
 	}
 
 	@Override
@@ -99,20 +91,12 @@ public class ChunkService extends AbstractDXRAMService implements MessageReceive
 		// #ifdef STATISTICS
 		m_statistics = getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
-		m_terminal = getComponent(TerminalComponent.class);
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 		// #ifdef STATISTICS
 		registerStatisticsOperations();
 		// #endif /* STATISTICS */
-
-		m_terminal.registerCommand(new TcmdChunkCreate());
-		m_terminal.registerCommand(new TcmdChunkRemove());
-		m_terminal.registerCommand(new TcmdChunkGet());
-		m_terminal.registerCommand(new TcmdChunkPut());
-		m_terminal.registerCommand(new TcmdChunkList());
-		m_terminal.registerCommand(new TcmdChunkStatus());
 
 		if (m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_backup.registerPeer();

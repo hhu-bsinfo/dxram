@@ -55,6 +55,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	private HashMap<String, AbstractDXRAMComponent> m_components = new HashMap<>();
 	private HashMap<String, AbstractDXRAMService> m_services = new HashMap<>();
+	private HashMap<String, AbstractDXRAMService> m_servicesShortName = new HashMap<>();
 
 	/**
 	 * Constructor
@@ -63,15 +64,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	}
 
-	/**
-	 * Get a service from the engine.
-	 *
-	 * @param p_class Class of the service to get. If the service has different implementations, use the common
-	 *                interface
-	 *                or abstract class to get the registered instance.
-	 * @return Reference to the service if available and enabled, null otherwise or if the engine is not
-	 * initialized.
-	 */
 	@Override
 	public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
 		T service = null;
@@ -104,6 +96,20 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		}
 
 		return service;
+	}
+
+	@Override
+	public AbstractDXRAMService getService(final String p_shortName) {
+		if (m_isInitilized) {
+			return m_servicesShortName.get(p_shortName);
+		}
+
+		return null;
+	}
+
+	@Override
+	public List<String> getServiceShortNames() {
+		return new ArrayList<>(m_servicesShortName.keySet());
 	}
 
 	/**
@@ -281,6 +287,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 					"Shutting down service '" + service.getServiceName() + "' failed.");
 			// #endif /* LOGGER >= ERROR */
 		});
+		m_servicesShortName.clear();
+
 		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down services done.");
 		// #endif /* LOGGER >= INFO */
@@ -454,7 +462,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 				}
 
 				try {
-					m_services.put(clazz.getName(), (AbstractDXRAMService) clazz.newInstance());
+					AbstractDXRAMService serv = (AbstractDXRAMService) clazz.newInstance();
+					m_services.put(clazz.getName(), serv);
+					m_servicesShortName.put(serv.getShortName(), serv);
 				} catch (final InstantiationException | IllegalAccessException e) {
 					// #if LOGGER >= ERROR
 					m_logger.error(DXRAM_ENGINE_LOG_HEADER,

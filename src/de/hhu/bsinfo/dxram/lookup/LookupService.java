@@ -13,10 +13,8 @@ import de.hhu.bsinfo.dxram.lookup.messages.RequestResponsibleSuperPeer;
 import de.hhu.bsinfo.dxram.lookup.messages.RequestSendLookupTreeMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.ResponseResponsibleSuperPeer;
 import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
-import de.hhu.bsinfo.dxram.lookup.tcmds.TcmdPrintLookUpTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -34,7 +32,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	private BackupComponent m_backup;
 	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
-	private TerminalComponent m_terminal;
 
 	private LookupComponent m_lookup;
 
@@ -42,7 +39,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	 * Constructor
 	 */
 	public LookupService() {
-		super();
+		super("lookup");
 	}
 
 	@Override
@@ -58,11 +55,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 		m_logger = getComponent(LoggerComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
-
-		//
-		m_lookup = getComponent(LookupComponent.class);
-		m_terminal = getComponent(TerminalComponent.class);
-		m_terminal.registerCommand(new TcmdPrintLookUpTree());
 
 		registerNetworkMessages();
 		registerNetworkMessageListener();

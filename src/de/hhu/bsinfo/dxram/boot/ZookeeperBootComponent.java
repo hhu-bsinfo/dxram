@@ -8,14 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
-import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeInfo;
-import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeList;
-import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeWait;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.NodeID;
 import de.hhu.bsinfo.utils.BloomFilter;
@@ -50,7 +46,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	private boolean m_shutdown;
 
 	private LoggerComponent m_logger;
-	private TerminalComponent m_terminal;
 
 	/**
 	 * Constructor
@@ -75,7 +70,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	@Override
 	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
-		m_terminal = getDependentComponent(TerminalComponent.class);
 
 		m_ownIP = p_engineSettings.getValue(DXRAMEngineConfigurationValues.IP);
 		m_ownPort = p_engineSettings.getValue(DXRAMEngineConfigurationValues.PORT);
@@ -95,10 +89,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 			// #endif /* LOGGER >= ERROR */
 			return false;
 		}
-
-		m_terminal.registerCommand(new TcmdNodeInfo());
-		m_terminal.registerCommand(new TcmdNodeList());
-		m_terminal.registerCommand(new TcmdNodeWait());
 
 		return true;
 	}

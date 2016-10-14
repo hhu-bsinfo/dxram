@@ -59,7 +59,7 @@ public class TcmdBarrierSignOn extends AbstractTerminalCommand {
 		}
 
 		getTerminalDelegate()
-		.println("Synchronized to barrier " + BarrierID.toHexString(barrierId) + " custom data: " + str);
+				.println("Synchronized to barrier " + BarrierID.toHexString(barrierId) + " custom data: " + str);
 
 		return true;
 	}

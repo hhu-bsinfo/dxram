@@ -9,6 +9,7 @@ import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Get information about the current node or another remote node.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.04.16
  */
 public class TcmdNodeInfo extends AbstractTerminalCommand {

@@ -9,14 +9,11 @@ import java.util.List;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.RebootMessage;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
-import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeReboot;
-import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeShutdown;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -33,7 +30,13 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
-	private TerminalComponent m_terminal;
+
+	/**
+	 * Constructor
+	 */
+	public BootService() {
+		super("boot");
+	}
 
 	/**
 	 * Check if a specific node is online.
@@ -255,16 +258,12 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
-		m_terminal = getComponent(TerminalComponent.class);
 
 		m_network.registerMessageType(BootMessages.TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, RebootMessage.class);
 		m_network.registerMessageType(BootMessages.TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, ShutdownMessage.class);
 
 		m_network.register(RebootMessage.class, this);
 		m_network.register(ShutdownMessage.class, this);
-
-		m_terminal.registerCommand(new TcmdNodeShutdown());
-		m_terminal.registerCommand(new TcmdNodeReboot());
 
 		return true;
 	}

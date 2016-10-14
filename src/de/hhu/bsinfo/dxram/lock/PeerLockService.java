@@ -14,9 +14,6 @@ import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
 import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
 import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
 import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
-import de.hhu.bsinfo.dxram.lock.tcmd.TcmdLock;
-import de.hhu.bsinfo.dxram.lock.tcmd.TcmdLockList;
-import de.hhu.bsinfo.dxram.lock.tcmd.TcmdUnlock;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -25,7 +22,6 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -47,7 +43,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	private LookupComponent m_lookup;
 	private EventComponent m_event;
 	private StatisticsComponent m_statistics;
-	private TerminalComponent m_terminal;
 
 	private LockStatisticsRecorderIDs m_statisticsRecorderIDs;
 
@@ -73,7 +68,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		// #ifdef STATISTICS
 		m_statistics = getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
-		m_terminal = getComponent(TerminalComponent.class);
 
 		m_event.registerListener(this, NodeFailureEvent.class);
 
@@ -104,10 +98,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
 		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
-
-		m_terminal.registerCommand(new TcmdUnlock());
-		m_terminal.registerCommand(new TcmdLock());
-		m_terminal.registerCommand(new TcmdLockList());
 
 		return true;
 	}

@@ -20,14 +20,13 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
-import de.hhu.bsinfo.dxram.recovery.tcmds.TcmdRecover;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
 
 /**
  * This service provides all recovery functionality.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.03.16
  */
 public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
@@ -46,17 +45,15 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	 * Constructor
 	 */
 	public RecoveryService() {
-		super();
+		super("recovery");
 	}
 
 	/**
 	 * Recovers all Chunks of given node
-	 * @param p_owner
-	 *            the NodeID of the node whose Chunks have to be restored
-	 * @param p_dest
-	 *            the NodeID of the node where the Chunks have to be restored
-	 * @param p_useLiveData
-	 *            whether the recover should use current logs or log files
+	 *
+	 * @param p_owner       the NodeID of the node whose Chunks have to be restored
+	 * @param p_dest        the NodeID of the node where the Chunks have to be restored
+	 * @param p_useLiveData whether the recover should use current logs or log files
 	 * @return whether the operation was successful or not
 	 */
 	public boolean recover(final short p_owner, final short p_dest, final boolean p_useLiveData) {
@@ -75,7 +72,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 			final NetworkErrorCodes err = m_network.sendMessage(new RecoverMessage(p_dest, p_owner, p_useLiveData));
 			if (err != NetworkErrorCodes.SUCCESS) {
 				// #if LOGGER >= ERROR
-				m_logger.error(RecoveryService.class, "Could not forward command to " + NodeID.toHexString(p_dest) + ". Aborting recovery!");
+				m_logger.error(RecoveryService.class,
+						"Could not forward command to " + NodeID.toHexString(p_dest) + ". Aborting recovery!");
 				// #endif /* LOGGER >= ERROR */
 				ret = false;
 			}
@@ -85,7 +83,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {}
+	protected void registerDefaultSettingsService(final Settings p_settings) {
+	}
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
@@ -108,8 +107,6 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 		// #endif /* LOGGER >= WARN */
 		m_backupDirectory = m_backup.getBackupDirectory();
 
-		getComponent(TerminalComponent.class).registerCommand(new TcmdRecover());
-
 		return true;
 	}
 
@@ -120,8 +117,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Recovers all Chunks of given node on this node
-	 * @param p_owner
-	 *            the NodeID of the node whose Chunks have to be restored
+	 *
+	 * @param p_owner the NodeID of the node whose Chunks have to be restored
 	 */
 	private void recoverLocally(final short p_owner) {
 		long firstChunkIDOrRangeID;
@@ -191,8 +188,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Recovers all Chunks of given node from log file on this node
-	 * @param p_owner
-	 *            the NodeID of the node whose Chunks have to be restored
+	 *
+	 * @param p_owner the NodeID of the node whose Chunks have to be restored
 	 */
 	private void recoverLocallyFromFile(final short p_owner) {
 		String fileName;
@@ -248,8 +245,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Handles an incoming RecoverMessage
-	 * @param p_message
-	 *            the RecoverMessage
+	 *
+	 * @param p_message the RecoverMessage
 	 */
 	private void incomingRecoverMessage(final RecoverMessage p_message) {
 		if (p_message.useLiveData()) {
@@ -261,8 +258,8 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 
 	/**
 	 * Handles an incoming GetChunkIDRequest
-	 * @param p_request
-	 *            the RecoverBackupRangeRequest
+	 *
+	 * @param p_request the RecoverBackupRangeRequest
 	 */
 	private void incomingRecoverBackupRangeRequest(final RecoverBackupRangeRequest p_request) {
 		short owner;
@@ -292,14 +289,14 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 		if (p_message != null) {
 			if (p_message.getType() == RecoveryMessages.TYPE) {
 				switch (p_message.getSubtype()) {
-				case RecoveryMessages.SUBTYPE_RECOVER_MESSAGE:
-					incomingRecoverMessage((RecoverMessage) p_message);
-					break;
-				case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
-					incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
-					break;
-				default:
-					break;
+					case RecoveryMessages.SUBTYPE_RECOVER_MESSAGE:
+						incomingRecoverMessage((RecoverMessage) p_message);
+						break;
+					case RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST:
+						incomingRecoverBackupRangeRequest((RecoverBackupRangeRequest) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -311,9 +308,12 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	 * Register network messages we use in here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE, RecoverMessage.class);
-		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, RecoverBackupRangeRequest.class);
-		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE, RecoverBackupRangeResponse.class);
+		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE,
+				RecoverMessage.class);
+		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST,
+				RecoverBackupRangeRequest.class);
+		m_network.registerMessageType(RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
+				RecoverBackupRangeResponse.class);
 	}
 
 	/**

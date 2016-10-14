@@ -29,11 +29,9 @@ import de.hhu.bsinfo.dxram.log.storage.PrimaryWriteBuffer;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLog;
 import de.hhu.bsinfo.dxram.log.storage.SecondaryLogBuffer;
 import de.hhu.bsinfo.dxram.log.storage.Version;
-import de.hhu.bsinfo.dxram.log.tcmds.TcmdLogInfo;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -86,7 +84,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	 * Constructor
 	 */
 	public LogService() {
-		super();
+		super("log");
 	}
 
 	/**
@@ -359,8 +357,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 			m_flushLock = new ReentrantLock(false);
 		}
-
-		getComponent(TerminalComponent.class).registerCommand(new TcmdLogInfo());
 
 		return true;
 	}

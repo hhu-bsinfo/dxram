@@ -22,11 +22,6 @@ import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
 import de.hhu.bsinfo.dxcompute.ms.tasks.PrintTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.SlavePrintInfoTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSComputeGroupStatus;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSGroupList;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskListSubmit;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskSubmit;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTasks;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -35,7 +30,6 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
@@ -61,6 +55,13 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	private ConcurrentMap<Integer, Task> m_remoteTasks = new ConcurrentHashMap<>();
 	private AtomicInteger m_taskIdCounter = new AtomicInteger(0);
+
+	/**
+	 * Constructor
+	 */
+	public MasterSlaveComputeService() {
+		super("mscomp");
+	}
 
 	/**
 	 * Get the compute of the current node.
@@ -318,7 +319,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_nameservice = getComponent(NameserviceComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		m_boot = getComponent(AbstractBootComponent.class);
-		TerminalComponent terminal = getComponent(TerminalComponent.class);
 		LookupComponent lookup = getComponent(LookupComponent.class);
 
 		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
@@ -340,12 +340,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_network.register(GetMasterStatusRequest.class, this);
 		m_network.register(TaskExecutionStartedMessage.class, this);
 		m_network.register(TaskExecutionFinishedMessage.class, this);
-
-		terminal.registerCommand(new TcmdMSGroupList());
-		terminal.registerCommand(new TcmdMSComputeGroupStatus());
-		terminal.registerCommand(new TcmdMSTaskSubmit());
-		terminal.registerCommand(new TcmdMSTasks());
-		terminal.registerCommand(new TcmdMSTaskListSubmit());
 
 		switch (role) {
 			case MASTER:

@@ -10,12 +10,8 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
-import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameGet;
-import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameList;
-import de.hhu.bsinfo.dxram.nameservice.tcmds.TcmdNameRegister;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
-import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -35,7 +31,13 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
-	private TerminalComponent m_terminal;
+
+	/**
+	 * Constructor
+	 */
+	public NameserviceService() {
+		super("name");
+	}
 
 	/**
 	 * Register a chunk id for a specific name.
@@ -145,16 +147,11 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
-		m_terminal = getComponent(TerminalComponent.class);
 
 		m_network.registerMessageType(NameserviceMessages.TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE,
 				ForwardRegisterMessage.class);
 
 		m_network.register(ForwardRegisterMessage.class, this);
-
-		m_terminal.registerCommand(new TcmdNameRegister());
-		m_terminal.registerCommand(new TcmdNameList());
-		m_terminal.registerCommand(new TcmdNameGet());
 
 		return true;
 	}
@@ -165,7 +162,6 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 		m_boot = null;
 		m_network = null;
 		m_logger = null;
-		m_terminal = null;
 
 		return true;
 	}

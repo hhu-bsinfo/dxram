@@ -49,6 +49,13 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	private Map<Long, Pair<Byte, AbstractJob>> m_remoteJobCallbackMap = new HashMap<Long, Pair<Byte, AbstractJob>>();
 
 	/**
+	 * Constructor
+	 */
+	public JobService() {
+		super("job");
+	}
+
+	/**
 	 * Register a new implementation/type of Job class.
 	 * Make sure to register all your Job classes.
 	 *

@@ -15,7 +15,8 @@ public class TerminalConfigurationValues {
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 05.09.16
 	 */
 	public static class Component {
-		public static final Pair<String, Boolean> ASK_ON_QUIT = new Pair<>("AskOnQuit", true);
+		public static final Pair<String, String> TERM_CMD_SCRIPT_FOLDER =
+				new Pair<>("TermCmdScriptFolder", "script/term");
 	}
 
 	/**

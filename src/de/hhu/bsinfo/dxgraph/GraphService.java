@@ -15,6 +15,10 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
  */
 public class GraphService extends AbstractDXRAMService {
 
+	public GraphService() {
+		super("graph");
+	}
+
 	@Override
 	protected void registerDefaultSettingsService(final Settings p_settings) {
 

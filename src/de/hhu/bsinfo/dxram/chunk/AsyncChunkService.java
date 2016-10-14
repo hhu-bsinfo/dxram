@@ -49,7 +49,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	 * Constructor
 	 */
 	public AsyncChunkService() {
-		super();
+		super("achunk");
 	}
 
 	@Override

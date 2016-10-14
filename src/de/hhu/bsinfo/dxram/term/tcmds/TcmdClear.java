@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxram.term.tcmds;
 
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
+import de.hhu.bsinfo.utils.args.ArgumentList;
 
 /**
  * Terminal command to clear the console.
@@ -28,5 +29,15 @@ public class TcmdClear extends AbstractTerminalCommand {
 
 	public void execute() {
 		getTerminalDelegate().clear();
+	}
+
+	@Override
+	public void registerArguments(final ArgumentList p_arguments) {
+	}
+
+	@Override
+	public boolean execute(final ArgumentList p_arguments) {
+
+		return true;
 	}
 }
