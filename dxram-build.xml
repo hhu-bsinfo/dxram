@@ -82,7 +82,7 @@
     </target>
 
     <target name="compile-release" depends="create_base_dirs" description="builds class files, release build">
-        <exec dir="scripts/" executable="/bin/bash">
+        <exec dir="util/" executable="/bin/bash">
             <arg line="preprocessor.sh INFO ENABLED"/>
         </exec>
 
@@ -96,7 +96,7 @@
                 <fail message="Compiler error(s)!"/>
             </catch>
             <finally>
-                <exec dir="scripts/" executable="/bin/bash">
+                <exec dir="util/" executable="/bin/bash">
                     <arg line="postprocessor.sh"/>
                 </exec>
             </finally>
@@ -104,7 +104,7 @@
     </target>
 
     <target name="compile-performance" depends="create_base_dirs" description="builds class files, performance build">
-        <exec dir="scripts/" executable="/bin/bash">
+        <exec dir="util/" executable="/bin/bash">
             <arg line="preprocessor.sh DISABLED DISABLED"/>
         </exec>
 
@@ -118,7 +118,7 @@
                 <fail message="Compiler error(s)!"/>
             </catch>
             <finally>
-                <exec dir="scripts/" executable="/bin/bash">
+                <exec dir="util/" executable="/bin/bash">
                     <arg line="postprocessor.sh"/>
                 </exec>
             </finally>
