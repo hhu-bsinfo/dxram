@@ -52,11 +52,7 @@ public class TerminalService extends AbstractDXRAMService {
 		}
 
 		// register commands for autocompletion
-		{
-			// TODO have prefix "term.XXX"
-			String[] commandNames = m_terminal.getRegisteredCommands().keySet().toArray(new String[0]);
-			JNIconsole.autocompleteCommands(commandNames);
-		}
+		JNIconsole.autocompleteCommands(m_terminal.getRegisteredCommands().keySet().toArray(new String[0]));
 
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Running terminal...");
@@ -66,11 +62,15 @@ public class TerminalService extends AbstractDXRAMService {
 		System.out.println(
 				"Running on node " + NodeID.toHexString(m_boot.getNodeID()) + ", role " + m_boot.getNodeRole());
 
-		// TODO autostart script file
-		//		if (!m_autostartScript.isEmpty()) {
-		//			System.out.println("Running auto start script " + m_autostartScript);
-		//			executeTerminalCommand("dsh file:" + m_autostartScript);
-		//		}
+		// auto start script file
+		if (!m_autostartScript.isEmpty()) {
+			System.out.println("Running auto start script " + m_autostartScript);
+			if (!m_terminal.getScriptContext().load(m_autostartScript)) {
+				System.out.println("Running auto start script failed");
+			} else {
+				System.out.println("Running auto start script complete");
+			}
+		}
 
 		while (m_loop) {
 			arr = JNIconsole
@@ -88,7 +88,7 @@ public class TerminalService extends AbstractDXRAMService {
 					// #endif /* LOGGER >= ERROR */
 				}
 
-				execute(command);
+				evaluate(command);
 			}
 		}
 
@@ -97,7 +97,12 @@ public class TerminalService extends AbstractDXRAMService {
 		// #endif /* LOGGER >= INFO */
 	}
 
-	private void execute(final String p_text) {
+	/**
+	 * Evaluate the text entered in the terminal.
+	 *
+	 * @param p_text Text to evaluate
+	 */
+	private void evaluate(final String p_text) {
 
 		// skip empty
 		if (p_text.isEmpty()) {
@@ -113,6 +118,11 @@ public class TerminalService extends AbstractDXRAMService {
 		}
 	}
 
+	/**
+	 * Evaluate the terminal command
+	 *
+	 * @param p_text Text to evaluate as terminal command
+	 */
 	private void eveluateCommand(final String p_text) {
 		// resolve terminal cmd "macros"
 		String[] tokensFunc = p_text.split("\\(");
@@ -191,293 +201,6 @@ public class TerminalService extends AbstractDXRAMService {
 
 		return true;
 	}
-
-	//	@Override
-	//	public void exitTerminal() {
-	//		m_loop = false;
-	//	}
-	//
-	//	@Override
-	//	public boolean areYouSure() {
-	//		boolean ret;
-	//		byte[] arr;
-	//
-	//		while (true) {
-	//			System.out.print("Are you sure (y/n)?");
-	//
-	//			arr = JNIconsole.readline("");
-	//			if (arr != null && arr.length > 0) {
-	//				if (arr[0] == 'y' || arr[0] == 'Y') {
-	//					ret = true;
-	//					break;
-	//				} else if (arr[0] == 'n' || arr[0] == 'N') {
-	//					ret = false;
-	//					break;
-	//				}
-	//			} else {
-	//				ret = false;
-	//				break;
-	//			}
-	//		}
-	//
-	//		return ret;
-	//	}
-	//
-	//	@Override
-	//	public String promptForUserInput(final String p_header) {
-	//		byte[] arr = JNIconsole.readline(p_header + "> ");
-	//		if (arr != null) {
-	//			if (arr.length == 0) {
-	//				return null;
-	//			} else {
-	//				return new String(arr, 0, arr.length);
-	//			}
-	//		} else {
-	//			return null;
-	//		}
-	//	}
-	//
-	//	@Override
-	//	public void print(final String p_str) {
-	//		System.out.print(p_str);
-	//	}
-	//
-	//	@Override
-	//	public void print(final Object p_object) {
-	//		System.out.print(p_object);
-	//	}
-	//
-	//	@Override
-	//	public void print(final String p_str, final TerminalColor p_color) {
-	//		changeConsoleColor(p_color, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
-	//		System.out.print(p_str);
-	//		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
-	//	}
-	//
-	//	@Override
-	//	public void print(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
-	//			final TerminalStyle p_style) {
-	//		changeConsoleColor(p_color, p_backgroundColor, p_style);
-	//		System.out.print(p_str);
-	//		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
-	//	}
-	//
-	//	@Override
-	//	public void println() {
-	//		System.out.println();
-	//	}
-	//
-	//	@Override
-	//	public void println(final String p_str) {
-	//		System.out.println(p_str);
-	//	}
-	//
-	//	@Override
-	//	public void println(final Object p_object) {
-	//		System.out.println(p_object);
-	//	}
-	//
-	//	@Override
-	//	public void println(final String p_str, final TerminalColor p_color) {
-	//		changeConsoleColor(p_color, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
-	//		System.out.print(p_str);
-	//		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
-	//		System.out.println();
-	//	}
-	//
-	//	@Override
-	//	public void println(final String p_str, final TerminalColor p_color, final TerminalColor p_backgroundColor,
-	//			final TerminalStyle p_style) {
-	//		changeConsoleColor(p_color, p_backgroundColor, p_style);
-	//		System.out.print(p_str);
-	//		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
-	//		System.out.println();
-	//	}
-	//
-	//	@Override
-	//	public void clear() {
-	//		// ANSI escape codes (clear screen, move cursor to first row and first column)
-	//		System.out.print("\033[H\033[2J");
-	//		System.out.flush();
-	//	}
-	//
-	//	@Override
-	//	public <T extends AbstractDXRAMService> T getDXRAMService(final Class<T> p_class) {
-	//		return getServiceAccessor().getService(p_class);
-	//	}
-	//
-	//	@Override
-	//	public boolean executeTerminalCommand(final String p_cmdString) {
-	//		//			String[] arguments;
-	//		//			ArgumentListParser argsParser = new DefaultArgumentListParser();
-	//		//			ArgumentList argsList = new ArgumentList();
-	//		//
-	//		//			// ignore comments
-	//		//			if (p_cmdString.trim().startsWith("#")) {
-	//		//				return true;
-	//		//			}
-	//		//
-	//		//			arguments = p_cmdString.split(" ");
-	//		//
-	//		//			if (arguments[0].equals("?")) {
-	//		//				if (arguments.length > 1) {
-	//		//					final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[1]);
-	//		//					if (c == null) {
-	//		//						System.out.println("error: unknown command");
-	//		//						return false;
-	//		//					} else {
-	//		//						printUsage(c);
-	//		//					}
-	//		//				} else {
-	//		//					System.out.println("Available commands:");
-	//		//					System.out.println(getAvailableCommands());
-	//		//				}
-	//		//			} else if (arguments[0].equals("!") || arguments[0].equals("!")) {
-	//		//				String cmdStr;
-	//		//				if (arguments.length < 2) {
-	//		//					System.out.println("Specify command for interactive mode:");
-	//		//					cmdStr = promptForUserInput("command");
-	//		//				} else {
-	//		//					cmdStr = arguments[1];
-	//		//				}
-	//		//				final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(cmdStr);
-	//		//				if (c == null) {
-	//		//					System.out.println("error: unknown command");
-	//		//					return false;
-	//		//				} else {
-	//		//					argsList.clear();
-	//		//					c.registerArguments(argsList);
-	//		//
-	//		//					// trigger interactive mode
-	//		//					System.out.println("Interactive argument input for '" + c.getName() + "':");
-	//		//					if (!interactiveArgumentMode(argsList)) {
-	//		//						System.out.println("error entering arguments");
-	//		//					}
-	//		//
-	//		//					if (!argsList.checkArguments()) {
-	//		//						printUsage(c);
-	//		//						return false;
-	//		//					} else {
-	//		//						c.setTerminalDelegate(this);
-	//		//						if (!c.execute(argsList)) {
-	//		//							printUsage(c);
-	//		//							return false;
-	//		//						}
-	//		//					}
-	//		//				}
-	//		//			} else if (arguments[0].equals("$")) {
-	//		//				if (arguments[1].equals("load")) {
-	//		//					if (!m_scriptEngine.loadScriptFile(arguments[2])) {
-	//		//						System.out.println("error loading script file " + arguments[2]);
-	//		//					}
-	//		//				} else {
-	//		//
-	//		//				}
-	//		//			} else {
-	//		//				if (arguments[0].isEmpty()) {
-	//		//					return true;
-	//		//				}
-	//		//
-	//		//				final AbstractTerminalCommand c = m_terminal.getRegisteredCommands().get(arguments[0]);
-	//		//				if (c == null) {
-	//		//					System.out.println("error: unknown command");
-	//		//					return false;
-	//		//				} else {
-	//		//					argsList.clear();
-	//		//					c.registerArguments(argsList);
-	//		//					try {
-	//		//						argsParser.parseArguments(arguments, argsList);
-	//		//					} catch (final Exception e) {
-	//		//						System.out.println("error: parsing arguments. most likely invalid syntax");
-	//		//						return false;
-	//		//					}
-	//		//
-	//		//					if (!argsList.checkArguments()) {
-	//		//						printUsage(c);
-	//		//						return false;
-	//		//					} else {
-	//		//						c.setTerminalDelegate(this);
-	//		//						if (!c.execute(argsList)) {
-	//		//							printUsage(c);
-	//		//							return false;
-	//		//						}
-	//		//					}
-	//		//				}
-	//		//			}
-	//
-	//		return true;
-	//	}
-
-	//	/**
-	//	 * Get a list of available/registered commands.
-	//	 *
-	//	 * @return List of registered commands.
-	//	 */
-	//	private String getAvailableCommands() {
-	//		String str = new String();
-	//		Collection<String> commands = m_terminal.getRegisteredCommands().keySet();
-	//		List<String> sortedList = new ArrayList<String>(commands);
-	//		Collections.sort(sortedList);
-	//		boolean first = true;
-	//		for (String cmd : sortedList) {
-	//			if (first) {
-	//				first = false;
-	//			} else {
-	//				str += ", ";
-	//			}
-	//			str += cmd;
-	//		}
-	//
-	//		return str;
-	//	}
-
-	//	/**
-	//	 * Print a usage message for the specified terminal command.
-	//	 *
-	//	 * @param p_command Terminal command to print usage message of.
-	//	 */
-	//	private void printUsage(final AbstractTerminalCommand p_command) {
-	//		ArgumentList argList = new ArgumentList();
-	//		// create default argument list
-	//		p_command.registerArguments(argList);
-	//
-	//		System.out.println("Command '" + p_command.getName() + "':");
-	//		System.out.println(p_command.getDescription());
-	//		System.out.println(argList.createUsageDescription(p_command.getName()));
-	//	}
-	//
-	//	/**
-	//	 * Execute interactive argument mode to allow the user entering arguments for a command one by one.
-	//	 *
-	//	 * @param p_arguments List of arguments with arguments that need values to be entered.
-	//	 * @return If user entered arguments properly, false otherwise.
-	//	 */
-	//	private boolean interactiveArgumentMode(final ArgumentList p_arguments) {
-	//		// ask for non optional entries first
-	//		for (Entry<String, Argument> entry : p_arguments.getArgumentMap().entrySet()) {
-	//			Argument arg = entry.getValue();
-	//			if (!arg.isOptional()) {
-	//				String input = promptForUserInput("<" + arg.getKey() + "> ");
-	//				if (input == null) {
-	//					return false;
-	//				}
-	//				p_arguments.setArgument(arg.getKey(), input, "");
-	//			}
-	//		}
-	//
-	//		// now go for optional entries
-	//		for (Entry<String, Argument> entry : p_arguments.getArgumentMap().entrySet()) {
-	//			Argument arg = entry.getValue();
-	//			if (arg.isOptional()) {
-	//				String input = promptForUserInput("[" + arg.getKey() + "] ");
-	//				if (input != null) {
-	//					p_arguments.setArgument(arg.getKey(), input, "");
-	//				}
-	//			}
-	//		}
-	//
-	//		return true;
-	//	}
 
 	/**
 	 * Change the color of stdout.
