@@ -6,20 +6,20 @@ function help() {
 }
 
 function exec(nid, kill) {
-	var boot = dxram.service("boot")
+	var boot = dxram.service("boot");
 
 	if (nid == null) {
-		print("No nodeID specified")
-		return
+		dxterm.errprintln("No nodeID specified");
+		return;
 	}
 
 	if (kill == null) {
-		kill = false
+		kill = false;
 	}
 
 	if (!boot.shutdownNode(nid, kill)) {
-		print("Shutting down node " + dxram.nidhexstr(nid) + " failed")
+		dxterm.println("Shutting down node " + dxram.nidhexstr(nid) + " failed");
 	} else {
-		print("Shutting down node " + dxram.nidhexstr(nid) + "...")
+		dxterm.println("Shutting down node " + dxram.nidhexstr(nid) + "...");
 	}
 }
