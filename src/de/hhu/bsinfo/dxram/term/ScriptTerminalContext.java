@@ -10,10 +10,13 @@ import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
 public class ScriptTerminalContext {
 
 	private ScriptEngineComponent m_scriptEngine;
+	private TerminalComponent m_terminal;
 	private List<String> m_commands;
 
-	public ScriptTerminalContext(final ScriptEngineComponent p_scriptEngine, final List<String> p_commands) {
+	public ScriptTerminalContext(final ScriptEngineComponent p_scriptEngine, final TerminalComponent p_terminal,
+			final List<String> p_commands) {
 		m_scriptEngine = p_scriptEngine;
+		m_terminal = p_terminal;
 		m_commands = p_commands;
 	}
 
@@ -25,6 +28,10 @@ public class ScriptTerminalContext {
 		}
 
 		System.out.println(str.substring(0, str.length() - 2));
+	}
+
+	public void reload() {
+		m_terminal.reloadTerminalScripts();
 	}
 
 	public Command cmd(final String p_name) {

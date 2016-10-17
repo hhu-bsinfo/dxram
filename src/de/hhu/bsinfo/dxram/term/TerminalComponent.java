@@ -20,6 +20,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	private LoggerComponent m_logger;
 	private ScriptEngineComponent m_scriptEngine;
 
+	private String m_terminalScriptFolder;
 	private ScriptTerminalContext m_terminalContext;
 	private ScriptContext m_terminalScriptContext;
 	private List<String> m_terminalScriptCommands = new ArrayList<>();
@@ -55,6 +56,16 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		return m_terminalScriptCommands;
 	}
 
+	/**
+	 * Reload the terminal scripts
+	 */
+	void reloadTerminalScripts() {
+		if (!m_terminalScriptFolder.isEmpty()) {
+			unloadTerminalScripts();
+			loadTerminalScripts(m_terminalScriptFolder);
+		}
+	}
+
 	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(TerminalConfigurationValues.Component.TERM_CMD_SCRIPT_FOLDER);
@@ -68,15 +79,14 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 
 		// create script context for terminal
 		m_terminalScriptContext = m_scriptEngine.createContext("terminal");
-		m_terminalContext = new ScriptTerminalContext(m_scriptEngine, m_terminalScriptCommands);
+		m_terminalContext = new ScriptTerminalContext(m_scriptEngine, this, m_terminalScriptCommands);
 
 		m_terminalScriptContext.bind("dxterm", m_terminalContext);
 
-		String scriptFolder = p_settings.getValue(TerminalConfigurationValues.Component.TERM_CMD_SCRIPT_FOLDER);
+		m_terminalScriptFolder = p_settings.getValue(TerminalConfigurationValues.Component.TERM_CMD_SCRIPT_FOLDER);
 
-		if (!scriptFolder.isEmpty()) {
-			loadTerminalScripts(scriptFolder);
-		}
+		// initial load
+		reloadTerminalScripts();
 
 		return true;
 	}
@@ -139,6 +149,24 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		}
 	}
 
+	/**
+	 * Unload all loaded terminal scripts and destroy the script contexts
+	 */
+	private void unloadTerminalScripts() {
+		for (String cmd : m_terminalScriptCommands) {
+			m_scriptEngine.destroyContext(cmd);
+		}
+
+		m_terminalScriptCommands.clear();
+	}
+
+	/**
+	 * Assert if a function in a script exists.
+	 *
+	 * @param p_ctx  Script context to search the function for
+	 * @param p_name Name of the function to search
+	 * @return True if function found, false otherwise
+	 */
 	private boolean assertFunctionExists(final ScriptContext p_ctx, final String p_name) {
 		if (!p_ctx.functionExists(p_name)) {
 			// #if LOGGER >= ERROR
