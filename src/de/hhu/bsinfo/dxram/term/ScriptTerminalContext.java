@@ -15,6 +15,26 @@ public class ScriptTerminalContext {
 		m_terminal = p_terminal;
 	}
 
+	public void print(final String p_str) {
+		System.out.print(p_str);
+	}
+
+	public void println(final String p_str) {
+		System.out.println(p_str);
+	}
+
+	public void errprint(final String p_str) {
+		changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.print(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
+	public void errprintln(final String p_str) {
+		changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+		System.out.println(p_str);
+		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
+	}
+
 	public void list() {
 		String str = "";
 
@@ -53,6 +73,25 @@ public class ScriptTerminalContext {
 
 		public Object exec(Object... args) {
 			return m_scriptEngine.getContext(m_name).call("exec", args);
+		}
+	}
+
+	/**
+	 * Change the color of stdout.
+	 *
+	 * @param p_color           Text color.
+	 * @param p_backgroundColor Shell background color
+	 * @param p_style           Text style.
+	 */
+	private void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor,
+			final TerminalStyle p_style) {
+		if (p_backgroundColor != TerminalColor.DEFAULT) {
+			System.out.printf("\033[%d;%d;%dm", p_style.ordinal(), p_color.ordinal() + 30,
+					p_backgroundColor.ordinal() + 40);
+		} else if (p_backgroundColor == TerminalColor.DEFAULT && p_color != TerminalColor.DEFAULT) {
+			System.out.printf("\033[%d;%dm", p_style.ordinal(), p_color.ordinal() + 30);
+		} else {
+			System.out.printf("\033[%dm", p_style.ordinal());
 		}
 	}
 }

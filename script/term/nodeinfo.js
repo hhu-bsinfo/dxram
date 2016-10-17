@@ -7,7 +7,7 @@ function help() {
 function exec(nid) {
 	var boot = dxram.service("boot")
 
-	if (nid) {
+	if (nid != null) {
 		if (boot.nodeAvailable(nid)) {
 			print("Node info " + dxram.nidhexstr(nid) + ":")
 			print("\tRole: " + boot.getNodeRole(nid));

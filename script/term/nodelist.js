@@ -11,7 +11,7 @@ function exec(role) {
 
 	var nodeIds = boot.getOnlineNodeIDs()
 
-	if (role) {			
+	if (role != null) {
 		print("Filtering by role " + nodeRole)
 	} 
 
@@ -20,7 +20,7 @@ function exec(role) {
 	for each(nodeId in nodeIds) {
 		var curRole = boot.getNodeRole(nodeId)
 		
-		if (!role || role && nodeRole.equals(curRole)) {
+		if (role != null || role == null && nodeRole.equals(curRole)) {
 			print("\t" + dxram.nidhexstr(nodeId) + ", " + curRole + ", " + boot.getNodeAddress(nodeId))
 		}
 	}

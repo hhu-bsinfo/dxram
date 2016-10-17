@@ -8,15 +8,15 @@ function help() {
 
 function exec(superpeers, peers, pollIntervalMs) {
 
-	if (!superpeers) {
+	if (superpeers == null) {
 		superpeers = 0
 	}
-	
-	if (!peers) {
+
+	if (peers == null) {
 		peers = 0
 	}
 
-	if (!pollIntervalMs) {
+	if (pollIntervalMs == null) {
 		pollIntervalMs = 1000
 	}
 

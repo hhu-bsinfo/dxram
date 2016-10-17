@@ -2,12 +2,16 @@ package de.hhu.bsinfo.dxram.script;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
@@ -169,5 +173,67 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 			Thread.sleep(p_timeMs);
 		} catch (final InterruptedException ignored) {
 		}
+	}
+
+	@Override
+	public long cid(final short p_nid, final long p_lid) {
+		return ChunkID.getChunkID(p_nid, p_lid);
+	}
+
+	@Override
+	public Chunk newChunk() {
+		return new Chunk();
+	}
+
+	@Override
+	public Chunk newChunk(final int p_bufferSize) {
+		return new Chunk(p_bufferSize);
+	}
+
+	@Override
+	public Chunk newChunk(final ByteBuffer p_buffer) {
+		return new Chunk(p_buffer);
+	}
+
+	@Override
+	public Chunk newChunk(final long p_id) {
+		return new Chunk(p_id);
+	}
+
+	@Override
+	public Chunk newChunk(final long p_id, final int p_bufferSize) {
+		return new Chunk(p_id, p_bufferSize);
+	}
+
+	@Override
+	public Chunk newChunk(final long p_id, final ByteBuffer p_buffer) {
+		return new Chunk(p_id, p_buffer);
+	}
+
+	@Override
+	public DataStructure newDataStructure(final String p_className) {
+		Class<?> clazz;
+		try {
+			clazz = Class.forName(p_className);
+		} catch (final ClassNotFoundException e) {
+			m_logger.error(getClass(), "Cannot find class with name " + p_className);
+			return null;
+		}
+
+		if (!DataStructure.class.isAssignableFrom(clazz)) {
+			m_logger.error(getClass(), "Class " + p_className + " is not implementing the DataStructure interface");
+			return null;
+		}
+
+		DataStructure dataStructure;
+		try {
+			dataStructure = (DataStructure) clazz.getConstructor().newInstance();
+		} catch (final InstantiationException | IllegalAccessException
+				| InvocationTargetException | NoSuchMethodException e) {
+			m_logger.error(getClass(), "Creating instance of " + p_className + " failed: " + e.getMessage());
+			return null;
+		}
+
+		return dataStructure;
 	}
 }

@@ -141,6 +141,9 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 						if (ctx.load(file.getAbsolutePath()) && assertFunctionExists(ctx, "help")
 								&& assertFunctionExists(ctx, "exec")) {
 
+							// bind terminal context
+							ctx.bind("dxterm", m_terminalContext);
+
 							m_terminalScriptCommands.put(name, ctx);
 						} else {
 							m_scriptEngine.destroyContext(ctx);

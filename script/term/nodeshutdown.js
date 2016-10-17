@@ -8,12 +8,12 @@ function help() {
 function exec(nid, kill) {
 	var boot = dxram.service("boot")
 
-	if (!nid) {
+	if (nid == null) {
 		print("No nodeID specified")
 		return
-	} 
+	}
 
-	if (!kill) {
+	if (kill == null) {
 		kill = false
 	}
 

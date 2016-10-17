@@ -203,25 +203,6 @@ public class TerminalService extends AbstractDXRAMService {
 	}
 
 	/**
-	 * Change the color of stdout.
-	 *
-	 * @param p_color           Text color.
-	 * @param p_backgroundColor Shell background color
-	 * @param p_style           Text style.
-	 */
-	private void changeConsoleColor(final TerminalColor p_color, final TerminalColor p_backgroundColor,
-			final TerminalStyle p_style) {
-		if (p_backgroundColor != TerminalColor.DEFAULT) {
-			System.out.printf("\033[%d;%d;%dm", p_style.ordinal(), p_color.ordinal() + 30,
-					p_backgroundColor.ordinal() + 40);
-		} else if (p_backgroundColor == TerminalColor.DEFAULT && p_color != TerminalColor.DEFAULT) {
-			System.out.printf("\033[%d;%dm", p_style.ordinal(), p_color.ordinal() + 30);
-		} else {
-			System.out.printf("\033[%dm", p_style.ordinal());
-		}
-	}
-
-	/**
 	 * Load terminal command history from a file.
 	 *
 	 * @param p_file File to load the history from and append new commands to.
