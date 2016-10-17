@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.script;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Created by nothaas on 10/14/16.
@@ -14,4 +15,6 @@ public interface ScriptDXRAMContext {
 	String nidhexstr(final short nodeId);
 
 	String cidhexstr(final long chunkId);
+
+	NodeRole noderole(final String p_str);
 }

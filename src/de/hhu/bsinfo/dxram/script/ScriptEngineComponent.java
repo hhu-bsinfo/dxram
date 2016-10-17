@@ -12,6 +12,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.NodeID;
 
 /**
@@ -155,5 +156,10 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	@Override
 	public String cidhexstr(final long chunkId) {
 		return ChunkID.toHexString(chunkId);
+	}
+
+	@Override
+	public NodeRole noderole(final String p_str) {
+		return NodeRole.toNodeRole(p_str);
 	}
 }

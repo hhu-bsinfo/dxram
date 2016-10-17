@@ -51,7 +51,7 @@ public class TerminalService extends AbstractDXRAMService {
 			return;
 		}
 
-		// register commands for autocompletion
+		// register commands for auto completion
 		JNIconsole.autocompleteCommands(m_terminal.getRegisteredCommands().keySet().toArray(new String[0]));
 
 		// #if LOGGER >= INFO

@@ -136,9 +136,10 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 					String name = file.getName().split("\\.")[0];
 
 					ScriptContext ctx = m_scriptEngine.createContext(name);
-					if (ctx != null && ctx.load(file.getAbsolutePath())) {
+					if (ctx != null) {
 
-						if (assertFunctionExists(ctx, "help") && assertFunctionExists(ctx, "exec")) {
+						if (ctx.load(file.getAbsolutePath()) && assertFunctionExists(ctx, "help")
+								&& assertFunctionExists(ctx, "exec")) {
 
 							m_terminalScriptCommands.put(name, ctx);
 						} else {
