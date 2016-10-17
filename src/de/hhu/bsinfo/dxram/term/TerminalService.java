@@ -54,7 +54,7 @@ public class TerminalService extends AbstractDXRAMService {
 		// register commands for autocompletion
 		{
 			// TODO have prefix "term.XXX"
-			String[] commandNames = m_terminal.getRegisteredCommands().toArray(new String[0]);
+			String[] commandNames = m_terminal.getRegisteredCommands().keySet().toArray(new String[0]);
 			JNIconsole.autocompleteCommands(commandNames);
 		}
 
@@ -99,17 +99,59 @@ public class TerminalService extends AbstractDXRAMService {
 
 	private void execute(final String p_text) {
 
+		// skip empty
 		if (p_text.isEmpty()) {
 			return;
 		}
 
-		// ignore comments
 		if (p_text.startsWith("?")) {
-			System.out.println("TODO help");
+			m_terminal.getScriptTerminalContext().help();
 		} else if (p_text.equals("exit")) {
 			m_loop = false;
 		} else {
-			m_terminal.getTerminalScriptContext().eval(p_text);
+			eveluateCommand(p_text);
+		}
+	}
+
+	private void eveluateCommand(final String p_text) {
+		// resolve terminal cmd "macros"
+		String[] tokensFunc = p_text.split("\\(");
+		String[] tokensHelp = p_text.split(" ");
+
+		// print help for cmd
+		if (tokensHelp.length > 1 && tokensHelp[0].equals("help")) {
+			de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensHelp[1]);
+			if (scriptCtx != null) {
+				m_terminal.getScriptContext().eval("dxterm.cmd(\"" + tokensHelp[1] + "\").help()");
+			} else {
+				System.out.println("Could not find help for terminal command '" + tokensHelp[1] + "'");
+			}
+		} else if (tokensFunc.length > 1) {
+
+			// resolve cmd call
+			de.hhu.bsinfo.dxram.script.ScriptContext scriptCtx = m_terminal.getRegisteredCommands().get(tokensFunc[0]);
+			if (scriptCtx != null) {
+				// assemble long call
+				String call = "dxterm.cmd(\"" + tokensFunc[0] + "\").exec(";
+
+				// prepare parameters
+				if (tokensFunc[1].length() > 1) {
+					call += tokensFunc[1];
+				} else {
+					call += ")";
+				}
+
+				m_terminal.getScriptContext().eval(call);
+			} else {
+				m_terminal.getScriptContext().eval(p_text);
+			}
+		} else {
+			// filter some generic "macros"
+			if (p_text.equals("help")) {
+				m_terminal.getScriptTerminalContext().help();
+			} else {
+				m_terminal.getScriptContext().eval(p_text);
+			}
 		}
 	}
 

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
@@ -147,7 +148,12 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	}
 
 	@Override
-	public String nodeIdToHexString(final short nodeId) {
+	public String nidhexstr(final short nodeId) {
 		return NodeID.toHexString(nodeId);
+	}
+
+	@Override
+	public String cidhexstr(final long chunkId) {
+		return ChunkID.toHexString(chunkId);
 	}
 }

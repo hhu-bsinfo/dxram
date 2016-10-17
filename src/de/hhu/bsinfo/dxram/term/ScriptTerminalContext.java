@@ -1,7 +1,5 @@
 package de.hhu.bsinfo.dxram.term;
 
-import java.util.List;
-
 import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
 
 /**
@@ -11,19 +9,16 @@ public class ScriptTerminalContext {
 
 	private ScriptEngineComponent m_scriptEngine;
 	private TerminalComponent m_terminal;
-	private List<String> m_commands;
 
-	public ScriptTerminalContext(final ScriptEngineComponent p_scriptEngine, final TerminalComponent p_terminal,
-			final List<String> p_commands) {
+	public ScriptTerminalContext(final ScriptEngineComponent p_scriptEngine, final TerminalComponent p_terminal) {
 		m_scriptEngine = p_scriptEngine;
 		m_terminal = p_terminal;
-		m_commands = p_commands;
 	}
 
 	public void list() {
 		String str = "";
 
-		for (String item : m_commands) {
+		for (String item : m_terminal.getRegisteredCommands().keySet()) {
 			str += item + ", ";
 		}
 
@@ -36,6 +31,10 @@ public class ScriptTerminalContext {
 
 	public Command cmd(final String p_name) {
 		return new Command(m_scriptEngine, p_name);
+	}
+
+	public void help() {
+		System.out.println("TODO write help");
 	}
 
 	public static class Command {

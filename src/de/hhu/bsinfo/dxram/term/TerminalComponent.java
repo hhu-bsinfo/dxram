@@ -2,8 +2,8 @@
 package de.hhu.bsinfo.dxram.term;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -23,7 +23,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	private String m_terminalScriptFolder;
 	private ScriptTerminalContext m_terminalContext;
 	private ScriptContext m_terminalScriptContext;
-	private List<String> m_terminalScriptCommands = new ArrayList<>();
+	private Map<String, ScriptContext> m_terminalScriptCommands = new HashMap<>();
 
 	/**
 	 * Constructor
@@ -43,8 +43,17 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 *
 	 * @return ScriptContext
 	 */
-	ScriptContext getTerminalScriptContext() {
+	ScriptContext getScriptContext() {
 		return m_terminalScriptContext;
+	}
+
+	/**
+	 * Get the context exposed inside the script context to be used in the terminal
+	 *
+	 * @return ScriptTerminalContext
+	 */
+	ScriptTerminalContext getScriptTerminalContext() {
+		return m_terminalContext;
 	}
 
 	/**
@@ -52,7 +61,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 *
 	 * @return Map of registered commands.
 	 */
-	List<String> getRegisteredCommands() {
+	Map<String, ScriptContext> getRegisteredCommands() {
 		return m_terminalScriptCommands;
 	}
 
@@ -79,7 +88,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 
 		// create script context for terminal
 		m_terminalScriptContext = m_scriptEngine.createContext("terminal");
-		m_terminalContext = new ScriptTerminalContext(m_scriptEngine, this, m_terminalScriptCommands);
+		m_terminalContext = new ScriptTerminalContext(m_scriptEngine, this);
 
 		m_terminalScriptContext.bind("dxterm", m_terminalContext);
 
@@ -94,11 +103,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	@Override
 	protected boolean shutdownComponent() {
 
-		for (String cmd : m_terminalScriptCommands) {
-			m_scriptEngine.destroyContext(cmd);
-		}
-
-		m_terminalScriptCommands.clear();
+		unloadTerminalScripts();
 
 		m_terminalContext = null;
 		m_scriptEngine = null;
@@ -135,7 +140,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 
 						if (assertFunctionExists(ctx, "help") && assertFunctionExists(ctx, "exec")) {
 
-							m_terminalScriptCommands.add(name);
+							m_terminalScriptCommands.put(name, ctx);
 						} else {
 							m_scriptEngine.destroyContext(ctx);
 						}
@@ -153,8 +158,8 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 * Unload all loaded terminal scripts and destroy the script contexts
 	 */
 	private void unloadTerminalScripts() {
-		for (String cmd : m_terminalScriptCommands) {
-			m_scriptEngine.destroyContext(cmd);
+		for (ScriptContext ctx : m_terminalScriptCommands.values()) {
+			m_scriptEngine.destroyContext(ctx);
 		}
 
 		m_terminalScriptCommands.clear();
