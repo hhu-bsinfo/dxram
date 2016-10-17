@@ -17,4 +17,6 @@ public interface ScriptDXRAMContext {
 	String cidhexstr(final long chunkId);
 
 	NodeRole noderole(final String p_str);
+
+	void sleep(final int p_timeMs);
 }

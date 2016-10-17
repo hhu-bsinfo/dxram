@@ -162,4 +162,12 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	public NodeRole noderole(final String p_str) {
 		return NodeRole.toNodeRole(p_str);
 	}
+
+	@Override
+	public void sleep(final int p_timeMs) {
+		try {
+			Thread.sleep(p_timeMs);
+		} catch (final InterruptedException ignored) {
+		}
+	}
 }
