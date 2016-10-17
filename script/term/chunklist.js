@@ -8,7 +8,7 @@ function help() {
 function exec(nid, migrated) {
 
 	if (nid == null) {
-		dxterm.errprintln("No nid specified");
+		dxterm.printlnErr("No nid specified");
 		return;
 	}
 
@@ -21,18 +21,18 @@ function exec(nid, migrated) {
 	var chunkRanges = chunk.getAllLocalChunkIDRanges(nid);
 
     if (chunkRanges == null) {
-        dxterm.errprintln("Getting chunk ranges failed.");
+        dxterm.printlnErr("Getting chunk ranges failed.");
         return;
     }
 
-    dxterm.println("Locally created chunk id ranges of " + dxram.nidhexstr(nid) + "(" + chunkRanges.size() / 2 + "):");
+    dxterm.println("Locally created chunk id ranges of " + dxram.nidHexStr(nid) + "(" + chunkRanges.size() / 2 + "):");
 
     for (var i = 0; i < chunkRanges.size(); i++) {
         var currRange = chunkRanges.get(i);
         if (i % 2 == 0) {
-            dxterm.print("[" + dxram.cidhexstr(currRange));
+            dxterm.print("[" + dxram.cidHexStr(currRange));
         } else {
-            dxterm.println(", " + dxram.cidhexstr(currRange) + "]");
+            dxterm.println(", " + dxram.cidHexStr(currRange) + "]");
         }
     }
 
@@ -41,18 +41,18 @@ function exec(nid, migrated) {
         chunkRanges = chunk.getAllMigratedChunkIDRanges(nid);
 
         if (chunkRanges == null) {
-            dxterm.errprintln("Getting migrated chunk ranges failed.");
+            dxterm.printlnErr("Getting migrated chunk ranges failed.");
             return;
         }
 
-        dxterm.println("Migrated chunk id ranges of " + dxram.nidhexstr(nid) + "(" + chunkRanges.size() / 2 + "):");
+        dxterm.println("Migrated chunk id ranges of " + dxram.nidHexStr(nid) + "(" + chunkRanges.size() / 2 + "):");
 
         for (var i = 0; i < chunkRanges.size(); i++) {
             var currRange = chunkRanges.get(i);
             if (i % 2 == 0) {
-                dxterm.print("[" + dxram.cidhexstr(currRange));
+                dxterm.print("[" + dxram.cidHexStr(currRange));
             } else {
-                dxterm.println(", " + dxram.cidhexstr(currRange) + "]");
+                dxterm.println(", " + dxram.cidHexStr(currRange) + "]");
             }
         }
     }

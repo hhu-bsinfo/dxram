@@ -23,13 +23,13 @@ public class ScriptTerminalContext {
 		System.out.println(p_str);
 	}
 
-	public void errprint(final String p_str) {
+	public void printErr(final String p_str) {
 		changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
 		System.out.print(p_str);
 		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
 	}
 
-	public void errprintln(final String p_str) {
+	public void printlnErr(final String p_str) {
 		changeConsoleColor(TerminalColor.RED, TerminalColor.DEFAULT, TerminalStyle.NORMAL);
 		System.out.println(p_str);
 		changeConsoleColor(TerminalColor.DEFAULT, TerminalColor.DEFAULT, TerminalStyle.NORMAL);

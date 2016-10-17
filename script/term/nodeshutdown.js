@@ -9,7 +9,7 @@ function exec(nid, kill) {
 	var boot = dxram.service("boot");
 
 	if (nid == null) {
-		dxterm.errprintln("No nodeID specified");
+		dxterm.printlnErr("No nodeID specified");
 		return;
 	}
 
@@ -18,8 +18,8 @@ function exec(nid, kill) {
 	}
 
 	if (!boot.shutdownNode(nid, kill)) {
-		dxterm.println("Shutting down node " + dxram.nidhexstr(nid) + " failed");
+		dxterm.println("Shutting down node " + dxram.nidHexStr(nid) + " failed");
 	} else {
-		dxterm.println("Shutting down node " + dxram.nidhexstr(nid) + "...");
+		dxterm.println("Shutting down node " + dxram.nidHexStr(nid) + "...");
 	}
 }

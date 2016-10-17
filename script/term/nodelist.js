@@ -7,7 +7,7 @@ function help() {
 function exec(role) {
 
 	var boot = dxram.service("boot");
-	var nodeRole = dxram.noderole(role);
+	var nodeRole = dxram.nodeRole(role);
 
 	var nodeIds = boot.getOnlineNodeIDs();
 
@@ -20,8 +20,8 @@ function exec(role) {
 	for each(nodeId in nodeIds) {
 		var curRole = boot.getNodeRole(nodeId);
 		
-		if (role != null || role == null && nodeRole.equals(curRole)) {
-			dxterm.println("\t" + dxram.nidhexstr(nodeId) + ", " + curRole + ", " + boot.getNodeAddress(nodeId));
+		if (role == null || role != null && nodeRole.equals(curRole)) {
+			dxterm.println("\t" + dxram.nidHexStr(nodeId) + ", " + curRole + ", " + boot.getNodeAddress(nodeId));
 		}
 	}
 }

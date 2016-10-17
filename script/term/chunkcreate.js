@@ -8,12 +8,12 @@ function help() {
 function exec(size, nid) {
 
 	if (size == null) {
-		dxterm.errprintln("No size specified");
+		dxterm.printlnErr("No size specified");
 		return;
 	}
 	
 	if (nid == null) {
-		dxterm.errprintln("No nid specified");
+		dxterm.printlnErr("No nid specified");
 		return;
 	}
 
@@ -22,8 +22,8 @@ function exec(size, nid) {
 	var chunkIDs = chunk.createRemote(nid, size);
 
 	if (chunkIDs != null) {
-	    dxterm.println("Created chunk of size " + size + ": " + dxram.cidhexstr(chunkIDs[0]));
+	    dxterm.println("Created chunk of size " + size + ": " + dxram.cidHexStr(chunkIDs[0]));
 	} else {
-        dxterm.errprintln("Creating chunk failed.");
+        dxterm.printlnErr("Creating chunk failed.");
 	}
 }
