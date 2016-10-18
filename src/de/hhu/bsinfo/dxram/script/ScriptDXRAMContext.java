@@ -47,4 +47,6 @@ public interface ScriptDXRAMContext {
 	Chunk newChunk(final long p_id, final ByteBuffer p_buffer);
 
 	DataStructure newDataStructure(final String p_className);
+
+	String bidHexStr(final int p_barrierId);
 }

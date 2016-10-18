@@ -16,6 +16,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
+import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.NodeID;
 
@@ -255,5 +256,10 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		}
 
 		return dataStructure;
+	}
+
+	@Override
+	public String bidHexStr(final int p_barrierId) {
+		return BarrierID.toHexString(p_barrierId);
 	}
 }
