@@ -9,24 +9,22 @@ function help() {
 function exec(id1, id2) {
 
     if (id1 == null) {
-        dxterm.printlnErr("No cid or nid specified")
-        return
-    }
-
-    if (id2 == null) {
-        execCid(id1)
-    } else {
-        execNidLid(dxram.cid(id1, id2))
-    }
-}
-
-function execCid(cidStr) {
-    if (cidStr == null) {
-        dxterm.printlnErr("No cid specified");
+        dxterm.printlnErr("No cid or nid specified");
         return;
     }
 
-    var cid = dxram.cid(cidStr)
+    if (id2 == null) {
+        execCid(dxram.cid(id1));
+    } else {
+        execCid(dxram.cid(id1, id2));
+    }
+}
+
+function execCid(cid) {
+    if (cid == null) {
+        dxterm.printlnErr("No cid specified");
+        return;
+    }
 
     // don't allow removal of index chunk
     if (dxram.lidOfCid(cid) == 0) {
@@ -41,8 +39,4 @@ function execCid(cidStr) {
     } else {
         dxterm.println("Chunk " + dxram.cidHexStr(cid) + " removed.");
     }
-}
-
-function execNidLid(nid, lid) {
-
 }
