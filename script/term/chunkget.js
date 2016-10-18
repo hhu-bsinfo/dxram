@@ -1,9 +1,19 @@
 function help() {
 
 	return "Get a chunk specified by either full cid or separted lid + nid from a storage\n" +
-			"Parameters: size nid\n" +
-			"  size: Size of the chunk to create\n" +
-			"  nid: Node id of the peer to create the chunk on"
+			"Parameters (1): cidStr or nid|lid className\n" +
+			"Parameters (2): cidStr or nid|lid [type] [hex] [offset] [length]"
+			"Parameters (3): cidStr or nid|lid [offset] [length] [type] [hex]"
+			"  cidStr: Full chunk ID of the chunk to get data from (as string!)\n" +
+			"  nid: (Or) separate node id part of the chunk to get data from"
+			"  lid: (In combination with) separate local id part of the chunk to get data from\n" +
+			"  className: Full name of a java class that implements DataStructure (with package path). " +
+			"An instance is created, the data is stored in that instance and printed.\n " +
+			"  type: Format to print the data (str, byte, short, int, long), defaults to byte\n"  +
+			"  hex: For some representations, print as hex instead of decimal, defaults to true\n" +
+			"  offset: Offset within the chunk to start getting data from, defaults to 0\n" +
+			"  length: Number of bytes of the chunk to print, defaults to size of chunk\n"
+
 }
 
 // ugly way to support overloading and type dispatching
