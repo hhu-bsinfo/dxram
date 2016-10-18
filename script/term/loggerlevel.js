@@ -1,4 +1,5 @@
 function help() {
+
 	return "Change the output level of the logger\n" +
 			"Parameters: level [nid]\n" +
 			"  level: Log level to set, available levels (str): disabled, error, warn, info, debug, trace\n" +

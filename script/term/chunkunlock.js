@@ -1,4 +1,5 @@
 function help() {
+
 	return "Unlock a previously locked chunk\n" +
 			"Parameters: cidStr | nid lid\n" +
 			"  cidStr: Full chunk ID of the chunk to unlock as string\n" +
@@ -21,6 +22,7 @@ function exec(id1, id2) {
 }
 
 function execCid(cid) {
+
     if (cid == null) {
         dxterm.printlnErr("No cid specified");
         return;
