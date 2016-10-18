@@ -16,11 +16,11 @@ function exec(nid) {
     var respSuperpeer = lookup.getResponsibleSuperPeer(nid);
 
     if (respSuperpeer == -1) {
-        dxterm.printlnErr("No responsible superpeer for " + dxram.nidHexStr(nid) + " found");
+        dxterm.printlnErr("No responsible superpeer for " + dxram.shortToHexStr(nid) + " found");
         return;
     }
 
     var tree = lookup.getLookupTreeFromSuperPeer(respSuperpeer, nid);
-    dxterm.println("Lookup tree of " + dxram.nidHexStr(nid) + ":");
+    dxterm.println("Lookup tree of " + dxram.shortToHexStr(nid) + ":");
     dxterm.println(tree);
 }

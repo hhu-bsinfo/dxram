@@ -21,7 +21,7 @@ function exec(role) {
 		var curRole = boot.getNodeRole(nodeId);
 		
 		if (role == null || role != null && nodeRole.equals(curRole)) {
-			dxterm.println("\t" + dxram.nidHexStr(nodeId) + ", " + curRole + ", " + boot.getNodeAddress(nodeId));
+			dxterm.println("\t" + dxram.shortToHexStr(nodeId) + ", " + curRole + ", " + boot.getNodeAddress(nodeId));
 		}
 	}
 }

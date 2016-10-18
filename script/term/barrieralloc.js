@@ -18,6 +18,6 @@ function exec(size) {
     if (barrierId == -1) {
         dxterm.printlnErr("Allocating barrier failed.");
     } else {
-        dxterm.println("Allocating barrier successful, barrier id: " + dxram.bidHexStr(barrierId));
+        dxterm.println("Allocating barrier successful, barrier id: " + dxram.intToHexStr(barrierId));
     }
 }

@@ -21,7 +21,7 @@ function exec(id, size) {
     var tmpstore = dxram.service("tmpstore");
 
     if (tmpstore.create(id, size)) {
-        dxterm.println("Created chunk of size " + size + " in temporary storage: " + dxram.longHexStr(id));
+        dxterm.println("Created chunk of size " + size + " in temporary storage: " + dxram.longToHexStr(id));
     } else {
         dxterm.printlnErr("Creating chunk in temporary storage failed");
     }

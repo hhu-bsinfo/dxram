@@ -16,15 +16,15 @@ function exec(bid) {
     var status = sync.barrierGetStatus(bid);
 
     if (status == null) {
-        dxterm.printlnErr("Getting status of barrier " + dxram.intHexStr(bid) + " failed.");
+        dxterm.printlnErr("Getting status of barrier " + dxram.intToHexStr(bid) + " failed.");
         return;
     }
 
     var peers = "";
     for (var i = 1; i < status.length; i++) {
-        peers += dxram.shortHexStr(status[i]) + ", ";
+        peers += dxram.shortToHexStr(status[i]) + ", ";
     }
 
-    dxterm.println("Barrier status " + dxram.intHexStr(bid) + ", "
+    dxterm.println("Barrier status " + dxram.intToHexStr(bid) + ", "
             + status[0] + "/" + (status.length - 1) + ": " + peers);
 }

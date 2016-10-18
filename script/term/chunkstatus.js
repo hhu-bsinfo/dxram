@@ -44,7 +44,7 @@ function exec(nid, sizetype) {
         sizetype = "b";
     }
 
-    dxterm.println("Chunk service/memory status of " + dxram.nidHexStr(nid) + ":");
+    dxterm.println("Chunk service/memory status of " + dxram.shortToHexStr(nid) + ":");
     if (divisor == 1) {
         dxterm.println("Free memory (" + sizetype + "): " + status.getFreeMemory());
         dxterm.println("Total memory (" + sizetype + "): " + status.getTotalMemory());

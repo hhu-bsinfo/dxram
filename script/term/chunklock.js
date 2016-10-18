@@ -14,7 +14,7 @@ function exec(id1, id2) {
     }
 
     if (id2 == null) {
-        execCid(dxram.cid(id1));
+        execCid(dxram.longStrToLong(id1));
     } else {
         execCid(dxram.cid(id1, id2));
     }
@@ -34,8 +34,8 @@ function execCid(cid) {
 
     var err = dxram.service("lock").lock(true, 1000, cid);
     if (!err.toString().equals("SUCCESS")) {
-        dxterm.printlnErr("Error locking chunk " + dxram.cidHexStr(cid) + ": " + err);
+        dxterm.printlnErr("Error locking chunk " + dxram.longToHexStr(cid) + ": " + err);
     } else {
-        dxterm.println("Locked chunk " + dxram.cidHexStr(cid));
+        dxterm.println("Locked chunk " + dxram.longToHexStr(cid));
     }
 }

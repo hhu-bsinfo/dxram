@@ -16,13 +16,13 @@ public interface ScriptDXRAMContext {
 
 	AbstractDXRAMService service(final String p_serviceName);
 
-	String shortHexStr(final short p_val);
+	String shortToHexStr(final short p_val);
 
-	String intHexStr(final int p_val);
+	String intToHexStr(final int p_val);
 
-	String longHexStr(final long p_val);
+	String longToHexStr(final long p_val);
 
-	long longStrLong(final String p_str);
+	long longStrToLong(final String p_str);
 
 	NodeRole nodeRole(final String p_str);
 

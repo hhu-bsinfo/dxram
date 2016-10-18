@@ -20,7 +20,7 @@ function exec(id1, id2, targetNid) {
     }
 
     if (id2 == null) {
-        execCid(dxram.cid(id1), targetNid);
+        execCid(dxram.longStrToLong(id1), targetNid);
     } else {
         execCid(dxram.cid(id1, id2), targetNid);
     }

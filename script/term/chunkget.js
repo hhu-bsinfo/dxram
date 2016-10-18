@@ -49,6 +49,8 @@ function exec_cid(cid) {
         return;
     }
 
+	cid = dxram.longStrToLong(cid);
+
     if (typeof arguments[1] === "string" && arguments.length == 2) {
         exec_class(cid, arguments[1]);
     } else if (typeof arguments[1] === "string") {
@@ -81,7 +83,7 @@ function exec_class(cid, className) {
     var chunk = dxram.service("chunk");
 
     if (chunk.get(dataStructure) != 1) {
-        dxterm.printlnErr("Getting data structure " + dxram.cidHexStr(cid) + " failed.");
+        dxterm.printlnErr("Getting data structure " + dxram.longToHexStr(cid) + " failed.");
         return;
     }
 
@@ -114,7 +116,7 @@ function exec_raw(cid, type, hex, offset, length) {
     var chunks = chunkService.get(cid);
 
     if (chunks == null || chunks.first() == 0) {
-        dxterm.printlnErr("Getting chunk " + dxram.cidHexStr(cid) + " failed.");
+        dxterm.printlnErr("Getting chunk " + dxram.longToHexStr(cid) + " failed.");
         return;
     }
 
@@ -186,7 +188,7 @@ function exec_raw(cid, type, hex, offset, length) {
             return;
     }
 
-    dxterm.println("Chunk data of " + dxram.cidHexStr(cid) + " (chunksize " + chunk.sizeofObject() + "):");
+    dxterm.println("Chunk data of " + dxram.longToHexStr(cid) + " (chunksize " + chunk.sizeofObject() + "):");
     dxterm.println(str);
 }
 

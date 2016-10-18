@@ -17,7 +17,7 @@ function help() {
 function exec() {
 
     if (arguments.length > 0 && typeof arguments[0] === "string") {
-        exec_cid.apply(this, [dxram.cid(argument[0])].concat(Array.prototype.slice.call(arguments, 1)));
+        exec_cid.apply(this, [dxram.longStrToLong(argument[0])].concat(Array.prototype.slice.call(arguments, 1)));
     } else if (arguments.length > 1) {
         exec_nidlid.apply(this, arguments);
     } else {
@@ -71,7 +71,7 @@ function exec_cid(cid, data, offset, type) {
     var chunks = chunkService.get(cid);
 
     if (chunks.first() == 0) {
-        dxmterm.printlnErr("Getting chunk " + dxram.cidHexStr(cid) + " failed.");
+        dxmterm.printlnErr("Getting chunk " + dxram.longToHexStr(cid) + " failed.");
         return;
     }
 
@@ -166,8 +166,8 @@ function exec_cid(cid, data, offset, type) {
 
     // put chunk back
     if (chunkService.put(chunk) != 1) {
-        dxterm.printlnErr("Putting chunk " + dxram.cidHexStr(cid) + " failed");
+        dxterm.printlnErr("Putting chunk " + dxram.longToHexStr(cid) + " failed");
     } else {
-        dxterm.println("Put to chunk " + dxram.cidHexStr(cid) + " successful.");
+        dxterm.println("Put to chunk " + dxram.longToHexStr(cid) + " successful.");
     }
 }

@@ -19,6 +19,6 @@ function exec(name) {
     if (cid == -1) {
         dxterm.printlnErr("Could not get name entry for " + name + ", does not exist");
     } else {
-        dxterm.println(name + ": " + dxram.cidHexStr(cid));
+        dxterm.println(name + ": " + dxram.longToHexStr(cid));
     }
 }

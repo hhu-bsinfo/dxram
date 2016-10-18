@@ -14,7 +14,7 @@ function exec(id1, id2) {
     }
 
     if (id2 == null) {
-        execCid(dxram.cid(id1));
+        execCid(dxram.longStrToLong(id1));
     } else {
         execCid(dxram.cid(id1, id2));
     }
@@ -35,8 +35,8 @@ function execCid(cid) {
     var chunk = dxram.service("chunk");
 
     if (chunk.remove(cid) != 1) {
-        dxterm.printlnErr("Removing chunk with ID " + dxram.cidHexStr(cid) + " failed.");
+        dxterm.printlnErr("Removing chunk with ID " + dxram.longToHexStr(cid) + " failed.");
     } else {
-        dxterm.println("Chunk " + dxram.cidHexStr(cid) + " removed.");
+        dxterm.println("Chunk " + dxram.longToHexStr(cid) + " removed.");
     }
 }

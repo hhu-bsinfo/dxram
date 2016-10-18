@@ -11,6 +11,6 @@ function exec() {
     dxterm.println("Nameservice entries(" + entries.size() + "):");
 
     for each (entry in entries) {
-        dxterm.println(entry.first() + ": " + dxram.cidHexStr(entry.second()));
+        dxterm.println(entry.first() + ": " + dxram.longToHexStr(entry.second()));
     }
 }
