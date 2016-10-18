@@ -112,8 +112,31 @@ public class StatisticsService extends AbstractDXRAMService {
 	 */
 	public void printStatistics() {
 		for (StatisticsRecorder recorder : m_statistics.getRecorders()) {
-			System.out.println(recorder);
+			if (recorder != null) {
+				System.out.println(recorder);
+			}
 		}
+	}
+
+	/**
+	 * Print the statistics of a specific recorder to the console.
+	 *
+	 * @param p_className Fully qualified name of the class including package location (or relative to de.hhu.bsinfo)
+	 */
+	public void printStatistics(final String p_className) {
+		Class<?> clss;
+		try {
+			clss = Class.forName(p_className);
+		} catch (final ClassNotFoundException e) {
+			// check again with longest common prefix of package names
+			try {
+				clss = Class.forName("de.hhu.bsinfo." + p_className);
+			} catch (final ClassNotFoundException e1) {
+				return;
+			}
+		}
+
+		printStatistics(clss);
 	}
 
 	/**
