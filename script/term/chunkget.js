@@ -1,251 +1,187 @@
 function help() {
+
 	return "Get a chunk specified by either full cid or separted lid + nid from a storage\n" +
 			"Parameters: size nid\n" +
 			"  size: Size of the chunk to create\n" +
 			"  nid: Node id of the peer to create the chunk on"
 }
 
-// ugly work around for non supported overloading and type dispatching
+// ugly way to support overloading and type dispatching
 function exec() {
 
-    switch (arguments.length) {
-        case 0:
-            print("1")
-            exec1()
-            break
-        case 1:
-            print(2)
-            exec1(arguments)
-            break
-        case 2:
-            print(3)
-            exec1(arguments)
-            break
-        default:
-            print(4)
-    }
-}
-
-function exec1(id1, id2) {
-
-    if (id1 == null) {
-        print("No cid or nid specified")
-        return
-    }
-
-    if (id2 == null) {
-        p_exec1(id1)
+    if (arguments.length > 0 && typeof arguments[0] === "string") {
+        exec_cid.apply(this, arguments);
+    } else if (arguments.length > 1) {
+        exec_nidlid.apply(this, arguments);
     } else {
-        p_exec1(dxram.cid(id1, id2))
+        dxterm.printlnErr("No cid or nid|lid specified");
     }
 }
 
-function p_exec1(cid) {
+function exec_nidlid(nid, lid) {
+
+    if (nid == null) {
+        dxram.printlnErr("No nid specified");
+        return;
+    }
+
+    if (lid == null) {
+        dxram.printlnErr("No lid specified");
+        return;
+    }
+
+    exec_cid.apply(this, [dxram.cid(nid, lid)].concat(Array.prototype.slice.call(arguments, 2)));
+}
+
+function exec_cid(cid) {
+
     if (cid == null) {
-        print("No cid specified")
-        return
+        dxram.printlnErr("No cid specified");
+        return;
     }
 
-    var chunk = dxram.service("chunk")
-
-    var res = chunk.get(cid)
-    if (res.first() == 0) {
-        print("Getting chunk " + dxram.cidhexstr(cid) + " failed.")
-        return
+    if (typeof arguments[1] === "string" && arguments.length == 2) {
+        exec_class(cid, arguments[1]);
+    } else if (typeof arguments[1] === "string") {
+        exec_raw.apply(this, arguments);
+    } else {
+        exec_raw2.apply(this, arguments);
     }
-
-    print("Chunk (" + dxram.cidhexstr(cid) + "): ")
 }
 
-//function printChunk(chunk, offset, dataType, hex) {
-//
-//    dataType = dataType.toLowerCase();
-//
-//    switch (dataType) {
-//
-//        case "str":
-//            var bytes = new byte[buffer.capacity() - buffer.position()];
-//
-//            try {
-//                buffer.get(bytes, 0, len);
-//            } catch (e) {
-//                // that's fine, trunc data
-//            }
-//
-//            str = new String(bytes, StandardCharsets.US_ASCII);
-//    }
-//
-//    if (dataType.equals("str")) {
-//        byte[] bytes = new byte[buffer.capacity() - buffer.position()];
-//
-//        try {
-//            buffer.get(bytes, 0, len);
-//        } catch (final BufferOverflowException e) {
-//            // that's fine, trunc data
-//        }
-//
-//        str = new String(bytes, StandardCharsets.US_ASCII);
-//    } else if (dataType.equals("byte")) {
-//        try {
-//            for (int i = 0; i < len; i += Byte.BYTES) {
-//                if (hex) {
-//                    str += Integer.toHexString(buffer.get() & 0xFF) + " ";
-//                } else {
-//                    str += (char) buffer.get();
-//                }
-//
-//            }
-//        } catch (final BufferOverflowException e) {
-//            // that's fine, trunc data
-//        }
-//    } else if (dataType.equals("short")) {
-//        try {
-//            for (int i = 0; i < len; i += Short.BYTES) {
-//                if (hex) {
-//                    str += Integer.toHexString(buffer.getShort() & 0xFFFF) + " ";
-//                } else {
-//                    str += buffer.getShort() + " ";
-//                }
-//            }
-//        } catch (final BufferOverflowException e) {
-//            // that's fine, trunc data
-//        }
-//    } else if (dataType.equals("int")) {
-//        try {
-//            for (int i = 0; i < len; i += Integer.BYTES) {
-//                if (hex) {
-//                    str += Integer.toHexString(buffer.getInt() & 0xFFFFFFFF) + " ";
-//                } else {
-//                    str += buffer.getInt() + " ";
-//                }
-//            }
-//        } catch (final BufferOverflowException e) {
-//            // that's fine, trunc data
-//        }
-//    } else if (dataType.equals("long")) {
-//        try {
-//            for (int i = 0; i < len; i += Long.BYTES) {
-//                if (hex) {
-//                    str += Long.toHexString(buffer.getLong() & 0xFFFFFFFFFFFFFFFFL) + " ";
-//                } else {
-//                    str += buffer.getLong() + " ";
-//                }
-//            }
-//        } catch (final BufferOverflowException e) {
-//            // that's fine, trunc data
-//        }
-//    } else {
-//        getTerminalDelegate().println("error: Unsupported data type " + dataType, TerminalColor.RED);
-//        return true;
-//    }
-//}
+function exec_class(cid, className) {
 
-//function exec2(nid, lid) {
-//    if (nid == null) {
-//        print("No nid specified")
-//        return
-//    }
-//
-//    if (lid == null) {
-//        print("No lid specified")
-//        return
-//    }
-//
-//    exec1(dxram.cid(nid, lid))
-//}
-//
-//function exec2_(cid, className) {
-//    if (cid == null) {
-//        print("No cid specified")
-//        return
-//    }
-//
-//    if (className == null) {
-//        print("No class name specified")
-//        return
-//    }
-//
-//    var ds = dxram.newDataStructure(className);
-//    if (ds == null) {
-//        print("Creating DataStructure of class type '" + className + "' failed")
-//        return
-//    }
-//
-//    var chunk = dxram.service("chunk")
-//
-//    ds.setID(cid)
-//    if (chunk.get(ds) != 1) {
-//        print("Getting data structure " + dxram.cidhexstr(cid) + " failed.")
-//        return
-//    }
-//
-//    print("DataStructure " + className + ": " + ds)
-//}
-//
-//function exec3(nid, lid, className) {
-//    if (nid == null) {
-//        print("No nid specified")
-//        return
-//    }
-//
-//    if (lid == null) {
-//        print("No lid specified")
-//        return
-//    }
-//
-//    if (className == null) {
-//        print("No class name specified")
-//        return
-//    }
-//}
-//
-//function exec4(cid, offset, type, hex) {
-//    if (cid == null) {
-//        print("No cid specified")
-//        return
-//    }
-//
-//    if (offset == null) {
-//        offset = 0
-//    }
-//
-//    if (type == null) {
-//        type = "byte"
-//    }
-//
-//    if (hex == null) {
-//        hex = true
-//    }
-//}
-//
-//function exec6(nid, lid, offset, type, hex, clazz) {
-//    if (!nid) {
-//        print("No nid specified")
-//        return
-//    }
-//
-//    if (!lid) {
-//        print("No lid specified")
-//        return
-//    }
-//}
+    if (cid == null) {
+        dxterm.printlnErr("No cid specified");
+        return;
+    }
 
-//	if (!size) {
-//		print("No size specified")
-//		return
-//	}
-//
-//	if (!nid) {
-//		print("No nid specified")
-//	}
-//
-//	var chunk = dxram.service("chunk")
-//
-//	var chunkIDs = chunk.createRemote(nid, size)
-//
-//	if (chunkIDs != null) {
-//	    print("Created chunk of size " + size + ": " + dxram.cidhexstr(chunkIDs[0]))
-//	} else {
-//        print("Creating chunk failed.")
-//	}
-//}
+    if (className == null) {
+        dxterm.printlnErr("No className specified");
+        return;
+    }
+
+    var dataStructure = dxram.newDataStructure(className);
+    if (dataStructure == null) {
+        dxterm.printlnErr("Creating data structure of name '" + className + "' failed");
+        return;
+    }
+
+    dataStructure.setID(cid);
+
+    var chunk = dxram.service("chunk");
+
+    if (chunk.get(dataStructure) != 1) {
+        dxterm.printlnErr("Getting data structure " + dxram.cidHexStr(cid) + " failed.");
+        return;
+    }
+
+    dxterm.println("DataStructure " + className + " (size " + dataStructure.sizeofObject() + "): ");
+    dxterm.println(dataStructure);
+}
+
+function exec_raw(cid, type, hex, offset, length) {
+
+    if (cid == null) {
+        dxterm.printlnErr("No cid specified");
+        return;
+    }
+
+    if (offset == null) {
+        offset = 0;
+    }
+
+    if (type == null) {
+        type = "byte";
+    }
+    type = type.toLowerCase();
+
+    if (hex == null) {
+        hex = true;
+    }
+
+    var chunkService = dxram.service("chunk");
+
+    var chunks = chunkService.get(cid);
+
+    if (chunks == null || chunks.first() == 0) {
+        dxram.printlnErr("Getting chunk " + dxram.cidHexStr(cid) + " failed.");
+        return;
+    }
+
+    var chunk = chunks.second()[0];
+
+    if (length == null || length > chunk.getDataSize()) {
+        length = chunk.getDataSize();
+    }
+
+    if (offset > length) {
+        offset = length;
+    }
+
+    if (offset + length > chunk.getDataSize()) {
+        length = chunk.getDataSize() - offset;
+    }
+
+    var buffer = chunk.getData();
+    buffer.position(offset);
+
+    var str = "";
+    switch (type) {
+        case "str":
+            str = new java.lang.String(buffer.array(), offset, length, java.StandardCharsets.US_ASCII);
+            break;
+
+        case "byte":
+            for (var i = 0; i < length; i += java.lang.Byte.BYTES) {
+                if (hex) {
+                    str += java.lang.Integer.toHexString(buffer.get() & 0xFF) + " ";
+                } else {
+                    str += buffer.get() + " ";
+                }
+            }
+            break;
+
+        case "short":
+            for (var i = 0; i < length; i += java.lang.Short.BYTES) {
+                if (hex) {
+                    str += java.lang.Integer.toHexString(buffer.getShort() & 0xFFFF) + " ";
+                } else {
+                    str += buffer.getShort() + " ";
+                }
+            }
+            break;
+
+        case "int":
+            for (var i = 0; i < length; i += java.lang.Integer.BYTES) {
+                if (hex) {
+                    str += java.lang.Integer.toHexString(buffer.getInt() & 0xFFFFFFFF) + " ";
+                } else {
+                    str += buffer.getInt() + " ";
+                }
+            }
+            break;
+
+        case "long":
+            for (var i = 0; i < length; i += java.lang.Long.BYTES) {
+                if (hex) {
+                    str += java.lang.Long.toHexString(buffer.getLong() & new java.lang.Long(0xFFFFFFFFFFFFFFFF)) + " ";
+                } else {
+                    str += buffer.getLong() + " ";
+                }
+            }
+            break;
+
+        default:
+            dxterm.printlnErr("Unsuported data type " + type);
+            return;
+    }
+
+    dxterm.println("Chunk data of " + dxram.cidHexStr(cid) + " (chunksize " + chunk.sizeofObject() + "):");
+    dxterm.println(str);
+}
+
+function exec_raw2(cid, offset, length, type, hex) {
+
+    exec_raw(cid, type, hex, offset, length);
+}
