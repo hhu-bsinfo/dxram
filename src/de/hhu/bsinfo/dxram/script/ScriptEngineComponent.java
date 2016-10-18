@@ -154,18 +154,23 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	}
 
 	@Override
-	public String nidHexStr(final short p_nodeId) {
-		return NodeID.toHexString(p_nodeId);
+	public String shortHexStr(final short p_val) {
+		return NodeID.toHexString(p_val);
 	}
 
 	@Override
-	public String lidHexStr(final long p_lid) {
-		return ChunkID.toHexString(p_lid);
+	public String intHexStr(final int p_val) {
+		return BarrierID.toHexString(p_val);
 	}
 
 	@Override
-	public String cidHexStr(final long p_chunkId) {
-		return ChunkID.toHexString(p_chunkId);
+	public String longHexStr(final long p_val) {
+		return ChunkID.toHexString(p_val);
+	}
+
+	@Override
+	public long longStrLong(final String p_str) {
+		return Long.decode(p_str);
 	}
 
 	@Override
@@ -184,11 +189,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	@Override
 	public long cid(final short p_nid, final long p_lid) {
 		return ChunkID.getChunkID(p_nid, p_lid);
-	}
-
-	@Override
-	public long cid(final String p_cidStr) {
-		return Long.decode(p_cidStr);
 	}
 
 	@Override
@@ -256,10 +256,5 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		}
 
 		return dataStructure;
-	}
-
-	@Override
-	public String bidHexStr(final int p_barrierId) {
-		return BarrierID.toHexString(p_barrierId);
 	}
 }
