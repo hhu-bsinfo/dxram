@@ -113,6 +113,10 @@ public class TerminalService extends AbstractDXRAMService {
 			m_terminal.getScriptTerminalContext().help();
 		} else if (p_text.equals("exit")) {
 			m_loop = false;
+		} else if (p_text.equals("clear")) {
+			// ANSI escape codes (clear screen, move cursor to first row and first column)
+			System.out.print("\033[H\033[2J");
+			System.out.flush();
 		} else {
 			eveluateCommand(p_text);
 		}
