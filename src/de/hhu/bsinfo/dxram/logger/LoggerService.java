@@ -40,6 +40,15 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 	}
 
 	/**
+	 * Set the log level for the logger.
+	 *
+	 * @param p_logLevel Log level string to set.
+	 */
+	public void setLogLevel(final String p_logLevel) {
+		m_logger.setLogLevel(LogLevel.toLogLevel(p_logLevel));
+	}
+
+	/**
 	 * Set the log level for the logger on another node
 	 *
 	 * @param p_logLevel Log level to set.
@@ -59,6 +68,16 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 			}
 			// #endif /* LOGGER >= ERROR */
 		}
+	}
+
+	/**
+	 * Set the log level for the logger on another node
+	 *
+	 * @param p_logLevel Log level string to set.
+	 * @param p_nodeId   Id of the node to change the log level on
+	 */
+	public void setLogLevel(final String p_logLevel, final Short p_nodeId) {
+		setLogLevel(LogLevel.toLogLevel(p_logLevel), p_nodeId);
 	}
 
 	/**
