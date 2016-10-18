@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.script;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -170,7 +171,22 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 	@Override
 	public long longStrToLong(final String p_str) {
-		return Long.decode(p_str);
+
+		String str = p_str.toLowerCase();
+
+		if (str.length() > 1) {
+			String tmp = str.substring(0, 2);
+			// oh java...no unsigned, why?
+			if (tmp.equals("0x")) {
+				return (new BigInteger(str.substring(2), 16)).longValue();
+			} else if (tmp.equals("0b")) {
+				return (new BigInteger(str.substring(2), 2)).longValue();
+			} else if (tmp.equals("0o")) {
+				return (new BigInteger(str.substring(2), 8)).longValue();
+			}
+		}
+
+		return java.lang.Long.parseLong(str);
 	}
 
 	@Override
