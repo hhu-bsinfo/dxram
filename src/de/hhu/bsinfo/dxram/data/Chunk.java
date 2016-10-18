@@ -147,13 +147,22 @@ public class Chunk implements DataStructure {
 	@Override
 	public void importObject(final Importer p_importer) {
 
+		// ugly workaround but this is the only place that needs this
+		if (m_data == null
+				|| p_importer instanceof MessagesDataStructureImExporter
+				&& m_data.capacity() != ((MessagesDataStructureImExporter) p_importer).getPayloadSize()) {
+			m_data = ByteBuffer.allocate(((MessagesDataStructureImExporter) p_importer).getPayloadSize());
+		}
+
 		p_importer.readBytes(m_data.array());
 	}
 
 	@Override
 	public void exportObject(final Exporter p_exporter) {
 
-		p_exporter.writeBytes(m_data.array());
+		if (m_data != null) {
+			p_exporter.writeBytes(m_data.array());
+		}
 	}
 
 	@Override

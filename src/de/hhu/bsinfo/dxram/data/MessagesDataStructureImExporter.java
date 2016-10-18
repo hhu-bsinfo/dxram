@@ -41,6 +41,15 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 		m_payloadSize = p_size;
 	}
 
+	/**
+	 * Get the payload size that was set previously indicating the total size of the data strcture.
+	 *
+	 * @return Payload size.
+	 */
+	public int getPayloadSize() {
+		return m_payloadSize;
+	}
+
 	@Override
 	public void exportObject(final Exportable p_object) {
 		p_object.exportObject(this);
