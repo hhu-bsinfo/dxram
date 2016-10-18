@@ -2,18 +2,17 @@ function help() {
 
 	return "Get a chunk specified by either full cid or separted lid + nid from a storage\n" +
 			"Parameters (1): cidStr or nid|lid className\n" +
-			"Parameters (2): cidStr or nid|lid [type] [hex] [offset] [length]"
-			"Parameters (3): cidStr or nid|lid [offset] [length] [type] [hex]"
+			"Parameters (2): cidStr or nid|lid [type] [hex] [offset] [length]\n" +
+			"Parameters (3): cidStr or nid|lid [offset] [length] [type] [hex]\n" +
 			"  cidStr: Full chunk ID of the chunk to get data from (as string!)\n" +
-			"  nid: (Or) separate node id part of the chunk to get data from"
+			"  nid: (Or) separate node id part of the chunk to get data from\n" +
 			"  lid: (In combination with) separate local id part of the chunk to get data from\n" +
 			"  className: Full name of a java class that implements DataStructure (with package path). " +
 			"An instance is created, the data is stored in that instance and printed.\n " +
 			"  type: Format to print the data (str, byte, short, int, long), defaults to byte\n"  +
 			"  hex: For some representations, print as hex instead of decimal, defaults to true\n" +
 			"  offset: Offset within the chunk to start getting data from, defaults to 0\n" +
-			"  length: Number of bytes of the chunk to print, defaults to size of chunk\n"
-
+			"  length: Number of bytes of the chunk to print, defaults to size of chunk";
 }
 
 // ugly way to support overloading and type dispatching
@@ -31,12 +30,12 @@ function exec() {
 function exec_nidlid(nid, lid) {
 
     if (nid == null) {
-        dxram.printlnErr("No nid specified");
+        dxterm.printlnErr("No nid specified");
         return;
     }
 
     if (lid == null) {
-        dxram.printlnErr("No lid specified");
+        dxterm.printlnErr("No lid specified");
         return;
     }
 
@@ -46,7 +45,7 @@ function exec_nidlid(nid, lid) {
 function exec_cid(cid) {
 
     if (cid == null) {
-        dxram.printlnErr("No cid specified");
+        dxterm.printlnErr("No cid specified");
         return;
     }
 
@@ -115,7 +114,7 @@ function exec_raw(cid, type, hex, offset, length) {
     var chunks = chunkService.get(cid);
 
     if (chunks == null || chunks.first() == 0) {
-        dxram.printlnErr("Getting chunk " + dxram.cidHexStr(cid) + " failed.");
+        dxterm.printlnErr("Getting chunk " + dxram.cidHexStr(cid) + " failed.");
         return;
     }
 
@@ -139,7 +138,7 @@ function exec_raw(cid, type, hex, offset, length) {
     var str = "";
     switch (type) {
         case "str":
-            str = new java.lang.String(buffer.array(), offset, length, java.StandardCharsets.US_ASCII);
+            str = new java.lang.String(buffer.array(), offset, length, java.lang.StandardCharsets.US_ASCII);
             break;
 
         case "byte":
