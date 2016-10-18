@@ -16,9 +16,11 @@ public interface ScriptDXRAMContext {
 
 	AbstractDXRAMService service(final String p_serviceName);
 
-	String nidHexStr(final short nodeId);
+	String nidHexStr(final short p_nodeId);
 
-	String cidHexStr(final long chunkId);
+	String lidHexStr(final long p_lid);
+
+	String cidHexStr(final long p_chunkId);
 
 	NodeRole nodeRole(final String p_str);
 

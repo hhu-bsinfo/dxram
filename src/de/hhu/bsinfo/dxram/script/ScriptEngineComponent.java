@@ -153,13 +153,18 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	}
 
 	@Override
-	public String nidHexStr(final short nodeId) {
-		return NodeID.toHexString(nodeId);
+	public String nidHexStr(final short p_nodeId) {
+		return NodeID.toHexString(p_nodeId);
 	}
 
 	@Override
-	public String cidHexStr(final long chunkId) {
-		return ChunkID.toHexString(chunkId);
+	public String lidHexStr(final long p_lid) {
+		return ChunkID.toHexString(p_lid);
+	}
+
+	@Override
+	public String cidHexStr(final long p_chunkId) {
+		return ChunkID.toHexString(p_chunkId);
 	}
 
 	@Override
