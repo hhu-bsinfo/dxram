@@ -1,12 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<conf>
-	<ComputeTask>
-		<tid __id="0" __type="short">0</tid>
-		<stid __id="0" __type="short">0</stid>
-	</ComputeTask>
-	<ComputeTask>
-		<tid __id="1" __type="short">0</tid>
-		<stid __id="1" __type="short">2</stid>
-		<timeMs __id="1" __type="int">4000</timeMs>
-	</ComputeTask>
-</conf>
+{
+  "m_typeId": 0,
+  "m_subtypeId": 0,
+  "m_numRequiredSlaves": 0
+}

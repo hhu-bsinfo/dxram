@@ -2,9 +2,12 @@ package de.hhu.bsinfo.dxram.script;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -300,5 +303,14 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		}
 
 		return dataStructure;
+	}
+
+	@Override
+	public String readFile(final String p_path) {
+		try {
+			return new String(Files.readAllBytes(Paths.get(p_path)));
+		} catch (final IOException ignored) {
+			return null;
+		}
 	}
 }

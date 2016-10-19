@@ -158,4 +158,12 @@ public interface ScriptDXRAMContext {
 	 * @return New data structure instance
 	 */
 	DataStructure newDataStructure(final String p_className);
+
+	/**
+	 * Read the contents of a (text) file.
+	 *
+	 * @param p_path Path of the file to read.
+	 * @return String containing the text of the file or null on error.
+	 */
+	String readFile(final String p_path);
 }

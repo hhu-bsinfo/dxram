@@ -271,12 +271,24 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		return response.getAssignedPayloadId();
 	}
 
+	/**
+	 * Read a task payload from a json formated string.
+	 *
+	 * @param p_taskJsonFormat Json formated string.
+	 * @return Instance of the task payload read or null if creating instance failed.
+	 */
 	public TaskPayload readTaskPayloadFromJson(final String p_taskJsonFormat) {
 		Gson gson = TaskPayloadGsonContext.createGsonInstance();
 
 		return gson.fromJson(p_taskJsonFormat, TaskPayload.class);
 	}
 
+	/**
+	 * Read a list of task payloads from a json formated string
+	 *
+	 * @param p_taskListJsonFormat Fson formated string
+	 * @return List of task payload instances created from the json string
+	 */
 	public TaskPayload[] readTaskPayloadListFromJson(final String p_taskListJsonFormat) {
 
 		Gson gson = TaskPayloadGsonContext.createGsonInstance();
@@ -284,11 +296,26 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		return gson.fromJson(p_taskListJsonFormat, TaskPayload[].class);
 	}
 
+	/**
+	 * Create a task payload instance
+	 *
+	 * @param p_type    Type id of the payload to create
+	 * @param p_subtype Subtype id of the payload to create
+	 * @param p_args    Further arguments for the payload's constructor
+	 * @return Instance of the payload or null if creation failed
+	 */
 	public TaskPayload createTaskPayload(final short p_type, final short p_subtype, final Object... p_args) {
 
 		return TaskPayloadManager.createInstance(p_type, p_subtype, p_args);
 	}
 
+	/**
+	 * Create a task instance
+	 *
+	 * @param p_payload Payload for the task instance
+	 * @param p_name    Name for the task instance
+	 * @return Task instance
+	 */
 	public Task createTask(final TaskPayload p_payload, final String p_name) {
 		return new Task(p_payload, p_name);
 	}

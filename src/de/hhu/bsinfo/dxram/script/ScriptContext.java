@@ -40,7 +40,7 @@ public class ScriptContext {
 		m_logger = p_logger;
 
 		m_scriptContext = new SimpleScriptContext();
-		setDefaultBindings(m_scriptContext);
+		initContext(m_scriptContext);
 	}
 
 	/**
@@ -184,12 +184,20 @@ public class ScriptContext {
 	 *
 	 * @param p_ctx Java script context
 	 */
-	private void setDefaultBindings(final javax.script.ScriptContext p_ctx) {
+	private void initContext(final javax.script.ScriptContext p_ctx) {
 		m_scriptEngine.setContext(p_ctx);
 		Bindings bindings = m_scriptEngine.createBindings();
 
 		bindings.put("dxram", m_scriptEngineContext);
 
 		p_ctx.setBindings(bindings, javax.script.ScriptContext.ENGINE_SCOPE);
+
+		// this extends the java script engine and adds a lot of useful things like better java
+		// interoperability, package loading etc
+		try {
+			m_scriptEngine.eval("load(\"nashorn:mozilla_compat.js\")");
+		} catch (final ScriptException ignored) {
+			// ignored
+		}
 	}
 }

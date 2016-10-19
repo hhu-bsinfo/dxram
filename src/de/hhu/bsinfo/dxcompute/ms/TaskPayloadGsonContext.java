@@ -17,7 +17,7 @@ import com.google.gson.JsonParseException;
  */
 public class TaskPayloadGsonContext implements JsonDeserializer<TaskPayload> {
 
-	public static Gson createGsonInstance() {
+	static Gson createGsonInstance() {
 		return new GsonBuilder()
 				.setPrettyPrinting()
 				.excludeFieldsWithoutExposeAnnotation()
