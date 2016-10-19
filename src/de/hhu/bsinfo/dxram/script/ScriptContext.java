@@ -11,7 +11,9 @@ import java.io.FileReader;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
- * Created by nothaas on 10/14/16.
+ * Script context wrapper for java script engine.
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 14.10.16
  */
 public class ScriptContext {
 
@@ -22,6 +24,14 @@ public class ScriptContext {
 
 	private LoggerComponent m_logger;
 
+	/**
+	 * Constructor
+	 *
+	 * @param p_scriptEngineContext DXRAM script context to be exposed to the java script engine
+	 * @param p_scriptEngine        The (java) script engine to use
+	 * @param p_logger              Logger component used for logging errors
+	 * @param p_name                Name of this context
+	 */
 	ScriptContext(final ScriptDXRAMContext p_scriptEngineContext, final ScriptEngine p_scriptEngine,
 			final LoggerComponent p_logger, final String p_name) {
 		m_scriptEngine = p_scriptEngine;
@@ -33,11 +43,22 @@ public class ScriptContext {
 		setDefaultBindings(m_scriptContext);
 	}
 
-	public String getName() {
+	/**
+	 * Get the name/identifier of this context
+	 *
+	 * @return Name of this context
+	 */
+	String getName() {
 		return m_name;
 	}
 
-	public boolean load(final String p_path) {
+	/**
+	 * Load a script file into this context
+	 *
+	 * @param p_path Path to the script file
+	 * @return True if loading successful, false on error.
+	 */
+	boolean load(final String p_path) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 
@@ -66,7 +87,14 @@ public class ScriptContext {
 		return true;
 	}
 
-	public boolean bind(final String p_key, final Object p_val) {
+	/**
+	 * Bind an object to this context.
+	 *
+	 * @param p_key Key for the binding
+	 * @param p_val Object to bind
+	 * @return True if sucessful, false on error
+	 */
+	boolean bind(final String p_key, final Object p_val) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 		m_scriptEngine.put(p_key, p_val);
@@ -74,7 +102,13 @@ public class ScriptContext {
 		return true;
 	}
 
-	public boolean eval(final String p_text) {
+	/**
+	 * Evaluate the given string for this context
+	 *
+	 * @param p_text Text to evaluate
+	 * @return True on success, false on error
+	 */
+	boolean eval(final String p_text) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 
@@ -98,7 +132,13 @@ public class ScriptContext {
 		return true;
 	}
 
-	public boolean functionExists(final String p_name) {
+	/**
+	 * Check if a specific function exists in this context
+	 *
+	 * @param p_name Name of the function to check
+	 * @return True if function exists, false otherwise
+	 */
+	boolean functionExists(final String p_name) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 
@@ -110,13 +150,20 @@ public class ScriptContext {
 		}
 	}
 
-	public Object call(final String p_name, Object... args) {
+	/**
+	 * Call a function that is defined in this context
+	 *
+	 * @param p_name Name of the function
+	 * @param p_args Arguments for the function
+	 * @return Return value of the function (and also null on error but can be return value of function as welL)
+	 */
+	Object call(final String p_name, final Object... p_args) {
 		m_scriptEngine.setContext(m_scriptContext);
 
 		Invocable inv = (Invocable) m_scriptEngine;
 
 		try {
-			return inv.invokeFunction(p_name, args);
+			return inv.invokeFunction(p_name, p_args);
 		} catch (final ScriptException e) {
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Calling '" + p_name + "' failed: " + e.getMessage());
@@ -132,6 +179,11 @@ public class ScriptContext {
 
 	// -------------------------------------------------------------------------------------------------------
 
+	/**
+	 * Set the default bindings for this context i.e. bind the dxram context to it.
+	 *
+	 * @param p_ctx Java script context
+	 */
 	private void setDefaultBindings(final javax.script.ScriptContext p_ctx) {
 		m_scriptEngine.setContext(p_ctx);
 		Bindings bindings = m_scriptEngine.createBindings();
