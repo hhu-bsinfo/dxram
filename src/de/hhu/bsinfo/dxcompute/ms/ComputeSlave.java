@@ -32,7 +32,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
 	private short m_masterNodeId = NodeID.INVALID_ID;
 
-	private volatile AbstractTaskPayload m_task;
+	private volatile TaskPayload m_task;
 	private volatile TaskContextData m_ctxData;
 	private Lock m_executeTaskLock = new ReentrantLock(false);
 	private Lock m_handleSignalLock = new ReentrantLock(false);
@@ -297,7 +297,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 	 */
 	private void incomingExecuteTaskRequest(final ExecuteTaskRequest p_message) {
 		ExecuteTaskResponse response = new ExecuteTaskResponse(p_message);
-		AbstractTaskPayload task = null;
+		TaskPayload task = null;
 
 		if (m_executeTaskLock.tryLock() && m_state == State.STATE_IDLE) {
 			task = p_message.getTaskPayload();

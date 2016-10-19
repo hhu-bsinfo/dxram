@@ -3,11 +3,10 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -16,26 +15,18 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class PrintTaskPayload extends AbstractTaskPayload {
+public class PrintTaskPayload extends TaskPayload {
 
-	private static final Argument MS_ARG_MSG =
-			new Argument("msg", null, false, "Message to print.");
-
+	@Expose
 	private String m_msg = "";
 
 	/**
 	 * Constructor
-	 */
-	public PrintTaskPayload() {
-		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK);
-	}
-
-	/**
-	 * Message to print.
 	 *
-	 * @param p_msg Message.
+	 * @param p_msg Message to print
 	 */
-	public void setMessage(final String p_msg) {
+	public PrintTaskPayload(final String p_msg) {
+		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_TASK, NUM_REQUIRED_SLAVES_ARBITRARY);
 		m_msg = p_msg;
 	}
 
@@ -48,18 +39,6 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 	@Override
 	public void handleSignal(final Signal p_signal) {
 		// ignore signals
-	}
-
-	@Override
-	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandRegisterArguments(p_argumentList);
-		p_argumentList.setArgument(MS_ARG_MSG);
-	}
-
-	@Override
-	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandCallbackForArguments(p_argumentList);
-		m_msg = p_argumentList.getArgumentValue(MS_ARG_MSG, String.class);
 	}
 
 	@Override

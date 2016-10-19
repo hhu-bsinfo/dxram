@@ -5,7 +5,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskListener;
@@ -67,7 +67,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 		MasterSlaveComputeService computeService =
 				getTerminalDelegate().getDXRAMService(MasterSlaveComputeService.class);
 
-		AbstractTaskPayload payload;
+		TaskPayload payload;
 		try {
 			payload = TaskPayloadManager.createInstance(tid, stid);
 		} catch (final Exception e) {
@@ -80,7 +80,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 		// get parameters for payload
 		ArgumentList payloadRegisteredArguments = new ArgumentList();
 		ArgumentList payloadCallbackArguments = new ArgumentList();
-		payload.terminalCommandRegisterArguments(payloadRegisteredArguments);
+		//payload.terminalCommandRegisterArguments(payloadRegisteredArguments);
 
 		// check if parameters were already added via terminal command args
 		for (Argument argument : payloadRegisteredArguments.getArgumentMap().values()) {
@@ -96,7 +96,7 @@ public class TcmdMSTaskSubmit extends AbstractTerminalCommand implements TaskLis
 
 		// provide arguments to task payload
 		try {
-			payload.terminalCommandCallbackForArguments(payloadCallbackArguments);
+			//payload.terminalCommandCallbackForArguments(payloadCallbackArguments);
 		} catch (final NullPointerException e) {
 			// happens if an argument was not provided (probably typo)
 			getTerminalDelegate().println("Parsing arguments of task with type id " + tid + " subtype id " + stid

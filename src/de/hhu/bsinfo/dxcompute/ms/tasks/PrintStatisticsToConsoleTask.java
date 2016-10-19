@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxram.stats.StatisticsService;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class PrintStatisticsToConsoleTask extends AbstractPrintStatisticsTask {
+public class PrintStatisticsToConsoleTask extends PrintStatisticsTask {
 
 	/**
 	 * Constructor

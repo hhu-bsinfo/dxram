@@ -5,7 +5,8 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
@@ -19,8 +20,6 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -29,31 +28,42 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
+public class GraphLoadOrderedEdgeListTaskPayload extends TaskPayload {
 
-	private static final Argument MS_ARG_PATH =
-			new Argument("graphPath", null, false, "Path containing the graph data to load.");
-	private static final Argument MS_ARG_VERTEX_BATCH_SIZE =
-			new Argument("vertexBatchSize", null, false, "Size of a vertex batch for the loading process.");
-	private static final Argument MS_ARG_FILTER_DUP_EDGES =
-			new Argument("filterDupEdges", null, false, "Check for and filter duplicate edges per vertex.");
-	private static final Argument MS_ARG_FILTER_SELF_LOOPS =
-			new Argument("filterSelfLoops", null, false, "Check for and filter self loops per vertex.");
+	@Expose
+	private String m_path = "./";
+	@Expose
+	private int m_vertexBatchSize = 100;
+	@Expose
+	private boolean m_filterDupEdges;
+	@Expose
+	private boolean m_filterSelfLoops;
 
 	private TaskContext m_ctx;
 	private LoggerService m_loggerService;
 	private ChunkService m_chunkService;
 
-	private String m_path = "./";
-	private int m_vertexBatchSize = 100;
-	private boolean m_filterDupEdges;
-	private boolean m_filterSelfLoops;
-
 	/**
 	 * Constructor
+	 *
+	 * @param p_numReqSlaves    Number of slaves required to run this task
+	 * @param p_path            Path containing the graph data to load
+	 * @param p_vertexBatchSize Size of a vertex batch for the loading process
+	 * @param p_filterDupEdges  Check for and filter duplicate edges per vertex
+	 * @param p_filterSelfLoops Check for and filter self loops per vertex
 	 */
-	public GraphLoadOrderedEdgeListTaskPayload() {
-		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_OEL);
+	public GraphLoadOrderedEdgeListTaskPayload(
+			final short p_numReqSlaves,
+			final String p_path,
+			final int p_vertexBatchSize,
+			final boolean p_filterDupEdges,
+			final boolean p_filterSelfLoops) {
+		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_OEL, p_numReqSlaves);
+
+		m_path = p_path;
+		m_vertexBatchSize = p_vertexBatchSize;
+		m_filterDupEdges = p_filterDupEdges;
+		m_filterSelfLoops = p_filterSelfLoops;
 	}
 
 	/**
@@ -150,26 +160,6 @@ public class GraphLoadOrderedEdgeListTaskPayload extends AbstractTaskPayload {
 			default:
 				break;
 		}
-	}
-
-	@Override
-	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandRegisterArguments(p_argumentList);
-
-		p_argumentList.setArgument(MS_ARG_PATH);
-		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
-		p_argumentList.setArgument(MS_ARG_FILTER_DUP_EDGES);
-		p_argumentList.setArgument(MS_ARG_FILTER_SELF_LOOPS);
-	}
-
-	@Override
-	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandCallbackForArguments(p_argumentList);
-
-		m_path = p_argumentList.getArgumentValue(MS_ARG_PATH, String.class);
-		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
-		m_filterDupEdges = p_argumentList.getArgumentValue(MS_ARG_FILTER_DUP_EDGES, Boolean.class);
-		m_filterSelfLoops = p_argumentList.getArgumentValue(MS_ARG_FILTER_SELF_LOOPS, Boolean.class);
 	}
 
 	@Override

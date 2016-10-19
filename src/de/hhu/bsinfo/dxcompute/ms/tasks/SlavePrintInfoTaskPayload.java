@@ -1,7 +1,7 @@
 
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.menet.NodeID;
@@ -11,12 +11,14 @@ import de.hhu.bsinfo.menet.NodeID;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class SlavePrintInfoTaskPayload extends AbstractTaskPayload {
+public class SlavePrintInfoTaskPayload extends TaskPayload {
+
 	/**
 	 * Constructor
 	 */
 	public SlavePrintInfoTaskPayload() {
-		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK);
+		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_SLAVE_PRINT_INFO_TASK,
+				NUM_REQUIRED_SLAVES_ARBITRARY);
 	}
 
 	@Override

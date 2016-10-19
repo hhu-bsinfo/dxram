@@ -3,7 +3,6 @@ package de.hhu.bsinfo.dxgraph.algo.bfs;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -11,7 +10,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
@@ -41,42 +41,32 @@ import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.serialization.Exporter;
-import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Compute task to run BFS on a loaded graph.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
  */
-public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
-
-	private static final Argument MS_ARG_BFS_ROOT =
-			new Argument("bfsRootNameserviceEntryName", null, false,
-					"Name of the nameservice entry for the roots to use for BFS.");
-	private static final Argument MS_ARG_VERTEX_BATCH_SIZE =
-			new Argument("vertexBatchSize", null, false, "Number of vertices to cache as a batch for processing.");
-	private static final Argument MS_ARG_VERTEX_MSG_BATCH_SIZE =
-			new Argument("vertexMessageBatchSize", null, false,
-					"Name of vertices to send as a single batch over the network.");
-	private static final Argument MS_ARG_NUM_THREADS =
-			new Argument("numThreadsPerNode", null, false, "Number of threads to use for BFS on a single node.");
-	private static final Argument MS_ARG_MARK_VERTICES =
-			new Argument("markVertices", "true", true,
-					"Mark the actual vertices/data visited with the level. On false, we just remember if we have visited it");
-	private static final Argument MS_ARG_BEAMER_MODE =
-			new Argument("beamerMode", "true", true,
-					"Run the BFS algorithm with bottom up optimized mode (beamer). False to run top-down approach only");
-	private static final Argument MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG =
-			new Argument("beamerFormulaGraphEdgeDeg", "16", true,
-					"Avg. edge degree of the graph (parameter on typical rmat generators). "
-							+ "Used to determine top down <-> bottom up switching on beamer mode");
-	private static final Argument MS_ARG_ABORT_BFS_ON_ERROR =
-			new Argument("abortBFSOnError", null, true, "Abort BFS execution on error or continue even on errors");
+public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 
 	private static final String MS_BARRIER_IDENT_0 = "BF0";
+
+	@Expose
+	private String m_bfsRootNameserviceEntry = GraphLoadBFSRootListTaskPayload.MS_BFS_ROOTS + "0";
+	@Expose
+	private int m_vertexBatchSize = 100;
+	@Expose
+	private int m_vertexMessageBatchSize = 100;
+	@Expose
+	private int m_numberOfThreadsPerNode = 4;
+	@Expose
+	private boolean m_markVertices = true;
+	@Expose
+	private boolean m_beamerMode = true;
+	@Expose
+	private int m_beamerFormulaGraphEdgeDeg = 16;
+	@Expose
+	private boolean m_abortBFSOnError = true;
 
 	private TaskContext m_ctx;
 	private LoggerService m_loggerService;
@@ -91,23 +81,45 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	private short m_nodeId = NodeID.INVALID_ID;
 	private GraphPartitionIndex m_graphPartitionIndex;
 
-	private String m_bfsRootNameserviceEntry = GraphLoadBFSRootListTaskPayload.MS_BFS_ROOTS + "0";
-	private int m_vertexBatchSize = 100;
-	private int m_vertexMessageBatchSize = 100;
-	private int m_numberOfThreadsPerNode = 4;
-	private boolean m_markVertices = true;
-	private boolean m_beamerMode = true;
-	private int m_beamerFormulaGraphEdgeDeg = 16;
-	private boolean m_abortBFSOnError = true;
-
 	private BFS m_curBFS = null;
 	private Lock m_signalLock = new ReentrantLock(false);
 	private volatile boolean m_signalAbortTriggered = false;
 
 	private int m_barrierId0 = BarrierID.INVALID_ID;
 
-	public GraphAlgorithmBFSTaskPayload() {
-		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS);
+	/**
+	 * Constructor
+	 *
+	 * @param p_numReqSlaves              Number of slaves required to run this task
+	 * @param p_bfsRootNameserviceEntry   Name of the nameservice entry for the roots to use for BFS
+	 * @param p_vertexBatchSize           Number of vertices to cache as a batch for processing
+	 * @param p_vertexMessageBatchSize    Name of vertices to send as a single batch over the network
+	 * @param p_numberOfThreadsPerNode    Number of threads to use for BFS on a single node
+	 * @param p_markVertices              Mark the actual vertices/data visited with the level. On false, we just remember if we have visited it
+	 * @param p_beamerMode                Run the BFS algorithm with bottom up optimized mode (beamer). False to run top-down approach only
+	 * @param p_beamerFormulaGraphEdgeDeg Avg. edge degree of the graph (parameter on typical rmat generators). Used to determine top down <-> bottom up switching on beamer mode
+	 * @param p_abortBFSOnError           Abort BFS execution on error or continue even on errors
+	 */
+	public GraphAlgorithmBFSTaskPayload(
+			final short p_numReqSlaves,
+			final String p_bfsRootNameserviceEntry,
+			final int p_vertexBatchSize,
+			final int p_vertexMessageBatchSize,
+			final int p_numberOfThreadsPerNode,
+			final boolean p_markVertices,
+			final boolean p_beamerMode,
+			final int p_beamerFormulaGraphEdgeDeg,
+			final boolean p_abortBFSOnError) {
+		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS, p_numReqSlaves);
+
+		m_bfsRootNameserviceEntry = p_bfsRootNameserviceEntry;
+		m_vertexBatchSize = p_vertexBatchSize;
+		m_vertexMessageBatchSize = p_vertexMessageBatchSize;
+		m_numberOfThreadsPerNode = p_numberOfThreadsPerNode;
+		m_markVertices = p_markVertices;
+		m_beamerMode = p_beamerMode;
+		m_beamerFormulaGraphEdgeDeg = p_beamerFormulaGraphEdgeDeg;
+		m_abortBFSOnError = p_abortBFSOnError;
 	}
 
 	@Override
@@ -321,67 +333,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				break;
 			}
 		}
-	}
-
-	@Override
-	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandRegisterArguments(p_argumentList);
-
-		p_argumentList.setArgument(MS_ARG_BFS_ROOT);
-		p_argumentList.setArgument(MS_ARG_VERTEX_BATCH_SIZE);
-		p_argumentList.setArgument(MS_ARG_VERTEX_MSG_BATCH_SIZE);
-		p_argumentList.setArgument(MS_ARG_NUM_THREADS);
-		p_argumentList.setArgument(MS_ARG_MARK_VERTICES);
-		p_argumentList.setArgument(MS_ARG_BEAMER_MODE);
-		p_argumentList.setArgument(MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG);
-		p_argumentList.setArgument(MS_ARG_ABORT_BFS_ON_ERROR);
-	}
-
-	@Override
-	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandCallbackForArguments(p_argumentList);
-
-		m_bfsRootNameserviceEntry = p_argumentList.getArgumentValue(MS_ARG_BFS_ROOT, String.class);
-		m_vertexBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_BATCH_SIZE, Integer.class);
-		m_vertexMessageBatchSize = p_argumentList.getArgumentValue(MS_ARG_VERTEX_MSG_BATCH_SIZE, Integer.class);
-		m_numberOfThreadsPerNode = p_argumentList.getArgumentValue(MS_ARG_NUM_THREADS, Integer.class);
-		m_markVertices = p_argumentList.getArgumentValue(MS_ARG_MARK_VERTICES, Boolean.class);
-		m_beamerMode = p_argumentList.getArgumentValue(MS_ARG_BEAMER_MODE, Boolean.class);
-		m_beamerFormulaGraphEdgeDeg =
-				p_argumentList.getArgumentValue(MS_ARG_BEAMER_FORMULA_GRAPH_EDGE_DEG, Integer.class);
-		m_abortBFSOnError = p_argumentList.getArgumentValue(MS_ARG_ABORT_BFS_ON_ERROR, Boolean.class);
-	}
-
-	@Override
-	public void exportObject(final Exporter p_exporter) {
-		super.exportObject(p_exporter);
-
-		p_exporter.writeInt(m_bfsRootNameserviceEntry.length());
-		p_exporter.writeBytes(m_bfsRootNameserviceEntry.getBytes(StandardCharsets.US_ASCII));
-		p_exporter.writeInt(m_vertexBatchSize);
-		p_exporter.writeInt(m_vertexMessageBatchSize);
-		p_exporter.writeInt(m_numberOfThreadsPerNode);
-		p_exporter.writeByte((byte) (m_markVertices ? 1 : 0));
-		p_exporter.writeByte((byte) (m_beamerMode ? 1 : 0));
-		p_exporter.writeInt(m_beamerFormulaGraphEdgeDeg);
-		p_exporter.writeByte((byte) (m_abortBFSOnError ? 1 : 0));
-	}
-
-	@Override
-	public void importObject(final Importer p_importer) {
-		super.importObject(p_importer);
-
-		int strLength = p_importer.readInt();
-		byte[] tmp = new byte[strLength];
-		p_importer.readBytes(tmp);
-		m_bfsRootNameserviceEntry = new String(tmp, StandardCharsets.US_ASCII);
-		m_vertexBatchSize = p_importer.readInt();
-		m_vertexMessageBatchSize = p_importer.readInt();
-		m_numberOfThreadsPerNode = p_importer.readInt();
-		m_markVertices = p_importer.readByte() > 0;
-		m_beamerMode = p_importer.readByte() > 0;
-		m_beamerFormulaGraphEdgeDeg = p_importer.readInt();
-		m_abortBFSOnError = p_importer.readByte() > 0;
 	}
 
 	@Override

@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.menet.AbstractRequest;
@@ -15,7 +15,7 @@ import de.hhu.bsinfo.menet.AbstractRequest;
  */
 public class SubmitTaskRequest extends AbstractRequest {
 
-	private AbstractTaskPayload m_task;
+	private TaskPayload m_task;
 
 	/**
 	 * Creates an instance of RemoteExecuteTaskRequest.
@@ -32,7 +32,7 @@ public class SubmitTaskRequest extends AbstractRequest {
 	 * @param p_destination the destination node id.
 	 * @param p_task        Task to submit to the remote master node.
 	 */
-	public SubmitTaskRequest(final short p_destination, final AbstractTaskPayload p_task) {
+	public SubmitTaskRequest(final short p_destination, final TaskPayload p_task) {
 		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST);
 		m_task = p_task;
 	}
@@ -42,7 +42,7 @@ public class SubmitTaskRequest extends AbstractRequest {
 	 *
 	 * @return Task payload for the master
 	 */
-	public AbstractTaskPayload getTaskPayload() {
+	public TaskPayload getTaskPayload() {
 		return m_task;
 	}
 

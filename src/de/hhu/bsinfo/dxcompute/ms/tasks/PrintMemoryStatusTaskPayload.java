@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import java.io.PrintStream;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxram.chunk.ChunkService.Status;
 
 /**
@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService.Status;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-abstract class AbstractPrintMemoryStatusTaskPayload extends AbstractTaskPayload {
+abstract class PrintMemoryStatusTaskPayload extends TaskPayload {
 
 	/**
 	 * Constructor
@@ -22,8 +22,8 @@ abstract class AbstractPrintMemoryStatusTaskPayload extends AbstractTaskPayload 
 	 * @param p_typeId    Type id
 	 * @param p_subtypeId Subtype id
 	 */
-	AbstractPrintMemoryStatusTaskPayload(final short p_typeId, final short p_subtypeId) {
-		super(p_typeId, p_subtypeId);
+	PrintMemoryStatusTaskPayload(final short p_typeId, final short p_subtypeId) {
+		super(p_typeId, p_subtypeId, NUM_REQUIRED_SLAVES_ARBITRARY);
 	}
 
 	/**

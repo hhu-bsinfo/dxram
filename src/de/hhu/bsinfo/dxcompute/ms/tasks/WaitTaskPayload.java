@@ -1,11 +1,10 @@
 
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -14,36 +13,20 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class WaitTaskPayload extends AbstractTaskPayload {
+public class WaitTaskPayload extends TaskPayload {
 
-	private static final Argument MS_ARG_TIME =
-			new Argument("timeMs", null, false, "Amount of time to wait in ms.");
-
+	@Expose
 	private int m_waitMs;
 
 	/**
 	 * Constructor
-	 */
-	public WaitTaskPayload() {
-		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK);
-	}
-
-	/**
-	 * Set the time to wait in ms.
 	 *
-	 * @param p_timeMs Time to wait in ms.
+	 * @param p_numReqSlaves Num of slaves request to run this job
+	 * @param p_timeMs       Amount of time to wait in ms.
 	 */
-	public void setWaitTimeMs(final int p_timeMs) {
+	public WaitTaskPayload(final short p_numReqSlaves, final int p_timeMs) {
+		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_WAIT_TASK, p_numReqSlaves);
 		m_waitMs = p_timeMs;
-	}
-
-	/**
-	 * Set the number of slaves to wait for before starting this task.
-	 *
-	 * @param p_numSlaves Number of slaves to wait for.
-	 */
-	public void setSlaveCount(final short p_numSlaves) {
-		setNumRequiredSlaves(p_numSlaves);
 	}
 
 	@Override
@@ -60,18 +43,6 @@ public class WaitTaskPayload extends AbstractTaskPayload {
 	@Override
 	public void handleSignal(final Signal p_signal) {
 		// ignore signals
-	}
-
-	@Override
-	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandRegisterArguments(p_argumentList);
-		p_argumentList.setArgument(MS_ARG_TIME);
-	}
-
-	@Override
-	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandCallbackForArguments(p_argumentList);
-		m_waitMs = p_argumentList.getArgumentValue(MS_ARG_TIME, Integer.class);
 	}
 
 	@Override

@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
@@ -17,7 +17,7 @@ import de.hhu.bsinfo.menet.NodeID;
  * Base class to print the statistics.
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
+abstract class PrintStatisticsTask extends TaskPayload {
 
 	/**
 	 * Constructor
@@ -29,8 +29,8 @@ abstract class AbstractPrintStatisticsTask extends AbstractTaskPayload {
 	 * @param p_subtypeId
 	 *            Subtype id
 	 */
-	AbstractPrintStatisticsTask(final short p_typeId, final short p_subtypeId) {
-		super(p_typeId, p_subtypeId);
+	PrintStatisticsTask(final short p_typeId, final short p_subtypeId) {
+		super(p_typeId, p_subtypeId, NUM_REQUIRED_SLAVES_ARBITRARY);
 	}
 
 	/**

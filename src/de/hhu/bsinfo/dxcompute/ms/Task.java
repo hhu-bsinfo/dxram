@@ -12,7 +12,7 @@ import de.hhu.bsinfo.menet.NodeID;
  */
 public class Task {
 
-	private AbstractTaskPayload m_payload;
+	private TaskPayload m_payload;
 	private String m_name;
 	private int m_taskIdAssigned = -1;
 	private short m_nodeIdSubmitted = -1;
@@ -25,7 +25,7 @@ public class Task {
 	 * @param p_payload Payload for that task containing the code and data to execute.
 	 * @param p_name    Name of the task (debug only).
 	 */
-	public Task(final AbstractTaskPayload p_payload, final String p_name) {
+	public Task(final TaskPayload p_payload, final String p_name) {
 		m_payload = p_payload;
 		m_name = p_name;
 	}
@@ -105,7 +105,7 @@ public class Task {
 	 *
 	 * @return TaskPayload
 	 */
-	AbstractTaskPayload getPayload() {
+	TaskPayload getPayload() {
 		return m_payload;
 	}
 

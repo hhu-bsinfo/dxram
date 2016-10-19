@@ -8,7 +8,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
@@ -16,8 +17,6 @@ import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importer;
 
@@ -28,21 +27,23 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
+public class GraphLoadPartitionIndexTaskPayload extends TaskPayload {
 	public static final String MS_PART_INDEX_IDENT = "GPI";
 
-	private static final Argument MS_ARG_PATH_FILE =
-			new Argument("graphPartitionIndexFile", null, false, "Partition index file to load");
+	@Expose
+	private String m_pathFile = "./";
 
 	private LoggerService m_loggerService;
 
-	private String m_pathFile = "./";
-
 	/**
 	 * Constructor
+	 *
+	 * @param p_numReqSlaves Number of slaves required to run this task
+	 * @param p_pathFile     Partition index file to load
 	 */
-	public GraphLoadPartitionIndexTaskPayload() {
-		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_PART_INDEX);
+	public GraphLoadPartitionIndexTaskPayload(final short p_numReqSlaves, final String p_pathFile) {
+		super(GraphTaskPayloads.TYPE, GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_PART_INDEX, p_numReqSlaves);
+		m_pathFile = p_pathFile;
 	}
 
 	/**
@@ -117,20 +118,6 @@ public class GraphLoadPartitionIndexTaskPayload extends AbstractTaskPayload {
 				break;
 			}
 		}
-	}
-
-	@Override
-	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandRegisterArguments(p_argumentList);
-
-		p_argumentList.setArgument(MS_ARG_PATH_FILE);
-	}
-
-	@Override
-	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
-		super.terminalCommandCallbackForArguments(p_argumentList);
-
-		m_pathFile = p_argumentList.getArgumentValue(MS_ARG_PATH_FILE, String.class);
 	}
 
 	@Override

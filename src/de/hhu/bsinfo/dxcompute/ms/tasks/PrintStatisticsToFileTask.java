@@ -6,39 +6,30 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
-import de.hhu.bsinfo.utils.args.ArgumentList;
-import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 
 /**
  * Print the statistics to a file.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
+public class PrintStatisticsToFileTask extends PrintStatisticsTask {
 
-	private static final Argument MS_ARG_OUTPUT_PATH =
-			new Argument("outputPath", null, false, "Filepath to write the statistics to.");
-
+	@Expose
 	private String m_path;
 
 	/**
 	 * Constructor
-	 */
-	public PrintStatisticsToFileTask() {
-		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK);
-	}
-
-	/**
-	 * Set the filepath to the output file to print to.
 	 *
 	 * @param p_path Filepath of the file to print to.
 	 */
-	public void setOutputFilePath(final String p_path) {
+	public PrintStatisticsToFileTask(final String p_path) {
+		super(MasterSlaveTaskPayloads.TYPE, MasterSlaveTaskPayloads.SUBTYPE_PRINT_STATISTICS_FILE_TASK);
 		m_path = p_path;
 	}
 
@@ -94,15 +85,5 @@ public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
 	@Override
 	public void handleSignal(final Signal p_signal) {
 		// ignore signals
-	}
-
-	@Override
-	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
-		p_argumentList.setArgument(MS_ARG_OUTPUT_PATH);
-	}
-
-	@Override
-	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
-		m_path = p_argumentList.getArgumentValue(MS_ARG_OUTPUT_PATH, String.class);
 	}
 }

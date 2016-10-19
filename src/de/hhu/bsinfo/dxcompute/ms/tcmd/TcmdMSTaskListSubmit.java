@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxcompute.ms.Task;
 import de.hhu.bsinfo.dxcompute.ms.TaskListener;
@@ -78,9 +78,9 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			return true;
 		}
 
-		ArrayList<AbstractTaskPayload> taskPayloads = parseTaskList(taskList);
+		ArrayList<TaskPayload> taskPayloads = parseTaskList(taskList);
 		m_finished = new Semaphore(-(taskPayloads.size() - 1), false);
-		for (AbstractTaskPayload taskPayload : taskPayloads) {
+		for (TaskPayload taskPayload : taskPayloads) {
 			Task task = new Task(taskPayload, name + m_taskCounter++);
 			task.registerTaskListener(this);
 
@@ -162,8 +162,8 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 	 * @param p_taskList Task list to parse.
 	 * @return List of task payload objects created from the provided list.
 	 */
-	private ArrayList<AbstractTaskPayload> parseTaskList(final Configuration p_taskList) {
-		ArrayList<AbstractTaskPayload> taskList = new ArrayList<>();
+	private ArrayList<TaskPayload> parseTaskList(final Configuration p_taskList) {
+		ArrayList<TaskPayload> taskList = new ArrayList<>();
 
 		Map<Integer, Short> tids = p_taskList.getValues("/ComputeTask/tid", Short.class);
 		Map<Integer, Short> stids = p_taskList.getValues("/ComputeTask/stid", Short.class);
@@ -196,7 +196,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 				continue;
 			}
 
-			AbstractTaskPayload taskPayload;
+			TaskPayload taskPayload;
 			try {
 				taskPayload = TaskPayloadManager.createInstance(tid, stid);
 			} catch (final RuntimeException e) {
@@ -209,7 +209,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			// grab the arguments the task expects
 			ArgumentList taskPayloadArguments = new ArgumentList();
 			ArgumentList taskPayloadArgumentsConfig = new ArgumentList();
-			taskPayload.terminalCommandRegisterArguments(taskPayloadArguments);
+			//taskPayload.terminalCommandRegisterArguments(taskPayloadArguments);
 
 			// grab the values from the config
 			for (Argument argument : taskPayloadArguments.getArgumentMap().values()) {
@@ -227,7 +227,7 @@ public class TcmdMSTaskListSubmit extends AbstractTerminalCommand implements Tas
 			}
 
 			try {
-				taskPayload.terminalCommandCallbackForArguments(taskPayloadArgumentsConfig);
+				//taskPayload.terminalCommandCallbackForArguments(taskPayloadArgumentsConfig);
 			} catch (final NullPointerException e) {
 				// happens if an argument was not provided (probably typo)
 				getTerminalDelegate()

@@ -10,7 +10,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
-public class PrintMemoryStatusToConsoleTask extends AbstractPrintMemoryStatusTaskPayload {
+public class PrintMemoryStatusToConsoleTask extends PrintMemoryStatusTaskPayload {
 
 	/**
 	 * Constructor

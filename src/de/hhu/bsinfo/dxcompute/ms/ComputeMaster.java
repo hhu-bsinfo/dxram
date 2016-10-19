@@ -253,7 +253,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		// get next task
 		m_taskCount.decrementAndGet();
 		Task task = m_tasks.poll();
-		AbstractTaskPayload taskPayload = task.getPayload();
+		TaskPayload taskPayload = task.getPayload();
 		if (taskPayload == null) {
 			// #if LOGGER >= ERROR
 			m_logger.error(getClass(), "Cannot proceed with task " + task + ", missing payload.");
@@ -263,7 +263,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		}
 
 		// check if enough slaves are available for the task to run
-		if (task.getPayload().getNumRequiredSlaves() != AbstractTaskPayload.NUM_REQUIRED_SLAVES_ARBITRARY
+		if (task.getPayload().getNumRequiredSlaves() != TaskPayload.NUM_REQUIRED_SLAVES_ARBITRARY
 				&& task.getPayload().getNumRequiredSlaves() > m_signedOnSlaves.size()) {
 			// #if LOGGER >= INFO
 			m_logger.info(getClass(),

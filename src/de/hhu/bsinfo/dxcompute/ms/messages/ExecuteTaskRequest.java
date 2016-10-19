@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.TaskContextData;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
@@ -18,7 +18,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 
 	private int m_barrierIdentifier = -1;
 	private TaskContextData m_ctxData;
-	private AbstractTaskPayload m_task;
+	private TaskPayload m_task;
 
 	/**
 	 * Creates an instance of ExecuteTaskRequest.
@@ -37,7 +37,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	 * @param p_task              Task to execute.
 	 */
 	public ExecuteTaskRequest(final short p_destination, final int p_barrierIdentifier,
-			final TaskContextData p_ctxData, final AbstractTaskPayload p_task) {
+			final TaskContextData p_ctxData, final TaskPayload p_task) {
 		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST);
 		m_barrierIdentifier = p_barrierIdentifier;
 		m_ctxData = p_ctxData;
@@ -67,7 +67,7 @@ public class ExecuteTaskRequest extends AbstractRequest {
 	 *
 	 * @return Task payload.
 	 */
-	public AbstractTaskPayload getTaskPayload() {
+	public TaskPayload getTaskPayload() {
 		return m_task;
 	}
 

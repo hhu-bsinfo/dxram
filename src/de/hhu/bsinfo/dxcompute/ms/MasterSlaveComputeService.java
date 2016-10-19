@@ -2,10 +2,15 @@
 package de.hhu.bsinfo.dxcompute.ms;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.gson.Gson;
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
@@ -70,6 +75,30 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	 */
 	public ComputeRole getComputeRole() {
 		return m_computeMSInstance.getRole();
+	}
+
+	/**
+	 * Get a list of registered task payloads
+	 *
+	 * @return List of registered task payloads
+	 */
+	public List<Map.Entry<Integer, Class<? extends TaskPayload>>> getRegisteredTaskPayloads() {
+		Map<Integer, Class<? extends TaskPayload>> map = TaskPayloadManager.getRegisteredTaskPayloadClasses();
+
+		// sort the list by tid and stid
+		List<Map.Entry<Integer, Class<? extends TaskPayload>>> list =
+				new LinkedList<>(map.entrySet());
+		Collections.sort(list, (p_o1, p_o2) -> {
+			if (p_o1.getKey() < p_o2.getKey()) {
+				return -1;
+			} else if (p_o1.getKey() > p_o2.getKey()) {
+				return 1;
+			} else {
+				return 0;
+			}
+		});
+
+		return list;
 	}
 
 	/**
@@ -240,6 +269,28 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		// #endif /* LOGGER >= INFO */
 
 		return response.getAssignedPayloadId();
+	}
+
+	public TaskPayload readTaskPayloadFromJson(final String p_taskJsonFormat) {
+		Gson gson = TaskPayloadGsonContext.createGsonInstance();
+
+		return gson.fromJson(p_taskJsonFormat, TaskPayload.class);
+	}
+
+	public TaskPayload[] readTaskPayloadListFromJson(final String p_taskListJsonFormat) {
+
+		Gson gson = TaskPayloadGsonContext.createGsonInstance();
+
+		return gson.fromJson(p_taskListJsonFormat, TaskPayload[].class);
+	}
+
+	public TaskPayload createTaskPayload(final short p_type, final short p_subtype, final Object... p_args) {
+
+		return TaskPayloadManager.createInstance(p_type, p_subtype, p_args);
+	}
+
+	public Task createTask(final TaskPayload p_payload, final String p_name) {
+		return new Task(p_payload, p_name);
 	}
 
 	@Override
