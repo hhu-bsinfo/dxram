@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Put data in the specified chunk. Either use a full cid or separete nid + lid to specify the chunk id. " +

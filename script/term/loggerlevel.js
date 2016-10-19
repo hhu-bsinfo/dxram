@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Change the output level of the logger\n" +

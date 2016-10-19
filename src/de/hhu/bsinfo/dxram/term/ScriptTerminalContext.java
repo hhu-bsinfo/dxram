@@ -128,6 +128,13 @@ public class ScriptTerminalContext {
 		}
 
 		/**
+		 * Load imports for the terminal command
+		 */
+		public void imports() {
+			m_scriptEngine.getContext(m_name).call("imports");
+		}
+
+		/**
 		 * Print the terminal command's help message
 		 */
 		public void help() {

@@ -15,8 +15,6 @@ function help() {
 
 function exec(fileName, cgid, wait) {
 
-    imports();
-
     if (fileName == null) {
         dxterm.printlnErr("No fileName specified");
         return;

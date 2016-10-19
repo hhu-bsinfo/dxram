@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 	return "Shutdown a DXRAM node\n" +
 			"Parameters: nid kill\n" +

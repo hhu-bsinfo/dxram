@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Get a chunk from the temporary storage\n" +

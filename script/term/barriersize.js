@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Change the size of an existing barrier, keeping its id\n" +

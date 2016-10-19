@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 	return "Migrate a chunk from one peer to another one\n" +
 			"Parameters: cidStr or nid|lid targetNid\n" +

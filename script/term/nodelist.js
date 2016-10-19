@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 	return "List all available nodes or nodes of a specific type\n" +
 			"Parameters: role\n" +

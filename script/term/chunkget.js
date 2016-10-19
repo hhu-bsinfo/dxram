@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Get a chunk specified by either full cid or separted lid + nid from a storage\n" +

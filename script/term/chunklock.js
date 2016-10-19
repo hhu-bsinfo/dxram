@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 	return "Lock a chunk\n" +
 			"Parameters: cidStr | nid lid\n" +

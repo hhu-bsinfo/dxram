@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Register a nameservice entry for a specific chunk id\n" +

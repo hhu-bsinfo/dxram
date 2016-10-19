@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 	return "Get the list of all locked chunks of a node\n" +
 			"Parameters: nid\n" +

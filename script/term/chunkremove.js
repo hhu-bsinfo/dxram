@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 	return "Remove an existing chunk. Usable with either full chunk id or split into nid and lid\n" +
 			"Parameters: cidStr | nid lid\n" +

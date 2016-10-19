@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 	return "Prints the look up tree of a specified node\n" +
 			"Parameters: nid\n" +

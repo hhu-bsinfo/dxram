@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Get the chunk id for a registered name mapping\n" +

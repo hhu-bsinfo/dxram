@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Get the current status of a barrier\n" +

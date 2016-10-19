@@ -19,8 +19,6 @@ function help() {
 
 function exec(arg1) {
 
-    imports();
-
     if (typeof arg1 === "string") {
         exec_taskFile.apply(this, arguments);
     } else {

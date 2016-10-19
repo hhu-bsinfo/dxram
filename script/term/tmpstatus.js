@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "Get the status of the temporary (superpeer) storage";

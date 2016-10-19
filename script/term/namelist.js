@@ -1,3 +1,7 @@
+function imports() {
+
+}
+
 function help() {
 
 	return "List all registered name mappings of the nameservice";
