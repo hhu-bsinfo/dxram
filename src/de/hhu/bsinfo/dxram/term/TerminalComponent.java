@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxram.script.ScriptContext;
 import de.hhu.bsinfo.dxram.script.ScriptEngineComponent;
 
 /**
- * Component providing data/commands for an interactive terminal to be run on a node.
+ * Component providing a separate script context and data/commands for an interactive terminal to be run on a node.
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */

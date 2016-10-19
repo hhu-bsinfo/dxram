@@ -18,7 +18,8 @@ import de.hhu.bsinfo.utils.JNIconsole;
 /**
  * Service providing an interactive terminal running on a DXRAM instance.
  * Allows access to implemented services, triggering commands, getting information
- * about current or remote DXRAM instances.
+ * about current or remote DXRAM instances. The command line interface is basically a java script interpreter with
+ * a few built in special commands
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
