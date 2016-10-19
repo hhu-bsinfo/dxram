@@ -309,17 +309,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		return TaskPayloadManager.createInstance(p_type, p_subtype, p_args);
 	}
 
-	/**
-	 * Create a task instance
-	 *
-	 * @param p_payload Payload for the task instance
-	 * @param p_name    Name for the task instance
-	 * @return Task instance
-	 */
-	public Task createTask(final TaskPayload p_payload, final String p_name) {
-		return new Task(p_payload, p_name);
-	}
-
 	@Override
 	public void taskBeforeExecution(final Task p_task) {
 		// only used for remote tasks to callback the node they were submitted on

@@ -56,7 +56,7 @@ function exec_taskId(typeId, subtypeId, cgid, wait) {
         return;
     }
 
-    var task = mscomp.createTask(payload, "Term");
+    var task = new Task(payload, "Term");
 
     if (task == null) {
         dxterm.printlnErr("Creating task failed");
@@ -141,7 +141,7 @@ function exec_taskFile(pathTaskFile, cgid, wait) {
         return;
     }
 
-    var task = mscomp.createTask(payload, "Term");
+    var task = new Task(payload, "Term");
 
     if (task == null) {
         dxterm.printlnErr("Creating task failed");

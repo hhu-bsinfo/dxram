@@ -50,7 +50,7 @@ function exec(fileName, cgid, wait) {
 
     for each (payload in payloadList) {
 
-        var task = mscomp.createTask(payload, "Term");
+        var task = new Task(payload, "Term");
 
         if (task == null) {
             dxterm.printlnErr("Creating task for payload " + payload + " failed");
