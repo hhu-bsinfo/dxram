@@ -48,7 +48,7 @@ public class ScriptContext {
 	 *
 	 * @return Name of this context
 	 */
-	String getName() {
+	public String getName() {
 		return m_name;
 	}
 
@@ -58,7 +58,7 @@ public class ScriptContext {
 	 * @param p_path Path to the script file
 	 * @return True if loading successful, false on error.
 	 */
-	boolean load(final String p_path) {
+	public boolean load(final String p_path) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 
@@ -94,7 +94,7 @@ public class ScriptContext {
 	 * @param p_val Object to bind
 	 * @return True if sucessful, false on error
 	 */
-	boolean bind(final String p_key, final Object p_val) {
+	public boolean bind(final String p_key, final Object p_val) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 		m_scriptEngine.put(p_key, p_val);
@@ -108,7 +108,7 @@ public class ScriptContext {
 	 * @param p_text Text to evaluate
 	 * @return True on success, false on error
 	 */
-	boolean eval(final String p_text) {
+	public boolean eval(final String p_text) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 
@@ -138,7 +138,7 @@ public class ScriptContext {
 	 * @param p_name Name of the function to check
 	 * @return True if function exists, false otherwise
 	 */
-	boolean functionExists(final String p_name) {
+	public boolean functionExists(final String p_name) {
 
 		m_scriptEngine.setContext(m_scriptContext);
 
@@ -157,7 +157,7 @@ public class ScriptContext {
 	 * @param p_args Arguments for the function
 	 * @return Return value of the function (and also null on error but can be return value of function as welL)
 	 */
-	Object call(final String p_name, final Object... p_args) {
+	public Object call(final String p_name, final Object... p_args) {
 		m_scriptEngine.setContext(m_scriptContext);
 
 		Invocable inv = (Invocable) m_scriptEngine;
