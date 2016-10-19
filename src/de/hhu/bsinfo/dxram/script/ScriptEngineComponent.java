@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -22,7 +21,9 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.NodeID;
 
 /**
- * Created by nothaas on 10/14/16.
+ * Script engine component creating a java script engine instance with access to different contexts
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 14.10.16
  */
 public class ScriptEngineComponent extends AbstractDXRAMComponent implements ScriptDXRAMContext {
 
@@ -35,7 +36,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	private ScriptDXRAMContext m_scriptEngineContext;
 
 	private LoggerComponent m_logger;
-	private AbstractBootComponent m_boot;
 
 	/**
 	 * Constructor
@@ -48,6 +48,12 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
+	/**
+	 * Create a new context.
+	 *
+	 * @param p_name Name of the context
+	 * @return Newly created context or null if a context with the name already exists
+	 */
 	public ScriptContext createContext(final String p_name) {
 
 		if (m_scriptContexts.containsKey(p_name)) {
@@ -63,6 +69,11 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		return ctx;
 	}
 
+	/**
+	 * Destroy a context by name
+	 *
+	 * @param p_name Name of the context to destroy
+	 */
 	public void destroyContext(final String p_name) {
 		ScriptContext ctx = getContext(p_name);
 
@@ -71,14 +82,30 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		}
 	}
 
+	/**
+	 * Destroy a context
+	 *
+	 * @param p_ctx Context to destroy
+	 */
 	public void destroyContext(final ScriptContext p_ctx) {
 		m_scriptContexts.remove(p_ctx.getName());
 	}
 
+	/**
+	 * Get the default script context
+	 *
+	 * @return Default script context
+	 */
 	public ScriptContext getContext() {
 		return m_defaultScriptContext;
 	}
 
+	/**
+	 * Get a context by name
+	 *
+	 * @param p_name Name of the context
+	 * @return Context assigned to the specified name or null if no context for that name exists
+	 */
 	public ScriptContext getContext(final String p_name) {
 
 		ScriptContext ctx = m_scriptContexts.get(p_name);
@@ -104,7 +131,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 			final Settings p_settings) {
 
 		m_logger = getDependentComponent(LoggerComponent.class);
-		m_boot = getDependentComponent(AbstractBootComponent.class);
 
 		m_scriptEngineManager = new ScriptEngineManager();
 		m_scriptEngine = m_scriptEngineManager.getEngineByName("JavaScript");
@@ -128,7 +154,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 		m_scriptEngineContext = null;
 
-		m_boot = null;
 		m_logger = null;
 
 		return true;
@@ -177,12 +202,15 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		if (str.length() > 1) {
 			String tmp = str.substring(0, 2);
 			// oh java...no unsigned, why?
-			if (tmp.equals("0x")) {
-				return (new BigInteger(str.substring(2), 16)).longValue();
-			} else if (tmp.equals("0b")) {
-				return (new BigInteger(str.substring(2), 2)).longValue();
-			} else if (tmp.equals("0o")) {
-				return (new BigInteger(str.substring(2), 8)).longValue();
+			switch (tmp) {
+				case "0x":
+					return (new BigInteger(str.substring(2), 16)).longValue();
+				case "0b":
+					return (new BigInteger(str.substring(2), 2)).longValue();
+				case "0o":
+					return (new BigInteger(str.substring(2), 8)).longValue();
+				default:
+					break;
 			}
 		}
 
