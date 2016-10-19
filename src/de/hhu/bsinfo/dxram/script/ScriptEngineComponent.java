@@ -5,14 +5,12 @@ import javax.script.ScriptEngineManager;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -246,36 +244,6 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	@Override
 	public long lidOfCid(final long p_cid) {
 		return ChunkID.getLocalID(p_cid);
-	}
-
-	@Override
-	public Chunk newChunk() {
-		return new Chunk();
-	}
-
-	@Override
-	public Chunk newChunk(final int p_bufferSize) {
-		return new Chunk(p_bufferSize);
-	}
-
-	@Override
-	public Chunk newChunk(final ByteBuffer p_buffer) {
-		return new Chunk(p_buffer);
-	}
-
-	@Override
-	public Chunk newChunk(final long p_id) {
-		return new Chunk(p_id);
-	}
-
-	@Override
-	public Chunk newChunk(final long p_id, final int p_bufferSize) {
-		return new Chunk(p_id, p_bufferSize);
-	}
-
-	@Override
-	public Chunk newChunk(final long p_id, final ByteBuffer p_buffer) {
-		return new Chunk(p_id, p_buffer);
 	}
 
 	@Override

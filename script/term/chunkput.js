@@ -1,5 +1,6 @@
 function imports() {
 
+	importClass(Packages.de.hhu.bsinfo.dxram.data.Chunk);
 }
 
 function help() {
@@ -21,7 +22,7 @@ function help() {
 function exec() {
 
     if (arguments.length > 0 && typeof arguments[0] === "string") {
-        exec_cid.apply(this, [dxram.longStrToLong(argument[0])].concat(Array.prototype.slice.call(arguments, 1)));
+        exec_cid.apply(this, [dxram.longStrToLong(arguments[0])].concat(Array.prototype.slice.call(arguments, 1)));
     } else if (arguments.length > 1) {
         exec_nidlid.apply(this, arguments);
     } else {
@@ -82,7 +83,7 @@ function exec_cid(cid, data, offset, type) {
     var chunk = chunks.second()[0];
     if (offset == -1) {
         // create new chunk
-        chunk = dxram.newChunk(chunk.getID(), chunk.getDataSize());
+        chunk = new Chunk(chunk.getID(), chunk.getDataSize());
         offset = 0;
     }
 

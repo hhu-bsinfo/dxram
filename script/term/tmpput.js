@@ -1,5 +1,6 @@
 function imports() {
 
+	importClass(Packages.de.hhu.bsinfo.dxram.data.Chunk);
 }
 
 function help() {
@@ -40,13 +41,13 @@ function exec(id, data, offset, type) {
     var chunk = tmpstore.get(id);
 
     if (chunk == null) {
-        dxmterm.printlnErr("Getting chunk " + dxram.intToHexStr(id) + " from tmp storage failed.");
+        dxterm.printlnErr("Getting chunk " + dxram.intToHexStr(id) + " from tmp storage failed.");
         return;
     }
 
     if (offset == -1) {
         // create new chunk
-        chunk = dxram.newChunk(chunk.getID(), chunk.getDataSize());
+        chunk = new Chunk(chunk.getID(), chunk.getDataSize());
         offset = 0;
     }
 

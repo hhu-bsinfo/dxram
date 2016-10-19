@@ -1,8 +1,5 @@
 package de.hhu.bsinfo.dxram.script;
 
-import java.nio.ByteBuffer;
-
-import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -100,55 +97,6 @@ public interface ScriptDXRAMContext {
 	 * @return Lid
 	 */
 	long lidOfCid(final long p_cid);
-
-	/**
-	 * Create a new chunk object
-	 *
-	 * @return Chunk object
-	 */
-	Chunk newChunk();
-
-	/**
-	 * Create a new chunk object
-	 *
-	 * @param p_bufferSize Size of the chunk object
-	 * @return Chunk Object
-	 */
-	Chunk newChunk(final int p_bufferSize);
-
-	/**
-	 * Create a new chunk object
-	 *
-	 * @param p_buffer Byte buffer to wrap
-	 * @return Chunk object
-	 */
-	Chunk newChunk(final ByteBuffer p_buffer);
-
-	/**
-	 * Create a new chunk object
-	 *
-	 * @param p_id Id for this object
-	 * @return Chunk object
-	 */
-	Chunk newChunk(final long p_id);
-
-	/**
-	 * Create a new chunk object
-	 *
-	 * @param p_id         Chunk id
-	 * @param p_bufferSize Size of the chunk
-	 * @return Chunk object
-	 */
-	Chunk newChunk(final long p_id, final int p_bufferSize);
-
-	/**
-	 * Create a new chunk object
-	 *
-	 * @param p_id     Chunk id
-	 * @param p_buffer ByteBuffer to wrap
-	 * @return Chunk object
-	 */
-	Chunk newChunk(final long p_id, final ByteBuffer p_buffer);
 
 	/**
 	 * Create a new DataStructure object. The DataStructure class needs to be
