@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -40,8 +41,9 @@ public class MigrateRequest extends AbstractRequest {
 	 * @param p_isBackup
 	 *            whether this is a backup message or not
 	 */
-	public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID, final boolean p_isBackup) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST);
+	public MigrateRequest(final short p_destination, final long p_chunkID, final short p_nodeID,
+			final boolean p_isBackup) {
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_REQUEST);
 
 		m_chunkID = p_chunkID;
 		m_nodeID = p_nodeID;

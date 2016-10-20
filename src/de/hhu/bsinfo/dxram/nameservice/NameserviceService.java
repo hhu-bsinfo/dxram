@@ -12,6 +12,7 @@ import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -123,7 +124,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == NameserviceMessages.TYPE) {
+			if (p_message.getType() == DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case NameserviceMessages.SUBTYPE_REGISTER_MESSAGE:
 						incomingRegisterMessage((ForwardRegisterMessage) p_message);
@@ -148,7 +149,8 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 		m_network = getComponent(NetworkComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 
-		m_network.registerMessageType(NameserviceMessages.TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE,
+		m_network.registerMessageType(DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE,
+				NameserviceMessages.SUBTYPE_REGISTER_MESSAGE,
 				ForwardRegisterMessage.class);
 
 		m_network.register(ForwardRegisterMessage.class, this);
@@ -172,6 +174,10 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	 * @param p_message Message to process
 	 */
 	private void incomingRegisterMessage(final ForwardRegisterMessage p_message) {
-		m_nameservice.register(p_message.getChunkId(), p_message.getName());
+		// Outsource registering to another thread to avoid blocking a message handler
+		Runnable task = () -> {
+			m_nameservice.register(p_message.getChunkId(), p_message.getName());
+		};
+		new Thread(task).start();
 	}
 }

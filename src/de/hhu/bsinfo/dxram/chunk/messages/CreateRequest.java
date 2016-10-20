@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -30,7 +31,7 @@ public class CreateRequest extends AbstractRequest {
 	 *            Sizes of the chunks to create.
 	 */
 	public CreateRequest(final short p_destination, final int... p_sizes) {
-		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
+		super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
 
 		m_sizes = p_sizes;
 

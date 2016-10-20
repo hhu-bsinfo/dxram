@@ -6,7 +6,7 @@ import java.util.Map;
 
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.conf.Configuration;
-import de.hhu.bsinfo.utils.log.Logger;
+import de.hhu.bsinfo.utils.logger.Logger;
 
 /**
  * Base class for all components in DXRAM. A component serves the engine as a building block

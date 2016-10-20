@@ -183,9 +183,9 @@ class NIOSelector extends Thread {
 					try {
 						connection.getChannel().register(m_selector, interest, connection);
 					} catch (final ClosedChannelException e) {
-						// #if LOGGER >= ERROR
-						NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not change operations!");
-						// #endif /* LOGGER >= ERROR */
+						// #if LOGGER >= DEBUG
+						NetworkHandler.getLogger().debug(getClass().getSimpleName(), "Could not change operations!");
+						// #endif /* LOGGER >= DEBUG */
 					}
 				}
 			}
@@ -259,11 +259,11 @@ class NIOSelector extends Thread {
 						try {
 							successful = m_nioInterface.read(connection);
 						} catch (final IOException e) {
-							// #if LOGGER >= ERROR
-							NetworkHandler.getLogger().error(getClass().getSimpleName(),
-									"Could not read from channel (" + NodeID.toHexString(connection.getDestination())
-									+ ")!");
-							// #endif /* LOGGER >= ERROR */
+							// #if LOGGER >= DEBUG
+							NetworkHandler.getLogger().debug(getClass().getSimpleName(),
+									"Could not read from channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
+							// #endif /* LOGGER >= DEBUG */
+
 							successful = false;
 						}
 						if (!successful) {
@@ -276,15 +276,19 @@ class NIOSelector extends Thread {
 						NetworkHandler.getLogger().error(getClass().getSimpleName(),
 								"If connection is null key has to be either readable or connectable!");
 						// #endif /* LOGGER >= ERROR */
+
+						m_connectionCreator.closeConnection(connection, true);
 					}
 					try {
 						complete = m_nioInterface.write(connection);
 					} catch (final IOException e) {
-						// #if LOGGER >= ERROR
-						NetworkHandler.getLogger().error(getClass().getSimpleName(),
-								"Could not write to channel (" + NodeID.toHexString(connection.getDestination())
-								+ ")!");
-						// #endif /* LOGGER >= ERROR */
+						// #if LOGGER >= DEBUG
+						NetworkHandler.getLogger().debug(getClass().getSimpleName(),
+								"Could not write to channel (" + NodeID.toHexString(connection.getDestination()) + ")!");
+						// #endif /* LOGGER >= DEBUG */
+
+						m_connectionCreator.closeConnection(connection, true);
+
 						complete = false;
 					}
 

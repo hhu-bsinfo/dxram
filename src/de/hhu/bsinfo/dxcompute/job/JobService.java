@@ -6,13 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.dxcompute.job.event.JobEventListener;
 import de.hhu.bsinfo.dxcompute.job.event.JobEvents;
-import de.hhu.bsinfo.dxcompute.job.messages.JobEventTriggeredMessage;
-import de.hhu.bsinfo.dxcompute.job.messages.JobMessages;
-import de.hhu.bsinfo.dxcompute.job.messages.PushJobQueueMessage;
-import de.hhu.bsinfo.dxcompute.job.messages.StatusRequest;
-import de.hhu.bsinfo.dxcompute.job.messages.StatusResponse;
+import de.hhu.bsinfo.dxcompute.job.messages.*;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -31,7 +28,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 /**
  * Service interface to schedule executables jobs. Use this to execute code
  * concurrently and even remotely with DXRAM.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class JobService extends AbstractDXRAMService implements MessageReceiver, JobEventListener {
@@ -58,9 +54,10 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	/**
 	 * Register a new implementation/type of Job class.
 	 * Make sure to register all your Job classes.
-	 *
-	 * @param p_typeID Type ID for the job to register.
-	 * @param p_clazz  Class to register for the specified ID.
+	 * @param p_typeID
+	 *            Type ID for the job to register.
+	 * @param p_clazz
+	 *            Class to register for the specified ID.
 	 */
 	public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
 		// #if LOGGER >= DEBUG
@@ -72,8 +69,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Schedule a job for execution (local).
-	 *
-	 * @param p_job Job to be scheduled for execution.
+	 * @param p_job
+	 *            Job to be scheduled for execution.
 	 * @return True if scheduling was successful, false otherwise.
 	 */
 	public long pushJob(final AbstractJob p_job) {
@@ -109,9 +106,10 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	/**
 	 * Schedule a job for remote execution. The job is sent to the node specified and
 	 * scheduled for execution there.
-	 *
-	 * @param p_job    Job to schedule.
-	 * @param p_nodeID ID of the node to schedule the job on.
+	 * @param p_job
+	 *            Job to schedule.
+	 * @param p_nodeID
+	 *            ID of the node to schedule the job on.
 	 * @return Valid job ID assigned to the submitted job, false otherwise.
 	 */
 	public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
@@ -167,7 +165,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Wait for all locally scheduled and currently executing jobs to finish.
-	 *
 	 * @return True if waiting was successful and all jobs finished, false otherwise.
 	 */
 	public boolean waitForLocalJobsToFinish() {
@@ -176,7 +173,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Wait for all jobs including remote ones to finish
-	 *
 	 * @return True if all jobs finished successfully, false otherwise.
 	 */
 	public boolean waitForAllJobsToFinish() {
@@ -209,8 +205,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 						// not done, yet...sleep a little and try again
 						try {
 							Thread.sleep(1000);
-						} catch (final InterruptedException e) {
-						}
+						} catch (final InterruptedException e) {}
 						continue;
 					}
 				}
@@ -232,7 +227,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 		if (p_message != null) {
-			if (p_message.getType() == JobMessages.TYPE) {
+			if (p_message.getType() == DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE:
 						incomingPushJobQueueMessage((PushJobQueueMessage) p_message);
@@ -349,11 +344,15 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	 * Register network messages used here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE,
+				JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE,
 				PushJobQueueMessage.class);
-		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_STATUS_REQUEST, StatusRequest.class);
-		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_STATUS_RESPONSE, StatusResponse.class);
-		m_network.registerMessageType(JobMessages.TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST,
+				StatusRequest.class);
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_RESPONSE,
+				StatusResponse.class);
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE,
+				JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE,
 				JobEventTriggeredMessage.class);
 	}
 
@@ -383,8 +382,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Handle incoming push queue request.
-	 *
-	 * @param p_request Incoming request.
+	 * @param p_request
+	 *            Incoming request.
 	 */
 	private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
 		// #ifdef STATISTICS
@@ -414,8 +413,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Handle incoming status request.
-	 *
-	 * @param p_request Incoming request.
+	 * @param p_request
+	 *            Incoming request.
 	 */
 	private void incomingStatusRequest(final StatusRequest p_request) {
 		Status status = new Status();
@@ -432,8 +431,8 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Dispatch for JobEventTriggeredMessage
-	 *
-	 * @param p_message The incoming message
+	 * @param p_message
+	 *            The incoming message
 	 */
 	private void incomingJobEventTriggeredMessage(final JobEventTriggeredMessage p_message) {
 		Pair<Byte, AbstractJob> job = m_remoteJobCallbackMap.get(p_message.getJobID());
@@ -484,7 +483,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	/**
 	 * Status object holding information about the job service.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
 	 */
 	public static class Status implements Importable, Exportable {
@@ -499,7 +497,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 		/**
 		 * Get the number of unfinished jobs
-		 *
 		 * @return Number of unfinished jobs
 		 */
 		public long getNumberOfUnfinishedJobs() {

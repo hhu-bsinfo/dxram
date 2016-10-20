@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.migration.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -29,7 +30,8 @@ public class MigrationRemoteMessage extends AbstractMessage {
 	 */
 	public MigrationRemoteMessage(final short p_destination, final long p_cid, final short p_target) {
 
-		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+				MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE);
 
 		m_chunkID = p_cid;
 		m_target = p_target;

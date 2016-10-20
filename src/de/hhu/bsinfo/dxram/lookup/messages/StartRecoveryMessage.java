@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NodeID;
 
@@ -38,7 +39,7 @@ public class StartRecoveryMessage extends AbstractMessage {
 	 *            the beginning of the range that has to be recovered
 	 */
 	public StartRecoveryMessage(final short p_destination, final short p_failedPeer, final int p_beginOfRange) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_START_RECOVERY_MESSAGE);
 
 		assert p_failedPeer != NodeID.INVALID_ID;
 

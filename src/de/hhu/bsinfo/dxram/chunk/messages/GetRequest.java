@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -38,7 +39,7 @@ public class GetRequest extends AbstractRequest {
 	 *            Data structure with the ID of the chunk to get.
 	 */
 	public GetRequest(final short p_destination, final DataStructure... p_dataStructures) {
-		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
+		super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
 
 		m_dataStructures = p_dataStructures;
 

@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -24,7 +25,7 @@ public class PingSuperpeerMessage extends AbstractMessage {
 	 *            the destination
 	 */
 	public PingSuperpeerMessage(final short p_destination) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_PING_SUPERPEER_MESSAGE);
 	}
 
 }

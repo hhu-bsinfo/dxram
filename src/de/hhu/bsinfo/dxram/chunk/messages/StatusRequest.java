@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -23,6 +24,6 @@ public class StatusRequest extends AbstractRequest {
 	 *            the destination node id.
 	 */
 	public StatusRequest(final short p_destination) {
-		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_STATUS_REQUEST);
+		super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_STATUS_REQUEST);
 	}
 }

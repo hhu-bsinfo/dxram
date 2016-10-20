@@ -5,14 +5,12 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Configuration values for the memory manager.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
 public class MemoryManagerConfigurationValues {
 
 	/**
 	 * Configuration values for the component.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
 	 */
 	public static class Component {

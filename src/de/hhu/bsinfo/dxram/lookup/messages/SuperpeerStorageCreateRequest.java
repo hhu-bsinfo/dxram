@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -34,7 +35,8 @@ public class SuperpeerStorageCreateRequest extends AbstractRequest {
 	 */
 	public SuperpeerStorageCreateRequest(final short p_destination, final int p_storageId, final int p_size,
 			final boolean p_replicate) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST);
 
 		m_storageId = p_storageId;
 		m_size = p_size;

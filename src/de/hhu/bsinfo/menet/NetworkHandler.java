@@ -9,12 +9,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
-import de.hhu.bsinfo.utils.log.LoggerInterface;
-import de.hhu.bsinfo.utils.log.LoggerNull;
+import de.hhu.bsinfo.utils.event.EventInterface;
+import de.hhu.bsinfo.utils.logger.LoggerInterface;
+import de.hhu.bsinfo.utils.logger.LoggerNull;
 
 /**
  * Access the network through Java NIO
- *
  * @author Florian Klein 18.03.2012
  * @author Marc Ewert 14.08.2014
  */
@@ -22,6 +22,7 @@ public final class NetworkHandler implements DataReceiver {
 
 	// Attributes
 	private static LoggerInterface m_loggerInterface;
+	private static EventInterface m_eventInterface;
 
 	private final HashMap<Class<? extends AbstractMessage>, Entry> m_receivers;
 
@@ -41,9 +42,10 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Creates an instance of NetworkHandler
-	 *
-	 * @param p_numMessageHandlerThreads the number of default message handler (+ one exclusive message handler)
-	 * @param p_requestMapSize           the number of entries in the request map
+	 * @param p_numMessageHandlerThreads
+	 *            the number of default message handler (+ one exclusive message handler)
+	 * @param p_requestMapSize
+	 *            the number of entries in the request map
 	 */
 	public NetworkHandler(final int p_numMessageHandlerThreads, final int p_requestMapSize) {
 		final byte networkType;
@@ -74,7 +76,6 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Returns the LoggerInterface
-	 *
 	 * @return the LoggerInterface
 	 */
 	protected static LoggerInterface getLogger() {
@@ -83,8 +84,8 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Sets the LoggerInterface
-	 *
-	 * @param p_logger the LoggerInterface
+	 * @param p_logger
+	 *            the LoggerInterface
 	 */
 	public void setLogger(final LoggerInterface p_logger) {
 		m_loggerInterface = p_logger;
@@ -92,8 +93,25 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	/**
+	 * Returns the EventInterface
+	 * @return the EventInterface
+	 */
+	protected static EventInterface getEventHandler() {
+		return m_eventInterface;
+	}
+
+	/**
+	 * Sets the EventInterface
+	 * @param p_event
+	 *            the EventInterface
+	 */
+	public void setEventHandler(final EventInterface p_event) {
+		m_eventInterface = p_event;
+
+	}
+
+	/**
 	 * Returns the status of the network module
-	 *
 	 * @return the status
 	 */
 	public String getStatus() {
@@ -105,25 +123,27 @@ public final class NetworkHandler implements DataReceiver {
 		return str;
 	}
 
-//	class PrintThread extends Thread {
-	//		public void run() {
-	//			while (true) {
-	//				System.out.println(getStatus());
-	//				try {
-	//					Thread.sleep(4000);
-	//				} catch (InterruptedException e) {
-	//					e.printStackTrace();
-	//				}
-	//			}
-	//		}
-	//	}
+	// class PrintThread extends Thread {
+	// public void run() {
+	// while (true) {
+	// System.out.println(getStatus());
+	// try {
+	// Thread.sleep(4000);
+	// } catch (InterruptedException e) {
+	// e.printStackTrace();
+	// }
+	// }
+	// }
+	// }
 
 	/**
 	 * Registers a message type
-	 *
-	 * @param p_type    the unique type
-	 * @param p_subtype the unique subtype
-	 * @param p_class   the calling class
+	 * @param p_type
+	 *            the unique type
+	 * @param p_subtype
+	 *            the unique subtype
+	 * @param p_class
+	 *            the calling class
 	 */
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		boolean ret = false;
@@ -142,14 +162,20 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Initializes the network handler
-	 *
-	 * @param p_ownNodeID                    the own NodeID
-	 * @param p_nodeMap                      the node map
-	 * @param p_incomingBufferSize           the size of incoming buffer
-	 * @param p_outgoingBufferSize           the size of outgoing buffer
-	 * @param p_numberOfBuffersPerConnection the number of bytes until a flow control message must be received to continue sending
-	 * @param p_flowControlWindowSize        the maximal number of ByteBuffer to schedule for sending/receiving
-	 * @param p_connectionTimeout            the connection timeout
+	 * @param p_ownNodeID
+	 *            the own NodeID
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
+	 * @param p_numberOfBuffersPerConnection
+	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @param p_connectionTimeout
+	 *            the connection timeout
 	 */
 	public void initialize(final short p_ownNodeID, final NodeMap p_nodeMap, final int p_incomingBufferSize,
 			final int p_outgoingBufferSize, final int p_numberOfBuffersPerConnection, final int p_flowControlWindowSize,
@@ -170,7 +196,7 @@ public final class NetworkHandler implements DataReceiver {
 		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting initialize");
 		// #endif /* LOGGER == TRACE */
 
-//		(new PrintThread()).start();
+		// (new PrintThread()).start();
 	}
 
 	/**
@@ -215,9 +241,10 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Registers a message receiver
-	 *
-	 * @param p_message  the message
-	 * @param p_receiver the receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
 	 */
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
@@ -241,9 +268,10 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Unregisters a message receiver
-	 *
-	 * @param p_message  the message
-	 * @param p_receiver the receiver
+	 * @param p_message
+	 *            the message
+	 * @param p_receiver
+	 *            the receiver
 	 */
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		Entry entry;
@@ -264,9 +292,36 @@ public final class NetworkHandler implements DataReceiver {
 	}
 
 	/**
+	 * Connects a node.
+	 * @param p_nodeID
+	 *            Node to connect
+	 * @return the status
+	 */
+	public int connectNode(final short p_nodeID) {
+		// #if LOGGER == TRACE
+		m_loggerInterface.trace(getClass().getSimpleName(), "Entering connectNode with: p_nodeID=" + p_nodeID);
+		// #endif /* LOGGER == TRACE */
+
+		try {
+			m_manager.getConnection(p_nodeID);
+		} catch (final IOException e) {
+			// #if LOGGER >= DEBUG
+			m_loggerInterface.debug(getClass().getSimpleName(), "IOException during connection lookup", e);
+			// #endif /* LOGGER >= DEBUG */
+			return -1;
+		}
+
+		// #if LOGGER == TRACE
+		m_loggerInterface.trace(getClass().getSimpleName(), "Exiting connectNode");
+		// #endif /* LOGGER == TRACE */
+
+		return 0;
+	}
+
+	/**
 	 * Sends a message
-	 *
-	 * @param p_message the message to send
+	 * @param p_message
+	 *            the message to send
 	 * @return the status
 	 */
 	public int sendMessage(final AbstractMessage p_message) {
@@ -299,18 +354,24 @@ public final class NetworkHandler implements DataReceiver {
 				try {
 					connection = m_manager.getConnection(p_message.getDestination());
 				} catch (final IOException e) {
-					// #if LOGGER >= ERROR
-					m_loggerInterface.error(getClass().getSimpleName(), "IOException during connection lookup", e);
-					// #endif /* LOGGER >= ERROR */
+					// #if LOGGER >= DEBUG
+					m_loggerInterface.debug(getClass().getSimpleName(), "Connection invalid", e);
+					// #endif /* LOGGER >= DEBUG */
 					return -1;
 				}
 				try {
 					if (null != connection) {
 						connection.write(p_message);
 					} else {
+						// #if LOGGER >= DEBUG
+						m_loggerInterface.debug(getClass().getSimpleName(), "Connection invalid");
+						// #endif /* LOGGER >= DEBUG */
 						return -1;
 					}
-				} catch (final IOException e) {
+				} catch (final NetworkException e) {
+					// #if LOGGER >= DEBUG
+					m_loggerInterface.debug(getClass().getSimpleName(), "Message invalid", e);
+					// #endif /* LOGGER >= DEBUG */
 					return -2;
 				}
 			}
@@ -327,8 +388,8 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Handles an incoming Message
-	 *
-	 * @param p_message the incoming Message
+	 * @param p_message
+	 *            the incoming Message
 	 */
 	@Override
 	public void newMessage(final AbstractMessage p_message) {
@@ -371,10 +432,9 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Distributes incoming default messages
-	 *
 	 * @author Kevin Beineke 19.07.2016
 	 */
-	private class DefaultMessageHandlerPool {
+	private final class DefaultMessageHandlerPool {
 
 		// Attributes
 		private DefaultMessageHandler[] m_threads;
@@ -386,8 +446,8 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Creates an instance of DefaultMessageHandlerPool
-		 *
-		 * @param p_numMessageHandlerThreads the number of default message handler
+		 * @param p_numMessageHandlerThreads
+		 *            the number of default message handler
 		 */
 		private DefaultMessageHandlerPool(final int p_numMessageHandlerThreads) {
 			m_defaultMessages = new ArrayDeque<>();
@@ -438,9 +498,10 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Enqueue a new message for delivering
-		 *
-		 * @param p_message     the message
-		 * @param p_maxMessages the maximal number of pending messages
+		 * @param p_message
+		 *            the message
+		 * @param p_maxMessages
+		 *            the maximal number of pending messages
 		 * @return whether the message was appended or not
 		 */
 		private boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
@@ -463,10 +524,9 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Executes incoming default messages
-	 *
 	 * @author Kevin Beineke 19.07.2016
 	 */
-	private class DefaultMessageHandler extends Thread {
+	private final class DefaultMessageHandler extends Thread {
 
 		// Attributes
 		private ArrayDeque<AbstractMessage> m_defaultMessages;
@@ -478,10 +538,12 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Creates an instance of DefaultMessageHandler
-		 *
-		 * @param p_queue the message queue
-		 * @param p_lock  the lock for accessing message queue
-		 * @param p_cond  the condition for new messages
+		 * @param p_queue
+		 *            the message queue
+		 * @param p_lock
+		 *            the lock for accessing message queue
+		 * @param p_cond
+		 *            the condition for new messages
 		 */
 		private DefaultMessageHandler(final ArrayDeque<AbstractMessage> p_queue, final ReentrantLock p_lock,
 				final Condition p_cond) {
@@ -525,9 +587,22 @@ public final class NetworkHandler implements DataReceiver {
 				if (entry != null) {
 					entry.newMessage(message);
 				} else {
-					// #if LOGGER >= ERROR
-					m_loggerInterface.error(getClass().getSimpleName(), "Default message queue is empty!");
-					// #endif /* LOGGER >= ERROR */
+					if (message == null) {
+						// #if LOGGER >= ERROR
+						m_loggerInterface.error(getClass().getSimpleName(),
+								"Exclusive message queue is empty!");
+						// #endif /* LOGGER >= ERROR */
+					} else {
+						if (message.getType() != (byte) 0) {
+							// Type 0 are default messages and can be ignored
+
+							// #if LOGGER >= ERROR
+							m_loggerInterface.error(getClass().getSimpleName(),
+									"No message receiver was registered for " + message.getType() + ", "
+											+ message.getSubtype() + "!");
+							// #endif /* LOGGER >= ERROR */
+						}
+					}
 				}
 				message = null;
 			}
@@ -536,7 +611,6 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Executes incoming exclusive messages
-	 *
 	 * @author Kevin Beineke 19.07.2016
 	 */
 	private class ExclusiveMessageHandler extends Thread {
@@ -569,9 +643,10 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Enqueue a new message for delivering
-		 *
-		 * @param p_message     the message
-		 * @param p_maxMessages the maximal number of pending messages
+		 * @param p_message
+		 *            the message
+		 * @param p_maxMessages
+		 *            the maximal number of pending messages
 		 * @return whether the message was appended or not
 		 */
 		public boolean newMessage(final AbstractMessage p_message, final int p_maxMessages) {
@@ -619,9 +694,18 @@ public final class NetworkHandler implements DataReceiver {
 				if (entry != null) {
 					entry.newMessage(message);
 				} else {
-					// #if LOGGER >= ERROR
-					m_loggerInterface.error(getClass().getSimpleName(), "Exclusive message queue is empty!");
-					// #endif /* LOGGER >= ERROR */
+					if (message == null) {
+						// #if LOGGER >= ERROR
+						m_loggerInterface.error(getClass().getSimpleName(),
+								"Exclusive message queue is empty!");
+						// #endif /* LOGGER >= ERROR */
+					} else {
+						// #if LOGGER >= ERROR
+						m_loggerInterface.error(getClass().getSimpleName(),
+								"No message receiver was registered for " + message.getType() + ", "
+										+ message.getSubtype() + "!");
+						// #endif /* LOGGER >= ERROR */
+					}
 				}
 				message = null;
 			}
@@ -630,7 +714,6 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Methods for reacting on incoming Messages
-	 *
 	 * @author Florian Klein
 	 *         09.03.2012
 	 */
@@ -640,8 +723,8 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Handles an incoming Message
-		 *
-		 * @param p_message the Message
+		 * @param p_message
+		 *            the Message
 		 */
 		void onIncomingMessage(AbstractMessage p_message);
 
@@ -649,7 +732,6 @@ public final class NetworkHandler implements DataReceiver {
 
 	/**
 	 * Wrapper class for message type - MessageReceiver pairs
-	 *
 	 * @author Florian Klein 23.07.2013
 	 * @author Marc Ewert 14.08.2014
 	 */
@@ -671,8 +753,8 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Adds a MessageReceiver
-		 *
-		 * @param p_receiver the MessageReceiver
+		 * @param p_receiver
+		 *            the MessageReceiver
 		 */
 		public void add(final MessageReceiver p_receiver) {
 			m_receivers.add(p_receiver);
@@ -680,8 +762,8 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Removes a MessageReceiver
-		 *
-		 * @param p_receiver the MessageReceiver
+		 * @param p_receiver
+		 *            the MessageReceiver
 		 */
 		public void remove(final MessageReceiver p_receiver) {
 			m_receivers.remove(p_receiver);
@@ -689,8 +771,8 @@ public final class NetworkHandler implements DataReceiver {
 
 		/**
 		 * Informs all MessageReceivers about a new message
-		 *
-		 * @param p_message the message
+		 * @param p_message
+		 *            the message
 		 */
 		public void newMessage(final AbstractMessage p_message) {
 			for (int i = 0; i < m_receivers.size(); i++) {

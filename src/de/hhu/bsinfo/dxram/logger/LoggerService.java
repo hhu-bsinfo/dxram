@@ -7,10 +7,11 @@ import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.menet.NodeID;
-import de.hhu.bsinfo.utils.log.LogLevel;
+import de.hhu.bsinfo.utils.logger.LogLevel;
 
 /**
  * Service to allow the application to use the same logger as DXRAM.
@@ -198,7 +199,7 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == LoggerMessages.TYPE) {
+			if (p_message.getType() == DXRAMMessageTypes.LOGGER_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE:
 						incomingSetLogLevelMessage((SetLogLevelMessage) p_message);
@@ -222,7 +223,8 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 
-		m_network.registerMessageType(LoggerMessages.TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE,
+		m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE,
+				LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE,
 				SetLogLevelMessage.class);
 
 		m_network.register(SetLogLevelMessage.class, this);

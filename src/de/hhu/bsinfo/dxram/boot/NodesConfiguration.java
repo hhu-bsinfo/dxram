@@ -124,6 +124,7 @@ public final class NodesConfiguration {
 		private short m_rack;
 		private short m_switch;
 		private NodeRole m_role;
+		private byte m_readFromFile;
 
 		// Constructors
 		/**
@@ -138,9 +139,11 @@ public final class NodesConfiguration {
 		 *            the switcharea of the node
 		 * @param p_role
 		 *            the role of the node
+		 * @param p_readFromFile
+		 *            whether this node's information was read from nodes file or not
 		 */
 		public NodeEntry(final String p_ip, final int p_port, final short p_rack, final short p_switch,
-				final NodeRole p_role) {
+				final NodeRole p_role, final boolean p_readFromFile) {
 			assert p_ip != null;
 			assert p_port > 0 && p_port < 65536;
 			assert p_rack >= 0;
@@ -152,6 +155,7 @@ public final class NodesConfiguration {
 			m_rack = p_rack;
 			m_switch = p_switch;
 			m_role = p_role;
+			m_readFromFile = p_readFromFile ? (byte) 1 : (byte) 0;
 		}
 
 		// Getter
@@ -181,7 +185,7 @@ public final class NodesConfiguration {
 
 		/**
 		 * Gets the switcharea of the node
-		 * @return the switcharea of the noide
+		 * @return the switcharea of the node
 		 */
 		public short getSwitch() {
 			return m_switch;
@@ -189,18 +193,25 @@ public final class NodesConfiguration {
 
 		/**
 		 * Gets the role of the node
-		 * @return the role of the noide
+		 * @return the role of the node
 		 */
 		public NodeRole getRole() {
 			return m_role;
+		}
+
+		/**
+		 * Gets the source of the node's information
+		 * @return whether this node's information was read from nodes file or not
+		 */
+		public boolean readFromFile() {
+			return m_readFromFile == 1 ? true : false;
 		}
 
 		// Methods
 		@Override
 		public String toString() {
 			return "NodesConfigurationEntry [m_ip=" + m_ip + ", m_port=" + m_port + ", m_rack=" + m_rack + ", m_switch="
-					+ m_switch + ", m_role="
-					+ m_role.getAcronym() + "]";
+					+ m_switch + ", m_role=" + m_role.getAcronym() + (m_readFromFile == 1 ? "true" : "false") + "]";
 		}
 
 	}

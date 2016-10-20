@@ -3,11 +3,9 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 /**
  * Different message types used for the master slave framework
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 18.02.16
  */
 public final class MasterSlaveMessages {
-	public static final byte TYPE = 41;
 	public static final byte SUBTYPE_SLAVE_JOIN_REQUEST = 1;
 	public static final byte SUBTYPE_SLAVE_JOIN_RESPONSE = 2;
 	public static final byte SUBTYPE_EXECUTE_TASK_REQUEST = 3;
@@ -23,6 +21,5 @@ public final class MasterSlaveMessages {
 	/**
 	 * Static class
 	 */
-	private MasterSlaveMessages() {
-	}
+	private MasterSlaveMessages() {}
 }

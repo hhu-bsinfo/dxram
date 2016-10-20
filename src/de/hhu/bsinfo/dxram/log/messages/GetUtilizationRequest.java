@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.log.messages;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -24,7 +25,7 @@ public class GetUtilizationRequest extends AbstractRequest {
 	 *            the destination
 	 */
 	public GetUtilizationRequest(final short p_destination) {
-		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST);
 	}
 
 }

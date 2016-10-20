@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.recovery.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -36,8 +37,10 @@ public class RecoverBackupRangeRequest extends AbstractRequest {
 	 * @param p_firstChunkIDOrRangeID
 	 *            the first ChunkID of the backup range or the RangeID for migrations
 	 */
-	public RecoverBackupRangeRequest(final short p_destination, final short p_owner, final long p_firstChunkIDOrRangeID) {
-		super(p_destination, RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST);
+	public RecoverBackupRangeRequest(final short p_destination, final short p_owner,
+			final long p_firstChunkIDOrRangeID) {
+		super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
+				RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST);
 
 		m_owner = p_owner;
 		m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;

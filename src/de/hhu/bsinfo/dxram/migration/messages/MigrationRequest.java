@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -36,7 +37,7 @@ public class MigrationRequest extends AbstractRequest {
 	 *            The data structure to migrate.
 	 */
 	public MigrationRequest(final short p_destination, final DataStructure p_dataStructure) {
-		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
+		super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
 
 		m_dataStructures = new DataStructure[] {p_dataStructure};
 	}
@@ -49,7 +50,7 @@ public class MigrationRequest extends AbstractRequest {
 	 *            Multiple data structures to migrate
 	 */
 	public MigrationRequest(final short p_destination, final DataStructure[] p_dataStructures) {
-		super(p_destination, MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
+		super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
 
 		m_dataStructures = p_dataStructures;
 	}

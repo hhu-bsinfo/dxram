@@ -7,8 +7,8 @@ import java.util.Map.Entry;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.utils.log.LogLevel;
-import de.hhu.bsinfo.utils.log.LoggerInterface;
+import de.hhu.bsinfo.utils.logger.LogLevel;
+import de.hhu.bsinfo.utils.logger.LoggerInterface;
 
 /**
  * This component provides an extended interface for logging. It enables

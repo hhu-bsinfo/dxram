@@ -7,7 +7,6 @@ package de.hhu.bsinfo.dxram.nameservice.messages;
  */
 public final class NameserviceMessages {
 
-	public static final byte TYPE = 7;
 	public static final byte SUBTYPE_REGISTER_MESSAGE = 1;
 
 	/**

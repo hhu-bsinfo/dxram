@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.boot.messages;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -22,6 +23,6 @@ public class RebootMessage extends AbstractMessage {
 	 *            the destination
 	 */
 	public RebootMessage(final short p_destination) {
-		super(p_destination, BootMessages.TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE);
 	}
 }

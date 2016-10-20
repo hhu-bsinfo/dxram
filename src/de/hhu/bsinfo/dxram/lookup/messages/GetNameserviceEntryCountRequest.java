@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -23,7 +24,8 @@ public class GetNameserviceEntryCountRequest extends AbstractRequest {
 	 *            the destination
 	 */
 	public GetNameserviceEntryCountRequest(final short p_destination) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST);
 	}
 
 }

@@ -23,6 +23,7 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -352,25 +353,26 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 * @param p_message the message to trigger the Migration from another peer
 	 */
 	private void incomingMigrationMessage(final MigrationRemoteMessage p_message) {
+		// Outsource migration to another thread to avoid blocking a message handler
+		Runnable task = () -> {
+			boolean success = migrate(p_message.getChunkID(), p_message.getTargetNode());
 
-		boolean success = migrate(p_message.getChunkID(), p_message.getTargetNode());
-
-		if (!success) {
-			// #if LOGGER == TRACE
-			m_logger.trace(getClass(), "Failure! Could not migrate chunk "
-					+ ChunkID.toHexString(p_message.getChunkID()) + " to node "
-					+ ChunkID.toHexString(p_message.getTargetNode()));
-			// #endif /* LOGGER == TRACE */
-
-		}
-
+			if (!success) {
+				// #if LOGGER == TRACE
+				m_logger.trace(getClass(), "Failure! Could not migrate chunk "
+						+ ChunkID.toHexString(p_message.getChunkID()) + " to node "
+						+ ChunkID.toHexString(p_message.getTargetNode()));
+				// #endif /* LOGGER == TRACE */
+			}
+		};
+		new Thread(task).start();
 	}
 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 
 		if (p_message != null) {
-			if (p_message.getType() == MigrationMessages.TYPE) {
+			if (p_message.getType() == DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case MigrationMessages.SUBTYPE_MIGRATION_REQUEST:
 						incomingMigrationRequest((MigrationRequest) p_message);
@@ -392,11 +394,14 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	 * Register network messages we use in here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST,
+		m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+				MigrationMessages.SUBTYPE_MIGRATION_REQUEST,
 				MigrationRequest.class);
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_RESPONSE,
+		m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+				MigrationMessages.SUBTYPE_MIGRATION_RESPONSE,
 				MigrationResponse.class);
-		m_network.registerMessageType(MigrationMessages.TYPE, MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE,
+		m_network.registerMessageType(DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE,
+				MigrationMessages.SUBTYPE_MIGRATION_REMOTE_MESSAGE,
 				MigrationRemoteMessage.class);
 
 	}

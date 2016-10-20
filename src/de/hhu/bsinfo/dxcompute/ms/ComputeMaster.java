@@ -10,18 +10,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskRequest;
-import de.hhu.bsinfo.dxcompute.ms.messages.ExecuteTaskResponse;
-import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
-import de.hhu.bsinfo.dxcompute.ms.messages.SignalMessage;
-import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinRequest;
-import de.hhu.bsinfo.dxcompute.ms.messages.SlaveJoinResponse;
+import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.ms.messages.*;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -33,7 +29,6 @@ import de.hhu.bsinfo.utils.Pair;
 /**
  * Implementation of a master. The master accepts tasks, pushes them to a queue and distributes them
  * to the conencted slaves for execution.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
@@ -50,15 +45,22 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_computeGroupId  Compute group id the instance is assigned to.
-	 * @param p_pingIntervalMs  Ping interval in ms to check back with the compute group if still alive.
-	 * @param p_serviceAccessor Accessor to services for compute tasks.
-	 * @param p_network         NetworkComponent
-	 * @param p_logger          LoggerComponent
-	 * @param p_nameservice     NameserviceComponent
-	 * @param p_boot            BootComponent
-	 * @param p_lookup          LookupComponent
+	 * @param p_computeGroupId
+	 *            Compute group id the instance is assigned to.
+	 * @param p_pingIntervalMs
+	 *            Ping interval in ms to check back with the compute group if still alive.
+	 * @param p_serviceAccessor
+	 *            Accessor to services for compute tasks.
+	 * @param p_network
+	 *            NetworkComponent
+	 * @param p_logger
+	 *            LoggerComponent
+	 * @param p_nameservice
+	 *            NameserviceComponent
+	 * @param p_boot
+	 *            BootComponent
+	 * @param p_lookup
+	 *            LookupComponent
 	 */
 	ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
 			final DXRAMServiceAccessor p_serviceAccessor,
@@ -78,7 +80,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Get a list of currently connected salves.
-	 *
 	 * @return List of currently connected slaves (node ids).
 	 */
 	ArrayList<Short> getConnectedSlaves() {
@@ -92,8 +93,8 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Submit a task to this master.
-	 *
-	 * @param p_task Task to submit.
+	 * @param p_task
+	 *            Task to submit.
 	 * @return True if submission was successful, false if the max number of tasks queued is reached.
 	 */
 	boolean submitTask(final Task p_task) {
@@ -108,7 +109,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Get the number of tasks currently in the queue.
-	 *
 	 * @return Number of tasks in the queue.
 	 */
 	int getNumberOfTasksInQueue() {
@@ -117,7 +117,6 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Get the total amount of tasks processed so far.
-	 *
 	 * @return Number of tasks processed.
 	 */
 	int getTotalTasksProcessed() {
@@ -158,8 +157,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		m_state = State.STATE_TERMINATE;
 		try {
 			join();
-		} catch (final InterruptedException ignored) {
-		}
+		} catch (final InterruptedException ignored) {}
 
 		// invalidate entry in nameservice
 		m_nameservice.register(-1, m_nameserviceMasterNodeIdKey);
@@ -168,7 +166,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == MasterSlaveMessages.TYPE) {
+			if (p_message.getType() == DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST:
 						incomingSlaveJoinRequest((SlaveJoinRequest) p_message);
@@ -226,8 +224,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 				// #endif /* LOGGER >= WARN */
 				try {
 					Thread.sleep(2000);
-				} catch (final InterruptedException ignored) {
-				}
+				} catch (final InterruptedException ignored) {}
 			} else {
 				m_state = State.STATE_EXECUTE;
 			}
@@ -240,8 +237,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 			// do nothing
 			try {
 				Thread.sleep(10);
-			} catch (final InterruptedException ignored) {
-			}
+			} catch (final InterruptedException ignored) {}
 		}
 	}
 
@@ -392,8 +388,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 		// #endif /* LOGGER >= ERROR */
 		try {
 			Thread.sleep(1000);
-		} catch (final InterruptedException ignored) {
-		}
+		} catch (final InterruptedException ignored) {}
 	}
 
 	/**
@@ -426,8 +421,8 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Handle a SlaveJoinRequest
-	 *
-	 * @param p_message SlaveJoinRequest
+	 * @param p_message
+	 *            SlaveJoinRequest
 	 */
 	private void incomingSlaveJoinRequest(final SlaveJoinRequest p_message) {
 		if (m_joinLock.tryLock()) {
@@ -481,8 +476,8 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
 	/**
 	 * Handle a SignalMessage
-	 *
-	 * @param p_message SignalMessage
+	 * @param p_message
+	 *            SignalMessage
 	 */
 	private void incomingSignalMessage(final SignalMessage p_message) {
 		switch (p_message.getSignal()) {

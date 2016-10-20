@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -33,7 +34,7 @@ public class LockRequest extends AbstractRequest {
 	 *            ChunkIDs to lock
 	 */
 	public LockRequest(final short p_destination, final boolean p_writeLock, final long p_chunkID) {
-		super(p_destination, LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST);
 
 		m_chunkID = p_chunkID;
 

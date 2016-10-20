@@ -22,6 +22,7 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent.MemoryErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -32,7 +33,6 @@ import de.hhu.bsinfo.menet.NodeID;
 /**
  * This service provides access to the backend storage system.
  * It does not replace the normal ChunkService, but extends it capabilities with async operations.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 17.02.16
  */
 public class AsyncChunkService extends AbstractDXRAMService implements MessageReceiver {
@@ -53,8 +53,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-	}
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
 
 	@Override
 	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
@@ -93,8 +92,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 *
-	 * @param p_dataStructres Data structures to put/update.
+	 * @param p_dataStructres
+	 *            Data structures to put/update.
 	 */
 	public void put(final DataStructure... p_dataStructres) {
 		put(ChunkLockOperation.NO_LOCK_OPERATION, p_dataStructres);
@@ -102,9 +101,10 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Put/Update the contents of the provided data structures in the backend storage.
-	 *
-	 * @param p_chunkUnlockOperation Unlock operation to execute right after the put operation.
-	 * @param p_dataStructures       Data structures to put/update.
+	 * @param p_chunkUnlockOperation
+	 *            Unlock operation to execute right after the put operation.
+	 * @param p_dataStructures
+	 *            Data structures to put/update.
 	 */
 	public void put(final ChunkLockOperation p_chunkUnlockOperation, final DataStructure... p_dataStructures) {
 		if (p_dataStructures.length == 0) {
@@ -249,7 +249,7 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
-			if (p_message.getType() == ChunkMessages.TYPE) {
+			if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case ChunkMessages.SUBTYPE_PUT_MESSAGE:
 						incomingPutMessage((PutMessage) p_message);
@@ -271,7 +271,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	 * Register network messages we use in here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(ChunkMessages.TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE, PutMessage.class);
+		m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MESSAGE,
+				PutMessage.class);
 	}
 
 	/**
@@ -298,8 +299,8 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 
 	/**
 	 * Handles an incoming PutRequest
-	 *
-	 * @param p_request the PutRequest
+	 * @param p_request
+	 *            the PutRequest
 	 */
 	private void incomingPutMessage(final PutMessage p_request) {
 		DataStructure[] chunks = p_request.getDataStructures();

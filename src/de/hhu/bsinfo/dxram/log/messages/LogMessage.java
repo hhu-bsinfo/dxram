@@ -6,6 +6,7 @@ import java.nio.ByteOrder;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -39,7 +40,7 @@ public class LogMessage extends AbstractMessage {
 	 *            the data structures to store
 	 */
 	public LogMessage(final short p_destination, final DataStructure... p_dataStructures) {
-		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
+		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
 
 		m_rangeID = -1;
 		m_dataStructures = p_dataStructures;
@@ -55,7 +56,7 @@ public class LogMessage extends AbstractMessage {
 	 *            the RangeID
 	 */
 	public LogMessage(final short p_destination, final byte p_rangeID, final DataStructure... p_dataStructures) {
-		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
+		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
 
 		m_rangeID = p_rangeID;
 		m_dataStructures = p_dataStructures;

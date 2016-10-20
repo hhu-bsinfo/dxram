@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NodeID;
 
@@ -34,7 +35,8 @@ public class NotifyAboutNewSuccessorMessage extends AbstractMessage {
 	 *            the new successor
 	 */
 	public NotifyAboutNewSuccessorMessage(final short p_destination, final short p_newSuccessor) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE);
 
 		assert p_newSuccessor != NodeID.INVALID_ID;
 

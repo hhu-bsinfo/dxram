@@ -32,6 +32,7 @@ import de.hhu.bsinfo.dxram.log.storage.Version;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.AbstractMessage;
 import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
@@ -774,7 +775,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == LogMessages.TYPE) {
+			if (p_message.getType() == DXRAMMessageTypes.LOG_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case LogMessages.SUBTYPE_LOG_MESSAGE:
 						incomingLogMessage((LogMessage) p_message);
@@ -801,11 +802,13 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	 * Register network messages we use in here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, LogMessage.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, RemoveMessage.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST,
+		m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE,
+				LogMessage.class);
+		m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE,
+				RemoveMessage.class);
+		m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_REQUEST,
 				GetUtilizationRequest.class);
-		m_network.registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE,
+		m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_GET_UTILIZATION_RESPONSE,
 				GetUtilizationResponse.class);
 	}
 

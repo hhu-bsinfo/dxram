@@ -10,6 +10,8 @@ import java.util.Map.Entry;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
+import de.hhu.bsinfo.dxram.event.EventListener;
+import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -29,7 +31,7 @@ import org.apache.zookeeper.data.Stat;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class ZookeeperBootComponent extends AbstractBootComponent implements Watcher {
+public class ZookeeperBootComponent extends AbstractBootComponent implements Watcher, EventListener<NodeFailureEvent> {
 
 	// Attributes
 	private String m_ownIP;
@@ -316,60 +318,81 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
-	public short setBootstrapPeer(final short p_nodeID) {
-		short ret;
-		Stat status;
-		String entry;
-
-		status = zookeeperGetStatus("nodes/bootstrap");
-		entry = new String(zookeeperGetData("nodes/bootstrap", status));
-		ret = Short.parseShort(entry);
-		if (ret == m_bootstrap) {
-			if (!zookeeperSetData("nodes/bootstrap", ("" + p_nodeID).getBytes(), status.getVersion())) {
-				m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
-			} else {
-				m_bootstrap = p_nodeID;
-			}
-		} else {
-			m_bootstrap = ret;
-		}
-
-		return m_bootstrap;
-	}
-
-	@Override
-	public boolean reportNodeFailure(final short p_nodeID, final boolean p_isSuperpeer) {
+	public void failureHandling(final short p_nodeID, final NodeRole p_role) {
 		boolean ret = false;
 		Stat status;
 
-		if (zookeeperPathExists("nodes/peers/" + p_nodeID)) {
-			zookeeperCreate("nodes/free/" + p_nodeID);
-
-			status = zookeeperGetStatus("nodes/new/" + p_nodeID);
-			if (null != status) {
-				zookeeperDelete("nodes/new/" + p_nodeID, status.getVersion());
-			}
-			if (p_isSuperpeer) {
+		if (p_role == NodeRole.SUPERPEER) {
+			try {
+				// Remove superpeer
 				status = zookeeperGetStatus("nodes/superpeers/" + p_nodeID);
 				if (null != status) {
 					zookeeperDelete("nodes/superpeers/" + p_nodeID, status.getVersion());
+					if (!m_nodesConfiguration.getNode(p_nodeID).readFromFile()) {
+						// Enable re-usage of NodeID if failed superpeer was not in nodes file
+						zookeeperCreate("node/free/" + p_nodeID);
+					}
 				}
-			} else {
+			} catch (final ZooKeeperException e) {
+				// Entry was already deleted by another node
+			}
+
+			// Determine new bootstrap if failed superpeer is current one
+			if (p_nodeID == m_bootstrap) {
+				setBootstrapPeer(m_nodesConfiguration.getOwnNodeID());
+
+				// #if LOGGER >= DEBUG
+				m_logger.debug(getClass(), "Failed node " + NodeID.toHexString(p_nodeID)
+						+ " was bootstrap. New bootstrap is " + NodeID.toHexString(m_bootstrap));
+				// #endif /* LOGGER >= DEBUG */
+
+			}
+		} else if (p_role == NodeRole.PEER) {
+			try {
+				// Remove peer
 				status = zookeeperGetStatus("nodes/peers/" + p_nodeID);
 				if (null != status) {
 					zookeeperDelete("nodes/peers/" + p_nodeID, status.getVersion());
+					if (!m_nodesConfiguration.getNode(p_nodeID).readFromFile()) {
+						// Enable re-usage of NodeID if failed peer was not in nodes file
+						zookeeperCreate("node/free/" + p_nodeID);
+					}
 				}
+			} catch (final ZooKeeperException e) {
+				// Entry was already deleted by another node
 			}
-
-			ret = true;
 		} else {
-			status = zookeeperGetStatus("nodes/terminals/" + p_nodeID);
-			if (null != status) {
-				zookeeperDelete("nodes/terminals/" + p_nodeID, status.getVersion());
+			try {
+				// Remove terminal
+				status = zookeeperGetStatus("nodes/terminals/" + p_nodeID);
+				if (null != status) {
+					zookeeperDelete("nodes/terminals/" + p_nodeID, status.getVersion());
+				}
+			} catch (final ZooKeeperException e) {
+				// Entry was already deleted by another node
 			}
 		}
 
-		return ret;
+		if (!m_nodesConfiguration.getNode(p_nodeID).readFromFile()) {
+			try {
+				// Remove node from "new nodes"
+				status = zookeeperGetStatus("nodes/new/" + p_nodeID);
+				if (null != status) {
+					zookeeperDelete("nodes/new/" + p_nodeID, status.getVersion());
+				}
+			} catch (final ZooKeeperException e) {
+				// Entry was already deleted by another node
+			}
+		}
+
+		// Remove failed node from nodes configuration
+		m_nodesConfiguration.removeNode(p_nodeID);
+	}
+
+	@Override
+	public void eventTriggered(final NodeFailureEvent p_event) {
+		// Remove failed node from nodes configuration
+		m_nodesConfiguration.removeNode(p_event.getNodeID());
 	}
 
 	@Override
@@ -408,7 +431,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 								m_nodesConfiguration.addNode(nodeID, new NodeEntry(splits[0],
 										Integer.parseInt(splits[1]), (short) 0, (short) 0,
-										NodeRole.toNodeRole(splits[2])));
+										NodeRole.toNodeRole(splits[2]), false));
 							}
 						}
 					}
@@ -422,6 +445,46 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	// -----------------------------------------------------------------------------------
+
+	/**
+	 * Replaces the current bootstrap with p_nodeID if the failed bootstrap has not been replaced by another superpeer
+	 *
+	 * @param p_nodeID the new bootstrap candidate
+	 */
+	public void setBootstrapPeer(final short p_nodeID) {
+		short currentBootstrap;
+		Stat status = null;
+		String entry;
+
+		try {
+			status = zookeeperGetStatus("nodes/bootstrap");
+		} catch (final ZooKeeperException e) {
+			// Entry should be available, even if another node updated the bootstrap first
+
+			// #if LOGGER >= ERROR
+			m_logger.error(this.getClass(), "Getting status from zookeeper failed.", e);
+			// #endif /* LOGGER >= ERROR */
+
+			return;
+		}
+
+		entry = new String(zookeeperGetData("nodes/bootstrap", status));
+		currentBootstrap = Short.parseShort(entry);
+		if (currentBootstrap == m_bootstrap) {
+			try {
+				if (!zookeeperSetData("nodes/bootstrap", ("" + p_nodeID).getBytes(), status.getVersion())) {
+					m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
+				} else {
+					m_bootstrap = p_nodeID;
+				}
+			} catch (final ZooKeeperException e) {
+				// Entry was already updated by another node, try again
+				setBootstrapPeer(p_nodeID);
+			}
+		} else {
+			m_bootstrap = currentBootstrap;
+		}
+	}
 
 	/**
 	 * Read the nodes list from the settings instance.
@@ -479,7 +542,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 				continue;
 			}
 
-			NodeEntry node = new NodeEntry(ip, port, rack, szwitch, NodeRole.toNodeRole(strRole));
+			NodeEntry node = new NodeEntry(ip, port, rack, szwitch, NodeRole.toNodeRole(strRole), true);
 			nodes.add(node);
 		}
 
@@ -721,7 +784,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 				m_nodesConfiguration.addNode(nodeID,
 						new NodeEntry(splits[0], Integer.parseInt(splits[1]), (short) 0, (short) 0,
-								NodeRole.toNodeRole(splits[2])));
+								NodeRole.toNodeRole(splits[2]), false));
 
 				if (nodeID == m_nodesConfiguration.getOwnNodeID()) {
 					// NodeID was already re-used
@@ -759,7 +822,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 				// Set routing information for that node
 				m_nodesConfiguration.addNode(nodeID,
-						new NodeEntry(m_ownIP, m_ownPort, (short) 0, (short) 0, p_cmdLineNodeRole));
+						new NodeEntry(m_ownIP, m_ownPort, (short) 0, (short) 0, p_cmdLineNodeRole, false));
 			} else {
 				// Remove NodeID if this node failed before
 				nodeID = m_nodesConfiguration.getOwnNodeID();
@@ -813,19 +876,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 *
 	 * @param p_path Path to get the status of.
 	 * @return Status of the path.
+	 * @throws ZooKeeperException if status could not be gotten
 	 */
-	private Stat zookeeperGetStatus(final String p_path) {
-		Stat status = null;
-
-		try {
-			status = m_zookeeper.getStatus(p_path);
-		} catch (final ZooKeeperException e) {
-			// #if LOGGER >= ERROR
-			m_logger.error(this.getClass(), "Getting status from zookeeper failed.", e);
-			// #endif /* LOGGER >= ERROR */
-		}
-
-		return status;
+	private Stat zookeeperGetStatus(final String p_path) throws ZooKeeperException {
+		return m_zookeeper.getStatus(p_path);
 	}
 
 	/**
@@ -833,15 +887,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 *
 	 * @param p_path    Path to delete.
 	 * @param p_version Version of the path to delete.
+	 * @throws ZooKeeperException if deletion failed
 	 */
-	private void zookeeperDelete(final String p_path, final int p_version) {
-		try {
-			m_zookeeper.delete(p_path, p_version);
-		} catch (final ZooKeeperException e) {
-			// #if LOGGER >= ERROR
-			m_logger.error(this.getClass(), "Deleting path from zookeeper failed.", e);
-			// #endif /* LOGGER >= ERROR */
-		}
+	private void zookeeperDelete(final String p_path, final int p_version) throws ZooKeeperException {
+		m_zookeeper.delete(p_path, p_version);
 	}
 
 	/**
@@ -892,16 +941,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 * @param p_data    Data to set.
 	 * @param p_version Version of the path.
 	 * @return True if successful, false otherwise.
+	 * @throws ZooKeeperException if data could not be set
 	 */
-	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) {
+	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version)
+			throws ZooKeeperException {
 		try {
 			m_zookeeper.setData(p_path, p_data, p_version);
 			return true;
 		} catch (final ZooKeeperException e) {
-			// #if LOGGER >= ERROR
-			m_logger.error(this.getClass(), "Setting data on zookeeper failed.", e);
-			// #endif /* LOGGER >= ERROR */
-			return false;
+			throw e;
 		}
 	}
 

@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -35,7 +36,8 @@ public class SuperpeerStorageGetRequest extends AbstractRequest {
 	 *            Data structure with the ID of the chunk to get.
 	 */
 	public SuperpeerStorageGetRequest(final short p_destination, final DataStructure p_dataStructure) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST);
 
 		m_dataStructure = p_dataStructure;
 	}

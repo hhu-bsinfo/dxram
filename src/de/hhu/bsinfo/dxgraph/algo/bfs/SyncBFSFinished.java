@@ -1,9 +1,11 @@
+
 package de.hhu.bsinfo.dxgraph.algo.bfs;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -40,7 +42,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 		m_signalAbortExecution = false;
 
-		m_networkService.registerMessageType(BFSMessages.TYPE,
+		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE,
 				BFSLevelFinishedMessage.class);
 
@@ -130,8 +132,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 				try {
 					Thread.sleep(2);
-				} catch (final InterruptedException ignored) {
-				}
+				} catch (final InterruptedException ignored) {}
 
 				if (m_signalAbortExecution) {
 					return false;
@@ -172,7 +173,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == BFSMessages.TYPE) {
+			if (p_message.getType() == DXGRAPHMessageTypes.BFS_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE:
 						onIncomingBFSLevelFinishedMessage(
@@ -189,8 +190,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 		try {
 			m_finishedCounterLock[p_message.getToken()].acquire();
-		} catch (final InterruptedException ignored) {
-		}
+		} catch (final InterruptedException ignored) {}
 
 		m_recvVertexMsgCountGlobal[p_message.getToken()] += p_message.getReceivedMessageCount();
 		m_sentVertexMsgCountGlobal[p_message.getToken()] += p_message.getSentMessageCount();

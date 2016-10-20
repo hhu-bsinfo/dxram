@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -36,7 +37,7 @@ public class BarrierReleaseMessage extends AbstractMessage {
 	 */
 	public BarrierReleaseMessage(final short p_destination, final int p_barrierId, final short[] p_signedOnPeers,
 			final long[] p_customData) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_BARRIER_RELEASE_MESSAGE);
 
 		m_barrierId = p_barrierId;
 		// the first entry of the list contains the number of signed on peers from the BarrierTable

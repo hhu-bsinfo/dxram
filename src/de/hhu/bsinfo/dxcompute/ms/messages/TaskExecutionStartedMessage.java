@@ -3,11 +3,11 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
  * Notify all remote listeners about a task that started execution.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 22.04.16
  */
 public class TaskExecutionStartedMessage extends AbstractMessage {
@@ -24,19 +24,19 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 	/**
 	 * Creates an instance of TaskRemoteCallbackMessage.
 	 * This constructor is used when sending this message.
-	 *
-	 * @param p_destination   the destination node id.
-	 * @param p_taskPayloadId Id of the task that started execution.
+	 * @param p_destination
+	 *            the destination node id.
+	 * @param p_taskPayloadId
+	 *            Id of the task that started execution.
 	 */
 	public TaskExecutionStartedMessage(final short p_destination, final int p_taskPayloadId) {
-		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE);
+		super(p_destination, DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE);
 
 		m_taskPayloadId = p_taskPayloadId;
 	}
 
 	/**
 	 * Id of the task that started execution.
-	 *
 	 * @return Id of the task.
 	 */
 	public int getTaskPayloadId() {

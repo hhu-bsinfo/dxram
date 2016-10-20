@@ -1,13 +1,14 @@
+
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
  * Message broadcasted by one bfs peer to all other participating peers when
  * the current peer has finished his iteration.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 19.05.16
  */
 public class BFSLevelFinishedMessage extends AbstractMessage {
@@ -26,12 +27,12 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
 
 	/**
 	 * Creates an instance of BFSLevelFinishedMessage
-	 *
-	 * @param p_destination the destination
+	 * @param p_destination
+	 *            the destination
 	 */
 	public BFSLevelFinishedMessage(final short p_destination, final int p_token, final long p_sentMsgCount,
 			final long p_receivedMsgCount) {
-		super(p_destination, BFSMessages.TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE);
+		super(p_destination, DXGRAPHMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE);
 
 		m_token = p_token;
 		m_sentMsgCount = p_sentMsgCount;

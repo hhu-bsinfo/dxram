@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -30,7 +31,8 @@ public class SuperpeerStorageRemoveMessage extends AbstractMessage {
 	 *            True if replicate message, false if not
 	 */
 	public SuperpeerStorageRemoveMessage(final short p_destination, final int p_storageId, final boolean p_replicate) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE);
 
 		m_storageId = p_storageId;
 		m_replicate = p_replicate;
