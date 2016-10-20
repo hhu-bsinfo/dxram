@@ -1,0 +1,35 @@
+[
+{
+  "m_typeId": 1,
+  "m_subtypeId": 0,
+  "m_numRequiredSlaves": 0,
+  "m_pathFile": "../../graph_data/oel/kron_21_16/out.2.ioel"
+}
+{
+  "m_typeId": 1,
+  "m_subtypeId": 1,
+  "m_numRequiredSlaves": 0,
+  "m_path": "../../graph_data/oel/kron_21_16"
+  "m_vertexBatchSize": 1000,
+  "m_filterDupEdges": false,
+  "m_filterSelfLoops": false
+},
+{
+  "m_typeId": 1,
+  "m_subtypeId": 2,
+  "m_numRequiredSlaves": 0,
+  "m_path": "../../graph_data/oel/kron_21_16"
+},
+{
+  "m_typeId": 1,
+  "m_subtypeId": 3,
+  "m_numRequiredSlaves": 0,
+  "m_vertexBatchSize": 100,
+  "m_vertexMessageBatchSize": 100,
+  "m_numberOfThreadsPerNode": 4,
+  "m_markVertices": false,
+  "m_beamerMode": true,
+  "m_beamerFormulaGraphEdgeDeg": 16,
+  "m_abortBFSOnError": true
+}
+]

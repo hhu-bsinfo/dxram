@@ -1,7 +1,0 @@
-#Classes
-ChunkID - Methods for handling ChunkIDs
-Core - API of the DXRAM core
-NodeID - Methods for handling NodeIDs
-
-#Packages
-config - Classes for the DXRAM configuration

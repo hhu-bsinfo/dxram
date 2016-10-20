@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="dxram" basedir="." default="build-release">
+
+    <!-- Load the ant contrib lib -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="${basedir}/lib/ant-contrib-0.6.jar"/>
+        </classpath>
+    </taskdef>
+
+
+    <property name="name" value="dxram"/>
+    <property name="build_dir" value="build"/>
+    <property name="conf_dir" value="config"/>
+    <property name="lib_dir" value="lib"/>
+    <property name="jni_dir" value="jni"/>
+    <property name="log_dir" value="log"/>
+    <property name="source_dir" value="src"/>
+
+    <property name="build_proj_dir" value="${build_dir}/${name}"/>
+    <property name="build_proj_conf_dir" value="${build_proj_dir}/${conf_dir}"/>
+    <property name="build_proj_lib_dir" value="${build_proj_dir}/${lib_dir}"/>
+    <property name="build_proj_jni_dir" value="${build_proj_dir}/${jni_dir}"/>
+    <property name="build_proj_log_dir" value="${build_proj_dir}/${log_dir}"/>
+
+    <target name="build-all"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, compile-release, compile-performance, move-release"
+            description="builds all files"/>
+    <target name="build-debug"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-debug, move-debug"
+            description="builds dxram-debug.jar (contains all logger calls)"/>
+    <target name="build-release"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-release, move-release"
+            description="builds dxram-release-jar"/>
+    <target name="build-performance"
+            depends="clean-all, create_base_dirs, copy_libs, copy_jni, copy_config, create_log, compile-performance, move-performance"
+            description="builds dxram-performance.jar (without any logger calls)"/>
+
+
+    <target name="clean-all" description="removes all created files and folders">
+        <delete dir="${build_proj_dir}" failonerror="false"/>
+    </target>
+
+    <target name="create_base_dirs" description="creates necessary folders">
+        <mkdir dir="${build_dir}"/>
+        <mkdir dir="${build_proj_dir}"/>
+    </target>
+
+    <target name="copy_libs" depends="create_base_dirs" description="copies the libs">
+        <copy file="${lib_dir}/log4j-1.2.16.jar" todir="${build_proj_lib_dir}"/>
+        <copy file="${lib_dir}/slf4j-log4j12-1.6.1.jar" todir="${build_proj_lib_dir}"/>
+        <copy file="${lib_dir}/slf4j-api-1.6.1.jar" todir="${build_proj_lib_dir}"/>
+        <copy file="${lib_dir}/zookeeper-3.4.3.jar" todir="${build_proj_lib_dir}"/>
+    </target>
+
+    <target name="copy_jni" depends="create_base_dirs" description="copies the jni libs">
+        <copy file="${jni_dir}/libJNIconsole.so" todir="${build_proj_jni_dir}"/>
+        <copy file="${jni_dir}/libJNINativeMemory.so" todir="${build_proj_jni_dir}"/>
+        <copy file="${jni_dir}/libJNIconsole.dylib" todir="${build_proj_jni_dir}"/>
+        <copy file="${jni_dir}/libJNINativeMemory.dylib" todir="${build_proj_jni_dir}"/>
+    </target>
+
+    <target name="copy_config" depends="create_base_dirs" description="copies the config files">
+        <mkdir dir="${build_proj_conf_dir}"/>
+        <copy todir="${build_proj_conf_dir}">
+            <fileset dir="${conf_dir}">
+                <include name="**/*.conf"/>
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="create_log" depends="create_base_dirs" description="creates the log directory">
+        <mkdir dir="${build_proj_log_dir}"/>
+    </target>
+
+    <target name="compile-debug" depends="create_base_dirs" description="builds class files, debug build">
+        <antcall target="compile">
+            <param name="buildtype" value="debug"/>
+        </antcall>
+    </target>
+
+    <target name="compile-release" depends="create_base_dirs" description="builds class files, release build">
+        <exec dir="util/" executable="/bin/bash">
+            <arg line="preprocessor.sh INFO ENABLED"/>
+        </exec>
+
+        <trycatch>
+            <try>
+                <antcall target="compile">
+                    <param name="buildtype" value="release"/>
+                </antcall>
+            </try>
+            <catch>
+                <fail message="Compiler error(s)!"/>
+            </catch>
+            <finally>
+                <exec dir="util/" executable="/bin/bash">
+                    <arg line="postprocessor.sh"/>
+                </exec>
+            </finally>
+        </trycatch>
+    </target>
+
+    <target name="compile-performance" depends="create_base_dirs" description="builds class files, performance build">
+        <exec dir="util/" executable="/bin/bash">
+            <arg line="preprocessor.sh DISABLED DISABLED"/>
+        </exec>
+
+        <trycatch>
+            <try>
+                <antcall target="compile">
+                    <param name="buildtype" value="performance"/>
+                </antcall>
+            </try>
+            <catch>
+                <fail message="Compiler error(s)!"/>
+            </catch>
+            <finally>
+                <exec dir="util/" executable="/bin/bash">
+                    <arg line="postprocessor.sh"/>
+                </exec>
+            </finally>
+        </trycatch>
+    </target>
+
+    <target name="compile" depends="create_base_dirs" description="builds class files">
+        <echo message="Compiling with build type ${buildtype}"/>
+
+        <mkdir dir="${build_proj_dir}/classes"/>
+        <mkdir dir="${build_proj_dir}/classes/${buildtype}"/>
+
+        <condition property="debugOn" value="true" else="false">
+            <equals arg1="${buildtype}" arg2="debug"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="release"/>
+        </condition>
+        <condition property="optimizeOn" value="on" else="off">
+            <equals arg1="${buildtype}" arg2="performance"/>
+        </condition>
+
+        <path id="build.classpath">
+            <pathelement path="${build_proj_dir}/${lib_dir}/log4j-1.2.16.jar"/>
+            <pathelement path="${build_proj_dir}/${lib_dir}/slf4j-log4j12-1.6.1.jar"/>
+            <pathelement path="${build_proj_dir}/${lib_dir}/slf4j-api-1.6.1.jar"/>
+            <pathelement path="${build_proj_dir}/${lib_dir}/zookeeper-3.4.3.jar"/>
+            <pathelement path="${build_proj_conf_dir}"/>
+        </path>
+        <manifestclasspath property="jar.classpath" jarfile="${build_proj_dir}/${name}-${buildtype}.jar">
+            <classpath refid="build.classpath"/>
+        </manifestclasspath>
+
+        <javac srcdir="${source_dir}" destdir="${build_proj_dir}/classes/${buildtype}" includeantruntime="false"
+               debug="${debugOn}" optimize="${optimizeOn}"
+               target="1.8" encoding="UTF-8">
+            <include name="de/hhu/bsinfo/dxgraph/**/*.java"/>
+            <include name="de/hhu/bsinfo/dxcompute/**/*.java"/>
+            <include name="de/hhu/bsinfo/dxram/**/*.java"/>
+            <include name="de/hhu/bsinfo/menet/**/*.java"/>
+            <include name="de/hhu/bsinfo/soh/**/*.java"/>
+            <include name="de/hhu/bsinfo/utils/**/*.java"/>
+            <include name="de/hhu/bsinfo/dxcompute/**/*.java"/>
+            <classpath>
+                <fileset dir="${lib_dir}">
+                    <include name="**/*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+
+        <jar destfile="${build_proj_dir}/${name}-${buildtype}.jar" basedir="${build_proj_dir}/classes/${buildtype}">
+            <manifest>
+                <attribute name="Main-Class" value="de.hhu.bsinfo.dxram.run.DXRAMMain"/>
+                <attribute name="Class-Path" value="${jar.classpath}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="move-debug" depends="compile-debug" description="moves jar file to DXRAM.jar">
+        <move file="${build_proj_dir}/${name}-debug.jar" tofile="${build_proj_dir}/DXRAM.jar"/>
+    </target>
+
+    <target name="move-release" depends="compile-release" description="moves jar file to DXRAM.jar">
+        <move file="${build_proj_dir}/${name}-release.jar" tofile="${build_proj_dir}/DXRAM.jar"/>
+    </target>
+
+    <target name="move-performance" depends="compile-performance" description="moves jar file to DXRAM.jar">
+        <move file="${build_proj_dir}/${name}-performance.jar" tofile="${build_proj_dir}/DXRAM.jar"/>
+    </target>
+</project>

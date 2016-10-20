@@ -5,7 +5,7 @@
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
 <!--
-    Checkstyle-Configuration: DXRAM syleguide
+    Checkstyle-Configuration: dxram
     Description: none
 -->
 <module name="Checker">
@@ -56,22 +56,13 @@
     <module name="WhitespaceAfter">
       <property name="tokens" value="COMMA"/>
     </module>
-    <module name="WhitespaceAround">
-      <property name="severity" value="ignore"/>
-      <property name="tokens" value="ASSIGN,BAND,BAND_ASSIGN,BOR,BOR_ASSIGN,BSR,BSR_ASSIGN,BXOR,BXOR_ASSIGN,COLON,DIV,DIV_ASSIGN,EQUAL,GE,GT,LAND,LE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE,LOR,LT,MINUS,MINUS_ASSIGN,MOD,MOD_ASSIGN,NOT_EQUAL,PLUS,PLUS_ASSIGN,QUESTION,SL,SL_ASSIGN,SR,SR_ASSIGN,STAR,STAR_ASSIGN,LITERAL_ASSERT,TYPE_EXTENSION_AND,WILDCARD_TYPE"/>
-      <property name="allowEmptyConstructors" value="true"/>
-      <property name="allowEmptyMethods" value="true"/>
-      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
-    </module>
     <module name="ModifierOrder"/>
     <module name="RedundantModifier"/>
-    <module name="AvoidNestedBlocks"/>
     <module name="LeftCurly">
       <property name="maxLineLength" value="160"/>
     </module>
     <module name="NeedBraces"/>
     <module name="RightCurly"/>
-    <module name="AvoidInlineConditionals"/>
     <module name="EmptyStatement"/>
     <module name="EqualsHashCode"/>
     <module name="HiddenField"/>
@@ -79,10 +70,6 @@
     <module name="MissingSwitchDefault"/>
     <module name="SimplifyBooleanExpression"/>
     <module name="SimplifyBooleanReturn"/>
-    <module name="DesignForExtension">
-      <property name="severity" value="ignore"/>
-      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
-    </module>
     <module name="FinalClass"/>
     <module name="HideUtilityClassConstructor"/>
     <module name="VisibilityModifier"/>
@@ -93,7 +80,6 @@
     <module name="UpperEll"/>
     <module name="MissingDeprecated"/>
     <module name="MissingOverride"/>
-    <module name="PackageAnnotation"/>
     <module name="SuppressWarnings"/>
     <module name="AbstractClassName">
       <property name="format" value="^Abstract[A-Z][a-zA-Z0-9]*$"/>
@@ -129,33 +115,16 @@
     <module name="FallThrough">
       <property name="checkLastCaseGroup" value="true"/>
     </module>
-    <module name="FinalLocalVariable">
-      <property name="tokens" value="PARAMETER_DEF,VARIABLE_DEF"/>
-    </module>
     <module name="IllegalThrows">
       <property name="illegalClassNames" value="java.lang.Throwable, java.lang.Error, java.lang.RuntimeException, java.lang.Exception"/>
     </module>
-    <module name="MissingCtor"/>
     <module name="MultipleVariableDeclarations"/>
-    <module name="NoFinalizer">
-      <property name="severity" value="ignore"/>
-      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
-    </module>
     <module name="ParameterAssignment"/>
-    <module name="ReturnCount">
-      <property name="max" value="1"/>
-    </module>
     <module name="StringLiteralEquality"/>
     <module name="UnnecessaryParentheses"/>
     <module name="OneStatementPerLine"/>
     <module name="InnerTypeLast"/>
     <module name="MutableException"/>
-    <module name="Indentation">
-      <property name="severity" value="ignore"/>
-      <property name="caseIndent" value="0"/>
-      <property name="lineWrappingIndentation" value="2"/>
-      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit"/>
-    </module>
     <module name="TrailingComment"/>
     <module name="OuterTypeFilename"/>
     <module name="PackageDeclaration"/>
@@ -164,12 +133,7 @@
       <property name="allowLineBreaks" value="true"/>
       <property name="tokens" value="DOT"/>
     </module>
-    <module name="ReturnCount">
-      <property name="max" value="1"/>
-    </module>
-    <module name="ReturnCount"/>
   </module>
-  <module name="JavadocPackage"/>
   <module name="NewlineAtEndOfFile"/>
   <module name="RegexpSingleline">
     <property name="format" value="\s+$"/>

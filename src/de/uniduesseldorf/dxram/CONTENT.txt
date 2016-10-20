@@ -1,9 +1,0 @@
-#Classes
-DXRAMLogger - can be used for general logging
-
-#Packages
-commands - execution of commands by monitoring peer
-core - code of the DXRAM core
-run - classes to start superpeers, peers and monitors
-test - several test classes
-utils - various utility classes
