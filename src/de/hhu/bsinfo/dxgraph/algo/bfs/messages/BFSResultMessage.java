@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
+import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -31,7 +31,7 @@ public class BFSResultMessage extends AbstractMessage {
 	 *            Results of a bfs iteration
 	 */
 	public BFSResultMessage(final short p_destination, final BFSResult p_bfsResult) {
-		super(p_destination, DXGRAPHMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE);
+		super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE);
 
 		m_bfsResult = p_bfsResult;
 	}

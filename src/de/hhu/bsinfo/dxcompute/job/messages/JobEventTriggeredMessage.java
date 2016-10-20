@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.job.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.job.JobID;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
@@ -33,7 +33,7 @@ public class JobEventTriggeredMessage extends AbstractMessage {
 	 *            Event id
 	 */
 	public JobEventTriggeredMessage(final short p_destination, final long p_jobId, final byte p_eventId) {
-		super(p_destination, DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE);
+		super(p_destination, DXComputeMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE);
 
 		m_jobId = p_jobId;
 		setStatusCode(p_eventId);

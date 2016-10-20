@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
@@ -33,7 +33,7 @@ public class TaskExecutionFinishedMessage extends AbstractMessage {
 	 */
 	public TaskExecutionFinishedMessage(final short p_destination, final int p_taskPayloadId,
 			final int[] p_executionReturnCodes) {
-		super(p_destination, DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		super(p_destination, DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
 
 		m_taskPayloadId = p_taskPayloadId;

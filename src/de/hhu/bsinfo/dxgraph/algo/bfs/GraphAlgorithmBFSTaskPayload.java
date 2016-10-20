@@ -14,7 +14,7 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
+import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVectorHybrid;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
@@ -134,13 +134,13 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 		m_synchronizationService = m_ctx.getDXRAMServiceAccessor().getService(SynchronizationService.class);
 		m_temporaryStorageService = m_ctx.getDXRAMServiceAccessor().getService(TemporaryStorageService.class);
 
-		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
+		m_networkService.registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE,
 				VerticesForNextFrontierMessage.class);
-		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
+		m_networkService.registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE,
 				BFSTerminateMessage.class);
-		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
+		m_networkService.registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE,
 				BFSResultMessage.class);
 
@@ -149,7 +149,7 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 
 		// TODO workaround for network issue creating multiple socket connections
 		{
-			m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
+			m_networkService.registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE,
 					BFSMessages.SUBTYPE_PING_MESSAGE,
 					PingMessage.class);
 
@@ -726,7 +726,7 @@ public class GraphAlgorithmBFSTaskPayload extends TaskPayload {
 		@Override
 		public void onIncomingMessage(final AbstractMessage p_message) {
 			if (p_message != null) {
-				if (p_message.getType() == DXGRAPHMessageTypes.BFS_MESSAGES_TYPE) {
+				if (p_message.getType() == DXGraphMessageTypes.BFS_MESSAGES_TYPE) {
 					switch (p_message.getSubtype()) {
 					case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE:
 						onIncomingVerticesForNextFrontierMessage((VerticesForNextFrontierMessage) p_message);

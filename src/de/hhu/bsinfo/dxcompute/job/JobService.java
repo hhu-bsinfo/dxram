@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.job.event.JobEventListener;
 import de.hhu.bsinfo.dxcompute.job.event.JobEvents;
 import de.hhu.bsinfo.dxcompute.job.messages.*;
@@ -227,7 +227,7 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 		m_logger.trace(getClass(), "Entering incomingMessage with: p_message=" + p_message);
 		// #endif /* LOGGER == TRACE */
 		if (p_message != null) {
-			if (p_message.getType() == DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE) {
+			if (p_message.getType() == DXComputeMessageTypes.JOB_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE:
 						incomingPushJobQueueMessage((PushJobQueueMessage) p_message);
@@ -344,14 +344,14 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	 * Register network messages used here.
 	 */
 	private void registerNetworkMessages() {
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.JOB_MESSAGES_TYPE,
 				JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE,
 				PushJobQueueMessage.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST,
+		m_network.registerMessageType(DXComputeMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST,
 				StatusRequest.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_RESPONSE,
+		m_network.registerMessageType(DXComputeMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_RESPONSE,
 				StatusResponse.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.JOB_MESSAGES_TYPE,
 				JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE,
 				JobEventTriggeredMessage.class);
 	}

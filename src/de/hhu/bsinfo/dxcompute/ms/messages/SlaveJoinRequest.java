@@ -1,7 +1,7 @@
 
 package de.hhu.bsinfo.dxcompute.ms.messages;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
@@ -24,7 +24,7 @@ public class SlaveJoinRequest extends AbstractRequest {
 	 *            the destination node id.
 	 */
 	public SlaveJoinRequest(final short p_destination) {
-		super(p_destination, DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		super(p_destination, DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST);
 	}
 }

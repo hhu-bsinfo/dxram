@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
+import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
@@ -33,7 +33,7 @@ public class BFSTerminateMessage extends AbstractMessage {
 	 */
 	public BFSTerminateMessage(final short p_destination, final long p_frontierNextVertices,
 			final long p_frontierNextEdges) {
-		super(p_destination, DXGRAPHMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE);
+		super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE);
 
 		m_frontierNextVerices = p_frontierNextVertices;
 		m_frontierNextEdges = p_frontierNextEdges;

@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.job.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.job.AbstractJob;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -36,7 +36,7 @@ public class PushJobQueueMessage extends AbstractMessage {
 	 */
 	public PushJobQueueMessage(final short p_destination, final AbstractJob p_job,
 			final byte p_callbackJobEventBitMask) {
-		super(p_destination, DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE);
+		super(p_destination, DXComputeMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE);
 
 		m_job = p_job;
 		m_callbackJobEventBitMask = p_callbackJobEventBitMask;

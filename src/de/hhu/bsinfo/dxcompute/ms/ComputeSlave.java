@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.messages.*;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -62,15 +62,15 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 		super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_logger,
 				p_nameservice, p_boot, p_lookup);
 
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SIGNAL, SignalMessage.class);
 
 		m_network.register(SlaveJoinResponse.class, this);
@@ -120,7 +120,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE) {
+			if (p_message.getType() == DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST:
 						incomingExecuteTaskRequest((ExecuteTaskRequest) p_message);

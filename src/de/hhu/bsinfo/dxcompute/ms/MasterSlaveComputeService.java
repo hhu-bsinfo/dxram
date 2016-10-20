@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.Gson;
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusResponse;
 import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
@@ -347,7 +347,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE) {
+			if (p_message.getType() == DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
 						incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
@@ -389,22 +389,22 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_boot = getComponent(AbstractBootComponent.class);
 		LookupComponent lookup = getComponent(LookupComponent.class);
 
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
 				SubmitTaskRequest.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE,
 				SubmitTaskResponse.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST,
 				GetMasterStatusRequest.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE,
 				GetMasterStatusResponse.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE,
 				TaskExecutionStartedMessage.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE,
 				TaskExecutionFinishedMessage.class);
 

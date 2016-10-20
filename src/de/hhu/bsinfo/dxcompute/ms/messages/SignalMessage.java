@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
@@ -32,7 +32,7 @@ public class SignalMessage extends AbstractMessage {
 	 *            signal to send
 	 */
 	public SignalMessage(final short p_destination, final Signal p_signal) {
-		super(p_destination, DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		super(p_destination, DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE);
 
 		m_signal = p_signal;

@@ -1,7 +1,7 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.messages.*;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -89,13 +89,13 @@ abstract class AbstractComputeMSBase extends Thread {
 		m_boot = p_boot;
 		m_lookup = p_lookup;
 
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_RESPONSE, SlaveJoinResponse.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_REQUEST, ExecuteTaskRequest.class);
-		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE, ExecuteTaskResponse.class);
 	}
 

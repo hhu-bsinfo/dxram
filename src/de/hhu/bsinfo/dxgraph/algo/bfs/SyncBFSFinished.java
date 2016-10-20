@@ -5,7 +5,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
+import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSLevelFinishedMessage;
 import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -42,7 +42,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 
 		m_signalAbortExecution = false;
 
-		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
+		m_networkService.registerMessageType(DXGraphMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE,
 				BFSLevelFinishedMessage.class);
 
@@ -173,7 +173,7 @@ public class SyncBFSFinished implements NetworkHandler.MessageReceiver {
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == DXGRAPHMessageTypes.BFS_MESSAGES_TYPE) {
+			if (p_message.getType() == DXGraphMessageTypes.BFS_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE:
 						onIncomingBFSLevelFinishedMessage(

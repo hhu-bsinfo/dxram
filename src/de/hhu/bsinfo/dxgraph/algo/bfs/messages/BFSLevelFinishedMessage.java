@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
+import de.hhu.bsinfo.dxgraph.DXGraphMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
@@ -32,7 +32,7 @@ public class BFSLevelFinishedMessage extends AbstractMessage {
 	 */
 	public BFSLevelFinishedMessage(final short p_destination, final int p_token, final long p_sentMsgCount,
 			final long p_receivedMsgCount) {
-		super(p_destination, DXGRAPHMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE);
+		super(p_destination, DXGraphMessageTypes.BFS_MESSAGES_TYPE, BFSMessages.SUBTYPE_BFS_LEVEL_FINISHED_MESSAGE);
 
 		m_token = p_token;
 		m_sentMsgCount = p_sentMsgCount;

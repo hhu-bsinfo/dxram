@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
@@ -30,7 +30,7 @@ public class TaskExecutionStartedMessage extends AbstractMessage {
 	 *            Id of the task that started execution.
 	 */
 	public TaskExecutionStartedMessage(final short p_destination, final int p_taskPayloadId) {
-		super(p_destination, DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE);
+		super(p_destination, DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE);
 
 		m_taskPayloadId = p_taskPayloadId;
 	}
