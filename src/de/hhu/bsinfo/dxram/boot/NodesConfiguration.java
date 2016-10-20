@@ -1,12 +1,14 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Represents a nodes configuration for DXRAM. This also holds any information
  * about the current node as well as any remote nodes available in the system.
+ *
  * @author Florian Klein
  *         03.09.2013
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 9.12.15
@@ -16,23 +18,19 @@ public final class NodesConfiguration {
 	public static final int MAX_NODE_ID = 65535;
 	public static final short INVALID_NODE_ID = -1;
 
-	// Attributes
-	private NodeEntry[] m_nodes;
+	private NodeEntry[] m_nodes = new NodeEntry[MAX_NODE_ID + 1];
+	private short m_ownID = INVALID_NODE_ID;
 
-	private short m_ownID;
-
-	// Constructors
 	/**
 	 * Creates an instance of NodesConfiguration
 	 */
 	public NodesConfiguration() {
-		m_nodes = new NodeEntry[MAX_NODE_ID + 1];
-		m_ownID = INVALID_NODE_ID;
+
 	}
 
-	// Getters
 	/**
 	 * Gets the configured node
+	 *
 	 * @return the configured nodes
 	 */
 	public NodeEntry[] getNodes() {
@@ -41,8 +39,8 @@ public final class NodesConfiguration {
 
 	/**
 	 * Get the NodeEntry of the specified node ID.
-	 * @param p_nodeID
-	 *            Node ID to get the entry of.
+	 *
+	 * @param p_nodeID Node ID to get the entry of.
 	 * @return NodeEntry containing information about the node or null if it does not exist.
 	 */
 	public NodeEntry getNode(final short p_nodeID) {
@@ -51,6 +49,7 @@ public final class NodesConfiguration {
 
 	/**
 	 * Get the node ID which is set for this node.
+	 *
 	 * @return Own node ID (or -1 if invalid).
 	 */
 	public short getOwnNodeID() {
@@ -59,6 +58,7 @@ public final class NodesConfiguration {
 
 	/**
 	 * Get the NodeEntry corresponding to our node ID.
+	 *
 	 * @return NodeEntry or null if invalid.
 	 */
 	public NodeEntry getOwnNodeEntry() {
@@ -69,10 +69,9 @@ public final class NodesConfiguration {
 
 	/**
 	 * Adds a node
-	 * @param p_nodeID
-	 *            Id of the node.
-	 * @param p_entry
-	 *            the configured node
+	 *
+	 * @param p_nodeID Id of the node.
+	 * @param p_entry  the configured node
 	 */
 	synchronized void addNode(final short p_nodeID, final NodeEntry p_entry) {
 		m_nodes[p_nodeID & 0xFFFF] = p_entry;
@@ -80,8 +79,8 @@ public final class NodesConfiguration {
 
 	/**
 	 * Remove a node from the mappings list.
-	 * @param p_nodeID
-	 *            Node ID of the entry to remove.
+	 *
+	 * @param p_nodeID Node ID of the entry to remove.
 	 */
 	synchronized void removeNode(final short p_nodeID) {
 		m_nodes[p_nodeID & 0xFFFF] = null;
@@ -89,8 +88,8 @@ public final class NodesConfiguration {
 
 	/**
 	 * Set the node ID for the current/own node.
-	 * @param p_nodeID
-	 *            Node id to set.
+	 *
+	 * @param p_nodeID Node id to set.
 	 */
 	synchronized void setOwnNodeID(final short p_nodeID) {
 		m_ownID = p_nodeID;
@@ -98,7 +97,7 @@ public final class NodesConfiguration {
 
 	@Override
 	public String toString() {
-		String str = new String();
+		String str = "";
 
 		str += "NodesConfiguration[ownID: " + m_ownID + "]:";
 		for (int i = 0; i < m_nodes.length; i++) {
@@ -110,39 +109,40 @@ public final class NodesConfiguration {
 		return str;
 	}
 
-	// Classes
 	/**
 	 * Describes a nodes configuration entry
+	 *
 	 * @author Florian Klein
 	 *         03.09.2013
 	 */
-	public static final class NodeEntry {
+	static final class NodeEntry {
 
-		// Attributes
-		private String m_ip;
-		private int m_port;
-		private short m_rack;
-		private short m_switch;
-		private NodeRole m_role;
+		// configuration values
+		@Expose
+		private String m_ip = "127.0.0.1";
+		@Expose
+		private int m_port = 22222;
+		@Expose
+		private NodeRole m_role = NodeRole.PEER;
+		@Expose
+		private short m_rack = 0;
+		@Expose
+		private short m_switch = 0;
+
+		// private state
 		private byte m_readFromFile;
 
-		// Constructors
 		/**
 		 * Creates an instance of NodesConfigurationEntry
-		 * @param p_ip
-		 *            the ip of the node
-		 * @param p_port
-		 *            the port of the node
-		 * @param p_rack
-		 *            the rack of the node
-		 * @param p_switch
-		 *            the switcharea of the node
-		 * @param p_role
-		 *            the role of the node
-		 * @param p_readFromFile
-		 *            whether this node's information was read from nodes file or not
+		 *
+		 * @param p_ip           the ip of the node
+		 * @param p_port         the port of the node
+		 * @param p_rack         the rack of the node
+		 * @param p_switch       the switcharea of the node
+		 * @param p_role         the role of the node
+		 * @param p_readFromFile whether this node's information was read from nodes file or not
 		 */
-		public NodeEntry(final String p_ip, final int p_port, final short p_rack, final short p_switch,
+		NodeEntry(final String p_ip, final int p_port, final short p_rack, final short p_switch,
 				final NodeRole p_role, final boolean p_readFromFile) {
 			assert p_ip != null;
 			assert p_port > 0 && p_port < 65536;
@@ -158,9 +158,9 @@ public final class NodesConfiguration {
 			m_readFromFile = p_readFromFile ? (byte) 1 : (byte) 0;
 		}
 
-		// Getter
 		/**
 		 * Gets the ip of the node
+		 *
 		 * @return the ip of the node
 		 */
 		public String getIP() {
@@ -169,6 +169,7 @@ public final class NodesConfiguration {
 
 		/**
 		 * Gets the port of the node
+		 *
 		 * @return the port of the node
 		 */
 		public int getPort() {
@@ -177,6 +178,7 @@ public final class NodesConfiguration {
 
 		/**
 		 * Gets the rack of the node
+		 *
 		 * @return the rack of the node
 		 */
 		public short getRack() {
@@ -185,6 +187,7 @@ public final class NodesConfiguration {
 
 		/**
 		 * Gets the switcharea of the node
+		 *
 		 * @return the switcharea of the node
 		 */
 		public short getSwitch() {
@@ -193,6 +196,7 @@ public final class NodesConfiguration {
 
 		/**
 		 * Gets the role of the node
+		 *
 		 * @return the role of the node
 		 */
 		public NodeRole getRole() {
@@ -201,13 +205,13 @@ public final class NodesConfiguration {
 
 		/**
 		 * Gets the source of the node's information
+		 *
 		 * @return whether this node's information was read from nodes file or not
 		 */
 		public boolean readFromFile() {
-			return m_readFromFile == 1 ? true : false;
+			return m_readFromFile == 1;
 		}
 
-		// Methods
 		@Override
 		public String toString() {
 			return "NodesConfigurationEntry [m_ip=" + m_ip + ", m_port=" + m_port + ", m_rack=" + m_rack + ", m_switch="

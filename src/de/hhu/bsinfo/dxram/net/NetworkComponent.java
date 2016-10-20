@@ -6,44 +6,60 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessages;
-import de.hhu.bsinfo.ethnet.*;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.ethnet.RequestMap;
 
 /**
  * Access to the network interface to send messages or requests
  * to other nodes.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class NetworkComponent extends AbstractDXRAMComponent {
 
+	// configuration values
+	@Expose
+	private int m_threadCountMsgHandler = 1;
+	@Expose
+	private int m_requestMapEntryCount = (int) Math.pow(2, 20);
+	@Expose
+	private int m_incomingBufferSize = 1024 * 1024;
+	@Expose
+	private int m_outgoingBufferSize = 1024 * 1024;
+	@Expose
+	private int m_numberOfPendingBuffersPerConnection = 100;
+	@Expose
+	private int m_flowControlWindowSize = 1024 * 1024;
+	@Expose
+	private int m_requestTimeoutMs = 333;
+
+	// dependent components
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
 	private EventComponent m_event;
 
 	// Attributes
 	private NetworkHandler m_networkHandler;
-	private int m_requestTimeoutMs = -1;
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
 	 */
-	public NetworkComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public NetworkComponent() {
+		super(7, 93);
 	}
 
 	// --------------------------------------------------------------------------------------
@@ -64,12 +80,10 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Registers a message type
-	 * @param p_type
-	 *            the unique type
-	 * @param p_subtype
-	 *            the unique subtype
-	 * @param p_class
-	 *            the calling class
+	 *
+	 * @param p_type    the unique type
+	 * @param p_subtype the unique subtype
+	 * @param p_class   the calling class
 	 */
 	public void registerMessageType(final byte p_type, final byte p_subtype, final Class<?> p_class) {
 		m_networkHandler.registerMessageType(p_type, p_subtype, p_class);
@@ -77,8 +91,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Connect a node.
-	 * @param p_nodeID
-	 *            Node to connect
+	 *
+	 * @param p_nodeID Node to connect
 	 * @return 0 if successful, -1 if not
 	 */
 	public NetworkErrorCodes connectNode(final short p_nodeID) {
@@ -101,8 +115,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Send a message.
-	 * @param p_message
-	 *            Message to send
+	 *
+	 * @param p_message Message to send
 	 * @return NetworkErrorCode, refer to enum
 	 */
 	public NetworkErrorCodes sendMessage(final AbstractMessage p_message) {
@@ -127,7 +141,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 				errCode = NetworkErrorCodes.SEND_DATA;
 				break;
 			default:
-				assert 1 == 2;
+				assert false;
 				break;
 		}
 
@@ -142,8 +156,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Send the Request and wait for fulfillment (wait for response).
-	 * @param p_request
-	 *            The request to send.
+	 *
+	 * @param p_request The request to send.
 	 * @return 0 if successful, -1 if sending the request failed, 1 waiting for the response timed out.
 	 */
 	public NetworkErrorCodes sendSync(final AbstractRequest p_request) {
@@ -184,10 +198,9 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Registers a message receiver
-	 * @param p_message
-	 *            the message
-	 * @param p_receiver
-	 *            the receiver
+	 *
+	 * @param p_message  the message
+	 * @param p_receiver the receiver
 	 */
 	public void register(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.register(p_message, p_receiver);
@@ -195,10 +208,9 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Unregisters a message receiver
-	 * @param p_message
-	 *            the message
-	 * @param p_receiver
-	 *            the receiver
+	 *
+	 * @param p_message  the message
+	 * @param p_receiver the receiver
 	 */
 	public void unregister(final Class<? extends AbstractMessage> p_message, final MessageReceiver p_receiver) {
 		m_networkHandler.unregister(p_message, p_receiver);
@@ -207,26 +219,12 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	// --------------------------------------------------------------------------------------
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_MAP_ENTRY_COUNT);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.INCOMING_BUFFER_SIZE);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.NUMBER_OF_PENDING_BUFFERS_PER_CONNECTION);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE);
-		p_settings.setDefaultValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
-	}
-
-	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_event = getDependentComponent(EventComponent.class);
 
-		m_networkHandler = new NetworkHandler(
-				p_settings.getValue(NetworkConfigurationValues.Component.THREAD_COUNT_MSG_HANDLER),
-				p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_MAP_ENTRY_COUNT));
-
+		m_networkHandler = new NetworkHandler(m_threadCountMsgHandler, m_requestMapEntryCount);
 		m_networkHandler.setLogger(m_logger);
 		m_networkHandler.setEventHandler(getDependentComponent(EventComponent.class));
 
@@ -235,7 +233,8 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
 		try {
 			Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-			outerloop: while (networkInterfaces.hasMoreElements()) {
+			outerloop:
+			while (networkInterfaces.hasMoreElements()) {
 				NetworkInterface currentNetworkInterface = (NetworkInterface) networkInterfaces.nextElement();
 				Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
 				while (addresses.hasMoreElements()) {
@@ -263,15 +262,14 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 				return false;
 			}
 		}
-		m_requestTimeoutMs = p_settings.getValue(NetworkConfigurationValues.Component.REQUEST_TIMEOUT_MS);
 
 		m_networkHandler.initialize(
 				m_boot.getNodeID(),
 				new NodeMappings(m_boot),
-				p_settings.getValue(NetworkConfigurationValues.Component.INCOMING_BUFFER_SIZE),
-				p_settings.getValue(NetworkConfigurationValues.Component.OUTGOING_BUFFER_SIZE),
-				p_settings.getValue(NetworkConfigurationValues.Component.NUMBER_OF_PENDING_BUFFERS_PER_CONNECTION),
-				p_settings.getValue(NetworkConfigurationValues.Component.FLOW_CONTROL_WINDOW_SIZE),
+				m_incomingBufferSize,
+				m_outgoingBufferSize,
+				m_numberOfPendingBuffersPerConnection,
+				m_flowControlWindowSize,
 				m_requestTimeoutMs);
 
 		m_networkHandler.registerMessageType(DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE,

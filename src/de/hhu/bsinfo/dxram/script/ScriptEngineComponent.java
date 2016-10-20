@@ -11,11 +11,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -28,6 +29,14 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class ScriptEngineComponent extends AbstractDXRAMComponent implements ScriptDXRAMContext {
 
+	// configuration values
+	@Expose
+	private String m_autostartScript = "";
+
+	// dependent components
+	private LoggerComponent m_logger;
+
+	// private state
 	private ScriptEngineManager m_scriptEngineManager;
 	private ScriptEngine m_scriptEngine;
 
@@ -36,17 +45,11 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 	private ScriptDXRAMContext m_scriptEngineContext;
 
-	private LoggerComponent m_logger;
-
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
 	 */
-	public ScriptEngineComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public ScriptEngineComponent() {
+		super(17, 83);
 	}
 
 	/**
@@ -123,13 +126,7 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	// -------------------------------------------------------------------------------------------------------
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(ScriptConfigurationValues.Component.AUTOSTART_SCRIPT);
-	}
-
-	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_logger = getDependentComponent(LoggerComponent.class);
 

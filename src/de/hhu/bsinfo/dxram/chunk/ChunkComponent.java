@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -22,6 +23,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class ChunkComponent extends AbstractDXRAMComponent {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private MemoryManagerComponent m_memoryManager;
@@ -31,14 +33,9 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public ChunkComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public ChunkComponent() {
+		super(14, 86);
 	}
 
 	/**
@@ -120,11 +117,9 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	 * @param p_chunks Chunks to put.
 	 */
 	public void putRecoveredChunks(final Chunk[] p_chunks) {
-		Chunk chunk = null;
 
 		m_memoryManager.lockManage();
-		for (int i = 0; i < p_chunks.length; i++) {
-			chunk = p_chunks[i];
+		for (Chunk chunk : p_chunks) {
 
 			m_memoryManager.create(chunk.getID(), chunk.getDataSize());
 			m_memoryManager.put(chunk);
@@ -143,17 +138,14 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	 * @return whether storing foreign chunks was successful or not
 	 */
 	public boolean putForeignChunks(final Chunk[] p_chunks) {
-		boolean ret = true;
 		byte rangeID;
 		int logEntrySize;
 		long size = 0;
 		long cutChunkID = -1;
 		short[] backupPeers = null;
-		Chunk chunk = null;
 
 		m_memoryManager.lockManage();
-		for (int i = 0; i < p_chunks.length; i++) {
-			chunk = p_chunks[i];
+		for (Chunk chunk : p_chunks) {
 
 			m_memoryManager.create(chunk.getID(), chunk.getDataSize());
 			m_memoryManager.put(chunk);
@@ -181,8 +173,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 		m_memoryManager.unlockManage();
 
 		if (m_backup.isActive()) {
-			for (int i = 0; i < p_chunks.length; i++) {
-				chunk = p_chunks[i];
+			for (Chunk chunk : p_chunks) {
 
 				if (chunk.getID() == cutChunkID) {
 					// All following chunks are in the new migration backup range
@@ -192,25 +183,20 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 				rangeID = m_backup.addMigratedChunk(chunk);
 
 				if (backupPeers != null) {
-					for (int j = 0; j < backupPeers.length; j++) {
-						if (backupPeers[j] != m_boot.getNodeID() && backupPeers[j] != -1) {
-							m_network.sendMessage(new LogMessage(backupPeers[j], rangeID, new Chunk[] {chunk}));
+					for (short backupPeer : backupPeers) {
+						if (backupPeer != m_boot.getNodeID() && backupPeer != -1) {
+							m_network.sendMessage(new LogMessage(backupPeer, rangeID, new Chunk[] {chunk}));
 						}
 					}
 				}
 			}
 		}
 
-		return ret;
+		return true;
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-	}
-
-	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_backup = getDependentComponent(BackupComponent.class);

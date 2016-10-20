@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
@@ -23,6 +24,7 @@ import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
  */
 public class LogComponent extends AbstractDXRAMComponent {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
@@ -34,12 +36,9 @@ public class LogComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Creates the log component
-	 *
-	 * @param p_priorityInit     the initialization priority
-	 * @param p_priorityShutdown the shutdown priority
 	 */
-	public LogComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public LogComponent() {
+		super(12, 88);
 	}
 
 	/**
@@ -143,8 +142,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_network = getDependentComponent(NetworkComponent.class);
@@ -168,10 +166,6 @@ public class LogComponent extends AbstractDXRAMComponent {
 		m_useChecksum = p_useChecksum;
 		m_secondaryLogSize = p_secondaryLogSize;
 		m_logSegmentSize = p_logSegmentSize;
-	}
-
-	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 	}
 
 	@Override

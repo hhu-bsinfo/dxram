@@ -4,7 +4,8 @@ package de.hhu.bsinfo.dxram.tmp;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
@@ -21,6 +22,7 @@ import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
  */
 public class TemporaryStorageService extends AbstractDXRAMService {
 
+	// dependent components
 	private LookupComponent m_lookup;
 
 	private NameServiceStringConverter m_idConverter = new NameServiceStringConverter("NAME");
@@ -124,13 +126,7 @@ public class TemporaryStorageService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-
-	}
-
-	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_lookup = getComponent(LookupComponent.class);
 
 		return true;

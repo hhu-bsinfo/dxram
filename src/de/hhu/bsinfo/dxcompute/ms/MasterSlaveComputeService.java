@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxcompute.DXComputeMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusRequest;
 import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusResponse;
@@ -31,6 +32,8 @@ import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
@@ -52,6 +55,15 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public class MasterSlaveComputeService extends AbstractDXRAMService implements MessageReceiver, TaskListener {
 
+	// configuration values
+	@Expose
+	private String m_role = ComputeRole.NONE.toString();
+	@Expose
+	private short m_computeGroupId = 0;
+	@Expose
+	private int m_pingIntervalMs = 1000;
+
+	// dependent components
 	private NetworkComponent m_network;
 	private NameserviceComponent m_nameservice;
 	private LoggerComponent m_logger;
@@ -369,19 +381,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-		p_settings.setDefaultValue(MasterSlaveConfigurationValues.Service.ROLE);
-		p_settings.setDefaultValue(MasterSlaveConfigurationValues.Service.COMPUTE_GROUP_ID);
-		p_settings.setDefaultValue(MasterSlaveConfigurationValues.Service.PING_INTERVAL_MS);
-	}
-
-	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
-		ComputeRole role =
-				ComputeRole.toComputeRole(p_settings.getValue(MasterSlaveConfigurationValues.Service.ROLE));
-		short computeGroupId = p_settings.getValue(MasterSlaveConfigurationValues.Service.COMPUTE_GROUP_ID);
-		int pingIntervalMs = p_settings.getValue(MasterSlaveConfigurationValues.Service.PING_INTERVAL_MS);
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_network = getComponent(NetworkComponent.class);
 		m_nameservice = getComponent(NameserviceComponent.class);
@@ -413,14 +413,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_network.register(TaskExecutionStartedMessage.class, this);
 		m_network.register(TaskExecutionFinishedMessage.class, this);
 
-		switch (role) {
+		switch (ComputeRole.toComputeRole(m_role)) {
 			case MASTER:
-				m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
+				m_computeMSInstance = new ComputeMaster(m_computeGroupId, m_pingIntervalMs, getServiceAccessor(),
 						m_network, m_logger, m_nameservice, m_boot, lookup);
 				break;
 			case SLAVE:
 				m_computeMSInstance =
-						new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
+						new ComputeSlave(m_computeGroupId, m_pingIntervalMs, getServiceAccessor(), m_network, m_logger,
 								m_nameservice, m_boot, lookup);
 				break;
 			case NONE:
@@ -435,7 +435,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		registerTaskPayloads();
 
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Started compute node " + role + " with compute group id " + computeGroupId);
+		m_logger.info(getClass(), "Started compute node " + m_role + " with compute group id " + m_computeGroupId);
 		// #endif /* LOGGER >= INFO */
 
 		return true;

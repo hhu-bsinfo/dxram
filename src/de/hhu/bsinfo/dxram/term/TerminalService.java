@@ -8,8 +8,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -24,14 +27,18 @@ import de.hhu.bsinfo.utils.JNIconsole;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.03.16
  */
 public class TerminalService extends AbstractDXRAMService {
+
+	// configuration values
+	@Expose
+	private String m_autostartScript = "";
+
+	// dependent components
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
 	private TerminalComponent m_terminal;
 
 	private boolean m_loop = true;
 	private BufferedWriter m_historyFile;
-
-	private String m_autostartScript;
 
 	/**
 	 * Constructor
@@ -175,13 +182,7 @@ public class TerminalService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-		p_settings.setDefaultValue(TerminalConfigurationValues.Service.AUTOSTART_SCRIPT);
-	}
-
-	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_logger = getComponent(LoggerComponent.class);
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_terminal = getComponent(TerminalComponent.class);
@@ -189,8 +190,6 @@ public class TerminalService extends AbstractDXRAMService {
 		if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
 			loadHistoryFromFile("dxram_term_history");
 		}
-
-		m_autostartScript = p_settings.getValue(TerminalConfigurationValues.Service.AUTOSTART_SCRIPT);
 
 		return true;
 	}

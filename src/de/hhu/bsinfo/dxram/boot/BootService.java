@@ -10,7 +10,9 @@ import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.RebootMessage;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -28,6 +30,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class BootService extends AbstractDXRAMService implements MessageReceiver {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
@@ -249,13 +252,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-
-	}
-
-	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_network = getComponent(NetworkComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
@@ -303,7 +300,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 				// wait a moment for the superpeer to detect the failure
 				try {
 					Thread.sleep(2000);
-				} catch (final InterruptedException e) {
+				} catch (final InterruptedException ignored) {
 				}
 				parentEngine.init();
 			}

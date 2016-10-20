@@ -3,9 +3,11 @@ package de.hhu.bsinfo.dxcompute.job;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxcompute.job.ws.Worker;
 import de.hhu.bsinfo.dxcompute.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
@@ -15,6 +17,11 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  */
 public class JobWorkStealingComponent extends AbstractJobComponent implements WorkerDelegate {
 
+	// configuration values
+	@Expose
+	private int m_numWorkers = 1;
+
+	// dependent components
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
 
@@ -23,14 +30,9 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public JobWorkStealingComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public JobWorkStealingComponent() {
+		super(16, 84);
 	}
 
 	@Override
@@ -75,30 +77,24 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(JobConfigurationValues.Component.NUM_WORKERS);
-	}
-
-	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 
-		m_workers = new Worker[p_settings.getValue(JobConfigurationValues.Component.NUM_WORKERS)];
+		m_workers = new Worker[m_numWorkers];
 
 		for (int i = 0; i < m_workers.length; i++) {
 			m_workers[i] = new Worker(i, this);
 		}
 
 		// avoid race condition by first creating all workers, then starting them
-		for (int i = 0; i < m_workers.length; i++) {
-			m_workers[i].start();
+		for (Worker worker : m_workers) {
+			worker.start();
 		}
 
 		// wait until all workers are running
-		for (int i = 0; i < m_workers.length; i++) {
-			while (!m_workers[i].isRunning()) {
+		for (Worker worker : m_workers) {
+			while (!worker.isRunning()) {
 			}
 		}
 

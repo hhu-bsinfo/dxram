@@ -49,11 +49,11 @@ public class DXRAM {
 	/**
 	 * Initialize the instance.
 	 *
-	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
+	 * @param p_configurationFile Absolute or relative path to a configuration file
 	 * @return True if initializing was successful, false otherwise.
 	 */
-	public boolean initialize(final String... p_configurationFiles) {
-		boolean ret = m_engine.init(p_configurationFiles);
+	public boolean initialize(final String p_configurationFile) {
+		boolean ret = m_engine.init(p_configurationFile);
 		if (ret) {
 			printNodeInfo();
 			postInit();
@@ -66,11 +66,11 @@ public class DXRAM {
 	 *
 	 * @param p_autoShutdown       True to have DXRAM shut down automatically when the application quits.
 	 *                             If false, the caller has to take care of shutting down the instance by calling shutdown when done.
-	 * @param p_configurationFiles Absolute or relative path to one or multiple configuration files.
+	 * @param p_configurationFiles Absolute or relative path to a configuration file
 	 * @return True if initializing was successful, false otherwise.
 	 */
-	public boolean initialize(final boolean p_autoShutdown, final String... p_configurationFiles) {
-		boolean ret = initialize(p_configurationFiles);
+	public boolean initialize(final boolean p_autoShutdown, final String p_configurationFile) {
+		boolean ret = initialize(p_configurationFile);
 		if (ret & p_autoShutdown) {
 			Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		}
@@ -120,14 +120,16 @@ public class DXRAM {
 
 		BootService bootService = m_engine.getService(BootService.class);
 
-		short nodeId = bootService.getNodeID();
-		str += "NodeID: " + NodeID.toHexString(nodeId) + "\n";
-		str += "Role: " + bootService.getNodeRole(nodeId) + "\n";
+		if (bootService != null) {
+			short nodeId = bootService.getNodeID();
+			str += "NodeID: " + NodeID.toHexString(nodeId) + "\n";
+			str += "Role: " + bootService.getNodeRole(nodeId) + "\n";
 
-		InetSocketAddress address = bootService.getNodeAddress(nodeId);
-		str += "Address: " + address;
+			InetSocketAddress address = bootService.getNodeAddress(nodeId);
+			str += "Address: " + address;
 
-		System.out.println(str);
+			System.out.println(str);
+		}
 	}
 
 	/**

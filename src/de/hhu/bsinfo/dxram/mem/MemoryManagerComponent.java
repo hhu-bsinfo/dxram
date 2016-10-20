@@ -4,12 +4,12 @@ package de.hhu.bsinfo.dxram.mem;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -31,6 +31,17 @@ import de.hhu.bsinfo.soh.StorageUnsafeMemory;
  */
 public final class MemoryManagerComponent extends AbstractDXRAMComponent implements CIDTable.GetNodeIdHook {
 
+	// configuration values
+	@Expose
+	private long m_keyValueStoreSize = 128L;
+	@Expose
+	private String m_keyValueStoreSizeUnit = "mb";
+
+	// dependent components
+	private AbstractBootComponent m_boot;
+	private LoggerComponent m_logger;
+	private StatisticsComponent m_statistics;
+
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
 	// private ReentrantReadWriteLock m_lock;
@@ -39,10 +50,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	private long m_totalActiveChunkMemory;
 
 	private SmallObjectHeapDataStructureImExporter[] m_imexporter = new SmallObjectHeapDataStructureImExporter[65536];
-
-	private AbstractBootComponent m_boot;
-	private LoggerComponent m_logger;
-	private StatisticsComponent m_statistics;
 
 	private MemoryStatisticsRecorderIDs m_statisticsRecorderIDs;
 
@@ -61,37 +68,41 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public MemoryManagerComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public MemoryManagerComponent() {
+		super(5, 95);
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-		p_settings.setDefaultValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
-	}
-
-	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 		// #ifdef STATISTICS
 		m_statistics = getDependentComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
 
-		NodeRole nodeRole = NodeRole.toNodeRole(p_engineSettings.getValue(DXRAMEngineConfigurationValues.ROLE));
-
-		if (nodeRole == NodeRole.PEER) {
+		if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
 			// #ifdef STATISTICS
 			registerStatisticsOperations();
 			// #endif /* STATISTICS */
 
-			final long ramSize = p_settings.getValue(MemoryManagerConfigurationValues.Component.RAM_SIZE);
+			long ramSize;
+			switch (m_keyValueStoreSizeUnit) {
+				case "kb":
+					ramSize = m_keyValueStoreSize * 1024;
+					break;
+				case "mb":
+					ramSize = m_keyValueStoreSize * 1024 * 1024;
+					break;
+				case "gb":
+					ramSize = m_keyValueStoreSize * 1024 * 1024 * 1024;
+					break;
+				case "b":
+				default:
+					ramSize = m_keyValueStoreSize;
+					break;
+			}
+
 			// #if LOGGER == INFO
 			m_logger.info(getClass(),
 					"Allocating native memory (" + (ramSize / 1024 / 1024) + " mb). This may take a while.");

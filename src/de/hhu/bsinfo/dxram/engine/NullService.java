@@ -16,13 +16,7 @@ public class NullService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-
-	}
-
-	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineSettings) {
 		return true;
 	}
 

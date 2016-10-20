@@ -8,11 +8,13 @@ import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
@@ -44,15 +46,37 @@ import de.hhu.bsinfo.utils.Tools;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public class LogService extends AbstractDXRAMService implements MessageReceiver {
+
 	// Constants
 	private static final AbstractLogEntryHeader DEFAULT_PRIM_LOG_ENTRY_HEADER = new DefaultPrimLogEntryHeader();
 	private static final AbstractLogEntryHeader MIGRATION_PRIM_LOG_ENTRY_HEADER = new MigrationPrimLogEntryHeader();
 	private static final int PAYLOAD_PRINT_LENGTH = 128;
 
-	// Attributes
+	// configuration values
+	@Expose
+	private boolean m_useChecksum = true;
+	@Expose
+	private int m_flashPageSize = 4 * 1024;
+	@Expose
+	private int m_logSegmentSize = 8 * 1024 * 1024;
+	@Expose
+	private long m_primaryLogSize = 256 * 1024 * 1024L;
+	@Expose
+	private long m_secondaryLogSize = 512 * 1024 * 1024L;
+	@Expose
+	private int m_writeBufferSize = 256 * 1024 * 1024;
+	@Expose
+	private int m_secondaryLogBufferSize = 128 * 1024;
+	@Expose
+	private int m_reorgUtilizationThreshold = 70;
+	@Expose
+	private boolean m_sortBufferPooling = true;
+
+	// dependent components
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
 
+	// private state
 	private short m_nodeID;
 	private boolean m_loggingIsActive;
 
@@ -70,16 +94,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	private boolean m_accessGrantedForReorgThread;
 
 	private String m_backupDirectory;
-	private boolean m_useChecksum;
-
-	private int m_flashPageSize;
-	private int m_logSegmentSize;
-	private long m_primaryLogSize;
-	private long m_secondaryLogSize;
-	private int m_writeBufferSize;
-	private int m_secondaryLogBufferSize;
-
-	private int m_reorgUtilizationThreshold;
 
 	/**
 	 * Constructor
@@ -280,22 +294,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-		p_settings.setDefaultValue(LogConfigurationValues.Service.LOG_CHECKSUM);
-
-		p_settings.setDefaultValue(LogConfigurationValues.Service.FLASHPAGE_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.LOG_SEGMENT_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
-
-		p_settings.setDefaultValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
-		p_settings.setDefaultValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING);
-	}
-
-	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_network = getComponent(NetworkComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
 		registerNetworkMessages();
@@ -304,17 +303,6 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 		m_loggingIsActive = (getComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER)
 				&& getComponent(BackupComponent.class).isActive();
 		if (m_loggingIsActive) {
-			m_useChecksum = p_settings.getValue(LogConfigurationValues.Service.LOG_CHECKSUM);
-
-			m_flashPageSize = p_settings.getValue(LogConfigurationValues.Service.FLASHPAGE_SIZE);
-			m_logSegmentSize = p_settings.getValue(LogConfigurationValues.Service.LOG_SEGMENT_SIZE);
-			m_primaryLogSize = p_settings.getValue(LogConfigurationValues.Service.PRIMARY_LOG_SIZE);
-			m_secondaryLogSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_SIZE);
-			m_writeBufferSize = p_settings.getValue(LogConfigurationValues.Service.WRITE_BUFFER_SIZE);
-			m_secondaryLogBufferSize = p_settings.getValue(LogConfigurationValues.Service.SECONDARY_LOG_BUFFER_SIZE);
-
-			m_reorgUtilizationThreshold =
-					p_settings.getValue(LogConfigurationValues.Service.REORG_UTILIZATION_THRESHOLD);
 
 			m_nodeID = getComponent(AbstractBootComponent.class).getNodeID();
 
@@ -342,7 +330,7 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			// Create primary log buffer
 			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize,
 					m_flashPageSize, m_secondaryLogBufferSize, m_logSegmentSize, m_useChecksum,
-					p_settings.getValue(LogConfigurationValues.Service.SORT_BUFFER_POOLING));
+					m_sortBufferPooling);
 
 			// Create secondary log and secondary log buffer catalogs
 			m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];

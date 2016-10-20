@@ -10,7 +10,8 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -31,7 +32,8 @@ import de.hhu.bsinfo.ethnet.NodeID;
  * @author Kevin Beineke <kevin.beineke@hhu.de> 31.03.16
  */
 public class RecoveryService extends AbstractDXRAMService implements MessageReceiver {
-	// Attributes
+
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
@@ -84,11 +86,7 @@ public class RecoveryService extends AbstractDXRAMService implements MessageRece
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-	}
-
-	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);

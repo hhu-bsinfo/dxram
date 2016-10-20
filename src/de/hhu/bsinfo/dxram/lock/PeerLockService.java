@@ -3,9 +3,11 @@ package de.hhu.bsinfo.dxram.lock;
 
 import java.util.ArrayList;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -36,6 +38,13 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class PeerLockService extends AbstractLockService implements MessageReceiver, EventListener<NodeFailureEvent> {
 
+	// configuration values
+	@Expose
+	private int m_remoteLockSendIntervalMs = 10;
+	@Expose
+	private int m_remoteLockTryTimeoutMs = 100;
+
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
@@ -46,17 +55,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	private LockStatisticsRecorderIDs m_statisticsRecorderIDs;
 
-	private int m_remoteLockSendIntervalMs = -1;
-	private int m_remoteLockTryTimeoutMs = -1;
-
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
-		p_settings.setDefaultValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
-	}
-
-	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_logger = getComponent(LoggerComponent.class);
@@ -99,9 +99,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_statisticsRecorderIDs.m_operations.m_incomingUnlock = m_statistics
 				.createOperation(m_statisticsRecorderIDs.m_id, LockStatisticsRecorderIDs.Operations.MS_INCOMING_UNLOCK);
 		// #endif /* STATISTICS */
-
-		m_remoteLockSendIntervalMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_SEND_INTERVAL_MS);
-		m_remoteLockTryTimeoutMs = p_settings.getValue(LockConfigurationValues.Service.REMOTE_LOCK_TRY_TIMEOUT_MS);
 
 		return true;
 	}
@@ -195,7 +192,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						if (idle) {
 							try {
 								Thread.sleep(m_remoteLockSendIntervalMs);
-							} catch (final InterruptedException e) {
+							} catch (final InterruptedException ignored) {
 							}
 						}
 
@@ -215,7 +212,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 									err = ErrorCode.NETWORK;
 									break;
 								default:
-									assert 1 == 2;
+									assert false;
 									break;
 							}
 
@@ -308,7 +305,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 									err = ErrorCode.NETWORK;
 									break;
 								default:
-									assert 1 == 2;
+									assert false;
 									break;
 							}
 						}
@@ -376,7 +373,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	 * @param p_request the LockRequest
 	 */
 	private void incomingLockRequest(final LockRequest p_request) {
-		boolean success = false;
+		boolean success;
 
 		// #ifdef STATISTICS
 		m_statistics.enter(m_statisticsRecorderIDs.m_id, m_statisticsRecorderIDs.m_operations.m_incomingLock);

@@ -8,12 +8,12 @@ import de.hhu.bsinfo.dxram.run.DXRAMMain;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.main.AbstractMain;
 
 /**
  * Small test/benchmark to measure execution time of the core methods
  * of ChunkService using the built in StatisticsService.
  * Run this as a peer, start one superpeer.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 23.03.16
  */
 public class ChunkServiceBenchmarkPeer extends DXRAMMain {
@@ -26,11 +26,11 @@ public class ChunkServiceBenchmarkPeer extends DXRAMMain {
 
 	/**
 	 * Java main entry point.
-	 * @param p_args
-	 *            Main arguments.
+	 *
+	 * @param p_args Main arguments.
 	 */
 	public static void main(final String[] p_args) {
-		AbstractMain main = new ChunkServiceBenchmarkPeer();
+		DXRAMMain main = new ChunkServiceBenchmarkPeer();
 		main.run(p_args);
 	}
 

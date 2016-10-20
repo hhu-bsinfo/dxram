@@ -10,24 +10,13 @@ public class NullComponent extends AbstractDXRAMComponent {
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public NullComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public NullComponent() {
+		super(1, 99);
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {
-
-	}
-
-	@Override
-	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineSettings) {
 		return true;
 	}
 

@@ -24,17 +24,7 @@ public class DXRAMMain extends AbstractMain {
 	 * Default constructor
 	 */
 	public DXRAMMain() {
-		super("DXRAM main entry point.");
-		m_dxram = new DXRAM();
-	}
-
-	/**
-	 * Constructor
-	 *
-	 * @param p_description Override the description for main.
-	 */
-	public DXRAMMain(final String p_description) {
-		super(p_description);
+		super("DXRAMMain");
 		m_dxram = new DXRAM();
 	}
 
@@ -44,16 +34,19 @@ public class DXRAMMain extends AbstractMain {
 	 * @param p_args Program arguments.
 	 */
 	public static void main(final String[] p_args) {
-		AbstractMain main = new DXRAMMain();
-		main.run(p_args);
+		DXRAMMain dxram = new DXRAMMain();
+		dxram.run(p_args);
 	}
 
 	@Override
 	protected void registerDefaultProgramArguments(final ArgumentList p_arguments) {
+
 	}
 
 	@Override
 	protected int main(final ArgumentList p_arguments) {
+		printBuildDateAndUser();
+
 		if (!m_dxram.initialize(true)) {
 			System.out.println("Initializing DXRAM failed.");
 			return -1;
@@ -65,29 +58,35 @@ public class DXRAMMain extends AbstractMain {
 	/**
 	 * Override this to implement your application built on top of DXRAM.
 	 *
-	 * @param p_arguments Arguments provided by the application.
 	 * @return Exit code of the application.
 	 */
 	protected int mainApplication(final ArgumentList p_arguments) {
-		NodeRole role = getService(BootService.class).getNodeRole();
+		BootService boot = getService(BootService.class);
 
-		if (role == NodeRole.TERMINAL) {
-			System.out.println(">>> DXRAM Terminal started <<<");
-			if (!runTerminal()) {
-				return -1;
+		if (boot != null) {
+			NodeRole role = boot.getNodeRole();
+
+			if (role == NodeRole.TERMINAL) {
+				System.out.println(">>> DXRAM Terminal started <<<");
+				if (!runTerminal()) {
+					return -1;
+				} else {
+					return 0;
+				}
 			} else {
-				return 0;
-			}
-		} else {
-			System.out.println(">>> DXRAM started <<<");
+				System.out.println(">>> DXRAM started <<<");
 
-			while (true) {
-				// Wait
-				try {
-					Thread.sleep(100000);
-				} catch (final InterruptedException e) {
+				while (true) {
+					// Wait
+					try {
+						Thread.sleep(100000);
+					} catch (final InterruptedException ignored) {
+					}
 				}
 			}
+		} else {
+			System.out.println("Missing BootService, cannot run DXRAM");
+			return -1;
 		}
 	}
 

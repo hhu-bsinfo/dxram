@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeRequest;
@@ -29,11 +31,11 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 
 public class LookupService extends AbstractDXRAMService implements MessageReceiver {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private LoggerComponent m_logger;
 	private NetworkComponent m_network;
-
 	private LookupComponent m_lookup;
 
 	/**
@@ -44,12 +46,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-	}
-
-	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);

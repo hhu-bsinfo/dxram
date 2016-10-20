@@ -1,13 +1,17 @@
 package de.hhu.bsinfo.dxram.script;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 
 /**
- * Created by nothaas on 10/14/16.
+ * Service exposing the java script engine
+ *
+ * @author Stefan Nothaas <stefan.nothaas@hhu.de> 14.10.16
  */
 public class ScriptEngineService extends AbstractDXRAMService {
 
+	// dependent components
 	private ScriptEngineComponent m_scriptEngine;
 
 	/**
@@ -17,22 +21,48 @@ public class ScriptEngineService extends AbstractDXRAMService {
 		super("script");
 	}
 
+	/**
+	 * Load a script file into the context of the java script engine
+	 *
+	 * @param p_path Path to the java script file to load
+	 * @return True if successful, false otherwise.
+	 */
 	public boolean load(final String p_path) {
 
 		return m_scriptEngine.getContext().load(p_path);
 	}
 
+	/**
+	 * Load a script file to the java script engine context of another node
+	 *
+	 * @param p_path   Path of the java script file to load
+	 * @param p_nodeId Node id of the node to load the script file on
+	 * @return True if successful, false otherwise
+	 */
 	public boolean load(final String p_path, final short p_nodeId) {
 
 		// TODO send message to other node
 		return false;
 	}
 
+	/**
+	 * Evaluate the text in the java script engine.
+	 *
+	 * @param p_text Text to evaluate in the java script engine
+	 * @return True if successful, false on error
+	 */
 	public boolean eval(final String p_text) {
 
 		return m_scriptEngine.getContext().eval(p_text);
 	}
 
+	/**
+	 * Evaluate the text in the java script engine of another node
+	 *
+	 * @param p_text   Text to evaluate in the java script engine
+	 * @param p_nodeId Node id of the node to evaluate the text on
+	 * @return True if successful, false on error
+	 */
 	public boolean eval(final String p_text, final short p_nodeId) {
 
 		// TODO send message to other node
@@ -40,13 +70,7 @@ public class ScriptEngineService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-
-	}
-
-	@Override
-	protected boolean startService(final DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
 		m_scriptEngine = getComponent(ScriptEngineComponent.class);
 

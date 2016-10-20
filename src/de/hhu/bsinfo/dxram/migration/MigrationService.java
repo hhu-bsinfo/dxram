@@ -13,6 +13,8 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -36,6 +38,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
  */
 public class MigrationService extends AbstractDXRAMService implements MessageReceiver {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private BackupComponent m_backup;
 	private ChunkComponent m_chunk;
@@ -309,12 +312,7 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-	}
-
-	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_backup = getComponent(BackupComponent.class);
 		m_chunk = getComponent(ChunkComponent.class);

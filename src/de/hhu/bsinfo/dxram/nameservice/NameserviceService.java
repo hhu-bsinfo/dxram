@@ -7,6 +7,8 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
@@ -28,6 +30,7 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class NameserviceService extends AbstractDXRAMService implements MessageReceiver {
 
+	// dependent components
 	private NameserviceComponent m_nameservice;
 	private AbstractBootComponent m_boot;
 	private NetworkComponent m_network;
@@ -137,13 +140,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-
-	}
-
-	@Override
-	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			final Settings p_settings) {
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_nameservice = getComponent(NameserviceComponent.class);
 		m_boot = getComponent(AbstractBootComponent.class);
 		m_network = getComponent(NetworkComponent.class);
@@ -175,9 +172,7 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	 */
 	private void incomingRegisterMessage(final ForwardRegisterMessage p_message) {
 		// Outsource registering to another thread to avoid blocking a message handler
-		Runnable task = () -> {
-			m_nameservice.register(p_message.getChunkId(), p_message.getName());
-		};
+		Runnable task = () -> m_nameservice.register(p_message.getChunkId(), p_message.getName());
 		new Thread(task).start();
 	}
 }

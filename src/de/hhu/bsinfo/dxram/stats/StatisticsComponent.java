@@ -4,9 +4,10 @@ package de.hhu.bsinfo.dxram.stats;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
+import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
 /**
@@ -17,22 +18,21 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
  */
 public class StatisticsComponent extends AbstractDXRAMComponent {
 
-	private LoggerComponent m_logger = null;
+	// configuration values
+	@Expose
+	private boolean m_record = false;
 
-	private boolean m_enabledOverride = true;
-	private Map<String, Boolean> m_disabledRecorders = new HashMap<String, Boolean>();
-	private ArrayList<StatisticsRecorder> m_recorders = new ArrayList<StatisticsRecorder>();
+	// dependent components
+	private LoggerComponent m_logger;
+
+	private Map<String, Boolean> m_disabledRecorders = new HashMap<>();
+	private ArrayList<StatisticsRecorder> m_recorders = new ArrayList<>();
 
 	/**
 	 * Constructor
-	 *
-	 * @param p_priorityInit     Priority for initialization of this component.
-	 *                           When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown Priority for shutting down this component.
-	 *                           When choosing the order, consider component dependencies here.
 	 */
-	public StatisticsComponent(int p_priorityInit, int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public StatisticsComponent() {
+		super(4, 96);
 	}
 
 	/**
@@ -81,7 +81,7 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	 * @param p_operationId Id of the operation to record.
 	 */
 	public void enter(final int p_recorderId, final int p_operationId) {
-		if (!m_enabledOverride) {
+		if (!m_record) {
 			return;
 		}
 
@@ -115,7 +115,7 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	 * @param p_val         Additional value to be added to the long counter.
 	 */
 	public void enter(final int p_recorderId, final int p_operationId, final long p_val) {
-		if (!m_enabledOverride) {
+		if (!m_record) {
 			return;
 		}
 
@@ -149,7 +149,7 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	 * @param p_val         Additional value to be added to the double counter.
 	 */
 	public void enter(final int p_recorderId, final int p_operationId, final double p_val) {
-		if (!m_enabledOverride) {
+		if (!m_record) {
 			return;
 		}
 
@@ -181,7 +181,7 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	 * @param p_operationId Id of the operation to record.
 	 */
 	public void leave(final int p_recorderId, final int p_operationId) {
-		if (!m_enabledOverride) {
+		if (!m_record) {
 			return;
 		}
 
@@ -232,32 +232,24 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(Settings p_settings) {
-		p_settings.setDefaultValue(StatisticsConfigurationValues.Component.RECORD);
-	}
-
-	@Override
-	protected boolean initComponent(de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
-			Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_logger = getDependentComponent(LoggerComponent.class);
 
-		m_enabledOverride = p_settings.getValue(StatisticsConfigurationValues.Component.RECORD);
-
 		// #if LOGGER >= INFO
-		m_logger.info(getClass(), "Recording of statistics enabled (global override): " + m_enabledOverride);
+		m_logger.info(getClass(), "Recording of statistics enabled (global override): " + m_record);
 		// #endif /* LOGGER >= INFO */
 
-		// read further entries, which can disable single categories (optional)
-		Map<Integer, String> catDisabled = p_settings.getValues("/CategoryDisabled", String.class);
-		if (catDisabled != null) {
-			for (Entry<Integer, String> entry : catDisabled.entrySet()) {
-				m_disabledRecorders.put(entry.getValue(), true);
-
-				// #if LOGGER >= DEBUG
-				m_logger.debug(getClass(), "Recorder " + entry.getValue() + " disabled.");
-				// #endif /* LOGGER >= DEBUG */
-			}
-		}
+		//		// read further entries, which can disable single categories (optional)
+		//		Map<Integer, String> catDisabled = p_settings.getValues("/CategoryDisabled", String.class);
+		//		if (catDisabled != null) {
+		//			for (Entry<Integer, String> entry : catDisabled.entrySet()) {
+		//				m_disabledRecorders.put(entry.getValue(), true);
+		//
+		//				// #if LOGGER >= DEBUG
+		//				m_logger.debug(getClass(), "Recorder " + entry.getValue() + " disabled.");
+		//				// #endif /* LOGGER >= DEBUG */
+		//			}
+		//		}
 
 		return true;
 	}

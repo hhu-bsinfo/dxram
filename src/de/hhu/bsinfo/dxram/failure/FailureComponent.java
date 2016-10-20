@@ -5,7 +5,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -28,15 +28,16 @@ import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Handles a node failure.
+ *
  * @author Kevin Beineke <kevin.beineke@hhu.de> 05.10.16
  */
 public class FailureComponent extends AbstractDXRAMComponent implements MessageReceiver, EventListener<AbstractEvent> {
 
+	// dependent components
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private EventComponent m_event;
-
 	private NetworkComponent m_network;
 
 	private byte[] m_events;
@@ -45,13 +46,9 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
 	/**
 	 * Creates the failure component
-	 * @param p_priorityInit
-	 *            the initialization priority
-	 * @param p_priorityShutdown
-	 *            the shutdown priority
 	 */
-	public FailureComponent(final int p_priorityInit, final int p_priorityShutdown) {
-		super(p_priorityInit, p_priorityShutdown);
+	public FailureComponent() {
+		super(10, 90);
 
 		m_events = new byte[Short.MAX_VALUE * 2];
 		m_eventLock = new ReentrantLock(false);
@@ -60,8 +57,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
 	/**
 	 * Dispatcher for a node failure
-	 * @param p_nodeID
-	 *            NodeID of failed node
+	 *
+	 * @param p_nodeID NodeID of failed node
 	 */
 	private void failureHandling(final short p_nodeID) {
 		NodeRole ownRole;
@@ -178,8 +175,8 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 
 	/**
 	 * Handles an incoming FailureRequest
-	 * @param p_request
-	 *            the FailureRequest
+	 *
+	 * @param p_request the FailureRequest
 	 */
 	private void incomingFailureRequest(final FailureRequest p_request) {
 		// Outsource failure handling to another thread to avoid blocking a message handler
@@ -210,10 +207,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	// --------------------------------------------------------------------------------
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
-
-	@Override
-	protected boolean initComponent(final DXRAMEngine.Settings p_engineSettings, final Settings p_settings) {
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_boot = getDependentComponent(AbstractBootComponent.class);
 		m_logger = getDependentComponent(LoggerComponent.class);
 		m_lookup = getDependentComponent(LookupComponent.class);
