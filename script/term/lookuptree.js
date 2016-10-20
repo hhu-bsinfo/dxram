@@ -17,14 +17,14 @@ function exec(nid) {
 
     var lookup = dxram.service("lookup");
 
-    var respSuperpeer = lookup.getResponsibleSuperPeer(nid);
+    var respSuperpeer = lookup.getResponsibleSuperpeer(nid);
 
     if (respSuperpeer == -1) {
         dxterm.printlnErr("No responsible superpeer for " + dxram.shortToHexStr(nid) + " found");
         return;
     }
 
-    var tree = lookup.getLookupTreeFromSuperPeer(respSuperpeer, nid);
+    var tree = lookup.getLookupTreeFromSuperpeer(respSuperpeer, nid);
     dxterm.println("Lookup tree of " + dxram.shortToHexStr(nid) + ":");
     dxterm.println(tree);
 }

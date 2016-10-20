@@ -72,14 +72,17 @@ static char* autocomplete_generator(const char* text, int state)
 
 static char** autocompletion(const char* text, int start, int end)
 {
+
     char **matches;
 
     matches = (char **)NULL;
 
-    if (start == 0)
+    if (start == 0) {
         matches = rl_completion_matches((char*)text, &autocomplete_generator);
-    else
-        rl_bind_key('\t',rl_abort);
+    }
+
+    rl_completion_append_character = '(';
+    rl_attempted_completion_over = 1;
 
     return (matches);
 
@@ -129,39 +132,49 @@ JNIEXPORT void JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_addToHistory(JNIEnv *
 JNIEXPORT jbyteArray JNICALL Java_de_hhu_bsinfo_utils_JNIconsole_readline(JNIEnv *p_env, jclass p_class, jstring p_prompt) {
     char *temp, *ptr;
 	const char* prompt;
-    
-    
+
     temp = (char *)NULL;
-    
+
     prompt = (*p_env)->GetStringUTFChars(p_env, p_prompt, NULL);
-    
+
     temp = readline (prompt);
-    
-	// don't add empty lines to history
-	if (temp[0] != '\0') {
-    	add_history (temp);
-	}
-   
-    
+
     int idx,len;
-    
+
     len = strlen(temp);
-    
+
+    // if there is an opening bracket but no closing, add a closing bracket at the end
+    if (strchr(temp, '(') != NULL) {
+      if (temp[len - 1] != ')') {
+	  ptr = (char*) malloc(len + 2);
+	  strcpy(ptr, temp);
+	  ptr[len] = ')';
+	  ptr[len + 1] = '\0';
+	  temp = ptr;
+	  len++;
+      }
+    }
+
+    // don't add empty lines to history
+    if (temp[0] != '\0') {
+	add_history (temp);
+    }
+
     jbyte buff[len];
     jbyteArray result = (*p_env)->NewByteArray(p_env, len);
     if (result == NULL) {
         free (temp);
         return NULL; /* out of memory error thrown */
     }
-    
-    
+
+
     ptr = temp;
     idx = 0;
     while (*ptr != '\0') {
         buff[idx++] = *ptr;
         ptr++;
     }
-    
+
     free (temp);
 
     (*p_env)->SetByteArrayRegion(p_env, result, 0, len, buff);

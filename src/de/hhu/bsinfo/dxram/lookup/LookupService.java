@@ -136,7 +136,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	 * @param p_nodeId       node id which lookuptree to get
 	 * @return requested lookup Tree
 	 */
-	public LookupTree getLookupTreeFromSuperPeer(final short p_superPeerNid, final short p_nodeId) {
+	public LookupTree getLookupTreeFromSuperpeer(final short p_superPeerNid, final short p_nodeId) {
 
 		LookupTree retTree;
 
