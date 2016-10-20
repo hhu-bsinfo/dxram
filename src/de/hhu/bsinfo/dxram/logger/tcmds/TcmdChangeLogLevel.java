@@ -5,7 +5,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
-import de.hhu.bsinfo.utils.log.LogLevel;
+import de.hhu.bsinfo.utils.logger.LogLevel;
 
 /**
  * This class handles the loggerlevel command which changes the logger level.

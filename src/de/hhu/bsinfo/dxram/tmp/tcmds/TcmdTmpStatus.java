@@ -1,7 +1,7 @@
 
 package de.hhu.bsinfo.dxram.tmp.tcmds;
 
-import de.hhu.bsinfo.dxram.lookup.overlay.SuperpeerStorage;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.dxram.term.TerminalColor;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;

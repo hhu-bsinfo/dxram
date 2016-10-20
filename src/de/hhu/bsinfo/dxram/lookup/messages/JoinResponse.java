@@ -4,7 +4,6 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**
@@ -18,10 +17,9 @@ public class JoinResponse extends AbstractResponse {
 	private short m_newContactSuperpeer;
 	private short m_predecessor;
 	private short m_successor;
-	private byte[] m_mappings;
 	private ArrayList<Short> m_superpeers;
 	private ArrayList<Short> m_peers;
-	private ArrayList<LookupTree> m_trees;
+	private byte[] m_metadata;
 
 	// Constructors
 	/**
@@ -33,10 +31,9 @@ public class JoinResponse extends AbstractResponse {
 		m_newContactSuperpeer = -1;
 		m_predecessor = -1;
 		m_successor = -1;
-		m_mappings = null;
 		m_superpeers = null;
 		m_peers = null;
-		m_trees = null;
+		m_metadata = null;
 	}
 
 	/**
@@ -49,26 +46,23 @@ public class JoinResponse extends AbstractResponse {
 	 *            the predecessor
 	 * @param p_successor
 	 *            the successor
-	 * @param p_mappings
-	 *            the id mappings
 	 * @param p_superpeers
 	 *            the finger superpeers
 	 * @param p_peers
 	 *            the peers the superpeer is responsible for
-	 * @param p_trees
-	 *            the CIDTrees of the peers
+	 * @param p_metadata
+	 *            the metadata
 	 */
 	public JoinResponse(final JoinRequest p_request, final short p_newContactSuperpeer, final short p_predecessor, final short p_successor,
-			final byte[] p_mappings, final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final ArrayList<LookupTree> p_trees) {
+			final ArrayList<Short> p_superpeers, final ArrayList<Short> p_peers, final byte[] p_metadata) {
 		super(p_request, LookupMessages.SUBTYPE_JOIN_RESPONSE);
 
 		m_newContactSuperpeer = p_newContactSuperpeer;
 		m_predecessor = p_predecessor;
 		m_successor = p_successor;
 		m_superpeers = p_superpeers;
-		m_mappings = p_mappings;
 		m_peers = p_peers;
-		m_trees = p_trees;
+		m_metadata = p_metadata;
 	}
 
 	// Getters
@@ -97,14 +91,6 @@ public class JoinResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Get mappings
-	 * @return the byte array
-	 */
-	public final byte[] getMappings() {
-		return m_mappings;
-	}
-
-	/**
 	 * Get superpeers
 	 * @return the NodeIDs
 	 */
@@ -121,11 +107,11 @@ public class JoinResponse extends AbstractResponse {
 	}
 
 	/**
-	 * Get CIDTrees
-	 * @return the CIDTrees
+	 * Get metadata
+	 * @return the byte array
 	 */
-	public final ArrayList<LookupTree> getCIDTrees() {
-		return m_trees;
+	public final byte[] getMetadata() {
+		return m_metadata;
 	}
 
 	// Methods
@@ -135,13 +121,6 @@ public class JoinResponse extends AbstractResponse {
 			p_buffer.put((byte) 1);
 			p_buffer.putShort(m_predecessor);
 			p_buffer.putShort(m_successor);
-
-			if (m_mappings == null || m_mappings.length == 0) {
-				p_buffer.putInt(0);
-			} else {
-				p_buffer.putInt(m_mappings.length);
-				p_buffer.put(m_mappings);
-			}
 
 			if (m_superpeers == null || m_superpeers.size() == 0) {
 				p_buffer.putInt(0);
@@ -161,13 +140,11 @@ public class JoinResponse extends AbstractResponse {
 				}
 			}
 
-			if (m_trees == null || m_trees.size() == 0) {
+			if (m_metadata == null || m_metadata.length == 0) {
 				p_buffer.putInt(0);
 			} else {
-				p_buffer.putInt(m_trees.size());
-				for (LookupTree tree : m_trees) {
-					LookupTree.writeCIDTree(p_buffer, tree);
-				}
+				p_buffer.putInt(m_metadata.length);
+				p_buffer.put(m_metadata);
 			}
 		} else {
 			p_buffer.put((byte) 0);
@@ -183,12 +160,6 @@ public class JoinResponse extends AbstractResponse {
 			m_predecessor = p_buffer.getShort();
 			m_successor = p_buffer.getShort();
 
-			length = p_buffer.getInt();
-			if (length != 0) {
-				m_mappings = new byte[length];
-				p_buffer.get(m_mappings);
-			}
-
 			m_superpeers = new ArrayList<Short>();
 			length = p_buffer.getInt();
 			for (int i = 0; i < length; i++) {
@@ -201,10 +172,10 @@ public class JoinResponse extends AbstractResponse {
 				m_peers.add(p_buffer.getShort());
 			}
 
-			m_trees = new ArrayList<LookupTree>();
 			length = p_buffer.getInt();
-			for (int i = 0; i < length; i++) {
-				m_trees.add(LookupTree.readCIDTree(p_buffer));
+			if (length != 0) {
+				m_metadata = new byte[length];
+				p_buffer.get(m_metadata);
 			}
 		} else {
 			m_newContactSuperpeer = p_buffer.getShort();
@@ -219,11 +190,6 @@ public class JoinResponse extends AbstractResponse {
 			ret = Byte.BYTES + Short.BYTES * 2;
 
 			ret += Integer.BYTES;
-			if (m_mappings != null && m_mappings.length > 0) {
-				ret += m_mappings.length;
-			}
-
-			ret += Integer.BYTES;
 			if (m_superpeers != null && m_superpeers.size() > 0) {
 				ret += Short.BYTES * m_superpeers.size();
 			}
@@ -234,10 +200,8 @@ public class JoinResponse extends AbstractResponse {
 			}
 
 			ret += Integer.BYTES;
-			if (m_trees != null && m_trees.size() > 0) {
-				for (LookupTree tree : m_trees) {
-					ret += LookupTree.getCIDTreeWriteLength(tree);
-				}
+			if (m_metadata != null && m_metadata.length > 0) {
+				ret += m_metadata.length;
 			}
 		} else {
 			ret = Byte.BYTES + Short.BYTES;

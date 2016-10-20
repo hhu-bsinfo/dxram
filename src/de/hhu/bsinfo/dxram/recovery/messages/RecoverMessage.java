@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.recovery.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -36,7 +37,7 @@ public class RecoverMessage extends AbstractMessage {
 	 *            the NodeID of the owner
 	 */
 	public RecoverMessage(final short p_destination, final short p_owner, final boolean p_useLiveData) {
-		super(p_destination, RecoveryMessages.TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE, RecoveryMessages.SUBTYPE_RECOVER_MESSAGE);
 
 		m_owner = p_owner;
 		m_useLiveData = p_useLiveData;

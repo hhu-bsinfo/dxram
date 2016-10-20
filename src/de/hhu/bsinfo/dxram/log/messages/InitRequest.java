@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -36,7 +37,7 @@ public class InitRequest extends AbstractRequest {
 	 *            the current owner
 	 */
 	public InitRequest(final short p_destination, final long p_firstChunkIDOrRangeID, final short p_owner) {
-		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, true);
+		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_INIT_REQUEST, true);
 
 		m_firstChunkIDOrRangeID = p_firstChunkIDOrRangeID;
 		m_owner = p_owner;

@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.menet.AbstractResponse;
 
 /**

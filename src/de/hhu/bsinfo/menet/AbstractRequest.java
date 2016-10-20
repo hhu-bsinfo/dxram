@@ -4,6 +4,8 @@ package de.hhu.bsinfo.menet;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
+
 /**
  * Represents a Request
  * @author Florian Klein 09.03.2012
@@ -162,6 +164,10 @@ public abstract class AbstractRequest extends AbstractMessage {
 			try {
 				m_wait.tryAcquire(WAITING_TIMEOUT, TimeUnit.MILLISECONDS);
 			} catch (final InterruptedException e) {}
+		}
+
+		if (!m_fulfilled && !m_aborted) {
+			NetworkHandler.getEventHandler().fireEvent(new ResponseDelayedEvent(getClass().getSimpleName(), super.getDestination()));
 		}
 
 		return m_fulfilled;

@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -33,7 +34,8 @@ public class GetChunkIDForNameserviceEntryRequest extends AbstractRequest {
 	 *            the id
 	 */
 	public GetChunkIDForNameserviceEntryRequest(final short p_destination, final int p_id) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST);
 
 		m_id = p_id;
 	}

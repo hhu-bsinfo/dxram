@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -37,7 +38,7 @@ public class JoinRequest extends AbstractRequest {
 	 *            wether the new node is a superpeer or not
 	 */
 	public JoinRequest(final short p_destination, final short p_newNode, final boolean p_nodeIsSuperpeer) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST);
 
 		assert p_newNode != 0;
 

@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -36,7 +37,7 @@ public class RemoveMessage extends AbstractMessage {
 	 *            the ChunkIDs of the Chunks to remove
 	 */
 	public RemoveMessage(final short p_destination, final Long[] p_chunkIDs) {
-		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
+		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
 		m_chunkIDs = p_chunkIDs;
 		m_rangeID = -1;
@@ -50,7 +51,7 @@ public class RemoveMessage extends AbstractMessage {
 	 *            the ChunkIDs of the Chunks to remove
 	 */
 	public RemoveMessage(final short p_destination, final long[] p_chunkIDs) {
-		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
+		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
 		final Long[] chunkIDs = new Long[p_chunkIDs.length];
 		for (int i = 0; i < p_chunkIDs.length; i++) {
@@ -70,7 +71,7 @@ public class RemoveMessage extends AbstractMessage {
 	 *            the RangeID
 	 */
 	public RemoveMessage(final short p_destination, final Long[] p_chunkIDs, final byte p_rangeID) {
-		super(p_destination, LogMessages.TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
+		super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_REMOVE_MESSAGE, true);
 
 		m_chunkIDs = p_chunkIDs;
 		m_rangeID = p_rangeID;

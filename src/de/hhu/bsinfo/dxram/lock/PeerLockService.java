@@ -8,22 +8,18 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
-import de.hhu.bsinfo.dxram.lock.messages.GetLockedListRequest;
-import de.hhu.bsinfo.dxram.lock.messages.GetLockedListResponse;
-import de.hhu.bsinfo.dxram.lock.messages.LockMessages;
-import de.hhu.bsinfo.dxram.lock.messages.LockRequest;
-import de.hhu.bsinfo.dxram.lock.messages.LockResponse;
-import de.hhu.bsinfo.dxram.lock.messages.UnlockMessage;
+import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
+import de.hhu.bsinfo.dxram.lock.messages.*;
 import de.hhu.bsinfo.dxram.lock.tcmd.TcmdLock;
 import de.hhu.bsinfo.dxram.lock.tcmd.TcmdLockList;
 import de.hhu.bsinfo.dxram.lock.tcmd.TcmdUnlock;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
-import de.hhu.bsinfo.dxram.lookup.event.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.term.TerminalComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -34,7 +30,6 @@ import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class PeerLockService extends AbstractLockService implements MessageReceiver, EventListener<NodeFailureEvent> {
@@ -45,7 +40,6 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	private MemoryManagerComponent m_memoryManager;
 	private AbstractLockComponent m_lock;
 	private LookupComponent m_lookup;
-	private EventComponent m_event;
 	private StatisticsComponent m_statistics;
 	private TerminalComponent m_terminal;
 
@@ -69,20 +63,24 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		m_memoryManager = getComponent(MemoryManagerComponent.class);
 		m_lock = getComponent(AbstractLockComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
-		m_event = getComponent(EventComponent.class);
 		// #ifdef STATISTICS
 		m_statistics = getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
 		m_terminal = getComponent(TerminalComponent.class);
 
-		m_event.registerListener(this, NodeFailureEvent.class);
+		getComponent(EventComponent.class).registerListener(this, NodeFailureEvent.class);
 
-		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_REQUEST, LockRequest.class);
-		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE, LockResponse.class);
-		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE, UnlockMessage.class);
-		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST,
+		m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST,
+				LockRequest.class);
+		m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_RESPONSE,
+				LockResponse.class);
+		m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_UNLOCK_MESSAGE,
+				UnlockMessage.class);
+		m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE,
+				LockMessages.SUBTYPE_GET_LOCKED_LIST_REQUEST,
 				GetLockedListRequest.class);
-		m_network.registerMessageType(LockMessages.TYPE, LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE,
+		m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE,
+				LockMessages.SUBTYPE_GET_LOCKED_LIST_RESPONSE,
 				GetLockedListResponse.class);
 
 		m_network.register(LockRequest.class, this);
@@ -201,8 +199,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						if (idle) {
 							try {
 								Thread.sleep(m_remoteLockSendIntervalMs);
-							} catch (final InterruptedException e) {
-							}
+							} catch (final InterruptedException e) {}
 						}
 
 						// Remote lock
@@ -354,7 +351,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		// #endif /* LOGGER == TRACE */
 
 		if (p_message != null) {
-			if (p_message.getType() == LockMessages.TYPE) {
+			if (p_message.getType() == DXRAMMessageTypes.LOCK_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
 					case LockMessages.SUBTYPE_LOCK_REQUEST:
 						incomingLockRequest((LockRequest) p_message);
@@ -378,8 +375,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	/**
 	 * Handles an incoming LockRequest
-	 *
-	 * @param p_request the LockRequest
+	 * @param p_request
+	 *            the LockRequest
 	 */
 	private void incomingLockRequest(final LockRequest p_request) {
 		boolean success = false;
@@ -406,8 +403,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	/**
 	 * Handles an incoming UnlockMessage
-	 *
-	 * @param p_message the UnlockMessage
+	 * @param p_message
+	 *            the UnlockMessage
 	 */
 	private void incomingUnlockMessage(final UnlockMessage p_message) {
 		// #ifdef STATISTICS
@@ -423,8 +420,8 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	/**
 	 * Handles an incoming GetLockedListRequest
-	 *
-	 * @param p_request the GetLockedListRequest
+	 * @param p_request
+	 *            the GetLockedListRequest
 	 */
 	private void incomingLockedListRequest(final GetLockedListRequest p_request) {
 		ArrayList<Pair<Long, Short>> list = m_lock.getLockedList();

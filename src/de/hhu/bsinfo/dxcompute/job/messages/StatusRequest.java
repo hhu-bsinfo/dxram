@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxcompute.job.messages;
 
+import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -23,6 +24,6 @@ public class StatusRequest extends AbstractRequest {
 	 *            the destination node id.
 	 */
 	public StatusRequest(final short p_destination) {
-		super(p_destination, JobMessages.TYPE, JobMessages.SUBTYPE_STATUS_REQUEST);
+		super(p_destination, DXCOMPUTEMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST);
 	}
 }

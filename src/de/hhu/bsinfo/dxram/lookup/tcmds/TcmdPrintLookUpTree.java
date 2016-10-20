@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxram.lookup.tcmds;
 
 import de.hhu.bsinfo.dxram.lookup.LookupService;
-import de.hhu.bsinfo.dxram.lookup.overlay.LookupTree;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.term.AbstractTerminalCommand;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
@@ -46,7 +46,7 @@ public class TcmdPrintLookUpTree extends AbstractTerminalCommand {
 		if (lookupService == null) {
 			System.out.println("Lookupservice is null");
 		} else {
-			responsibleSuperPeer = lookupService.getResponsibleSuperPeer(nid);
+			responsibleSuperPeer = lookupService.getResponsibleSuperpeer(nid);
 		}
 
 		if (responsibleSuperPeer != -1) {

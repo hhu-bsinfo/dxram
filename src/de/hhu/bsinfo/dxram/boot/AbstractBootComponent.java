@@ -98,20 +98,11 @@ public abstract class AbstractBootComponent extends AbstractDXRAMComponent {
 	public abstract boolean nodeAvailable(final short p_nodeID);
 
 	/**
-	 * Replaces the current bootstrap with p_nodeID if the failed bootstrap has not been replaced by another superpeer
-	 * @param p_nodeID
-	 *            the new bootstrap candidate
-	 * @return the new bootstrap
-	 */
-	public abstract short setBootstrapPeer(final short p_nodeID);
-
-	/**
 	 * Report that we detected a node failure.
 	 * @param p_nodeID
 	 *            the failed node
-	 * @param p_isSuperpeer
-	 *            whether the failed node was a superpeer or not
-	 * @return true if the current node reported the failure first
+	 * @param p_role
+	 *            failed node's role
 	 */
-	public abstract boolean reportNodeFailure(final short p_nodeID, final boolean p_isSuperpeer);
+	public abstract void failureHandling(final short p_nodeID, final NodeRole p_role);
 }

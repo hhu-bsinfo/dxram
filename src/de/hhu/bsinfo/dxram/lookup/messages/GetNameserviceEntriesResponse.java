@@ -2,10 +2,8 @@
 package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 import de.hhu.bsinfo.menet.AbstractResponse;
-import de.hhu.bsinfo.utils.Pair;
 
 /**
  * Response to a GetMappingCountRequest
@@ -13,7 +11,7 @@ import de.hhu.bsinfo.utils.Pair;
  */
 public class GetNameserviceEntriesResponse extends AbstractResponse {
 
-	private ArrayList<Pair<Integer, Long>> m_entries;
+	private byte[] m_entries;
 
 	// Constructors
 	/**
@@ -31,7 +29,7 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
 	 *            the count
 	 */
 	public GetNameserviceEntriesResponse(final GetNameserviceEntriesRequest p_request,
-			final ArrayList<Pair<Integer, Long>> p_entries) {
+			final byte[] p_entries) {
 		super(p_request, LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_RESPONSE);
 
 		m_entries = p_entries;
@@ -42,35 +40,33 @@ public class GetNameserviceEntriesResponse extends AbstractResponse {
 	 * Get the entries.
 	 * @return Entries
 	 */
-	public ArrayList<Pair<Integer, Long>> getEntries() {
+	public byte[] getEntries() {
 		return m_entries;
 	}
 
 	// Methods
 	@Override
 	protected final void writePayload(final ByteBuffer p_buffer) {
-		p_buffer.putInt(m_entries.size());
-		for (Pair<Integer, Long> entry : m_entries) {
-			p_buffer.putInt(entry.first());
-			p_buffer.putLong(entry.second());
+		if (m_entries.length == 0) {
+			p_buffer.putInt(0);
+		} else {
+			p_buffer.putInt(m_entries.length);
+			p_buffer.put(m_entries);
 		}
 	}
 
 	@Override
 	protected final void readPayload(final ByteBuffer p_buffer) {
-		int elems = p_buffer.getInt();
-		m_entries = new ArrayList<Pair<Integer, Long>>(elems);
-		for (int i = 0; i < elems; i++) {
-			Pair<Integer, Long> pair = new Pair<Integer, Long>();
-			pair.m_first = p_buffer.getInt();
-			pair.m_second = p_buffer.getLong();
-			m_entries.add(pair);
+		int length = p_buffer.getInt();
+		if (length != 0) {
+			m_entries = new byte[length];
+			p_buffer.get(m_entries);
 		}
 	}
 
 	@Override
 	protected final int getPayloadLength() {
-		return Integer.BYTES + (Integer.BYTES + Long.BYTES) * m_entries.size();
+		return Integer.BYTES + m_entries.length;
 	}
 
 }

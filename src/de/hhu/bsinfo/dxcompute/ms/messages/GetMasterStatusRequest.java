@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxcompute.ms.messages;
 
+import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -23,6 +24,7 @@ public class GetMasterStatusRequest extends AbstractRequest {
 	 *            the destination node id.
 	 */
 	public GetMasterStatusRequest(final short p_destination) {
-		super(p_destination, MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST);
+		super(p_destination, DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+				MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST);
 	}
 }

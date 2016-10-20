@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -33,7 +34,8 @@ public class SetRestorerAfterRecoveryMessage extends AbstractMessage {
 	 *            the failed peer
 	 */
 	public SetRestorerAfterRecoveryMessage(final short p_destination, final short p_owner) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE);
 
 		m_owner = p_owner;
 	}

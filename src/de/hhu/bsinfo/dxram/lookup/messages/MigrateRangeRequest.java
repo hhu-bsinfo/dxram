@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -46,7 +47,7 @@ public class MigrateRangeRequest extends AbstractRequest {
 	 */
 	public MigrateRangeRequest(final short p_destination, final long p_startChunkID,
 			final long p_endChunkID, final short p_nodeID, final boolean p_isBackup) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST);
 
 		m_startChunkID = p_startChunkID;
 		m_endChunkID = p_endChunkID;

@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -40,8 +41,9 @@ public class InitRangeRequest extends AbstractRequest {
 	 * @param p_isBackup
 	 *            whether this is a backup message or not
 	 */
-	public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_lookupRange, final boolean p_isBackup) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
+	public InitRangeRequest(final short p_destination, final long p_startChunkID, final long p_lookupRange,
+			final boolean p_isBackup) {
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_INIT_RANGE_REQUEST);
 
 		m_startChunkIDOrRangeID = p_startChunkID;
 		m_lookupRange = p_lookupRange;

@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -21,6 +22,7 @@ public class SuperpeerStorageStatusRequest extends AbstractRequest {
 	 *            the destination
 	 */
 	public SuperpeerStorageStatusRequest(final short p_destination) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST);
 	}
 }

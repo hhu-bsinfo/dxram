@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -32,7 +33,7 @@ public class RemoveRequest extends AbstractRequest {
 	 *            the chunk IDs to remove
 	 */
 	public RemoveRequest(final short p_destination, final Long... p_chunkIds) {
-		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST);
+		super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_REMOVE_REQUEST);
 
 		m_chunkIDs = p_chunkIds;
 

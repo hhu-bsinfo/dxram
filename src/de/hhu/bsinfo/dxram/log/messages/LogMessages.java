@@ -6,7 +6,6 @@ package de.hhu.bsinfo.dxram.log.messages;
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
 public final class LogMessages {
-	public static final byte TYPE = 4;
 	public static final byte SUBTYPE_LOG_MESSAGE = 1;
 	public static final byte SUBTYPE_REMOVE_MESSAGE = 2;
 	public static final byte SUBTYPE_INIT_REQUEST = 3;

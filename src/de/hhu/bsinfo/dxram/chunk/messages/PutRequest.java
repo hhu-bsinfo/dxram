@@ -4,11 +4,8 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import de.hhu.bsinfo.dxram.data.Chunk;
-import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
-import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
-import de.hhu.bsinfo.dxram.data.DataStructure;
-import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.data.*;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -43,23 +40,23 @@ public class PutRequest extends AbstractRequest {
 	 */
 	public PutRequest(final short p_destination, final ChunkLockOperation p_unlockOperation,
 			final DataStructure... p_dataStructures) {
-		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
+		super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
 
 		m_dataStructures = p_dataStructures;
 
 		byte tmpCode = getStatusCode();
 		switch (p_unlockOperation) {
-		case NO_LOCK_OPERATION:
-			break;
-		case READ_LOCK:
-			ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
-			break;
-		case WRITE_LOCK:
-			ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
-			break;
-		default:
-			assert 1 == 2;
-			break;
+			case NO_LOCK_OPERATION:
+				break;
+			case READ_LOCK:
+				ChunkMessagesMetadataUtils.setReadLockFlag(tmpCode, true);
+				break;
+			case WRITE_LOCK:
+				ChunkMessagesMetadataUtils.setWriteLockFlag(tmpCode, true);
+				break;
+			default:
+				assert 1 == 2;
+				break;
 		}
 
 		setStatusCode(ChunkMessagesMetadataUtils.setNumberOfItemsToSend(tmpCode, p_dataStructures.length));

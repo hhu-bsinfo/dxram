@@ -127,7 +127,7 @@ class NIOConnection extends AbstractConnection {
 			final MessageCreator p_messageCreator, final NIOSelector p_nioSelector,
 			final int p_numberOfBuffersPerConnection,
 			final int p_incomingBufferSize, final int p_outgoingBufferSize, final int p_flowControlWindowSize)
-			throws IOException {
+					throws IOException {
 		super(p_destination, p_nodeMap, p_messageDirectory, p_flowControlWindowSize);
 
 		m_incomingBufferSize = p_incomingBufferSize;

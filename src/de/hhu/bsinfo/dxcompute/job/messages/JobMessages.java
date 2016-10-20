@@ -6,7 +6,6 @@ package de.hhu.bsinfo.dxcompute.job.messages;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public final class JobMessages {
-	public static final byte TYPE = 2;
 	public static final byte SUBTYPE_PUSH_JOB_QUEUE_MESSAGE = 1;
 	public static final byte SUBTYPE_STATUS_REQUEST = 2;
 	public static final byte SUBTYPE_STATUS_RESPONSE = 3;

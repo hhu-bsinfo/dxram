@@ -186,10 +186,10 @@ abstract class AbstractConnection {
 	 * Writes data to the connection
 	 * @param p_message
 	 *            the AbstractMessage to send
-	 * @throws IOException
+	 * @throws NetworkException
 	 *             if the data could not be written
 	 */
-	protected final void write(final AbstractMessage p_message) throws IOException {
+	protected final void write(final AbstractMessage p_message) throws NetworkException {
 		m_flowControlCondLock.lock();
 		while (m_unconfirmedBytes > m_flowControlWindowSize) {
 			try {
@@ -206,6 +206,7 @@ abstract class AbstractConnection {
 			// #if LOGGER >= ERROR
 			NetworkHandler.getLogger().error(getClass().getSimpleName(), "Could not send message: " + p_message, e);
 			// #endif /* LOGGER >= ERROR */
+
 			return;
 		}
 
@@ -418,7 +419,7 @@ abstract class AbstractConnection {
 					m_streamInterpreter.update(p_buffer);
 
 					if (m_streamInterpreter.isMessageComplete()) {
-						if (!m_streamInterpreter.isExceptionOccurred()) {
+						if (!m_streamInterpreter.exceptionOccurred()) {
 							messageBuffer = m_streamInterpreter.getMessageBuffer();
 
 							message = createMessage(messageBuffer);
@@ -534,7 +535,7 @@ abstract class AbstractConnection {
 		 * Checks if an Exception occurred
 		 * @return true if an Exception occurred, false otherwise
 		 */
-		public final boolean isExceptionOccurred() {
+		public final boolean exceptionOccurred() {
 			return m_exceptionOccurred;
 		}
 

@@ -3,8 +3,9 @@ package de.hhu.bsinfo.dxram.logger.messages;
 
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.utils.log.LogLevel;
+import de.hhu.bsinfo.utils.logger.LogLevel;
 
 /**
  * Set the log level of a remote node
@@ -29,7 +30,7 @@ public class SetLogLevelMessage extends AbstractMessage {
 	 *            Log level to set on remote node
 	 */
 	public SetLogLevelMessage(final short p_destination, final LogLevel p_logLevel) {
-		super(p_destination, LoggerMessages.TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.LOGGER_MESSAGES_TYPE, LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE);
 
 		m_logLevel = p_logLevel;
 	}

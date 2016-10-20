@@ -11,7 +11,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Creates and manages new network connections using Java NIO
- *
  * @author Florian Klein 18.03.2012
  *         Marc Ewert 11.08.2014
  */
@@ -37,15 +36,22 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	/**
 	 * Creates an instance of NIOConnectionCreator
-	 *
-	 * @param p_messageDirectory             the message directory
-	 * @param p_nodeMap                      the node map
-	 * @param p_ownNodeID                    the NodeID of this node
-	 * @param p_incomingBufferSize           the size of incoming buffer
-	 * @param p_outgoingBufferSize           the size of outgoing buffer
-	 * @param p_numberOfBuffersPerConnection the number of bytes until a flow control message must be received to continue sending
-	 * @param p_flowControlWindowSize        the maximal number of ByteBuffer to schedule for sending/receiving
-	 * @param p_connectionTimeout            the connection timeout
+	 * @param p_messageDirectory
+	 *            the message directory
+	 * @param p_nodeMap
+	 *            the node map
+	 * @param p_ownNodeID
+	 *            the NodeID of this node
+	 * @param p_incomingBufferSize
+	 *            the size of incoming buffer
+	 * @param p_outgoingBufferSize
+	 *            the size of outgoing buffer
+	 * @param p_numberOfBuffersPerConnection
+	 *            the number of bytes until a flow control message must be received to continue sending
+	 * @param p_flowControlWindowSize
+	 *            the maximal number of ByteBuffer to schedule for sending/receiving
+	 * @param p_connectionTimeout
+	 *            the connection timeout
 	 */
 	protected NIOConnectionCreator(final MessageDirectory p_messageDirectory, final NodeMap p_nodeMap,
 			final short p_ownNodeID, final int p_incomingBufferSize, final int p_outgoingBufferSize,
@@ -131,10 +137,11 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	/**
 	 * Creates a new connection to the given destination
-	 *
-	 * @param p_destination the destination
+	 * @param p_destination
+	 *            the destination
 	 * @return a new connection
-	 * @throws IOException if the connection could not be created
+	 * @throws IOException
+	 *             if the connection could not be created
 	 */
 	@Override
 	public NIOConnection createConnection(final short p_destination) throws IOException {
@@ -171,7 +178,8 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 		}
 		condLock.unlock();
 
-		// Close new connection if this node's NodeID is smaller. Own NodeID was transmitted triggering remote node to establish a connection.
+		// Close new connection if this node's NodeID is smaller. Own NodeID was transmitted triggering remote node to
+		// establish a connection.
 		if (m_ownNodeID < p_destination) {
 
 			ret.closeGracefully();
@@ -186,9 +194,10 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 	/**
 	 * Creates a new connection, triggered by incoming key
 	 * m_buffer needs to be synchronized externally
-	 *
-	 * @param p_channel the channel of the connection
-	 * @throws IOException if the connection could not be created
+	 * @param p_channel
+	 *            the channel of the connection
+	 * @throws IOException
+	 *             if the connection could not be created
 	 */
 	protected void createConnection(final SocketChannel p_channel) throws IOException {
 		NIOConnection connection;
@@ -226,9 +235,10 @@ class NIOConnectionCreator extends AbstractConnectionCreator {
 
 	/**
 	 * Closes the given connection
-	 *
-	 * @param p_connection              the connection
-	 * @param p_informConnectionManager whether to inform the connection manager or not
+	 * @param p_connection
+	 *            the connection
+	 * @param p_informConnectionManager
+	 *            whether to inform the connection manager or not
 	 */
 	protected void closeConnection(final NIOConnection p_connection, final boolean p_informConnectionManager) {
 		SelectionKey key;

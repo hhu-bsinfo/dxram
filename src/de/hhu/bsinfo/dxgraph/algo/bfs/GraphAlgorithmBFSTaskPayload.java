@@ -13,13 +13,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
 import de.hhu.bsinfo.dxgraph.GraphTaskPayloads;
 import de.hhu.bsinfo.dxgraph.algo.bfs.front.ConcurrentBitVectorHybrid;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSMessages;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSResultMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.BFSTerminateMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.PingMessage;
-import de.hhu.bsinfo.dxgraph.algo.bfs.messages.VerticesForNextFrontierMessage;
+import de.hhu.bsinfo.dxgraph.algo.bfs.messages.*;
 import de.hhu.bsinfo.dxgraph.data.BFSResult;
 import de.hhu.bsinfo.dxgraph.data.GraphPartitionIndex;
 import de.hhu.bsinfo.dxgraph.data.GraphRootList;
@@ -32,7 +29,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
-import de.hhu.bsinfo.dxram.lookup.overlay.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.NetworkService;
@@ -48,7 +45,6 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Compute task to run BFS on a loaded graph.
- *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
  */
 public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
@@ -120,13 +116,13 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		m_synchronizationService = p_dxram.getService(SynchronizationService.class);
 		m_temporaryStorageService = p_dxram.getService(TemporaryStorageService.class);
 
-		m_networkService.registerMessageType(BFSMessages.TYPE,
+		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE,
 				VerticesForNextFrontierMessage.class);
-		m_networkService.registerMessageType(BFSMessages.TYPE,
+		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_BFS_TERMINATE_MESSAGE,
 				BFSTerminateMessage.class);
-		m_networkService.registerMessageType(BFSMessages.TYPE,
+		m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
 				BFSMessages.SUBTYPE_BFS_RESULT_MESSAGE,
 				BFSResultMessage.class);
 
@@ -135,7 +131,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		// TODO workaround for network issue creating multiple socket connections
 		{
-			m_networkService.registerMessageType(BFSMessages.TYPE,
+			m_networkService.registerMessageType(DXGRAPHMessageTypes.BFS_MESSAGES_TYPE,
 					BFSMessages.SUBTYPE_PING_MESSAGE,
 					PingMessage.class);
 
@@ -145,8 +141,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			{
 				try {
 					Thread.sleep(getSlaveId() * 500);
-				} catch (final InterruptedException ignore) {
-				}
+				} catch (final InterruptedException ignore) {}
 
 				// send ping message to force open socket connections in order
 				for (short slave : getSlaveNodeIds()) {
@@ -245,8 +240,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			System.gc();
 			try {
 				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-			}
+			} catch (InterruptedException e) {}
 
 			// #if LOGGER >= INFO
 			m_loggerService.info(getClass(), "Executing BFS with root " + ChunkID.toHexString(root));
@@ -389,7 +383,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 	/**
 	 * Base class for the master/slave BFS roles. Every BFS instance can be used for a single
 	 * BFS run, only.
-	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 13.05.16
 	 */
 	private class BFS implements MessageReceiver {
@@ -416,8 +409,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Constructor
-		 *
-		 * @param p_bfsEntryNode Root entry node to start the BFS at.
+		 * @param p_bfsEntryNode
+		 *            Root entry node to start the BFS at.
 		 */
 		BFS(final long p_bfsEntryNode) {
 			m_bfsLocalResult = new BFSResult();
@@ -429,7 +422,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Get the local results of the BFS iteration (when done).
-		 *
 		 * @return BFS result.
 		 */
 		BFSResult getBFSResult() {
@@ -438,11 +430,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Initialize the BFS instance.
-		 *
-		 * @param p_totalVertexCount    Total vertex count of the graph.
-		 * @param p_verticesMarkVisited False to not alter the graph data stored and use a local list to
-		 *                              remember visited vertices, true to alter graph data and store visited
-		 *                              information with the graph.
+		 * @param p_totalVertexCount
+		 *            Total vertex count of the graph.
+		 * @param p_verticesMarkVisited
+		 *            False to not alter the graph data stored and use a local list to
+		 *            remember visited vertices, true to alter graph data and store visited
+		 *            information with the graph.
 		 */
 		void init(final long p_totalVertexCount, final boolean p_verticesMarkVisited) {
 			m_curFrontier = new ConcurrentBitVectorHybrid(p_totalVertexCount, 1);
@@ -480,8 +473,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Execute one full BFS run.
-		 *
-		 * @param p_entryVertex Root vertex id to start BFS at.
+		 * @param p_entryVertex
+		 *            Root vertex id to start BFS at.
 		 */
 		void execute(final long p_entryVertex) {
 			boolean bottomUpApproach = false;
@@ -544,14 +537,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					// Enabling Bottom-Up Search"
 					if (bottomUpApproach) {
 						// last iteration was bottom up approach, check if we should switch
-						if (fullGraphNextFrontVertexCount
-								< fullGraphVertexCount / 14 * m_beamerFormulaGraphEdgeDeg) {
+						if (fullGraphNextFrontVertexCount < fullGraphVertexCount / 14 * m_beamerFormulaGraphEdgeDeg) {
 							bottomUpApproach = false;
 						}
 					} else {
 						// last iteration was top down approach, check if we should switch
-						if (fullGraphNextFrontEdgeCount
-								> fullGraphEdgeCount / 10) {
+						if (fullGraphNextFrontEdgeCount > fullGraphEdgeCount / 10) {
 							bottomUpApproach = true;
 						}
 					}
@@ -579,8 +570,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 						if (!m_threads[t].hasIterationFinished()) {
 							try {
 								Thread.sleep(2);
-							} catch (InterruptedException e) {
-							}
+							} catch (InterruptedException e) {}
 							if (m_signalAbortTriggered) {
 								return;
 							}
@@ -637,9 +627,10 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 							BFSTerminateMessage msg =
 									new BFSTerminateMessage(slavesNodeIds[i], m_nextFrontier.size(),
 											numEdgesInNextFrontier);
-							//							System.out.println("<<<<< BFSTerminateMessage " + NodeID.toHexString(slavesNodeIds[i]));
+							// System.out.println("<<<<< BFSTerminateMessage " + NodeID.toHexString(slavesNodeIds[i]));
 							NetworkErrorCodes err = m_networkService.sendMessage(msg);
-							//							System.out.println("<<<<<??? BFSTerminateMessage " + NodeID.toHexString(slavesNodeIds[i]));
+							// System.out.println("<<<<<??? BFSTerminateMessage " +
+							// NodeID.toHexString(slavesNodeIds[i]));
 							if (err != NetworkErrorCodes.SUCCESS) {
 								m_loggerService.error(getClass(),
 										"Sending bfs terminate message to " + NodeID.toHexString(slavesNodeIds[i])
@@ -653,12 +644,11 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					}
 
 					// wait until everyone reported the next frontier state/termination
-					//					System.out.println("!!!!! " + getSlaveNodeIds().length);
+					// System.out.println("!!!!! " + getSlaveNodeIds().length);
 					while (!m_bfsSlavesEmptyNextFrontiers.compareAndSet(getSlaveNodeIds().length - 1, 0)) {
 						try {
 							Thread.sleep(2);
-						} catch (InterruptedException e) {
-						}
+						} catch (InterruptedException e) {}
 					}
 
 					fullGraphNextFrontVertexCount = m_nextFrontVertices.getAndSet(0);
@@ -712,8 +702,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			m_statisticsThread.shutdown();
 			try {
 				m_statisticsThread.join();
-			} catch (final InterruptedException ignored) {
-			}
+			} catch (final InterruptedException ignored) {}
 
 			// collect further results
 			m_bfsLocalResult.m_graphFullSizeVertices = fullGraphVertexCount;
@@ -743,8 +732,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 				m_statisticsThread.shutdown();
 				try {
 					m_statisticsThread.join();
-				} catch (final InterruptedException ignored) {
-				}
+				} catch (final InterruptedException ignored) {}
 
 				m_statisticsThread = null;
 			}
@@ -760,8 +748,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 			for (BFSThread thread : m_threads) {
 				try {
 					thread.join();
-				} catch (final InterruptedException ignored) {
-				}
+				} catch (final InterruptedException ignored) {}
 			}
 
 			m_syncBFSFinished.cleanup();
@@ -778,7 +765,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 		@Override
 		public void onIncomingMessage(final AbstractMessage p_message) {
 			if (p_message != null) {
-				if (p_message.getType() == BFSMessages.TYPE) {
+				if (p_message.getType() == DXGRAPHMessageTypes.BFS_MESSAGES_TYPE) {
 					switch (p_message.getSubtype()) {
 						case BFSMessages.SUBTYPE_VERTICES_FOR_NEXT_FRONTIER_MESSAGE:
 							onIncomingVerticesForNextFrontierMessage(
@@ -797,8 +784,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Handle incoming VerticesForNextFrontierMessage messages.
-		 *
-		 * @param p_message VerticesForNextFrontierMessage to handle
+		 * @param p_message
+		 *            VerticesForNextFrontierMessage to handle
 		 */
 		private void onIncomingVerticesForNextFrontierMessage(final VerticesForNextFrontierMessage p_message) {
 
@@ -871,12 +858,12 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Handle incoming BFSTerminateMessage messages.
-		 *
-		 * @param p_message BFSTerminateMessage to handle
+		 * @param p_message
+		 *            BFSTerminateMessage to handle
 		 */
 		private void onIncomingBFSTerminateMessage(final BFSTerminateMessage p_message) {
 
-			//			System.out.println(">>>> onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getSource()));
+			// System.out.println(">>>> onIncomingBFSTerminateMessage " + NodeID.toHexString(p_message.getSource()));
 
 			long nextFrontVerts = p_message.getFrontierNextVertices();
 			long nextFrontEdges = p_message.getFrontierNextEdges();
@@ -917,7 +904,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			/**
 			 * Get the currently total vertex visited count.
-			 *
 			 * @return Current total vertex visited count.
 			 */
 			long getTotalVertexCount() {
@@ -926,7 +912,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			/**
 			 * Get the currently total edge traversed count.
-			 *
 			 * @return Current total edge traversed count.
 			 */
 			long getTotalEdgeCount() {
@@ -935,7 +920,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			/**
 			 * Get the currently max visited vertices per second.
-			 *
 			 * @return Max visited vertices per second.
 			 */
 			long getMaxVerticesVisitedPerSec() {
@@ -944,7 +928,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			/**
 			 * Get the currently max traversed edges per second.
-			 *
 			 * @return Max traversed edges per second.
 			 */
 			long getMaxEdgesTraversedPerSec() {
@@ -953,7 +936,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			/**
 			 * Get the average vertices visited per second.
-			 *
 			 * @return Average vertices per second visited.
 			 */
 			long getAvgVerticesPerSec() {
@@ -962,7 +944,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			/**
 			 * Get the average edges traversed per second.
-			 *
 			 * @return Average edges per second traversed.
 			 */
 			long getAvgEdgesPerSec() {
@@ -971,7 +952,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 			/**
 			 * Get the total running time in ms.
-			 *
 			 * @return Total running time.
 			 */
 			long getTotalTimeMs() {
@@ -1078,16 +1058,23 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Constructor
-		 *
-		 * @param p_id                     Id of the thread.
-		 * @param p_vertexBatchSize        Number of vertices to process in a single batch.
-		 * @param p_vertexMessageBatchSize Number of vertices to back as a batch into a single message to
-		 *                                 send to other nodes.
-		 * @param p_curFrontierShared      Shared instance with other threads of the current frontier.
-		 * @param p_nextFrontierShared     Shared instance with other threads of the next frontier
-		 * @param p_visitedFrontierShared  Shared instance with other threads of the visited frontier.
-		 * @param p_sharedVertexCounter    Shared instance with other threads to count visited vertices
-		 * @param p_sharedEdgeCounter      Shared instance with other threads to count traversed edges
+		 * @param p_id
+		 *            Id of the thread.
+		 * @param p_vertexBatchSize
+		 *            Number of vertices to process in a single batch.
+		 * @param p_vertexMessageBatchSize
+		 *            Number of vertices to back as a batch into a single message to
+		 *            send to other nodes.
+		 * @param p_curFrontierShared
+		 *            Shared instance with other threads of the current frontier.
+		 * @param p_nextFrontierShared
+		 *            Shared instance with other threads of the next frontier
+		 * @param p_visitedFrontierShared
+		 *            Shared instance with other threads of the visited frontier.
+		 * @param p_sharedVertexCounter
+		 *            Shared instance with other threads to count visited vertices
+		 * @param p_sharedEdgeCounter
+		 *            Shared instance with other threads to count traversed edges
 		 */
 		BFSThread(final int p_id, final int p_vertexBatchSize, final int p_vertexMessageBatchSize,
 				final ConcurrentBitVectorHybrid p_curFrontierShared,
@@ -1119,8 +1106,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Set the current BFS depth level
-		 *
-		 * @param p_curDepth Current BFS depth.
+		 * @param p_curDepth
+		 *            Current BFS depth.
 		 */
 		void setCurrentBFSDepthLevel(final int p_curDepth) {
 			m_currentDepthLevel = p_curDepth;
@@ -1128,8 +1115,8 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Trigger running a single iteration until all vertices of the current frontier are processed.
-		 *
-		 * @param p_bottomUpIteration BFS direction for this iteration
+		 * @param p_bottomUpIteration
+		 *            BFS direction for this iteration
 		 */
 		void runIteration(final boolean p_bottomUpIteration) {
 			m_bottomUpIteration = p_bottomUpIteration;
@@ -1139,7 +1126,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Get the edge count of the vertices added to the next frontier in this bfs iteration.
-		 *
 		 * @return Edge count of the the vertices added to the next frontier.
 		 */
 		long getEdgeCountNextFrontier() {
@@ -1148,7 +1134,6 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 
 		/**
 		 * Check if the currently running iteration has finished.
-		 *
 		 * @return True if finished, false if still running.
 		 */
 		boolean hasIterationFinished() {
@@ -1188,8 +1173,7 @@ public class GraphAlgorithmBFSTaskPayload extends AbstractTaskPayload {
 					if (!m_runIteration) {
 						try {
 							Thread.sleep(2);
-						} catch (InterruptedException e) {
-						}
+						} catch (InterruptedException e) {}
 					}
 				} while (!m_runIteration);
 

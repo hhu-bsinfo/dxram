@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.nameservice.messages;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractMessage;
 
 /**
@@ -33,7 +34,7 @@ public class ForwardRegisterMessage extends AbstractMessage {
 	 *            The name to use for the mapping of the chunk id
 	 */
 	public ForwardRegisterMessage(final short p_destination, final long p_chunkId, final String p_name) {
-		super(p_destination, NameserviceMessages.TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE);
+		super(p_destination, DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE, NameserviceMessages.SUBTYPE_REGISTER_MESSAGE);
 
 		m_chunkId = p_chunkId;
 		m_name = p_name;

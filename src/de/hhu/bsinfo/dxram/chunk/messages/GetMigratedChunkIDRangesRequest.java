@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -23,6 +24,7 @@ public class GetMigratedChunkIDRangesRequest extends AbstractRequest {
 	 *            the destination node id.
 	 */
 	public GetMigratedChunkIDRangesRequest(final short p_destination) {
-		super(p_destination, ChunkMessages.TYPE, ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST);
+		super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE,
+				ChunkMessages.SUBTYPE_GET_MIGRATED_CHUNKID_RANGES_REQUEST);
 	}
 }

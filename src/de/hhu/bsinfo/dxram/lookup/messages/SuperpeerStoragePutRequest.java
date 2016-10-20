@@ -8,6 +8,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -43,7 +44,8 @@ public class SuperpeerStoragePutRequest extends AbstractRequest {
 	 */
 	public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure,
 			boolean p_replicate) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
+				LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST);
 
 		m_dataStructure = p_dataStructure;
 		m_isReplicate = p_replicate;

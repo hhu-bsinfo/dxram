@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.engine;
 
 import de.hhu.bsinfo.utils.JNIconsole;
 import de.hhu.bsinfo.utils.OSValidator;
-import de.hhu.bsinfo.utils.log.Logger;
+import de.hhu.bsinfo.utils.logger.Logger;
 
 /**
  * Separate class to avoid further bloating of DXRAMEngine to setup JNI related things (used by DXRAMEngine).

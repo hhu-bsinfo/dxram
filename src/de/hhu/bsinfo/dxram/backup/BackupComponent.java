@@ -9,6 +9,9 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.event.EventListener;
+import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitResponse;
@@ -17,6 +20,7 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.menet.NodeID;
 
@@ -24,7 +28,7 @@ import de.hhu.bsinfo.menet.NodeID;
  * Component for managing backup ranges.
  * @author Kevin Beineke <kevin.beineke@hhu.de> 30.03.16
  */
-public class BackupComponent extends AbstractDXRAMComponent {
+public class BackupComponent extends AbstractDXRAMComponent implements EventListener<NodeFailureEvent> {
 
 	private boolean m_backupActive;
 	private String m_backupDirectory;
@@ -216,6 +220,39 @@ public class BackupComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
+	public void eventTriggered(NodeFailureEvent p_event) {
+		short failedPeer;
+		long firstChunkID;
+		short[] backupPeers;
+
+		// TODO: Lock!
+
+		failedPeer = p_event.getNodeID();
+		for (BackupRange backupRange : m_ownBackupRanges) {
+			backupPeers = backupRange.getBackupPeers();
+			for (short backupPeer : backupPeers) {
+				if (backupPeer == failedPeer) {
+					// Determine new backup peer (shifting!)
+
+					// Send new backup peer all chunks of backup range
+					firstChunkID = backupRange.getRangeID();
+
+					// Inform responsible superpeer to update backup range
+				}
+			}
+		}
+
+		for (BackupRange backupRange : m_migrationBackupRanges) {
+			backupPeers = backupRange.getBackupPeers();
+			for (short backupPeer : backupPeers) {
+				if (backupPeer == failedPeer) {
+
+				}
+			}
+		}
+	}
+
+	@Override
 	protected void registerDefaultSettingsComponent(final Settings p_settings) {
 		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_ACTIVE);
 		p_settings.setDefaultValue(BackupConfigurationValues.Component.BACKUP_DIRECTORY);
@@ -236,6 +273,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 		m_lookup = getDependentComponent(LookupComponent.class);
 		m_log = getDependentComponent(LogComponent.class);
 
+		getDependentComponent(EventComponent.class).registerListener(this, NodeFailureEvent.class);
+
 		m_nodeID = m_boot.getNodeID();
 		if (m_backupActive && m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_ownBackupRanges = new ArrayList<BackupRange>();
@@ -245,8 +284,10 @@ public class BackupComponent extends AbstractDXRAMComponent {
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
 
-			getDependentComponent(NetworkComponent.class).registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
-			getDependentComponent(NetworkComponent.class).registerMessageType(LogMessages.TYPE, LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
+			getDependentComponent(NetworkComponent.class).registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+					LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
+			getDependentComponent(NetworkComponent.class).registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+					LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
 		}
 		m_firstRangeInitialized = false;
 
@@ -332,7 +373,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 					}
 					// #if LOGGER >= INFO
 					m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
-							+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
+							+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": "
+							+ NodeID.toHexString(peers.get(index)));
 					// #endif /* LOGGER >= INFO */
 					newBackupPeers[i] = peers.get(index);
 					ready = false;
@@ -366,7 +408,8 @@ public class BackupComponent extends AbstractDXRAMComponent {
 				}
 				// #if LOGGER >= INFO
 				m_logger.info(BackupComponent.class, i + 1 + ". backup peer determined for new range "
-						+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": " + NodeID.toHexString(peers.get(index)));
+						+ ChunkID.toHexString(((long) m_nodeID << 48) + p_localID) + ": "
+						+ NodeID.toHexString(peers.get(index)));
 				// #endif /* LOGGER >= INFO */
 				newBackupPeers[i] = peers.get(index);
 				ready = false;

@@ -5,27 +5,10 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusRequest;
-import de.hhu.bsinfo.dxcompute.ms.messages.GetMasterStatusResponse;
-import de.hhu.bsinfo.dxcompute.ms.messages.MasterSlaveMessages;
-import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskRequest;
-import de.hhu.bsinfo.dxcompute.ms.messages.SubmitTaskResponse;
-import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionFinishedMessage;
-import de.hhu.bsinfo.dxcompute.ms.messages.TaskExecutionStartedMessage;
-import de.hhu.bsinfo.dxcompute.ms.tasks.MasterSlaveTaskPayloads;
-import de.hhu.bsinfo.dxcompute.ms.tasks.NullTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToConsoleTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintMemoryStatusToFileTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToConsoleTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintStatisticsToFileTask;
-import de.hhu.bsinfo.dxcompute.ms.tasks.PrintTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tasks.SlavePrintInfoTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSComputeGroupStatus;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSGroupList;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskListSubmit;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTaskSubmit;
-import de.hhu.bsinfo.dxcompute.ms.tcmd.TcmdMSTasks;
+import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
+import de.hhu.bsinfo.dxcompute.ms.messages.*;
+import de.hhu.bsinfo.dxcompute.ms.tasks.*;
+import de.hhu.bsinfo.dxcompute.ms.tcmd.*;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -281,22 +264,22 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	@Override
 	public void onIncomingMessage(final AbstractMessage p_message) {
 		if (p_message != null) {
-			if (p_message.getType() == MasterSlaveMessages.TYPE) {
+			if (p_message.getType() == DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
-				case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
-					incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
-					break;
-				case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
-					incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
-					break;
-				case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
-					incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
-					break;
-				case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
-					incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
-					break;
-				default:
-					break;
+					case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
+						incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
+						break;
+					case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
+						incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
+						break;
+					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
+						incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
+						break;
+					case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
+						incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
+						break;
+					default:
+						break;
 				}
 			}
 		}
@@ -324,18 +307,22 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_terminal = getComponent(TerminalComponent.class);
 		m_lookup = getComponent(LookupComponent.class);
 
-		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+				MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
 				SubmitTaskRequest.class);
-		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+				MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_RESPONSE,
 				SubmitTaskResponse.class);
-		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+				MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST,
 				GetMasterStatusRequest.class);
-		m_network.registerMessageType(MasterSlaveMessages.TYPE, MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
+				MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_RESPONSE,
 				GetMasterStatusResponse.class);
-		m_network.registerMessageType(MasterSlaveMessages.TYPE,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE,
 				TaskExecutionStartedMessage.class);
-		m_network.registerMessageType(MasterSlaveMessages.TYPE,
+		m_network.registerMessageType(DXCOMPUTEMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE,
 				TaskExecutionFinishedMessage.class);
 
@@ -351,23 +338,23 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		m_terminal.registerCommand(new TcmdMSTaskListSubmit());
 
 		switch (role) {
-		case MASTER:
-			m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
-					m_network, m_logger,
-					m_nameservice, m_boot, m_lookup);
-			break;
-		case SLAVE:
-			m_computeMSInstance =
-			new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
-					m_nameservice, m_boot, m_lookup);
-			break;
-		case NONE:
-			m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
-					m_nameservice, m_boot, m_lookup);
-			break;
-		default:
-			assert 1 == 2;
-			break;
+			case MASTER:
+				m_computeMSInstance = new ComputeMaster(computeGroupId, pingIntervalMs, getServiceAccessor(),
+						m_network, m_logger,
+						m_nameservice, m_boot, m_lookup);
+				break;
+			case SLAVE:
+				m_computeMSInstance =
+						new ComputeSlave(computeGroupId, pingIntervalMs, getServiceAccessor(), m_network, m_logger,
+								m_nameservice, m_boot, m_lookup);
+				break;
+			case NONE:
+				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
+						m_nameservice, m_boot, m_lookup);
+				break;
+			default:
+				assert 1 == 2;
+				break;
 		}
 
 		registerTaskPayloads();

@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.menet.AbstractRequest;
 
 /**
@@ -34,7 +35,7 @@ public class GetLookupRangeRequest extends AbstractRequest {
 	 *            the ChunkID of the requested object
 	 */
 	public GetLookupRangeRequest(final short p_destination, final long p_chunkID) {
-		super(p_destination, LookupMessages.TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST);
+		super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST);
 
 		assert p_chunkID != ChunkID.INVALID_ID;
 
