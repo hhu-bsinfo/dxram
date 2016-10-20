@@ -6,7 +6,7 @@ import java.nio.ByteOrder;
 
 import de.hhu.bsinfo.dxram.data.*;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * (Async) Message for updating a Chunk on a remote node

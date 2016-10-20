@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
-import de.hhu.bsinfo.menet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 public class GetLookupTreeResponse extends AbstractResponse {
 

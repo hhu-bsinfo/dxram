@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.stats.StatisticsRecorder;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Base class to print the statistics.

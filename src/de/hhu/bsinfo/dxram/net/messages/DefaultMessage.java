@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.net.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * This is a default message which is never processed on the receiver.

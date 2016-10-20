@@ -2,9 +2,9 @@
 package de.hhu.bsinfo.dxram.net;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.AbstractRequest;
-import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 
 /**
  * Service to access the backend network service for sending messages

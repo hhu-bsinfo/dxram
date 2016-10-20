@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
-import de.hhu.bsinfo.menet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response of the master to a join request by a slave.

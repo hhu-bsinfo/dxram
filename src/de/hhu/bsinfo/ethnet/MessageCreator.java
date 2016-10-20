@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.menet;
+package de.hhu.bsinfo.ethnet;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;

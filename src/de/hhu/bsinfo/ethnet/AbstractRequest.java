@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.menet;
+package de.hhu.bsinfo.ethnet;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;

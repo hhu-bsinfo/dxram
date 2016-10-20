@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxram.lock.messages;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.AbstractResponse;
 import de.hhu.bsinfo.utils.Pair;
 
 /**

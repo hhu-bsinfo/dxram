@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Helper methods for superpeer overlay

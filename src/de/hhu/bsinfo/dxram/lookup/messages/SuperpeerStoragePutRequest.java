@@ -9,7 +9,7 @@ import de.hhu.bsinfo.dxram.data.ChunkMessagesMetadataUtils;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.menet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request to put data into the superpeer storage.

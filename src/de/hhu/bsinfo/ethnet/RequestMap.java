@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.menet;
+package de.hhu.bsinfo.ethnet;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;

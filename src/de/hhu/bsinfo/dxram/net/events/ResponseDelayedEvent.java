@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxram.net.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * An event for a delayed request. Triggered by application thread.

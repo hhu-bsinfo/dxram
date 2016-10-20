@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxcompute.job.messages;
 
 import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
-import de.hhu.bsinfo.menet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request the status of a the job service from a remote node.

@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms.tasks;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
 import de.hhu.bsinfo.dxcompute.ms.TaskContext;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Print information about the current slave to the console.

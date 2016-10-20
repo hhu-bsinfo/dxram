@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.menet;
+package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -8,7 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
+import de.hhu.bsinfo.ethnet.AbstractConnection.DataReceiver;
 import de.hhu.bsinfo.utils.event.EventInterface;
 import de.hhu.bsinfo.utils.logger.LoggerInterface;
 import de.hhu.bsinfo.utils.logger.LoggerNull;

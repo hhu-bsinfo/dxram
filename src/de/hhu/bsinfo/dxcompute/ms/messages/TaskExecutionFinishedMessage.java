@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Notify remote listeners that execution of a submitted task has finished.

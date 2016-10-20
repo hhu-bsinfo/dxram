@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.dxcompute.job.AbstractJob;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Push a job to the queue of another node

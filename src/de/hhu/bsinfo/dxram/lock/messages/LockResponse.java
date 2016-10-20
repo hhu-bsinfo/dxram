@@ -1,7 +1,7 @@
 
 package de.hhu.bsinfo.dxram.lock.messages;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a LockRequest

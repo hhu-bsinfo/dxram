@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.menet;
+package de.hhu.bsinfo.ethnet;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;

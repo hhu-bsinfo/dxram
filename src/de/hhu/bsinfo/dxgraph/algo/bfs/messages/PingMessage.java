@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 
 import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Created by nothaas on 6/10/16.

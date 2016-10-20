@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response to a GetUtilizationRequest

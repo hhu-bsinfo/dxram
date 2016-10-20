@@ -21,9 +21,9 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverMessage;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
-import de.hhu.bsinfo.menet.AbstractMessage;
-import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * This service provides all recovery functionality.

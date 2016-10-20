@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxram.lock.messages;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.menet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request to get a list of locked chunks from another node.

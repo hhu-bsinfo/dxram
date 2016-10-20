@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.dxcompute.job.JobID;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Message indicating a job event was triggered on another node

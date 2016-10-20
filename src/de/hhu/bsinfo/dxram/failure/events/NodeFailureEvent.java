@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.failure.events;
 
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * An event for node failure

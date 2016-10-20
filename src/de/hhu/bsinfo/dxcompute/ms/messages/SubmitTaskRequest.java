@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
-import de.hhu.bsinfo.menet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Submit a task request to a remote master compute node.

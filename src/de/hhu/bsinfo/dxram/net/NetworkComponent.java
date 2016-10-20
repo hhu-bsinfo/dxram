@@ -15,8 +15,8 @@ import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.net.messages.DefaultMessages;
-import de.hhu.bsinfo.menet.*;
-import de.hhu.bsinfo.menet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.ethnet.*;
+import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 
 /**
  * Access to the network interface to send messages or requests

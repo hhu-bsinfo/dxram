@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxram.boot.messages;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Message to trigger a soft shutdown of DXRAM

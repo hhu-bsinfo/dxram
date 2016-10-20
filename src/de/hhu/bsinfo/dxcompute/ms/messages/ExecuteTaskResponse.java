@@ -1,7 +1,7 @@
 
 package de.hhu.bsinfo.dxcompute.ms.messages;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Reponse to the execute task request with status code.

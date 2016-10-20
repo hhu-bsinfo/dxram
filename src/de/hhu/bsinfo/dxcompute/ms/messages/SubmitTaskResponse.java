@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import java.nio.ByteBuffer;
 
-import de.hhu.bsinfo.menet.AbstractResponse;
+import de.hhu.bsinfo.ethnet.AbstractResponse;
 
 /**
  * Response by the remote master to the submitted task.

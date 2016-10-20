@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Message to send signal codes from master to slave or vice versa

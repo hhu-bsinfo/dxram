@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxcompute.ms;
 
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * A task that can be submitted to a master-slave compute group.

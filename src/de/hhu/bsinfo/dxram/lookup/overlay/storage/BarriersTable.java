@@ -7,7 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Table managing synchronization barriers on a superpeer.

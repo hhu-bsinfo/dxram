@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxram.boot;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.menet.NodeID;
+import de.hhu.bsinfo.ethnet.NodeID;
 
 /**
  * Represents a nodes configuration for DXRAM. This also holds any information

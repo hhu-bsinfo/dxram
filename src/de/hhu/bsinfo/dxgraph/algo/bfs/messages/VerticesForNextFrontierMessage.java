@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxgraph.algo.bfs.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxgraph.DXGRAPHMessageTypes;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Message to send non local vertices for BFS to the node owning them for processing.

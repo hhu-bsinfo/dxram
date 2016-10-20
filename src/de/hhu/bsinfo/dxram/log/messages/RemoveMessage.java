@@ -4,7 +4,7 @@ package de.hhu.bsinfo.dxram.log.messages;
 import java.nio.ByteBuffer;
 
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
-import de.hhu.bsinfo.menet.AbstractMessage;
+import de.hhu.bsinfo.ethnet.AbstractMessage;
 
 /**
  * Message for removing a Chunk on a remote node

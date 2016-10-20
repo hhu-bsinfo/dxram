@@ -2,7 +2,7 @@
 package de.hhu.bsinfo.dxcompute.ms.messages;
 
 import de.hhu.bsinfo.dxcompute.DXCOMPUTEMessageTypes;
-import de.hhu.bsinfo.menet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request of the slave to a master to join a compute group.

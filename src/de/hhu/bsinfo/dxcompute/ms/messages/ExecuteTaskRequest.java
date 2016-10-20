@@ -8,7 +8,7 @@ import de.hhu.bsinfo.dxcompute.ms.TaskContextData;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
 import de.hhu.bsinfo.dxram.data.MessagesDataStructureImExporter;
-import de.hhu.bsinfo.menet.AbstractRequest;
+import de.hhu.bsinfo.ethnet.AbstractRequest;
 
 /**
  * Request to execute a task on another slave compute node.

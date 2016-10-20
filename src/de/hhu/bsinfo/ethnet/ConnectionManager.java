@@ -1,5 +1,5 @@
 
-package de.hhu.bsinfo.menet;
+package de.hhu.bsinfo.ethnet;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -11,8 +11,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxram.net.events.ConnectionLostEvent;
-import de.hhu.bsinfo.menet.AbstractConnection.DataReceiver;
-import de.hhu.bsinfo.menet.AbstractConnectionCreator.ConnectionCreatorListener;
+import de.hhu.bsinfo.ethnet.AbstractConnection.DataReceiver;
+import de.hhu.bsinfo.ethnet.AbstractConnectionCreator.ConnectionCreatorListener;
 
 /**
  * Manages the network connections
