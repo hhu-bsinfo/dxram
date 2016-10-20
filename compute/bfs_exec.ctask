@@ -1,13 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<conf>
-	<ComputeTask>
-		<tid __id="0" __type="short">1</tid>
-		<stid __id="0" __type="short">3</stid>
-		<bfsRootNameserviceEntryName __id="0" __type="str">BFS0</bfsRootNameserviceEntryName>
-		<vertexBatchSize __id="0" __type="int">100</vertexBatchSize>
-		<vertexMessageBatchSize __id="0" __type="int">100</vertexMessageBatchSize>
-		<numThreadsPerNode __id="0" __type="int">4</numThreadsPerNode>
-		<markVertices __id="0" __type="bool">false</markVertices>
-		<compVertexMsgs __id="0" __type="bool">false</compVertexMsgs>
-	</ComputeTask>
-</conf>
+{
+  "m_typeId": 1,
+  "m_subtypeId": 3,
+  "m_numRequiredSlaves": 0,
+  "m_vertexBatchSize": 100,
+  "m_vertexMessageBatchSize": 100,
+  "m_numberOfThreadsPerNode": 4,
+  "m_markVertices": false,
+  "m_beamerMode": true,
+  "m_beamerFormulaGraphEdgeDeg": 16,
+  "m_abortBFSOnError": true
+}
