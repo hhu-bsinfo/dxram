@@ -8,11 +8,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
-import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeRequest;
-import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeResponse;
-import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
-import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
-import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
+import de.hhu.bsinfo.dxram.lookup.messages.*;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -23,7 +19,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 
 /**
  * Look up service providing look ups for e.g. use in TCMDs
- *
  * @author Mike Birkhoff
  */
 
@@ -44,8 +39,7 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	}
 
 	@Override
-	protected void registerDefaultSettingsService(final Settings p_settings) {
-	}
+	protected void registerDefaultSettingsService(final Settings p_settings) {}
 
 	@Override
 	protected boolean startService(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
@@ -78,8 +72,8 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Sends a Response to a LookupTree Request
-	 *
-	 * @param p_message the LookupTreeRequest
+	 * @param p_message
+	 *            the LookupTreeRequest
 	 */
 	private void incomingRequestLookupTreeOnServerMessage(final GetLookupTreeRequest p_message) {
 		LookupTree tree = m_lookup.superPeerGetLookUpTree(p_message.getTreeNodeID());
@@ -114,7 +108,6 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Returns all known superpeers
-	 *
 	 * @return array with all superpeers
 	 */
 	public ArrayList<Short> getAllSuperpeers() {
@@ -123,8 +116,8 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Returns the responsible superpeer for given peer
-	 *
-	 * @param p_nid node id to get responsible super peer from
+	 * @param p_nid
+	 *            node id to get responsible super peer from
 	 * @return node ID of superpeer
 	 */
 	public short getResponsibleSuperpeer(final short p_nid) {
@@ -133,12 +126,13 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * sends a message to a superpeer to get a lookuptree from
-	 *
-	 * @param p_superPeerNid superpeer where the lookuptree to get from
-	 * @param p_nodeId       node id which lookuptree to get
+	 * @param p_superPeerNid
+	 *            superpeer where the lookuptree to get from
+	 * @param p_nodeId
+	 *            node id which lookuptree to get
 	 * @return requested lookup Tree
 	 */
-	public LookupTree getLookupTreeFromSuperPeer(final short p_superPeerNid, final short p_nodeId) {
+	public LookupTree getLookupTreeFromSuperpeer(final short p_superPeerNid, final short p_nodeId) {
 
 		LookupTree retTree;
 
@@ -159,8 +153,8 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 
 	/**
 	 * Sends a request to given superpeer to get a metadata summary
-	 *
-	 * @param p_nodeID superpeer to get summary from
+	 * @param p_nodeID
+	 *            superpeer to get summary from
 	 * @return the metadata summary
 	 */
 	public String getMetadataSummary(final short p_nodeID) {
