@@ -1,7 +1,0 @@
-Manifest-Version: 1.0
-Ant-Version: Apache Ant 1.9.3
-Created-By: 1.8.0_66-b17 (Oracle Corporation)
-Main-Class: de.uniduesseldorf.dxram.run.Main
-Class-Path: lib/log4j-1.2.16.jar lib/slf4j-log4j12-1.6.1.jar lib/slf4j
- -api-1.6.1.jar lib/zookeeper-3.4.3.jar config/
-
