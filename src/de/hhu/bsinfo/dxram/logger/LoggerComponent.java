@@ -16,6 +16,7 @@ import de.hhu.bsinfo.utils.logger.LoggerInterface;
  * allowing filtering and redirecting of log messages.
  * This component should be used by all other components and services to do any
  * logging.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInterface {
@@ -23,12 +24,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public LoggerComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
@@ -38,12 +38,10 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log an error message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_clazz
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_clazz Class calling this method.
+	 * @param p_msg   Message to log.
 	 */
 	public <T> void error(final Class<T> p_clazz, final String p_msg) {
 		LogLevel logLevel = m_logLevels.get(p_clazz.getSimpleName());
@@ -58,14 +56,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log an error message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
-	 * @param p_e
-	 *            Exception to add to the log message.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
+	 * @param p_e     Exception to add to the log message.
 	 */
 	public <T> void error(final Class<T> p_class, final String p_msg, final Exception p_e) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -80,12 +75,10 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log a warning message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
 	 */
 	public <T> void warn(final Class<T> p_class, final String p_msg) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -100,14 +93,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log a warning message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
-	 * @param p_e
-	 *            Exception to add to the log message.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
+	 * @param p_e     Exception to add to the log message.
 	 */
 	public <T> void warn(final Class<T> p_class, final String p_msg, final Exception p_e) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -122,12 +112,10 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log an info message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
 	 */
 	public <T> void info(final Class<T> p_class, final String p_msg) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -142,14 +130,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log an info message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
-	 * @param p_e
-	 *            Exception to add to the log message.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
+	 * @param p_e     Exception to add to the log message.
 	 */
 	public <T> void info(final Class<T> p_class, final String p_msg, final Exception p_e) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -164,12 +149,10 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log a debug message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
 	 */
 	public <T> void debug(final Class<T> p_class, final String p_msg) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -184,14 +167,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log a debug message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
-	 * @param p_e
-	 *            Exception to add to the log message.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
+	 * @param p_e     Exception to add to the log message.
 	 */
 	public <T> void debug(final Class<T> p_class, final String p_msg, final Exception p_e) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -206,12 +186,10 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log a trace message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
 	 */
 	public <T> void trace(final Class<T> p_class, final String p_msg) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());
@@ -226,14 +204,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 
 	/**
 	 * Log a trace message.
-	 * @param <T>
-	 *            Type of the class
-	 * @param p_class
-	 *            Class calling this method.
-	 * @param p_msg
-	 *            Message to log.
-	 * @param p_e
-	 *            Exception to add to the log message.
+	 *
+	 * @param <T>     Type of the class
+	 * @param p_class Class calling this method.
+	 * @param p_msg   Message to log.
+	 * @param p_e     Exception to add to the log message.
 	 */
 	public <T> void trace(final Class<T> p_class, final String p_msg, final Exception p_e) {
 		LogLevel logLevel = m_logLevels.get(p_class.getSimpleName());

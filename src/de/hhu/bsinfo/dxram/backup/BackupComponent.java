@@ -220,7 +220,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	}
 
 	@Override
-	public void eventTriggered(NodeFailureEvent p_event) {
+	public void eventTriggered(final NodeFailureEvent p_event) {
 		short failedPeer;
 		long firstChunkID;
 		short[] backupPeers;
@@ -430,5 +430,4 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 			}
 		}
 	}
-
 }

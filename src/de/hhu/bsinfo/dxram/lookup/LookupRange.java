@@ -10,6 +10,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Stores the primary peer and the lookup range boundaries.
+ *
  * @author Kevin Beineke
  *         03.09.2013
  */
@@ -28,12 +29,12 @@ public final class LookupRange implements Importable, Exportable {
 	}
 
 	// Constructors
+
 	/**
 	 * Creates an instance of LookupRange
-	 * @param p_primaryPeer
-	 *            the primary peer
-	 * @param p_range
-	 *            the range's beginning and ending
+	 *
+	 * @param p_primaryPeer the primary peer
+	 * @param p_range       the range's beginning and ending
 	 */
 	public LookupRange(final short p_primaryPeer, final long[] p_range) {
 		super();
@@ -43,20 +44,16 @@ public final class LookupRange implements Importable, Exportable {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		m_primaryPeer = p_importer.readShort();
 		m_range = new long[] {p_importer.readLong(), p_importer.readLong()};
-
-		return Short.BYTES + 2 * Long.BYTES;
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 		p_exporter.writeShort(getPrimaryPeer());
 		p_exporter.writeLong(getStartID());
 		p_exporter.writeLong(getEndID());
-
-		return Short.BYTES + 2 * Long.BYTES;
 	}
 
 	@Override
@@ -64,14 +61,11 @@ public final class LookupRange implements Importable, Exportable {
 		return Short.BYTES + 2 * Long.BYTES;
 	}
 
-	@Override
-	public boolean hasDynamicObjectSize() {
-		return false;
-	}
-
 	// Getter
+
 	/**
 	 * Get primary peer
+	 *
 	 * @return the primary peer
 	 */
 	public short getPrimaryPeer() {
@@ -80,6 +74,7 @@ public final class LookupRange implements Importable, Exportable {
 
 	/**
 	 * Get range
+	 *
 	 * @return the beginning and ending of range
 	 */
 	public long[] getRange() {
@@ -88,6 +83,7 @@ public final class LookupRange implements Importable, Exportable {
 
 	/**
 	 * Get the start LocalID
+	 *
 	 * @return the start LocalID
 	 */
 	public long getStartID() {
@@ -96,6 +92,7 @@ public final class LookupRange implements Importable, Exportable {
 
 	/**
 	 * Get the end LocalID
+	 *
 	 * @return the end LocalID
 	 */
 	public long getEndID() {
@@ -103,18 +100,21 @@ public final class LookupRange implements Importable, Exportable {
 	}
 
 	// Setter
+
 	/**
 	 * Set primary peer
-	 * @param p_primaryPeer
-	 *            the primary peer
+	 *
+	 * @param p_primaryPeer the primary peer
 	 */
 	public void setPrimaryPeer(final short p_primaryPeer) {
 		m_primaryPeer = p_primaryPeer;
 	}
 
 	// Methods
+
 	/**
 	 * Prints the LookupRange
+	 *
 	 * @return String interpretation of LookupRange
 	 */
 	@Override

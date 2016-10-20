@@ -85,7 +85,7 @@ public class VerticesForNextFrontierMessage extends AbstractMessage {
 	/**
 	 * Add a vertex to the batch
 	 * @param p_vertex
-	 *            Vertex to add
+	 *            VertexSimple to add
 	 * @return True if adding successful, false if batch is full
 	 */
 	public boolean addVertex(final long p_vertex) {

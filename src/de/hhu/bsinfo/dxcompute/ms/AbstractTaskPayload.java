@@ -1,12 +1,6 @@
 
 package de.hhu.bsinfo.dxcompute.ms;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -22,19 +16,14 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  */
 public abstract class AbstractTaskPayload implements Importable, Exportable {
 
-	protected static Map<Integer, Class<? extends AbstractTaskPayload>> m_registeredTaskClasses =
-			new HashMap<>();
+	public static final short NUM_REQUIRED_SLAVES_ARBITRARY = 0;
+
+	private static final ArgumentList.Argument MS_ARG_SLAVES =
+			new ArgumentList.Argument("slaves", "0", false, "Number of slaves to wait for this task to execute.");
 
 	private short m_typeId = -1;
 	private short m_subtypeId = -1;
-	private int m_payloadId = -1;
-	private short m_computeGroupId = -1;
-	private short m_slaveId = -1;
-	// list of all slaves of the same compute group sorted by their slave id (indexable)
-	private short[] m_slaveNodeIds = new short[0];
-	private int[] m_executionReturnCodes = new int[0];
-
-	private TaskPayloadSlaveInterface m_slaveInterface;
+	private short m_numRequiredSlaves = -1;
 
 	/**
 	 * Constructor
@@ -48,58 +37,6 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	public AbstractTaskPayload(final short p_typeId, final short p_subtypeId) {
 		m_typeId = p_typeId;
 		m_subtypeId = p_subtypeId;
-	}
-
-	/**
-	 * Create an instance of a registered task payload.
-	 * Throws RuntimeException If no task payload specifeid by the ids could be created.
-	 *
-	 * @param p_typeId    Type id of the task payload.
-	 * @param p_subtypeId Subtype id of the task payload.
-	 * @return New instance of the specified task payload.
-	 */
-	public static AbstractTaskPayload createInstance(final short p_typeId, final short p_subtypeId) {
-		Class<? extends AbstractTaskPayload> clazz =
-				m_registeredTaskClasses.get(((p_typeId & 0xFFFF) << 16) | p_subtypeId);
-		if (clazz == null) {
-			throw new RuntimeException(
-					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId
-							+ ", not registered.");
-		}
-
-		try {
-			Constructor<? extends AbstractTaskPayload> ctor = clazz.getConstructor();
-			return ctor.newInstance();
-		} catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
-				| IllegalArgumentException | InvocationTargetException e) {
-			throw new RuntimeException(
-					"Cannot create instance of TaskPayload with id " + p_typeId + "|" + p_subtypeId + ": "
-							+ e.getMessage());
-		}
-	}
-
-	/**
-	 * Get the list of registered task payload classes.
-	 *
-	 * @return List of registered task payload classes.
-	 */
-	public static Map<Integer, Class<? extends AbstractTaskPayload>> getRegisteredTaskPayloadClasses() {
-		return m_registeredTaskClasses;
-	}
-
-	/**
-	 * Register a new task payload class.
-	 *
-	 * @param p_typeId    Type id for the class.
-	 * @param p_subtypeId Subtype id for the class.
-	 * @param p_class     Class to register for the specified ids.
-	 * @return True if registeration was successful, false otherwise.
-	 */
-	public static boolean registerTaskPayloadClass(final short p_typeId, final short p_subtypeId,
-			final Class<? extends AbstractTaskPayload> p_class) {
-		Class<? extends AbstractTaskPayload> clazz =
-				m_registeredTaskClasses.put(((p_typeId & 0xFFFF) << 16) | p_subtypeId, p_class);
-		return clazz == null;
 	}
 
 	/**
@@ -121,12 +58,30 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	}
 
 	/**
+	 * Get the number of slaves required to run this task.
+	 *
+	 * @return Number of slaves this task requires.
+	 */
+	public short getNumRequiredSlaves() {
+		return m_numRequiredSlaves;
+	}
+
+	/**
+	 * Set the number of slaves this task requires to execute.
+	 *
+	 * @param p_num Number of slaves required.
+	 */
+	public void setNumRequiredSlaves(final short p_num) {
+		m_numRequiredSlaves = p_num;
+	}
+
+	/**
 	 * Execute function to implement with the task/code to execute.
 	 *
-	 * @param p_dxram Service access of dxram to access all available services for your task.
+	 * @param p_ctx Context for this task containing DXRAM access and task parameters.
 	 * @return Return code of your task. 0 on success, everything else indicates an error.
 	 */
-	public abstract int execute(final DXRAMServiceAccessor p_dxram);
+	public abstract int execute(final TaskContext p_ctx);
 
 	/**
 	 * Handle a signal from the master
@@ -142,7 +97,7 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 * @param p_argumentList List to add the arguments required to run.
 	 */
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
-
+		p_argumentList.setArgument(MS_ARG_SLAVES);
 	}
 
 	/**
@@ -153,156 +108,26 @@ public abstract class AbstractTaskPayload implements Importable, Exportable {
 	 *                       required to run the task
 	 */
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
-
+		m_numRequiredSlaves = p_argumentList.getArgumentValue(MS_ARG_SLAVES, Short.class);
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		p_exporter.writeInt(m_payloadId);
-		p_exporter.writeShort(m_slaveId);
-		p_exporter.writeInt(m_slaveNodeIds.length);
-		p_exporter.writeShorts(m_slaveNodeIds);
-		p_exporter.writeInt(m_executionReturnCodes.length);
-		p_exporter.writeInts(m_executionReturnCodes);
-
-		return sizeofObject();
+	public void importObject(final Importer p_importer) {
+		m_numRequiredSlaves = p_importer.readShort();
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		m_payloadId = p_importer.readInt();
-		m_slaveId = p_importer.readShort();
-		m_slaveNodeIds = new short[p_importer.readInt()];
-		p_importer.readShorts(m_slaveNodeIds);
-		m_executionReturnCodes = new int[p_importer.readInt()];
-		p_importer.readInts(m_executionReturnCodes);
-
-		return sizeofObject();
+	public void exportObject(final Exporter p_exporter) {
+		p_exporter.writeShort(m_numRequiredSlaves);
 	}
 
 	@Override
 	public int sizeofObject() {
-		return Integer.BYTES + Short.BYTES + Integer.BYTES + m_slaveNodeIds.length * Short.BYTES + Integer.BYTES
-				+ m_executionReturnCodes.length * Integer.BYTES;
-	}
-
-	@Override
-	public boolean hasDynamicObjectSize() {
-		return false;
+		return Short.BYTES;
 	}
 
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + "[" + m_typeId + ", " + m_subtypeId + ", " + m_computeGroupId + ", "
-				+ m_payloadId + ", " + m_slaveId
-				+ "/" + m_slaveNodeIds.length + "]";
-	}
-
-	/**
-	 * Set the payload id.
-	 *
-	 * @param p_payloadId Payload id to set.
-	 */
-	void setPayloadId(final int p_payloadId) {
-		m_payloadId = p_payloadId;
-	}
-
-	/**
-	 * Set the compute group id.
-	 *
-	 * @param p_computeGroupId Id to set.
-	 */
-	void setComputeGroupId(final short p_computeGroupId) {
-		m_computeGroupId = p_computeGroupId;
-	}
-
-	/**
-	 * Set the slave id.
-	 *
-	 * @param p_slaveId Id to set.
-	 */
-	void setSlaveId(final short p_slaveId) {
-		m_slaveId = p_slaveId;
-	}
-
-	/**
-	 * Set the slave node ids.
-	 *
-	 * @param p_slaveNodeIds Node ids to set. Indexable by slave id.
-	 */
-	void setSalves(final short[] p_slaveNodeIds) {
-		m_slaveNodeIds = p_slaveNodeIds;
-	}
-
-	/**
-	 * Set the execution return codes of all slaves.
-	 *
-	 * @param p_returnCodes Return codes of all slaves. Indexable by slave id.
-	 */
-	void setExecutionReturnCodes(final int[] p_returnCodes) {
-		m_executionReturnCodes = p_returnCodes;
-	}
-
-	/**
-	 * Set the slave interface for this task.
-	 *
-	 * @param p_slaveInterface Slave interface
-	 */
-	void setSlaveInterface(final TaskPayloadSlaveInterface p_slaveInterface) {
-		m_slaveInterface = p_slaveInterface;
-	}
-
-	/**
-	 * Get the payload id assigned by the master node on submission.
-	 *
-	 * @return Payload id.
-	 */
-	protected int getPayloadId() {
-		return m_payloadId;
-	}
-
-	/**
-	 * Get the compute group id this task is executed in.
-	 *
-	 * @return Compute group id.
-	 */
-	protected short getComputeGroupId() {
-		return m_computeGroupId;
-	}
-
-	/**
-	 * Get the id of the slave that executes the task (0 based).
-	 *
-	 * @return Id of the slave executing the task.
-	 */
-	protected short getSlaveId() {
-		return m_slaveId;
-	}
-
-	/**
-	 * Get the node ids of all slaves executing this task.
-	 *
-	 * @return Node ids of all slaves. Indexable by slave id.
-	 */
-	protected short[] getSlaveNodeIds() {
-		return m_slaveNodeIds;
-	}
-
-	/**
-	 * Get the return codes of all slaves after execution finished.
-	 *
-	 * @return Array of return codes of all slaves after execution. Indexable by slave id.
-	 */
-	protected int[] getExecutionReturnCodes() {
-		return m_executionReturnCodes;
-	}
-
-	/**
-	 * Send a signal from this task (and slave) to the master
-	 *
-	 * @param p_signal Signal to send
-	 */
-	protected void sendSignalToMaster(final Signal p_signal) {
-		m_slaveInterface.sendSignalToMaster(p_signal);
+		return getClass().getSimpleName() + "[" + m_typeId + ", " + m_subtypeId + ", " + m_numRequiredSlaves + "]";
 	}
 }

@@ -34,7 +34,7 @@ public final class CIDTable {
 	protected static final long FULL_FLAG = BIT_FLAG;
 	protected static final long DELETED_FLAG = BIT_FLAG;
 
-	private short m_ownNodeID = -1;
+	private GetNodeIdHook m_nodeIdHook;
 	private long m_addressTableDirectory = -1;
 	private SmallObjectHeap m_rawMemory;
 	private int m_tableCount = -1;
@@ -52,15 +52,15 @@ public final class CIDTable {
 	/**
 	 * Creates an instance of CIDTable
 	 *
-	 * @param p_ownNodeID             ID of the current node.
+	 * @param p_nodeIdHook            Instance of a class implementing the node id hook.
 	 * @param p_statistics            Statistics component for recording.
 	 * @param p_statisticsRecorderIDs Metadata for statistics recording
 	 * @param p_logger                Logger component for logging.
 	 */
-	public CIDTable(final short p_ownNodeID, final StatisticsComponent p_statistics,
+	public CIDTable(final GetNodeIdHook p_nodeIdHook, final StatisticsComponent p_statistics,
 			final MemoryStatisticsRecorderIDs p_statisticsRecorderIDs,
 			final LoggerComponent p_logger) {
-		m_ownNodeID = p_ownNodeID;
+		m_nodeIdHook = p_nodeIdHook;
 		m_statistics = p_statistics;
 		m_statisticsRecorderIDs = p_statisticsRecorderIDs;
 		m_logger = p_logger;
@@ -198,7 +198,7 @@ public final class CIDTable {
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
 				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
 				if (entry > 0) {
-					if (i == (m_ownNodeID & 0xFFFF)) {
+					if (i == (m_nodeIdHook.getNodeId() & 0xFFFF)) {
 						ret.addAll(getAllRanges((long) i << 48,
 								readEntry(m_addressTableDirectory, i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
 								LID_TABLE_LEVELS - 1));
@@ -244,7 +244,7 @@ public final class CIDTable {
 			ret = new ArrayList<Long>();
 			for (int i = 0; i < ENTRIES_FOR_NID_LEVEL; i++) {
 				entry = readEntry(m_addressTableDirectory, i) & BITMASK_ADDRESS;
-				if (entry > 0 && i != (m_ownNodeID & 0xFFFF)) {
+				if (entry > 0 && i != (m_nodeIdHook.getNodeId() & 0xFFFF)) {
 					ret.addAll(getAllEntries((long) i << 48, readEntry(m_addressTableDirectory,
 							i & NID_LEVEL_BITMASK) & BITMASK_ADDRESS, LID_TABLE_LEVELS - 1));
 				}
@@ -700,8 +700,8 @@ public final class CIDTable {
 		 * Finds free LIDs in the CIDTable
 		 */
 		private void findFreeLIDs() {
-			findFreeLIDs(readEntry(m_addressTableDirectory, m_ownNodeID & NID_LEVEL_BITMASK) & BITMASK_ADDRESS,
-					LID_TABLE_LEVELS - 1, 0);
+			findFreeLIDs(readEntry(m_addressTableDirectory, m_nodeIdHook.getNodeId() & NID_LEVEL_BITMASK)
+					& BITMASK_ADDRESS, LID_TABLE_LEVELS - 1, 0);
 		}
 
 		/**
@@ -737,7 +737,7 @@ public final class CIDTable {
 				} else {
 					// check if we got an entry referencing a zombie
 					if ((entry & DELETED_FLAG) > 0 && (entry & BITMASK_ADDRESS) > 0) {
-						nodeID = m_ownNodeID;
+						nodeID = m_nodeIdHook.getNodeId();
 						localID = p_offset + i;
 
 						chunkID = nodeID << 48;
@@ -760,5 +760,14 @@ public final class CIDTable {
 
 			return ret;
 		}
+	}
+
+	/**
+	 * Special interface to allow booting the memory manager before the
+	 * boot component but still getting the node id after the boot
+	 * component has booted.
+	 */
+	interface GetNodeIdHook {
+		short getNodeId();
 	}
 }

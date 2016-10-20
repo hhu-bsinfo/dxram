@@ -3,6 +3,7 @@ package de.hhu.bsinfo.utils.serialization;
 
 /**
  * Interface to define the size of an object for importing/exporting.
+ *
  * @author Stefan Nothaas 17.12.15 <stefan.nothaas@hhu.de>
  */
 public interface ObjectSize {
@@ -14,15 +15,8 @@ public interface ObjectSize {
 	 * Also make sure to first check if the object has a dynamic
 	 * size. This might have influence on the value returned here
 	 * i.e. it can change depending on the data stored in the object.
+	 *
 	 * @return Size of the object in bytes.
 	 */
 	int sizeofObject();
-
-	/**
-	 * Does the object have a varying size depending
-	 * on the data it holds?
-	 * @return True if the size is not static, false
-	 *         for an always fixed size.
-	 */
-	boolean hasDynamicObjectSize();
 }

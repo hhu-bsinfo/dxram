@@ -62,7 +62,7 @@ public final class NetworkConnectionTest {
 		}
 
 		// Broadcast
-		Iterator<Short> iter = bootService.getAvailablePeerNodeIDs().iterator();
+		Iterator<Short> iter = bootService.getOnlinePeerNodeIDs().iterator();
 		while (iter.hasNext()) {
 			short nodeID = iter.next();
 			chunkService.createRemote(nodeID, 50);

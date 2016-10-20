@@ -9,6 +9,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -28,7 +29,7 @@ import de.hhu.bsinfo.soh.StorageUnsafeMemory;
  *         13.02.2014
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 11.11.15
  */
-public final class MemoryManagerComponent extends AbstractDXRAMComponent {
+public final class MemoryManagerComponent extends AbstractDXRAMComponent implements CIDTable.GetNodeIdHook {
 
 	private SmallObjectHeap m_rawMemory;
 	private CIDTable m_cidTable;
@@ -83,7 +84,9 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		m_statistics = getDependentComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
 
-		if (m_boot.getNodeRole() == NodeRole.PEER) {
+		NodeRole nodeRole = NodeRole.toNodeRole(p_engineSettings.getValue(DXRAMEngineConfigurationValues.ROLE));
+
+		if (nodeRole == NodeRole.PEER) {
 			// #ifdef STATISTICS
 			registerStatisticsOperations();
 			// #endif /* STATISTICS */
@@ -95,7 +98,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
 			m_rawMemory.initialize(ramSize, ramSize);
-			m_cidTable = new CIDTable(m_boot.getNodeID(), m_statistics, m_statisticsRecorderIDs, m_logger);
+			m_cidTable = new CIDTable(this, m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 
 			// m_lock = new ReentrantReadWriteLock(false);
@@ -463,9 +466,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 
 			// SmallObjectHeapDataStructureImExporter importer =
 			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (importer.importObject(p_dataStructure) < 0) {
-				ret = MemoryErrorCodes.READ;
-			}
+			importer.importObject(p_dataStructure);
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
@@ -554,9 +555,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 			SmallObjectHeapDataStructureImExporter exporter = getImExporter(address, chunkSize);
 			// SmallObjectHeapDataStructureImExporter exporter =
 			// new SmallObjectHeapDataStructureImExporter(m_rawMemory, address, 0, chunkSize);
-			if (exporter.exportObject(p_dataStructure) < 0) {
-				ret = MemoryErrorCodes.WRITE;
-			}
+			exporter.exportObject(p_dataStructure);
 		} else {
 			ret = MemoryErrorCodes.DOES_NOT_EXIST;
 		}
@@ -930,6 +929,11 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent {
 		}
 
 		return m_cidTable.getCIDRangesOfAllLocalChunks();
+	}
+
+	@Override
+	public short getNodeId() {
+		return m_boot.getNodeID();
 	}
 
 	/**

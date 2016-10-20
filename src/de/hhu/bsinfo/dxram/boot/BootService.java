@@ -57,7 +57,7 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 	 * Get IDs of all available (online) nodes including own.
 	 * @return List of IDs of nodes available.
 	 */
-	public List<Short> getIDsOfOnlineNodes() {
+	public List<Short> getOnlineNodeIDs() {
 		return m_boot.getIDsOfOnlineNodes();
 	}
 
@@ -93,7 +93,16 @@ public class BootService extends AbstractDXRAMService implements MessageReceiver
 	 * Get IDs of all available (online) peer nodes exception our own.
 	 * @return List of IDs of nodes available.
 	 */
-	public List<Short> getAvailablePeerNodeIDs() {
+	public List<Short> getOnlineSuperpeerNodeIDs() {
+		return m_boot.getIDsOfOnlineSuperpeers();
+	}
+
+	/**
+	 * Get IDs of all available (online) peer nodes exception our own.
+	 *
+	 * @return List of IDs of nodes available.
+	 */
+	public List<Short> getOnlinePeerNodeIDs() {
 		return m_boot.getIDsOfOnlinePeers();
 	}
 

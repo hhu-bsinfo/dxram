@@ -1,11 +1,11 @@
 package de.hhu.bsinfo.dxcompute.ms;
 
 /**
- * Interface to access the slave the task is running on
+ * Interface to send signals to the master
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 16.07.16
  */
-public interface TaskPayloadSlaveInterface {
+public interface TaskSignalInterface {
 	/**
 	 * Send a signal to the master of the slave this task is running on.
 	 *

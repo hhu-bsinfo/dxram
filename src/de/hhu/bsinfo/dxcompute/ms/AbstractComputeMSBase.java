@@ -103,7 +103,7 @@ abstract class AbstractComputeMSBase extends Thread {
 	 * Get the compute role assigned to this instance.
 	 * @return Compute role assigned.
 	 */
-	public ComputeRole getRole() {
+	ComputeRole getRole() {
 		return m_role;
 	}
 
@@ -111,7 +111,7 @@ abstract class AbstractComputeMSBase extends Thread {
 	 * Get the current state.
 	 * @return State of the instance.
 	 */
-	public State getComputeState() {
+	State getComputeState() {
 		return m_state;
 	}
 
@@ -119,7 +119,7 @@ abstract class AbstractComputeMSBase extends Thread {
 	 * Get the compute group id this node is assigend to.
 	 * @return Compute group id assigned to.
 	 */
-	public short getComputeGroupId() {
+	short getComputeGroupId() {
 		return m_computeGroupId;
 	}
 
@@ -135,7 +135,7 @@ abstract class AbstractComputeMSBase extends Thread {
 	 * Get the service accessor of DXRAM to be passed to the tasks being executed
 	 * @return DXRAMService accessor
 	 */
-	protected DXRAMServiceAccessor getServiceAccessor() {
+	DXRAMServiceAccessor getServiceAccessor() {
 		return m_serviceAccessor;
 	}
 }

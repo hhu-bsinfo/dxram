@@ -5,6 +5,7 @@ package de.hhu.bsinfo.utils.serialization;
  * Interface for an instance which can import/de-serialize
  * Objects. This instance can (for example) read the contents
  * of an object from a file.
+ *
  * @author Stefan Nothaas 17.12.15 <stefan.nothaas@hhu.de>
  */
 public interface Importer {
@@ -15,11 +16,10 @@ public interface Importer {
 	 * the importObject method of the importable object.
 	 * But it's possible to trigger some pre- and post processing
 	 * of data/buffers.
-	 * @param p_object
-	 *            Importable Pre-allocated object to read data from the target into.
-	 * @return Number of bytes read from the importer i.e. the size of the read object.
+	 *
+	 * @param p_object Importable Pre-allocated object to read data from the target into.
 	 */
-	int importObject(final Importable p_object);
+	void importObject(final Importable p_object);
 
 	// ----------------------------------------------------------------------
 
@@ -27,6 +27,7 @@ public interface Importer {
 	 * Read a single byte from the target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
+	 *
 	 * @return Byte read.
 	 */
 	byte readByte();
@@ -35,6 +36,7 @@ public interface Importer {
 	 * Read a short from the target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
+	 *
 	 * @return Value read.
 	 */
 	short readShort();
@@ -43,6 +45,7 @@ public interface Importer {
 	 * Read an int from the target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
+	 *
 	 * @return Value read.
 	 */
 	int readInt();
@@ -51,6 +54,7 @@ public interface Importer {
 	 * Read a long from the target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
+	 *
 	 * @return Value read.
 	 */
 	long readLong();
@@ -59,6 +63,7 @@ public interface Importer {
 	 * Read a float from the target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
+	 *
 	 * @return Value read.
 	 */
 	float readFloat();
@@ -67,6 +72,7 @@ public interface Importer {
 	 * Read a double from the target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
+	 *
 	 * @return Value read.
 	 */
 	double readDouble();
@@ -75,8 +81,8 @@ public interface Importer {
 	 * Read data into a byte array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
+	 *
+	 * @param p_array Array to read into.
 	 * @return Number of bytes read.
 	 */
 	int readBytes(final byte[] p_array);
@@ -85,8 +91,8 @@ public interface Importer {
 	 * Read data into a short array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
+	 *
+	 * @param p_array Array to read into.
 	 * @return Number of shorts read;
 	 */
 	int readShorts(final short[] p_array);
@@ -95,8 +101,8 @@ public interface Importer {
 	 * Read data into an int array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
+	 *
+	 * @param p_array Array to read into.
 	 * @return Number of ints read;
 	 */
 	int readInts(final int[] p_array);
@@ -105,8 +111,8 @@ public interface Importer {
 	 * Read data into a long array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
+	 *
+	 * @param p_array Array to read into.
 	 * @return Number of longs read;
 	 */
 	int readLongs(final long[] p_array);
@@ -115,12 +121,10 @@ public interface Importer {
 	 * Read data into a byte array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
-	 * @param p_offset
-	 *            Offset to start in the array for reading into.
-	 * @param p_length
-	 *            Number of bytes to read.
+	 *
+	 * @param p_array  Array to read into.
+	 * @param p_offset Offset to start in the array for reading into.
+	 * @param p_length Number of bytes to read.
 	 * @return Number of bytes read.
 	 */
 	int readBytes(final byte[] p_array, final int p_offset, int p_length);
@@ -129,12 +133,10 @@ public interface Importer {
 	 * Read data into a short array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
-	 * @param p_offset
-	 *            Offset to start in the array for reading into.
-	 * @param p_length
-	 *            Number of shorts to read.
+	 *
+	 * @param p_array  Array to read into.
+	 * @param p_offset Offset to start in the array for reading into.
+	 * @param p_length Number of shorts to read.
 	 * @return Number of shorts read.
 	 */
 	int readShorts(final short[] p_array, final int p_offset, int p_length);
@@ -143,12 +145,10 @@ public interface Importer {
 	 * Read data into an int array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
-	 * @param p_offset
-	 *            Offset to start in the array for reading into.
-	 * @param p_length
-	 *            Number of ints to read.
+	 *
+	 * @param p_array  Array to read into.
+	 * @param p_offset Offset to start in the array for reading into.
+	 * @param p_length Number of ints to read.
 	 * @return Number of ints read.
 	 */
 	int readInts(final int[] p_array, final int p_offset, int p_length);
@@ -157,12 +157,10 @@ public interface Importer {
 	 * Read data into a long array from target.
 	 * Use this call in your importable object in the
 	 * import call to read data from the target.
-	 * @param p_array
-	 *            Array to read into.
-	 * @param p_offset
-	 *            Offset to start in the array for reading into.
-	 * @param p_length
-	 *            Number of longs to read.
+	 *
+	 * @param p_array  Array to read into.
+	 * @param p_offset Offset to start in the array for reading into.
+	 * @param p_length Number of longs to read.
 	 * @return Number of longs read.
 	 */
 	int readLongs(final long[] p_array, final int p_offset, int p_length);

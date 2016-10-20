@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.boot.BootService;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.utils.args.ArgumentList;
@@ -43,10 +43,10 @@ public class PrintStatisticsToFileTask extends AbstractPrintStatisticsTask {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
-		BootService bootService = p_dxram.getService(BootService.class);
-		StatisticsService statisticsService = p_dxram.getService(StatisticsService.class);
-		LoggerService loggerService = p_dxram.getService(LoggerService.class);
+	public int execute(final TaskContext p_ctx) {
+		BootService bootService = p_ctx.getDXRAMServiceAccessor().getService(BootService.class);
+		StatisticsService statisticsService = p_ctx.getDXRAMServiceAccessor().getService(StatisticsService.class);
+		LoggerService loggerService = p_ctx.getDXRAMServiceAccessor().getService(LoggerService.class);
 
 		if (m_path == null) {
 			return -1;

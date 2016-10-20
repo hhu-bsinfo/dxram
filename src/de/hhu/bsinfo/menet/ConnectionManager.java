@@ -256,10 +256,10 @@ final class ConnectionManager implements ConnectionCreatorListener {
 		rand = new Random();
 		while (dismiss == null) {
 			random = rand.nextInt(m_connections.length);
-			dismiss = m_connections[random];
+			dismiss = m_connections[random & 0xFFFF];
 		}
 		System.out.println("Removing " + NodeID.toHexString((short) random));
-		m_connections[random] = null;
+		m_connections[random & 0xFFFF] = null;
 		m_connectionList.remove(dismiss);
 
 		dismiss.close();
@@ -272,14 +272,14 @@ final class ConnectionManager implements ConnectionCreatorListener {
 	 */
 	/*-public void closeConnection(final short p_destination) {
 		AbstractConnection connection;
-	
+
 		assert p_destination != NodeID.INVALID_ID;
-	
+
 		m_connectionCreationLock.lock();
 		connection = m_connections[p_destination & 0xFFFF];
 		m_connections[p_destination & 0xFFFF] = null;
 		m_connectionList.remove(connection);
-	
+
 		if (connection != null) {
 			connection.close();
 		}

@@ -49,8 +49,8 @@ public class SmallObjectHeapDataStructureImExporter implements Importer, Exporte
 	}
 
 	@Override
-	public int exportObject(final Exportable p_object) {
-		return p_object.exportObject(this, m_chunkSize);
+	public void exportObject(final Exportable p_object) {
+		p_object.exportObject(this);
 	}
 
 	@Override
@@ -102,8 +102,8 @@ public class SmallObjectHeapDataStructureImExporter implements Importer, Exporte
 	}
 
 	@Override
-	public int importObject(final Importable p_object) {
-		return p_object.importObject(this, m_chunkSize);
+	public void importObject(final Importable p_object) {
+		p_object.importObject(this);
 	}
 
 	@Override

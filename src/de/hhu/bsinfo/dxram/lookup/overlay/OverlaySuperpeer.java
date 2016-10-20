@@ -17,8 +17,71 @@ import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupRangeWithBackupPeers;
-import de.hhu.bsinfo.dxram.lookup.messages.*;
-import de.hhu.bsinfo.dxram.lookup.overlay.storage.*;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.AskAboutSuccessorResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierAllocRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierAllocResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierChangeSizeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierChangeSizeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierFreeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierFreeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierGetStatusRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierGetStatusResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierReleaseMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.BarrierSignOnResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetAllBackupRangesResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetChunkIDForNameserviceEntryResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetLookupRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntriesResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.GetNameserviceEntryCountResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.InitRangeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.InitRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.InsertNameserviceEntriesRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.InsertNameserviceEntriesResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.JoinRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.JoinResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.LookupMessages;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutFailedPeerRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutFailedPeerResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewPredecessorMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.RemoveChunkIDsResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SendBackupsMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SendSuperpeersMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SetRestorerAfterRecoveryMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.StartRecoveryMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageCreateResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageGetResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStoragePutResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageRemoveMessage;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusRequest;
+import de.hhu.bsinfo.dxram.lookup.messages.SuperpeerStorageStatusResponse;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarriersTable;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.MetadataHandler;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceHashTable;
+import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
@@ -256,13 +319,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 				index = 0;
 			}
 
-			System.out.println("Adding responsible peers:");
-
 			startIndex = index;
 			currentPeer = m_assignedPeersIncludingBackups.get(index++);
 			while (OverlayHelper.isPeerInSuperpeerRange(currentPeer, p_firstSuperpeer, p_lastSuperpeer)) {
-				System.out.println(" Adding " + NodeID.toHexString(currentPeer) + ", index: "
-						+ (Collections.binarySearch(peers, currentPeer) * -1 - 1));
 				// Add current peer to peer list
 				peers.add(Collections.binarySearch(peers, currentPeer) * -1 - 1, currentPeer);
 				if (index == m_assignedPeersIncludingBackups.size()) {
@@ -613,7 +672,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 								// #if LOGGER >= INFO
 								m_logger.info(getClass(),
 										"Initiating recovery of range " + ChunkID.toHexString(firstChunkIDOrRangeID)
-												+ " on peer " + backupPeers[i]);
+										+ " on peer " + backupPeers[i]);
 								// #endif /* LOGGER >= INFO */
 
 								request = new RecoverBackupRangeRequest(backupPeers[i], p_failedNode,
@@ -776,9 +835,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 		metadata = m_metadata.receiveMetadataInRange(p_responsibleArea[0], p_responsibleArea[1]);
 
 		while (!m_superpeers.isEmpty()) {
-			// #if LOGGER >= INFO
-			m_logger.info(getClass(), "Spreading superpeers meta-data to " + NodeID.toHexString(m_successor));
-			// #endif /* LOGGER >= INFO */
+			// #if LOGGER >= DEBUG
+			m_logger.debug(getClass(), "Spreading superpeer's meta-data to " + NodeID.toHexString(m_successor));
+			// #endif /* LOGGER >= DEBUG */
 			if (m_network.sendMessage(new SendBackupsMessage(m_successor, metadata)) != NetworkErrorCodes.SUCCESS) {
 				// Successor is not available anymore, remove from superpeer array and try next superpeer
 				// #if LOGGER >= ERROR
@@ -830,13 +889,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 			}
 			break;
 		}
-		// #if LOGGER >= INFO
+		// #if LOGGER >= DEBUG
 		if (metadata.length > 0 && superpeerToSendData) {
-			m_logger.info(getClass(), str);
+			m_logger.debug(getClass(), str);
 		} else {
-			m_logger.info(getClass(), "No need to spread data");
+			m_logger.debug(getClass(), "No need to spread data");
 		}
-		// #endif /* LOGGER >= INFO */
+		// #endif /* LOGGER >= DEBUG */
 	}
 
 	/**
@@ -958,7 +1017,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 		// #if LOGGER == TRACE
 		m_logger.trace(getClass(),
 				"Got request: GET_LOOKUP_RANGE_REQUEST " + NodeID.toHexString(p_getLookupRangeRequest.getSource())
-						+ " chunkID: " + ChunkID.toHexString(chunkID));
+				+ " chunkID: " + ChunkID.toHexString(chunkID));
 		// #endif /* LOGGER == TRACE */
 
 		result = m_metadata.getLookupRangeFromLookupTree(chunkID);
@@ -1112,7 +1171,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 			// #if LOGGER == TRACE
 			m_logger.trace(getClass(),
 					"GET_CHUNKID_REQUEST from " + NodeID.toHexString(p_getChunkIDForNameserviceEntryRequest.getSource())
-							+ ", id " + id + ", reply chunkID " + ChunkID.toHexString(chunkID));
+					+ ", id " + id + ", reply chunkID " + ChunkID.toHexString(chunkID));
 			// #endif /* LOGGER == TRACE */
 		}
 		if (m_network.sendMessage(
@@ -1189,13 +1248,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 					// Outsource informing backups to another thread to avoid blocking a message handler
 					Runnable task = () -> {
 						// Send backups
-						for (short backupSuperpeer : backupSuperpeers) {
-							MigrateRequest request = new MigrateRequest(backupSuperpeer, chunkID, nodeID, true);
-							if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
-								// Ignore superpeer failure, superpeer will fix this later
+							for (short backupSuperpeer : backupSuperpeers) {
+								MigrateRequest request = new MigrateRequest(backupSuperpeer, chunkID, nodeID, true);
+								if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+									// Ignore superpeer failure, superpeer will fix this later
+								}
 							}
-						}
-					};
+						};
 					new Thread(task).start();
 				}
 
@@ -1275,14 +1334,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 					// Outsource informing backups to another thread to avoid blocking a message handler
 					Runnable task = () -> {
 						// Send backups
-						for (short backupSuperpeer : backupSuperpeers) {
-							MigrateRangeRequest request =
-									new MigrateRangeRequest(backupSuperpeer, startChunkID, endChunkID, nodeID, true);
-							if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
-								// Ignore superpeer failure, superpeer will fix this later
+							for (short backupSuperpeer : backupSuperpeers) {
+								MigrateRangeRequest request =
+										new MigrateRangeRequest(backupSuperpeer, startChunkID, endChunkID, nodeID, true);
+								if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+									// Ignore superpeer failure, superpeer will fix this later
+								}
 							}
-						}
-					};
+						};
 					new Thread(task).start();
 				}
 
@@ -1359,14 +1418,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 				// Outsource informing backups to another thread to avoid blocking a message handler
 				Runnable task = () -> {
 					// Send backups
-					for (short backupSuperpeer : backupSuperpeers) {
-						InitRangeRequest request = new InitRangeRequest(backupSuperpeer, startChunkIDOrRangeID,
-								primaryAndBackupPeers.convertToLong(), true);
-						if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
-							// Ignore superpeer failure, superpeer will fix this later
+						for (short backupSuperpeer : backupSuperpeers) {
+							InitRangeRequest request = new InitRangeRequest(backupSuperpeer, startChunkIDOrRangeID,
+									primaryAndBackupPeers.convertToLong(), true);
+							if (m_network.sendSync(request) != NetworkErrorCodes.SUCCESS) {
+								// Ignore superpeer failure, superpeer will fix this later
+							}
 						}
-					}
-				};
+					};
 				new Thread(task).start();
 			}
 
@@ -1571,7 +1630,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 				if (err != NetworkErrorCodes.SUCCESS) {
 					m_logger.error(getClass(),
 							"Releasing peer " + NodeID.toHexString(signedOnPeers[i]) + " of barrier " + BarrierID
-									.toHexString(barrierId) + " failed: " + err);
+							.toHexString(barrierId) + " failed: " + err);
 				}
 				// #endif /* LOGGER >= ERROR */
 			}
@@ -1865,7 +1924,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 	 *            the NotifyAboutFailedPeerRequest
 	 */
 	private void
-			incomingNotifyAboutFailedPeerRequest(final NotifyAboutFailedPeerRequest p_notifyAboutFailedPeerRequest) {
+	incomingNotifyAboutFailedPeerRequest(final NotifyAboutFailedPeerRequest p_notifyAboutFailedPeerRequest) {
 		short failedPeer;
 
 		// #if LOGGER == TRACE
@@ -1880,13 +1939,13 @@ public class OverlaySuperpeer implements MessageReceiver {
 		// Outsource informing all peers to another thread to avoid blocking a message handler
 		Runnable task = () -> {
 			// Inform all peers
-			for (short peer : m_peers) {
-				FailureRequest failureRequest = new FailureRequest(peer, failedPeer);
-				if (m_network.sendSync(failureRequest) != NetworkErrorCodes.SUCCESS) {
-					// Ignore, failure is detected by network module
+				for (short peer : m_peers) {
+					FailureRequest failureRequest = new FailureRequest(peer, failedPeer);
+					if (m_network.sendSync(failureRequest) != NetworkErrorCodes.SUCCESS) {
+						// Ignore, failure is detected by network module
+					}
 				}
-			}
-		};
+			};
 		new Thread(task).start();
 	}
 
@@ -1900,80 +1959,80 @@ public class OverlaySuperpeer implements MessageReceiver {
 		if (p_message != null) {
 			if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
 				switch (p_message.getSubtype()) {
-					case LookupMessages.SUBTYPE_JOIN_REQUEST:
-						incomingJoinRequest((JoinRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST:
-						incomingGetLookupRangeRequest((GetLookupRangeRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST:
-						incomingRemoveChunkIDsRequest((RemoveChunkIDsRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST:
-						incomingInsertNameserviceEntriesRequest((InsertNameserviceEntriesRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST:
-						incomingGetChunkIDForNameserviceEntryRequest((GetChunkIDForNameserviceEntryRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST:
-						incomingGetNameserviceEntryCountRequest((GetNameserviceEntryCountRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST:
-						incomingGetNameserviceEntriesRequest((GetNameserviceEntriesRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
-						incomingMigrateRequest((MigrateRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST:
-						incomingMigrateRangeRequest((MigrateRangeRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_INIT_RANGE_REQUEST:
-						incomingInitRangeRequest((InitRangeRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST:
-						incomingGetAllBackupRangesRequest((GetAllBackupRangesRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE:
-						incomingSetRestorerAfterRecoveryMessage((SetRestorerAfterRecoveryMessage) p_message);
-						break;
-					case LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST:
-						incomingBarrierAllocRequest((BarrierAllocRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST:
-						incomingBarrierFreeRequest((BarrierFreeRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST:
-						incomingBarrierSignOnRequest((BarrierSignOnRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST:
-						incomingBarrierGetStatusRequest((BarrierGetStatusRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST:
-						incomingBarrierChangeSizeRequest((BarrierChangeSizeRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST:
-						incomingSuperpeerStorageCreateRequest((SuperpeerStorageCreateRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST:
-						incomingSuperpeerStorageGetRequest((SuperpeerStorageGetRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST:
-						incomingSuperpeerStoragePutRequest((SuperpeerStoragePutRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE:
-						incomingSuperpeerStorageRemoveMessage((SuperpeerStorageRemoveMessage) p_message);
-						break;
-					case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST:
-						incomingSuperpeerStorageStatusRequest((SuperpeerStorageStatusRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST:
-						incomingGetMetadataSummaryRequest((GetMetadataSummaryRequest) p_message);
-						break;
-					case LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_REQUEST:
-						incomingNotifyAboutFailedPeerRequest((NotifyAboutFailedPeerRequest) p_message);
-						break;
-					default:
-						break;
+				case LookupMessages.SUBTYPE_JOIN_REQUEST:
+					incomingJoinRequest((JoinRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_GET_LOOKUP_RANGE_REQUEST:
+					incomingGetLookupRangeRequest((GetLookupRangeRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_REMOVE_CHUNKIDS_REQUEST:
+					incomingRemoveChunkIDsRequest((RemoveChunkIDsRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_INSERT_NAMESERVICE_ENTRIES_REQUEST:
+					incomingInsertNameserviceEntriesRequest((InsertNameserviceEntriesRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_GET_CHUNKID_FOR_NAMESERVICE_ENTRY_REQUEST:
+					incomingGetChunkIDForNameserviceEntryRequest((GetChunkIDForNameserviceEntryRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRY_COUNT_REQUEST:
+					incomingGetNameserviceEntryCountRequest((GetNameserviceEntryCountRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_GET_NAMESERVICE_ENTRIES_REQUEST:
+					incomingGetNameserviceEntriesRequest((GetNameserviceEntriesRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_MIGRATE_REQUEST:
+					incomingMigrateRequest((MigrateRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_MIGRATE_RANGE_REQUEST:
+					incomingMigrateRangeRequest((MigrateRangeRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_INIT_RANGE_REQUEST:
+					incomingInitRangeRequest((InitRangeRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_GET_ALL_BACKUP_RANGES_REQUEST:
+					incomingGetAllBackupRangesRequest((GetAllBackupRangesRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_SET_RESTORER_AFTER_RECOVERY_MESSAGE:
+					incomingSetRestorerAfterRecoveryMessage((SetRestorerAfterRecoveryMessage) p_message);
+					break;
+				case LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST:
+					incomingBarrierAllocRequest((BarrierAllocRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_BARRIER_FREE_REQUEST:
+					incomingBarrierFreeRequest((BarrierFreeRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_BARRIER_SIGN_ON_REQUEST:
+					incomingBarrierSignOnRequest((BarrierSignOnRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_BARRIER_STATUS_REQUEST:
+					incomingBarrierGetStatusRequest((BarrierGetStatusRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_BARRIER_CHANGE_SIZE_REQUEST:
+					incomingBarrierChangeSizeRequest((BarrierChangeSizeRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_CREATE_REQUEST:
+					incomingSuperpeerStorageCreateRequest((SuperpeerStorageCreateRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST:
+					incomingSuperpeerStorageGetRequest((SuperpeerStorageGetRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST:
+					incomingSuperpeerStoragePutRequest((SuperpeerStoragePutRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_REMOVE_MESSAGE:
+					incomingSuperpeerStorageRemoveMessage((SuperpeerStorageRemoveMessage) p_message);
+					break;
+				case LookupMessages.SUBTYPE_SUPERPEER_STORAGE_STATUS_REQUEST:
+					incomingSuperpeerStorageStatusRequest((SuperpeerStorageStatusRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_GET_METADATA_SUMMARY_REQUEST:
+					incomingGetMetadataSummaryRequest((GetMetadataSummaryRequest) p_message);
+					break;
+				case LookupMessages.SUBTYPE_NOTIFY_ABOUT_FAILED_PEER_REQUEST:
+					incomingNotifyAboutFailedPeerRequest((NotifyAboutFailedPeerRequest) p_message);
+					break;
+				default:
+					break;
 				}
 			}
 		}

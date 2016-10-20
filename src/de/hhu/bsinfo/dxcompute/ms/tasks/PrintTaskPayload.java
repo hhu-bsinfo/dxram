@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 
 import de.hhu.bsinfo.dxcompute.ms.AbstractTaskPayload;
 import de.hhu.bsinfo.dxcompute.ms.Signal;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.utils.args.ArgumentList;
 import de.hhu.bsinfo.utils.args.ArgumentList.Argument;
 import de.hhu.bsinfo.utils.serialization.Exporter;
@@ -40,7 +40,7 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
+	public int execute(final TaskContext p_ctx) {
 		System.out.println(m_msg);
 		return 0;
 	}
@@ -52,34 +52,32 @@ public class PrintTaskPayload extends AbstractTaskPayload {
 
 	@Override
 	public void terminalCommandRegisterArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandRegisterArguments(p_argumentList);
 		p_argumentList.setArgument(MS_ARG_MSG);
 	}
 
 	@Override
 	public void terminalCommandCallbackForArguments(final ArgumentList p_argumentList) {
+		super.terminalCommandCallbackForArguments(p_argumentList);
 		m_msg = p_argumentList.getArgumentValue(MS_ARG_MSG, String.class);
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		int size = super.exportObject(p_exporter, p_size);
+	public void exportObject(final Exporter p_exporter) {
+		super.exportObject(p_exporter);
 
 		p_exporter.writeInt(m_msg.length());
 		p_exporter.writeBytes(m_msg.getBytes(StandardCharsets.US_ASCII));
-
-		return size + Integer.BYTES + m_msg.length();
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
-		int size = super.importObject(p_importer, p_size);
+	public void importObject(final Importer p_importer) {
+		super.importObject(p_importer);
 
 		int strLength = p_importer.readInt();
 		byte[] tmp = new byte[strLength];
 		p_importer.readBytes(tmp);
 		m_msg = new String(tmp, StandardCharsets.US_ASCII);
-
-		return size + Integer.BYTES + m_msg.length();
 	}
 
 	@Override

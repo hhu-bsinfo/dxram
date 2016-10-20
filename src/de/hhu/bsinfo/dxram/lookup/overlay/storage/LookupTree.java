@@ -206,13 +206,13 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		// TODO stefan: replace java serializable interface with importer/exporter interface
 		throw new RuntimeException("Not implemented.");
 	}
 
 	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
+	public void exportObject(final Exporter p_exporter) {
 		// TODO stefan: replace java serializable interface with importer/exporter interface
 		throw new RuntimeException("Not implemented.");
 	}
@@ -221,11 +221,6 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 	public int sizeofObject() {
 		// TODO stefan: replace java serializable interface with importer/exporter interface
 		throw new RuntimeException("Not implemented.");
-	}
-
-	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
 	}
 
 	// Getters
@@ -364,7 +359,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 		m_migrationBackupRanges.add(p_rangeID,
 				((p_backupPeers[2] & 0x000000000000FFFFL) << 32) + ((p_backupPeers[1] & 0x000000000000FFFFL) << 16)
-						+ (p_backupPeers[0] & 0x0000FFFF));
+				+ (p_backupPeers[0] & 0x0000FFFF));
 
 		return true;
 	}
@@ -594,7 +589,7 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 			backupNodes = element[1];
 			backupPeers =
 					new short[] {(short) backupNodes, (short) ((backupNodes & 0x00000000FFFF0000L) >> 16),
-							(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
+					(short) ((backupNodes & 0x0000FFFF00000000L) >> 32)};
 			if (p_failedPeer == backupPeers[0]) {
 				backupNodes = ((p_replacement & 0x000000000000FFFFL) << 32)
 						+ ((backupPeers[2] & 0x000000000000FFFFL) << 16) + (backupPeers[1] & 0x0000FFFF);
@@ -1589,16 +1584,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_keys[mid];
+			midVal = m_keys[mid];
 
-				if (midVal < p_localID) {
-					low = mid + 1;
-				} else if (midVal > p_localID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < p_localID) {
+				low = mid + 1;
+			} else if (midVal > p_localID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);
@@ -1788,16 +1783,16 @@ public final class LookupTree implements Serializable, Importable, Exportable {
 
 			while (low <= high) {
 				mid = low + high >>> 1;
-				midVal = m_children[mid].getLocalID(0);
+			midVal = m_children[mid].getLocalID(0);
 
-				if (midVal < localID) {
-					low = mid + 1;
-				} else if (midVal > localID) {
-					high = mid - 1;
-				} else {
-					ret = mid;
-					break;
-				}
+			if (midVal < localID) {
+				low = mid + 1;
+			} else if (midVal > localID) {
+				high = mid - 1;
+			} else {
+				ret = mid;
+				break;
+			}
 			}
 			if (-1 == ret) {
 				ret = -(low + 1);

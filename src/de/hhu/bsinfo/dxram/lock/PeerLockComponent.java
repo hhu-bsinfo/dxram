@@ -15,6 +15,7 @@ import de.hhu.bsinfo.utils.Pair;
 /**
  * Implementation of the lock component interface. This provides a peer side locking i.e.
  * the peer owning the chunk stores any information about its locking state.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class PeerLockComponent extends AbstractLockComponent {
@@ -26,19 +27,19 @@ public class PeerLockComponent extends AbstractLockComponent {
 
 	/**
 	 * Constructor
-	 * @param p_priorityInit
-	 *            Priority for initialization of this component.
-	 *            When choosing the order, consider component dependencies here.
-	 * @param p_priorityShutdown
-	 *            Priority for shutting down this component.
-	 *            When choosing the order, consider component dependencies here.
+	 *
+	 * @param p_priorityInit     Priority for initialization of this component.
+	 *                           When choosing the order, consider component dependencies here.
+	 * @param p_priorityShutdown Priority for shutting down this component.
+	 *                           When choosing the order, consider component dependencies here.
 	 */
 	public PeerLockComponent(final int p_priorityInit, final int p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
 	@Override
-	protected void registerDefaultSettingsComponent(final Settings p_settings) {}
+	protected void registerDefaultSettingsComponent(final Settings p_settings) {
+	}
 
 	@Override
 	protected boolean initComponent(final de.hhu.bsinfo.dxram.engine.DXRAMEngine.Settings p_engineSettings,
@@ -87,7 +88,8 @@ public class PeerLockComponent extends AbstractLockComponent {
 		if (lockEntry == null) {
 			// create on demand
 
-			while (!m_mapEntryCreationLock.compareAndSet(false, true)) {}
+			while (!m_mapEntryCreationLock.compareAndSet(false, true)) {
+			}
 
 			LockEntry prev = m_lockedChunks.get(ChunkID.getLocalID(p_chunkId));
 			// avoid race condition and use recently created lock if there is one
@@ -102,7 +104,8 @@ public class PeerLockComponent extends AbstractLockComponent {
 
 		if (p_timeoutMs == MS_TIMEOUT_UNLIMITED) {
 			// unlimited timeout, lock
-			while (!lockEntry.m_lock.compareAndSet(false, true)) {}
+			while (!lockEntry.m_lock.compareAndSet(false, true)) {
+			}
 			lockEntry.m_nodeID = p_lockingNodeID;
 			success = true;
 		} else {
@@ -172,6 +175,7 @@ public class PeerLockComponent extends AbstractLockComponent {
 
 	/**
 	 * Entry for the lock map.
+	 *
 	 * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
 	 */
 	private static class LockEntry {

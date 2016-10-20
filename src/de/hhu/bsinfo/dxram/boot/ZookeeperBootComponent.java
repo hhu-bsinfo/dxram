@@ -16,6 +16,7 @@ import org.apache.zookeeper.data.Stat;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeInfo;
 import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeList;
+import de.hhu.bsinfo.dxram.boot.tcmds.TcmdNodeWait;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngineConfigurationValues;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -103,6 +104,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 		m_terminal.registerCommand(new TcmdNodeInfo());
 		m_terminal.registerCommand(new TcmdNodeList());
+		m_terminal.registerCommand(new TcmdNodeWait());
 
 		return true;
 	}
@@ -219,6 +221,28 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		if (zookeeperPathExists("nodes/peers")) {
 			try {
 				List<String> children = m_zookeeper.getChildren("nodes/peers");
+				for (String child : children) {
+					childID = Short.parseShort(child);
+					if (childID != getNodeID()) {
+						ids.add(Short.parseShort(child));
+					}
+				}
+			} catch (final ZooKeeperException e) {}
+		}
+
+		return ids;
+	}
+
+	@Override
+	public List<Short> getIDsOfOnlineSuperpeers() {
+		// TODO: Don't use ZooKeeper for this
+
+		short childID;
+		List<Short> ids = new ArrayList<Short>();
+
+		if (zookeeperPathExists("nodes/superpeers")) {
+			try {
+				List<String> children = m_zookeeper.getChildren("nodes/superpeers");
 				for (String child : children) {
 					childID = Short.parseShort(child);
 					if (childID != getNodeID()) {
@@ -431,34 +455,40 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 * Replaces the current bootstrap with p_nodeID if the failed bootstrap has not been replaced by another superpeer
 	 * @param p_nodeID
 	 *            the new bootstrap candidate
-	 * @return the new bootstrap
 	 */
-	public short setBootstrapPeer(final short p_nodeID) {
-		short ret;
+	public void setBootstrapPeer(final short p_nodeID) {
+		short currentBootstrap;
 		Stat status = null;
 		String entry;
 
 		try {
 			status = zookeeperGetStatus("nodes/bootstrap");
 		} catch (final ZooKeeperException e) {
+			// Entry should be available, even if another node updated the bootstrap first
+
 			// #if LOGGER >= ERROR
 			m_logger.error(this.getClass(), "Getting status from zookeeper failed.", e);
 			// #endif /* LOGGER >= ERROR */
-			return -1;
-		}
-		entry = new String(zookeeperGetData("nodes/bootstrap", status));
-		ret = Short.parseShort(entry);
-		if (ret == m_bootstrap) {
-			if (!zookeeperSetData("nodes/bootstrap", ("" + p_nodeID).getBytes(), status.getVersion())) {
-				m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
-			} else {
-				m_bootstrap = p_nodeID;
-			}
-		} else {
-			m_bootstrap = ret;
+
+			return;
 		}
 
-		return m_bootstrap;
+		entry = new String(zookeeperGetData("nodes/bootstrap", status));
+		currentBootstrap = Short.parseShort(entry);
+		if (currentBootstrap == m_bootstrap) {
+			try {
+				if (!zookeeperSetData("nodes/bootstrap", ("" + p_nodeID).getBytes(), status.getVersion())) {
+					m_bootstrap = Short.parseShort(new String(zookeeperGetData("nodes/bootstrap")));
+				} else {
+					m_bootstrap = p_nodeID;
+				}
+			} catch (final ZooKeeperException e) {
+				// Entry was already updated by another node, try again
+				setBootstrapPeer(p_nodeID);
+			}
+		} else {
+			m_bootstrap = currentBootstrap;
+		}
 	}
 
 	/**
@@ -925,16 +955,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 * @param p_version
 	 *            Version of the path.
 	 * @return True if successful, false otherwise.
+	 * @throws ZooKeeperException
+	 *             if data could not be set
 	 */
-	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) {
+	private boolean zookeeperSetData(final String p_path, final byte[] p_data, final int p_version) throws ZooKeeperException {
 		try {
 			m_zookeeper.setData(p_path, p_data, p_version);
 			return true;
 		} catch (final ZooKeeperException e) {
-			// #if LOGGER >= ERROR
-			m_logger.error(this.getClass(), "Setting data on zookeeper failed.", e);
-			// #endif /* LOGGER >= ERROR */
-			return false;
+			throw e;
 		}
 	}
 

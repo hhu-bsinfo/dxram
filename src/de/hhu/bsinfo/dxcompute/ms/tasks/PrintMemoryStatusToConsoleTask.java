@@ -2,8 +2,8 @@
 package de.hhu.bsinfo.dxcompute.ms.tasks;
 
 import de.hhu.bsinfo.dxcompute.ms.Signal;
+import de.hhu.bsinfo.dxcompute.ms.TaskContext;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 
 /**
  * Print the current memory status to the console.
@@ -20,8 +20,8 @@ public class PrintMemoryStatusToConsoleTask extends AbstractPrintMemoryStatusTas
 	}
 
 	@Override
-	public int execute(final DXRAMServiceAccessor p_dxram) {
-		ChunkService chunkService = p_dxram.getService(ChunkService.class);
+	public int execute(final TaskContext p_ctx) {
+		ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
 		printMemoryStatusToOutput(System.out, chunkService.getStatus());
 		return 0;
 	}

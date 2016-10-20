@@ -12,6 +12,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
 
 /**
  * Data structure holding BFS results of multiple nodes.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 20.05.16
  */
 public class BFSResults implements DataStructure {
@@ -25,6 +26,7 @@ public class BFSResults implements DataStructure {
 
 	/**
 	 * Get aggregated results of all nodes.
+	 *
 	 * @return Aggregated results.
 	 */
 	public BFSResult getAggregatedResult() {
@@ -33,12 +35,10 @@ public class BFSResults implements DataStructure {
 
 	/**
 	 * Add a result of a node running BFS.
-	 * @param p_computeSlaveId
-	 *            Compute slave id of the node.
-	 * @param p_nodeId
-	 *            Node id of the node.
-	 * @param p_bfsResult
-	 *            BFS result of the node.
+	 *
+	 * @param p_computeSlaveId Compute slave id of the node.
+	 * @param p_nodeId         Node id of the node.
+	 * @param p_bfsResult      BFS result of the node.
 	 */
 	public void addResult(final short p_computeSlaveId, final short p_nodeId, final BFSResult p_bfsResult) {
 		int id = (p_nodeId << 16) | p_computeSlaveId;
@@ -47,6 +47,7 @@ public class BFSResults implements DataStructure {
 
 	/**
 	 * Get all single results of every BFS node.
+	 *
 	 * @return List of single results identified by compute slave id and node id.
 	 */
 	public ArrayList<Pair<Integer, BFSResult>> getResults() {
@@ -64,19 +65,17 @@ public class BFSResults implements DataStructure {
 	}
 
 	@Override
-	public int importObject(final Importer p_importer, final int p_size) {
+	public void importObject(final Importer p_importer) {
 		m_aggregatedResult = new BFSResult();
-		m_aggregatedResult.importObject(p_importer, p_size);
+		m_aggregatedResult.importObject(p_importer);
 
 		int size = p_importer.readInt();
 		for (int i = 0; i < size; i++) {
 			int id = p_importer.readInt();
 			BFSResult result = new BFSResult();
-			result.importObject(p_importer, p_size);
+			result.importObject(p_importer);
 			m_bfsResults.add(new Pair<>(id, result));
 		}
-
-		return sizeofObject();
 	}
 
 	@Override
@@ -90,21 +89,14 @@ public class BFSResults implements DataStructure {
 	}
 
 	@Override
-	public boolean hasDynamicObjectSize() {
-		return true;
-	}
-
-	@Override
-	public int exportObject(final Exporter p_exporter, final int p_size) {
-		m_aggregatedResult.exportObject(p_exporter, p_size);
+	public void exportObject(final Exporter p_exporter) {
+		m_aggregatedResult.exportObject(p_exporter);
 
 		p_exporter.writeInt(m_bfsResults.size());
 		for (Pair<Integer, BFSResult> entry : m_bfsResults) {
 			p_exporter.writeInt(entry.m_first);
-			entry.second().exportObject(p_exporter, p_size);
+			entry.second().exportObject(p_exporter);
 		}
-
-		return sizeofObject();
 	}
 
 	@Override

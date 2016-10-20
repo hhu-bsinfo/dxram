@@ -12,6 +12,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  * Implementation of an Importer/Exporter for DataStructure objects for
  * network messages. Use this if a network message has to send an object,
  * which implements the DataStructure interface.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
 public class MessagesDataStructureImExporter implements Importer, Exporter {
@@ -21,8 +22,8 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 
 	/**
 	 * Constructor
-	 * @param p_messageBuffer
-	 *            Buffer the message has to write to/read from.
+	 *
+	 * @param p_messageBuffer Buffer the message has to write to/read from.
 	 */
 	public MessagesDataStructureImExporter(final ByteBuffer p_messageBuffer) {
 		m_messageBuffer = p_messageBuffer;
@@ -33,16 +34,16 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 	 * (for dynamic sized objects) or the amount of bytes in the buffer available
 	 * when exporting an object.
 	 * Use case: Generic chunk data with dynamic size (see Chunk object).
-	 * @param p_size
-	 *            Payload size to set.
+	 *
+	 * @param p_size Payload size to set.
 	 */
 	public void setPayloadSize(final int p_size) {
 		m_payloadSize = p_size;
 	}
 
 	@Override
-	public int exportObject(final Exportable p_object) {
-		return p_object.exportObject(this, m_payloadSize);
+	public void exportObject(final Exportable p_object) {
+		p_object.exportObject(this);
 	}
 
 	@Override
@@ -93,8 +94,8 @@ public class MessagesDataStructureImExporter implements Importer, Exporter {
 	}
 
 	@Override
-	public int importObject(final Importable p_object) {
-		return p_object.importObject(this, m_payloadSize);
+	public void importObject(final Importable p_object) {
+		p_object.importObject(this);
 	}
 
 	@Override
