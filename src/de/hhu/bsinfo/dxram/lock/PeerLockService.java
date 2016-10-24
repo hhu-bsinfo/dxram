@@ -30,6 +30,7 @@ import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Lock service providing exclusive locking of chunks/data structures.
@@ -40,9 +41,9 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 
 	// configuration values
 	@Expose
-	private int m_remoteLockSendIntervalMs = 10;
+	private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
 	@Expose
-	private int m_remoteLockTryTimeoutMs = 100;
+	private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
 
 	// dependent components
 	private AbstractBootComponent m_boot;
@@ -191,7 +192,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 						// avoid heavy network load/lock polling
 						if (idle) {
 							try {
-								Thread.sleep(m_remoteLockSendIntervalMs);
+								Thread.sleep(m_remoteLockSendInterval.getMs());
 							} catch (final InterruptedException ignored) {
 							}
 						}
@@ -382,7 +383,7 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 		// the host handles the timeout as we don't want to block the message receiver thread
 		// for too long, execute a tryLock instead
 		success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(),
-				p_request.isWriteLockOperation(), m_remoteLockTryTimeoutMs);
+				p_request.isWriteLockOperation(), (int) m_remoteLockTryTimeout.getMs());
 
 		if (success) {
 			m_network.sendMessage(new LockResponse(p_request, (byte) 0));
