@@ -152,7 +152,19 @@ class DXRAMContextHandler {
                 // skip dxram token
                 for (int i = 1; i < tokens.length; i++) {
 
-                    JsonElement elem = parent.get(tokens[i]);
+                    JsonElement elem;
+
+                    // support access to arrays/maps
+                    if (tokens[i].contains("[")) {
+                        String[] arrayTokens = tokens[i].split("\\[");
+                        // trim ]
+                        arrayTokens[1] = arrayTokens[1].substring(0, arrayTokens[1].length() - 1);
+
+                        JsonElement elemArray = parent.get(arrayTokens[0]);
+                        elem =  elemArray.getAsJsonObject().get(arrayTokens[1]);
+                    } else {
+                        elem = parent.get(tokens[i]);
+                    }
 
                     // if first element is already invalid
                     if (elem == null) {
