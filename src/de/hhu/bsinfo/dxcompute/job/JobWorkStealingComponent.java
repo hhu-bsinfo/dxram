@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxcompute.job;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxcompute.DXComputeComponentOrder;
 import de.hhu.bsinfo.dxcompute.job.ws.Worker;
 import de.hhu.bsinfo.dxcompute.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -32,7 +33,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 	 * Constructor
 	 */
 	public JobWorkStealingComponent() {
-		super(16, 84);
+		super(DXComputeComponentOrder.Init.JOB_WORK_STEALING, DXComputeComponentOrder.Shutdown.JOB_WORK_STEALING);
 	}
 
 	@Override
