@@ -197,11 +197,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine...");
 		// #endif /* LOGGER >= INFO */
 
-		// resolve dependencies of all components first
-		for (AbstractDXRAMComponent component : m_contextHandler.getContext().getComponents().values()) {
-			component.resolveComponentDependencies(this);
-		}
-
 		// sort list by initialization priority
 		list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 		comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityInit())).compareTo(p_o2.getPriorityInit());

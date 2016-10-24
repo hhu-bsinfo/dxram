@@ -80,6 +80,8 @@ public abstract class AbstractDXRAMComponent {
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Initializing component...");
 		// #endif /* LOGGER >= INFO */
 
+		resolveComponentDependencies(p_engine);
+
 		try {
 			ret = initComponent(m_parentEngine.getSettings());
 		} catch (final Exception e) {
