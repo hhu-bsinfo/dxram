@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.lookup;
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -71,7 +72,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	 * Creates the lookup component
 	 */
 	public LookupComponent() {
-		super(8, 92);
+		super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP);
 	}
 
 	/**

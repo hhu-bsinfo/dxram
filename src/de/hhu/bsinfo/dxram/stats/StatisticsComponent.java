@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -32,7 +33,7 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 	 * Constructor
 	 */
 	public StatisticsComponent() {
-		super(4, 96);
+		super(DXRAMComponentOrder.Init.STATISTICS, DXRAMComponentOrder.Shutdown.STATISTICS);
 	}
 
 	/**

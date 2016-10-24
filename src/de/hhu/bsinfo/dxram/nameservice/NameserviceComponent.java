@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.NameServiceIndexData;
@@ -45,7 +46,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	 * Constructor
 	 */
 	public NameserviceComponent() {
-		super(15, 85);
+		super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE);
 	}
 
 	/**

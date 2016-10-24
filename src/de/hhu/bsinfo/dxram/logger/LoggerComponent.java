@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.logger;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.logger.LogLevel;
@@ -26,7 +27,7 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 	 * Constructor
 	 */
 	public LoggerComponent() {
-		super(2, 98);
+		super(DXRAMComponentOrder.Init.LOGGER, DXRAMComponentOrder.Shutdown.LOGGER);
 	}
 
 	// -------------------------------------------------------------------------------------

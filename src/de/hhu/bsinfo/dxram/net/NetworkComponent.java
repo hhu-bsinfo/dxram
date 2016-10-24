@@ -7,6 +7,7 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -59,7 +60,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	 * Constructor
 	 */
 	public NetworkComponent() {
-		super(7, 93);
+		super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK);
 	}
 
 	// --------------------------------------------------------------------------------------

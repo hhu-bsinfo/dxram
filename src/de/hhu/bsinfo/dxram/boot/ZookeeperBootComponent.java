@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -70,7 +71,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	 * Constructor
 	 */
 	public ZookeeperBootComponent() {
-		super(6, 50);
+		super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT);
 	}
 
 	@Override

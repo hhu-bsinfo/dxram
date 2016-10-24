@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -70,7 +71,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	 * Constructor
 	 */
 	public MemoryManagerComponent() {
-		super(5, 95);
+		super(DXRAMComponentOrder.Init.MEMORY, DXRAMComponentOrder.Shutdown.MEMORY);
 	}
 
 	@Override

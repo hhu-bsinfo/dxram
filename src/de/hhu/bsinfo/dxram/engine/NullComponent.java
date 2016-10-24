@@ -1,6 +1,8 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+
 /**
  * Dummy component implementation for testing.
  *
@@ -12,7 +14,7 @@ public class NullComponent extends AbstractDXRAMComponent {
 	 * Constructor
 	 */
 	public NullComponent() {
-		super(1, 99);
+		super(DXRAMComponentOrder.Init.NULL, DXRAMComponentOrder.Shutdown.NULL);
 	}
 
 	@Override

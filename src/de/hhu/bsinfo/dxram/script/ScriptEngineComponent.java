@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -49,7 +50,7 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 	 * Constructor
 	 */
 	public ScriptEngineComponent() {
-		super(17, 83);
+		super(DXRAMComponentOrder.Init.SCRIPT, DXRAMComponentOrder.Shutdown.SCRIPT);
 	}
 
 	/**

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -35,7 +36,7 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 	 * Constructor
 	 */
 	public TerminalComponent() {
-		super(18, 82);
+		super(DXRAMComponentOrder.Init.TERMINAL, DXRAMComponentOrder.Shutdown.TERMINAL);
 	}
 
 	/**

@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -67,7 +68,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	 * Creates the backup component
 	 */
 	public BackupComponent() {
-		super(13, 87);
+		super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP);
 	}
 
 	/**

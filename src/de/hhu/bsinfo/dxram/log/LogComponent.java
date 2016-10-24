@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.log;
 
 import java.io.IOException;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
@@ -38,7 +39,7 @@ public class LogComponent extends AbstractDXRAMComponent {
 	 * Creates the log component
 	 */
 	public LogComponent() {
-		super(12, 88);
+		super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG);
 	}
 
 	/**

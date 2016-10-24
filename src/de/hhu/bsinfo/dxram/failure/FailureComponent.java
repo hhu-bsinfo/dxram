@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.failure;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -48,7 +49,7 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	 * Creates the failure component
 	 */
 	public FailureComponent() {
-		super(10, 90);
+		super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE);
 
 		m_events = new byte[Short.MAX_VALUE * 2];
 		m_eventLock = new ReentrantLock(false);

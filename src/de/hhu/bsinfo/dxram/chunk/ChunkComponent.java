@@ -1,6 +1,7 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
@@ -35,7 +36,7 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	 * Constructor
 	 */
 	public ChunkComponent() {
-		super(14, 86);
+		super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK);
 	}
 
 	/**

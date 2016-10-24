@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -36,7 +37,7 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 	 * Constructor
 	 */
 	public EventComponent() {
-		super(3, 97);
+		super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT);
 	}
 
 	/**
