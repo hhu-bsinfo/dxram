@@ -19,13 +19,15 @@ import de.hhu.bsinfo.utils.main.AbstractMain;
 public class DXRAMMain extends AbstractMain {
 
 	private DXRAM m_dxram;
+	private String m_nodeTypeName;
 
 	/**
 	 * Default constructor
 	 */
 	public DXRAMMain() {
-		super("DXRAMMain");
+		super("DXRAM");
 		m_dxram = new DXRAM();
+		m_nodeTypeName = "DXRAM";
 	}
 
 	/**
@@ -34,12 +36,13 @@ public class DXRAMMain extends AbstractMain {
 	 * Use this if you extended the DXRAM class and provide an instance of it to
 	 * run it within the DXRAMMain context
 	 *
-	 * @param p_applicationName New application name for this DXRAM instance
+	 * @param p_nodeTypeName Type name for node (debugging purpose, only)
 	 * @param p_dxram DXRAM instance to run (just create the instance, no init)
 	 */
-	public DXRAMMain(final String p_applicationName, final DXRAM p_dxram) {
-		super(p_applicationName);
+	public DXRAMMain(final String p_nodeTypeName, final DXRAM p_dxram) {
+		super("DXRAM");
 		m_dxram = p_dxram;
+		m_nodeTypeName = p_nodeTypeName;
 	}
 
 	/**
@@ -60,9 +63,10 @@ public class DXRAMMain extends AbstractMain {
 	@Override
 	protected int main(final ArgumentList p_arguments) {
 		printBuildDateAndUser();
+		System.out.println("Main entry point: " + m_nodeTypeName);
 
 		if (!m_dxram.initialize(true)) {
-			System.out.println("Initializing DXRAM failed.");
+			System.out.println("Initializing " + m_nodeTypeName + " failed.");
 			return -1;
 		}
 
@@ -81,14 +85,14 @@ public class DXRAMMain extends AbstractMain {
 			NodeRole role = boot.getNodeRole();
 
 			if (role == NodeRole.TERMINAL) {
-				System.out.println(">>> DXRAM Terminal started <<<");
+				System.out.println(">>> " + m_nodeTypeName + " Terminal started <<<");
 				if (!runTerminal()) {
 					return -1;
 				} else {
 					return 0;
 				}
 			} else {
-				System.out.println(">>> DXRAM started <<<");
+				System.out.println(">>> " + m_nodeTypeName + " started <<<");
 
 				while (true) {
 					// Wait
@@ -99,7 +103,7 @@ public class DXRAMMain extends AbstractMain {
 				}
 			}
 		} else {
-			System.out.println("Missing BootService, cannot run DXRAM");
+			System.out.println("Missing BootService, cannot run " + m_nodeTypeName);
 			return -1;
 		}
 	}
