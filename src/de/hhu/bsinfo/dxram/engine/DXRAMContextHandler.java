@@ -114,7 +114,7 @@ class DXRAMContextHandler {
         JsonElement element;
         try {
             element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
-        } catch (final IOException e) {
+        } catch (final Exception e) {
             System.out.println("Could not load configuration '" + p_configFilePath + "': " + e.getMessage());
             return false;
         }
