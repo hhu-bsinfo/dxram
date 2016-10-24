@@ -26,6 +26,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.StorageUnit;
 
 /**
  * Component for managing backup ranges.
@@ -40,7 +41,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	@Expose
 	private String m_backupDirectory = "./log/";
 	@Expose
-	private long m_backupRangeSize = 256 * 1024 * 1024L;
+	private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.UNIT_MB);
 	@Expose
 	private short m_replicationFactor = 3;
 
@@ -118,7 +119,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 				m_log.initBackupRange((long) m_nodeID << 48, m_currentBackupRange.getBackupPeers());
 				m_rangeSize = size;
 				m_firstRangeInitialized = true;
-			} else if (m_rangeSize + size > m_backupRangeSize) {
+			} else if (m_backupRangeSize.getBytes() + size > m_backupRangeSize.getBytes()) {
 				determineBackupPeers(localID);
 				m_lookup.initRange(((long) m_nodeID << 48) + localID,
 						new LookupRangeWithBackupPeers(m_nodeID, m_currentBackupRange.getBackupPeers(), null));
@@ -275,7 +276,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 		if (m_backupActive && m_boot.getNodeRole().equals(NodeRole.PEER)) {
 			m_ownBackupRanges = new ArrayList<BackupRange>();
 			m_migrationBackupRanges = new ArrayList<BackupRange>();
-			m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize);
+			m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize.getBytes());
 			m_currentBackupRange = null;
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
