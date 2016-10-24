@@ -121,7 +121,11 @@ class DXRAMContextHandler {
 
         overrideConfigurationWithVMArguments(element.getAsJsonObject());
 
-        m_context = gson.fromJson(element, DXRAMContext.class);
+        try {
+            m_context = gson.fromJson(element, DXRAMContext.class);
+        } catch (final Exception e) {
+            System.out.println("Loading configuration  '" + p_configFilePath + "' failed: " + e.getMessage());
+        }
 
         return true;
     }
