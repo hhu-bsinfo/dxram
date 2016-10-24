@@ -150,6 +150,7 @@ public abstract class AbstractDXRAMService {
 	/**
 	 * Check if this class is an engine accessor i.e. breaking the rules of
 	 * not knowing the engine. Override this if this feature is used.
+	 * Do not override this if you do not know what you are doing.
 	 *
 	 * @return True if accessor, false otherwise.
 	 */
@@ -172,8 +173,8 @@ public abstract class AbstractDXRAMService {
 
 	/**
 	 * Get the engine within the service.
-	 * This is not wanted in most cases to hide as much as possible from the services.
-	 * But for some exceptions (like triggering a shutdown or reboot) there is no other way.
+	 * If you don't know what you are doing, do not use this.
+	 * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
 	 *
 	 * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
 	 */

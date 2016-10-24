@@ -143,16 +143,6 @@ public abstract class AbstractDXRAMComponent {
 	}
 
 	/**
-	 * Get the parent engine of this component.
-	 *
-	 * @return Parent engine of this component.
-	 * @note This is available for very special occasions. If you do not know what you are doing, don't use this method.
-	 */
-	protected DXRAMEngine getParentEngine() {
-		return m_parentEngine;
-	}
-
-	/**
 	 * Called before the component is initialized. Get all the components your own component depends on.
 	 *
 	 * @param p_componentAccessor Component accessor that provides access to other components
@@ -173,4 +163,30 @@ public abstract class AbstractDXRAMComponent {
 	 * @return True if shutdown was successful, false otherwise.
 	 */
 	protected abstract boolean shutdownComponent();
+
+	/**
+	 * Check if this class is an engine accessor i.e. breaking the rules of
+	 * not knowing the engine. Override this if this feature is used.
+	 * Do not override this if you do not know what you are doing.
+	 *
+	 * @return True if accessor, false otherwise.
+	 */
+	protected boolean isEngineAccessor() {
+		return false;
+	}
+
+	/**
+	 * Get the engine within the component.
+	 * If you don't know what you are doing, do not use this.
+	 * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
+	 *
+	 * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
+	 */
+	protected DXRAMEngine getParentEngine() {
+		if (isEngineAccessor()) {
+			return m_parentEngine;
+		} else {
+			return null;
+		}
+	}
 }

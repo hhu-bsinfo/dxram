@@ -161,6 +161,11 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 		return true;
 	}
 
+	@Override
+    protected boolean isEngineAccessor() {
+        return true;
+    }
+
 	// -------------------------------------------------------------------------------------------------------
 
 	@Override
