@@ -21,9 +21,9 @@ public abstract class AbstractDXRAMComponent {
 	@Expose
 	private final boolean m_enabled = true;
 	@Expose
-	private final int m_priorityInit;
+	private final short m_priorityInit;
 	@Expose
-	private final int m_priorityShutdown;
+	private final short m_priorityShutdown;
 
 	private DXRAMEngine m_parentEngine;
 
@@ -33,7 +33,7 @@ public abstract class AbstractDXRAMComponent {
 	 * @param p_priorityInit     Default init priority for this component
 	 * @param p_priorityShutdown Default shutdown priority for this component
 	 */
-	public AbstractDXRAMComponent(final int p_priorityInit, final int p_priorityShutdown) {
+	public AbstractDXRAMComponent(final short p_priorityInit, final short p_priorityShutdown) {
 		m_priorityInit = p_priorityInit;
 		m_priorityShutdown = p_priorityShutdown;
 	}

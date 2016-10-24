@@ -8,7 +8,7 @@ public class DXComputeComponentOrder {
      * Init order of components
      */
     public final class Init {
-        public static final int JOB_WORK_STEALING = 100;
+        public static final short JOB_WORK_STEALING = 100;
 
         /**
          * Static class
@@ -22,7 +22,7 @@ public class DXComputeComponentOrder {
      * Shutdown order of components
      */
     public final class Shutdown {
-        public static final int JOB_WORK_STEALING = -100;
+        public static final short JOB_WORK_STEALING = -100;
 
 
         /**

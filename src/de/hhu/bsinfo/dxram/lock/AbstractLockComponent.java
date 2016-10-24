@@ -21,7 +21,7 @@ public abstract class AbstractLockComponent extends AbstractDXRAMComponent {
 	 * @param p_priorityInit     Default init priority for this component
 	 * @param p_priorityShutdown Default shutdown priority for this component
 	 */
-	public AbstractLockComponent(final int p_priorityInit, final int p_priorityShutdown) {
+	public AbstractLockComponent(final short p_priorityInit, final short p_priorityShutdown) {
 		super(p_priorityInit, p_priorityShutdown);
 	}
 
