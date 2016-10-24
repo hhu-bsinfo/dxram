@@ -66,7 +66,7 @@ public class DXRAM {
 	 *
 	 * @param p_autoShutdown       True to have DXRAM shut down automatically when the application quits.
 	 *                             If false, the caller has to take care of shutting down the instance by calling shutdown when done.
-	 * @param p_configurationFiles Absolute or relative path to a configuration file
+	 * @param p_configurationFile Absolute or relative path to a configuration file
 	 * @return True if initializing was successful, false otherwise.
 	 */
 	public boolean initialize(final boolean p_autoShutdown, final String p_configurationFile) {
