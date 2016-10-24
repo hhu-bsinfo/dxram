@@ -14,7 +14,6 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.MigrationPrimLogEntryHeader;
@@ -38,6 +37,7 @@ import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
+import de.hhu.bsinfo.utils.StorageUnit;
 import de.hhu.bsinfo.utils.Tools;
 
 /**
@@ -56,17 +56,17 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	@Expose
 	private boolean m_useChecksum = true;
 	@Expose
-	private int m_flashPageSize = 4 * 1024;
+	private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.UNIT_KB);
 	@Expose
-	private int m_logSegmentSize = 8 * 1024 * 1024;
+	private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.UNIT_MB);
 	@Expose
-	private long m_primaryLogSize = 256 * 1024 * 1024L;
+	private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.UNIT_MB);
 	@Expose
-	private long m_secondaryLogSize = 512 * 1024 * 1024L;
+	private StorageUnit m_secondaryLogSize = new StorageUnit(512, StorageUnit.UNIT_MB);
 	@Expose
-	private int m_writeBufferSize = 256 * 1024 * 1024;
+	private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.UNIT_MB);
 	@Expose
-	private int m_secondaryLogBufferSize = 128 * 1024;
+	private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.UNIT_KB);
 	@Expose
 	private int m_reorgUtilizationThreshold = 70;
 	@Expose
@@ -309,15 +309,16 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
 
 			// Set attributes of log component that can only be set by log service
-			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum, m_secondaryLogSize,
-					m_logSegmentSize);
+			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum,
+					m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
 
 			// Set the log entry header crc size (must be called before the first log entry header is created)
 			AbstractLogEntryHeader.setCRCSize(m_useChecksum);
 
 			// Create primary log
 			try {
-				m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize, m_flashPageSize);
+				m_primaryLog = new PrimaryLog(this, m_backupDirectory, m_nodeID, m_primaryLogSize.getBytes(),
+						(int) m_flashPageSize.getBytes());
 			} catch (final IOException | InterruptedException e) {
 				// #if LOGGER >= ERROR
 				m_logger.error(LogService.class, "Primary log creation failed: " + e);
@@ -328,9 +329,9 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 			// #endif /* LOGGER == TRACE */
 
 			// Create primary log buffer
-			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, m_writeBufferSize,
-					m_flashPageSize, m_secondaryLogBufferSize, m_logSegmentSize, m_useChecksum,
-					m_sortBufferPooling);
+			m_writeBuffer = new PrimaryWriteBuffer(this, m_logger, m_primaryLog, (int) m_writeBufferSize.getBytes(),
+					(int) m_flashPageSize.getBytes(), (int) m_secondaryLogBufferSize.getBytes(),
+					(int) m_logSegmentSize.getBytes(), m_useChecksum, m_sortBufferPooling);
 
 			// Create secondary log and secondary log buffer catalogs
 			m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -339,7 +340,8 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 
 			// Create reorganization thread for secondary logs
 			m_secondaryLogsReorgThread =
-					new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize, m_logSegmentSize);
+					new SecondaryLogsReorgThread(this, m_logger, m_secondaryLogSize.getBytes(),
+							(int) m_logSegmentSize.getBytes());
 			m_secondaryLogsReorgThread.setName("Logging: Reorganization Thread");
 			// Start secondary logs reorganization thread
 			m_secondaryLogsReorgThread.start();
@@ -697,22 +699,24 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 							new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner,
 									ChunkID.getLocalID(firstChunkIDOrRangeID), cat.getNewID(false),
 									false,
-									m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
+									m_backupDirectory, m_secondaryLogSize.getBytes(),
+									(int) m_flashPageSize.getBytes(), (int) m_logSegmentSize.getBytes(),
 									m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize,
-							m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(),
+							(int) m_logSegmentSize.getBytes());
 				}
 			} else {
 				if (!cat.exists(-1, (byte) firstChunkIDOrRangeID)) {
 					// Create new secondary log for migrations
 					secLog = new SecondaryLog(this, m_logger, m_secondaryLogsReorgThread, owner, firstChunkIDOrRangeID,
 							cat.getNewID(true), true,
-							m_backupDirectory, m_secondaryLogSize, m_flashPageSize, m_logSegmentSize,
+							m_backupDirectory, m_secondaryLogSize.getBytes(), (int) m_flashPageSize.getBytes(),
+							(int) m_logSegmentSize.getBytes(),
 							m_reorgUtilizationThreshold, m_useChecksum);
 					// Insert range in log catalog
-					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, m_secondaryLogBufferSize,
-							m_logSegmentSize);
+					cat.insertRange(m_logger, firstChunkIDOrRangeID, secLog, (int) m_secondaryLogBufferSize.getBytes(),
+							(int) m_logSegmentSize.getBytes());
 				}
 			}
 		} catch (final IOException | InterruptedException e) {
