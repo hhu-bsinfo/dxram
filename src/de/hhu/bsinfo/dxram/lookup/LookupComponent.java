@@ -30,6 +30,7 @@ import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Component for finding chunks in superpeer overlay.
@@ -48,7 +49,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	@Expose
 	private int m_nameserviceCacheEntries = 1000000;
 	@Expose
-	private long m_cacheTtl = 1000L;
+	private TimeUnit m_cacheTtl = new TimeUnit(1, TimeUnit.SEC);
 	@Expose
 	private int m_pingInterval = 1;
 	@Expose
