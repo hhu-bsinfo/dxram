@@ -20,7 +20,7 @@ import de.hhu.bsinfo.utils.logger.Logger;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-public class DXRAMEngine implements DXRAMServiceAccessor {
+public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor {
 
 	private static final String DXRAM_ENGINE_LOG_HEADER = DXRAMEngine.class.getSimpleName();
 
@@ -109,17 +109,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		return new ArrayList<>(m_servicesShortName.keySet());
 	}
 
-	/**
-	 * Get a component from the engine.
-	 *
-	 * @param <T>     Type of the component class.
-	 * @param p_class Class of the component to get. If the component has different implementations, use the common
-	 *                interface
-	 *                or abstract class to get the registered instance.
-	 * @return Reference to the component if available and enabled, null otherwise or if the engine is not
-	 * initialized.
-	 */
-	<T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
+	@Override
+	public <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
 		T component = null;
 
 		AbstractDXRAMComponent tmpComponent = m_contextHandler.getContext().getComponents().get(p_class.getSimpleName());
@@ -205,6 +196,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing engine...");
 		// #endif /* LOGGER >= INFO */
+
+		// resolve dependencies of all components first
+		for (AbstractDXRAMComponent component : m_contextHandler.getContext().getComponents().values()) {
+			component.resolveComponentDependencies(this);
+		}
 
 		// sort list by initialization priority
 		list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());

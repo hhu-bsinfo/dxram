@@ -8,6 +8,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
@@ -197,15 +198,17 @@ public class ChunkComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_log = p_componentAccessor.getComponent(LogComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+	}
+
+	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_backup = getDependentComponent(BackupComponent.class);
-		m_memoryManager = getDependentComponent(MemoryManagerComponent.class);
-		m_network = getDependentComponent(NetworkComponent.class);
-		m_log = getDependentComponent(LogComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
-
 		return true;
 	}
 

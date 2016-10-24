@@ -8,6 +8,7 @@ import java.util.Map;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
@@ -232,10 +233,13 @@ public class StatisticsComponent extends AbstractDXRAMComponent {
 		return null;
 	}
 
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+    }
+
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
-
 		// #if LOGGER >= INFO
 		m_logger.info(getClass(), "Recording of statistics enabled (global override): " + m_record);
 		// #endif /* LOGGER >= INFO */

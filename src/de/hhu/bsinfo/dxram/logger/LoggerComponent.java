@@ -6,6 +6,7 @@ import java.util.Map;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.utils.logger.LogLevel;
 import de.hhu.bsinfo.utils.logger.LoggerInterface;
@@ -218,6 +219,11 @@ public class LoggerComponent extends AbstractDXRAMComponent implements LoggerInt
 	}
 
 	// -------------------------------------------------------------------------------------
+
+	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		// no dependencies
+	}
 
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {

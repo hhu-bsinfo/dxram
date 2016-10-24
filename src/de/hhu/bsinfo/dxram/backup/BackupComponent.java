@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -50,6 +51,8 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private LogComponent m_log;
+	private EventComponent m_event;
+	private NetworkComponent m_network;
 
 	// private state
 	private long m_rangeSize;
@@ -263,27 +266,31 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_log = p_componentAccessor.getComponent(LogComponent.class);
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+	}
+
+	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_lookup = getDependentComponent(LookupComponent.class);
-		m_log = getDependentComponent(LogComponent.class);
-
-		getDependentComponent(EventComponent.class).registerListener(this, NodeFailureEvent.class);
+		m_event.registerListener(this, NodeFailureEvent.class);
 
 		m_nodeID = m_boot.getNodeID();
 		if (m_backupActive && m_boot.getNodeRole().equals(NodeRole.PEER)) {
-			m_ownBackupRanges = new ArrayList<BackupRange>();
-			m_migrationBackupRanges = new ArrayList<BackupRange>();
+			m_ownBackupRanges = new ArrayList<>();
+			m_migrationBackupRanges = new ArrayList<>();
 			m_migrationsTree = new MigrationBackupTree((short) 10, m_backupRangeSize.getBytes());
 			m_currentBackupRange = null;
 			m_currentMigrationBackupRange = new BackupRange(-1, null);
 			m_rangeSize = 0;
 
-			getDependentComponent(NetworkComponent.class).registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+			m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
 					LogMessages.SUBTYPE_INIT_REQUEST, InitRequest.class);
-			getDependentComponent(NetworkComponent.class).registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
+			m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
 					LogMessages.SUBTYPE_INIT_RESPONSE, InitResponse.class);
 		}
 		m_firstRangeInitialized = false;

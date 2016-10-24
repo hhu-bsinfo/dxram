@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -63,6 +64,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private EventComponent m_event;
+	private NetworkComponent m_network;
 
 	private OverlaySuperpeer m_superpeer;
 	private OverlayPeer m_peer;
@@ -796,11 +798,15 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	// --------------------------------------------------------------------------------
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_event = getDependentComponent(EventComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+	}
 
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		if (m_cachesEnabled) {
 			m_chunkIDCacheTree = new CacheTree(m_maxCacheEntries, ORDER);
 
@@ -821,11 +827,11 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
                     (int) m_storageMaxSize.getBytes(),
 					m_boot,
 					m_logger,
-					getDependentComponent(NetworkComponent.class), getDependentComponent(EventComponent.class));
+					m_network, m_event);
 		} else {
 			m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
 					m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_logger,
-					getDependentComponent(NetworkComponent.class), m_event);
+					m_network, m_event);
 			m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);
 		}
 

@@ -10,6 +10,7 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -222,14 +223,17 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	// --------------------------------------------------------------------------------------
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_event = getDependentComponent(EventComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
+	}
 
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_networkHandler = new NetworkHandler(m_threadCountMsgHandler, m_requestMapEntryCount);
 		m_networkHandler.setLogger(m_logger);
-		m_networkHandler.setEventHandler(getDependentComponent(EventComponent.class));
+		m_networkHandler.setEventHandler(m_event);
 
 		// Check if given ip address is bound to one of this node's network interfaces
 		boolean found = false;

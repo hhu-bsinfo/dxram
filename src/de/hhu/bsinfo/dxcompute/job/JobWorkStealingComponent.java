@@ -8,6 +8,7 @@ import de.hhu.bsinfo.dxcompute.DXComputeComponentOrder;
 import de.hhu.bsinfo.dxcompute.job.ws.Worker;
 import de.hhu.bsinfo.dxcompute.job.ws.WorkerDelegate;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 
@@ -78,10 +79,13 @@ public class JobWorkStealingComponent extends AbstractJobComponent implements Wo
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_boot = getDependentComponent(AbstractBootComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+	}
 
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_workers = new Worker[m_numWorkers];
 
 		for (int i = 0; i < m_workers.length; i++) {

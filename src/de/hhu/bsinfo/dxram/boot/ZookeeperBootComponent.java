@@ -8,6 +8,7 @@ import java.util.List;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration.NodeEntry;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -56,6 +57,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 	// dependent components
 	private LoggerComponent m_logger;
+	private LookupComponent m_lookup;
 
 	// private state
 	private IPV4Unit m_ownAddress;
@@ -77,9 +79,13 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+	}
 
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_ownAddress = p_engineEngineSettings.getAddress();
 		NodeRole role = p_engineEngineSettings.getRole();
 
@@ -107,8 +113,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		LookupComponent lookup;
 
 		m_shutdown = true;
-		lookup = getDependentComponent(LookupComponent.class);
-		if (lookup != null && lookup.isResponsibleForBootstrapCleanup()) {
+
+		if (m_lookup != null && m_lookup.isResponsibleForBootstrapCleanup()) {
 			try {
 				// #if LOGGER >= INFO
 				m_logger.info(getClass(), "Cleaning-up ZooKeeper folder");

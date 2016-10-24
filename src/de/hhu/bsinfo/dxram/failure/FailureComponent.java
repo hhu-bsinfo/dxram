@@ -6,6 +6,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -208,19 +209,22 @@ public class FailureComponent extends AbstractDXRAMComponent implements MessageR
 	// --------------------------------------------------------------------------------
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_lookup = getDependentComponent(LookupComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
+	}
 
-		m_network = getDependentComponent(NetworkComponent.class);
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST,
 				FailureRequest.class);
 		m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE,
 				FailureResponse.class);
 		m_network.register(FailureRequest.class, this);
 
-		m_event = getDependentComponent(EventComponent.class);
 		m_event.registerListener(this, ConnectionLostEvent.class);
 		m_event.registerListener(this, ResponseDelayedEvent.class);
 

@@ -130,19 +130,6 @@ public abstract class AbstractDXRAMComponent {
 	// ------------------------------------------------------------------------------
 
 	/**
-	 * Get a dependent component from the engine. Use it in this component if you have
-	 * to interact with other components.
-	 *
-	 * @param <T>     Class of the implemented component.
-	 * @param p_class Class of the component to get. If a component has multiple implementations, always use the base
-	 *                class/interface here.
-	 * @return Reference to the component requested or null if not available/enabled.
-	 */
-	protected <T extends AbstractDXRAMComponent> T getDependentComponent(final Class<T> p_class) {
-		return m_parentEngine.getComponent(p_class);
-	}
-
-	/**
 	 * Get the logger for logging messages.
 	 *
 	 * @return Logger for logging.
@@ -162,6 +149,13 @@ public abstract class AbstractDXRAMComponent {
 	protected DXRAMEngine getParentEngine() {
 		return m_parentEngine;
 	}
+
+	/**
+	 * Called before the component is initialized. Get all the components your own component depends on.
+	 *
+	 * @param p_componentAccessor Component accessor that provides access to other components
+	 */
+	protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
 	/**
 	 * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.

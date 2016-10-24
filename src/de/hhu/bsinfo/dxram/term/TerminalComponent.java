@@ -8,6 +8,7 @@ import java.util.Map;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.script.ScriptContext;
@@ -76,11 +77,14 @@ public class TerminalComponent extends AbstractDXRAMComponent {
 		}
 	}
 
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+        m_scriptEngine = p_componentAccessor.getComponent(ScriptEngineComponent.class);
+    }
+
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_scriptEngine = getDependentComponent(ScriptEngineComponent.class);
-
 		// create script context for terminal
 		m_terminalScriptContext = m_scriptEngine.createContext("terminal");
 		m_terminalContext = new ScriptTerminalContext(m_scriptEngine, this);

@@ -10,6 +10,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.stats.StatisticsComponent;
@@ -74,13 +75,16 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
 		// #ifdef STATISTICS
-		m_statistics = getDependentComponent(StatisticsComponent.class);
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
+	}
 
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		if (p_engineEngineSettings.getRole() == NodeRole.PEER) {
 			// #ifdef STATISTICS
 			registerStatisticsOperations();

@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxram.chunk.NameServiceIndexData;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -33,6 +34,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	private String m_type = "NAME";
 
 	// dependent components
+	private AbstractBootComponent m_boot;
 	private LoggerComponent m_logger;
 	private LookupComponent m_lookup;
 	private ChunkComponent m_chunk;
@@ -141,16 +143,20 @@ public class NameserviceComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
-		m_lookup = getDependentComponent(LookupComponent.class);
-		m_chunk = getDependentComponent(ChunkComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
+	}
 
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_converter = new NameServiceStringConverter(m_type);
 
 		m_indexData = new NameServiceIndexData();
 
-		if (getDependentComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER) {
+		if (m_boot.getNodeRole() == NodeRole.PEER) {
 			m_indexData.setID(m_chunk.createIndexChunk(m_indexData.sizeofObject()));
 			if (m_indexData.getID() == ChunkID.INVALID_ID) {
 				// #if LOGGER >= ERROR

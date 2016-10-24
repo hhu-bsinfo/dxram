@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierID;
@@ -126,11 +127,13 @@ public class ScriptEngineComponent extends AbstractDXRAMComponent implements Scr
 
 	// -------------------------------------------------------------------------------------------------------
 
+    @Override
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+    }
+
 	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-		m_logger = getDependentComponent(LoggerComponent.class);
-
 		m_scriptEngineManager = new ScriptEngineManager();
 		m_scriptEngine = m_scriptEngineManager.getEngineByName("JavaScript");
 

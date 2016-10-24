@@ -18,6 +18,11 @@ public class NullComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		// no dependencies
+	}
+
+	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineSettings) {
 		return true;
 	}

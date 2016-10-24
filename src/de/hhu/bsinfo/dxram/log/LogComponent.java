@@ -8,6 +8,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.messages.InitRequest;
@@ -143,12 +144,14 @@ public class LogComponent extends AbstractDXRAMComponent {
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+	}
+
+	@Override
 	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-		m_boot = getDependentComponent(AbstractBootComponent.class);
-		m_network = getDependentComponent(NetworkComponent.class);
-		m_logger = getDependentComponent(LoggerComponent.class);
-
 		return true;
 	}
 

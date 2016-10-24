@@ -8,6 +8,7 @@ import java.util.Map;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.utils.event.EventInterface;
@@ -86,9 +87,12 @@ public class EventComponent extends AbstractDXRAMComponent implements EventInter
 	}
 
 	@Override
-	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getDependentComponent(LoggerComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+	}
 
+	@Override
+	protected boolean initComponent(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		if (m_useExecutor) {
 			// #if LOGGER >= INFO
 			m_logger.info(getClass().getSimpleName(), "EventExecutor: Initialising " + m_threadCount + " threads");
