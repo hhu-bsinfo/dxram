@@ -11,6 +11,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
+import de.hhu.bsinfo.utils.StorageUnit;
 
 /**
  * Gson context for DXRAM handling serialization and deserialization of components and services
@@ -27,6 +29,8 @@ class DXRAMGsonContext {
 						new ComponentSerializer())
 				.registerTypeAdapter(AbstractDXRAMService.class,
 						new ServiceSerializer())
+				.registerTypeAdapter(StorageUnit.class,
+						new StorageUnitGsonSerializer())
 				.create();
 	}
 

@@ -17,6 +17,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
+import de.hhu.bsinfo.utils.StorageUnit;
 
 /**
  * Interface to access the local heap. Features for migration
@@ -34,9 +35,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
 	// configuration values
 	@Expose
-	private long m_keyValueStoreSize = 128L;
-	@Expose
-	private String m_keyValueStoreSizeUnit = "mb";
+	private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.UNIT_MB);
 
 	// dependent components
 	private AbstractBootComponent m_boot;
@@ -87,29 +86,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 			registerStatisticsOperations();
 			// #endif /* STATISTICS */
 
-			long ramSize;
-			switch (m_keyValueStoreSizeUnit) {
-				case "kb":
-					ramSize = m_keyValueStoreSize * 1024;
-					break;
-				case "mb":
-					ramSize = m_keyValueStoreSize * 1024 * 1024;
-					break;
-				case "gb":
-					ramSize = m_keyValueStoreSize * 1024 * 1024 * 1024;
-					break;
-				case "b":
-				default:
-					ramSize = m_keyValueStoreSize;
-					break;
-			}
-
 			// #if LOGGER == INFO
 			m_logger.info(getClass(),
-					"Allocating native memory (" + (ramSize / 1024 / 1024) + " mb). This may take a while.");
+					"Allocating native memory (" + m_keyValueStoreSize.getMB() + " mb). This may take a while.");
 			// #endif /* LOGGER == INFO */
 			m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory());
-			m_rawMemory.initialize(ramSize, ramSize);
+			m_rawMemory.initialize(m_keyValueStoreSize.getBytes(), m_keyValueStoreSize.getBytes());
 			m_cidTable = new CIDTable(this, m_statistics, m_statisticsRecorderIDs, m_logger);
 			m_cidTable.initialize(m_rawMemory);
 
