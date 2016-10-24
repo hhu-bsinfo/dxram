@@ -43,7 +43,7 @@ public class DXRAMServiceManager {
 	 * @param p_class Serivce class to register
 	 */
 	public static void register(final Class<? extends AbstractDXRAMService> p_class) {
-		m_registeredServices.put(p_class.getName(), p_class);
+		m_registeredServices.put(p_class.getSimpleName(), p_class);
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class DXRAMServiceManager {
 	/**
 	 * Create an instance of a service
 	 *
-	 * @param p_className Fully qualified name of the class (incl. package path)
+	 * @param p_className Name of the class (without package path)
 	 * @return Instance of the service
 	 */
 	static AbstractDXRAMService createInstance(final String p_className) {
@@ -82,7 +82,7 @@ public class DXRAMServiceManager {
 		try {
 			return clazz.getConstructor().newInstance();
 		} catch (final Exception e) {
-			throw new RuntimeException("Cannot create service instance of " + clazz.getName(), e);
+			throw new RuntimeException("Cannot create service instance of " + clazz.getSimpleName(), e);
 		}
 	}
 
@@ -99,7 +99,7 @@ public class DXRAMServiceManager {
 			try {
 				instances[index++] = clazz.getConstructor().newInstance();
 			} catch (final Exception e) {
-				throw new RuntimeException("Cannot create component instance of " + clazz.getName(), e);
+				throw new RuntimeException("Cannot create component instance of " + clazz.getSimpleName(), e);
 			}
 		}
 

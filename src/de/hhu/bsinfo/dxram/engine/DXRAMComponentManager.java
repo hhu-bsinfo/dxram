@@ -43,7 +43,7 @@ class DXRAMComponentManager {
 	 * @param p_class Component class to register
 	 */
 	public static void register(final Class<? extends AbstractDXRAMComponent> p_class) {
-		m_registeredComponents.put(p_class.getName(), p_class);
+		m_registeredComponents.put(p_class.getSimpleName(), p_class);
 	}
 
 	/**
@@ -71,7 +71,7 @@ class DXRAMComponentManager {
 	/**
 	 * Create an instance of a component
 	 *
-	 * @param p_className Fully qualified name of the class (incl. package path)
+	 * @param p_className Simple class name (without package path)
 	 * @return Instance of the component
 	 */
 	static AbstractDXRAMComponent createInstance(final String p_className) {
@@ -81,7 +81,7 @@ class DXRAMComponentManager {
 		try {
 			return clazz.getConstructor().newInstance();
 		} catch (final Exception e) {
-			throw new RuntimeException("Cannot create component instance of " + clazz.getName(), e);
+			throw new RuntimeException("Cannot create component instance of " + clazz.getSimpleName(), e);
 		}
 	}
 
@@ -98,7 +98,7 @@ class DXRAMComponentManager {
 			try {
 				instances[index++] = clazz.getConstructor().newInstance();
 			} catch (final Exception e) {
-				throw new RuntimeException("Cannot create component instance of " + clazz.getName(), e);
+				throw new RuntimeException("Cannot create component instance of " + clazz.getSimpleName(), e);
 			}
 		}
 

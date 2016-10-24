@@ -45,7 +45,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		T service = null;
 
 		if (m_isInitilized) {
-			AbstractDXRAMService tmpService = m_contextHandler.getContext().getServices().get(p_class.getName());
+			AbstractDXRAMService tmpService = m_contextHandler.getContext().getServices().get(p_class.getSimpleName());
 			if (tmpService == null) {
 				// check for any kind of instance of the specified class
 				// we might have another interface/abstract class between the
@@ -101,7 +101,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	<T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
 		T component = null;
 
-		AbstractDXRAMComponent tmpComponent = m_contextHandler.getContext().getComponents().get(p_class.getName());
+		AbstractDXRAMComponent tmpComponent = m_contextHandler.getContext().getComponents().get(p_class.getSimpleName());
 		if (tmpComponent == null) {
 			// check for any kind of instance of the specified class
 			// we might have another interface/abstract class between the

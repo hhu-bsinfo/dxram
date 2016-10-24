@@ -61,7 +61,7 @@ public class DXRAMContext {
 	void fillDefaultComponents() {
 
 		for (AbstractDXRAMComponent component : DXRAMComponentManager.createAllInstances()) {
-			m_components.put(component.getClass().getName(), component);
+			m_components.put(component.getClass().getSimpleName(), component);
 		}
 	}
 
@@ -71,7 +71,7 @@ public class DXRAMContext {
 	void fillDefaultServices() {
 
 		for (AbstractDXRAMService service : DXRAMServiceManager.createAllInstances()) {
-			m_services.put(service.getClass().getName(), service);
+			m_services.put(service.getClass().getSimpleName(), service);
 		}
 	}
 
