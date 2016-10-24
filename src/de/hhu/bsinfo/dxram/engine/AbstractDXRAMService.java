@@ -64,7 +64,17 @@ public abstract class AbstractDXRAMService {
 		// #if LOGGER >= INFO
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service...");
 		// #endif /* LOGGER >= INFO */
-		ret = startService(m_parentEngine.getSettings());
+
+		try {
+			ret = startService(m_parentEngine.getSettings());
+		} catch (final Exception e) {
+			// #if LOGGER >= ERROR
+			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.", e);
+			// #endif /* LOGGER >= ERROR */
+
+			return false;
+		}
+
 		if (!ret) {
 			// #if LOGGER >= ERROR
 			m_parentEngine.getLogger().error(this.getClass().getSimpleName(), "Starting service failed.");
