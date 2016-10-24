@@ -24,6 +24,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	private static final String DXRAM_ENGINE_LOG_HEADER = DXRAMEngine.class.getSimpleName();
 
+    private DXRAMComponentManager m_componentManager;
+    private DXRAMServiceManager m_serviceManager;
 	private DXRAMContextHandler m_contextHandler;
 	
 	private boolean m_isInitilized;
@@ -37,7 +39,26 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 * Constructor
 	 */
 	public DXRAMEngine() {
+		m_componentManager = new DXRAMComponentManager();
+		m_serviceManager = new DXRAMServiceManager();
+	}
 
+	/**
+	 * Register a DXRAM component
+	 *
+	 * @param p_class Class of the component to register
+	 */
+	public void registerComponent(final Class<? extends AbstractDXRAMComponent> p_class) {
+		m_componentManager.register(p_class);
+	}
+
+	/**
+	 * Register a DXRAM service
+	 *
+	 * @param p_class Class of the service to register
+	 */
+	public void registerService(final Class<? extends AbstractDXRAMService> p_class) {
+		m_serviceManager.register(p_class);
 	}
 
 	@Override
@@ -291,7 +312,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		String config = p_configurationFile;
 
-		m_contextHandler = new DXRAMContextHandler();
+		m_contextHandler = new DXRAMContextHandler(m_componentManager, m_serviceManager);
 
 		// check vm arguments for configuration override
 		String configurationOverride = System.getProperty("dxram.config");

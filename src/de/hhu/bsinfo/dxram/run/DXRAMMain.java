@@ -29,6 +29,20 @@ public class DXRAMMain extends AbstractMain {
 	}
 
 	/**
+	 * Constructor
+	 *
+	 * Use this if you extended the DXRAM class and provide an instance of it to
+	 * run it within the DXRAMMain context
+	 *
+	 * @param p_applicationName New application name for this DXRAM instance
+	 * @param p_dxram DXRAM instance to run (just create the instance, no init)
+	 */
+	public DXRAMMain(final String p_applicationName, final DXRAM p_dxram) {
+		super(p_applicationName);
+		m_dxram = p_dxram;
+	}
+
+	/**
 	 * Main entry point
 	 *
 	 * @param p_args Program arguments.

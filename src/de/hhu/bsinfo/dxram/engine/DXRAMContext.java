@@ -57,20 +57,24 @@ public class DXRAMContext {
 
 	/**
 	 * Fill the context with all components that registered at the DXRAMComponentManager
+	 *
+	 * @param p_manager Manager to use
 	 */
-	void fillDefaultComponents() {
+	void fillDefaultComponents(final DXRAMComponentManager p_manager) {
 
-		for (AbstractDXRAMComponent component : DXRAMComponentManager.createAllInstances()) {
+		for (AbstractDXRAMComponent component : p_manager.createAllInstances()) {
 			m_components.put(component.getClass().getSimpleName(), component);
 		}
 	}
 
 	/**
 	 * Fill the context with all services that registered at the DXRAMServiceManager
+	 *
+	 * @param p_manager Manager to use
 	 */
-	void fillDefaultServices() {
+	void fillDefaultServices(final DXRAMServiceManager p_manager) {
 
-		for (AbstractDXRAMService service : DXRAMServiceManager.createAllInstances()) {
+		for (AbstractDXRAMService service : p_manager.createAllInstances()) {
 			m_services.put(service.getClass().getSimpleName(), service);
 		}
 	}

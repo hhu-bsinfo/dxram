@@ -28,12 +28,12 @@ import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
  */
 public class DXRAMServiceManager {
 
-	private static Map<String, Class<? extends AbstractDXRAMService>> m_registeredServices = new HashMap<>();
+	private Map<String, Class<? extends AbstractDXRAMService>> m_registeredServices = new HashMap<>();
 
 	/**
-	 * Static class
+	 * Constructor
 	 */
-	private DXRAMServiceManager() {
+	DXRAMServiceManager() {
 
 	}
 
@@ -42,31 +42,8 @@ public class DXRAMServiceManager {
 	 *
 	 * @param p_class Serivce class to register
 	 */
-	public static void register(final Class<? extends AbstractDXRAMService> p_class) {
+	public void register(final Class<? extends AbstractDXRAMService> p_class) {
 		m_registeredServices.put(p_class.getSimpleName(), p_class);
-	}
-
-	/**
-	 * Register all DXRAM services
-	 */
-	static void registerDefault() {
-		register(AsyncChunkService.class);
-		register(BootService.class);
-		register(ChunkMemoryService.class);
-		register(ChunkService.class);
-		register(LogService.class);
-		register(LoggerService.class);
-		register(LookupService.class);
-		register(MigrationService.class);
-		register(NameserviceService.class);
-		register(NetworkService.class);
-		register(NullService.class);
-		register(PeerLockService.class);
-		register(RecoveryService.class);
-		register(ScriptEngineService.class);
-		register(SynchronizationService.class);
-		register(TerminalService.class);
-		register(TemporaryStorageService.class);
 	}
 
 	/**
@@ -75,7 +52,7 @@ public class DXRAMServiceManager {
 	 * @param p_className Name of the class (without package path)
 	 * @return Instance of the service
 	 */
-	static AbstractDXRAMService createInstance(final String p_className) {
+	AbstractDXRAMService createInstance(final String p_className) {
 
 		Class<? extends AbstractDXRAMService> clazz = m_registeredServices.get(p_className);
 
@@ -91,7 +68,7 @@ public class DXRAMServiceManager {
 	 *
 	 * @return List of instances of all registered services
 	 */
-	static AbstractDXRAMService[] createAllInstances() {
+	AbstractDXRAMService[] createAllInstances() {
 		AbstractDXRAMService[] instances = new AbstractDXRAMService[m_registeredServices.size()];
 		int index = 0;
 

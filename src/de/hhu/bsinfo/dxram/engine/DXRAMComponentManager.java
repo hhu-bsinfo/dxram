@@ -26,14 +26,14 @@ import de.hhu.bsinfo.dxram.term.TerminalComponent;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 21.10.16
  */
-class DXRAMComponentManager {
+public class DXRAMComponentManager {
 
-	private static Map<String, Class<? extends AbstractDXRAMComponent>> m_registeredComponents = new HashMap<>();
+	private Map<String, Class<? extends AbstractDXRAMComponent>> m_registeredComponents = new HashMap<>();
 
 	/**
-	 * Static class
+	 * Constructor
 	 */
-	private DXRAMComponentManager() {
+	DXRAMComponentManager() {
 
 	}
 
@@ -42,30 +42,8 @@ class DXRAMComponentManager {
 	 *
 	 * @param p_class Component class to register
 	 */
-	public static void register(final Class<? extends AbstractDXRAMComponent> p_class) {
+	public void register(final Class<? extends AbstractDXRAMComponent> p_class) {
 		m_registeredComponents.put(p_class.getSimpleName(), p_class);
-	}
-
-	/**
-	 * Register all DXRAM components
-	 */
-	static void registerDefault() {
-		register(BackupComponent.class);
-		register(ZookeeperBootComponent.class);
-		register(ChunkComponent.class);
-		register(EventComponent.class);
-		register(FailureComponent.class);
-		register(PeerLockComponent.class);
-		register(LogComponent.class);
-		register(LoggerComponent.class);
-		register(LookupComponent.class);
-		register(MemoryManagerComponent.class);
-		register(NameserviceComponent.class);
-		register(NetworkComponent.class);
-		register(NullComponent.class);
-		register(ScriptEngineComponent.class);
-		register(StatisticsComponent.class);
-		register(TerminalComponent.class);
 	}
 
 	/**
@@ -74,7 +52,7 @@ class DXRAMComponentManager {
 	 * @param p_className Simple class name (without package path)
 	 * @return Instance of the component
 	 */
-	static AbstractDXRAMComponent createInstance(final String p_className) {
+	AbstractDXRAMComponent createInstance(final String p_className) {
 
 		Class<? extends AbstractDXRAMComponent> clazz = m_registeredComponents.get(p_className);
 
@@ -90,7 +68,7 @@ class DXRAMComponentManager {
 	 *
 	 * @return List of instances of all registered components
 	 */
-	static AbstractDXRAMComponent[] createAllInstances() {
+	AbstractDXRAMComponent[] createAllInstances() {
 		AbstractDXRAMComponent[] instances = new AbstractDXRAMComponent[m_registeredComponents.size()];
 		int index = 0;
 

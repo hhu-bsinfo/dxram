@@ -22,13 +22,16 @@ class DXRAMContextHandler {
 
     private static final String DXRAM_CONFIG_FILE_PATH = "config/dxram.json";
 
+    private DXRAMComponentManager m_componentManager;
+    private DXRAMServiceManager m_serviceManager;
     private DXRAMContext m_context = new DXRAMContext();
 
     /**
      * Constructor
      */
-    DXRAMContextHandler() {
-
+    DXRAMContextHandler(final DXRAMComponentManager p_componentManager, final DXRAMServiceManager p_serviceManager) {
+        m_componentManager = p_componentManager;
+        m_serviceManager = p_serviceManager;
     }
 
     /**
@@ -77,13 +80,9 @@ class DXRAMContextHandler {
             return false;
         }
 
-        // create default components and services
-        DXRAMComponentManager.registerDefault();
-        DXRAMServiceManager.registerDefault();
-
         m_context = new DXRAMContext();
-        m_context.fillDefaultComponents();
-        m_context.fillDefaultServices();
+        m_context.fillDefaultComponents(m_componentManager);
+        m_context.fillDefaultServices(m_serviceManager);
 
         Gson gson = DXRAMGsonContext.createGsonInstance();
         String jsonString = gson.toJson(m_context);
