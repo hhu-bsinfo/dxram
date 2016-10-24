@@ -2,24 +2,14 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import de.hhu.bsinfo.utils.logger.LogDestination;
 import de.hhu.bsinfo.utils.logger.LogDestinationConsole;
 import de.hhu.bsinfo.utils.logger.LogDestinationFile;
@@ -30,14 +20,12 @@ import de.hhu.bsinfo.utils.logger.Logger;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 26.01.16
  */
-
 public class DXRAMEngine implements DXRAMServiceAccessor {
 
 	private static final String DXRAM_ENGINE_LOG_HEADER = DXRAMEngine.class.getSimpleName();
-	private static final String DXRAM_CONFIG_FILE_PATH = "config/dxram.json";
 
-	private DXRAMContext m_context;
-
+	private DXRAMContextHandler m_contextHandler;
+	
 	private boolean m_isInitilized;
 
 	private Logger m_logger;
@@ -57,12 +45,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		T service = null;
 
 		if (m_isInitilized) {
-			AbstractDXRAMService tmpService = m_context.getServices().get(p_class.getName());
+			AbstractDXRAMService tmpService = m_contextHandler.getContext().getServices().get(p_class.getName());
 			if (tmpService == null) {
 				// check for any kind of instance of the specified class
 				// we might have another interface/abstract class between the
 				// class we request and an instance we could serve
-				for (Entry<String, AbstractDXRAMService> entry : m_context.getServices().entrySet()) {
+				for (Entry<String, AbstractDXRAMService> entry : m_contextHandler.getContext().getServices().entrySet()) {
 					tmpService = entry.getValue();
 					if (p_class.isInstance(tmpService)) {
 						break;
@@ -89,7 +77,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	@Override
 	public AbstractDXRAMService getService(final String p_shortName) {
 		if (m_isInitilized) {
-			return m_context.getServices().get(m_servicesShortName.get(p_shortName));
+			return m_contextHandler.getContext().getServices().get(m_servicesShortName.get(p_shortName));
 		}
 
 		return null;
@@ -113,12 +101,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	<T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
 		T component = null;
 
-		AbstractDXRAMComponent tmpComponent = m_context.getComponents().get(p_class.getName());
+		AbstractDXRAMComponent tmpComponent = m_contextHandler.getContext().getComponents().get(p_class.getName());
 		if (tmpComponent == null) {
 			// check for any kind of instance of the specified class
 			// we might have another interface/abstract class between the
 			// class we request and an instance we could serve
-			for (Entry<String, AbstractDXRAMComponent> entry : m_context.getComponents().entrySet()) {
+			for (Entry<String, AbstractDXRAMComponent> entry : m_contextHandler.getContext().getComponents().entrySet()) {
 				tmpComponent = entry.getValue();
 				if (p_class.isInstance(tmpComponent)) {
 					break;
@@ -148,7 +136,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 * @return EngineSettings instance or null if engine is not initialized.
 	 */
 	DXRAMContext.EngineSettings getSettings() {
-		return m_context.getEngineSettings();
+		return m_contextHandler.getContext().getEngineSettings();
 	}
 
 	/**
@@ -189,7 +177,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		}
 
 		// init the short names for the services
-		for (Entry<String, AbstractDXRAMService> service : m_context.getServices().entrySet()) {
+		for (Entry<String, AbstractDXRAMService> service : m_contextHandler.getContext().getServices().entrySet()) {
 			m_servicesShortName.put(service.getValue().getShortName(), service.getKey());
 		}
 
@@ -198,7 +186,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		// #endif /* LOGGER >= INFO */
 
 		// sort list by initialization priority
-		list = new ArrayList<>(m_context.getComponents().values());
+		list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 		comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityInit())).compareTo(p_o2.getPriorityInit());
 		Collections.sort(list, comp);
 
@@ -217,10 +205,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		// #if LOGGER >= INFO
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Initializing components done.");
 		//
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Starting " + m_context.getServices().size() + " services...");
+		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Starting " + m_contextHandler.getContext().getServices().size() + " services...");
 		// #endif /* LOGGER >= INFO */
 
-		for (AbstractDXRAMService service : m_context.getServices().values()) {
+		for (AbstractDXRAMService service : m_contextHandler.getContext().getServices().values()) {
 			if (!service.start(this)) {
 				// #if LOGGER >= ERROR
 				m_logger.error(DXRAM_ENGINE_LOG_HEADER,
@@ -254,10 +242,10 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down engine...");
 		// #endif /* LOGGER >= INFO */
 		// #if LOGGER >= INFO
-		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + m_context.getServices().size() + " services...");
+		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down " + m_contextHandler.getContext().getServices().size() + " services...");
 		// #endif /* LOGGER >= INFO */
 
-		m_context.getServices().values().stream().filter(service -> !service.shutdown()).forEach(service -> {
+		m_contextHandler.getContext().getServices().values().stream().filter(service -> !service.shutdown()).forEach(service -> {
 			// #if LOGGER >= ERROR
 			m_logger.error(DXRAM_ENGINE_LOG_HEADER,
 					"Shutting down service '" + service.getServiceName() + "' failed.");
@@ -269,7 +257,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 		m_logger.info(DXRAM_ENGINE_LOG_HEADER, "Shutting down services done.");
 		// #endif /* LOGGER >= INFO */
 
-		list = new ArrayList<>(m_context.getComponents().values());
+		list = new ArrayList<>(m_contextHandler.getContext().getComponents().values());
 
 		comp = (p_o1, p_o2) -> (new Integer(p_o1.getPriorityShutdown())).compareTo(p_o2.getPriorityShutdown());
 
@@ -289,7 +277,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		m_logger.close();
 
-		m_context = null;
+		m_contextHandler = null;
 
 		m_isInitilized = false;
 
@@ -303,7 +291,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		String config = p_configurationFile;
 
-		m_context = new DXRAMContext();
+		m_contextHandler = new DXRAMContextHandler();
 
 		// check vm arguments for configuration override
 		String configurationOverride = System.getProperty("dxram.config");
@@ -313,12 +301,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 
 		// check if a config needs to be created
 		if (config.isEmpty() || !(new File(config)).exists()) {
-			createDefaultConfiguration(config);
+			m_contextHandler.createDefaultConfiguration(config);
 			return false;
 		}
 
 		// load existing configuration
-		if (!loadConfiguration(config)) {
+		if (!m_contextHandler.loadConfiguration(config)) {
 			return false;
 		}
 
@@ -330,173 +318,19 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	}
 
 	/**
-	 * Create a default configuration file
-	 *
-	 * @param p_configFilePath Path for configuration file
-	 * @return True if creating config file successful, false otherwise
-	 */
-	private boolean createDefaultConfiguration(final String p_configFilePath) {
-
-		System.out.println("No valid configuration found or specified via vm argument -Ddxram.config, "
-				+ "creating default configuration '" + p_configFilePath + "'...");
-
-		String configFilePath;
-
-		if (p_configFilePath.isEmpty()) {
-			configFilePath = DXRAM_CONFIG_FILE_PATH;
-		} else {
-			configFilePath = p_configFilePath;
-		}
-
-		File file = new File(configFilePath);
-		if (file.exists()) {
-			if (!file.delete()) {
-				System.out.println("Deleting existing config file " + file + " failed");
-				return false;
-			}
-		}
-
-		try {
-			if (!file.createNewFile()) {
-				System.out.println("Creating new config file " + file + " failed");
-				return false;
-			}
-		} catch (final IOException e) {
-			System.out.println("Creating new config file " + file + " failed: " + e.getMessage());
-			return false;
-		}
-
-		// create default components and services
-		DXRAMComponentManager.registerDefault();
-		DXRAMServiceManager.registerDefault();
-
-		m_context.fillDefaultComponents();
-		m_context.fillDefaultServices();
-
-		Gson gson = DXRAMGsonContext.createGsonInstance();
-		String jsonString = gson.toJson(m_context);
-
-		try {
-			PrintWriter writer = new PrintWriter(file);
-			writer.print(jsonString);
-			writer.close();
-		} catch (final FileNotFoundException e) {
-			// we can ignored this here, already checked that
-		}
-
-		return true;
-	}
-
-	/**
-	 * Load an existing configuration
-	 *
-	 * @param p_configFilePath Path to existing configuration file
-	 * @return True if loading successful, false on error
-	 */
-	private boolean loadConfiguration(final String p_configFilePath) {
-
-		System.out.println("Loading configuration '" + p_configFilePath + "'...");
-
-		Gson gson = DXRAMGsonContext.createGsonInstance();
-
-		JsonElement element;
-		try {
-			element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
-		} catch (final IOException e) {
-			System.out.println("Could not load configuration '" + p_configFilePath + "': " + e.getMessage());
-			return false;
-		}
-
-		overrideConfigurationWithVMArguments(element.getAsJsonObject());
-
-		m_context = gson.fromJson(element, DXRAMContext.class);
-
-		return true;
-	}
-
-	/**
-	 * Override current configuration with further values provided via VM arguments
-	 *
-	 * @param p_object Root object of JSON configuration tree
-	 */
-	private void overrideConfigurationWithVMArguments(final JsonObject p_object) {
-
-		Properties props = System.getProperties();
-		Enumeration e = props.propertyNames();
-
-		while (e.hasMoreElements()) {
-
-			String key = (String) e.nextElement();
-			if (key.startsWith("dxram.") && !key.equals("dxram.config")) {
-
-				String[] tokens = key.split("\\.");
-
-				JsonObject parent = p_object;
-				JsonObject child = null;
-				// skip dxram token
-				for (int i = 1; i < tokens.length; i++) {
-
-					JsonElement elem = parent.get(tokens[i]);
-
-					// if first element is already invalid
-					if (elem == null) {
-						child = null;
-						break;
-					}
-
-					if (elem.isJsonObject()) {
-						child = elem.getAsJsonObject();
-					} else if (i + 1 == tokens.length) {
-						break;
-					}
-
-					if (child == null) {
-						break;
-					}
-
-					parent = child;
-				}
-
-				if (child == null) {
-					System.out.println("Invalid vm argument '" + key + "'");
-					continue;
-				}
-
-				String propertyKey = props.getProperty(key);
-
-				// try to determine type, not a very nice way =/
-				if (propertyKey.matches(
-						"^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-								+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-								+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-								+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
-					// ip address
-					parent.addProperty(tokens[tokens.length - 1], propertyKey);
-				} else if (propertyKey.matches("[-+]?\\d*\\.?\\d+")) {
-					// numeric
-					parent.addProperty(tokens[tokens.length - 1], Long.parseLong(propertyKey));
-				} else {
-					// string
-					parent.addProperty(tokens[tokens.length - 1], propertyKey);
-				}
-			}
-		}
-	}
-
-	/**
 	 * Setup the logger.
 	 */
 	private void setupLogger() {
 		m_logger = new Logger();
-		m_logger.setLogLevel(m_context.getEngineSettings().getLoggerLevel());
+		m_logger.setLogLevel(m_contextHandler.getContext().getEngineSettings().getLoggerLevel());
 		{
 			final LogDestination logDest = new LogDestinationConsole();
-			m_logger.addLogDestination(logDest, m_context.getEngineSettings().getLoggerLevelConsole());
+			m_logger.addLogDestination(logDest, m_contextHandler.getContext().getEngineSettings().getLoggerLevelConsole());
 		}
 		{
-			final LogDestination logDest = new LogDestinationFile(m_context.getEngineSettings().getLoggerFilePath(),
-					m_context.getEngineSettings().loggerFileBackUpOld());
-			m_logger.addLogDestination(logDest, m_context.getEngineSettings().getLoggerFileLevel());
+			final LogDestination logDest = new LogDestinationFile(m_contextHandler.getContext().getEngineSettings().getLoggerFilePath(),
+					m_contextHandler.getContext().getEngineSettings().loggerFileBackUpOld());
+			m_logger.addLogDestination(logDest, m_contextHandler.getContext().getEngineSettings().getLoggerFileLevel());
 		}
 	}
 
@@ -505,6 +339,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor {
 	 */
 	private void setupJNI() {
 		m_jniManager = new DXRAMJNIManager(m_logger);
-		m_jniManager.setup(m_context.getEngineSettings());
+		m_jniManager.setup(m_contextHandler.getContext().getEngineSettings());
 	}
 }
