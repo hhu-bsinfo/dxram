@@ -9,7 +9,7 @@
 /cmd_*
 *.DS_Store
 log.txt
-/.idea
+.idea
 *.swp
 /DXRAM.jar
 /dxram.iml
