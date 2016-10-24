@@ -37,7 +37,7 @@ import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
-import de.hhu.bsinfo.utils.StorageUnit;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.Tools;
 
 /**

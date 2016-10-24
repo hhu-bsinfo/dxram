@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
-import de.hhu.bsinfo.utils.StorageUnit;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Component for finding chunks in superpeer overlay.

@@ -12,7 +12,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
-import de.hhu.bsinfo.utils.StorageUnit;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Gson context for DXRAM handling serialization and deserialization of components and services

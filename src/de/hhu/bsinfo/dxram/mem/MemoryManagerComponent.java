@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.soh.SmallObjectHeap;
 import de.hhu.bsinfo.soh.SmallObjectHeapSegment;
 import de.hhu.bsinfo.soh.StorageUnsafeMemory;
-import de.hhu.bsinfo.utils.StorageUnit;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Interface to access the local heap. Features for migration

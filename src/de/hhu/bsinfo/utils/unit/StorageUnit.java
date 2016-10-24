@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.utils;
+package de.hhu.bsinfo.utils.unit;
 
 /**
  * Wrapper for handling and converting storage units (byte, kb, mb, gb, tb)

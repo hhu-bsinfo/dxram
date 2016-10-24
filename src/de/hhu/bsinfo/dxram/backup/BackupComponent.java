@@ -26,7 +26,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.messages.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
-import de.hhu.bsinfo.utils.StorageUnit;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 
 /**
  * Component for managing backup ranges.
