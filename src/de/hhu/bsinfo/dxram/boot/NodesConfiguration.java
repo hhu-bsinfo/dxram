@@ -4,6 +4,7 @@ package de.hhu.bsinfo.dxram.boot;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
+import de.hhu.bsinfo.utils.unit.IPV4Unit;
 
 /**
  * Represents a nodes configuration for DXRAM. This also holds any information
@@ -116,9 +117,7 @@ public final class NodesConfiguration {
 
 		// configuration values
 		@Expose
-		private String m_ip = "127.0.0.1";
-		@Expose
-		private int m_port = 22222;
+		private IPV4Unit m_address = new IPV4Unit("127.0.0.1", 22222);
 		@Expose
 		private NodeRole m_role = NodeRole.PEER;
 		@Expose
@@ -132,23 +131,19 @@ public final class NodesConfiguration {
 		/**
 		 * Creates an instance of NodesConfigurationEntry
 		 *
-		 * @param p_ip           the ip of the node
-		 * @param p_port         the port of the node
+		 * @param p_address		 addres of the node
 		 * @param p_rack         the rack of the node
 		 * @param p_switch       the switcharea of the node
 		 * @param p_role         the role of the node
 		 * @param p_readFromFile whether this node's information was read from nodes file or not
 		 */
-		NodeEntry(final String p_ip, final int p_port, final short p_rack, final short p_switch,
+		NodeEntry(final IPV4Unit p_address, final short p_rack, final short p_switch,
 				final NodeRole p_role, final boolean p_readFromFile) {
-			assert p_ip != null;
-			assert p_port > 0 && p_port < 65536;
 			assert p_rack >= 0;
 			assert p_switch >= 0;
 			assert p_role != null;
 
-			m_ip = p_ip;
-			m_port = p_port;
+			m_address = p_address;
 			m_rack = p_rack;
 			m_switch = p_switch;
 			m_role = p_role;
@@ -156,21 +151,12 @@ public final class NodesConfiguration {
 		}
 
 		/**
-		 * Gets the ip of the node
+		 * Gets the address of the node
 		 *
-		 * @return the ip of the node
+		 * @return the address of the node
 		 */
-		public String getIP() {
-			return m_ip;
-		}
-
-		/**
-		 * Gets the port of the node
-		 *
-		 * @return the port of the node
-		 */
-		public int getPort() {
-			return m_port;
+		public IPV4Unit getAddress() {
+			return m_address;
 		}
 
 		/**
@@ -211,7 +197,7 @@ public final class NodesConfiguration {
 
 		@Override
 		public String toString() {
-			return "NodesConfigurationEntry [m_ip=" + m_ip + ", m_port=" + m_port + ", m_rack=" + m_rack + ", m_switch="
+			return "NodesConfigurationEntry [m_address=" + m_address + ", m_rack=" + m_rack + ", m_switch="
 					+ m_switch + ", m_role=" + m_role.getAcronym() + (m_readFromFile == 1 ? "true" : "false") + "]";
 		}
 

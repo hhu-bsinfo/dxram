@@ -2,6 +2,8 @@ package de.hhu.bsinfo.utils.unit;
 
 import com.google.gson.annotations.Expose;
 
+import java.net.InetSocketAddress;
+
 /**
  * Wrapper for handling an IPV4 address
  *
@@ -10,7 +12,7 @@ import com.google.gson.annotations.Expose;
 public class IPV4Unit {
 
     @Expose
-    private String m_address = "255.255.255.255";
+    private String m_ip = "255.255.255.255";
     @Expose
     private int m_port = 65535;
 
@@ -24,11 +26,11 @@ public class IPV4Unit {
     /**
      * Constructor
      *
-     * @param p_address IPV4 address, format xxx.xxx.xxx.xxx
+     * @param p_ip IPV4 address, format xxx.xxx.xxx.xxx
      * @param p_port Port
      */
-    public IPV4Unit(final String p_address, final int p_port) {
-        m_address = p_address;
+    public IPV4Unit(final String p_ip, final int p_port) {
+        m_ip = p_ip;
         m_port = p_port;
     }
 
@@ -36,8 +38,8 @@ public class IPV4Unit {
      * Get the ip address as a string
      * @return IP address as string
      */
-    public String getAddress() {
-        return m_address;
+    public String getIP() {
+        return m_ip;
     }
 
     /**
@@ -54,6 +56,35 @@ public class IPV4Unit {
      * @return Ip address and port as string
      */
     public String getAddressStr() {
-        return m_address + ":" + m_port;
+        return m_ip + ":" + m_port;
+    }
+
+    /**
+     * Get as InetSocketAddress object
+     *
+     * @return InetSocketAddress
+     */
+    public InetSocketAddress getInetSocketAddress() {
+        return new InetSocketAddress(m_ip, m_port);
+    }
+
+    @Override
+    public String toString() {
+        return getAddressStr();
+    }
+
+    @Override
+    public boolean equals(final Object p_obj) {
+        if (!(p_obj instanceof IPV4Unit)) {
+            return false;
+        }
+
+        if (p_obj == this) {
+            return true;
+        }
+
+        IPV4Unit obj = (IPV4Unit) p_obj;
+
+        return m_ip.equals(obj.getIP()) && m_port == obj.getPort();
     }
 }

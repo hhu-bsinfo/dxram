@@ -6,6 +6,7 @@ import java.util.Map;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.utils.logger.LogLevel;
+import de.hhu.bsinfo.utils.unit.IPV4Unit;
 
 /**
  * Context object with settings for the engine as well as component and service instances
@@ -80,9 +81,7 @@ public class DXRAMContext {
 	public static class EngineSettings {
 
 		@Expose
-		private String m_ip = "127.0.0.1";
-		@Expose
-		private int m_port = 22222;
+		private IPV4Unit m_address = new IPV4Unit("127.0.0.1", 22222);
 		@Expose
 		private String m_role = "Peer";
 		@Expose
@@ -106,21 +105,12 @@ public class DXRAMContext {
 		}
 
         /**
-         * IP address assigned for this DXRAM instance
+         * Get the address assigned to the DXRAM instance
          *
-         * @return IP address
+         * @return Address
          */
-		public String getIp() {
-			return m_ip;
-		}
-
-        /**
-         * Port assigned for this DXRAM instance
-         *
-         * @return Port
-         */
-		public int getPort() {
-			return m_port;
+		public IPV4Unit getAddress() {
+			return m_address;
 		}
 
         /**
