@@ -19,6 +19,7 @@ import de.hhu.bsinfo.utils.BloomFilter;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -38,7 +39,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	@Expose
 	private String m_connectionString = "127.0.0.1:2181";
 	@Expose
-	private int m_timeout = 10000;
+	private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
 	@Expose
 	private int m_zookeeperBitfieldSize = 256 * 1024;
 	@Expose
@@ -86,7 +87,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		m_logger.info(getClass(), "Initializing with ip " + m_ownIP + ", port " + m_ownPort + ", role " + role);
 		// #endif /* LOGGER >= INFO */
 
-		m_zookeeper = new ZooKeeperHandler(m_path, m_connectionString, m_timeout, m_logger);
+		m_zookeeper = new ZooKeeperHandler(m_path, m_connectionString, (int) m_timeout.getMs(), m_logger);
 		m_isStarting = true;
 
 		m_nodes = new NodesConfiguration();
