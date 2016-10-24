@@ -29,6 +29,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.utils.Cache;
 import de.hhu.bsinfo.utils.Pair;
+import de.hhu.bsinfo.utils.StorageUnit;
 
 /**
  * Component for finding chunks in superpeer overlay.
@@ -55,7 +56,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 	@Expose
 	private int m_storageMaxNumEntries = 1000;
 	@Expose
-	private int m_storageMaxSizeBytes = 32 * 1024 * 1024;
+    private StorageUnit m_storageMaxSize = new StorageUnit(32, StorageUnit.UNIT_MB);
 
 	// dependent components
 	private AbstractBootComponent m_boot;
@@ -816,7 +817,7 @@ public class LookupComponent extends AbstractDXRAMComponent implements EventList
 					m_pingInterval,
 					m_maxBarriersPerSuperpeer,
 					m_storageMaxNumEntries,
-					m_storageMaxSizeBytes,
+                    (int) m_storageMaxSize.getBytes(),
 					m_boot,
 					m_logger,
 					getDependentComponent(NetworkComponent.class), getDependentComponent(EventComponent.class));
