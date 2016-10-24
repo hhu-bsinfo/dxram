@@ -71,7 +71,7 @@ public class StorageUnit {
     }
 
     /**
-     * Prase the value with the specified unit
+     * Parse the value with the specified unit
      *
      * @param p_value Value
      * @param p_unit Unit of the value
