@@ -7,6 +7,12 @@ package de.hhu.bsinfo.utils;
  */
 public class StorageUnit {
 
+    public static final String UNIT_BYTE = "b";
+    public static final String UNIT_KB = "kb";
+    public static final String UNIT_MB = "mb";
+    public static final String UNIT_GB = "gb";
+    public static final String UNIT_TB = "tb";
+
     private long m_bytes;
 
     /**
@@ -72,19 +78,19 @@ public class StorageUnit {
      */
     private void parse(final long p_value, final String p_unit) {
         switch (p_unit) {
-            case "kb":
+            case UNIT_KB:
                 m_bytes = p_value * 1024;
                 break;
-            case "mb":
+            case UNIT_MB:
                 m_bytes = p_value * 1024 * 1024;
                 break;
-            case "gb":
+            case UNIT_GB:
                 m_bytes = p_value * 1024 * 1024 * 1024;
                 break;
-            case "tb":
+            case UNIT_TB:
                 m_bytes = p_value * 1024 * 1024 * 1024 * 1024;
                 break;
-            case "b":
+            case UNIT_BYTE:
             default:
                 m_bytes = p_value;
                 break;
