@@ -47,6 +47,7 @@ import de.hhu.bsinfo.utils.serialization.Exportable;
 import de.hhu.bsinfo.utils.serialization.Exporter;
 import de.hhu.bsinfo.utils.serialization.Importable;
 import de.hhu.bsinfo.utils.serialization.Importer;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * DXRAM service providing a master slave based distributed task execution framework for computation on DXRAM.
@@ -61,7 +62,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	@Expose
 	private short m_computeGroupId = 0;
 	@Expose
-	private int m_pingIntervalMs = 1000;
+	private TimeUnit m_pingInterval = new TimeUnit(1, TimeUnit.SEC);
 
 	// dependent components
 	private NetworkComponent m_network;
@@ -415,13 +416,13 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 		switch (ComputeRole.toComputeRole(m_role)) {
 			case MASTER:
-				m_computeMSInstance = new ComputeMaster(m_computeGroupId, m_pingIntervalMs, getServiceAccessor(),
+				m_computeMSInstance = new ComputeMaster(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(),
 						m_network, m_logger, m_nameservice, m_boot, lookup);
 				break;
 			case SLAVE:
 				m_computeMSInstance =
-						new ComputeSlave(m_computeGroupId, m_pingIntervalMs, getServiceAccessor(), m_network, m_logger,
-								m_nameservice, m_boot, lookup);
+						new ComputeSlave(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(),
+								m_network, m_logger, m_nameservice, m_boot, lookup);
 				break;
 			case NONE:
 				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
