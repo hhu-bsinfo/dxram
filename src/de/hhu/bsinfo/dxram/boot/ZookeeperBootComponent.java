@@ -19,6 +19,7 @@ import de.hhu.bsinfo.utils.BloomFilter;
 import de.hhu.bsinfo.utils.CRC16;
 import de.hhu.bsinfo.utils.ZooKeeperHandler;
 import de.hhu.bsinfo.utils.ZooKeeperHandler.ZooKeeperException;
+import de.hhu.bsinfo.utils.unit.StorageUnit;
 import de.hhu.bsinfo.utils.unit.TimeUnit;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -41,7 +42,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 	@Expose
 	private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
 	@Expose
-	private int m_zookeeperBitfieldSize = 256 * 1024;
+	private StorageUnit m_zookeeperBitfieldSize = new StorageUnit(256, StorageUnit.KB);
 	@Expose
 	// we can't use the NodesConfiguration class with the configuration because the nodes in that class
 	// are already mapped to their node ids
@@ -505,7 +506,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 		boolean parsed = false;
 
 		m_hashGenerator = new CRC16();
-		m_bloomFilter = new BloomFilter(m_zookeeperBitfieldSize, 65536);
+		m_bloomFilter = new BloomFilter((int) m_zookeeperBitfieldSize.getBytes(), 65536);
 
 		barrier = "barrier";
 
