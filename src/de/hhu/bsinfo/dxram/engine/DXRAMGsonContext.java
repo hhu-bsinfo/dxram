@@ -12,7 +12,9 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import de.hhu.bsinfo.dxram.util.StorageUnitGsonSerializer;
+import de.hhu.bsinfo.dxram.util.TimeUnitGsonSerializer;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Gson context for DXRAM handling serialization and deserialization of components and services
@@ -31,6 +33,8 @@ class DXRAMGsonContext {
 						new ServiceSerializer())
 				.registerTypeAdapter(StorageUnit.class,
 						new StorageUnitGsonSerializer())
+				.registerTypeAdapter(TimeUnit.class,
+						new TimeUnitGsonSerializer())
 				.create();
 	}
 
