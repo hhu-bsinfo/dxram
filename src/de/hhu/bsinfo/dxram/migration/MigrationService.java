@@ -13,8 +13,8 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.data.Chunk;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -312,15 +312,18 @@ public class MigrationService extends AbstractDXRAMService implements MessageRec
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_backup = getComponent(BackupComponent.class);
-		m_chunk = getComponent(ChunkComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+		m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_migrationLock = new ReentrantLock(false);
 
 		registerNetworkMessages();

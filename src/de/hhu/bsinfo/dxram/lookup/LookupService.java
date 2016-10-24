@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeRequest;
@@ -28,7 +28,6 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
  *
  * @author Mike Birkhoff
  */
-
 public class LookupService extends AbstractDXRAMService implements MessageReceiver {
 
 	// dependent components
@@ -46,14 +45,16 @@ public class LookupService extends AbstractDXRAMService implements MessageReceiv
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+	}
+
+	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_backup = getComponent(BackupComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 

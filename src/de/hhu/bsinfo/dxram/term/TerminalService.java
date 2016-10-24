@@ -11,8 +11,8 @@ import java.io.IOException;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.ethnet.NodeID;
@@ -182,11 +182,14 @@ public class TerminalService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_logger = getComponent(LoggerComponent.class);
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_terminal = getComponent(TerminalComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_terminal = p_componentAccessor.getComponent(TerminalComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		if (m_boot.getNodeRole() == NodeRole.TERMINAL) {
 			loadHistoryFromFile("dxram_term_history");
 		}
@@ -196,10 +199,6 @@ public class TerminalService extends AbstractDXRAMService {
 
 	@Override
 	protected boolean shutdownService() {
-		m_logger = null;
-		m_boot = null;
-		m_terminal = null;
-
 		if (m_historyFile != null) {
 			try {
 				m_historyFile.close();

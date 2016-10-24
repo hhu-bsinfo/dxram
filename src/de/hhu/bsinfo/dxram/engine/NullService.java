@@ -16,6 +16,11 @@ public class NullService extends AbstractDXRAMService {
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		// no dependencies
+	}
+
+	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineSettings) {
 		return true;
 	}

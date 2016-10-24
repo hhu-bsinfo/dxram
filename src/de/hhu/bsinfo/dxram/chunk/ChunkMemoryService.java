@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.chunk;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
@@ -35,11 +36,14 @@ public class ChunkMemoryService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		return true;
 	}
 

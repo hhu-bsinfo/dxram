@@ -65,6 +65,8 @@ public abstract class AbstractDXRAMService {
 		m_parentEngine.getLogger().info(this.getClass().getSimpleName(), "Starting service...");
 		// #endif /* LOGGER >= INFO */
 
+		resolveComponentDependencies(p_engine);
+
 		try {
 			ret = startService(m_parentEngine.getSettings());
 		} catch (final Exception e) {
@@ -114,16 +116,11 @@ public abstract class AbstractDXRAMService {
 	}
 
 	/**
-	 * Get a component from the engine.
+	 * Called before the service is initialized. Get all the components your service depends on.
 	 *
-	 * @param <T>     Class implementing DXRAMComponent
-	 * @param p_class Class of the component to get. If a component has multiple implementations, always use the base
-	 *                class/interface here.
-	 * @return Reference to the component requested or null if not available/enabled.
+	 * @param p_componentAccessor Component accessor that provides access to the components
 	 */
-	protected <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
-		return m_parentEngine.getComponent(p_class);
-	}
+	protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
 	/**
 	 * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.

@@ -7,8 +7,8 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.nameservice.messages.ForwardRegisterMessage;
 import de.hhu.bsinfo.dxram.nameservice.messages.NameserviceMessages;
@@ -140,12 +140,15 @@ public class NameserviceService extends AbstractDXRAMService implements MessageR
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_nameservice = getComponent(NameserviceComponent.class);
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_network.registerMessageType(DXRAMMessageTypes.NAMESERVICE_MESSAGES_TYPE,
 				NameserviceMessages.SUBTYPE_REGISTER_MESSAGE,
 				ForwardRegisterMessage.class);

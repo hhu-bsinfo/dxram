@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.lock.AbstractLockComponent;
@@ -58,18 +59,20 @@ public class AsyncChunkService extends AbstractDXRAMService implements MessageRe
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-		m_lock = getComponent(AbstractLockComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
 		// #ifdef STATISTICS
-		m_statistics = getComponent(StatisticsComponent.class);
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
-		getComponent(TerminalComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 		// #ifdef STATISTICS

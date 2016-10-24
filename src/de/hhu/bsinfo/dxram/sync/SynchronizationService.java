@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxram.sync;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -78,16 +79,17 @@ public class SynchronizationService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_lookup = getComponent(LookupComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownService() {
-		m_lookup = null;
-
 		return true;
 	}
 }

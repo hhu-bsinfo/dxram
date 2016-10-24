@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.DefaultPrimLogEntryHeader;
@@ -75,6 +76,9 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	// dependent components
 	private NetworkComponent m_network;
 	private LoggerComponent m_logger;
+	private AbstractBootComponent m_boot;
+	private LogComponent m_log;
+	private BackupComponent m_backup;
 
 	// private state
 	private short m_nodeID;
@@ -294,22 +298,29 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_log = p_componentAccessor.getComponent(LogComponent.class);
+		m_backup = p_componentAccessor.getComponent(BackupComponent.class);
+	}
+
+	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_network = getComponent(NetworkComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
+
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
-		m_loggingIsActive = (getComponent(AbstractBootComponent.class).getNodeRole() == NodeRole.PEER)
-				&& getComponent(BackupComponent.class).isActive();
+		m_loggingIsActive = (m_boot.getNodeRole() == NodeRole.PEER) && m_backup.isActive();
 		if (m_loggingIsActive) {
 
-			m_nodeID = getComponent(AbstractBootComponent.class).getNodeID();
+			m_nodeID = m_boot.getNodeID();
 
-			m_backupDirectory = getComponent(BackupComponent.class).getBackupDirectory();
+			m_backupDirectory = m_backup.getBackupDirectory();
 
 			// Set attributes of log component that can only be set by log service
-			getComponent(LogComponent.class).setAttributes(this, m_backupDirectory, m_useChecksum,
+			m_log.setAttributes(this, m_backupDirectory, m_useChecksum,
 					m_secondaryLogSize.getBytes(), (int) m_logSegmentSize.getBytes());
 
 			// Set the log entry header crc size (must be called before the first log entry header is created)

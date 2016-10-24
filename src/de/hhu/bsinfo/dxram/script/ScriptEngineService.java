@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.script;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 
@@ -70,18 +71,17 @@ public class ScriptEngineService extends AbstractDXRAMService {
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_scriptEngine = p_componentAccessor.getComponent(ScriptEngineComponent.class);
+	}
+
+	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-		m_scriptEngine = getComponent(ScriptEngineComponent.class);
-
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownService() {
-
-		m_scriptEngine = null;
-
 		return true;
 	}
 }

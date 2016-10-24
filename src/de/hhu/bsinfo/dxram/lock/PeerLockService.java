@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -53,23 +54,28 @@ public class PeerLockService extends AbstractLockService implements MessageRecei
 	private AbstractLockComponent m_lock;
 	private LookupComponent m_lookup;
 	private StatisticsComponent m_statistics;
+	private EventComponent m_event;
 
 	private LockStatisticsRecorderIDs m_statisticsRecorderIDs;
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+		m_lock = p_componentAccessor.getComponent(AbstractLockComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+		// #ifdef STATISTICS
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
+		// #endif /* STATISTICS */
+		m_event = p_componentAccessor.getComponent(EventComponent.class);
+	}
+
+	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_network = getComponent(NetworkComponent.class);
-		m_memoryManager = getComponent(MemoryManagerComponent.class);
-		m_lock = getComponent(AbstractLockComponent.class);
-		m_lookup = getComponent(LookupComponent.class);
-		// #ifdef STATISTICS
-		m_statistics = getComponent(StatisticsComponent.class);
-		// #endif /* STATISTICS */
-
-		getComponent(EventComponent.class).registerListener(this, NodeFailureEvent.class);
+		m_event.registerListener(this, NodeFailureEvent.class);
 
 		m_network.registerMessageType(DXRAMMessageTypes.LOCK_MESSAGES_TYPE, LockMessages.SUBTYPE_LOCK_REQUEST,
 				LockRequest.class);

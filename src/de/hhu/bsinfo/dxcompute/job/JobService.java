@@ -16,8 +16,8 @@ import de.hhu.bsinfo.dxcompute.job.messages.StatusRequest;
 import de.hhu.bsinfo.dxcompute.job.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkErrorCodes;
@@ -304,15 +304,18 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 	// --------------------------------------------------------------------------------------------
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_job = getComponent(AbstractJobComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_job = p_componentAccessor.getComponent(AbstractJobComponent.class);
 		// #ifdef STATISTICS
-		m_statistics = getComponent(StatisticsComponent.class);
+		m_statistics = p_componentAccessor.getComponent(StatisticsComponent.class);
 		// #endif /* STATISTICS */
-		m_network = getComponent(NetworkComponent.class);
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		registerNetworkMessages();
 		registerNetworkMessageListener();
 
@@ -327,12 +330,6 @@ public class JobService extends AbstractDXRAMService implements MessageReceiver,
 
 	@Override
 	protected boolean shutdownService() {
-		m_boot = null;
-		m_logger = null;
-		m_job = null;
-		m_statistics = null;
-		m_network = null;
-
 		return true;
 	}
 

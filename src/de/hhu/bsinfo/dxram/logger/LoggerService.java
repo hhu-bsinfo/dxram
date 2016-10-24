@@ -3,6 +3,7 @@ package de.hhu.bsinfo.dxram.logger;
 
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
@@ -215,11 +216,14 @@ public class LoggerService extends AbstractDXRAMService implements MessageReceiv
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_network = getComponent(NetworkComponent.class);
-		m_boot = getComponent(AbstractBootComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE,
 				LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE,
 				SetLogLevelMessage.class);

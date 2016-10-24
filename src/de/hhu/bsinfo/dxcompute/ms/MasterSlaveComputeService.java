@@ -32,8 +32,8 @@ import de.hhu.bsinfo.dxcompute.ms.tasks.WaitTaskPayload;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.dxram.logger.LoggerComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
@@ -69,6 +69,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	private NameserviceComponent m_nameservice;
 	private LoggerComponent m_logger;
 	private AbstractBootComponent m_boot;
+	private LookupComponent m_lookup;
 
 	private AbstractComputeMSBase m_computeMSInstance;
 
@@ -382,14 +383,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 	}
 
 	@Override
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+		m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
+		m_logger = p_componentAccessor.getComponent(LoggerComponent.class);
+		m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+		m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+	}
+
+	@Override
 	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-
-		m_network = getComponent(NetworkComponent.class);
-		m_nameservice = getComponent(NameserviceComponent.class);
-		m_logger = getComponent(LoggerComponent.class);
-		m_boot = getComponent(AbstractBootComponent.class);
-		LookupComponent lookup = getComponent(LookupComponent.class);
-
 		m_network.registerMessageType(DXComputeMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
 				MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST,
 				SubmitTaskRequest.class);
@@ -417,16 +420,16 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 		switch (ComputeRole.toComputeRole(m_role)) {
 			case MASTER:
 				m_computeMSInstance = new ComputeMaster(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(),
-						m_network, m_logger, m_nameservice, m_boot, lookup);
+						m_network, m_logger, m_nameservice, m_boot, m_lookup);
 				break;
 			case SLAVE:
 				m_computeMSInstance =
 						new ComputeSlave(m_computeGroupId, m_pingInterval.getMs(), getServiceAccessor(),
-								m_network, m_logger, m_nameservice, m_boot, lookup);
+								m_network, m_logger, m_nameservice, m_boot, m_lookup);
 				break;
 			case NONE:
 				m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_logger,
-						m_nameservice, m_boot, lookup);
+						m_nameservice, m_boot, m_lookup);
 				break;
 			default:
 				assert 1 == 2;
@@ -444,10 +447,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService implements M
 
 	@Override
 	protected boolean shutdownService() {
-		m_network = null;
-		m_nameservice = null;
-		m_logger = null;
-
 		m_computeMSInstance.shutdown();
 		m_computeMSInstance = null;
 

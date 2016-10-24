@@ -2,6 +2,7 @@
 package de.hhu.bsinfo.dxram.net;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceManager;
 import de.hhu.bsinfo.ethnet.AbstractMessage;
@@ -78,16 +79,17 @@ public class NetworkService extends AbstractDXRAMService {
 	}
 
 	@Override
-	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
-		m_network = getComponent(NetworkComponent.class);
+	protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+		m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+	}
 
+	@Override
+	protected boolean startService(final DXRAMContext.EngineSettings p_engineEngineSettings) {
 		return true;
 	}
 
 	@Override
 	protected boolean shutdownService() {
-		m_network = null;
-
 		return true;
 	}
 
