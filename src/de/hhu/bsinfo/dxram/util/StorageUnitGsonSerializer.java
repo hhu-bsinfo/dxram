@@ -23,7 +23,14 @@ public class StorageUnitGsonSerializer implements JsonDeserializer<StorageUnit>,
 
         JsonObject jsonObj = p_jsonElement.getAsJsonObject();
         long value = jsonObj.get("m_value").getAsLong();
-        String unit = jsonObj.get("m_unit").getAsString();
+
+        JsonElement unitElem = jsonObj.get("m_unit");
+        String unit;
+        if (unitElem == null) {
+            unit = StorageUnit.UNIT_BYTE;
+        } else {
+            unit = unitElem.getAsString();
+        }
 
         return new StorageUnit(value, unit);
     }
