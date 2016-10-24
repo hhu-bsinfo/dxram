@@ -7,11 +7,12 @@ import de.hhu.bsinfo.utils.args.ArgumentListParser;
 import de.hhu.bsinfo.utils.args.DefaultArgumentListParser;
 
 /**
- * Framwork for application execution with easier to handle argument list.
+ * Framework for application execution with easier to handle argument list.
+ *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 03.02.16
  */
 public abstract class AbstractMain {
-	private String m_description = new String();
+	private String m_description = "";
 	private ArgumentList m_arguments = new ArgumentList();
 	private ArgumentListParser m_argumentsParser = new DefaultArgumentListParser();
 
