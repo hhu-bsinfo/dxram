@@ -24,6 +24,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.ethnet.RequestMap;
 import de.hhu.bsinfo.utils.unit.StorageUnit;
+import de.hhu.bsinfo.utils.unit.TimeUnit;
 
 /**
  * Access to the network interface to send messages or requests
@@ -47,7 +48,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	@Expose
     private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.MB);
 	@Expose
-	private int m_requestTimeoutMs = 333;
+	private TimeUnit m_requestTimeout = new TimeUnit(333, TimeUnit.MS);
 
 	// dependent components
 	private LoggerComponent m_logger;
@@ -173,7 +174,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 			m_logger.trace(getClass(), "Waiting for response to request: " + p_request);
 			// #endif /* LOGGER == TRACE */
 
-			if (!p_request.waitForResponses(m_requestTimeoutMs)) {
+			if (!p_request.waitForResponses((int) m_requestTimeout.getMs())) {
 				// #if LOGGER >= ERROR
 				m_logger.error(this.getClass(),
 						"Sending sync, waiting for responses " + p_request + " failed, timeout.");
@@ -272,7 +273,7 @@ public class NetworkComponent extends AbstractDXRAMComponent {
                 (int) m_outgoingBufferSize.getBytes(),
 				m_numberOfPendingBuffersPerConnection,
                 (int) m_flowControlWindowSize.getBytes(),
-				m_requestTimeoutMs);
+                (int) m_requestTimeout.getMs());
 
 		m_networkHandler.registerMessageType(DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE,
 				DefaultMessages.SUBTYPE_DEFAULT_MESSAGE, DefaultMessage.class);
