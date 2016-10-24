@@ -729,11 +729,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent implements Wat
 
 				if (nodeID == m_nodes.getOwnNodeID()) {
 					// NodeID was already re-used
-					m_nodes.setOwnNodeID(NodesConfiguration.INVALID_NODE_ID);
+					m_nodes.setOwnNodeID(NodeID.INVALID_ID);
 				}
 			}
 
-			if (m_nodes.getOwnNodeID() == NodesConfiguration.INVALID_NODE_ID) {
+			if (m_nodes.getOwnNodeID() == NodeID.INVALID_ID) {
 				// Add this node if it was not in start configuration
 				// #if LOGGER >= WARN
 				m_logger.warn(this.getClass(), "node not in nodes.config (" + m_ownIP + ", " + m_ownPort + ")");

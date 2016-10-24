@@ -14,12 +14,9 @@ import de.hhu.bsinfo.ethnet.NodeID;
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 9.12.15
  */
 public final class NodesConfiguration {
-
-	public static final int MAX_NODE_ID = 65535;
-	public static final short INVALID_NODE_ID = -1;
-
-	private NodeEntry[] m_nodes = new NodeEntry[MAX_NODE_ID + 1];
-	private short m_ownID = INVALID_NODE_ID;
+	
+	private NodeEntry[] m_nodes = new NodeEntry[NodeID.MAX_ID + 1];
+	private short m_ownID = NodeID.INVALID_ID;
 
 	/**
 	 * Creates an instance of NodesConfiguration
