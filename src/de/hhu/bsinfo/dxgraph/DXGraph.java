@@ -3,10 +3,15 @@ package de.hhu.bsinfo.dxgraph;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxcompute.DXCompute;
 import de.hhu.bsinfo.dxcompute.job.AbstractJob;
+import de.hhu.bsinfo.dxcompute.ms.TaskPayloadManager;
+import de.hhu.bsinfo.dxgraph.algo.bfs.GraphAlgorithmBFSTaskPayload;
 import de.hhu.bsinfo.dxgraph.data.Edge;
 import de.hhu.bsinfo.dxgraph.data.Vertex;
-import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxgraph.load.GraphLoadBFSRootListTaskPayload;
+import de.hhu.bsinfo.dxgraph.load.GraphLoadOrderedEdgeListTaskPayload;
+import de.hhu.bsinfo.dxgraph.load.GraphLoadPartitionIndexTaskPayload;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -23,7 +28,7 @@ import de.hhu.bsinfo.utils.serialization.Importer;
  *
  * @author Stefan Nothaas <stefan.nothaas@hhu.de> 09.09.16
  */
-public class DXGraph extends DXRAM {
+public class DXGraph extends DXCompute {
 
 	private ChunkService m_chunkService;
 
@@ -36,6 +41,15 @@ public class DXGraph extends DXRAM {
 
 	@Override
 	protected void postInit() {
+		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
+				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_PART_INDEX, GraphLoadPartitionIndexTaskPayload.class);
+		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
+				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_OEL, GraphLoadOrderedEdgeListTaskPayload.class);
+		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
+				GraphTaskPayloads.SUBTYPE_GRAPH_LOAD_BFS_ROOTS, GraphLoadBFSRootListTaskPayload.class);
+		TaskPayloadManager.registerTaskPayloadClass(GraphTaskPayloads.TYPE,
+				GraphTaskPayloads.SUBTYPE_GRAPH_ALGO_BFS, GraphAlgorithmBFSTaskPayload.class);
+
 		m_chunkService = m_engine.getService(ChunkService.class);
 	}
 
