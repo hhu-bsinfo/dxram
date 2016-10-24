@@ -41,7 +41,7 @@ public class BackupComponent extends AbstractDXRAMComponent implements EventList
 	@Expose
 	private String m_backupDirectory = "./log/";
 	@Expose
-	private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.UNIT_MB);
+	private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.MB);
 	@Expose
 	private short m_replicationFactor = 3;
 

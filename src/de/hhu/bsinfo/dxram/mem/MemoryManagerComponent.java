@@ -35,7 +35,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent impleme
 
 	// configuration values
 	@Expose
-	private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.UNIT_MB);
+	private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
 
 	// dependent components
 	private AbstractBootComponent m_boot;

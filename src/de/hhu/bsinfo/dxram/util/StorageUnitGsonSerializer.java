@@ -27,7 +27,7 @@ public class StorageUnitGsonSerializer implements JsonDeserializer<StorageUnit>,
         JsonElement unitElem = jsonObj.get("m_unit");
         String unit;
         if (unitElem == null) {
-            unit = StorageUnit.UNIT_BYTE;
+            unit = StorageUnit.BYTE;
         } else {
             unit = unitElem.getAsString();
         }
@@ -42,7 +42,7 @@ public class StorageUnitGsonSerializer implements JsonDeserializer<StorageUnit>,
         JsonObject jsonObj = new JsonObject();
 
         jsonObj.addProperty("m_value", p_storageUnit.getBytes());
-        jsonObj.addProperty("m_unit", StorageUnit.UNIT_BYTE);
+        jsonObj.addProperty("m_unit", StorageUnit.BYTE);
 
         return jsonObj;
     }

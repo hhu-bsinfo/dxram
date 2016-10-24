@@ -39,13 +39,13 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	@Expose
 	private int m_requestMapEntryCount = (int) Math.pow(2, 20);
 	@Expose
-    private StorageUnit m_incomingBufferSize = new StorageUnit(1, StorageUnit.UNIT_MB);
+    private StorageUnit m_incomingBufferSize = new StorageUnit(1, StorageUnit.MB);
 	@Expose
-    private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.UNIT_MB);
+    private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.MB);
 	@Expose
 	private int m_numberOfPendingBuffersPerConnection = 100;
 	@Expose
-    private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.UNIT_MB);
+    private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.MB);
 	@Expose
 	private int m_requestTimeoutMs = 333;
 

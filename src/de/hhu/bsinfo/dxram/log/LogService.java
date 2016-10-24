@@ -56,17 +56,17 @@ public class LogService extends AbstractDXRAMService implements MessageReceiver 
 	@Expose
 	private boolean m_useChecksum = true;
 	@Expose
-	private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.UNIT_KB);
+	private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.KB);
 	@Expose
-	private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.UNIT_MB);
+	private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.MB);
 	@Expose
-	private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.UNIT_MB);
+	private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
 	@Expose
-	private StorageUnit m_secondaryLogSize = new StorageUnit(512, StorageUnit.UNIT_MB);
+	private StorageUnit m_secondaryLogSize = new StorageUnit(512, StorageUnit.MB);
 	@Expose
-	private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.UNIT_MB);
+	private StorageUnit m_writeBufferSize = new StorageUnit(256, StorageUnit.MB);
 	@Expose
-	private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.UNIT_KB);
+	private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
 	@Expose
 	private int m_reorgUtilizationThreshold = 70;
 	@Expose
