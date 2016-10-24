@@ -23,6 +23,7 @@ import de.hhu.bsinfo.ethnet.NetworkHandler;
 import de.hhu.bsinfo.ethnet.NetworkHandler.MessageReceiver;
 import de.hhu.bsinfo.ethnet.NodeID;
 import de.hhu.bsinfo.ethnet.RequestMap;
+import de.hhu.bsinfo.utils.StorageUnit;
 
 /**
  * Access to the network interface to send messages or requests
@@ -38,13 +39,13 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 	@Expose
 	private int m_requestMapEntryCount = (int) Math.pow(2, 20);
 	@Expose
-	private int m_incomingBufferSize = 1024 * 1024;
+    private StorageUnit m_incomingBufferSize = new StorageUnit(1, StorageUnit.UNIT_MB);
 	@Expose
-	private int m_outgoingBufferSize = 1024 * 1024;
+    private StorageUnit m_outgoingBufferSize = new StorageUnit(1, StorageUnit.UNIT_MB);
 	@Expose
 	private int m_numberOfPendingBuffersPerConnection = 100;
 	@Expose
-	private int m_flowControlWindowSize = 1024 * 1024;
+    private StorageUnit m_flowControlWindowSize = new StorageUnit(1, StorageUnit.UNIT_MB);
 	@Expose
 	private int m_requestTimeoutMs = 333;
 
@@ -267,10 +268,10 @@ public class NetworkComponent extends AbstractDXRAMComponent {
 		m_networkHandler.initialize(
 				m_boot.getNodeID(),
 				new NodeMappings(m_boot),
-				m_incomingBufferSize,
-				m_outgoingBufferSize,
+                (int) m_incomingBufferSize.getBytes(),
+                (int) m_outgoingBufferSize.getBytes(),
 				m_numberOfPendingBuffersPerConnection,
-				m_flowControlWindowSize,
+                (int) m_flowControlWindowSize.getBytes(),
 				m_requestTimeoutMs);
 
 		m_networkHandler.registerMessageType(DXRAMMessageTypes.DEFAULT_MESSAGES_TYPE,
